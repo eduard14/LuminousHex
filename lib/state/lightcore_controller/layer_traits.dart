@@ -710,20 +710,27 @@ extension LightcoreControllerLayerTraits on LightcoreController {
   void _loadLayer(TowerLayerSnapshot layer) {
     _activeLayerId = layer.id;
     _slots = List<OuterTowerState>.from(layer.slots);
+    layer.slots = _slots;
     _core = layer.core;
     _layer2 = layer.layer2;
     _enemies = List<EnemyState>.from(layer.enemies);
+    layer.enemies = _enemies;
     _pulses = List<EnergyPulseState>.from(layer.pulses);
+    layer.pulses = _pulses;
     _shots = List<CoreShotState>.from(layer.shots);
+    layer.shots = _shots;
     _impacts = List<ImpactState>.from(layer.impacts);
+    layer.impacts = _impacts;
     _ammoQueue = List<AmmoPacket>.from(layer.ammoQueue);
+    layer.ammoQueue = _ammoQueue;
     if (layer.activeEnemyCardIds.isEmpty ||
         (layer.activeEnemyCardIds.length == 1 &&
             layer.activeEnemyCardIds.single ==
                 EnemyLibrary.starterDefault.id)) {
       layer.activeEnemyCardIds = <String>[EnemyLibrary.basicWhite.id];
     }
-    _activeEnemyCardIds = layer.activeEnemyCardIds;
+    _activeEnemyCardIds = List<String>.from(layer.activeEnemyCardIds);
+    layer.activeEnemyCardIds = _activeEnemyCardIds;
     _activeBossEnemyCardId = layer.activeBossEnemyCardId;
     _enemyTargetUpgradeLevel = _normalizeEnemyTargetUpgradeLevel(
       layer.enemyTargetUpgradeLevel,

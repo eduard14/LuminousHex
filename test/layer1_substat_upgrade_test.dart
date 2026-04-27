@@ -95,7 +95,7 @@ void main() {
     controller.lumens = 1000;
     controller.kills = LightcoreController.unlockKillsForOuterSlot(0);
 
-    expect(controller.buildTowerAt(0, TowerLibrary.greenPrism), isTrue);
+    expect(controller.buildTowerAt(0, TowerLibrary.redPrism), isTrue);
 
     final before = controller.slots[0];
     final powerBefore = controller.towerPower(before);

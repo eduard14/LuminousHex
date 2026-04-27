@@ -521,7 +521,7 @@ extension LightcoreControllerTowerMath on LightcoreController {
   }
 
   double towerEffectiveRange(OuterTowerState tower) {
-    if (!_slotCountsTowardRing(tower)) {
+    if (!_slotCountsTowardRing(tower) && !tower.isLayerProject) {
       return 0;
     }
     return towerEffectiveRangeForProjectile(tower, _slotProjectileType(tower));
@@ -542,7 +542,7 @@ extension LightcoreControllerTowerMath on LightcoreController {
     OuterTowerState tower,
     ProjectileType projectileType,
   ) {
-    if (!_slotCountsTowardRing(tower)) {
+    if (!_slotCountsTowardRing(tower) && !tower.isLayerProject) {
       return 0;
     }
     final combatBonus = towerPatternBonusesFor(tower) + towerInventoryBonuses;
