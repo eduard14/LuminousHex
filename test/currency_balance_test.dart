@@ -1,0 +1,281 @@
+import 'package:flutter_test/flutter_test.dart';
+
+import 'package:lightcore/data/enemy_configs.dart';
+import 'package:lightcore/models/lightcore_currency_labels.dart';
+import 'package:lightcore/state/lightcore_controller.dart';
+
+void main() {
+  test('apex scan labels match apex pull currency naming', () {
+    expect(LightcoreCurrencyLabels.bossScanCount(1), '1 Apex Scan');
+    expect(LightcoreCurrencyLabels.bossScanCount(2), '2 Apex Scans');
+    expect(LightcoreCurrencyLabels.rewardBossScans(3), '+3 Apex Scans');
+  });
+
+  test('enemy level reward preview grows on an exponential lumen curve', () {
+    final controller = LightcoreController();
+    addTearDown(controller.dispose);
+
+    expect(
+      controller.debugSetEnemyCardLevel(
+        EnemyLibrary.basicWhite.id,
+        level: 1,
+        copies: 1,
+      ),
+      isTrue,
+    );
+    final level1 = controller.enemyCardPreviewReward(
+      controller.enemyCardById(EnemyLibrary.basicWhite.id)!,
+    );
+
+    expect(
+      controller.debugSetEnemyCardLevel(
+        EnemyLibrary.basicWhite.id,
+        level: 25,
+        copies: 1,
+      ),
+      isTrue,
+    );
+    final level25 = controller.enemyCardPreviewReward(
+      controller.enemyCardById(EnemyLibrary.basicWhite.id)!,
+    );
+
+    expect(
+      controller.debugSetEnemyCardLevel(
+        EnemyLibrary.basicWhite.id,
+        level: 50,
+        copies: 1,
+      ),
+      isTrue,
+    );
+    final level50 = controller.enemyCardPreviewReward(
+      controller.enemyCardById(EnemyLibrary.basicWhite.id)!,
+    );
+
+    expect(level25, greaterThan(level1 * 3));
+    expect(level50, greaterThan(level25 * 3));
+  });
+
+  test('enemy EXP preview varies while kills stay per clear', () {
+    final controller = LightcoreController();
+    addTearDown(controller.dispose);
+
+    final white = controller.enemyCardById(EnemyLibrary.basicWhite.id)!;
+    final red = controller.enemyCardById(EnemyLibrary.basicRed.id)!;
+
+    expect(controller.enemyCardPreviewKillCredit(white), 1);
+    expect(controller.enemyCardPreviewKillCredit(red), 1);
+    expect(controller.enemyCardPreviewExperience(white), greaterThan(1));
+    expect(
+      controller.enemyCardPreviewExperience(red),
+      greaterThan(controller.enemyCardPreviewExperience(white)),
+    );
+  });
+
+  test('enemy clears award one kill and card-specific EXP', () {
+    final controller = LightcoreController();
+    addTearDown(controller.dispose);
+
+    final white = controller.enemyCardById(EnemyLibrary.basicWhite.id)!;
+    final red = controller.enemyCardById(EnemyLibrary.basicRed.id)!;
+    final whiteExperience = controller.enemyCardPreviewExperience(white);
+    final redExperience = controller.enemyCardPreviewExperience(red);
+
+    final whiteEnemy = controller.debugSpawnEnemyFromCard(
+      EnemyLibrary.basicWhite.id,
+      angle: 0,
+      radius: controller.spawnRadius,
+    )!;
+    expect(controller.debugDefeatEnemy(whiteEnemy.id), isTrue);
+
+    expect(controller.kills, 1);
+    expect(controller.experience, whiteExperience);
+
+    final redEnemy = controller.debugSpawnEnemyFromCard(
+      EnemyLibrary.basicRed.id,
+      angle: 0,
+      radius: controller.spawnRadius,
+    )!;
+    expect(controller.debugDefeatEnemy(redEnemy.id), isTrue);
+
+    expect(controller.kills, 2);
+    expect(controller.experience, whiteExperience + redExperience);
+    expect(redExperience, greaterThan(whiteExperience));
+  });
+
+  test('enemy target ceiling upgrades one at a time into trillion costs', () {
+    final controller = LightcoreController();
+    addTearDown(controller.dispose);
+
+    expect(LightcoreController.enemyTargetUpgradeStep, 1);
+    expect(controller.enemyTargetMax, LightcoreController.baseEnemyTargetMax);
+    expect(controller.setEnemyTargetCount(controller.enemyTargetMax), isTrue);
+
+    var upgrades = 0;
+    var previousCost = 0;
+    var finalPaidCost = 0;
+    while (controller.canUpgradeEnemyTargetMax) {
+      final cost = controller.enemyTargetUpgradeCost;
+      final previousMax = controller.enemyTargetMax;
+      expect(cost, greaterThan(previousCost));
+
+      controller.lumens = cost;
+      expect(controller.upgradeEnemyTargetMax(), isTrue);
+      expect(controller.enemyTargetMax, previousMax + 1);
+      expect(controller.enemyTargetCount, controller.enemyTargetMax);
+
+      upgrades += 1;
+      previousCost = cost;
+      finalPaidCost = cost;
+    }
+
+    expect(
+      upgrades,
+      LightcoreController.maxActiveEnemies -
+          LightcoreController.baseEnemyTargetMax,
+    );
+    expect(controller.enemyTargetMax, LightcoreController.maxActiveEnemies);
+    expect(finalPaidCost, greaterThanOrEqualTo(1000000000000));
+  });
+
+  test(
+    'legacy enemy target upgrade levels migrate to one-at-a-time ceiling',
+    () {
+      final controller = LightcoreController();
+      addTearDown(controller.dispose);
+      final payload = controller.buildCloudSavePayload();
+      final layerData = payload['layers'] as Map<String, dynamic>;
+      final layers = layerData['items'] as List<dynamic>;
+      final rootLayer = layers.first as Map<String, dynamic>;
+
+      rootLayer
+        ..remove('enemyTargetUpgradeStep')
+        ..['enemyTargetUpgradeLevel'] = 8
+        ..['enemyTargetCount'] = LightcoreController.maxActiveEnemies;
+
+      final restored = LightcoreController.fromCloudSavePayload(payload);
+      addTearDown(restored.dispose);
+
+      expect(restored.enemyTargetMax, LightcoreController.maxActiveEnemies);
+      expect(restored.enemyTargetCount, LightcoreController.maxActiveEnemies);
+
+      final restoredPayload = restored.buildCloudSavePayload();
+      final restoredLayerData =
+          restoredPayload['layers'] as Map<String, dynamic>;
+      final restoredLayers = restoredLayerData['items'] as List<dynamic>;
+      final restoredRootLayer = restoredLayers.first as Map<String, dynamic>;
+      expect(
+        restoredRootLayer['enemyTargetUpgradeStep'],
+        LightcoreController.enemyTargetUpgradeStep,
+      );
+    },
+  );
+
+  test('premium time warps spend shards and enforce weekly caps', () {
+    final controller = LightcoreController();
+    addTearDown(controller.dispose);
+    final offer = controller.timeWarpOfferById(
+      LightcoreController.timeWarpPrismTwelveHoursId,
+    )!;
+    controller.prismShards = offer.cost * offer.weeklyLimit;
+
+    for (var index = 0; index < offer.weeklyLimit; index += 1) {
+      expect(controller.purchaseTimeWarp(offer.id), isTrue);
+    }
+
+    expect(controller.prismShards, 0);
+    expect(controller.totalPrismShardsSpent, offer.cost * offer.weeklyLimit);
+    expect(
+      controller.totalTimeWarpSecondsClaimed,
+      offer.durationSeconds * offer.weeklyLimit,
+    );
+    expect(controller.timeWarpPurchasesRemaining(offer.id), 0);
+    expect(controller.purchaseTimeWarp(offer.id), isFalse);
+  });
+
+  test('flux time warp cap state survives cloud save restore', () {
+    final controller = LightcoreController();
+    addTearDown(controller.dispose);
+    final offer = controller.timeWarpOfferById(
+      LightcoreController.timeWarpFluxThirtyMinutesId,
+    )!;
+    controller.flux = offer.cost * offer.weeklyLimit;
+
+    for (var index = 0; index < offer.weeklyLimit; index += 1) {
+      expect(controller.purchaseTimeWarp(offer.id), isTrue);
+    }
+
+    final restored = LightcoreController.fromCloudSavePayload(
+      controller.buildCloudSavePayload(),
+    );
+    addTearDown(restored.dispose);
+
+    expect(restored.timeWarpPurchasesRemaining(offer.id), 0);
+    expect(
+      restored.totalTimeWarpSecondsClaimed,
+      offer.durationSeconds * offer.weeklyLimit,
+    );
+    expect(restored.purchaseTimeWarp(offer.id), isFalse);
+  });
+
+  test('server date keys drive daily and weekly reset state', () {
+    final controller = LightcoreController();
+    addTearDown(controller.dispose);
+    final offer = controller.timeWarpOfferById(
+      LightcoreController.timeWarpFluxThirtyMinutesId,
+    )!;
+    const storeOfferId = 'test_weekly_store_offer';
+    const storeOfferWeeklyLimit = 2;
+    controller.syncServerDateKeys(dayKey: '2026-04-20', weekKey: '2026-04-20');
+    controller.flux = offer.cost * offer.weeklyLimit;
+    controller.prismShards = 20;
+
+    for (var index = 0; index < offer.weeklyLimit; index += 1) {
+      expect(controller.purchaseTimeWarp(offer.id), isTrue);
+    }
+    expect(controller.timeWarpPurchasesRemaining(offer.id), 0);
+    for (var index = 0; index < storeOfferWeeklyLimit; index += 1) {
+      expect(
+        controller.spendPrismShardsForStoreOffer(
+          offerId: storeOfferId,
+          amount: 5,
+          weeklyLimit: storeOfferWeeklyLimit,
+          reasonLabel: 'Test Weekly Store Offer',
+        ),
+        isTrue,
+      );
+    }
+    expect(
+      controller.storeOfferPurchasesRemaining(
+        storeOfferId,
+        weeklyLimit: storeOfferWeeklyLimit,
+      ),
+      0,
+    );
+
+    controller.syncServerDateKeys(dayKey: '2026-04-21', weekKey: '2026-04-27');
+
+    expect(controller.timeWarpPurchasesRemaining(offer.id), offer.weeklyLimit);
+    expect(
+      controller.storeOfferPurchasesRemaining(
+        storeOfferId,
+        weeklyLimit: storeOfferWeeklyLimit,
+      ),
+      storeOfferWeeklyLimit,
+    );
+    final payload = controller.buildCloudSavePayload();
+    final dailyPass =
+        (payload['battlePasses'] as List<dynamic>).firstWhere(
+              (item) => (item as Map<String, dynamic>)['type'] == 'dailyKills',
+            )
+            as Map<String, dynamic>;
+    expect(dailyPass['seasonKey'], '2026-04-21');
+    expect(
+      (payload['store'] as Map<String, dynamic>)['timeWarpWeekKey'],
+      '2026-04-27',
+    );
+    expect(
+      (payload['store'] as Map<String, dynamic>)['storeOfferWeekKey'],
+      '2026-04-27',
+    );
+  });
+}

@@ -1,0 +1,532 @@
+part of '../lightcore_controller.dart';
+
+extension LightcoreControllerSaveLayerSerialization on LightcoreController {
+  Map<String, dynamic> _serializeLayerSnapshot(TowerLayerSnapshot layer) {
+    return <String, dynamic>{
+      'id': layer.id,
+      'tier': layer.tier,
+      'label': layer.label,
+      'slots': layer.slots
+          .map(_serializeOuterTowerState)
+          .toList(growable: false),
+      'core': _serializeCoreState(layer.core),
+      'layer2': _serializeLayer2TowerState(layer.layer2),
+      'activeEnemyCardIds': List<String>.from(layer.activeEnemyCardIds),
+      'activeBossEnemyCardId': layer.activeBossEnemyCardId,
+      'enemyTargetCount': layer.enemyTargetCount,
+      'enemyTargetUpgradeLevel': layer.enemyTargetUpgradeLevel,
+      'enemyTargetUpgradeStep': enemyTargetUpgradeStep,
+      'outerRingRevealed': layer.outerRingRevealed,
+      'swarmActivated': layer.swarmActivated,
+      'selectedSlotIndex': layer.selectedSlotIndex,
+      'selectedEnemyCardId': layer.selectedEnemyCardId,
+      'elapsed': layer.elapsed,
+      'spawnTimer': layer.spawnTimer,
+      'spawnSequence': layer.spawnSequence,
+      'enemyCounter': layer.enemyCounter,
+      'pulseCounter': layer.pulseCounter,
+      'shotCounter': layer.shotCounter,
+      'impactCounter': layer.impactCounter,
+      'normalKillsSinceBoss': layer.normalKillsSinceBoss,
+      'bossReady': layer.bossReady,
+      'childTowerUpgrades': layer.childTowerUpgrades
+          .map(
+            (upgrade) => <String, dynamic>{
+              'type': upgrade.type.name,
+              'rank': upgrade.rank,
+            },
+          )
+          .toList(growable: false),
+      'parentLayerId': layer.parentLayerId,
+      'parentSlotIndex': layer.parentSlotIndex,
+      'sourceLayerId': layer.sourceLayerId,
+      'promotedParentLayerId': layer.promotedParentLayerId,
+      'promotedIntoParentSlot': layer.promotedIntoParentSlot,
+      'promotionTraitRoll': layer.promotionTraitRoll,
+    };
+  }
+
+  TowerLayerSnapshot? _deserializeLayerSnapshot(Map<String, dynamic> data) {
+    final layerId = _stringOrNull(data['id']);
+    if (layerId == null) {
+      return null;
+    }
+    final tier = _intValue(data['tier'], fallback: 1);
+    final activeEnemyCardIds = _coerceList(
+      data['activeEnemyCardIds'],
+    ).map(_stringOrNull).whereType<String>().toList(growable: false);
+    final resolvedActiveEnemyCardIds =
+        activeEnemyCardIds.isEmpty ||
+            (activeEnemyCardIds.length == 1 &&
+                activeEnemyCardIds.single == EnemyLibrary.starterDefault.id)
+        ? <String>[EnemyLibrary.basicWhite.id]
+        : activeEnemyCardIds;
+    final enemyTargetUpgradeLevel = _migratedEnemyTargetUpgradeLevel(
+      savedUpgradeLevel: _intValue(
+        data['enemyTargetUpgradeLevel'],
+        fallback: 0,
+      ),
+      savedUpgradeStep: _intValue(
+        data['enemyTargetUpgradeStep'],
+        fallback: _legacyEnemyTargetUpgradeStep,
+      ),
+    );
+    return TowerLayerSnapshot(
+      id: layerId,
+      tier: max(1, tier),
+      label: _stringOrNull(data['label']) ?? 'Recovered Shell',
+      slots: _deserializeOuterTowerSlots(_coerceList(data['slots'])),
+      core: _deserializeCoreState(_coerceMap(data['core'])),
+      layer2: _deserializeLayer2TowerState(_coerceMap(data['layer2'])),
+      enemies: <EnemyState>[],
+      pulses: <EnergyPulseState>[],
+      shots: <CoreShotState>[],
+      impacts: <ImpactState>[],
+      ammoQueue: <AmmoPacket>[],
+      activeEnemyCardIds: resolvedActiveEnemyCardIds,
+      enemyTargetCount: _intValue(
+        data['enemyTargetCount'],
+        fallback: initialEnemyTarget,
+      ),
+      enemyTargetUpgradeLevel: enemyTargetUpgradeLevel,
+      outerRingRevealed: _boolValue(data['outerRingRevealed']),
+      swarmActivated: _boolValue(data['swarmActivated']),
+      selectedSlotIndex: _intOrNull(data['selectedSlotIndex']),
+      selectedEnemyCardId:
+          _stringOrNull(data['selectedEnemyCardId']) ??
+          resolvedActiveEnemyCardIds.first,
+      elapsed: _doubleValue(data['elapsed']),
+      spawnTimer: _doubleValue(data['spawnTimer'], fallback: 1.0),
+      spawnSequence: _intValue(data['spawnSequence']),
+      enemyCounter: _intValue(data['enemyCounter']),
+      pulseCounter: _intValue(data['pulseCounter']),
+      shotCounter: _intValue(data['shotCounter']),
+      impactCounter: _intValue(data['impactCounter']),
+      normalKillsSinceBoss: _intValue(data['normalKillsSinceBoss']),
+      bossReady: _boolValue(data['bossReady']),
+      childTowerUpgrades: _coerceList(data['childTowerUpgrades'])
+          .map((item) => _deserializeChildTowerUpgrade(_coerceMap(item)))
+          .whereType<ChildTowerUpgradeState>()
+          .toList(growable: false),
+      activeBossEnemyCardId: _stringOrNull(data['activeBossEnemyCardId']),
+      parentLayerId: _stringOrNull(data['parentLayerId']),
+      parentSlotIndex: _intOrNull(data['parentSlotIndex']),
+      sourceLayerId: _stringOrNull(data['sourceLayerId']),
+      promotedParentLayerId: _stringOrNull(data['promotedParentLayerId']),
+      promotedIntoParentSlot: _boolValue(data['promotedIntoParentSlot']),
+      promotionTraitRoll: _intValue(data['promotionTraitRoll']),
+    );
+  }
+
+  List<OuterTowerState> _deserializeOuterTowerSlots(List<dynamic> savedSlots) {
+    return List<OuterTowerState>.generate(slotCount, (index) {
+      if (index >= savedSlots.length) {
+        return OuterTowerState(slotIndex: index);
+      }
+      return _deserializeOuterTowerState(
+            _coerceMap(savedSlots[index]),
+            slotIndex: index,
+          ) ??
+          OuterTowerState(slotIndex: index);
+    }, growable: false);
+  }
+
+  Map<String, dynamic> _serializeOuterTowerState(OuterTowerState tower) {
+    return <String, dynamic>{
+      'slotIndex': tower.slotIndex,
+      'configId': tower.config?.id,
+      'level': tower.level,
+      'charge': tower.charge,
+      'cooldownRemaining': tower.cooldownRemaining,
+      'automationCooldownRemaining': tower.automationCooldownRemaining,
+      'disruption': tower.disruption,
+      'equippedCardInstanceId': tower.equippedCardInstanceId,
+      'projectileType': tower.projectileType?.name,
+      'payloadType': tower.payloadType?.name,
+      'targetPriority': tower.targetPriority.name,
+      'projectileTargetPriorities': <String, dynamic>{
+        for (final entry in tower.projectileTargetPriorities.entries)
+          entry.key.name: entry.value.name,
+      },
+      'fireSequence': tower.fireSequence,
+      'investedLumens': tower.investedLumens,
+      'fabricationTotalSeconds': tower.fabricationTotalSeconds,
+      'fabricationRemainingSeconds': tower.fabricationRemainingSeconds,
+      'powerFactor': tower.powerFactor,
+      'chargeFactor': tower.chargeFactor,
+      'cooldownFactor': tower.cooldownFactor,
+      'rangeFactor': tower.rangeFactor,
+      'generationFactor': tower.generationFactor,
+      'critChanceBonus': tower.critChanceBonus,
+      'critDamageFactor': tower.critDamageFactor,
+      'finalDamageFactor': tower.finalDamageFactor,
+      'bossDamageFactor': tower.bossDamageFactor,
+      'normalDamageFactor': tower.normalDamageFactor,
+      'defensePenetration': tower.defensePenetration,
+      'minDamageFactor': tower.minDamageFactor,
+      'maxDamageFactor': tower.maxDamageFactor,
+      'dotDamageFactor': tower.dotDamageFactor,
+      'towerUpgradeOptions': tower.towerUpgradeOptions
+          .map(
+            (option) => <String, dynamic>{
+              'type': option.type.name,
+              'rank': option.rank,
+              'isOvercharge': option.isOvercharge,
+              'isRadiant': option.isRadiant,
+            },
+          )
+          .toList(growable: false),
+      'childLayerId': tower.childLayerId,
+      'childLayerTier': tower.childLayerTier,
+      'childLayerName': tower.childLayerName,
+      'childAffinity': tower.childAffinity?.name,
+      'childSecondaryAffinity': tower.childSecondaryAffinity?.name,
+      'childProjectileLoadout': tower.childProjectileLoadout
+          .map((type) => type.name)
+          .toList(growable: false),
+      'childPayloadLoadout': tower.childPayloadLoadout
+          .map((type) => type.name)
+          .toList(growable: false),
+      'childProjectileType': tower.childProjectileType?.name,
+      'childPayloadType': tower.childPayloadType?.name,
+      'childCoreLevel': tower.childCoreLevel,
+      'childRange': tower.childRange,
+      'childGenerationSpeed': tower.childGenerationSpeed,
+      'childCritChance': tower.childCritChance,
+      'childCritMultiplier': tower.childCritMultiplier,
+      'childFinalDamageMultiplier': tower.childFinalDamageMultiplier,
+      'childBossDamageMultiplier': tower.childBossDamageMultiplier,
+      'childNormalDamageMultiplier': tower.childNormalDamageMultiplier,
+      'childDefensePenetration': tower.childDefensePenetration,
+      'childMinDamageMultiplier': tower.childMinDamageMultiplier,
+      'childMaxDamageMultiplier': tower.childMaxDamageMultiplier,
+      'childPowerUpgradeBonus': tower.childPowerUpgradeBonus,
+      'childChargeUpgradeBonus': tower.childChargeUpgradeBonus,
+      'childCooldownUpgradeBonus': tower.childCooldownUpgradeBonus,
+      'childRangeUpgradeBonus': tower.childRangeUpgradeBonus,
+      'childGenerationUpgradeBonus': tower.childGenerationUpgradeBonus,
+      'childCritChanceUpgradeBonus': tower.childCritChanceUpgradeBonus,
+      'childCritDamageUpgradeBonus': tower.childCritDamageUpgradeBonus,
+      'childFinalDamageUpgradeBonus': tower.childFinalDamageUpgradeBonus,
+      'childBossDamageUpgradeBonus': tower.childBossDamageUpgradeBonus,
+      'childNormalDamageUpgradeBonus': tower.childNormalDamageUpgradeBonus,
+      'childDefensePenetrationUpgradeBonus':
+          tower.childDefensePenetrationUpgradeBonus,
+      'childMinDamageUpgradeBonus': tower.childMinDamageUpgradeBonus,
+      'childMaxDamageUpgradeBonus': tower.childMaxDamageUpgradeBonus,
+      'childBuiltCount': tower.childBuiltCount,
+      'childPromoted': tower.childPromoted,
+    };
+  }
+
+  OuterTowerState? _deserializeOuterTowerState(
+    Map<String, dynamic> data, {
+    required int slotIndex,
+  }) {
+    final config = _towerConfigById(_stringOrNull(data['configId']));
+    final projectileType = _deserializeOuterTowerProjectileType(
+      config,
+      _stringOrNull(data['projectileType']),
+    );
+    return OuterTowerState(
+      slotIndex: _intValue(data['slotIndex'], fallback: slotIndex),
+      config: config,
+      level: _intValue(data['level'], fallback: 1),
+      charge: _doubleValue(data['charge']),
+      cooldownRemaining: _doubleValue(data['cooldownRemaining']),
+      automationCooldownRemaining: _doubleValue(
+        data['automationCooldownRemaining'],
+      ),
+      disruption: _doubleValue(data['disruption']),
+      equippedCardInstanceId: _stringOrNull(data['equippedCardInstanceId']),
+      projectileType: projectileType,
+      payloadType: _enumByName(
+        PayloadType.values,
+        _stringOrNull(data['payloadType']),
+      ),
+      targetPriority:
+          _enumByName(
+            TargetPriority.values,
+            _stringOrNull(data['targetPriority']),
+          ) ??
+          TargetPriority.close,
+      projectileTargetPriorities: <ProjectileType, TargetPriority>{
+        for (final entry in _coerceMap(
+          data['projectileTargetPriorities'],
+        ).entries)
+          if (_enumByName(ProjectileType.values, entry.key) != null &&
+              _enumByName(TargetPriority.values, _stringOrNull(entry.value)) !=
+                  null)
+            _enumByName(ProjectileType.values, entry.key)!: _enumByName(
+              TargetPriority.values,
+              _stringOrNull(entry.value),
+            )!,
+      },
+      fireSequence: _intValue(data['fireSequence']),
+      investedLumens: _intValue(data['investedLumens']),
+      fabricationTotalSeconds: _doubleValue(data['fabricationTotalSeconds']),
+      fabricationRemainingSeconds: _doubleValue(
+        data['fabricationRemainingSeconds'],
+      ),
+      powerFactor: _doubleValue(data['powerFactor'], fallback: 1),
+      chargeFactor: _doubleValue(data['chargeFactor'], fallback: 1),
+      cooldownFactor: _doubleValue(data['cooldownFactor'], fallback: 1),
+      rangeFactor: _doubleValue(data['rangeFactor'], fallback: 1),
+      generationFactor: _doubleValue(data['generationFactor'], fallback: 1),
+      critChanceBonus: _doubleValue(data['critChanceBonus']),
+      critDamageFactor: _doubleValue(data['critDamageFactor'], fallback: 1),
+      finalDamageFactor: _doubleValue(data['finalDamageFactor'], fallback: 1),
+      bossDamageFactor: _doubleValue(data['bossDamageFactor'], fallback: 1),
+      normalDamageFactor: _doubleValue(data['normalDamageFactor'], fallback: 1),
+      defensePenetration: _doubleValue(data['defensePenetration']),
+      minDamageFactor: _doubleValue(data['minDamageFactor'], fallback: 1),
+      maxDamageFactor: _doubleValue(data['maxDamageFactor'], fallback: 1),
+      dotDamageFactor: _doubleValue(data['dotDamageFactor'], fallback: 1),
+      towerUpgradeOptions: _coerceList(data['towerUpgradeOptions'])
+          .map((item) => _deserializeTowerUpgrade(_coerceMap(item)))
+          .whereType<TowerUpgradeOptionState>()
+          .toList(growable: false),
+      childLayerId: _stringOrNull(data['childLayerId']),
+      childLayerTier: _intOrNull(data['childLayerTier']),
+      childLayerName: _stringOrNull(data['childLayerName']),
+      childAffinity: _enumByName(
+        PrototypeAffinity.values,
+        _stringOrNull(data['childAffinity']),
+      ),
+      childSecondaryAffinity: _enumByName(
+        PrototypeAffinity.values,
+        _stringOrNull(data['childSecondaryAffinity']),
+      ),
+      childProjectileLoadout: _coerceList(data['childProjectileLoadout'])
+          .map(_stringOrNull)
+          .whereType<String>()
+          .map((value) => _enumByName(ProjectileType.values, value))
+          .whereType<ProjectileType>()
+          .toList(growable: false),
+      childPayloadLoadout: _coerceList(data['childPayloadLoadout'])
+          .map(_stringOrNull)
+          .whereType<String>()
+          .map((value) => _enumByName(PayloadType.values, value))
+          .whereType<PayloadType>()
+          .toList(growable: false),
+      childProjectileType: _enumByName(
+        ProjectileType.values,
+        _stringOrNull(data['childProjectileType']),
+      ),
+      childPayloadType: _enumByName(
+        PayloadType.values,
+        _stringOrNull(data['childPayloadType']),
+      ),
+      childCoreLevel: _intOrNull(data['childCoreLevel']),
+      childRange: _doubleOrNull(data['childRange']),
+      childGenerationSpeed: _doubleOrNull(data['childGenerationSpeed']),
+      childCritChance: _doubleOrNull(data['childCritChance']),
+      childCritMultiplier: _doubleOrNull(data['childCritMultiplier']),
+      childFinalDamageMultiplier: _doubleOrNull(
+        data['childFinalDamageMultiplier'],
+      ),
+      childBossDamageMultiplier: _doubleOrNull(
+        data['childBossDamageMultiplier'],
+      ),
+      childNormalDamageMultiplier: _doubleOrNull(
+        data['childNormalDamageMultiplier'],
+      ),
+      childDefensePenetration: _doubleOrNull(data['childDefensePenetration']),
+      childMinDamageMultiplier: _doubleOrNull(data['childMinDamageMultiplier']),
+      childMaxDamageMultiplier: _doubleOrNull(data['childMaxDamageMultiplier']),
+      childPowerUpgradeBonus: _doubleValue(data['childPowerUpgradeBonus']),
+      childChargeUpgradeBonus: _doubleValue(data['childChargeUpgradeBonus']),
+      childCooldownUpgradeBonus: _doubleValue(
+        data['childCooldownUpgradeBonus'],
+      ),
+      childRangeUpgradeBonus: _doubleValue(data['childRangeUpgradeBonus']),
+      childGenerationUpgradeBonus: _doubleValue(
+        data['childGenerationUpgradeBonus'],
+      ),
+      childCritChanceUpgradeBonus: _doubleValue(
+        data['childCritChanceUpgradeBonus'],
+      ),
+      childCritDamageUpgradeBonus: _doubleValue(
+        data['childCritDamageUpgradeBonus'],
+      ),
+      childFinalDamageUpgradeBonus: _doubleValue(
+        data['childFinalDamageUpgradeBonus'],
+      ),
+      childBossDamageUpgradeBonus: _doubleValue(
+        data['childBossDamageUpgradeBonus'],
+      ),
+      childNormalDamageUpgradeBonus: _doubleValue(
+        data['childNormalDamageUpgradeBonus'],
+      ),
+      childDefensePenetrationUpgradeBonus: _doubleValue(
+        data['childDefensePenetrationUpgradeBonus'],
+      ),
+      childMinDamageUpgradeBonus: _doubleValue(
+        data['childMinDamageUpgradeBonus'],
+      ),
+      childMaxDamageUpgradeBonus: _doubleValue(
+        data['childMaxDamageUpgradeBonus'],
+      ),
+      childBuiltCount: _intValue(data['childBuiltCount']),
+      childPromoted: _boolValue(data['childPromoted']),
+    );
+  }
+
+  ProjectileType? _deserializeOuterTowerProjectileType(
+    TowerConfig? config,
+    String? projectileTypeName,
+  ) {
+    final projectileType = _enumByName(
+      ProjectileType.values,
+      projectileTypeName,
+    );
+    if (config?.id == TowerLibrary.greenPrism.id &&
+        projectileType == ProjectileType.orbitNode) {
+      return ProjectileType.shieldHalo;
+    }
+    return projectileType;
+  }
+
+  TowerUpgradeOptionState? _deserializeTowerUpgrade(Map<String, dynamic> data) {
+    final type = _enumByName(
+      TowerUpgradeStatType.values,
+      _stringOrNull(data['type']),
+    );
+    if (type == null) {
+      return null;
+    }
+    return TowerUpgradeOptionState(
+      type: type,
+      rank: _intValue(data['rank']),
+      isOvercharge: _boolValue(data['isOvercharge']),
+      isRadiant: _boolValue(data['isRadiant']),
+    );
+  }
+
+  ChildTowerUpgradeState? _deserializeChildTowerUpgrade(
+    Map<String, dynamic> data,
+  ) {
+    final type = _enumByName(
+      ChildTowerUpgradeType.values,
+      _stringOrNull(data['type']),
+    );
+    if (type == null) {
+      return null;
+    }
+    return ChildTowerUpgradeState(type: type, rank: _intValue(data['rank']));
+  }
+
+  Map<String, dynamic> _serializeCoreState(CoreState core) {
+    return <String, dynamic>{
+      'coreStability': core.coreStability,
+      'flowEfficiency': core.flowEfficiency,
+      'fireCooldownRemaining': core.fireCooldownRemaining,
+      'level': core.level,
+      'projectileType': core.projectileType.name,
+      'payloadType': core.payloadType.name,
+      'affinity': core.affinity.name,
+      'secondaryAffinity': core.secondaryAffinity?.name,
+      'projectileLoadout': core.projectileLoadout
+          .map((type) => type.name)
+          .toList(growable: false),
+      'payloadLoadout': core.payloadLoadout
+          .map((type) => type.name)
+          .toList(growable: false),
+      'fireSequence': core.fireSequence,
+      'rangeUpgradeLevel': core.rangeUpgradeLevel,
+      'fireSpeedUpgradeLevel': core.fireSpeedUpgradeLevel,
+      'multiShotUpgradeLevel': core.multiShotUpgradeLevel,
+      'queueLimitUpgradeLevel': core.queueLimitUpgradeLevel,
+    };
+  }
+
+  CoreState _deserializeCoreState(Map<String, dynamic> data) {
+    final legacyFlowEfficiency = _doubleValue(
+      data['flowEfficiency'],
+      fallback: _maxFlowEfficiency,
+    );
+    final coreStability = _doubleValue(
+      data['coreStability'],
+      fallback: _stabilityForLegacyOutputEfficiency(legacyFlowEfficiency),
+    ).clamp(0.0, _maxCoreStability);
+    return CoreState(
+      coreStability: coreStability,
+      flowEfficiency: _outputEfficiencyPercentForStability(coreStability),
+      fireCooldownRemaining: _doubleValue(data['fireCooldownRemaining']),
+      level: _intValue(data['level'], fallback: 1),
+      projectileType:
+          _enumByName(
+            ProjectileType.values,
+            _stringOrNull(data['projectileType']),
+          ) ??
+          ProjectileType.starBolt,
+      payloadType:
+          _enumByName(PayloadType.values, _stringOrNull(data['payloadType'])) ??
+          PayloadType.none,
+      affinity:
+          _enumByName(
+            PrototypeAffinity.values,
+            _stringOrNull(data['affinity']),
+          ) ??
+          PrototypeAffinity.neutral,
+      secondaryAffinity: _enumByName(
+        PrototypeAffinity.values,
+        _stringOrNull(data['secondaryAffinity']),
+      ),
+      projectileLoadout: _coerceList(data['projectileLoadout'])
+          .map(_stringOrNull)
+          .whereType<String>()
+          .map((value) => _enumByName(ProjectileType.values, value))
+          .whereType<ProjectileType>()
+          .toList(growable: false),
+      payloadLoadout: _coerceList(data['payloadLoadout'])
+          .map(_stringOrNull)
+          .whereType<String>()
+          .map((value) => _enumByName(PayloadType.values, value))
+          .whereType<PayloadType>()
+          .toList(growable: false),
+      fireSequence: _intValue(data['fireSequence']),
+      rangeUpgradeLevel: _intValue(data['rangeUpgradeLevel']),
+      fireSpeedUpgradeLevel: _intValue(data['fireSpeedUpgradeLevel']),
+      multiShotUpgradeLevel: _intValue(data['multiShotUpgradeLevel']),
+      queueLimitUpgradeLevel: _intValue(data['queueLimitUpgradeLevel']),
+    );
+  }
+
+  Map<String, dynamic> _serializeLayer2TowerState(Layer2TowerState layer2) {
+    return <String, dynamic>{
+      'unlocked': layer2.unlocked,
+      'count': layer2.count,
+      'fireCooldownRemaining': layer2.fireCooldownRemaining,
+      'projectileType': layer2.projectileType.name,
+      'payloadType': layer2.payloadType.name,
+      'affinity': layer2.affinity.name,
+      'sourceSummary': layer2.sourceSummary,
+    };
+  }
+
+  Layer2TowerState _deserializeLayer2TowerState(Map<String, dynamic> data) {
+    return Layer2TowerState(
+      unlocked: _boolValue(data['unlocked']),
+      count: _intValue(data['count']),
+      fireCooldownRemaining: _doubleValue(data['fireCooldownRemaining']),
+      projectileType:
+          _enumByName(
+            ProjectileType.values,
+            _stringOrNull(data['projectileType']),
+          ) ??
+          ProjectileType.threadBeam,
+      payloadType:
+          _enumByName(PayloadType.values, _stringOrNull(data['payloadType'])) ??
+          PayloadType.none,
+      affinity:
+          _enumByName(
+            PrototypeAffinity.values,
+            _stringOrNull(data['affinity']),
+          ) ??
+          PrototypeAffinity.solar,
+      sourceSummary:
+          _stringOrNull(data['sourceSummary']) ?? 'Awaiting first ascension',
+    );
+  }
+}

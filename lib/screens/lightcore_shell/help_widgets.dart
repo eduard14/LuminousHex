@@ -1,0 +1,158 @@
+part of '../lightcore_shell.dart';
+
+class _EventOfflineBackdrop extends StatelessWidget {
+  const _EventOfflineBackdrop();
+
+  @override
+  Widget build(BuildContext context) {
+    return const DecoratedBox(
+      decoration: BoxDecoration(
+        gradient: RadialGradient(
+          center: Alignment.center,
+          radius: 0.9,
+          colors: [
+            Color(0xFF12283A),
+            LightcorePalette.abyss,
+            LightcorePalette.night,
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _GlowOrb extends StatelessWidget {
+  const _GlowOrb({required this.color, required this.size});
+
+  final Color color;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    return IgnorePointer(
+      child: Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          gradient: RadialGradient(colors: [color, Colors.transparent]),
+        ),
+      ),
+    );
+  }
+}
+
+class _HelpSectionData {
+  const _HelpSectionData({
+    required this.id,
+    required this.title,
+    required this.summary,
+    required this.body,
+  });
+
+  final String id;
+  final String title;
+  final String summary;
+  final String body;
+}
+
+const List<_HelpSectionData> _helpSections = <_HelpSectionData>[
+  _HelpSectionData(
+    id: 'mission-briefing',
+    title: 'Mission Briefing',
+    summary:
+        'Why the shell is moving through space and what the swarm really is.',
+    body:
+        'The Lightcore is navigating fractured sectors and sealing black holes before they grow into stronger singularities. Every shell is a temporary defense ring built to stabilize the route ahead.\n\n'
+        'Anomalies keep mutating as you move deeper into space. That is why new systems come online over time, why threat scans matter, and why promoted shells must keep pushing forward instead of holding one lane forever.',
+  ),
+  _HelpSectionData(
+    id: 'header-icons',
+    title: 'Command HUD',
+    summary:
+        'What the compact header buttons and resource icons mean in the shell.',
+    body:
+        'Top action icons:\n'
+        '- Storefront opens the Store.\n'
+        '- Friends opens friend requests and daily Apex Scan gifts.\n'
+        '- Scan reticle opens Threat Scans. A badge appears once 10 or more scans are ready.\n'
+        '- Premium badge opens Passes. A number badge means claimable rewards are waiting.\n'
+        '- Settings opens stats, help, and reset controls.\n\n'
+        'Status icons:\n'
+        '- Leaderboard shows global ranking based on TS.\n'
+        '- Trophy shows current TS.\n'
+        '- Coin shows current Lumen.\n'
+        '- Premium seal shows current Flux.\n'
+        '- Circular blur shows current Output Efficiency.\n'
+        '- Eye shows which layer you are viewing right now.',
+  ),
+  _HelpSectionData(
+    id: 'battle-basics',
+    title: 'Shell Defense Basics',
+    summary: 'How the core, relay prisms, and anomalies interact.',
+    body:
+        'The center tower is the Lightcore. Tap it to generate its own packet for the core queue; the Lightcore fires queued packets when a target is in range and its cooldown is ready. The six surrounding towers are relay prisms. They build charge, then fire a packet into the core queue when you tap them or when a manager automates them.\n\n'
+        'Anomalies spiral inward from beyond the shell. They do not destroy the core directly. Instead they jam the edge hex they hit, slow relay output, and reduce how efficiently the shell harvests Lumens.',
+  ),
+  _HelpSectionData(
+    id: 'flow-queue-lanes',
+    title: 'Output, Queue, and Lanes',
+    summary: 'What the packet markers mean and how pressure strains the core.',
+    body:
+        'Core Stability is the hidden pressure value from 0 to 100. Output Efficiency is the visible multiplier derived from that stability, and Effective Gain is Base Gain x Threat Reward x Output Efficiency.\n\n'
+        'Queue is the stored payload orbiting the core. The packets circling the center inherit the queued projectile colors and show which generated shots are waiting for the Lightcore to convert them into outgoing fire. A full queue makes ready prisms wait until the core spends packets.\n\n'
+        'A lane is the approach corridor tied to each outer hex. When anomalies break through a corridor, they jam that lane and slow the prism assigned to it. Repeated lane hits shake Core Stability, and Output Efficiency recovers over time through recovery stats and stable builds.',
+  ),
+  _HelpSectionData(
+    id: 'currencies',
+    title: 'Resources',
+    summary: 'What Lumens, Flux, and Threat Scans are for.',
+    body:
+        'Lumens are your main stabilization currency. Use them to anchor new prisms and upgrade existing ones. Lumen income scales hardest with active-shell progress, so it is your main growth curve.\n\n'
+        'Flux feeds the foundries. The foundry unlocks at Account Radiance Lv ${LightcoreController.managerUnlockLevel}, so early Flux is intentionally banked until managers enter the run.\n\n'
+        'Threat Scans let you resolve anomaly signatures. Scan income starts slower than Lumen income, so each scan matters more.',
+  ),
+  _HelpSectionData(
+    id: 'enemy-tickets',
+    title: 'Threat Scans and Signatures',
+    summary: 'How scan level, rarity, and card counts work.',
+    body:
+        'Anomaly cards represent threat signatures. Spectrum Band defines behavior, like speed or splitting. Rarity defines threat tier, reward potential, and long-term value.\n\n'
+        'You spend Threat Scans one at a time or in batches to resolve anomaly signatures. As total scans rise, your scan level increases and higher rarities become possible more often.\n\n'
+        'Extra copies strengthen a signature. Once a card hits its rarity cap, extra copies can eventually merge upward into a random card of the next rarity.',
+  ),
+  _HelpSectionData(
+    id: 'projectile-families',
+    title: 'Projectile Families',
+    summary: 'How Source Towers become aligned projectile and payload traits.',
+    body:
+        'Every buildable Source Tower is a pure Spectrum Band seed with one projectile family and no payload. Projectile is the delivery method, payload is the hit effect, and Aligned Towers roll those two traits independently from the child shells underneath them. That means an Aligned Tower can resolve into signatures such as Red projectile / Blue payload.\n\n'
+        'Default family tracks:\n'
+        '- White Starbolt: Starbolt. Payloads: Precision, priority correction, and consistency through managers or alignment history.\n'
+        '- Blue Rayline: Thread Beam -> Pulse Beam, Split Beam -> Sweep Beam, Lance Beam, Prism Beam, Sentinel Beam. Payloads: Chill, Fracture -> Deep Chill, Brittle Fracture.\n'
+        '- Orange Impact: Heavy Shot -> Breaker Shot, Crush Shot -> Siege Shot, Drill Shot, Ricochet Shot, Hunter Ship. Payloads: Rend, Force -> Core Rend, Concussive Force.\n'
+        '- Red Burst: Core Bomb -> Pulse Bomb, Cluster Bomb -> Nova Bomb, Cascade Bomb, Field Bomb, Bomber Ship. Payloads: Overheat, Detonate -> Meltdown, Chain Detonate.\n'
+        '- Yellow Arc: Chain Arc -> Fork Arc, Arc Node -> Storm Arc, Web Arc, Sky Arc, Interceptor Ship. Payloads: Shock, Disrupt -> Overload, EMP Disrupt.\n'
+        '- Purple Wave: Pulse Ring -> Echo Ring, Collapse Ring -> Halo Wave, Spiral Wave, Warp Wave, Shade Satellite. Payloads: Expose, Pull -> Collapse, Singularity Pull.\n'
+        '- Green Shield: persistent Shield Halo, no packet generation -> Sweep Node, Sling Node -> Halo Nodes, Anchor Node, Flail Node, Familiar Ship. Payloads: Corrupt, Spread -> Cascade Corrupt, Viral Spread.\n\n'
+        'Projectile and payload colors stay tied to what the child shells actually contain. If you want a parent tower to stay pure, every aligned child shell feeding it must stay pure too.',
+  ),
+  _HelpSectionData(
+    id: 'layers-promotion',
+    title: 'Shell Classes and Alignment',
+    summary: 'How seven lower shells align into one higher shell class.',
+    body:
+        'A shell is not ready to align just because all six outer slots are filled. Edge slots unlock from total EXP, beginning at 25, and Root Shell alignment also requires every Source Tower to reach level 5. Alignment is manual from the Advancement screen.\n\n'
+        'A higher shell is a seven-shell cluster: the source shell plus six edge anchors. Seven Root Shells make a Prism Shell, seven Prism Shells make a Nexus Shell, and seven Nexus Shells make the final Ascendant Shell.\n\n'
+        'Prism towers gain payload traits. Nexus and Ascendant alignments upgrade those projectile and payload pools again. Echo Seeds let you recalibrate an aligned child tower without rebuilding its underlying shell.\n\n'
+        'Every active shell can run its own battle simulation. The viewed shell gets direct input, while background shells continue resolving their timers, pressure, and automated output.',
+  ),
+  _HelpSectionData(
+    id: 'targeting-managers',
+    title: 'Targeting and Foundries',
+    summary: 'How child towers bias shots and how managers modify behavior.',
+    body:
+        'Targeting priorities such as Close, Strong, and Weak tell a relay what kind of anomaly packet it should ask the core to focus when that tower contributes charge. This matters most once promoted child towers are online.\n\n'
+        'Core Managers are equipment for your prisms. Each one has an automation rate: if the tower becomes ready faster than the manager can tap it, the tower loses efficiency while it waits. Threat Directors modify anomaly spawn rate, reward, EXP, health, and speed. Both manager families unlock at Account Radiance Lv ${LightcoreController.managerUnlockLevel}.',
+  ),
+];

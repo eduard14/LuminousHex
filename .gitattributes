@@ -1,0 +1,12 @@
+* text=auto eol=lf
+
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.ico binary
+*.jar binary
+*.otf binary
+*.ttf binary
+*.plist text
+*.storyboard text
+*.xib text

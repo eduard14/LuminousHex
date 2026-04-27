@@ -1,0 +1,482 @@
+import 'package:flutter_test/flutter_test.dart';
+
+import 'package:lightcore/app/lightcore_bootstrap.dart';
+import 'package:lightcore/data/enemy_configs.dart';
+import 'package:lightcore/data/tower_configs.dart';
+import 'package:lightcore/models/lightcore_tournament.dart';
+import 'package:lightcore/models/lightcore_progression.dart';
+import 'package:lightcore/models/lightcore_types.dart';
+import 'package:lightcore/state/lightcore_controller.dart';
+
+void _promoteRootShell(LightcoreController controller) {
+  controller.lumens = 100000;
+  controller.kills = LightcoreController.unlockKillsForOuterSlot(
+    LightcoreController.slotCount - 1,
+  );
+  for (var index = 0; index < LightcoreController.slotCount; index++) {
+    controller.buildTowerAt(index, TowerLibrary.all[index]);
+    while (controller.slots[index].level < LightcoreController.maxTowerLevel) {
+      controller.upgradeTower(index);
+    }
+  }
+  controller.unlockLayer2Tower();
+}
+
+void _maxOutCurrentTier1Shell(LightcoreController controller) {
+  controller.lumens = 100000000;
+  controller.kills = LightcoreController.unlockKillsForOuterSlot(
+    LightcoreController.slotCount - 1,
+  );
+  for (var index = 0; index < LightcoreController.slotCount; index++) {
+    controller.buildTowerAt(index, TowerLibrary.all[index]);
+    while (controller.slots[index].level < LightcoreController.maxTowerLevel) {
+      controller.upgradeTower(index);
+    }
+  }
+  expect(controller.isPromotionReady, isTrue);
+}
+
+void _promoteChildShellIntoParent(
+  LightcoreController controller,
+  int parentSlotIndex,
+) {
+  expect(
+    controller.createChildLayer(parentSlotIndex, PrototypeAffinity.aether),
+    isTrue,
+  );
+  expect(controller.activeLayerHasParentSlot, isTrue);
+  _maxOutCurrentTier1Shell(controller);
+  controller.unlockLayer2Tower();
+  expect(controller.activeLayer.tier, 2);
+}
+
+void _promoteToLayer3(LightcoreController controller) {
+  _promoteRootShell(controller);
+  for (var index = 0; index < LightcoreController.slotCount; index++) {
+    _promoteChildShellIntoParent(controller, index);
+  }
+  expect(controller.isPromotionReady, isTrue);
+  controller.unlockLayer2Tower();
+  expect(controller.activeLayer.tier, 3);
+}
+
+void _finishBossAndEquipmentTutorial(LightcoreController controller) {
+  controller.debugCompleteBossAndEquipmentTutorial();
+}
+
+void _completeSidecarTutorials(LightcoreController controller) {
+  var guard = 0;
+  while (guard++ < 8) {
+    switch (controller.tutorialStep) {
+      case LightcoreTutorialStep.openTowerMatrix:
+        controller.markTutorialTowerMatrixOpened();
+      case LightcoreTutorialStep.upgradeCoreRange:
+        controller.lumens = controller.coreRangeUpgradeCost;
+        expect(controller.upgradeCoreRange(), isTrue);
+      case LightcoreTutorialStep.openStore:
+        controller.markTutorialStoreOpened();
+      case LightcoreTutorialStep.claimBattlePassReward:
+        final claimed = BattlePassType.values.fold<int>(
+          0,
+          (sum, type) => sum + controller.claimUnlockedBattlePassRewards(type),
+        );
+        expect(claimed, greaterThan(0));
+      default:
+        return;
+    }
+  }
+}
+
+void _completeManagerTutorials(LightcoreController controller) {
+  var guard = 0;
+  while (guard++ < 10) {
+    switch (controller.tutorialStep) {
+      case LightcoreTutorialStep.openManagers:
+        controller.markTutorialManagersOpened();
+      case LightcoreTutorialStep.forgeTowerManager:
+        controller.flux = LightcoreController.towerManagerFluxCost;
+        expect(controller.forgeTowerManager(), isTrue);
+      case LightcoreTutorialStep.assignTowerManager:
+        expect(controller.cards, isNotEmpty);
+        final slot = controller.slots.firstWhere((slot) => slot.isBuilt);
+        controller.equipCardToSlot(
+          controller.cards.first.instanceId,
+          slot.slotIndex,
+        );
+      case LightcoreTutorialStep.forgeEnemyManager:
+        controller.flux = LightcoreController.enemyManagerFluxCost;
+        expect(controller.forgeEnemyManager(), isTrue);
+      case LightcoreTutorialStep.assignEnemyManager:
+        expect(controller.enemyManagers, isNotEmpty);
+        expect(controller.activeEnemyDeck, isNotEmpty);
+        controller.assignEnemyManagerToCard(
+          controller.enemyManagers.first.instanceId,
+          controller.activeEnemyDeck.first.config.id,
+        );
+      default:
+        return;
+    }
+  }
+}
+
+void main() {
+  test('starter deck defaults to White Basic and early pulls are scripted', () {
+    final controller = LightcoreController();
+    addTearDown(controller.dispose);
+
+    expect(
+      controller.activeEnemyDeck.single.config.id,
+      EnemyLibrary.basicWhite.id,
+    );
+    expect(controller.tutorialTowerChoices, const [TowerLibrary.redPrism]);
+    final initialThreatScans = controller.enemyTickets;
+
+    expect(controller.tutorialStep, LightcoreTutorialStep.unfoldShell);
+    controller.selectCenter();
+    expect(controller.tutorialStep, LightcoreTutorialStep.buildFirstRedTower);
+    expect(controller.enemyTickets, initialThreatScans + 1);
+    expect(controller.tutorialStep, LightcoreTutorialStep.buildFirstRedTower);
+    expect(controller.tutorialBuildTowerAt(0, TowerLibrary.redPrism), isTrue);
+    expect(controller.tutorialStep, LightcoreTutorialStep.tapFirstTower);
+    for (var tap = 0; tap < 3; tap++) {
+      expect(controller.debugSetTowerCharge(0, charge: 1), isTrue);
+      expect(controller.activateTowerSlot(0, showBanner: false), isTrue);
+    }
+
+    expect(controller.tutorialStep, LightcoreTutorialStep.pullFirstWhiteEnemy);
+
+    final firstPull = controller.openEnemyTickets(1);
+    expect(firstPull.single.config.id, EnemyLibrary.basicWhite.id);
+
+    expect(controller.tutorialStep, LightcoreTutorialStep.readEffectiveGain);
+
+    controller.markTutorialStabilityPanelOpened();
+    expect(controller.tutorialStep, LightcoreTutorialStep.assignTowerManager);
+    expect(controller.cards, isNotEmpty);
+    controller.equipCardToSlot(controller.cards.first.instanceId, 0);
+    expect(controller.tutorialStep, LightcoreTutorialStep.autoQueueCheck);
+
+    var guard = 0;
+    while (controller.tutorialStep == LightcoreTutorialStep.autoQueueCheck &&
+        guard++ < 80) {
+      controller.tick(0.25);
+    }
+    expect(controller.tutorialStep, LightcoreTutorialStep.upgradeCoreRange);
+    expect(controller.upgradeCoreRange(), isTrue);
+    expect(controller.tutorialStep, LightcoreTutorialStep.openTowerMatrix);
+    expect(controller.tutorialTowerChoices.length, greaterThan(1));
+  });
+
+  test('first red tower unlocks the full palette for later empty hexes', () {
+    final controller = LightcoreController();
+    addTearDown(controller.dispose);
+
+    controller.kills = LightcoreController.unlockKillsForOuterSlot(1);
+    controller.lumens = 1000;
+
+    expect(controller.tutorialTowerChoices, const [TowerLibrary.redPrism]);
+    expect(controller.tutorialBuildTowerAt(0, TowerLibrary.redPrism), isTrue);
+    expect(controller.tutorialTowerChoices, contains(TowerLibrary.greenPrism));
+
+    controller.selectSlot(1);
+
+    expect(controller.tutorialBuildTowerAt(1, TowerLibrary.greenPrism), isTrue);
+    expect(controller.slots[1].config?.id, TowerLibrary.greenPrism.id);
+  });
+
+  test('tap quest shows charge state until the tower can shoot', () {
+    final controller = LightcoreController();
+    addTearDown(controller.dispose);
+
+    controller.selectCenter();
+    controller.applyOfflineClaim(
+      LightcoreOfflineClaimResult(
+        secondsClaimed: 1,
+        lumensGranted: 1000,
+        fluxGranted: 0,
+        enemyTicketsGranted: 0,
+        killsGranted: LightcoreController.unlockKillsForOuterSlot(0),
+        serverValidated: true,
+      ),
+      showBanner: false,
+    );
+    controller.selectSlot(0);
+
+    final buildCost = controller.buildCostForConfig(TowerLibrary.redPrism);
+    controller.lumens = buildCost;
+    expect(controller.tutorialBuildTowerAt(0, TowerLibrary.redPrism), isTrue);
+    expect(controller.tutorialStep, LightcoreTutorialStep.tapFirstTower);
+    expect(controller.tutorialBattleSlotGuideLabel(0), 'CHARGING');
+    expect(controller.debugSetTowerCharge(0, charge: 1), isTrue);
+    expect(controller.tutorialStep, LightcoreTutorialStep.tapFirstTower);
+    expect(controller.tutorialHeadline, 'Queue a Pulse');
+    expect(
+      controller.tutorialPrompt,
+      'Towers fire what is in their queue. Tap to add pulses while active.',
+    );
+    expect(controller.tutorialBattleSlotGuideLabel(0), 'TAP TO FIRE');
+    expect(controller.activateTowerSlot(0, showBanner: false), isTrue);
+
+    expect(controller.tutorialStep, LightcoreTutorialStep.tapFirstTower);
+  });
+
+  test('tutorial pauses instead of showing wait-only steps', () {
+    final controller = LightcoreController();
+    addTearDown(controller.dispose);
+
+    expect(controller.tutorialStep, LightcoreTutorialStep.unfoldShell);
+
+    controller.selectCenter();
+
+    expect(controller.isOuterSlotUnlocked(0), isTrue);
+    expect(controller.tutorialStep, LightcoreTutorialStep.buildFirstRedTower);
+  });
+
+  test('core shot tutorial appears when first enemy reaches core range', () {
+    final controller = LightcoreController();
+    addTearDown(controller.dispose);
+
+    controller.selectCenter();
+
+    expect(controller.tutorialStep, LightcoreTutorialStep.buildFirstRedTower);
+
+    final enemy = controller.debugSpawnEnemyFromCard(
+      EnemyLibrary.basicWhite.id,
+      angle: 0,
+      radius: controller.coreEffectiveRange - 1,
+    );
+    expect(enemy, isNotNull);
+
+    controller.tick(0.01);
+
+    expect(controller.tutorialStep, LightcoreTutorialStep.tapBattleCore);
+    expect(controller.tutorialHighlightsBattleCore, isTrue);
+    expect(controller.tutorialBattleCoreGuideLabel, 'TAP CORE');
+    expect(
+      controller.tutorialPrompt,
+      'Tap the glowing Lightcore on the battlefield to generate a shot.',
+    );
+
+    controller.handleBattleCenterTap();
+
+    expect(controller.pulses, hasLength(1));
+    expect(controller.queuedCorePackets, 0);
+    expect(controller.tutorialStep, LightcoreTutorialStep.buildFirstRedTower);
+  });
+
+  test('same-color attacks are resisted', () {
+    final controller = LightcoreController();
+    addTearDown(controller.dispose);
+
+    expect(
+      controller.affinityMultiplier(
+        PrototypeAffinity.ember,
+        PrototypeAffinity.ember,
+      ),
+      lessThan(1),
+    );
+    expect(
+      controller.affinityMultiplier(
+        PrototypeAffinity.ember,
+        PrototypeAffinity.flare,
+      ),
+      greaterThan(1),
+    );
+  });
+
+  test(
+    'boss tutorial pulls White Warden, requires arming, and spawns a weak intro boss',
+    () {
+      final controller = LightcoreController();
+      addTearDown(controller.dispose);
+
+      controller.selectCenter();
+      controller.debugCompleteCoreLearningTutorial();
+      controller.applyOfflineClaim(
+        LightcoreOfflineClaimResult(
+          secondsClaimed: 1,
+          lumensGranted: 0,
+          fluxGranted: 0,
+          enemyTicketsGranted: 0,
+          killsGranted: LightcoreController.killsForOverallLevel(
+            LightcoreController.bossUnlockLevel,
+          ),
+          serverValidated: true,
+        ),
+        showBanner: false,
+      );
+
+      expect(controller.tutorialStep, LightcoreTutorialStep.openBossPulls);
+
+      final pulls = controller.openBossTickets(1);
+
+      expect(pulls.single.config.id, BossEnemyLibrary.starterWhiteWarden.id);
+      expect(controller.activeBossEnemyCard, isNull);
+      expect(controller.tutorialStep, LightcoreTutorialStep.armFirstBoss);
+
+      controller.setActiveBossEnemyCard(BossEnemyLibrary.starterWhiteWarden.id);
+
+      expect(controller.activeLayer.bossReady, isTrue);
+      expect(controller.tutorialStep, LightcoreTutorialStep.none);
+
+      controller.tick(0.2);
+
+      expect(controller.tutorialStep, LightcoreTutorialStep.defeatFirstBoss);
+      expect(controller.bossAlive, isTrue);
+      expect(
+        controller.enemies.single.config.id,
+        BossEnemyLibrary.starterWhiteWarden.id,
+      );
+      expect(controller.enemies.single.maxHealth, lessThan(1500));
+      expect(controller.tutorialHighlightedEnemyId, isNotNull);
+    },
+  );
+
+  test('first child shell teaches shot generation before overdrive', () {
+    final controller = LightcoreController();
+    addTearDown(controller.dispose);
+
+    _promoteRootShell(controller);
+    _finishBossAndEquipmentTutorial(controller);
+
+    expect(controller.createChildLayer(0, PrototypeAffinity.aether), isTrue);
+    controller.selectCenter();
+
+    expect(controller.tutorialStep, LightcoreTutorialStep.none);
+    expect(controller.buildTowerAt(0, TowerLibrary.redPrism), isTrue);
+    expect(controller.debugSetTowerCharge(0, charge: 1), isTrue);
+    expect(controller.tutorialStep, LightcoreTutorialStep.tapSecondShellTower);
+    expect(controller.tutorialHighlightsBattleSlot(0), isTrue);
+    expect(controller.activateTowerSlot(0, showBanner: false), isTrue);
+    expect(controller.tutorialHighlightsBattleSlot(0), isFalse);
+    expect(
+      controller.tutorialStep,
+      LightcoreTutorialStep.holdOverdrive,
+      reason:
+          'step=${controller.tutorialStep} tier=${controller.activeLayer.tier} parent=${controller.activeLayer.parentLayerId} childLayers=${controller.layers.where((layer) => layer.parentLayerId != null).length}',
+    );
+    expect(
+      controller.tutorialShowcaseTarget,
+      LightcoreTutorialPulseTarget.overdriveButton,
+    );
+    expect(controller.debugSetTowerCharge(0, charge: 1), isTrue);
+    expect(controller.tutorialStep, LightcoreTutorialStep.holdOverdrive);
+
+    final beforePulse = controller.tutorialPulseSignalFor(
+      LightcoreTutorialPulseTarget.overdriveButton,
+    );
+    expect(controller.showcaseCurrentTutorialTarget(), isTrue);
+    expect(
+      controller.tutorialPulseSignalFor(
+        LightcoreTutorialPulseTarget.overdriveButton,
+      ),
+      greaterThan(beforePulse),
+    );
+
+    controller.startManualOverdrive();
+    controller.tick(0.35);
+
+    expect(controller.manualOverdriveMultiplier, greaterThan(1.1));
+    expect(controller.tutorialStep, LightcoreTutorialStep.openTowerMatrix);
+  });
+
+  test('manager quest appears when overall level 10 unlocks managers', () {
+    final controller = LightcoreController();
+    addTearDown(controller.dispose);
+
+    _promoteToLayer3(controller);
+    _finishBossAndEquipmentTutorial(controller);
+    controller.experience = LightcoreController.experienceForOverallLevel(
+      LightcoreController.managerUnlockLevel,
+    );
+    controller.tick(0.01);
+
+    expect(controller.managersUnlocked, isTrue);
+
+    if (controller.tutorialStep == LightcoreTutorialStep.holdOverdrive) {
+      controller.startManualOverdrive();
+      controller.tick(0.35);
+    }
+
+    expect(controller.tutorialStep, LightcoreTutorialStep.openManagers);
+
+    controller.markTutorialManagersOpened();
+
+    expect(controller.tutorialStep, LightcoreTutorialStep.forgeTowerManager);
+    _completeManagerTutorials(controller);
+    expect(controller.tutorialStep, LightcoreTutorialStep.openTowerMatrix);
+  });
+
+  test(
+    'level 20 unlocks screen-name setup and level 30 unlocks mentorship',
+    () {
+      final controller = LightcoreController();
+      addTearDown(controller.dispose);
+
+      _finishBossAndEquipmentTutorial(controller);
+      controller.selectCenter();
+      controller.lumens = 100000;
+      controller.kills = LightcoreController.killsForOverallLevel(
+        LightcoreController.tournamentUnlockLevel,
+      );
+      controller.buildTowerAt(0, TowerLibrary.redPrism);
+      controller.buildTowerAt(1, TowerLibrary.all[1]);
+      _completeManagerTutorials(controller);
+      _completeSidecarTutorials(controller);
+      _completeManagerTutorials(controller);
+      _completeSidecarTutorials(controller);
+
+      expect(controller.tutorialStep, LightcoreTutorialStep.setScreenName);
+      expect(controller.setScreenName('Nova Relay', showBanner: false), isTrue);
+      expect(controller.tutorialStep, LightcoreTutorialStep.openFriends);
+
+      controller.markTutorialFriendsOpened();
+      expect(controller.tutorialStep, LightcoreTutorialStep.inspectEnemyBlitz);
+
+      controller.experience = LightcoreController.experienceForOverallLevel(
+        LightcoreController.mentorshipUnlockLevel,
+      );
+      controller.tick(0.01);
+      expect(controller.tutorialStep, LightcoreTutorialStep.openMentees);
+
+      controller.markTutorialMentorshipOpened();
+      expect(controller.tutorialStep, LightcoreTutorialStep.inspectEnemyBlitz);
+
+      controller.markTutorialTournamentModeReviewed(
+        LightcoreTournamentModeId.enemyBlitz,
+      );
+      expect(controller.tutorialStep, LightcoreTutorialStep.inspectHexGauntlet);
+
+      controller.markTutorialTournamentModeReviewed(
+        LightcoreTournamentModeId.hexGauntlet,
+      );
+      expect(controller.tutorialStep, LightcoreTutorialStep.inspectArenaFlow);
+
+      controller.markTutorialTournamentModeReviewed(
+        LightcoreTournamentModeId.arenaFlow,
+      );
+      expect(controller.tutorialStep, LightcoreTutorialStep.none);
+    },
+  );
+
+  test(
+    'screen-name validation counts visible characters after spacing cleanup',
+    () {
+      final controller = LightcoreController();
+      addTearDown(controller.dispose);
+      controller.kills = LightcoreController.killsForOverallLevel(
+        LightcoreController.tournamentUnlockLevel,
+      );
+
+      expect(
+        controller.validateScreenName('A B'),
+        'Screen names need at least 3 visible characters.',
+      );
+      expect(
+        controller.setScreenName('  Nova   Relay  ', showBanner: false),
+        isTrue,
+      );
+      expect(controller.screenName, 'Nova Relay');
+    },
+  );
+}

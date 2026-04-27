@@ -1,0 +1,652 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+
+import 'package:lightcore/data/enemy_configs.dart';
+import 'package:lightcore/models/lightcore_types.dart';
+import 'package:lightcore/screens/enemy_management_screen.dart';
+import 'package:lightcore/state/lightcore_controller.dart';
+import 'package:lightcore/theme/lightcore_theme.dart';
+
+void main() {
+  test('openEnemyTickets consumes the full requested stash', () {
+    final controller = LightcoreController();
+    final startingTickets = controller.enemyTickets;
+
+    final pulls = controller.openEnemyTickets(startingTickets);
+
+    expect(pulls, hasLength(startingTickets));
+    expect(controller.enemyTickets, 0);
+    expect(controller.lastEnemyPackPulls, hasLength(startingTickets));
+  });
+
+  test('rewarded resources can grant apex scans', () {
+    final controller = LightcoreController();
+
+    controller.grantRewardedResources(
+      bossTicketsGranted: 3,
+      sourceLabel: 'Test reward',
+    );
+
+    expect(controller.bossTickets, 3);
+    expect(controller.bannerMessage, contains('+3 Apex Scans'));
+  });
+
+  test('crossing a summoning level grants ticket milestone rewards', () {
+    final controller = LightcoreController();
+    controller.enemyPullCount =
+        LightcoreController.summoningLevelPullTargetForLevel(2) - 1;
+    controller.enemyTickets = 1;
+
+    final reward = LightcoreController.summoningLevelTicketRewardForLevel(2);
+
+    controller.openEnemyTickets(1);
+
+    expect(controller.summoningLevel, 2);
+    expect(controller.enemyTickets, reward);
+  });
+
+  test('summoning milestone rewards and gaps follow the scan track curve', () {
+    expect(LightcoreController.summoningLevelTicketRewardForLevel(2), 100);
+    expect(
+      LightcoreController.summoningLevelTicketRewardForLevel(
+        LightcoreController.maxSummoningLevel,
+      ),
+      1000,
+    );
+
+    final gaps = [
+      for (
+        var level = 2;
+        level <= LightcoreController.maxSummoningLevel;
+        level += 1
+      )
+        LightcoreController.summoningLevelPullGapForLevel(level),
+    ];
+
+    for (var index = 1; index < gaps.length; index += 1) {
+      expect(gaps[index], greaterThan(gaps[index - 1]));
+    }
+    expect(gaps.last, 20000);
+  });
+
+  test(
+    'summon rarity helpers expose top and second-highest available tiers',
+    () {
+      final controller = LightcoreController();
+
+      expect(controller.highestAvailableEnemyPullRarity, EnemyCardRarity.rare);
+      expect(
+        controller.secondHighestAvailableEnemyPullRarity,
+        EnemyCardRarity.uncommon,
+      );
+
+      controller.debugSetSummoningLevel(20);
+
+      expect(
+        controller.highestAvailableEnemyPullRarity,
+        EnemyCardRarity.legendary,
+      );
+      expect(
+        controller.secondHighestAvailableEnemyPullRarity,
+        EnemyCardRarity.epic,
+      );
+      expect(
+        resolveEnemyPackHighlightTier(
+          highestDrawnRarity: EnemyCardRarity.legendary,
+          highestAvailableRarity: controller.highestAvailableEnemyPullRarity,
+          secondHighestAvailableRarity:
+              controller.secondHighestAvailableEnemyPullRarity,
+        ),
+        EnemyPackHighlightTier.highest,
+      );
+      expect(
+        resolveEnemyPackHighlightTier(
+          highestDrawnRarity: EnemyCardRarity.epic,
+          highestAvailableRarity: controller.highestAvailableEnemyPullRarity,
+          secondHighestAvailableRarity:
+              controller.secondHighestAvailableEnemyPullRarity,
+        ),
+        EnemyPackHighlightTier.secondHighest,
+      );
+    },
+  );
+
+  test('summoning progress helpers expose next level state', () {
+    final controller = LightcoreController();
+    final nextLevelTarget =
+        LightcoreController.summoningLevelPullTargetForLevel(2);
+    controller.enemyPullCount = nextLevelTarget - 1;
+
+    expect(controller.summoningLevel, 1);
+    expect(
+      controller.summoningLevelProgress,
+      closeTo(
+        (nextLevelTarget - 1) / controller.currentSummoningLevelPullGap,
+        0.0001,
+      ),
+    );
+    expect(controller.pullsToNextSummoningLevel, 1);
+    expect(controller.nextSummoningLevel, 2);
+    expect(
+      controller.nextSummoningLevelTicketReward,
+      LightcoreController.summoningLevelTicketRewardForLevel(2),
+    );
+
+    controller.debugSetSummoningLevel(LightcoreController.maxSummoningLevel);
+
+    expect(controller.isSummoningLevelMaxed, isTrue);
+    expect(controller.summoningLevelProgress, 1.0);
+    expect(controller.pullsToNextSummoningLevel, 0);
+    expect(controller.nextSummoningLevelTicketReward, 0);
+  });
+
+  test(
+    'activeThreatScanBundle exposes armed deck pressure and counterplay',
+    () {
+      final controller = LightcoreController();
+      addTearDown(controller.dispose);
+
+      controller.debugSetEnemyCardLevel(EnemyLibrary.basicRed.id, level: 1);
+      controller.toggleEnemyCardSelection(EnemyLibrary.basicRed.id);
+      controller.toggleEnemyCardSelection(EnemyLibrary.basicWhite.id);
+      controller.setEnemyTargetCount(controller.enemyTargetMax);
+
+      final bundle = controller.activeThreatScanBundle;
+
+      expect(bundle.primaryAffinity, PrototypeAffinity.ember);
+      expect(bundle.name, 'Red Threat Scan Bundle');
+      expect(bundle.cardNames, contains(EnemyLibrary.basicRed.name));
+      expect(
+        bundle.threatRewardMultiplier,
+        closeTo(EnemyLibrary.basicRed.threatRewardMultiplier, 0.0001),
+      );
+      expect(
+        bundle.stabilityPressureMultiplier,
+        closeTo(EnemyLibrary.basicRed.stabilityDamageMultiplier, 0.0001),
+      );
+      expect(
+        bundle.effectiveGainMultiplier,
+        closeTo(controller.activeEffectiveGainMultiplier, 0.0001),
+      );
+      expect(bundle.riskLabel, isNot('Dormant'));
+      expect(bundle.counterplayLabel, contains('burst'));
+    },
+  );
+
+  test('mergeAllReadyEnemyCards fuses every available enemy merge', () {
+    final controller = LightcoreController();
+
+    controller.debugSetEnemyCardLevel(
+      EnemyLibrary.basicWhite.id,
+      level: EnemyCardRarity.basic.levelCap,
+      copies: 40,
+    );
+
+    expect(controller.mergeableEnemyCardCount, 1);
+
+    final mergedCount = controller.mergeAllReadyEnemyCards();
+
+    expect(mergedCount, 2);
+    expect(controller.mergeableEnemyCardCount, 0);
+    expect(controller.enemyCardById(EnemyLibrary.basicWhite.id)?.copies, 0);
+  });
+
+  test('upgradeAllReadyEnemyCards spends copies until no level-ups remain', () {
+    final controller = LightcoreController();
+
+    controller.debugSetEnemyCardLevel(
+      EnemyLibrary.starterDefault.id,
+      level: 1,
+      copies: 0,
+    );
+    controller.debugSetEnemyCardLevel(
+      EnemyLibrary.basicWhite.id,
+      level: 1,
+      copies: 3,
+    );
+    controller.debugSetEnemyCardLevel(
+      EnemyLibrary.basicRed.id,
+      level: 2,
+      copies: 1,
+    );
+
+    expect(controller.upgradableEnemyCardCount, 2);
+
+    final upgradedCount = controller.upgradeAllReadyEnemyCards();
+
+    expect(upgradedCount, 4);
+    expect(controller.upgradableEnemyCardCount, 0);
+    expect(controller.enemyCardById(EnemyLibrary.basicWhite.id)?.level, 4);
+    expect(controller.enemyCardById(EnemyLibrary.basicWhite.id)?.copies, 0);
+    expect(controller.enemyCardById(EnemyLibrary.basicRed.id)?.level, 3);
+    expect(controller.enemyCardById(EnemyLibrary.basicRed.id)?.copies, 0);
+  });
+
+  testWidgets('local fake scan previews pulses without mutating inventory', (
+    tester,
+  ) async {
+    final controller = LightcoreController();
+    Map<String, ({int copies, bool unlocked})> enemySnapshot() => {
+      for (final card in controller.enemyCards)
+        card.config.id: (copies: card.copies, unlocked: card.unlocked),
+    };
+    final startingTickets = controller.enemyTickets;
+    final startingPullCount = controller.enemyPullCount;
+    final startingLastPulls = controller.lastEnemyPackPulls.length;
+    final startingInventory = enemySnapshot();
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+    tester.view.physicalSize = const Size(1400, 2200);
+    tester.view.devicePixelRatio = 1;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: buildLightcoreTheme(),
+        home: Scaffold(body: EnemyPullSheet(controller: controller)),
+      ),
+    );
+    await tester.pump();
+
+    final fakeScanButton = find.text('Fake Threat Scan');
+
+    expect(fakeScanButton, findsOneWidget);
+
+    await tester.tap(fakeScanButton);
+    await tester.pump();
+
+    expect(
+      find.descendant(
+        of: find.byType(Dialog),
+        matching: find.text('Threat Scans'),
+      ),
+      findsOneWidget,
+    );
+    expect(find.text('Preview Only'), findsOneWidget);
+    expect(find.textContaining('Silver sweep - no indication'), findsOneWidget);
+    expect(find.textContaining('Orange'), findsNothing);
+    expect(find.textContaining('Azure'), findsNothing);
+
+    await tester.pump(const Duration(milliseconds: 1300));
+    await tester.pump();
+
+    expect(find.textContaining('Silver pulse - no indication'), findsOneWidget);
+    expect(find.textContaining('Orange'), findsNothing);
+    expect(find.textContaining('Azure'), findsNothing);
+    expect(find.text('x3'), findsNothing);
+    expect(find.text('Skip'), findsNothing);
+    expect(find.text('Close'), findsNothing);
+
+    await tester.pump(const Duration(milliseconds: 2100));
+    await tester.pump();
+
+    expect(find.textContaining('Orange pulse resolving'), findsOneWidget);
+    expect(find.textContaining('Azure'), findsNothing);
+    expect(find.text('x3'), findsNothing);
+
+    await tester.pump(const Duration(milliseconds: 1500));
+    await tester.pump();
+
+    expect(find.textContaining('Orange pulse resolving'), findsOneWidget);
+    expect(find.text('x3'), findsNothing);
+
+    await tester.pump(const Duration(milliseconds: 1300));
+    await tester.pump();
+
+    expect(find.textContaining('Azure lock held'), findsOneWidget);
+    expect(find.text('x3'), findsNothing);
+
+    await tester.pump(const Duration(milliseconds: 350));
+    await tester.pump();
+
+    expect(find.textContaining('Azure pulse stacking'), findsOneWidget);
+    expect(find.text('x3'), findsNothing);
+
+    await tester.pump(const Duration(milliseconds: 5200));
+    await tester.pump();
+
+    expect(find.text('x3'), findsOneWidget);
+    expect(find.text('x2'), findsOneWidget);
+    expect(find.text('Skip'), findsNothing);
+    expect(find.text('Close'), findsOneWidget);
+    expect(controller.enemyTickets, startingTickets);
+    expect(controller.enemyPullCount, startingPullCount);
+    expect(controller.lastEnemyPackPulls, hasLength(startingLastPulls));
+    expect(enemySnapshot(), startingInventory);
+  });
+
+  testWidgets('local fake apex scan does not mutate apex inventory', (
+    tester,
+  ) async {
+    final controller = LightcoreController();
+    Map<String, ({int copies, bool unlocked})> bossSnapshot() => {
+      for (final card in controller.bossEnemyCards)
+        card.config.id: (copies: card.copies, unlocked: card.unlocked),
+    };
+    final startingTickets = controller.bossTickets;
+    final startingPullCount = controller.bossPullCount;
+    final startingLastPulls = controller.lastBossPackPulls.length;
+    final startingInventory = bossSnapshot();
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+    tester.view.physicalSize = const Size(1400, 2200);
+    tester.view.devicePixelRatio = 1;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: buildLightcoreTheme(),
+        home: Scaffold(body: EnemyPullSheet(controller: controller)),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Apex'));
+    await tester.pumpAndSettle();
+
+    final fakeBossButton = find.text('Fake Apex Scan');
+
+    expect(fakeBossButton, findsOneWidget);
+
+    await tester.tap(fakeBossButton);
+    await tester.pump();
+
+    expect(
+      find.descendant(
+        of: find.byType(Dialog),
+        matching: find.text('Apex Scans'),
+      ),
+      findsOneWidget,
+    );
+    expect(find.text('Preview Only'), findsOneWidget);
+
+    await tester.pump(const Duration(seconds: 13));
+    await tester.pump();
+    await tester.tap(find.text('Close'));
+    await tester.pumpAndSettle();
+
+    expect(controller.bossTickets, startingTickets);
+    expect(controller.bossPullCount, startingPullCount);
+    expect(controller.lastBossPackPulls, hasLength(startingLastPulls));
+    expect(bossSnapshot(), startingInventory);
+  });
+
+  testWidgets('10+ option opens a batch slider', (tester) async {
+    final controller = LightcoreController();
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+    tester.view.physicalSize = const Size(1400, 2200);
+    tester.view.devicePixelRatio = 1;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: buildLightcoreTheme(),
+        home: Scaffold(body: EnemyPullSheet(controller: controller)),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('10+'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Open 10+'), findsOneWidget);
+    expect(find.text('10 scans'), findsOneWidget);
+    expect(find.text('Open 10'), findsOneWidget);
+  });
+
+  testWidgets('max option resolves every available threat scan', (
+    tester,
+  ) async {
+    final controller = LightcoreController();
+    controller.enemyTickets = 9;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+    tester.view.physicalSize = const Size(1400, 2200);
+    tester.view.devicePixelRatio = 1;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: buildLightcoreTheme(),
+        home: Scaffold(body: EnemyPullSheet(controller: controller)),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('MAX'));
+    await tester.pump();
+
+    expect(controller.enemyTickets, 0);
+    expect(controller.lastEnemyPackPulls, hasLength(9));
+    expect(controller.enemyPullCount, 9);
+
+    await tester.pump(const Duration(seconds: 13));
+    await tester.pump();
+    await tester.tap(find.text('Close'));
+    await tester.pumpAndSettle();
+  });
+
+  testWidgets('max option resolves every available apex scan', (tester) async {
+    final controller = LightcoreController();
+    controller.experience = LightcoreController.experienceForOverallLevel(
+      LightcoreController.bossUnlockLevel,
+    );
+    controller.bossTickets = 7;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+    tester.view.physicalSize = const Size(1400, 2200);
+    tester.view.devicePixelRatio = 1;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: buildLightcoreTheme(),
+        home: Scaffold(body: EnemyPullSheet(controller: controller)),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Apex'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Ad'), findsOneWidget);
+
+    await tester.tap(find.text('MAX'));
+    await tester.pump();
+
+    expect(controller.bossTickets, 0);
+    expect(controller.lastBossPackPulls, hasLength(7));
+    expect(controller.bossPullCount, 7);
+
+    await tester.pump(const Duration(seconds: 13));
+    await tester.pump();
+    await tester.tap(find.text('Close'));
+    await tester.pumpAndSettle();
+  });
+
+  testWidgets('rates info button opens summon rates dialog', (tester) async {
+    final controller = LightcoreController();
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+    tester.view.physicalSize = const Size(1400, 2200);
+    tester.view.devicePixelRatio = 1;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: buildLightcoreTheme(),
+        home: Scaffold(body: EnemyPullSheet(controller: controller)),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final infoButton = find.byTooltip('Show threat rates');
+
+    expect(infoButton, findsOneWidget);
+
+    await tester.tap(infoButton);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Threat Rates'), findsOneWidget);
+    expect(
+      find.textContaining('unlock Scan Lv 2 and +100 tickets'),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('pull sheet separates enemy and boss flows into tabs', (
+    tester,
+  ) async {
+    final controller = LightcoreController();
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+    tester.view.physicalSize = const Size(1400, 2200);
+    tester.view.devicePixelRatio = 1;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: buildLightcoreTheme(),
+        home: Scaffold(body: EnemyPullSheet(controller: controller)),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Threat Scans'), findsOneWidget);
+    expect(find.text('Apex Scans Locked'), findsNothing);
+    expect(find.byTooltip('Show threat rates'), findsOneWidget);
+    expect(find.byTooltip('Show apex scan rates'), findsNothing);
+
+    await tester.tap(find.text('Apex'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Apex Scans'), findsOneWidget);
+    expect(
+      find.textContaining(
+        'Reach Account Radiance Lv ${LightcoreController.bossUnlockLevel}',
+      ),
+      findsOneWidget,
+    );
+    expect(find.byTooltip('Show threat rates'), findsNothing);
+    expect(find.byTooltip('Show apex scan rates'), findsOneWidget);
+  });
+
+  testWidgets('pull sheet omits recent scan summaries', (tester) async {
+    final controller = LightcoreController();
+    controller.openEnemyTickets(1);
+    controller.experience = LightcoreController.experienceForOverallLevel(
+      LightcoreController.bossUnlockLevel,
+    );
+    controller.debugAddBossTickets(1);
+    controller.openBossTickets(1);
+
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+    tester.view.physicalSize = const Size(1400, 2200);
+    tester.view.devicePixelRatio = 1;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: buildLightcoreTheme(),
+        home: Scaffold(body: EnemyPullSheet(controller: controller)),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Resolved'), findsNothing);
+
+    await tester.tap(find.text('Apex'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Resolved Apex Scans'), findsNothing);
+  });
+
+  testWidgets('apex scan preview hides resolved equipped and future cards', (
+    tester,
+  ) async {
+    final controller = LightcoreController();
+    controller.experience = LightcoreController.experienceForOverallLevel(
+      LightcoreController.bossUnlockLevel,
+    );
+    final equipped = BossEnemyLibrary.byRarity[EnemyCardRarity.basic]!.first;
+    final resolved = BossEnemyLibrary.byRarity[EnemyCardRarity.basic]![1];
+    final available = BossEnemyLibrary.byRarity[EnemyCardRarity.basic]![2];
+    final future = BossEnemyLibrary.byRarity[EnemyCardRarity.epic]!.first;
+
+    controller.debugSetEnemyCardLevel(equipped.id, level: 1, boss: true);
+    controller.setActiveBossEnemyCard(equipped.id);
+    controller.debugSetEnemyCardLevel(resolved.id, level: 1, boss: true);
+
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+    tester.view.physicalSize = const Size(1400, 2200);
+    tester.view.devicePixelRatio = 1;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: buildLightcoreTheme(),
+        home: Scaffold(body: EnemyPullSheet(controller: controller)),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Apex'));
+    await tester.pumpAndSettle();
+
+    expect(find.byTooltip('${equipped.name} • tap for details'), findsNothing);
+    expect(find.byTooltip('${resolved.name} • tap for details'), findsNothing);
+    expect(find.byTooltip('${future.name} • tap for details'), findsNothing);
+    expect(
+      find.byTooltip('${available.name} • tap for details'),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('enemy management exposes a bottom mass fuse button', (
+    tester,
+  ) async {
+    final controller = LightcoreController();
+    addTearDown(controller.dispose);
+    controller.debugSetEnemyCardLevel(
+      EnemyLibrary.basicWhite.id,
+      level: EnemyCardRarity.basic.levelCap,
+      copies: 20,
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: buildLightcoreTheme(),
+        home: Scaffold(
+          body: EnemyManagementScreen(controller: controller, isActive: true),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final scrollable = find.byType(Scrollable).first;
+    await tester.scrollUntilVisible(
+      find.text('Mass Fuse Anomalies • 1 Ready'),
+      800,
+      scrollable: scrollable,
+    );
+
+    await tester.tap(find.text('Mass Fuse Anomalies • 1 Ready'));
+    await tester.pumpAndSettle();
+
+    expect(controller.mergeableEnemyCardCount, 0);
+    expect(controller.enemyCardById(EnemyLibrary.basicWhite.id)?.copies, 0);
+    expect(find.text('Mass Fuse Anomalies'), findsOneWidget);
+  });
+}

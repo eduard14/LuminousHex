@@ -1,0 +1,1323 @@
+part of '../lightcore_controller.dart';
+
+extension LightcoreControllerStateAccessors on LightcoreController {
+  void _recordLumenSpend(int amount) {
+    if (amount > 0) {
+      _totalLumensSpent += amount;
+    }
+  }
+
+  void _recordFluxSpend(int amount) {
+    if (amount > 0) {
+      _totalFluxSpent += amount;
+    }
+  }
+
+  void _recordPrismShardSpend(int amount) {
+    if (amount > 0) {
+      _totalPrismShardsSpent += amount;
+    }
+  }
+
+  void _recordUpgradePurchase() {
+    _totalUpgradesBought += 1;
+  }
+
+  bool get _starterManagerTutorialUnlocked =>
+      _tutorialStabilityPanelOpened || _tutorialAutoQueuedPulses > 0;
+
+  String _tutorialTowerShotGuideLabel(int slotIndex) {
+    if (slotIndex < 0 || slotIndex >= _slots.length) {
+      return 'WAIT';
+    }
+    final tower = _slots[slotIndex];
+    if (canManuallyActivateTower(tower)) {
+      return 'TAP TO FIRE';
+    }
+    if (tower.cooldownRemaining > 0) {
+      return 'COOLDOWN';
+    }
+    return 'CHARGING';
+  }
+
+  double get _radianceMightPowerBonus =>
+      radianceStatRank(LightcoreRadianceStat.might) * 0.006;
+
+  double get _radianceMightCritDamageBonus =>
+      radianceStatRank(LightcoreRadianceStat.might) * 0.0025;
+
+  double get _radianceMightBossDamageBonus =>
+      radianceStatRank(LightcoreRadianceStat.might) * 0.0025;
+
+  double get _radianceFocusRangeBonus =>
+      radianceStatRank(LightcoreRadianceStat.focus) * 0.0035;
+
+  double get _radianceFocusCritChanceBonus =>
+      radianceStatRank(LightcoreRadianceStat.focus) * 0.001;
+
+  double get _radianceFocusCritDamageBonus =>
+      radianceStatRank(LightcoreRadianceStat.focus) * 0.001;
+
+  double get _radianceTempoChargeBonus =>
+      radianceStatRank(LightcoreRadianceStat.tempo) * 0.005;
+
+  double get _radianceTempoCoreFireSpeedBonus =>
+      radianceStatRank(LightcoreRadianceStat.tempo) * 0.003;
+
+  double get _radianceInsightExperienceBonus =>
+      radianceStatRank(LightcoreRadianceStat.insight) * 0.0025;
+
+  double get _radianceInsightLumenBonus =>
+      radianceStatRank(LightcoreRadianceStat.insight) * 0.004;
+
+  double get _radianceInsightFluxBonus =>
+      radianceStatRank(LightcoreRadianceStat.insight) * 0.003;
+
+  double get _radianceInsightTicketBonus =>
+      radianceStatRank(LightcoreRadianceStat.insight) * 0.0025;
+
+  double get _radianceInsightDropBonus =>
+      radianceStatRank(LightcoreRadianceStat.insight) * 0.0025;
+
+  double get _radianceCoreCooldownMultiplier =>
+      (1 - _radianceTempoCoreFireSpeedBonus).clamp(0.72, 1.0).toDouble();
+
+  double get _radianceExperienceMultiplier =>
+      1 + _radianceInsightExperienceBonus;
+
+  ProfileMedalStatus _profileMedalStatusFor(ProfileMedalConfig config) {
+    final progress = _profileMedalProgress(config);
+    final unlocked =
+        _unlockedProfileMedalIds.contains(config.id) ||
+        progress >= config.requiredValue;
+    return ProfileMedalStatus(
+      config: config,
+      unlocked: unlocked,
+      equipped: _equippedProfileMedalId == config.id,
+      progress: progress,
+      target: config.requiredValue,
+    );
+  }
+
+  int _profileMedalProgress(ProfileMedalConfig config) {
+    return switch (config.id) {
+      'first_prism' => max(_totalTowersBuilt, builtTowerCount),
+      'ringwright' => max(_totalTowersBuilt, builtTowerCount),
+      'apex_breaker' => totalBossesDefeated,
+      'radiance_crest' => overallLevel,
+      'signal_hunter' => ownedEnemyCardCount,
+      'foundry_patron' => totalManagersForged,
+      'dungeon_climber' => dailyDungeonHighestClearedTowerLevel,
+      'ascendant' => prestigeLevel,
+      _ => 0,
+    };
+  }
+
+  void _syncProfileMedalAchievements({required bool showBanner}) {
+    final newlyUnlocked = <ProfileMedalConfig>[];
+    for (final config in MedalLibrary.all) {
+      if (_profileMedalProgress(config) >= config.requiredValue &&
+          _unlockedProfileMedalIds.add(config.id)) {
+        newlyUnlocked.add(config);
+      }
+    }
+    _normalizeEquippedProfileMedal();
+    if (!showBanner || newlyUnlocked.isEmpty) {
+      return;
+    }
+    final first = newlyUnlocked.first;
+    final suffix = newlyUnlocked.length == 1
+        ? ''
+        : ' +${newlyUnlocked.length - 1} more';
+    _showBanner('Medal unlocked: ${first.name}$suffix.');
+  }
+
+  void _normalizeEquippedProfileMedal() {
+    final medalId = _equippedProfileMedalId;
+    if (medalId == null) {
+      return;
+    }
+    if (!MedalLibrary.byId.containsKey(medalId) ||
+        !_unlockedProfileMedalIds.contains(medalId)) {
+      _equippedProfileMedalId = null;
+    }
+  }
+
+  double _passiveLumenBaseForLayer(TowerLayerSnapshot layer) {
+    final managed = _managedTowerCountForLayer(layer);
+    if (managed == 0) {
+      return 0;
+    }
+    final tierScale = pow(2, layer.tier - 1).toDouble();
+    final passiveOnlyScale = isLayerPassiveOnly(layer)
+        ? _promotedSourcePassiveMultiplier
+        : 1.0;
+    return ((managed * 0.18) + (layer.core.level * 0.04)) *
+        tierScale *
+        passiveOnlyScale;
+  }
+
+  UnmodifiableListView<TowerConfig> get towerConfigs =>
+      UnmodifiableListView(TowerLibrary.all);
+
+  UnmodifiableListView<OuterTowerState> get slots =>
+      UnmodifiableListView(_slots);
+
+  UnmodifiableListView<InventoryCard> get cards => UnmodifiableListView(_cards);
+
+  UnmodifiableListView<EnemyManagerState> get enemyManagers =>
+      UnmodifiableListView(_enemyManagers);
+
+  InventoryCard? get towerCoreManager =>
+      managerAssignmentUnlocked ? _towerCoreManagerForLayer(activeLayer) : null;
+
+  EnemyManagerState? get enemyCoreManager =>
+      managerAssignmentUnlocked ? _enemyCoreManagerForLayer(activeLayer) : null;
+
+  UnmodifiableListView<EnemyCardState> get enemyCards =>
+      UnmodifiableListView(_enemyCards);
+
+  UnmodifiableListView<EnemyCardState> get bossEnemyCards =>
+      UnmodifiableListView(_bossEnemyCards);
+
+  UnmodifiableListView<PlayerEquipmentItem> get equipmentInventory =>
+      UnmodifiableListView(_equipmentInventory);
+
+  UnmodifiableListView<ProfileMedalStatus> get profileMedals =>
+      UnmodifiableListView(
+        MedalLibrary.all.map(_profileMedalStatusFor).toList(growable: false),
+      );
+
+  UnmodifiableListView<String> get activeEnemyCardIds =>
+      UnmodifiableListView(_activeEnemyCardIds);
+
+  UnmodifiableListView<EnemyState> get enemies =>
+      UnmodifiableListView(_enemies);
+
+  UnmodifiableListView<EnergyPulseState> get pulses =>
+      UnmodifiableListView(_pulses);
+
+  UnmodifiableListView<CoreShotState> get shots => UnmodifiableListView(_shots);
+
+  UnmodifiableListView<ImpactState> get impacts =>
+      UnmodifiableListView(_impacts);
+
+  UnmodifiableListView<PackPullResult> get lastEnemyPackPulls =>
+      UnmodifiableListView(_lastEnemyPackPulls);
+
+  UnmodifiableListView<PackPullResult> get lastBossPackPulls =>
+      UnmodifiableListView(_lastBossPackPulls);
+
+  LightcoreGuideProfile get guideProfile => _guideProfile;
+
+  String get playerId => _playerId;
+
+  String? get screenName => _screenName;
+
+  bool get hasCustomScreenName =>
+      _screenName != null &&
+      _screenNameVisibleLength(_screenName!) >= minScreenNameLength;
+
+  String get playerDisplayName =>
+      hasCustomScreenName ? _screenName!.trim() : _playerId;
+
+  LightcoreSocialOverview? get socialOverview => _socialOverview;
+
+  bool get hasServerSocialOverview => _socialOverview != null;
+
+  LightcoreSocialBonusProfile get socialBonusProfile =>
+      _socialOverview?.bonusProfile ?? LightcoreSocialBonusProfile.zero;
+
+  UnmodifiableListView<TowerLayerSnapshot> get layers =>
+      UnmodifiableListView(_layers);
+
+  bool isLayerPassiveOnly(TowerLayerSnapshot layer) =>
+      layer.promotedParentLayerId != null || layer.promotedIntoParentSlot;
+
+  int get newEquipmentNotificationCount => _newEquipmentItemIds.length;
+
+  bool get hasNewEquipmentNotifications => _newEquipmentItemIds.isNotEmpty;
+
+  bool get notificationBannersEnabled => _notificationBannersEnabled;
+
+  bool get tutorialPromptsEnabled => _tutorialPromptsEnabled;
+
+  bool get localhostAutoTapperEnabled => _localhostAutoTapperEnabled;
+
+  bool get levelUpRadianceActive => _levelUpRadianceProgress < 1;
+
+  double get levelUpRadianceProgress => _levelUpRadianceProgress;
+
+  int get levelUpRadianceSequence => _levelUpRadianceSequence;
+
+  int get lastLevelUpRadianceLevel => _lastLevelUpRadianceLevel;
+
+  int get lastLevelUpRadianceDestroyedEnemies =>
+      _lastLevelUpRadianceDestroyedEnemies;
+
+  void pushNotification(String message, {double duration = 2.8}) {
+    _showBanner(message, duration: duration);
+    _notifyNow();
+  }
+
+  void setNotificationBannersEnabled(bool enabled) {
+    if (_notificationBannersEnabled == enabled) {
+      return;
+    }
+    _notificationBannersEnabled = enabled;
+    _notifyNow();
+  }
+
+  void setTutorialPromptsEnabled(bool enabled) {
+    if (_tutorialPromptsEnabled == enabled) {
+      return;
+    }
+    _tutorialPromptsEnabled = enabled;
+    _notifyNow();
+  }
+
+  void setLocalhostAutoTapperEnabled(bool enabled) {
+    if (_localhostAutoTapperEnabled == enabled) {
+      return;
+    }
+    _localhostAutoTapperEnabled = enabled;
+    _localhostAutoTapperCoreCooldown = 0;
+  }
+
+  void markNewEquipmentNotificationsSeen() {
+    if (_newEquipmentItemIds.isEmpty) {
+      return;
+    }
+    _newEquipmentItemIds.clear();
+    _notifyNow();
+  }
+
+  CoreState get coreState => _core;
+
+  int get coreDamageSequence =>
+      _coreDamageSequencesByLayer[_activeLayerId] ?? 0;
+
+  double get coreDamageAmount => _coreDamageAmountsByLayer[_activeLayerId] ?? 0;
+
+  Layer2TowerState get layer2State => _layer2;
+
+  double get relayImpactRadius => _relayImpactRadius;
+
+  double get spawnRadius => _currentSpawnBaseRadius;
+
+  double get spawnCeilingRadius => spawnRadius + _spawnRadiusBandVariance;
+
+  int? get towerRangePreviewSlotIndex => _towerRangePreviewSlotIndex;
+
+  double get defaultTowerBaseRange =>
+      _relayImpactRadius +
+      ((spawnRadius - _relayImpactRadius) * _defaultTowerLaneRangeShare);
+
+  TowerLayerSnapshot get activeLayer => _layerById(_activeLayerId);
+
+  TowerLayerSnapshot get viewedLayer => _layerById(_viewLayerId);
+
+  TowerLayerSnapshot get runtimeLayer => _layerById(_runtimeLayerId);
+
+  OuterTowerState? get selectedSlotOrNull =>
+      selectedSlotIndex == null ? null : _slots[selectedSlotIndex!];
+
+  EnemyCardState? get selectedEnemyCardOrNull =>
+      selectedEnemyCardId == null ? null : enemyCardById(selectedEnemyCardId!);
+
+  EnemyCardState? get activeBossEnemyCard => _activeBossEnemyCardId == null
+      ? null
+      : (() {
+          final card = bossEnemyCardById(_activeBossEnemyCardId!);
+          return card != null && card.isOwned ? card : null;
+        })();
+
+  OuterTowerState get selectedSlot => selectedSlotOrNull ?? _slots.first;
+
+  bool get isCenterSelected => selectedSlotIndex == null;
+
+  bool get outerRingRevealed => _outerRingRevealed;
+
+  bool get swarmActivated => _swarmActivated;
+
+  int get builtTowerCount => _slots.where(_slotCountsTowardRing).length;
+
+  int get enemyCount => _enemies.length;
+
+  int get enemyTargetCount => _enemyTargetCount;
+
+  int get enemyTargetFloor => minEnemyTarget;
+
+  int get enemyTargetMax => _enemyTargetMaxForLevel(_enemyTargetUpgradeLevel);
+
+  int get ownedEnemyCardCount =>
+      _enemyCards.where((card) => card.isOwned).length;
+
+  int get upgradableEnemyCardCount =>
+      _enemyCards.where(canUpgradeEnemyCard).length;
+
+  int get mergeableEnemyCardCount =>
+      _enemyCards.where(canMergeEnemyCard).length;
+
+  int get ownedBossEnemyCardCount =>
+      _bossEnemyCards.where((card) => card.isOwned).length;
+
+  int get upgradableBossEnemyCardCount =>
+      _bossEnemyCards.where(canUpgradeBossEnemyCard).length;
+
+  List<EnemyCardState> get ownedBossEnemyCards =>
+      _bossEnemyCards.where((card) => card.isOwned).toList(growable: false);
+
+  List<EnemyCardState> get availableUnresolvedBossScanCards {
+    final availableRarities = availableBossPullRarities.toSet();
+    final activeBossId = activeBossEnemyCard?.config.id;
+    return _bossEnemyCards
+        .where(
+          (card) =>
+              !card.isOwned &&
+              card.config.id != activeBossId &&
+              availableRarities.contains(card.config.rarity),
+        )
+        .toList(growable: false);
+  }
+
+  int get summoningLevel => summoningLevelForPullCount(enemyPullCount);
+
+  int get bossSummoningLevel => min(
+    maxBossSummoningLevel,
+    1 + (bossPullCount ~/ bossPullsPerSummoningLevel),
+  );
+
+  int get prestigeLevel =>
+      _layers.fold(0, (best, layer) => max(best, layer.tier - 1));
+
+  int get progressionLayer => max(1, prestigeLevel + 1);
+
+  int get promotionReadyTowerCount =>
+      _slots.where(_slotCountsTowardRing).where(_slotReadyForPromotion).length;
+
+  bool get layerNavigationUnlocked => payloadsUnlocked;
+
+  bool get payloadsUnlocked => progressionLayer >= payloadUnlockLayer;
+
+  bool get managersUnlocked =>
+      overallLevel >= managerUnlockLevel || _starterManagerTutorialUnlocked;
+
+  bool get managerAssignmentUnlocked =>
+      _managerAssignmentUnlockedForLayer(activeLayer);
+
+  bool get isOuterRingComplete => builtTowerCount == slotCount;
+
+  int get progressionExperience => max(experience, kills);
+
+  int get overallLevel => overallLevelForExperience(progressionExperience);
+
+  int get accountRadianceLevel => overallLevel;
+
+  String get accountRadianceLabel =>
+      'Account Radiance Lv $accountRadianceLevel';
+
+  bool get bossHuntsUnlocked => overallLevel >= bossUnlockLevel;
+
+  bool get dailyDungeonsUnlocked => overallLevel >= dailyDungeonUnlockLevel;
+
+  bool get tournamentsUnlocked => overallLevel >= tournamentUnlockLevel;
+
+  bool get mentorshipUnlocked => overallLevel >= mentorshipUnlockLevel;
+
+  int get dailyDungeonHighestUnlockedTowerLevel =>
+      _dailyDungeonHighestUnlockedTowerLevel;
+
+  int get dailyDungeonHighestClearedTowerLevel =>
+      _dailyDungeonHighestClearedTowerLevel;
+
+  int get tournamentLevelsRemaining =>
+      max(0, tournamentUnlockLevel - overallLevel);
+
+  int get dailyDungeonLevelsRemaining =>
+      max(0, dailyDungeonUnlockLevel - overallLevel);
+
+  int get managerLevelsRemaining => max(0, managerUnlockLevel - overallLevel);
+
+  int get mentorshipLevelsRemaining =>
+      max(0, mentorshipUnlockLevel - overallLevel);
+
+  bool get canEditScreenName => tournamentsUnlocked;
+
+  int get bossLevelsRemaining => max(0, bossUnlockLevel - overallLevel);
+
+  double get bossUnlockProgress =>
+      (overallLevel / bossUnlockLevel).clamp(0.0, 1.0);
+
+  int get overallLevelFloorExperience =>
+      experienceForOverallLevel(overallLevel);
+
+  int get overallLevelFloorKills => overallLevelFloorExperience;
+
+  int get nextOverallLevel => overallLevel + 1;
+
+  int get nextOverallLevelTargetExperience =>
+      experienceForOverallLevel(nextOverallLevel);
+
+  int get nextOverallLevelTargetKills => nextOverallLevelTargetExperience;
+
+  int get experienceIntoCurrentOverallLevel =>
+      progressionExperience - overallLevelFloorExperience;
+
+  int get killsIntoCurrentOverallLevel => experienceIntoCurrentOverallLevel;
+
+  int get experienceNeededForCurrentOverallLevel =>
+      max(1, nextOverallLevelTargetExperience - overallLevelFloorExperience);
+
+  int get killsNeededForCurrentOverallLevel =>
+      experienceNeededForCurrentOverallLevel;
+
+  int get experienceToNextOverallLevel =>
+      max(0, nextOverallLevelTargetExperience - progressionExperience);
+
+  int get killsToNextOverallLevel => experienceToNextOverallLevel;
+
+  double get totalBattleSeconds => _totalBattleSeconds;
+
+  int get totalOfflineSecondsClaimed => _totalOfflineSecondsClaimed;
+
+  int get totalUpgradesBought => _totalUpgradesBought;
+
+  int get totalTowersBuilt => _totalTowersBuilt;
+
+  int get totalManagersForged => _totalManagersForged;
+
+  int get totalBossesDefeated => _totalBossesDefeated;
+
+  int get totalLumensSpent => _totalLumensSpent;
+
+  int get totalFluxSpent => _totalFluxSpent;
+
+  int get totalPrismShardsSpent => _totalPrismShardsSpent;
+
+  int get totalTimeWarpSecondsClaimed => _totalTimeWarpSecondsClaimed;
+
+  int get totalPullsOpened => enemyPullCount + bossPullCount;
+
+  double get overallLevelProgress =>
+      (experienceIntoCurrentOverallLevel /
+              experienceNeededForCurrentOverallLevel)
+          .clamp(0.0, 1.0);
+
+  int get unlockedOuterSlotCount =>
+      unlockedOuterSlotCountForExperience(progressionExperience);
+
+  int get bossKillsIntoCycle => activeLayer.bossReady
+      ? bossSpawnKillRequirement
+      : activeLayer.normalKillsSinceBoss;
+
+  int get bossKillsRemaining => activeLayer.bossReady
+      ? 0
+      : max(0, bossSpawnKillRequirement - activeLayer.normalKillsSinceBoss);
+
+  double get bossSpawnProgress =>
+      (bossKillsIntoCycle / bossSpawnKillRequirement).clamp(0.0, 1.0);
+
+  bool get bossAlive => _enemies.any((enemy) => enemy.config.isBoss);
+
+  LightcoreTutorialStep get tutorialStep => _tutorialStep;
+
+  LightcoreTutorialQuestDefinition? get tutorialQuestDefinition =>
+      _tutorialQuestDefinitions[_tutorialStep];
+
+  String? get tutorialQuestId => tutorialQuestDefinition?.id;
+
+  String? get tutorialPrimaryClickTarget =>
+      tutorialQuestDefinition?.primaryClickTarget;
+
+  String? get tutorialCompletionCondition =>
+      tutorialQuestDefinition?.completionCondition;
+
+  String? get tutorialLearningReward => tutorialQuestDefinition?.reward;
+
+  bool get hasActiveTutorial => _tutorialStep != LightcoreTutorialStep.none;
+
+  bool get tutorialNeedsTowerPaletteGate {
+    if (_earlyTutorialComplete) {
+      return false;
+    }
+    return _firstTutorialTower == null;
+  }
+
+  bool get tutorialHighlightsBattleCore =>
+      _tutorialStep == LightcoreTutorialStep.unfoldShell ||
+      _tutorialStep == LightcoreTutorialStep.tapBattleCore;
+
+  String? get tutorialBattleCoreGuideLabel =>
+      _tutorialStep == LightcoreTutorialStep.tapBattleCore ? 'TAP CORE' : null;
+
+  bool get tutorialHighlightsCoreStats =>
+      _tutorialStep == LightcoreTutorialStep.readEffectiveGain ||
+      _tutorialStep == LightcoreTutorialStep.autoQueueCheck;
+
+  bool tutorialHighlightsBattleSlot(int slotIndex) {
+    if (slotIndex == 0 &&
+        (_tutorialStep == LightcoreTutorialStep.selectFirstHex ||
+            _tutorialStep == LightcoreTutorialStep.tapFirstTower ||
+            ((_tutorialStep == LightcoreTutorialStep.buildFirstRedTower ||
+                    _tutorialStep ==
+                        LightcoreTutorialStep.upgradeFirstTowerToLevel3 ||
+                    _tutorialStep ==
+                        LightcoreTutorialStep.upgradeFirstTowerToLevel4) &&
+                selectedSlotIndex != 0))) {
+      return true;
+    }
+    final shotTutorialSlotIndex = _secondShellShotTutorialSlotIndex();
+    return _tutorialStep == LightcoreTutorialStep.tapSecondShellTower &&
+        shotTutorialSlotIndex == slotIndex;
+  }
+
+  String? tutorialBattleSlotGuideLabel(int slotIndex) {
+    if (!tutorialHighlightsBattleSlot(slotIndex)) {
+      return null;
+    }
+    return switch (_tutorialStep) {
+      LightcoreTutorialStep.tapFirstTower ||
+      LightcoreTutorialStep.tapSecondShellTower => _tutorialTowerShotGuideLabel(
+        slotIndex,
+      ),
+      _ => null,
+    };
+  }
+
+  bool get tutorialHighlightsPullsButton =>
+      _tutorialStep == LightcoreTutorialStep.pullFirstWhiteEnemy ||
+      _tutorialStep == LightcoreTutorialStep.pullFirstRedEnemy ||
+      _tutorialStep == LightcoreTutorialStep.openBossPulls;
+
+  bool get tutorialHighlightsStoreButton =>
+      _tutorialStep == LightcoreTutorialStep.openStore;
+
+  bool get tutorialHighlightsBattlePassButton =>
+      _tutorialStep == LightcoreTutorialStep.claimBattlePassReward;
+
+  bool get tutorialHighlightsFriendsButton =>
+      _tutorialStep == LightcoreTutorialStep.openFriends;
+
+  bool get tutorialHighlightsHeaderMenuButton =>
+      _tutorialStep == LightcoreTutorialStep.setScreenName ||
+      _tutorialStep == LightcoreTutorialStep.openFriends ||
+      _tutorialStep == LightcoreTutorialStep.openMentees ||
+      _tutorialStep == LightcoreTutorialStep.openMentors ||
+      _tutorialStep == LightcoreTutorialStep.inspectEnemyBlitz ||
+      _tutorialStep == LightcoreTutorialStep.inspectHexGauntlet ||
+      _tutorialStep == LightcoreTutorialStep.inspectArenaFlow;
+
+  bool get tutorialHighlightsEnemySinglePullButton =>
+      _tutorialStep == LightcoreTutorialStep.pullFirstWhiteEnemy ||
+      _tutorialStep == LightcoreTutorialStep.pullFirstRedEnemy;
+
+  bool get tutorialHighlightsBossSinglePullButton =>
+      _tutorialStep == LightcoreTutorialStep.openBossPulls;
+
+  bool get tutorialHighlightsTowersNav =>
+      _tutorialStep == LightcoreTutorialStep.openTowerMatrix ||
+      _tutorialStep == LightcoreTutorialStep.upgradeCoreRange;
+
+  bool get tutorialHighlightsEnemiesNav =>
+      _tutorialStep == LightcoreTutorialStep.armFirstBoss ||
+      _tutorialStep == LightcoreTutorialStep.setFirstEnemyTarget ||
+      _tutorialStep == LightcoreTutorialStep.adjustEnemyCount;
+
+  bool get tutorialHighlightsManagersNav =>
+      _tutorialStep == LightcoreTutorialStep.openManagers ||
+      _tutorialStep == LightcoreTutorialStep.forgeTowerManager ||
+      _tutorialStep == LightcoreTutorialStep.assignTowerManager ||
+      _tutorialStep == LightcoreTutorialStep.forgeEnemyManager ||
+      _tutorialStep == LightcoreTutorialStep.assignEnemyManager;
+
+  bool get tutorialHighlightsMenteesNav =>
+      _tutorialStep == LightcoreTutorialStep.openMentees ||
+      _tutorialStep == LightcoreTutorialStep.openMentors;
+
+  bool get tutorialHighlightsMentorsNav =>
+      _tutorialStep == LightcoreTutorialStep.openMentees ||
+      _tutorialStep == LightcoreTutorialStep.openMentors;
+
+  bool get tutorialHighlightsTournamentsNav =>
+      _tutorialStep == LightcoreTutorialStep.inspectEnemyBlitz ||
+      _tutorialStep == LightcoreTutorialStep.inspectHexGauntlet ||
+      _tutorialStep == LightcoreTutorialStep.inspectArenaFlow;
+
+  bool get tutorialHighlightsOverlayBackButton =>
+      _tutorialStep == LightcoreTutorialStep.defeatFirstBoss;
+
+  bool get tutorialHighlightsBossBar =>
+      _tutorialStep == LightcoreTutorialStep.openEquipment;
+
+  bool get tutorialHighlightsPlayerManagerButton =>
+      _tutorialStep == LightcoreTutorialStep.openEquipment ||
+      _tutorialStep == LightcoreTutorialStep.setScreenName;
+
+  bool get tutorialHighlightsOverdriveButton =>
+      _tutorialStep == LightcoreTutorialStep.holdOverdrive;
+
+  bool get tutorialHighlightsBattleBoss =>
+      _tutorialStep == LightcoreTutorialStep.defeatFirstBoss &&
+      _tutorialTrackedBossEnemyId != null;
+
+  String? get tutorialHighlightedEnemyId =>
+      tutorialHighlightsBattleBoss ? _tutorialTrackedBossEnemyId : null;
+
+  LightcoreTutorialPulseTarget? get tutorialShowcaseTarget =>
+      switch (_tutorialStep) {
+        LightcoreTutorialStep.pullFirstWhiteEnemy ||
+        LightcoreTutorialStep.pullFirstRedEnemy ||
+        LightcoreTutorialStep.openBossPulls =>
+          LightcoreTutorialPulseTarget.pullsButton,
+        LightcoreTutorialStep.openEquipment ||
+        LightcoreTutorialStep.setScreenName =>
+          LightcoreTutorialPulseTarget.playerManagerButton,
+        LightcoreTutorialStep.holdOverdrive =>
+          LightcoreTutorialPulseTarget.overdriveButton,
+        _ => null,
+      };
+
+  bool get canShowcaseCurrentTutorialTarget => tutorialShowcaseTarget != null;
+
+  LightcoreTournamentModeId? get tutorialTournamentModeTarget =>
+      switch (_tutorialStep) {
+        LightcoreTutorialStep.inspectEnemyBlitz =>
+          LightcoreTournamentModeId.enemyBlitz,
+        LightcoreTutorialStep.inspectHexGauntlet =>
+          LightcoreTournamentModeId.hexGauntlet,
+        LightcoreTutorialStep.inspectArenaFlow =>
+          LightcoreTournamentModeId.arenaFlow,
+        _ => null,
+      };
+
+  bool tutorialHighlightsTournamentModeCard(LightcoreTournamentModeId mode) =>
+      tutorialTournamentModeTarget == mode;
+
+  int tutorialPulseSignalFor(LightcoreTutorialPulseTarget target) =>
+      _tutorialPulseTarget == target ? _tutorialPulseSignal : 0;
+
+  double get promotionProgress => promotionReadyTowerCount / slotCount;
+
+  bool get isPromotionReady =>
+      builtTowerCount == slotCount && promotionReadyTowerCount == slotCount;
+
+  bool get canUnlockLayer2 =>
+      isPromotionReady &&
+      activeLayer.promotedParentLayerId == null &&
+      !activeLayer.promotedIntoParentSlot &&
+      (activeLayerHasParentSlot || activeLayer.tier < maxShellTier);
+
+  bool get isBattleActive => true;
+
+  int get queuedCorePackets => _ammoQueue.length;
+
+  int get coreQueueOccupancy =>
+      min(coreQueueCapacity, _ammoQueue.length + _pulses.length);
+
+  List<AmmoPacket> get queuedAmmoPackets =>
+      List<AmmoPacket>.unmodifiable(_ammoQueue);
+
+  double get ringProgress => builtTowerCount / slotCount;
+
+  bool get canOpenEnemyTickets => enemyTickets >= enemyTicketCost;
+
+  bool get canOpenBossTickets =>
+      bossHuntsUnlocked && bossTickets >= bossTicketCost;
+
+  bool get canForgeTowerManager =>
+      managersUnlocked && flux >= towerManagerFluxCost;
+
+  bool get canForgeEnemyManager =>
+      managersUnlocked && flux >= enemyManagerFluxCost;
+
+  String get enemyTicketCurrencyName =>
+      LightcoreCurrencyLabels.threatScanName(enemyTickets);
+
+  String get enemyTicketLabel => '$enemyTickets $enemyTicketCurrencyName';
+
+  String get echoSeedLabel =>
+      '$echoSeeds Echo Seed${echoSeeds == 1 ? '' : 's'}';
+
+  String get bossTicketCurrencyName =>
+      LightcoreCurrencyLabels.bossScanName(bossTickets);
+
+  String get bossCoreCurrencyName =>
+      bossCores == 1 ? 'Heartcore' : 'Heartcores';
+
+  String get bossTicketLabel => '$bossTickets $bossTicketCurrencyName';
+
+  String get bossCoreLabel => '$bossCores $bossCoreCurrencyName';
+
+  int get equipmentInventoryCapacity => maxEquipmentInventorySize;
+
+  int get equippedEquipmentCount => _equippedPlayerItems.values
+      .where((instanceId) => instanceId != null)
+      .length;
+
+  int get equipmentAutoDismantleCount =>
+      _equipmentAutoDismantleCandidates().length;
+
+  bool get canAutoDismantleOldEquipment => equipmentAutoDismantleCount > 0;
+
+  EquipmentBonusProfile get equipmentBonuses {
+    var total = EquipmentBonusProfile.zero;
+    for (final slot in EquipmentLoadoutSlot.values) {
+      final item = equippedPlayerItemForSlot(slot);
+      if (item != null) {
+        total = total + item.bonuses;
+      }
+    }
+    for (final status in activeEquipmentSets) {
+      for (final bonus in status.unlockedBonuses) {
+        total = total + bonus.bonuses;
+      }
+    }
+    return total;
+  }
+
+  EquipmentBonusProfile get profileMedalBonuses =>
+      equippedProfileMedal?.bonuses ?? EquipmentBonusProfile.zero;
+
+  EquipmentBonusProfile get profileLoadoutBonuses =>
+      equipmentBonuses + profileMedalBonuses;
+
+  int get totalRadianceStatPointsEarned => max(0, overallLevel - 1);
+
+  int get totalRadianceStatPointsSpent => LightcoreRadianceStat.values.fold(
+    0,
+    (sum, stat) => sum + radianceStatRank(stat),
+  );
+
+  int get unspentRadianceStatPoints =>
+      max(0, totalRadianceStatPointsEarned - totalRadianceStatPointsSpent);
+
+  bool get hasUnspentRadianceStatPoints => unspentRadianceStatPoints > 0;
+
+  int radianceStatRank(LightcoreRadianceStat stat) =>
+      max(0, _radianceStatRanks[stat] ?? 0);
+
+  bool canUpgradeRadianceStat(LightcoreRadianceStat stat) =>
+      unspentRadianceStatPoints > 0;
+
+  bool upgradeRadianceStat(LightcoreRadianceStat stat) {
+    if (!canUpgradeRadianceStat(stat)) {
+      return false;
+    }
+    _radianceStatRanks[stat] = radianceStatRank(stat) + 1;
+    _showBanner(
+      '${radianceStatLabel(stat)} raised to ${radianceStatRank(stat)}. ${radianceStatEffectLabel(stat)}',
+    );
+    _syncTutorialStep(showBanner: false);
+    _notifyNow();
+    return true;
+  }
+
+  String radianceStatLabel(LightcoreRadianceStat stat) => switch (stat) {
+    LightcoreRadianceStat.might => 'Might',
+    LightcoreRadianceStat.focus => 'Focus',
+    LightcoreRadianceStat.tempo => 'Tempo',
+    LightcoreRadianceStat.insight => 'Insight',
+  };
+
+  String radianceStatShortLabel(LightcoreRadianceStat stat) => switch (stat) {
+    LightcoreRadianceStat.might => 'MGT',
+    LightcoreRadianceStat.focus => 'FOC',
+    LightcoreRadianceStat.tempo => 'TMP',
+    LightcoreRadianceStat.insight => 'INS',
+  };
+
+  String radianceStatGameplayLabel(LightcoreRadianceStat stat) =>
+      switch (stat) {
+        LightcoreRadianceStat.might => 'Tower power, core shots, Apex damage',
+        LightcoreRadianceStat.focus => 'Range, critical chance, precision',
+        LightcoreRadianceStat.tempo => 'Tower charge and core firing cadence',
+        LightcoreRadianceStat.insight => 'EXP, Lumens, Flux, scans, drops',
+      };
+
+  String radianceStatEffectLabel(LightcoreRadianceStat stat) {
+    final rank = radianceStatRank(stat);
+    if (rank <= 0) {
+      return switch (stat) {
+        LightcoreRadianceStat.might =>
+          '+0.6% Power per point • +0.25% Apex per point',
+        LightcoreRadianceStat.focus =>
+          '+0.35% Range per point • +0.10% Crit per point',
+        LightcoreRadianceStat.tempo =>
+          '+0.5% Charge per point • +0.3% Core fire per point',
+        LightcoreRadianceStat.insight =>
+          '+0.25% EXP per point • +0.4% Rewards per point',
+      };
+    }
+    return switch (stat) {
+      LightcoreRadianceStat.might =>
+        'Power +${_formatPositivePercent(_radianceMightPowerBonus)}% • Apex +${_formatPositivePercent(_radianceMightBossDamageBonus)}%',
+      LightcoreRadianceStat.focus =>
+        'Range +${_formatPositivePercent(_radianceFocusRangeBonus)}% • Crit +${_formatPositivePercent(_radianceFocusCritChanceBonus)}%',
+      LightcoreRadianceStat.tempo =>
+        'Charge +${_formatPositivePercent(_radianceTempoChargeBonus)}% • Core fire +${_formatPositivePercent(_radianceTempoCoreFireSpeedBonus)}%',
+      LightcoreRadianceStat.insight =>
+        'EXP +${_formatPositivePercent(_radianceInsightExperienceBonus)}% • Rewards +${_formatPositivePercent(_radianceInsightLumenBonus)}%',
+    };
+  }
+
+  EquipmentBonusProfile get globalLevelBonuses {
+    return EquipmentBonusProfile(
+      towerPower: _radianceMightPowerBonus,
+      chargeRate: _radianceTempoChargeBonus,
+      critChance: _radianceFocusCritChanceBonus,
+      critDamage: _radianceMightCritDamageBonus + _radianceFocusCritDamageBonus,
+      range: _radianceFocusRangeBonus,
+      bossDamage: _radianceMightBossDamageBonus,
+      lumenGain: _radianceInsightLumenBonus,
+      fluxGain: _radianceInsightFluxBonus,
+      ticketGain: _radianceInsightTicketBonus,
+      dropRate: _radianceInsightDropBonus,
+    );
+  }
+
+  String get globalLevelCombatStatsLabel {
+    return 'Might ${radianceStatRank(LightcoreRadianceStat.might)} • '
+        'Focus ${radianceStatRank(LightcoreRadianceStat.focus)} • '
+        'Tempo ${radianceStatRank(LightcoreRadianceStat.tempo)}';
+  }
+
+  String get globalLevelEconomyStatsLabel {
+    return 'Insight ${radianceStatRank(LightcoreRadianceStat.insight)} • '
+        'EXP +${_formatPositivePercent(_radianceInsightExperienceBonus)}% • '
+        'Rewards +${_formatPositivePercent(_radianceInsightLumenBonus)}%';
+  }
+
+  String get globalLevelStatsSummaryLabel {
+    final bonuses = globalLevelBonuses;
+    return [
+      'Radiance stats',
+      if (unspentRadianceStatPoints > 0)
+        '$unspentRadianceStatPoints point${unspentRadianceStatPoints == 1 ? '' : 's'} ready',
+      'Might ${radianceStatRank(LightcoreRadianceStat.might)}',
+      'Focus ${radianceStatRank(LightcoreRadianceStat.focus)}',
+      'Tempo ${radianceStatRank(LightcoreRadianceStat.tempo)}',
+      'Insight ${radianceStatRank(LightcoreRadianceStat.insight)}',
+      'Power +${_formatPositivePercent(bonuses.towerPower)}%',
+      'Charge +${_formatPositivePercent(bonuses.chargeRate)}%',
+      'Range +${_formatPositivePercent(bonuses.range)}%',
+      'Crit +${_formatPositivePercent(bonuses.critChance)}%',
+      'Apex +${_formatPositivePercent(bonuses.bossDamage)}%',
+      'Rewards +${_formatPositivePercent(bonuses.lumenGain)}%',
+    ].join(' • ');
+  }
+
+  String get globalLevelPowerStatLabel =>
+      '+${_formatPositivePercent(globalLevelBonuses.towerPower)}%';
+
+  String get globalLevelChargeStatLabel =>
+      '+${_formatPositivePercent(globalLevelBonuses.chargeRate)}%';
+
+  String get globalLevelRewardStatLabel =>
+      '+${_formatPositivePercent(globalLevelBonuses.lumenGain)}%';
+
+  ProfileMedalConfig? get equippedProfileMedal {
+    final medalId = _equippedProfileMedalId;
+    return medalId == null ? null : MedalLibrary.byId[medalId];
+  }
+
+  int get unlockedProfileMedalCount =>
+      profileMedals.where((medal) => medal.unlocked).length;
+
+  ProfileMedalStatus? profileMedalStatusById(String medalId) {
+    final config = MedalLibrary.byId[medalId];
+    return config == null ? null : _profileMedalStatusFor(config);
+  }
+
+  TowerPatternBonusProfile get enemyInventoryBonuses =>
+      _enemyCards.fold(TowerPatternBonusProfile.zero, (total, card) {
+        if (!card.isOwned) {
+          return total;
+        }
+        return total + enemyInventoryEffectForCard(card);
+      });
+
+  TowerPatternBonusProfile get bossInventoryBonuses =>
+      _bossEnemyCards.fold(TowerPatternBonusProfile.zero, (total, card) {
+        if (!card.isOwned) {
+          return total;
+        }
+        return total + bossInventoryEffectForCard(card);
+      });
+
+  TowerPatternBonusProfile get towerInventoryBonuses =>
+      enemyInventoryBonuses + bossInventoryBonuses;
+
+  List<String> get enemyInventoryBonusHighlights =>
+      _towerBonusHighlights(enemyInventoryBonuses, maxItems: 4);
+
+  List<String> get bossInventoryBonusHighlights =>
+      _towerBonusHighlights(bossInventoryBonuses, maxItems: 4);
+
+  List<String> get towerInventoryBonusHighlights =>
+      _towerBonusHighlights(towerInventoryBonuses, maxItems: 5);
+
+  String get enemyInventoryBonusSummaryLabel =>
+      _towerBonusSummary(enemyInventoryBonuses);
+
+  String get bossInventoryBonusSummaryLabel =>
+      _towerBonusSummary(bossInventoryBonuses);
+
+  String get towerInventoryBonusSummaryLabel =>
+      _towerBonusSummary(towerInventoryBonuses);
+
+  int get towerStrength => _computeTowerStrength().round();
+
+  String get towerStrengthLabel => towerStrength.toString();
+
+  String get towerStrengthCompactLabel => _compactNumber(towerStrength);
+
+  bool get globalTowerStrengthRankNeedsRefresh {
+    final self = _socialOverview?.self;
+    return self == null ||
+        self.towerStrength != towerStrength ||
+        self.towerStrengthRank == null;
+  }
+
+  int? get globalTowerStrengthRank {
+    final self = _socialOverview?.self;
+    if (self == null || self.towerStrength != towerStrength) {
+      return null;
+    }
+    return self.towerStrengthRank;
+  }
+
+  int get globalTowerStrengthRankedPlayers => globalTowerStrengthRank == null
+      ? 0
+      : _socialOverview?.self.towerStrengthRankedPlayers ?? 0;
+
+  String get globalTowerStrengthRankLabel {
+    final rank = globalTowerStrengthRank;
+    return rank == null ? '#--' : '#$rank';
+  }
+
+  String get globalTowerStrengthRankingTooltip {
+    final rank = globalTowerStrengthRank;
+    if (rank == null) {
+      return 'Global ranking pending. Position is based on TS $towerStrengthLabel.';
+    }
+    final rankedPlayers = globalTowerStrengthRankedPlayers;
+    final totalLabel = rankedPlayers > 0 ? ' of $rankedPlayers' : '';
+    return 'Global ranking #$rank$totalLabel based on TS $towerStrengthLabel.';
+  }
+
+  String get towerStrengthSummaryLabel =>
+      'TS $towerStrengthCompactLabel • $towerInventoryBonusSummaryLabel';
+
+  List<TowerPatternAchievement> get activeTowerAchievements =>
+      _resolveTowerPatternAchievements(_slots);
+
+  String get towerAchievementHintLabel =>
+      'Pattern bonuses activate from the live shell: full rainbow, all one color, blue + green for Storm Chain, or red + orange for Ember Drive.';
+
+  TowerPatternBonusProfile towerPatternBonusesFor(OuterTowerState tower) {
+    if (!_slotCountsTowardRing(tower)) {
+      return TowerPatternBonusProfile.zero;
+    }
+    var total = TowerPatternBonusProfile.zero;
+    for (final achievement in activeTowerAchievements) {
+      total = total + achievement.bonuses;
+    }
+    return total;
+  }
+
+  List<EquipmentSetStatus> get activeEquipmentSets {
+    final equippedBySet = <String, int>{};
+    for (final slot in EquipmentLoadoutSlot.values) {
+      final item = equippedPlayerItemForSlot(slot);
+      if (item == null) {
+        continue;
+      }
+      equippedBySet.update(item.setId, (count) => count + 1, ifAbsent: () => 1);
+    }
+    final statuses =
+        equippedBySet.entries.map((entry) {
+          final config = EquipmentLibrary.byId[entry.key];
+          final unlocked = <EquipmentSetBonusConfig>[
+            if (config != null)
+              for (final bonus in config.setBonuses)
+                if (entry.value >= bonus.pieceCount) bonus,
+          ];
+          return EquipmentSetStatus(
+            config: config ?? EquipmentLibrary.all.first,
+            equippedCount: entry.value,
+            unlockedBonuses: unlocked,
+          );
+        }).toList()..sort((a, b) {
+          final pieceCompare = b.equippedCount.compareTo(a.equippedCount);
+          if (pieceCompare != 0) {
+            return pieceCompare;
+          }
+          return a.config.name.compareTo(b.config.name);
+        });
+    return statuses;
+  }
+
+  List<PlayerEquipmentItem> get recentEquipmentDrops {
+    final items = _equipmentInventory.toList()
+      ..sort((a, b) => b.dropOrder.compareTo(a.dropOrder));
+    return items;
+  }
+
+  bool get canUpgradeEnemyTargetMax => enemyTargetMax < maxActiveEnemies;
+
+  bool get isCompositeLayer => activeLayer.tier > 1;
+
+  bool get hasSourceLayer => activeLayer.sourceLayerId != null;
+
+  bool get activeLayerHasParentSlot => activeLayer.parentLayerId != null;
+
+  bool get activeLayerPromotedIntoParentSlot =>
+      activeLayer.promotedIntoParentSlot;
+
+  int get activeLayerTargetTier => activeLayer.parentLayerId == null
+      ? activeLayer.tier + 1
+      : _layerById(activeLayer.parentLayerId!).tier;
+
+  String get activeLayerTargetShellLabel =>
+      shellNameForTier(activeLayerTargetTier);
+
+  String get nextShellClassLabel =>
+      shellNameForTier(min(activeLayer.tier + 1, maxShellTier));
+
+  String get activeLayerLabel => layerDisplayLabel(activeLayer);
+
+  String get runtimeLayerLabel => layerDisplayLabel(runtimeLayer);
+
+  String layerDisplayLabel(TowerLayerSnapshot layer) {
+    final base = shellNameForTier(layer.tier);
+    final slotIndex = layer.parentSlotIndex;
+    if (layer.parentLayerId != null && slotIndex != null) {
+      return '$base • Hex ${slotIndex + 1}';
+    }
+    return base;
+  }
+
+  bool get isViewingRuntimeLayer => _viewLayerId == _runtimeLayerId;
+
+  double get activeLayerPriceMultiplier => _layerPriceMultiplier(activeLayer);
+
+  bool get isChildTowerGrowthLayer => activeLayerHasParentSlot;
+
+  OuterTowerState? get activeChildTowerProjection {
+    final parentId = activeLayer.parentLayerId;
+    final parentSlotIndex = activeLayer.parentSlotIndex;
+    if (parentId == null || parentSlotIndex == null) {
+      return null;
+    }
+    final parent = _layerById(parentId);
+    return parent.slots[parentSlotIndex];
+  }
+
+  UnmodifiableListView<ChildTowerUpgradeState> get activeChildTowerUpgrades =>
+      UnmodifiableListView(activeLayer.childTowerUpgrades);
+
+  int get activeChildTowerUpgradeRanksSpent => activeLayer.childTowerUpgrades
+      .fold(0, (sum, upgrade) => sum + upgrade.rank);
+
+  int get activeChildTowerUpgradeRankCap =>
+      activeLayer.childTowerUpgrades.length * childTowerUpgradeMaxRank;
+
+  double get activeChildTowerLevelProgress {
+    final cap = activeChildTowerUpgradeRankCap;
+    if (cap <= 0) {
+      return 0;
+    }
+    return activeChildTowerUpgradeRanksSpent / cap;
+  }
+
+  String get activeChildTowerLevelProgressLabel {
+    final cap = activeChildTowerUpgradeRankCap;
+    if (cap <= 0) {
+      return 'No child tower growth here';
+    }
+    return '$activeChildTowerUpgradeRanksSpent/$cap tuned this level';
+  }
+
+  String get activeChildTowerAnchorLabel {
+    final parentId = activeLayer.parentLayerId;
+    final parentSlotIndex = activeLayer.parentSlotIndex;
+    if (parentId == null || parentSlotIndex == null) {
+      return activeLayerLabel;
+    }
+    final parent = _layerById(parentId);
+    return 'Hex ${parentSlotIndex + 1} in ${layerDisplayLabel(parent)}';
+  }
+
+  int get childLayerTierToCreate => max(1, activeLayer.tier - 1);
+
+  String childCoreChoiceLabel(PrototypeAffinity affinity, {int? childTier}) {
+    final tier = childTier ?? childLayerTierToCreate;
+    final projectile = forgedProjectilesForAffinity(
+      affinity,
+      targetTier: tier,
+    ).first;
+    final payload = forgedPayloadsForAffinity(affinity, targetTier: tier).first;
+    return tier < payloadUnlockLayer
+        ? '${affinity.label} • ${projectile.label}'
+        : '${affinity.label} • ${projectile.label} / ${payload.label}';
+  }
+
+  int get enemyTargetUpgradeCost => canUpgradeEnemyTargetMax
+      ? _enemyTargetUpgradeCost(upgradeLevel: _enemyTargetUpgradeLevel)
+      : 0;
+
+  String get enemyTargetUpgradeCostLabel =>
+      _compactNumber(enemyTargetUpgradeCost);
+
+  String get enemySpawnCadenceLabel => '${_spawnInterval.toStringAsFixed(2)}s';
+
+  double get activeThreatRewardMultiplier {
+    final deck = activeEnemyDeck;
+    if (deck.isEmpty) {
+      return 1;
+    }
+    return deck.fold(
+          0.0,
+          (sum, card) => sum + _threatRewardMultiplierForCard(card),
+        ) /
+        deck.length;
+  }
+
+  double get activeThreatStabilityMultiplier {
+    final deck = activeEnemyDeck;
+    if (deck.isEmpty) {
+      return 1;
+    }
+    return deck.fold(
+          0.0,
+          (sum, card) => sum + _threatStabilityMultiplierForCard(card),
+        ) /
+        deck.length;
+  }
+
+  double get activeEffectiveGainMultiplier =>
+      activeThreatRewardMultiplier * outputEfficiencyMultiplier;
+
+  String get activeThreatRewardLabel =>
+      'x${activeThreatRewardMultiplier.toStringAsFixed(2)}';
+
+  String get activeEffectiveGainLabel =>
+      'x${activeEffectiveGainMultiplier.toStringAsFixed(2)}';
+
+  ThreatScanBundleSnapshot get activeThreatScanBundle {
+    final deck = activeEnemyDeck;
+    final primaryAffinity = _dominantThreatAffinity(deck);
+    final directorNames = _activeThreatDirectorNames(deck);
+    final threatReward = activeThreatRewardMultiplier;
+    final stabilityPressure = activeThreatStabilityMultiplier;
+    final outputEfficiency = outputEfficiencyMultiplier;
+    return ThreatScanBundleSnapshot(
+      id: _threatScanBundleId(deck),
+      name: _threatScanBundleName(deck, primaryAffinity),
+      summary: _threatScanBundleSummary(
+        deck,
+        primaryAffinity: primaryAffinity,
+        directorNames: directorNames,
+      ),
+      primaryAffinity: primaryAffinity,
+      cardNames: List<String>.unmodifiable(
+        deck.map((card) => card.config.name),
+      ),
+      directorNames: directorNames,
+      riskLabel: _threatScanRiskLabel(
+        hasDeck: deck.isNotEmpty,
+        threatReward: threatReward,
+        stabilityPressure: stabilityPressure,
+        outputEfficiency: outputEfficiency,
+        targetCount: enemyTargetCount,
+        targetMax: enemyTargetMax,
+      ),
+      counterplayLabel: _threatCounterplayLabel(primaryAffinity),
+      activeCardCount: deck.length,
+      liveEnemyCount: enemyCount,
+      targetCount: enemyTargetCount,
+      targetMax: enemyTargetMax,
+      threatRewardMultiplier: threatReward,
+      stabilityPressureMultiplier: stabilityPressure,
+      outputEfficiencyMultiplier: outputEfficiency,
+      effectiveGainMultiplier: threatReward * outputEfficiency,
+    );
+  }
+
+  double get passiveLumenPerSecond =>
+      passiveLumenBasePerSecond *
+      lumenHarvestEfficiency *
+      _economyBalanceMultiplier('passiveLumens');
+
+  double get passiveLumenBasePerSecond => _layers
+      .where((layer) => layer.id != runtimeLayer.id)
+      .fold(0.0, (sum, layer) => sum + _passiveLumenBaseForLayer(layer));
+
+  double get lumenHarvestEfficiency => outputEfficiencyMultiplier;
+
+  bool get hasLumenHarvestPressure => _core.coreStability < 99.5;
+
+  String get lumenHarvestEfficiencyLabel => outputEfficiencyLabel;
+
+  String get lumenHarvestRecoveryLabel {
+    if (!hasLumenHarvestPressure) {
+      return 'Stable';
+    }
+    final remainingSeconds =
+        ((_maxCoreStability - _core.coreStability) /
+                max(0.001, coreStabilityRecoveryPerSecond))
+            .ceil();
+    final recovery = Duration(seconds: max(1, remainingSeconds));
+    if (recovery.inHours >= 1) {
+      return '${recovery.inHours}h ${recovery.inMinutes.remainder(60)}m';
+    }
+    return '${max(1, recovery.inMinutes)}m';
+  }
+
+  double get coreStabilityRecoveryPerSecond {
+    final built = _slots.where(_slotCountsTowardRing).toList();
+    final greenRecovery =
+        built
+            .where((slot) => _slotAffinity(slot) == PrototypeAffinity.verdant)
+            .length *
+        0.06;
+    final managerRecovery = _managedTowerCountForLayer(activeLayer) * 0.025;
+    final coreRecovery = max(0, _core.level - 1) * 0.02;
+    return _baseCoreStabilityRecoveryPerSecond *
+            (1 + greenRecovery + coreRecovery) +
+        managerRecovery;
+  }
+
+  double get offlineKillsPerHour {
+    if (!_swarmActivated) {
+      return 0;
+    }
+    final managedTowerCount = _managedTowerCountForLayer(activeLayer);
+    if (managedTowerCount == 0) {
+      return 0;
+    }
+
+    final targetSpan = max(1, enemyTargetMax - minEnemyTarget);
+    final targetPressure = ((enemyTargetCount - minEnemyTarget) / targetSpan)
+        .clamp(0.0, 1.0);
+    final shellReadiness =
+        (0.018 +
+                (managedTowerCount * 0.032) +
+                ((_core.level - 1) * 0.016) +
+                ((activeLayer.tier - 1) * 0.03))
+            .clamp(0.018, 0.32);
+    final recentEffectiveGain = activeEffectiveGainMultiplier.clamp(0.15, 4.5);
+    final pressureMultiplier =
+        (0.72 + (targetPressure * 0.28)) * recentEffectiveGain;
+    final tierMultiplier = 1 + ((activeLayer.tier - 1) * 0.45);
+    return min(
+          maxOfflineKillsPerHour * tierMultiplier,
+          (3600 / _spawnInterval) *
+              shellReadiness *
+              pressureMultiplier *
+              tierMultiplier,
+        ) *
+        _economyBalanceMultiplier('offlineKills');
+  }
+}

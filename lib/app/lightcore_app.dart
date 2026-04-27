@@ -1,0 +1,1191 @@
+import 'dart:async';
+
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import 'package:package_info_plus/package_info_plus.dart';
+
+import '../models/lightcore_guide.dart';
+import '../models/lightcore_social_invite_link.dart';
+import '../screens/lightcore_main_menu_screen.dart';
+import '../screens/lightcore_shell.dart';
+import '../services/lightcore_firebase_backend.dart';
+import '../services/lightcore_firebase_runtime_config.dart';
+import '../services/lightcore_session_store.dart';
+import '../services/lightcore_web_foreground_events.dart';
+import '../state/lightcore_controller.dart';
+import '../theme/lightcore_palette.dart';
+import '../theme/lightcore_theme.dart';
+import '../widgets/lightcore_loading_screen.dart';
+import '../widgets/lightcore_screen_transition.dart';
+import 'lightcore_build_info.dart';
+import 'lightcore_bootstrap.dart';
+
+class LightcoreApp extends StatefulWidget {
+  const LightcoreApp({super.key, this.backend});
+
+  final FirebaseLightcoreBackend? backend;
+
+  @override
+  State<LightcoreApp> createState() => _LightcoreAppState();
+}
+
+class _LightcoreAppState extends State<LightcoreApp>
+    with WidgetsBindingObserver {
+  static const Duration _cloudSaveDebounce = Duration(seconds: 45);
+  static const Duration _serverSyncInterval = Duration(minutes: 3);
+  static const Duration _screenLinkDuration = Duration(milliseconds: 820);
+  static const int _maxMissedServerSyncs = 2;
+
+  late final LightcoreSessionStore _sessionStore;
+  late final FirebaseLightcoreBackend _backend;
+  late final LightcoreSocialInviteLink? _startupSocialInvite;
+  final GlobalKey<ScaffoldMessengerState> _scaffoldMessengerKey =
+      GlobalKey<ScaffoldMessengerState>();
+  late LightcoreGuestSession _guestSession;
+
+  LightcoreBootstrapReport? _bootstrapReport;
+  LightcoreGuideProfile? _guideProfile;
+  LightcoreController? _controller;
+  LightcoreController? _observedController;
+  Timer? _cloudSaveTimer;
+  Timer? _serverSyncTimer;
+  LightcoreWebForegroundSubscription? _webForegroundSubscription;
+  LightcoreOfflineClaimResult? _startupOfflineClaim;
+  _ResolvedClientVersion _clientVersion = const _ResolvedClientVersion(
+    versionName: LightcoreBuildInfo.versionName,
+    buildNumber: LightcoreBuildInfo.buildNumber,
+  );
+  bool _enteredGame = false;
+  bool _isBootstrapping = true;
+  bool _isLinkingScreen = false;
+  bool _authBusy = false;
+  bool _cloudSavePending = false;
+  bool _cloudSaveInFlight = false;
+  bool _serverSyncInFlight = false;
+  bool _serverSyncPending = false;
+  bool _serverSyncPendingForceSave = false;
+  bool _skipGuestSignInPrompt = false;
+  int _missedServerSyncs = 0;
+  int _battleSurfaceGeneration = 0;
+  DateTime? _lastForegroundRecoveryAt;
+  String? _sessionNotice;
+
+  static bool get _localhostAutoTapperEnabled {
+    if (!kIsWeb) {
+      return false;
+    }
+    final host = Uri.base.host.toLowerCase();
+    return host == 'localhost' || host == '127.0.0.1' || host == '::1';
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _sessionStore = LightcoreSessionStore();
+    _backend =
+        widget.backend ??
+        FirebaseLightcoreBackend(runtimeConfig: lightcoreFirebaseRuntimeConfig);
+    _webForegroundSubscription = listenForLightcoreWebForeground(
+      _handleWebForeground,
+    );
+    _startupSocialInvite = LightcoreSocialInviteLink.maybeFromUri(Uri.base);
+    _guestSession = createGuestSession();
+    unawaited(_bootstrapMainMenu(reason: 'startup'));
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _webForegroundSubscription?.cancel();
+    _cloudSaveTimer?.cancel();
+    _serverSyncTimer?.cancel();
+    unawaited(_runServerSync(forceCloudSave: true));
+    _observedController?.removeListener(_handleControllerChanged);
+    _controller?.dispose();
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.paused ||
+        state == AppLifecycleState.hidden ||
+        state == AppLifecycleState.detached) {
+      _lastForegroundRecoveryAt = null;
+      _stopServerSyncTimer();
+      unawaited(_runServerSync(forceCloudSave: true));
+      return;
+    }
+
+    if (state == AppLifecycleState.resumed && _hasActiveGame) {
+      _recoverForegroundGameSession();
+      return;
+    }
+
+    if (state == AppLifecycleState.resumed &&
+        !_enteredGame &&
+        !_isLinkingScreen &&
+        !_isBootstrapping) {
+      unawaited(_bootstrapMainMenu(reason: 'lifecycle-resumed-main-menu'));
+    }
+  }
+
+  void _handleWebForeground() {
+    if (!mounted) {
+      return;
+    }
+    if (_hasActiveGame) {
+      _recoverForegroundGameSession();
+      return;
+    }
+    if (!_enteredGame && !_isLinkingScreen && !_isBootstrapping) {
+      unawaited(_bootstrapMainMenu(reason: 'web-foreground-main-menu'));
+    }
+  }
+
+  void _recoverForegroundGameSession() {
+    final now = DateTime.now();
+    final lastRecovery = _lastForegroundRecoveryAt;
+    if (lastRecovery != null &&
+        now.difference(lastRecovery) < const Duration(milliseconds: 400)) {
+      return;
+    }
+    _lastForegroundRecoveryAt = now;
+    _logSession('foreground-recovery-start');
+    _controller?.recoverBattleSession();
+    _refreshBattleSurface();
+    _startServerSyncTimer();
+    unawaited(_resumeOnlineGameSession());
+  }
+
+  Future<void> _bootstrapMainMenu({String reason = 'manual'}) async {
+    _logSession('bootstrap-start', <String, Object?>{'reason': reason});
+    if (mounted) {
+      setState(() => _isBootstrapping = true);
+    }
+
+    var guestSession = _guestSession;
+    LightcoreGuideProfile? guideProfile = _guideProfile;
+    var skipGuestSignInPrompt = _skipGuestSignInPrompt;
+    try {
+      final persistedPlayerId = await _sessionStore.readPlayerId();
+      if (persistedPlayerId != null && persistedPlayerId.isNotEmpty) {
+        guestSession = LightcoreGuestSession(
+          playerId: persistedPlayerId,
+          createdAt: DateTime.now(),
+          authLabel: 'Stored guest session',
+        );
+      } else {
+        await _sessionStore.writePlayerId(guestSession.playerId);
+      }
+      guideProfile = LightcoreGuideProfile.maybeFromStorageId(
+        await _sessionStore.readGuideId(),
+      );
+      skipGuestSignInPrompt = await _sessionStore.readSkipGuestSignInPrompt();
+    } catch (error) {
+      // Shared preferences are optional for tests and unsupported contexts.
+      _logSession('bootstrap-session-store-warning', <String, Object?>{
+        'reason': reason,
+        'error': error,
+      });
+    }
+
+    final clientVersion = await _resolveClientVersion();
+    _clientVersion = clientVersion;
+    late final LightcoreBootstrapReport report;
+    try {
+      report = await _backend.bootstrap(
+        guestSession: guestSession,
+        clientVersion: clientVersion.versionName,
+        clientBuildNumber: clientVersion.buildNumber,
+      );
+    } catch (error) {
+      _logSession('bootstrap-backend-error', <String, Object?>{
+        'reason': reason,
+        'error': error,
+      });
+      report = LightcoreBootstrapReport(
+        guestSession: guestSession,
+        clientVersion: clientVersion.versionName,
+        clientBuildNumber: clientVersion.buildNumber,
+        manifest:
+            createDefaultContentManifest(
+              firebaseProjectId: lightcoreFirebaseRuntimeConfig.projectId,
+            ).copyWith(
+              statusMessage:
+                  'Startup sync failed. Reconnect and retry from the main menu.',
+            ),
+        profile: LightcorePlayerProfileSummary(playerId: guestSession.playerId),
+        offlineClaim: LightcoreOfflineClaimResult.empty(
+          statusMessage: 'Startup sync failed.',
+        ),
+        integrityLevel: LightcoreIntegrityLevel.localOnly,
+        firebaseReady: false,
+        serverValidated: false,
+        appCheckActive: false,
+        warnings: <String>['Bootstrap failed: $error'],
+      );
+    }
+    final cloudGuide = LightcoreGuideProfile.maybeFromStorageId(
+      report.cloudSave?.guideStorageId,
+    );
+    if (guideProfile == null && cloudGuide != null) {
+      guideProfile = cloudGuide;
+      try {
+        await _sessionStore.writeGuideId(cloudGuide.storageId);
+      } catch (_) {
+        // Shared preferences are optional for tests and unsupported contexts.
+      }
+    }
+    try {
+      await _sessionStore.writePlayerId(report.profile.playerId);
+    } catch (error) {
+      // Shared preferences are optional for tests and unsupported contexts.
+      _logSession('bootstrap-player-store-warning', <String, Object?>{
+        'reason': reason,
+        'error': error,
+      });
+    }
+
+    if (!mounted) {
+      _logSession('bootstrap-abandoned', <String, Object?>{'reason': reason});
+      return;
+    }
+
+    _logBootstrapReport('bootstrap-complete', report, reason: reason);
+    setState(() {
+      _guestSession = guestSession;
+      _bootstrapReport = report;
+      _guideProfile = guideProfile;
+      _skipGuestSignInPrompt = skipGuestSignInPrompt;
+      if (report.serverValidated) {
+        _sessionNotice = null;
+      }
+      _isBootstrapping = false;
+    });
+  }
+
+  Future<_ResolvedClientVersion> _resolveClientVersion() async {
+    try {
+      final info = await PackageInfo.fromPlatform();
+      return _normalizeClientVersion(
+        versionName: info.version,
+        buildNumber: info.buildNumber,
+      );
+    } catch (_) {
+      return const _ResolvedClientVersion(
+        versionName: LightcoreBuildInfo.versionName,
+        buildNumber: LightcoreBuildInfo.buildNumber,
+      );
+    }
+  }
+
+  void _enterGame() {
+    unawaited(_enterGameFromServer());
+  }
+
+  Future<void> _enterGameFromServer() async {
+    final report = _bootstrapReport;
+    if (report == null ||
+        !report.canEnterGame ||
+        _hasActiveGame ||
+        _isLinkingScreen) {
+      _logSession('enter-game-ignored', <String, Object?>{
+        'hasReport': report != null,
+        'reportCanEnter': report?.canEnterGame,
+        'hasActiveGame': _hasActiveGame,
+        'isLinkingScreen': _isLinkingScreen,
+        'blocker': _launchBlocker(report),
+      });
+      return;
+    }
+
+    _logBootstrapReport('enter-game-start', report, reason: 'current-report');
+    setState(() {
+      _isLinkingScreen = true;
+      _sessionNotice = null;
+    });
+
+    await _bootstrapMainMenu(reason: 'enter-game-refresh');
+    if (!mounted) {
+      _logSession('enter-game-abandoned');
+      return;
+    }
+
+    final launchReport = _bootstrapReport;
+    if (launchReport == null || !launchReport.canEnterGame) {
+      _logBootstrapReport(
+        'enter-game-blocked',
+        launchReport,
+        reason: _launchBlocker(launchReport),
+      );
+      setState(() => _isLinkingScreen = false);
+      return;
+    }
+    if (report.serverValidated && !launchReport.serverValidated) {
+      _logBootstrapReport(
+        'enter-game-blocked',
+        launchReport,
+        reason: 'server-validation-lost',
+      );
+      setState(() {
+        _isLinkingScreen = false;
+        _sessionNotice =
+            'Startup sync did not finish. Retry to restore your cloud save and offline progress.';
+      });
+      return;
+    }
+    if (_serverRestoreIncomplete(launchReport)) {
+      _logBootstrapReport(
+        'enter-game-blocked',
+        launchReport,
+        reason: 'cloud-restore-incomplete',
+      );
+      setState(() {
+        _isLinkingScreen = false;
+        _sessionNotice =
+            'Startup sync did not finish. Retry to restore your cloud save and offline progress.';
+      });
+      return;
+    }
+
+    final replacedController = _controller;
+    final controller = _createControllerFromReport(launchReport);
+    _logBootstrapReport(
+      'enter-game-controller-created',
+      launchReport,
+      reason: launchReport.cloudSave?.hasPayload == true
+          ? 'cloud-save'
+          : 'fresh-local-controller',
+    );
+    controller.syncServerDateKeys(
+      dayKey: launchReport.serverDayKey,
+      weekKey: launchReport.serverWeekKey,
+    );
+    controller.syncBalanceTuning(launchReport.manifest.balanceTuning);
+    controller.setLocalhostAutoTapperEnabled(_localhostAutoTapperEnabled);
+    final startupOfflineClaim = launchReport.offlineClaim.hasRewards
+        ? launchReport.offlineClaim
+        : null;
+    if (startupOfflineClaim != null) {
+      controller.applyOfflineClaim(startupOfflineClaim, showBanner: false);
+    }
+    controller.syncPlayerProfile(launchReport.profile, showBanner: false);
+    unawaited(_syncSocialOverview(controller));
+    _observeController(controller);
+    _missedServerSyncs = 0;
+
+    setState(() {
+      _controller = controller;
+      _startupOfflineClaim = startupOfflineClaim;
+      _isLinkingScreen = true;
+      _sessionNotice = null;
+    });
+    if (replacedController != null &&
+        !identical(replacedController, controller)) {
+      replacedController.dispose();
+    }
+    _markCloudSaveDirty();
+    unawaited(_runServerSync(forceCloudSave: true));
+    unawaited(_completeScreenLink());
+  }
+
+  LightcoreController _createControllerFromReport(
+    LightcoreBootstrapReport report,
+  ) {
+    if (report.cloudSave?.hasPayload == true) {
+      return LightcoreController.fromCloudSavePayload(
+        report.cloudSave!.payload,
+        fallbackGuideProfile: _guideProfile ?? LightcoreGuideProfile.lumo,
+        balanceTuning: report.manifest.balanceTuning,
+      );
+    }
+    return LightcoreController(
+      guideProfile: _guideProfile ?? LightcoreGuideProfile.lumo,
+      balanceTuning: report.manifest.balanceTuning,
+    );
+  }
+
+  bool _serverRestoreIncomplete(LightcoreBootstrapReport report) {
+    if (!report.cloudRestoreRequired) {
+      return false;
+    }
+    return !report.cloudRestoreComplete;
+  }
+
+  Future<void> _completeScreenLink() async {
+    await Future<void>.delayed(_screenLinkDuration);
+    if (!mounted || !_isLinkingScreen) {
+      return;
+    }
+    if (_controller == null) {
+      setState(() {
+        _enteredGame = false;
+        _isLinkingScreen = false;
+      });
+      return;
+    }
+    setState(() {
+      _enteredGame = true;
+      _isLinkingScreen = false;
+    });
+    _logSession('enter-game-complete');
+    _startServerSyncTimer();
+  }
+
+  void _selectGuide(LightcoreGuideProfile guideProfile) {
+    setState(() => _guideProfile = guideProfile);
+    unawaited(_sessionStore.writeGuideId(guideProfile.storageId));
+  }
+
+  void _setSkipGuestSignInPrompt(bool skipPrompt) {
+    if (_skipGuestSignInPrompt == skipPrompt) {
+      return;
+    }
+    setState(() => _skipGuestSignInPrompt = skipPrompt);
+    unawaited(_sessionStore.writeSkipGuestSignInPrompt(skipPrompt));
+  }
+
+  Future<LightcoreServerSyncResult?> _syncOfflineSnapshot() async {
+    final controller = _controller;
+    if (controller == null) {
+      return null;
+    }
+
+    try {
+      return await _backend.syncOfflineSnapshot(
+        controller.buildOfflineProgressSnapshot(),
+        clientVersion: _clientVersion.versionName,
+        clientBuildNumber: _clientVersion.buildNumber,
+      );
+    } on LightcoreSessionExpiredException {
+      rethrow;
+    } catch (error) {
+      // Snapshot sync is best-effort and should never block app lifecycle.
+      _logSession('server-sync-snapshot-error', <String, Object?>{
+        'error': error,
+      });
+      return null;
+    }
+  }
+
+  void _startServerSyncTimer() {
+    if (!_enteredGame || _controller == null) {
+      return;
+    }
+    _serverSyncTimer ??= Timer.periodic(_serverSyncInterval, (_) {
+      unawaited(_runServerSync());
+    });
+  }
+
+  void _stopServerSyncTimer() {
+    _serverSyncTimer?.cancel();
+    _serverSyncTimer = null;
+  }
+
+  Future<void> _resumeOnlineGameSession() async {
+    await _claimForegroundOfflineProgress();
+    await _runServerSync(forceCloudSave: true);
+  }
+
+  Future<void> _claimForegroundOfflineProgress() async {
+    final controller = _controller;
+    if (controller == null || !_cloudSaveEnabled) {
+      _logSession('offline-claim-skipped', <String, Object?>{
+        'hasController': controller != null,
+        'cloudSaveEnabled': _cloudSaveEnabled,
+      });
+      return;
+    }
+
+    try {
+      _logSession('offline-claim-start');
+      final claim = await _backend.claimOfflineProgress();
+      if (!_isCurrentGameController(controller)) {
+        _logSession('offline-claim-abandoned');
+        return;
+      }
+      if (!claim.hasRewards) {
+        _logSession('offline-claim-complete', <String, Object?>{
+          'hasRewards': false,
+          'status': claim.statusMessage,
+        });
+        return;
+      }
+      _logSession('offline-claim-complete', <String, Object?>{
+        'hasRewards': true,
+        'seconds': claim.secondsClaimed,
+        'lumens': claim.lumensGranted,
+        'flux': claim.fluxGranted,
+        'tickets': claim.enemyTicketsGranted,
+      });
+      controller.applyOfflineClaim(claim);
+      if (mounted) {
+        setState(() => _startupOfflineClaim = claim);
+      } else {
+        _startupOfflineClaim = claim;
+      }
+      await _flushCloudSave(force: true);
+    } on LightcoreSessionExpiredException catch (error) {
+      _logSession('offline-claim-session-expired', <String, Object?>{
+        'message': error.message,
+      });
+      _expireActiveSession(error.message);
+    } catch (error) {
+      // Foreground reward reconciliation retries on the next heartbeat/bootstrap.
+      _logSession('offline-claim-error', <String, Object?>{'error': error});
+    }
+  }
+
+  Future<void> _runServerSync({bool forceCloudSave = false}) async {
+    if (_serverSyncInFlight) {
+      _serverSyncPending = true;
+      _serverSyncPendingForceSave =
+          _serverSyncPendingForceSave || forceCloudSave;
+      if (forceCloudSave) {
+        _cloudSavePending = true;
+      }
+      return;
+    }
+
+    final controller = _controller;
+    if (controller == null || !_cloudSaveEnabled) {
+      _logSession('server-sync-skipped', <String, Object?>{
+        'hasController': controller != null,
+        'cloudSaveEnabled': _cloudSaveEnabled,
+        'forceCloudSave': forceCloudSave,
+      });
+      return;
+    }
+
+    _serverSyncInFlight = true;
+    _logSession('server-sync-start', <String, Object?>{
+      'forceCloudSave': forceCloudSave,
+    });
+    try {
+      final syncResult = await _syncOfflineSnapshot();
+      if (!_isCurrentGameController(controller)) {
+        _logSession('server-sync-abandoned');
+        return;
+      }
+      if (syncResult != null) {
+        _markServerSyncHealthy();
+        _logSession('server-sync-complete', <String, Object?>{
+          'accepted': syncResult.accepted,
+          'sessionId': _redact(syncResult.sessionId),
+          'versionGate': syncResult.versionGate,
+        });
+        _applyServerSyncResult(syncResult);
+      } else if (_enteredGame) {
+        _markServerSyncMissed();
+        _logSession('server-sync-missed', <String, Object?>{
+          'missedServerSyncs': _missedServerSyncs,
+          'maxMissedServerSyncs': _maxMissedServerSyncs,
+        });
+        if (_sessionShouldExpire) {
+          _expireActiveSession();
+          return;
+        }
+      }
+      await _flushCloudSave(force: forceCloudSave);
+    } on LightcoreSessionExpiredException catch (error) {
+      _logSession('server-sync-session-expired', <String, Object?>{
+        'message': error.message,
+      });
+      _expireActiveSession(error.message);
+    } finally {
+      _serverSyncInFlight = false;
+      if (_serverSyncPending && mounted) {
+        final pendingForceSave = _serverSyncPendingForceSave;
+        _serverSyncPending = false;
+        _serverSyncPendingForceSave = false;
+        unawaited(_runServerSync(forceCloudSave: pendingForceSave));
+      }
+    }
+  }
+
+  void _applyServerSyncResult(LightcoreServerSyncResult syncResult) {
+    final controller = _controller;
+    controller?.syncServerDateKeys(
+      dayKey: syncResult.serverDayKey,
+      weekKey: syncResult.serverWeekKey,
+    );
+    controller?.syncBalanceTuning(syncResult.manifest.balanceTuning);
+    controller?.syncPlayerProfile(syncResult.profile, showBanner: false);
+
+    final previous = _bootstrapReport;
+    if (previous == null) {
+      return;
+    }
+
+    final nextReport = LightcoreBootstrapReport(
+      guestSession: previous.guestSession,
+      clientVersion: _clientVersion.versionName,
+      clientBuildNumber: _clientVersion.buildNumber,
+      manifest: syncResult.manifest,
+      profile: syncResult.profile,
+      offlineClaim: previous.offlineClaim,
+      integrityLevel:
+          previous.integrityLevel == LightcoreIntegrityLevel.localOnly
+          ? LightcoreIntegrityLevel.degraded
+          : previous.integrityLevel,
+      firebaseReady: previous.firebaseReady,
+      serverValidated: true,
+      appCheckActive: previous.appCheckActive,
+      sessionId: syncResult.sessionId ?? previous.sessionId,
+      serverTime: syncResult.serverTime,
+      serverDayKey: syncResult.serverDayKey ?? previous.serverDayKey,
+      serverWeekKey: syncResult.serverWeekKey ?? previous.serverWeekKey,
+      cloudSave: _backend.cachedCloudSave,
+      cloudRestoreRequired: previous.cloudRestoreRequired,
+      cloudRestoreComplete: previous.cloudRestoreComplete,
+      warnings: previous.warnings,
+    );
+
+    if (!mounted) {
+      _bootstrapReport = nextReport;
+      return;
+    }
+
+    setState(() {
+      _bootstrapReport = nextReport;
+      if (_enteredGame && nextReport.hardBlocked) {
+        _enteredGame = false;
+        _isLinkingScreen = false;
+        _startupOfflineClaim = null;
+        _stopServerSyncTimer();
+      }
+    });
+  }
+
+  bool get _sessionShouldExpire => _missedServerSyncs >= _maxMissedServerSyncs;
+
+  bool get _hasActiveGame => _enteredGame && _controller != null;
+
+  bool _isCurrentGameController(LightcoreController controller) =>
+      mounted && identical(_controller, controller);
+
+  void _disposeControllerAfterExit(LightcoreController controller) {
+    Future<void>.delayed(_screenLinkDuration, () {
+      if (!identical(_controller, controller)) {
+        controller.dispose();
+      }
+    });
+  }
+
+  void _markServerSyncHealthy() {
+    _missedServerSyncs = 0;
+  }
+
+  void _markServerSyncMissed() {
+    _missedServerSyncs += 1;
+  }
+
+  void _expireActiveSession([String? message]) {
+    _logSession('session-expired', <String, Object?>{
+      'message': message,
+      'hadController': _controller != null,
+      'enteredGame': _enteredGame,
+      'isLinkingScreen': _isLinkingScreen,
+      'cloudSavePending': _cloudSavePending,
+      'cloudSaveInFlight': _cloudSaveInFlight,
+      'serverSyncInFlight': _serverSyncInFlight,
+    });
+    _stopServerSyncTimer();
+    _cloudSaveTimer?.cancel();
+    _cloudSaveTimer = null;
+    _cloudSavePending = false;
+    _serverSyncPending = false;
+    _serverSyncPendingForceSave = false;
+    _missedServerSyncs = 0;
+
+    final expiredController = _controller;
+    _observedController?.removeListener(_handleControllerChanged);
+    _observedController = null;
+
+    if (!mounted) {
+      _controller = null;
+      _enteredGame = false;
+      _isLinkingScreen = false;
+      _startupOfflineClaim = null;
+      _sessionNotice = _sessionExpiredMessage(message);
+      expiredController?.dispose();
+      return;
+    }
+
+    setState(() {
+      _controller = null;
+      _enteredGame = false;
+      _isLinkingScreen = false;
+      _startupOfflineClaim = null;
+      _sessionNotice = _sessionExpiredMessage(message);
+    });
+    if (expiredController != null) {
+      _disposeControllerAfterExit(expiredController);
+    }
+  }
+
+  void _refreshBattleSurface() {
+    if (!mounted) {
+      _battleSurfaceGeneration += 1;
+      return;
+    }
+    setState(() {
+      _battleSurfaceGeneration += 1;
+    });
+  }
+
+  String _sessionExpiredMessage(String? message) {
+    final normalized = message?.trim();
+    if (normalized != null && normalized.isNotEmpty) {
+      return normalized;
+    }
+    return 'Session expired. Reconnect to claim server-calculated offline progress.';
+  }
+
+  Future<void> _syncSocialOverview(LightcoreController controller) async {
+    try {
+      final overview = await _backend.fetchSocialOverview();
+      if (!_isCurrentGameController(controller)) {
+        return;
+      }
+      controller.syncSocialOverview(overview);
+    } catch (_) {
+      // Social bonuses are online-only and should not block entering the game.
+    }
+  }
+
+  Future<bool> _signInWithGoogle() async {
+    if (_authBusy) {
+      _logSession('google-sign-in-ignored', <String, Object?>{
+        'reason': 'auth-busy',
+      });
+      return false;
+    }
+    final controller = _controller;
+    final linkCurrentGame = _enteredGame && controller != null;
+    _logSession('google-sign-in-start', <String, Object?>{
+      'linkCurrentGame': linkCurrentGame,
+    });
+    setState(() => _authBusy = true);
+    try {
+      if (linkCurrentGame) {
+        await _flushCloudSave(force: true);
+      }
+      await _backend.signInWithGoogle(requireAnonymousLink: linkCurrentGame);
+      await _bootstrapMainMenu(reason: 'after-google-sign-in');
+      if (linkCurrentGame) {
+        final profile = _bootstrapReport?.profile;
+        if (profile != null) {
+          controller.syncPlayerProfile(profile, showBanner: false);
+        }
+        try {
+          await _backend.savePlayerSave(
+            controller.buildCloudSavePayload(),
+            clientVersion: _clientVersion.versionName,
+            clientBuildNumber: _clientVersion.buildNumber,
+          );
+          controller.pushNotification(
+            'Google account linked. This save can now recover on other devices.',
+            duration: 4.2,
+          );
+        } on LightcoreSessionExpiredException catch (error) {
+          _expireActiveSession(error.message);
+        } catch (_) {
+          controller.pushNotification(
+            'Google account linked. Cloud backup will retry when the backend is reachable.',
+            duration: 4.2,
+          );
+        }
+        unawaited(_syncSocialOverview(controller));
+      }
+      _logSession('google-sign-in-complete', <String, Object?>{
+        'linkCurrentGame': linkCurrentGame,
+      });
+      return true;
+    } catch (error) {
+      _logSession('google-sign-in-error', <String, Object?>{'error': error});
+      if (!mounted) {
+        return false;
+      }
+      final controller = _controller;
+      if (_enteredGame && controller != null) {
+        controller.pushNotification(
+          'Google sign-in failed: $error',
+          duration: 4.8,
+        );
+      } else {
+        _showSnackBar('Google sign-in failed: $error');
+      }
+      return false;
+    } finally {
+      if (mounted) {
+        setState(() => _authBusy = false);
+      }
+    }
+  }
+
+  Future<void> _signInWithGoogleFromSettings() async {
+    await _signInWithGoogle();
+  }
+
+  Future<void> _signOutToGuest() async {
+    if (_authBusy) {
+      return;
+    }
+    final controller = _controller;
+    final inGame = _enteredGame && controller != null;
+    setState(() => _authBusy = true);
+    try {
+      if (inGame) {
+        await _flushCloudSave(force: true);
+      }
+      await _backend.signOutToGuest();
+      await _bootstrapMainMenu(reason: 'after-sign-out');
+      if (inGame) {
+        final profile = _bootstrapReport?.profile;
+        if (profile != null) {
+          controller.syncPlayerProfile(profile, showBanner: false);
+        }
+        try {
+          await _backend.savePlayerSave(
+            controller.buildCloudSavePayload(),
+            clientVersion: _clientVersion.versionName,
+            clientBuildNumber: _clientVersion.buildNumber,
+          );
+        } on LightcoreSessionExpiredException catch (error) {
+          _expireActiveSession(error.message);
+        } catch (_) {
+          // A fresh guest session can keep playing locally if cloud init fails.
+        }
+        controller.pushNotification(
+          'Signed out of Google. This device is using guest cloud sync again.',
+          duration: 4.0,
+        );
+      }
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+      final controller = _controller;
+      if (_enteredGame && controller != null) {
+        controller.pushNotification('Sign-out failed: $error', duration: 4.8);
+      } else {
+        _showSnackBar('Sign-out failed: $error');
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _authBusy = false);
+      }
+    }
+  }
+
+  void _observeController(LightcoreController controller) {
+    if (_observedController == controller) {
+      return;
+    }
+    _observedController?.removeListener(_handleControllerChanged);
+    _observedController = controller;
+    controller.addListener(_handleControllerChanged);
+  }
+
+  void _handleControllerChanged() {
+    _markCloudSaveDirty();
+  }
+
+  void _logBootstrapReport(
+    String event,
+    LightcoreBootstrapReport? report, {
+    required String reason,
+  }) {
+    _logSession(event, <String, Object?>{
+      'reason': reason,
+      'hasReport': report != null,
+      'canEnterGame': report?.canEnterGame,
+      'firebaseReady': report?.firebaseReady,
+      'serverValidated': report?.serverValidated,
+      'appCheckActive': report?.appCheckActive,
+      'versionLabel': report?.versionLabel,
+      'versionGate': report?.versionGate.name,
+      'restoreRequired': report?.cloudRestoreRequired,
+      'restoreComplete': report?.cloudRestoreComplete,
+      'cloudSaveHasPayload': report?.cloudSave?.hasPayload,
+      'sessionId': _redact(report?.sessionId),
+      'profilePlayerId': _redact(report?.profile.playerId),
+      'authUid': _redact(report?.profile.authUid),
+      'warnings': report?.warnings.join(' | '),
+    });
+  }
+
+  void _logSession(
+    String event, [
+    Map<String, Object?> values = const <String, Object?>{},
+  ]) {
+    if (!_sessionDebugLoggingEnabled) {
+      return;
+    }
+    final details = values.entries
+        .where((entry) => entry.value != null)
+        .map((entry) => '${entry.key}=${entry.value}')
+        .join(' ');
+    debugPrint(
+      details.isEmpty
+          ? '[LightcoreSession] $event'
+          : '[LightcoreSession] $event $details',
+    );
+  }
+
+  void _showSnackBar(String message) {
+    final messenger = _scaffoldMessengerKey.currentState;
+    if (messenger == null) {
+      return;
+    }
+    messenger
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  bool get _cloudSaveEnabled =>
+      _bootstrapReport?.firebaseReady == true &&
+      _backend.canUseCloudSave &&
+      _controller != null;
+
+  static bool get _sessionDebugLoggingEnabled =>
+      const bool.fromEnvironment('LIGHTCORE_SESSION_DEBUG') ||
+      Uri.base.queryParameters['sessionDebug'] == '1' ||
+      Uri.base.queryParameters['debugErrors'] == '1';
+
+  String _launchBlocker(LightcoreBootstrapReport? report) {
+    if (report == null) {
+      return 'no-bootstrap-report';
+    }
+    if (report.manifest.maintenanceMode) {
+      return 'maintenance-mode';
+    }
+    if (!report.versionResolved) {
+      return 'server-validation-missing';
+    }
+    if (!report.latestVersionSatisfied) {
+      return 'version-blocked:${report.requiredServerVersion}';
+    }
+    if (!report.contentResolved) {
+      return 'content-verification-failed';
+    }
+    if (!report.restoreResolved) {
+      return 'cloud-restore-incomplete';
+    }
+    if (!report.canEnterGame) {
+      return 'can-enter-false';
+    }
+    return 'none';
+  }
+
+  String? _redact(String? value) {
+    final normalized = value?.trim();
+    if (normalized == null || normalized.isEmpty) {
+      return null;
+    }
+    if (normalized.length <= 8) {
+      return normalized;
+    }
+    return '${normalized.substring(0, 4)}...${normalized.substring(normalized.length - 4)}';
+  }
+
+  void _markCloudSaveDirty() {
+    if (!_cloudSaveEnabled) {
+      return;
+    }
+    _cloudSavePending = true;
+    _cloudSaveTimer ??= Timer(_cloudSaveDebounce, () {
+      _cloudSaveTimer = null;
+      unawaited(_flushCloudSave());
+    });
+  }
+
+  Future<void> _flushCloudSave({bool force = false}) async {
+    if (!_cloudSaveEnabled) {
+      return;
+    }
+    if (force) {
+      _cloudSavePending = true;
+    }
+    if (!_cloudSavePending) {
+      return;
+    }
+    if (_cloudSaveInFlight) {
+      _cloudSavePending = true;
+      return;
+    }
+
+    final controller = _controller;
+    if (controller == null) {
+      return;
+    }
+    _cloudSaveTimer?.cancel();
+    _cloudSaveTimer = null;
+    _cloudSavePending = false;
+    _cloudSaveInFlight = true;
+    try {
+      await _backend.savePlayerSave(
+        controller.buildCloudSavePayload(),
+        clientVersion: _clientVersion.versionName,
+        clientBuildNumber: _clientVersion.buildNumber,
+      );
+      if (!_isCurrentGameController(controller)) {
+        return;
+      }
+      if (controller.globalTowerStrengthRankNeedsRefresh) {
+        unawaited(_syncSocialOverview(controller));
+      }
+    } on LightcoreSessionExpiredException catch (error) {
+      _expireActiveSession(error.message);
+    } catch (_) {
+      _cloudSavePending = true;
+      if (mounted) {
+        _cloudSaveTimer ??= Timer(_cloudSaveDebounce, () {
+          _cloudSaveTimer = null;
+          unawaited(_flushCloudSave());
+        });
+      }
+    } finally {
+      _cloudSaveInFlight = false;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final controller = _controller;
+    final hasActiveGame = _enteredGame && controller != null;
+    final currentScreen = _isLinkingScreen
+        ? const KeyedSubtree(
+            key: ValueKey<String>('lightcore-screen-link'),
+            child: LightcoreLoadingScreen(
+              title: 'Opening Shell',
+              subtitle: 'Routing command through the tower lattice.',
+              statusLabel: 'Screen Link',
+              accent: LightcorePalette.aether,
+              signalLabels: ['SYNC', 'LINK', 'ARM'],
+            ),
+          )
+        : hasActiveGame
+        ? KeyedSubtree(
+            key: const ValueKey<String>('lightcore-shell'),
+            child: LightcoreShell(
+              controller: controller,
+              backend: _backend,
+              battleSurfaceGeneration: _battleSurfaceGeneration,
+              clientDisplayVersion: _clientVersion.displayVersion,
+              initialOfflineClaim: _startupOfflineClaim,
+              initialSocialInvite: _startupSocialInvite,
+              authBusy: _authBusy,
+              onGoogleSignIn: _signInWithGoogleFromSettings,
+              onSignOut: _signOutToGuest,
+            ),
+          )
+        : KeyedSubtree(
+            key: const ValueKey<String>('lightcore-main-menu'),
+            child: LightcoreMainMenuScreen(
+              guestSession: _guestSession,
+              bootstrapReport: _bootstrapReport,
+              guideProfile: _guideProfile,
+              isLoading: _isBootstrapping,
+              onEnterGame: _enterGame,
+              onSelectGuide: _selectGuide,
+              onRetryBootstrap: () => unawaited(_bootstrapMainMenu()),
+              authBusy: _authBusy,
+              sessionNotice: _sessionNotice,
+              skipGuestSignInPrompt: _skipGuestSignInPrompt,
+              onGoogleSignIn: _signInWithGoogle,
+              onSkipGuestSignInPromptChanged: _setSkipGuestSignInPrompt,
+            ),
+          );
+
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      title: 'Lightcore',
+      theme: buildLightcoreTheme(),
+      scaffoldMessengerKey: _scaffoldMessengerKey,
+      home: Scaffold(
+        backgroundColor: LightcorePalette.night,
+        body: LightcoreTransitionSwitcher(
+          duration: const Duration(milliseconds: 650),
+          switchInCurve: Curves.easeOutCubic,
+          switchOutCurve: Curves.easeInCubic,
+          enterOffset: hasActiveGame ? const Offset(0, 0.045) : Offset.zero,
+          tint: hasActiveGame
+              ? LightcorePalette.verdant
+              : LightcorePalette.aether,
+          child: currentScreen,
+        ),
+      ),
+    );
+  }
+}
+
+class _ResolvedClientVersion {
+  const _ResolvedClientVersion({
+    required this.versionName,
+    required this.buildNumber,
+  });
+
+  final String versionName;
+  final String buildNumber;
+
+  String get displayVersion {
+    final version = versionName.trim();
+    final build = buildNumber.trim();
+    if (build.isEmpty) {
+      return version;
+    }
+    return '$version+$build';
+  }
+}
+
+_ResolvedClientVersion _normalizeClientVersion({
+  required String versionName,
+  required String buildNumber,
+}) {
+  const fallback = _ResolvedClientVersion(
+    versionName: LightcoreBuildInfo.versionName,
+    buildNumber: LightcoreBuildInfo.buildNumber,
+  );
+  final resolvedVersion = versionName.trim();
+  final resolvedBuild = buildNumber.trim();
+  if (resolvedVersion.isEmpty) {
+    return fallback;
+  }
+
+  final versionCompare = compareVersionStrings(
+    resolvedVersion,
+    fallback.versionName,
+  );
+  if (versionCompare < 0) {
+    return fallback;
+  }
+
+  if (versionCompare == 0) {
+    final build = resolvedBuild.isEmpty ? fallback.buildNumber : resolvedBuild;
+    if (_compareBuildNumbers(build, fallback.buildNumber) < 0) {
+      return fallback;
+    }
+    return _ResolvedClientVersion(
+      versionName: resolvedVersion,
+      buildNumber: build,
+    );
+  }
+
+  return _ResolvedClientVersion(
+    versionName: resolvedVersion,
+    buildNumber: resolvedBuild,
+  );
+}
+
+int _compareBuildNumbers(String left, String right) {
+  return _buildNumberValue(left).compareTo(_buildNumberValue(right));
+}
+
+int _buildNumberValue(String value) {
+  final digits = RegExp(r'\d+').firstMatch(value.trim())?.group(0);
+  return int.tryParse(digits ?? '0') ?? 0;
+}

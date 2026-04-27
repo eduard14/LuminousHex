@@ -1,0 +1,803 @@
+part of '../lightcore_controller.dart';
+
+extension LightcoreControllerBattleEnemyActions on LightcoreController {
+  List<PackPullResult> openEnemyTickets(int count) {
+    if (count <= 0 || enemyTickets < count) {
+      return const <PackPullResult>[];
+    }
+
+    final previousSummoningLevel = summoningLevel;
+    enemyTickets -= count;
+    final pulls = <PackPullResult>[];
+    for (var draw = 0; draw < count; draw++) {
+      final scriptedConfig = _scriptedEnemyPullForTutorial();
+      final config =
+          scriptedConfig ??
+          (() {
+            final rarity = _rollPackRarity();
+            final pool = EnemyLibrary.byRarity[rarity]!;
+            return pool[_packRandom.nextInt(pool.length)];
+          })();
+      enemyPullCount += 1;
+      final cardIndex = _enemyCards.indexWhere(
+        (card) => card.config.id == config.id,
+      );
+      final current = _enemyCards[cardIndex];
+      final wasNew = !current.unlocked;
+      _enemyCards[cardIndex] = current.copyWith(
+        unlocked: true,
+        copies: current.copies + 1,
+      );
+      pulls.add(PackPullResult(config: config, isNew: wasNew));
+      if (wasNew && _activeEnemyCardIds.length < enemyDeckLimit) {
+        _activeEnemyCardIds.add(config.id);
+      }
+    }
+
+    final levelRewardTickets = _grantSummoningLevelTicketRewards(
+      previousLevel: previousSummoningLevel,
+      currentLevel: summoningLevel,
+    );
+    _advanceBattlePass(BattlePassType.enemyPulls, count);
+    _lastEnemyPackPulls = pulls;
+    var message =
+        'Resolved $count threat scan${count == 1 ? '' : 's'}: ${pulls.take(4).map((pull) => pull.config.name).join(', ')}${pulls.length > 4 ? '...' : ''}.';
+    if (levelRewardTickets > 0) {
+      message +=
+          ' Scan Lv $summoningLevel reached: ${LightcoreCurrencyLabels.rewardThreatScans(levelRewardTickets)}.';
+    }
+    _showBanner(message);
+    _syncTutorialStep(showBanner: false);
+    _notifyNow();
+    return List<PackPullResult>.unmodifiable(pulls);
+  }
+
+  List<PackPullResult> tutorialOpenEnemyTickets(int count) {
+    if ((_tutorialStep == LightcoreTutorialStep.pullFirstWhiteEnemy ||
+            _tutorialStep == LightcoreTutorialStep.pullFirstRedEnemy) &&
+        count != 1) {
+      _showBanner('Resolve exactly 1 threat scan for this lesson.');
+      _notifyNow();
+      return const <PackPullResult>[];
+    }
+    return openEnemyTickets(count);
+  }
+
+  List<PackPullResult> openBossTickets(int count) {
+    if (!bossHuntsUnlocked || count <= 0 || bossTickets < count) {
+      return const <PackPullResult>[];
+    }
+
+    final previousSummoningLevel = bossSummoningLevel;
+    bossTickets -= count;
+    final pulls = <PackPullResult>[];
+    for (var draw = 0; draw < count; draw++) {
+      final config = _shouldScriptBossPullTutorial
+          ? BossEnemyLibrary.starterWhiteWarden
+          : (() {
+              final rarity = _rollBossPackRarity();
+              final pool = BossEnemyLibrary.byRarity[rarity]!;
+              return pool[_packRandom.nextInt(pool.length)];
+            })();
+      bossPullCount += 1;
+      final cardIndex = _bossEnemyCards.indexWhere(
+        (card) => card.config.id == config.id,
+      );
+      final current = _bossEnemyCards[cardIndex];
+      final wasNew = !current.unlocked;
+      _bossEnemyCards[cardIndex] = current.copyWith(
+        unlocked: true,
+        copies: current.copies + 1,
+      );
+      pulls.add(PackPullResult(config: config, isNew: wasNew));
+    }
+
+    final levelRewardTickets = _grantBossSummoningLevelTicketRewards(
+      previousLevel: previousSummoningLevel,
+      currentLevel: bossSummoningLevel,
+    );
+    _lastBossPackPulls = pulls;
+    var message =
+        'Resolved $count apex scan${count == 1 ? '' : 's'}: ${pulls.take(4).map((pull) => pull.config.name).join(', ')}${pulls.length > 4 ? '...' : ''}.';
+    if (levelRewardTickets > 0) {
+      message +=
+          ' Apex Scan Lv $bossSummoningLevel reached: ${LightcoreCurrencyLabels.rewardBossScans(levelRewardTickets)}.';
+    }
+    _showBanner(message);
+    _syncTutorialStep(showBanner: false);
+    _notifyNow();
+    return List<PackPullResult>.unmodifiable(pulls);
+  }
+
+  List<PackPullResult> tutorialOpenBossTickets(int count) {
+    if (_tutorialStep == LightcoreTutorialStep.openBossPulls && count != 1) {
+      _showBanner(
+        'Resolve exactly 1 apex scan so the first Apex lesson stays readable.',
+      );
+      _notifyNow();
+      return const <PackPullResult>[];
+    }
+    return openBossTickets(count);
+  }
+
+  bool tutorialArmBossEnemyCard(String cardId) {
+    if (_tutorialStep == LightcoreTutorialStep.armFirstBoss &&
+        cardId != BossEnemyLibrary.starterWhiteWarden.id) {
+      _showBanner(
+        'Arm White Warden first so the tutorial can script the opening Apex win.',
+      );
+      _notifyNow();
+      return false;
+    }
+    final before = activeBossEnemyCard?.config.id;
+    setActiveBossEnemyCard(cardId);
+    return activeBossEnemyCard?.config.id != before;
+  }
+
+  void markTutorialPlayerManagerOpened() {
+    if (_tutorialStep != LightcoreTutorialStep.openEquipment) {
+      return;
+    }
+    _tutorialFirstEquipmentOpened = true;
+    _syncTutorialStep(showBanner: false);
+    _notifyNow();
+  }
+
+  void markTutorialTowerMatrixOpened() {
+    if (_tutorialTowerMatrixOpened) {
+      return;
+    }
+    _tutorialTowerMatrixOpened = true;
+    _syncTutorialStep(showBanner: false);
+    _notifyNow();
+  }
+
+  void markTutorialStabilityPanelOpened() {
+    if (_tutorialStabilityPanelOpened) {
+      return;
+    }
+    _tutorialStabilityPanelOpened = true;
+    _ensureStarterCoreManagerForTutorial();
+    _syncTutorialStep(showBanner: false);
+    _notifyNow();
+  }
+
+  void markTutorialStoreOpened() {
+    if (_tutorialStoreOpened) {
+      return;
+    }
+    _tutorialStoreOpened = true;
+    _syncTutorialStep(showBanner: false);
+    _notifyNow();
+  }
+
+  void markTutorialManagersOpened() {
+    if (!managersUnlocked || _tutorialFirstManagersOpened) {
+      return;
+    }
+    _tutorialFirstManagersOpened = true;
+    _syncTutorialStep(showBanner: false);
+    _notifyNow();
+  }
+
+  void markTutorialFriendsOpened() {
+    if (_tutorialFriendsOpened) {
+      return;
+    }
+    _tutorialFriendsOpened = true;
+    _syncTutorialStep(showBanner: false);
+    _notifyNow();
+  }
+
+  void markTutorialMenteesOpened() {
+    markTutorialMentorshipOpened();
+  }
+
+  void markTutorialMentorshipOpened() {
+    if (!mentorshipUnlocked) {
+      return;
+    }
+    if (_tutorialMenteesOpened && _tutorialMentorsOpened) {
+      return;
+    }
+    _tutorialMenteesOpened = true;
+    _tutorialMentorsOpened = true;
+    _syncTutorialStep(showBanner: false);
+    _notifyNow();
+  }
+
+  void markTutorialMentorsOpened() {
+    markTutorialMentorshipOpened();
+  }
+
+  void markTutorialTournamentModeReviewed(LightcoreTournamentModeId mode) {
+    final targetMode = tutorialTournamentModeTarget;
+    if (targetMode != mode || _reviewedTournamentTutorialModes.contains(mode)) {
+      return;
+    }
+    _reviewedTournamentTutorialModes.add(mode);
+    _syncTutorialStep(showBanner: false);
+    _notifyNow();
+  }
+
+  void debugAddEnemyTickets(int count) {
+    if (!kDebugMode || count <= 0) {
+      return;
+    }
+    enemyTickets += count;
+    _showBanner('Debug: ${LightcoreCurrencyLabels.rewardThreatScans(count)}.');
+    _notifyNow();
+  }
+
+  void debugSetSummoningLevel(int level) {
+    if (!kDebugMode) {
+      return;
+    }
+    final normalizedLevel = min(maxSummoningLevel, max(1, level));
+    enemyPullCount = summoningLevelPullTargetForLevel(normalizedLevel);
+    _showBanner(
+      'Debug: Summoning Level $summoningLevel • Peak ${highestAvailableEnemyPullRarity.label} anomaly.',
+    );
+    _notifyNow();
+  }
+
+  void selectEnemyCard(String cardId) {
+    final card = enemyCardById(cardId);
+    if (card == null || !card.isOwned) {
+      return;
+    }
+    selectedEnemyCardId = cardId;
+    if (_tutorialStep == LightcoreTutorialStep.setFirstEnemyTarget &&
+        cardId == EnemyLibrary.basicRed.id) {
+      _tutorialFirstEnemyTargetSet = true;
+      _syncTutorialStep(showBanner: false);
+    }
+    _notifyNow();
+  }
+
+  void toggleEnemyCardSelection(String cardId) {
+    final card = enemyCardById(cardId);
+    if (card == null || !card.isOwned) {
+      return;
+    }
+
+    if (_activeEnemyCardIds.contains(cardId)) {
+      if (_activeEnemyCardIds.length == 1) {
+        _showBanner('Keep at least one anomaly card active in the deck.');
+        _notifyNow();
+        return;
+      }
+      _activeEnemyCardIds.remove(cardId);
+      if (selectedEnemyCardId == cardId) {
+        selectedEnemyCardId = _activeEnemyCardIds.isEmpty
+            ? null
+            : _activeEnemyCardIds.first;
+      }
+      _showBanner('${card.config.name} removed from the active anomaly deck.');
+      _notifyNow();
+      return;
+    }
+
+    if (_activeEnemyCardIds.length >= enemyDeckLimit) {
+      _showBanner('Anomaly deck is full. Remove a card before adding another.');
+      _notifyNow();
+      return;
+    }
+
+    _activeEnemyCardIds.add(cardId);
+    selectedEnemyCardId ??= cardId;
+    _showBanner('${card.config.name} added to the active anomaly deck.');
+    _notifyNow();
+  }
+
+  void setActiveBossEnemyCard(String cardId) {
+    final card = bossEnemyCardById(cardId);
+    if (card == null || !card.isOwned || _activeBossEnemyCardId == cardId) {
+      return;
+    }
+
+    _activeBossEnemyCardId = cardId;
+    activeLayer.activeBossEnemyCardId = cardId;
+    if (_tutorialStep == LightcoreTutorialStep.armFirstBoss) {
+      activeLayer.bossReady = true;
+      activeLayer.normalKillsSinceBoss = bossSpawnKillRequirement;
+      _tutorialIntroBossPending = true;
+      _tutorialTrackedBossEnemyId = null;
+      _spawnTimer = min(_spawnTimer, 0.01);
+      _syncTutorialStep(showBanner: false);
+    }
+    _showBanner('${card.config.name} armed as the next Apex spawn.');
+    _notifyNow();
+  }
+
+  bool setEnemyTargetCount(int value) {
+    final nextValue = _normalizeEnemyTargetCount(value);
+    if (nextValue == _enemyTargetCount) {
+      return false;
+    }
+
+    _enemyTargetCount = nextValue;
+    if (_tutorialStep == LightcoreTutorialStep.adjustEnemyCount &&
+        nextValue > enemyTargetFloor) {
+      _tutorialEnemyCountAdjusted = true;
+      _syncTutorialStep(showBanner: false);
+    }
+    _notifyNow();
+    return true;
+  }
+
+  bool upgradeEnemyTargetMax() {
+    if (!canUpgradeEnemyTargetMax) {
+      return false;
+    }
+
+    final cost = enemyTargetUpgradeCost;
+    if (lumens < cost) {
+      return false;
+    }
+
+    final previousMax = enemyTargetMax;
+    lumens -= cost;
+    _recordLumenSpend(cost);
+    _recordUpgradePurchase();
+    _enemyTargetUpgradeLevel = _normalizeEnemyTargetUpgradeLevel(
+      _enemyTargetUpgradeLevel + 1,
+    );
+    final nextMax = enemyTargetMax;
+    if (_enemyTargetCount == previousMax) {
+      _enemyTargetCount = nextMax;
+    } else {
+      _enemyTargetCount = _normalizeEnemyTargetCount(_enemyTargetCount);
+    }
+    _showBanner('Swarm ceiling raised to $nextMax anomalies.');
+    _notifyNow();
+    return true;
+  }
+
+  bool forgeTowerManager() {
+    if (!managersUnlocked) {
+      _showBanner(
+        'Managers unlock at Account Radiance Lv $managerUnlockLevel.',
+      );
+      _notifyNow();
+      return false;
+    }
+    if (flux < towerManagerFluxCost) {
+      return false;
+    }
+
+    flux -= towerManagerFluxCost;
+    _recordFluxSpend(towerManagerFluxCost);
+    final manager = _generateTowerManager(forgeCost: towerManagerFluxCost);
+    _cards.add(manager);
+    _totalManagersForged += 1;
+    towerManagerPullCount += 1;
+    _advanceBattlePass(BattlePassType.towerManagerPulls, 1);
+    _syncTutorialStep(showBanner: false);
+    _showBanner('${manager.name} forged in the Core Manager foundry.');
+    _notifyNow();
+    return true;
+  }
+
+  bool forgeEnemyManager() {
+    if (!managersUnlocked) {
+      _showBanner(
+        'Managers unlock at Account Radiance Lv $managerUnlockLevel.',
+      );
+      _notifyNow();
+      return false;
+    }
+    if (flux < enemyManagerFluxCost) {
+      return false;
+    }
+
+    flux -= enemyManagerFluxCost;
+    _recordFluxSpend(enemyManagerFluxCost);
+    final manager = _generateEnemyManager(forgeCost: enemyManagerFluxCost);
+    _enemyManagers.add(manager);
+    _totalManagersForged += 1;
+    enemyManagerPullCount += 1;
+    _advanceBattlePass(BattlePassType.enemyManagerPulls, 1);
+    _syncTutorialStep(showBanner: false);
+    _showBanner('${manager.name} forged in the Threat Director foundry.');
+    _notifyNow();
+    return true;
+  }
+
+  bool dismantleTowerManager(String managerId) {
+    final index = _cards.indexWhere((card) => card.instanceId == managerId);
+    if (index == -1) {
+      return false;
+    }
+
+    final manager = _cards[index];
+    for (final layer in _layers) {
+      for (var slotIndex = 0; slotIndex < layer.slots.length; slotIndex++) {
+        final slot = layer.slots[slotIndex];
+        if (slot.equippedCardInstanceId == manager.instanceId) {
+          layer.slots[slotIndex] = slot.copyWith(
+            automationCooldownRemaining: 0,
+            clearEquippedCard: true,
+          );
+        }
+      }
+    }
+    flux += max(1, manager.dismantleFlux);
+    _cards.removeAt(index);
+    _showBanner(
+      '${manager.name} dismantled for ${LightcoreCurrencyLabels.fluxCount(manager.dismantleFlux)}.',
+    );
+    _notifyNow();
+    return true;
+  }
+
+  bool dismantleEnemyManager(String managerId) {
+    final index = _enemyManagers.indexWhere(
+      (manager) => manager.instanceId == managerId,
+    );
+    if (index == -1) {
+      return false;
+    }
+
+    final manager = _enemyManagers[index];
+    flux += max(1, manager.dismantleFlux);
+    _enemyManagers.removeAt(index);
+    _showBanner(
+      '${manager.name} dismantled for ${LightcoreCurrencyLabels.fluxCount(manager.dismantleFlux)}.',
+    );
+    _notifyNow();
+    return true;
+  }
+
+  void assignEnemyManagerToSelected(String managerId) {
+    assignEnemyManagerToCore(managerId);
+  }
+
+  void assignEnemyManagerToCore(String managerId) {
+    if (!managerAssignmentUnlocked) {
+      _showBanner('Manager assignment unlocks with a Layer 2 Core.');
+      _notifyNow();
+      return;
+    }
+    final managerIndex = _enemyManagers.indexWhere(
+      (manager) => manager.instanceId == managerId,
+    );
+    if (managerIndex == -1) {
+      return;
+    }
+
+    for (var index = 0; index < _enemyManagers.length; index++) {
+      final manager = _enemyManagers[index];
+      if (index != managerIndex && manager.assignedLayerId == activeLayer.id) {
+        _enemyManagers[index] = manager.copyWith(clearAssignment: true);
+      }
+    }
+
+    _enemyManagers[managerIndex] = _enemyManagers[managerIndex].copyWith(
+      assignedLayerId: activeLayer.id,
+      clearAssignedEnemyCard: true,
+    );
+    if (_tutorialStep == LightcoreTutorialStep.assignEnemyManager) {
+      _tutorialEnemyManagerAssigned = true;
+      _syncTutorialStep(showBanner: false);
+    }
+    _showBanner(
+      '${_enemyManagers[managerIndex].name} assigned to the Tower Core for all enemies.',
+    );
+    _notifyNow();
+  }
+
+  void assignEnemyManagerToCard(String managerId, String enemyCardId) {
+    final enemyCard = enemyCardById(enemyCardId);
+    if (enemyCard != null && enemyCard.isOwned) {
+      selectedEnemyCardId = enemyCardId;
+    }
+    assignEnemyManagerToCore(managerId);
+  }
+
+  void clearEnemyCoreManager() {
+    final manager = _enemyCoreManagerForLayer(activeLayer);
+    if (manager == null) {
+      return;
+    }
+    for (var index = 0; index < _enemyManagers.length; index++) {
+      final candidate = _enemyManagers[index];
+      if (candidate.assignedLayerId == activeLayer.id) {
+        _enemyManagers[index] = candidate.copyWith(clearAssignment: true);
+      }
+    }
+    _showBanner('Threat Director removed from the Tower Core.');
+    _notifyNow();
+  }
+
+  void clearEnemyManagerFromCard(String enemyCardId) {
+    final enemyCard = enemyCardById(enemyCardId);
+    if (enemyCard != null && enemyCard.isOwned) {
+      selectedEnemyCardId = enemyCardId;
+    }
+    clearEnemyCoreManager();
+  }
+
+  int enemyLevelCap(EnemyCardState card) => card.config.rarity.levelCap;
+
+  int enemyUpgradeRequirement(EnemyCardState card) {
+    final interval = switch (card.config.rarity) {
+      EnemyCardRarity.basic => 8,
+      EnemyCardRarity.uncommon => 6,
+      EnemyCardRarity.rare => 5,
+      EnemyCardRarity.epic => 3,
+      EnemyCardRarity.legendary => 2,
+    };
+    final base = switch (card.config.rarity) {
+      EnemyCardRarity.basic => 1,
+      EnemyCardRarity.uncommon => 2,
+      EnemyCardRarity.rare => 3,
+      EnemyCardRarity.epic => 4,
+      EnemyCardRarity.legendary => 5,
+    };
+    return base + ((card.level - 1) ~/ interval);
+  }
+
+  int enemyMergeRequirement(EnemyCardState card) =>
+      switch (card.config.rarity) {
+        EnemyCardRarity.basic => 20,
+        EnemyCardRarity.uncommon => 15,
+        EnemyCardRarity.rare => 10,
+        EnemyCardRarity.epic => 6,
+        EnemyCardRarity.legendary => 0,
+      };
+
+  bool canUpgradeEnemyCard(EnemyCardState card) =>
+      card.isOwned &&
+      card.level < enemyLevelCap(card) &&
+      card.copies >= enemyUpgradeRequirement(card);
+
+  bool canMergeEnemyCard(EnemyCardState card) =>
+      card.isOwned &&
+      card.level >= enemyLevelCap(card) &&
+      card.config.rarity.nextRarity != null &&
+      card.copies >= enemyMergeRequirement(card);
+
+  // TODO(full-game): Enemy-card upgrades should be a transactional inventory
+  // write on the server. The client should request an upgrade and reconcile the
+  // returned profile state instead of consuming copies locally.
+  bool upgradeEnemyCard(String cardId) {
+    final cardIndex = _enemyCards.indexWhere(
+      (card) => card.config.id == cardId,
+    );
+    if (cardIndex == -1) {
+      return false;
+    }
+
+    final card = _enemyCards[cardIndex];
+    final requirement = enemyUpgradeRequirement(card);
+    if (!card.isOwned ||
+        card.level >= enemyLevelCap(card) ||
+        card.copies < requirement) {
+      return false;
+    }
+
+    _enemyCards[cardIndex] = card.copyWith(
+      copies: card.copies - requirement,
+      level: card.level + 1,
+    );
+    _recordUpgradePurchase();
+    _showBanner('${card.config.name} upgraded to level ${card.level + 1}.');
+    _notifyNow();
+    return true;
+  }
+
+  int upgradeAllReadyEnemyCards() {
+    var upgradedCount = 0;
+
+    while (true) {
+      final readyCards = _enemyCards
+          .where(canUpgradeEnemyCard)
+          .toList(growable: false);
+      if (readyCards.isEmpty) {
+        break;
+      }
+
+      readyCards.sort((left, right) {
+        final rarityCompare = left.config.rarity.index.compareTo(
+          right.config.rarity.index,
+        );
+        if (rarityCompare != 0) {
+          return rarityCompare;
+        }
+        final levelCompare = left.level.compareTo(right.level);
+        if (levelCompare != 0) {
+          return levelCompare;
+        }
+        return left.config.id.compareTo(right.config.id);
+      });
+
+      final nextCardId = readyCards.first.config.id;
+      final nextIndex = _enemyCards.indexWhere(
+        (card) => card.config.id == nextCardId,
+      );
+      if (nextIndex == -1) {
+        break;
+      }
+
+      final card = _enemyCards[nextIndex];
+      final requirement = enemyUpgradeRequirement(card);
+      if (!card.isOwned ||
+          card.level >= enemyLevelCap(card) ||
+          card.copies < requirement) {
+        break;
+      }
+
+      _enemyCards[nextIndex] = card.copyWith(
+        copies: card.copies - requirement,
+        level: card.level + 1,
+      );
+      _recordUpgradePurchase();
+      upgradedCount++;
+    }
+
+    if (upgradedCount == 0) {
+      return 0;
+    }
+
+    _showBanner(
+      upgradedCount == 1
+          ? 'Bulk leveled 1 anomaly card.'
+          : 'Bulk leveled $upgradedCount anomaly levels.',
+    );
+    _notifyNow();
+    return upgradedCount;
+  }
+
+  bool mergeEnemyCard(String cardId) {
+    final cardIndex = _enemyCards.indexWhere(
+      (card) => card.config.id == cardId,
+    );
+    if (cardIndex == -1) {
+      return false;
+    }
+
+    return _mergeEnemyCardAtIndex(cardIndex);
+  }
+
+  int mergeAllReadyEnemyCards() {
+    var mergedCount = 0;
+
+    while (true) {
+      final readyCards = _enemyCards
+          .where(canMergeEnemyCard)
+          .toList(growable: false);
+      if (readyCards.isEmpty) {
+        break;
+      }
+
+      readyCards.sort((left, right) {
+        final rarityCompare = left.config.rarity.index.compareTo(
+          right.config.rarity.index,
+        );
+        if (rarityCompare != 0) {
+          return rarityCompare;
+        }
+        return left.config.id.compareTo(right.config.id);
+      });
+      final nextCardId = readyCards.first.config.id;
+      final nextIndex = _enemyCards.indexWhere(
+        (card) => card.config.id == nextCardId,
+      );
+      if (nextIndex == -1 ||
+          !_mergeEnemyCardAtIndex(
+            nextIndex,
+            showBanner: false,
+            notify: false,
+          )) {
+        break;
+      }
+      mergedCount++;
+    }
+
+    if (mergedCount == 0) {
+      return 0;
+    }
+
+    _showBanner(
+      mergedCount == 1
+          ? 'Mass fused 1 anomaly card.'
+          : 'Mass fused $mergedCount anomaly cards.',
+    );
+    _notifyNow();
+    return mergedCount;
+  }
+
+  bool rerollTowerProjectile(int slotIndex) {
+    if (slotIndex < 0 || slotIndex >= _slots.length) {
+      return false;
+    }
+    final tower = _slots[slotIndex];
+    final rerollCost = currentTraitRefreshCost;
+    if (!tower.isBuilt || tower.isChildLayerNode || lumens < rerollCost) {
+      return false;
+    }
+
+    lumens -= rerollCost;
+    final nextType = _rollProjectileTrait(tower.config!);
+    _slots[slotIndex] = tower.copyWith(projectileType: nextType);
+    _showBanner('${towerDisplayName(tower)} rerolled to ${nextType.label}.');
+    _notifyNow();
+    return true;
+  }
+
+  bool rerollTowerPayload(int slotIndex) {
+    if (!payloadsUnlocked) {
+      _showBanner('Payloads unlock in the Prism Shell.');
+      _notifyNow();
+      return false;
+    }
+    if (slotIndex < 0 || slotIndex >= _slots.length) {
+      return false;
+    }
+    final tower = _slots[slotIndex];
+    final rerollCost = currentTraitRefreshCost;
+    if (!tower.isBuilt || tower.isChildLayerNode || lumens < rerollCost) {
+      return false;
+    }
+
+    lumens -= rerollCost;
+    final nextType = _rollPayloadTrait(tower.config!);
+    _slots[slotIndex] = tower.copyWith(payloadType: nextType);
+    _showBanner(
+      '${towerDisplayName(tower)} payload rerolled to ${nextType.label}.',
+    );
+    _notifyNow();
+    return true;
+  }
+
+  bool rerollPromotedChildTower(int slotIndex) {
+    if (slotIndex < 0 || slotIndex >= _slots.length) {
+      return false;
+    }
+    final tower = _slots[slotIndex];
+    final childLayerId = tower.childLayerId;
+    if (!tower.isPromotedChildTower || childLayerId == null || echoSeeds <= 0) {
+      return false;
+    }
+
+    final childLayer = _layerById(childLayerId);
+    childLayer.promotionTraitRoll += 1;
+    echoSeeds -= 1;
+    _syncParentSlotFromLayer(childLayer);
+    final rerolledTower = _slots[slotIndex];
+    _showBanner(
+      'Echo Seed spent on ${towerDisplayName(rerolledTower)}. ${towerProjectileLabel(rerolledTower)} projectile • ${towerPayloadLabel(rerolledTower)} payload.',
+    );
+    _notifyNow();
+    return true;
+  }
+
+  double enemyCardPreviewHealth(EnemyCardState card) {
+    return _balancedEnemyStat(
+          card.config,
+          'baseHealth',
+          card.config.baseHealth,
+        ) *
+        _enemyCardLevelHealthScale(card.level);
+  }
+
+  int enemyCardPreviewReward(EnemyCardState card) {
+    return max(
+      1,
+      (_balancedEnemyStat(
+                card.config,
+                'reward',
+                card.config.reward.toDouble(),
+              ) *
+              _enemyCardLevelLumenScale(card.level))
+          .round(),
+    );
+  }
+
+  int enemyCardPreviewExperience(EnemyCardState card) =>
+      _experienceRewardForEnemyCard(card);
+
+  int enemyCardPreviewKillCredit(EnemyCardState card) =>
+      _killCreditForConfig(card.config);
+}

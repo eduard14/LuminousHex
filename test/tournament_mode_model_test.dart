@@ -1,0 +1,120 @@
+import 'package:flutter_test/flutter_test.dart';
+import 'package:lightcore/data/enemy_configs.dart';
+import 'package:lightcore/models/lightcore_tournament.dart';
+import 'package:lightcore/models/lightcore_state.dart';
+import 'package:lightcore/state/lightcore_controller.dart';
+
+void main() {
+  test('new tournament mode ids round-trip from wire keys', () {
+    expect(
+      tournamentModeFromWireKey('enemyBlitz'),
+      LightcoreTournamentModeId.enemyBlitz,
+    );
+    expect(
+      tournamentModeFromWireKey('hexGauntlet'),
+      LightcoreTournamentModeId.hexGauntlet,
+    );
+    expect(
+      tournamentModeFromWireKey('arenaFlow'),
+      LightcoreTournamentModeId.arenaFlow,
+    );
+  });
+
+  test('tournament mode metadata matches weekly event concepts', () {
+    expect(LightcoreTournamentModeId.enemyBlitz.label, 'Anomaly Blitz');
+    expect(LightcoreTournamentModeId.hexGauntlet.label, 'Hex');
+    expect(
+      LightcoreTournamentModeId.hexGauntlet.queueLabel,
+      'Global leaderboard',
+    );
+    expect(LightcoreTournamentModeId.enemyBlitz.usesTowerSeed, isFalse);
+    expect(LightcoreTournamentModeId.hexGauntlet.usesTowerSeed, isFalse);
+    expect(LightcoreTournamentModeId.arenaFlow.usesTowerSeed, isFalse);
+    expect(LightcoreTournamentModeId.arenaFlow.usesGlobalRating, isTrue);
+    expect(LightcoreTournamentModeId.arenaFlow.supportsBossDraft, isTrue);
+  });
+
+  test('closed events cannot start runs even when joined', () {
+    final state = LightcoreTournamentModeState.fromMap(<String, dynamic>{
+      'mode': 'hexGauntlet',
+      'statusMessage': 'Closed for now.',
+      'mechanicSummary': 'Weekly global climb.',
+      'rewardPreview': const <String, dynamic>{},
+      'startsAt': '2026-04-25T00:00:00.000Z',
+      'endsAt': '2026-04-27T00:00:00.000Z',
+      'joined': true,
+      'isOpen': false,
+    });
+
+    expect(state.canStartRun, isFalse);
+  });
+
+  test('tournament snapshots normalize permanent progress out of entry', () {
+    final controller = LightcoreController();
+    addTearDown(controller.dispose);
+
+    controller.kills = LightcoreController.killsForOverallLevel(80);
+    controller.lumens = 100000;
+
+    final snapshot = controller.buildTournamentSnapshot();
+
+    expect(snapshot.overallLevel, LightcoreController.evenEntryTournamentLevel);
+    expect(snapshot.prestigeLevel, 0);
+    expect(snapshot.activeLayerTier, 1);
+    expect(snapshot.builtTowerCount, LightcoreController.slotCount);
+    expect(
+      snapshot.coreLevel,
+      LightcoreController.evenEntryTournamentCoreLevel,
+    );
+    expect(
+      snapshot.towerPowerIndex,
+      LightcoreController.evenEntryTournamentPowerIndex,
+    );
+  });
+
+  test('tournament battle runtime normalizes a full flame battle shell', () {
+    final controller = LightcoreController();
+    addTearDown(controller.dispose);
+
+    controller.configureTournamentBattle(
+      mode: LightcoreTournamentModeId.arenaFlow,
+      seedPowerIndex: 1400,
+      enemyDraft: [
+        EnemyCardState(
+          config: EnemyLibrary.basicRed,
+          unlocked: true,
+          copies: 1,
+          level: 3,
+        ),
+      ],
+      bossDraft: EnemyCardState(
+        config: BossEnemyLibrary.starterWhiteWarden,
+        unlocked: true,
+        copies: 1,
+        level: 2,
+      ),
+      towerTier: 2,
+      enemyPressure: 12,
+    );
+
+    expect(controller.outerRingRevealed, isTrue);
+    expect(controller.swarmActivated, isTrue);
+    expect(controller.slots.every((slot) => slot.isBuilt), isTrue);
+    expect(controller.activeEnemyCardIds, contains(EnemyLibrary.basicRed.id));
+    expect(
+      controller.activeBossEnemyCard?.config.id,
+      BossEnemyLibrary.starterWhiteWarden.id,
+    );
+    expect(controller.enemyTargetCount, 12);
+    expect(controller.layer2State.unlocked, isTrue);
+  });
+
+  test('event offline progress counts as claimed offline time', () {
+    final controller = LightcoreController();
+    addTearDown(controller.dispose);
+
+    controller.advanceEventOfflineProgress(5);
+
+    expect(controller.totalOfflineSecondsClaimed, 5);
+  });
+}
