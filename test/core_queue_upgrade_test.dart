@@ -308,7 +308,7 @@ void main() {
     final initialEdgeHealth = _healthForEnemy(controller, edgeEnemy!.id);
     final initialOutsideHealth = _healthForEnemy(controller, outsideEnemy!.id);
 
-    controller.activeLayer.ammoQueue.add(_coreBombPacket());
+    controller.debugSetAmmoQueue([_coreBombPacket()]);
     controller.tick(0.05);
     for (var step = 0; step < 20 && controller.shots.isNotEmpty; step++) {
       controller.tick(0.05);
@@ -343,7 +343,7 @@ void main() {
       );
       expect(target, isNotNull);
 
-      controller.activeLayer.ammoQueue.add(_coreBombPacket());
+      controller.debugSetAmmoQueue([_coreBombPacket()]);
       controller.tick(0.05);
       for (var step = 0; step < 20 && controller.shots.isNotEmpty; step++) {
         controller.tick(0.05);
