@@ -32,27 +32,38 @@ extension _LightcoreBattleGameEnemyRendering on LightcoreBattleGame {
               alpha: spawnFadeRemaining * (0.18 + (spawnPulse * 0.1)),
             ),
         );
+        if (!_lowPowerBattleEffects) {
+          canvas.drawCircle(
+            position,
+            radius * (0.9 + (spawnPulse * 0.18)),
+            Paint()
+              ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 12)
+              ..color = color.withValues(
+                alpha:
+                    revealProgress *
+                    spawnFadeRemaining *
+                    0.18 *
+                    _battleGlowAlphaScale,
+              ),
+          );
+        }
+      }
+
+      if (!_lowPowerBattleEffects) {
         canvas.drawCircle(
           position,
-          radius * (0.9 + (spawnPulse * 0.18)),
+          radius * 1.18,
           Paint()
-            ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 12)
-            ..color = color.withValues(
-              alpha: revealProgress * spawnFadeRemaining * 0.18,
+            ..style = PaintingStyle.fill
+            ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 14)
+            ..color = (isBoss ? LightcorePalette.solar : color).withValues(
+              alpha:
+                  (isBoss ? 0.24 : 0.18) *
+                  revealProgress *
+                  _battleGlowAlphaScale,
             ),
         );
       }
-
-      canvas.drawCircle(
-        position,
-        radius * 1.18,
-        Paint()
-          ..style = PaintingStyle.fill
-          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 14)
-          ..color = (isBoss ? LightcorePalette.solar : color).withValues(
-            alpha: (isBoss ? 0.24 : 0.18) * revealProgress,
-          ),
-      );
       if (isBoss) {
         canvas.drawPath(
           _hexPath(position, radius * 1.44),
@@ -95,10 +106,11 @@ extension _LightcoreBattleGameEnemyRendering on LightcoreBattleGame {
       );
 
       if (enemy.burnRemaining > 0) {
-        for (var index = 0; index < 3; index++) {
+        final emberCount = _qualityScaledCount(3, balanced: 2, lowPower: 1);
+        for (var index = 0; index < emberCount; index++) {
           final angle =
               (controller.elapsed * 2.4) +
-              (((math.pi * 2) / 3) * index) -
+              (((math.pi * 2) / emberCount) * index) -
               (math.pi / 2);
           final emberCenter = Offset(
             position.dx + math.cos(angle) * (radius * 0.16),
@@ -158,19 +170,21 @@ extension _LightcoreBattleGameEnemyRendering on LightcoreBattleGame {
               enemy.shockRemaining,
           alpha: 0.74 * revealProgress,
         );
-        final orbitAngle =
-            (controller.elapsed * 6.2) + (enemy.id.hashCode * 0.003);
-        final sparkCenter = Offset(
-          position.dx + math.cos(orbitAngle) * (radius * 0.4),
-          position.dy + math.sin(orbitAngle) * (radius * 0.34),
-        );
-        _drawEnergyOrb(
-          canvas,
-          sparkCenter,
-          LightcorePalette.layer2,
-          radius * 0.08,
-          alpha: 0.6 * revealProgress,
-        );
+        if (!_lowPowerBattleEffects) {
+          final orbitAngle =
+              (controller.elapsed * 6.2) + (enemy.id.hashCode * 0.003);
+          final sparkCenter = Offset(
+            position.dx + math.cos(orbitAngle) * (radius * 0.4),
+            position.dy + math.sin(orbitAngle) * (radius * 0.34),
+          );
+          _drawEnergyOrb(
+            canvas,
+            sparkCenter,
+            LightcorePalette.layer2,
+            radius * 0.08,
+            alpha: 0.6 * revealProgress,
+          );
+        }
       }
       if (enemy.slowRemaining > 0) {
         canvas.drawPath(

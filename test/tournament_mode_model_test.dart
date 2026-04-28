@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:lightcore/data/enemy_configs.dart';
 import 'package:lightcore/models/lightcore_tournament.dart';
 import 'package:lightcore/models/lightcore_state.dart';
+import 'package:lightcore/models/lightcore_types.dart';
 import 'package:lightcore/state/lightcore_controller.dart';
 
 void main() {
@@ -107,6 +108,30 @@ void main() {
     );
     expect(controller.enemyTargetCount, 12);
     expect(controller.layer2State.unlocked, isTrue);
+  });
+
+  test('tournament battle preserves high-rarity enemy draft pressure', () {
+    final controller = LightcoreController();
+    addTearDown(controller.dispose);
+    final legendary = EnemyLibrary.byRarity[EnemyCardRarity.legendary]!.first;
+
+    controller.configureTournamentBattle(
+      mode: LightcoreTournamentModeId.enemyBlitz,
+      seedPowerIndex: 1400,
+      enemyDraft: [
+        EnemyCardState(config: legendary, unlocked: true, copies: 1, level: 1),
+      ],
+      towerTier: 1,
+      enemyPressure: 16,
+    );
+
+    final activeCard = controller.activeEnemyDeck.single;
+    expect(activeCard.config.id, legendary.id);
+    expect(
+      controller.enemyCardPreviewHealth(activeCard),
+      greaterThan(900000000),
+    );
+    expect(controller.enemyCardThreatRatingLabel(activeCard), 'Overwhelming');
   });
 
   test('event offline progress counts as claimed offline time', () {

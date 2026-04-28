@@ -198,15 +198,19 @@ class _TowerLevelHexBadgePainter extends CustomPainter {
   }
 }
 
-IconData towerProjectileIcon(ProjectileType type) =>
-    switch (type.behaviorProfile) {
-      ProjectileBehaviorProfile.thread => Icons.timeline_rounded,
-      ProjectileBehaviorProfile.pulse => Icons.bolt_rounded,
-      ProjectileBehaviorProfile.burst => Icons.auto_awesome_rounded,
-      ProjectileBehaviorProfile.chain => Icons.device_hub_rounded,
-      ProjectileBehaviorProfile.split => Icons.call_split_rounded,
-      ProjectileBehaviorProfile.lance => Icons.center_focus_strong_rounded,
-      ProjectileBehaviorProfile.explosion => Icons.flare_rounded,
-      ProjectileBehaviorProfile.wave => Icons.radar_rounded,
-      ProjectileBehaviorProfile.nova => Icons.blur_on_rounded,
-    };
+IconData towerProjectileIcon(ProjectileType type) {
+  if (type == ProjectileType.shieldHalo) {
+    return Icons.shield_moon_rounded;
+  }
+  return switch (type.behaviorProfile) {
+    ProjectileBehaviorProfile.thread => Icons.timeline_rounded,
+    ProjectileBehaviorProfile.pulse => Icons.bolt_rounded,
+    ProjectileBehaviorProfile.burst => Icons.auto_awesome_rounded,
+    ProjectileBehaviorProfile.chain => Icons.device_hub_rounded,
+    ProjectileBehaviorProfile.split => Icons.call_split_rounded,
+    ProjectileBehaviorProfile.lance => Icons.center_focus_strong_rounded,
+    ProjectileBehaviorProfile.explosion => Icons.flare_rounded,
+    ProjectileBehaviorProfile.wave => Icons.radar_rounded,
+    ProjectileBehaviorProfile.nova => Icons.blur_on_rounded,
+  };
+}

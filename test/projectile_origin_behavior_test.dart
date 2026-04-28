@@ -126,13 +126,25 @@ void main() {
     expect(single.pulses, isEmpty);
 
     final singleRadius = single.towerShieldRingRadius(single.slots[0]);
+    expect(singleRadius, closeTo(single.relayImpactRadius + 20, 0.001));
+    expect(
+      singleRadius,
+      closeTo(single.towerEffectiveRange(single.slots[0]), 0.001),
+    );
     final singleEnemy = single.debugSpawnEnemyFromCard(
       EnemyLibrary.basicWhite.id,
       angle: 0.1,
       radius: singleRadius,
     );
+    final farEnemy = single.debugSpawnEnemyFromCard(
+      EnemyLibrary.basicWhite.id,
+      angle: 0.5,
+      radius: singleRadius + 80,
+    );
     expect(singleEnemy, isNotNull);
+    expect(farEnemy, isNotNull);
     final initialSingleHealth = _healthForEnemy(single, singleEnemy!.id);
+    final initialFarHealth = _healthForEnemy(single, farEnemy!.id);
 
     single.tick(1.0);
 
@@ -142,6 +154,7 @@ void main() {
       initialSingleHealth,
     );
     expect(singleDamage, greaterThan(0));
+    expect(_damageTaken(single, farEnemy.id, initialFarHealth), 0);
     expect(single.pulses, isEmpty);
     expect(single.queuedAmmoPackets, isEmpty);
     expect(single.shots, isEmpty);

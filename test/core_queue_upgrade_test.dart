@@ -60,6 +60,28 @@ AmmoPacket _coreBombPacket() {
   );
 }
 
+AmmoPacket _redTowerBombPacket() {
+  return const AmmoPacket(
+    id: 'test_red_tower_bomb',
+    sourceSlotIndex: 0,
+    affinity: PrototypeAffinity.ember,
+    power: 18,
+    advantageMultiplier: 1,
+    projectileType: ProjectileType.coreBomb,
+    payloadType: PayloadType.none,
+    targetPriority: TargetPriority.close,
+    range: 320,
+    critChance: 0,
+    critMultiplier: 1,
+    finalDamageMultiplier: 1,
+    bossDamageMultiplier: 1,
+    normalDamageMultiplier: 1,
+    defensePenetration: 0,
+    minDamageMultiplier: 1,
+    maxDamageMultiplier: 1,
+  );
+}
+
 void _fillQueue(LightcoreController controller, int count) {
   controller.debugSetAmmoQueue(
     List<AmmoPacket>.generate(count, _dummyAmmoPacket),
@@ -326,6 +348,112 @@ void main() {
       _healthForEnemy(controller, edgeEnemy.id),
       lessThan(initialEdgeHealth),
     );
+    expect(_healthForEnemy(controller, outsideEnemy.id), initialOutsideHealth);
+  });
+
+  test('red tower bomb splashes nearby enemies when primary target dies', () {
+    final controller = LightcoreController();
+    addTearDown(controller.dispose);
+
+    controller.lumens = 1000;
+    controller.kills = LightcoreController.unlockKillsForOuterSlot(0);
+    expect(controller.buildTowerAt(0, TowerLibrary.redPrism), isTrue);
+
+    final primaryEnemy = controller.debugSpawnEnemyFromCard(
+      EnemyLibrary.basicWhite.id,
+      angle: 0,
+      radius: 200,
+      level: 1,
+    );
+    final splashEnemy = controller.debugSpawnEnemyFromCard(
+      EnemyLibrary.basicWhite.id,
+      angle: 0.12,
+      radius: 220,
+      level: 16,
+    );
+    final outsideEnemy = controller.debugSpawnEnemyFromCard(
+      EnemyLibrary.basicWhite.id,
+      angle: 0.8,
+      radius: 220,
+      level: 16,
+    );
+    expect(primaryEnemy, isNotNull);
+    expect(splashEnemy, isNotNull);
+    expect(outsideEnemy, isNotNull);
+
+    final initialSplashHealth = _healthForEnemy(controller, splashEnemy!.id);
+    final initialOutsideHealth = _healthForEnemy(controller, outsideEnemy!.id);
+
+    controller.debugSetAmmoQueue([_redTowerBombPacket()]);
+    controller.tick(0.05);
+    for (var step = 0; step < 20 && controller.shots.isNotEmpty; step++) {
+      controller.tick(0.05);
+    }
+
+    expect(
+      controller.enemies.any((enemy) => enemy.id == primaryEnemy!.id),
+      isFalse,
+    );
+    expect(
+      _healthForEnemy(controller, splashEnemy.id),
+      lessThan(initialSplashHealth),
+    );
+    expect(_healthForEnemy(controller, outsideEnemy.id), initialOutsideHealth);
+    expect(
+      controller.impacts.any(
+        (impact) => impact.projectileType == ProjectileType.coreBomb,
+      ),
+      isTrue,
+    );
+  });
+
+  test('red tower bomb splash deals full damage to nearby enemies', () {
+    final controller = LightcoreController();
+    addTearDown(controller.dispose);
+
+    controller.lumens = 1000;
+    controller.kills = LightcoreController.unlockKillsForOuterSlot(0);
+    expect(controller.buildTowerAt(0, TowerLibrary.redPrism), isTrue);
+
+    final primaryEnemy = controller.debugSpawnEnemyFromCard(
+      EnemyLibrary.basicWhite.id,
+      angle: 0,
+      radius: 220,
+      level: 16,
+    );
+    final splashEnemy = controller.debugSpawnEnemyFromCard(
+      EnemyLibrary.basicWhite.id,
+      angle: 0.12,
+      radius: 220,
+      level: 16,
+    );
+    final outsideEnemy = controller.debugSpawnEnemyFromCard(
+      EnemyLibrary.basicWhite.id,
+      angle: 0.8,
+      radius: 220,
+      level: 16,
+    );
+    expect(primaryEnemy, isNotNull);
+    expect(splashEnemy, isNotNull);
+    expect(outsideEnemy, isNotNull);
+
+    final initialPrimaryHealth = _healthForEnemy(controller, primaryEnemy!.id);
+    final initialSplashHealth = _healthForEnemy(controller, splashEnemy!.id);
+    final initialOutsideHealth = _healthForEnemy(controller, outsideEnemy!.id);
+
+    controller.debugSetAmmoQueue([_redTowerBombPacket()]);
+    controller.tick(0.05);
+    for (var step = 0; step < 20 && controller.shots.isNotEmpty; step++) {
+      controller.tick(0.05);
+    }
+
+    final primaryDamage =
+        initialPrimaryHealth - _healthForEnemy(controller, primaryEnemy.id);
+    final splashDamage =
+        initialSplashHealth - _healthForEnemy(controller, splashEnemy.id);
+
+    expect(primaryDamage, greaterThan(0));
+    expect(splashDamage, closeTo(primaryDamage, 0.0001));
     expect(_healthForEnemy(controller, outsideEnemy.id), initialOutsideHealth);
   });
 

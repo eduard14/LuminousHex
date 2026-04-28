@@ -227,7 +227,25 @@ class _BossSignalOrb extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bossCard = card;
     final config = card?.config;
+
+    if (config != null && bossCard != null) {
+      return _ThreatSummonCard(
+        config: config,
+        dimension: 68,
+        artSize: 42,
+        locked: !bossCard.isOwned,
+        semanticLabel: '${config.name} active Apex scan preview',
+        topRight: !bossCard.isOwned
+            ? const Icon(
+                Icons.lock_rounded,
+                size: 14,
+                color: LightcorePalette.mist,
+              )
+            : null,
+      );
+    }
 
     return Container(
       width: 68,
@@ -238,24 +256,22 @@ class _BossSignalOrb extends StatelessWidget {
         color: LightcorePalette.panel.withValues(alpha: 0.84),
       ),
       child: Center(
-        child: config == null
-            ? Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: LightcorePalette.warning.withValues(alpha: 0.18),
-                  border: Border.all(
-                    color: LightcorePalette.warning.withValues(alpha: 0.48),
-                  ),
-                ),
-                child: const Icon(
-                  Icons.lock_rounded,
-                  size: 18,
-                  color: LightcorePalette.warning,
-                ),
-              )
-            : _BossGlyph(config: config, size: 42, locked: !card!.isOwned),
+        child: Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: LightcorePalette.warning.withValues(alpha: 0.18),
+            border: Border.all(
+              color: LightcorePalette.warning.withValues(alpha: 0.48),
+            ),
+          ),
+          child: const Icon(
+            Icons.lock_rounded,
+            size: 18,
+            color: LightcorePalette.warning,
+          ),
+        ),
       ),
     );
   }
@@ -274,65 +290,31 @@ class _BossScanPreview extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final primary = card.config.affinity.color;
-    final secondary = card.config.secondaryAffinity?.color ?? primary;
     final owned = card.isOwned;
 
     return Tooltip(
       message: '${card.config.name} • tap for details',
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(16),
-          onTap: onTap,
-          child: Container(
-            width: 52,
-            height: 52,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: active
-                    ? LightcorePalette.warning
-                    : secondary.withValues(alpha: owned ? 0.42 : 0.2),
-                width: active ? 1.8 : 1.2,
-              ),
-              color: LightcorePalette.panel.withValues(
-                alpha: owned ? 0.76 : 0.56,
-              ),
-              boxShadow: active
-                  ? [
-                      BoxShadow(
-                        color: secondary.withValues(alpha: 0.26),
-                        blurRadius: 18,
-                        spreadRadius: -6,
-                      ),
-                    ]
-                  : null,
-            ),
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                _BossGlyph(config: card.config, size: 28, locked: !owned),
-                Positioned(
-                  top: 5,
-                  right: 5,
-                  child: Icon(
-                    !owned
-                        ? Icons.lock_rounded
-                        : active
-                        ? Icons.check_circle_rounded
-                        : Icons.open_in_full_rounded,
-                    size: 12,
-                    color: !owned
-                        ? LightcorePalette.mist
-                        : active
-                        ? LightcorePalette.warning
-                        : primary,
-                  ),
-                ),
-              ],
-            ),
-          ),
+      child: _ThreatSummonCard(
+        config: card.config,
+        dimension: 52,
+        artSize: 28,
+        locked: !owned,
+        selected: active && owned,
+        onTap: onTap,
+        semanticLabel:
+            '${card.config.name}, ${owned ? 'owned' : 'locked'} Apex scan preview',
+        topRight: Icon(
+          !owned
+              ? Icons.lock_rounded
+              : active
+              ? Icons.check_circle_rounded
+              : Icons.open_in_full_rounded,
+          size: 12,
+          color: !owned
+              ? LightcorePalette.mist
+              : active
+              ? LightcorePalette.warning
+              : card.config.affinity.color,
         ),
       ),
     );

@@ -285,179 +285,29 @@ class _PackPullSummaryCard extends StatelessWidget {
       opacity: dimOpacity * Curves.easeOutCubic.transform(dropProgress),
       child: Transform.scale(
         scale: scale,
-        child: Container(
-          width: tileSize,
-          height: tileSize,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(22),
-            color: LightcorePalette.panelRaised.withValues(alpha: 0.72),
-            border: Border.all(
-              color: Color.lerp(rarityTint, emphasisTint, glowStrength)!,
-              width: emphasized ? 2 : 1.4,
-            ),
-            boxShadow: [
-              if (glowStrength > 0)
-                BoxShadow(
-                  color: emphasisTint.withValues(alpha: 0.24 * glowStrength),
-                  blurRadius: 18 + (18 * glowStrength),
-                  spreadRadius: -6 + (2 * glowStrength),
-                ),
-              if (emphasized)
-                BoxShadow(
-                  color: emphasisTint.withValues(alpha: 0.14),
-                  blurRadius: 22,
-                  spreadRadius: -6,
-                ),
-            ],
-          ),
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-              _ScanResultCore(
-                config: summary.config,
-                glowNew: animateNewReveal && summary.isNew,
-              ),
-              Positioned(
-                left: 0,
-                right: 0,
-                bottom: 10,
-                child: Text(
-                  'x${summary.count}',
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                    color: LightcorePalette.layer2,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-              ),
-              if (summary.config.isBoss)
-                Positioned(
-                  top: 8,
-                  right: 8,
-                  child: Icon(
-                    Icons.shield_rounded,
-                    size: 14,
-                    color: LightcorePalette.warning.withValues(alpha: 0.9),
-                  ),
-                ),
-            ],
-          ),
+        child: _ThreatSummonCard(
+          config: summary.config,
+          dimension: tileSize,
+          artSize: 58,
+          bottomLabel: 'x${summary.count}',
+          emphasized: emphasized,
+          glowTint: emphasisTint,
+          topRight: summary.config.isBoss
+              ? Icon(
+                  Icons.shield_rounded,
+                  size: 14,
+                  color: LightcorePalette.warning.withValues(alpha: 0.9),
+                )
+              : null,
+          semanticLabel:
+              '${summary.config.name}, ${summary.config.rarity.label}, ${summary.count}',
+          selected: false,
+          locked: false,
+          glowStrength: animateNewReveal && summary.isNew
+              ? math.max(glowStrength, 0.36)
+              : glowStrength,
         ),
       ),
-    );
-  }
-}
-
-class _ScanResultCore extends StatefulWidget {
-  const _ScanResultCore({required this.config, required this.glowNew});
-
-  final EnemyConfig config;
-  final bool glowNew;
-
-  @override
-  State<_ScanResultCore> createState() => _ScanResultCoreState();
-}
-
-class _ScanResultCoreState extends State<_ScanResultCore>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _glowController;
-
-  @override
-  void initState() {
-    super.initState();
-    _glowController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1000),
-    );
-    if (widget.glowNew) {
-      _glowController.forward();
-    } else {
-      _glowController.value = 1;
-    }
-  }
-
-  @override
-  void didUpdateWidget(covariant _ScanResultCore oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (!oldWidget.glowNew && widget.glowNew) {
-      _glowController
-        ..value = 0
-        ..forward();
-    }
-  }
-
-  @override
-  void dispose() {
-    _glowController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _glowController,
-      builder: (context, _) {
-        final tint = widget.config.affinity.color;
-        final assetPath = enemyImageAssetForConfig(widget.config);
-        final glowStrength = widget.glowNew
-            ? (1 - Curves.easeOutCubic.transform(_glowController.value)).clamp(
-                0.0,
-                1.0,
-              )
-            : 0.0;
-
-        return SizedBox(
-          width: 58,
-          height: 58,
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-              if (assetPath == null)
-                Container(
-                  width: 54,
-                  height: 54,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: tint,
-                    boxShadow: [
-                      BoxShadow(
-                        color: tint.withValues(alpha: 0.22),
-                        blurRadius: 18,
-                        spreadRadius: -6,
-                      ),
-                    ],
-                  ),
-                )
-              else
-                _EnemyCardArt(config: widget.config, size: 58),
-              if (widget.config.isBoss)
-                const Icon(
-                  Icons.shield_rounded,
-                  size: 18,
-                  color: LightcorePalette.night,
-                ),
-              if (glowStrength > 0)
-                IgnorePointer(
-                  child: Container(
-                    width: 64,
-                    height: 64,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      gradient: RadialGradient(
-                        colors: [
-                          tint.withValues(alpha: 0.96 * glowStrength),
-                          tint.withValues(alpha: 0.46 * glowStrength),
-                          Colors.transparent,
-                        ],
-                        stops: const [0.0, 0.62, 1.0],
-                      ),
-                    ),
-                  ),
-                ),
-            ],
-          ),
-        );
-      },
     );
   }
 }

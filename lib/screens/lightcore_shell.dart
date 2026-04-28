@@ -1385,6 +1385,71 @@ class _LightcoreShellState extends State<LightcoreShell> {
     );
   }
 
+  Widget _buildGraphicsSettingsPanel(
+    BuildContext context,
+    LightcoreController controller,
+  ) {
+    final selectedQuality = controller.graphicsQuality;
+
+    return AuroraPanel(
+      tint: LightcorePalette.aether,
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Battle Visuals',
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+          const SizedBox(height: 6),
+          Text(
+            selectedQuality.summary,
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
+          const SizedBox(height: 12),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final compact = constraints.maxWidth < 440;
+              return SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: SegmentedButton<LightcoreGraphicsQuality>(
+                  key: const ValueKey<String>('graphics-quality-control'),
+                  showSelectedIcon: false,
+                  style: ButtonStyle(
+                    visualDensity: compact
+                        ? VisualDensity.compact
+                        : VisualDensity.standard,
+                  ),
+                  segments: const [
+                    ButtonSegment<LightcoreGraphicsQuality>(
+                      value: LightcoreGraphicsQuality.high,
+                      icon: Icon(Icons.auto_awesome_rounded),
+                      label: Text('High'),
+                    ),
+                    ButtonSegment<LightcoreGraphicsQuality>(
+                      value: LightcoreGraphicsQuality.balanced,
+                      icon: Icon(Icons.tune_rounded),
+                      label: Text('Balanced'),
+                    ),
+                    ButtonSegment<LightcoreGraphicsQuality>(
+                      value: LightcoreGraphicsQuality.lowPower,
+                      icon: Icon(Icons.battery_saver_rounded),
+                      label: Text('Low Power'),
+                    ),
+                  ],
+                  selected: <LightcoreGraphicsQuality>{selectedQuality},
+                  onSelectionChanged: (selection) {
+                    controller.setGraphicsQuality(selection.single);
+                  },
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
   void _openSettings(BuildContext context) {
     showDialog<void>(
       context: context,
@@ -1404,6 +1469,7 @@ class _LightcoreShellState extends State<LightcoreShell> {
                 children: [
                   Expanded(
                     child: ListView(
+                      key: const ValueKey<String>('settings-scroll-view'),
                       children: [
                         AuroraPanel(
                           tint: controller.activeLayer.core.affinity.color,
@@ -1427,6 +1493,8 @@ class _LightcoreShellState extends State<LightcoreShell> {
                         _buildAccountSettingsPanel(context),
                         const SizedBox(height: 12),
                         _buildNotificationSettingsPanel(context, controller),
+                        const SizedBox(height: 12),
+                        _buildGraphicsSettingsPanel(context, controller),
                         const SizedBox(height: 16),
                         Wrap(
                           spacing: 10,
@@ -2141,15 +2209,26 @@ String _formatMetricCount(int value) {
   if (absolute < 1000) {
     return value.toString();
   }
-  if (absolute < 1000000) {
-    final compact = value / 1000;
-    return _trimCompactDecimal(
-      '${compact.toStringAsFixed(absolute < 10000 ? 1 : 0)}k',
-    );
+  if (absolute >= 1000000000000000) {
+    return _formatCompactMetricUnit(value, 1000000000000000, 'q');
   }
-  final compact = value / 1000000;
+  if (absolute >= 1000000000000) {
+    return _formatCompactMetricUnit(value, 1000000000000, 't');
+  }
+  if (absolute >= 1000000000) {
+    return _formatCompactMetricUnit(value, 1000000000, 'b');
+  }
+  if (absolute >= 1000000) {
+    return _formatCompactMetricUnit(value, 1000000, 'm');
+  }
+  return _formatCompactMetricUnit(value, 1000, 'k');
+}
+
+String _formatCompactMetricUnit(int value, int divisor, String suffix) {
+  final absolute = value.abs();
+  final compact = value / divisor;
   return _trimCompactDecimal(
-    '${compact.toStringAsFixed(absolute < 10000000 ? 1 : 0)}m',
+    '${compact.toStringAsFixed(absolute < divisor * 10 ? 1 : 0)}$suffix',
   );
 }
 

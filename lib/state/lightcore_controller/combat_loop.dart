@@ -1,6 +1,11 @@
 part of '../lightcore_controller.dart';
 
 const double _persistentShieldRingDamagePerSecondMultiplier = 0.28;
+const double _shieldHaloGuardRadiusOffset = 20;
+const double _shieldHaloGuardBandHalfWidth = 12;
+
+double _shieldHaloGuardRadiusForMaxRange(double maxRange) =>
+    min(maxRange, _relayImpactRadius + _shieldHaloGuardRadiusOffset);
 
 extension LightcoreControllerCombatLoop on LightcoreController {
   ({bool busy, bool fabricationAdvanced}) _advanceRuntimeLayer(
@@ -50,6 +55,7 @@ extension LightcoreControllerCombatLoop on LightcoreController {
         _activateLocalhostReadyTowers();
       }
       _advancePulses(battleDt);
+      _advanceCoreTowerAutomation(battleDt);
       if (foreground) {
         _queueLocalhostCoreTap(battleDt);
       }
@@ -130,6 +136,32 @@ extension LightcoreControllerCombatLoop on LightcoreController {
       _localhostAutoTapperCoreCooldown = _localhostAutoTapperCoreInterval;
       _needsNotify = true;
     }
+  }
+
+  void _advanceCoreTowerAutomation(double dt) {
+    final automationInterval = _coreAutomationInterval;
+    if (automationInterval == null) {
+      if (_core.automationCooldownRemaining != 0) {
+        _core = _core.copyWith(automationCooldownRemaining: 0);
+      }
+      return;
+    }
+
+    var automationCooldown = max(0.0, _core.automationCooldownRemaining - dt);
+    if (automationCooldown > 0 || _enemies.isEmpty) {
+      _core = _core.copyWith(automationCooldownRemaining: automationCooldown);
+      return;
+    }
+
+    if (_queueCoreBasicAttack(showBanner: false)) {
+      _swarmActivated = true;
+      if (_tutorialStep == LightcoreTutorialStep.autoQueueCheck &&
+          _tutorialAutoQueuedPulses < 5) {
+        _tutorialAutoQueuedPulses += 1;
+      }
+      _needsNotify = true;
+    }
+    _core = _core.copyWith(automationCooldownRemaining: automationInterval);
   }
 
   double get _spawnInterval {
@@ -267,7 +299,7 @@ extension LightcoreControllerCombatLoop on LightcoreController {
         continue;
       }
       final ringRadius = towerShieldRingRadius(tower);
-      final bandHalfWidth = max(24.0, ringRadius * 0.1);
+      const bandHalfWidth = _shieldHaloGuardBandHalfWidth;
       final targets = _enemies
           .where((enemy) {
             final collisionRadius = _enemyCollisionRadius(enemy);

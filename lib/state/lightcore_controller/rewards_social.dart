@@ -316,4 +316,29 @@ extension LightcoreControllerRewardsSocial on LightcoreController {
       .whereType<EnemyCardState>()
       .where((card) => card.isOwned)
       .toList();
+
+  UnmodifiableListView<ThreatAssignmentPresetState>
+  get activeThreatAssignmentPresets {
+    _normalizeThreatAssignmentPresetSelection(activeLayer);
+    return UnmodifiableListView(activeLayer.threatAssignmentPresets);
+  }
+
+  String? get selectedThreatAssignmentPresetId {
+    _normalizeThreatAssignmentPresetSelection(activeLayer);
+    return activeLayer.selectedThreatAssignmentPresetId;
+  }
+
+  ThreatAssignmentPresetState? get selectedThreatAssignmentPreset {
+    _normalizeThreatAssignmentPresetSelection(activeLayer);
+    final presetId = activeLayer.selectedThreatAssignmentPresetId;
+    if (presetId == null) {
+      return null;
+    }
+    for (final preset in activeLayer.threatAssignmentPresets) {
+      if (preset.id == presetId) {
+        return preset;
+      }
+    }
+    return null;
+  }
 }

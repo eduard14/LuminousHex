@@ -1,5 +1,8 @@
 part of '../lightcore_controller.dart';
 
+const double _towerStrengthLayerScaleBase = 10000;
+const double _maxTowerStrengthScore = 9000000000000000;
+
 extension LightcoreControllerInventoryRuntime on LightcoreController {
   TowerPatternBonusProfile _inventoryEffectForCard(EnemyCardState card) {
     final config = card.config;
@@ -76,7 +79,7 @@ extension LightcoreControllerInventoryRuntime on LightcoreController {
         (activeLayer.tier * 140) +
         (builtTowerCount * 42) +
         (promotionReadyTowerCount * 36);
-    return max(
+    final baseScore = max(
       1.0,
       liveTowerScore +
           coreScore +
@@ -86,6 +89,11 @@ extension LightcoreControllerInventoryRuntime on LightcoreController {
           bossScore +
           progressionScore,
     );
+    final layerScale = pow(
+      _towerStrengthLayerScaleBase,
+      max(0, activeLayer.tier - 1),
+    ).toDouble();
+    return min(_maxTowerStrengthScore, baseScore * layerScale);
   }
 
   double _towerStrengthForTower(OuterTowerState tower) {
@@ -104,8 +112,44 @@ extension LightcoreControllerInventoryRuntime on LightcoreController {
     final bossDamage = towerBossDamageMultiplier(tower);
     final normalDamage = towerNormalDamageMultiplier(tower);
     final defensePenetration = towerDefensePenetration(tower);
+    final minDamage = towerMinDamageMultiplier(tower);
+    final maxDamage = towerMaxDamageMultiplier(tower);
+    final dotDamage = towerDotDamageMultiplier(tower);
+    final advantage = towerAdvantageMultiplier(tower);
     final liveUptime = 1 - towerDisruptionFraction(tower);
-    return (power * 2.8) +
+    final averageDamageRange = (minDamage + maxDamage) / 2;
+    final expectedCritMultiplier = 1 + (critChance * max(0, critDamage - 1));
+    final typeDamageMultiplier = (normalDamage * 0.72) + (bossDamage * 0.28);
+    final penetrationMultiplier = 1 + (defensePenetration * 0.9);
+    final activationRate = towerUsesPersistentShieldRing(tower)
+        ? 1.0
+        : max(0.05, towerWantedActivationRate(tower));
+    final rangeCoverage = (range / max(1.0, defaultTowerBaseRange))
+        .clamp(0.5, 2.4)
+        .toDouble();
+    final generationUtility = towerUsesPersistentShieldRing(tower)
+        ? 1.0
+        : (1 + generation).clamp(0.6, 3.0).toDouble();
+    final outputScore =
+        power *
+        activationRate *
+        120 *
+        finalDamage *
+        typeDamageMultiplier *
+        averageDamageRange *
+        dotDamage *
+        expectedCritMultiplier *
+        penetrationMultiplier *
+        advantage *
+        rangeCoverage *
+        generationUtility *
+        liveUptime;
+    final passiveShieldScore = towerUsesPersistentShieldRing(tower)
+        ? power * 24
+        : 0.0;
+    return outputScore +
+        passiveShieldScore +
+        (power * 2.8) +
         (chargeRate * 90) +
         ((1 / liveCooldown) * 60) +
         (range * 0.16) +
@@ -116,6 +160,10 @@ extension LightcoreControllerInventoryRuntime on LightcoreController {
         (bossDamage * 44) +
         (normalDamage * 36) +
         (defensePenetration * 240) +
+        (minDamage * 28) +
+        (maxDamage * 34) +
+        (dotDamage * 42) +
+        (advantage * 32) +
         (tower.level * 24) +
         (liveUptime * 18);
   }
@@ -261,6 +309,9 @@ extension LightcoreControllerInventoryRuntime on LightcoreController {
   }
 
   String _compactNumber(int value) {
+    if (value >= 1000000000000000) {
+      return '${(value / 1000000000000000).toStringAsFixed(value >= 10000000000000000 ? 0 : 1)}Q';
+    }
     if (value >= 1000000000000) {
       return '${(value / 1000000000000).toStringAsFixed(value >= 10000000000000 ? 0 : 1)}T';
     }

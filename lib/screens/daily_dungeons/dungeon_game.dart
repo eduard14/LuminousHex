@@ -57,7 +57,7 @@ class _ThreatDirectorDungeonGame extends FlameGame {
     if (!_running || (_cooldowns[key] ?? 0) > 0) {
       return;
     }
-    final lifetime = _dungeonRaidLifetime(card, apex: apex);
+    final lifetime = _dungeonRaidLifetime(controller, card, apex: apex);
     final raidHealth = _dungeonRaidMaxHealth(
       controller,
       card,

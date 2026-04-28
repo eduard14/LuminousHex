@@ -523,24 +523,28 @@ extension LightcoreBattleGameCoreRendering on LightcoreBattleGame {
       controller.coreState.secondaryAffinity,
     );
     final eased = Curves.easeOutCubic.transform(rawProgress);
-    final fade = Curves.easeOutQuad.transform(1 - rawProgress);
+    final fade =
+        Curves.easeOutQuad.transform(1 - rawProgress) * _battleEffectAlphaScale;
     final maxRadius = _spawnRadiusVisual * 1.12;
 
     final flashRect = Rect.fromCircle(center: center, radius: maxRadius);
-    canvas.drawRect(
-      flashRect,
-      Paint()
-        ..shader = RadialGradient(
-          colors: [
-            LightcorePalette.mist.withValues(alpha: 0.22 * fade),
-            coreColor.withValues(alpha: 0.16 * fade),
-            Colors.transparent,
-          ],
-          stops: const [0, 0.34, 1],
-        ).createShader(flashRect),
-    );
+    if (!_lowPowerBattleEffects) {
+      canvas.drawRect(
+        flashRect,
+        Paint()
+          ..shader = RadialGradient(
+            colors: [
+              LightcorePalette.mist.withValues(alpha: 0.22 * fade),
+              coreColor.withValues(alpha: 0.16 * fade),
+              Colors.transparent,
+            ],
+            stops: const [0, 0.34, 1],
+          ).createShader(flashRect),
+      );
+    }
 
-    for (var index = 0; index < 4; index++) {
+    final ringCount = _qualityScaledCount(4, balanced: 3, lowPower: 2);
+    for (var index = 0; index < ringCount; index++) {
       final ringProgress = ((rawProgress * 1.22) - (index * 0.12))
           .clamp(0.0, 1.0)
           .toDouble();
@@ -559,7 +563,9 @@ extension LightcoreBattleGameCoreRendering on LightcoreBattleGame {
         Paint()
           ..style = PaintingStyle.stroke
           ..strokeWidth = _coreRadius * (0.09 - (index * 0.012))
-          ..maskFilter = MaskFilter.blur(BlurStyle.normal, _coreRadius * 0.05)
+          ..maskFilter = _lowPowerBattleEffects
+              ? null
+              : MaskFilter.blur(BlurStyle.normal, _coreRadius * 0.05)
           ..color = Color.lerp(
             coreColor,
             LightcorePalette.mist,
@@ -573,7 +579,7 @@ extension LightcoreBattleGameCoreRendering on LightcoreBattleGame {
       ..strokeCap = StrokeCap.round
       ..strokeWidth = math.max(1.4, _coreRadius * 0.034)
       ..color = LightcorePalette.mist.withValues(alpha: 0.34 * fade);
-    final spokeCount = 18;
+    final spokeCount = _qualityScaledCount(18, balanced: 10, lowPower: 0);
     final spin = controller.elapsed * 1.8;
     for (var index = 0; index < spokeCount; index++) {
       final angle = ((math.pi * 2) / spokeCount * index) + spin;

@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 class LightcoreSessionStore {
   static const String _playerIdKey = 'lightcore.player_id';
   static const String _guideIdKey = 'lightcore.guide_id';
+  static const String _graphicsQualityKey = 'lightcore.graphics_quality';
   static const String _skipGuestSignInPromptKey =
       'lightcore.skip_guest_sign_in_prompt';
 
@@ -24,6 +25,16 @@ class LightcoreSessionStore {
   Future<void> writeGuideId(String guideId) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_guideIdKey, guideId);
+  }
+
+  Future<String?> readGraphicsQuality() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_graphicsQualityKey);
+  }
+
+  Future<void> writeGraphicsQuality(String graphicsQuality) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_graphicsQualityKey, graphicsQuality);
   }
 
   Future<bool> readSkipGuestSignInPrompt() async {

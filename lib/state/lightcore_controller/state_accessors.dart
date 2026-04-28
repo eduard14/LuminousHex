@@ -238,6 +238,8 @@ extension LightcoreControllerStateAccessors on LightcoreController {
 
   bool get hasNewEquipmentNotifications => _newEquipmentItemIds.isNotEmpty;
 
+  LightcoreGraphicsQuality get graphicsQuality => _graphicsQuality;
+
   bool get notificationBannersEnabled => _notificationBannersEnabled;
 
   bool get tutorialPromptsEnabled => _tutorialPromptsEnabled;
@@ -265,6 +267,14 @@ extension LightcoreControllerStateAccessors on LightcoreController {
       return;
     }
     _notificationBannersEnabled = enabled;
+    _notifyNow();
+  }
+
+  void setGraphicsQuality(LightcoreGraphicsQuality quality) {
+    if (_graphicsQuality == quality) {
+      return;
+    }
+    _graphicsQuality = quality;
     _notifyNow();
   }
 

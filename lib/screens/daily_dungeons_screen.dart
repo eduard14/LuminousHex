@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flame/game.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
 import '../models/lightcore_state.dart';
@@ -18,6 +19,8 @@ part 'daily_dungeons/dungeon_run_widgets.dart';
 part 'daily_dungeons/dungeon_selection_widgets.dart';
 part 'daily_dungeons/dungeon_battle_painter.dart';
 part 'daily_dungeons/dungeon_loadout_widgets.dart';
+part 'daily_dungeons/prism_rift_dungeon_game.dart';
+part 'daily_dungeons/prism_rift_dungeon_widgets.dart';
 
 class DailyDungeonsScreen extends StatefulWidget {
   const DailyDungeonsScreen({
@@ -116,13 +119,14 @@ class _DailyDungeonsScreenState extends State<DailyDungeonsScreen> {
                       child: _DungeonSelectCard(
                         title: 'Prism Rift',
                         subtitle:
-                            'Rift route is sealed until the daily dungeon rotation opens it.',
+                            'Manual aim route. Stabilize rift shards with charged player-fired shots.',
                         icon: Icons.terrain_rounded,
                         tint: LightcorePalette.violet,
                         selected: _selected == _DailyDungeonSlot.prismRift,
-                        enabled: false,
-                        statusLabel: 'Sealed',
-                        onTap: null,
+                        enabled: true,
+                        statusLabel: 'Open',
+                        onTap: () =>
+                            _selectDungeon(_DailyDungeonSlot.prismRift),
                       ),
                     ),
                   ],
@@ -131,7 +135,9 @@ class _DailyDungeonsScreenState extends State<DailyDungeonsScreen> {
             ),
             const SizedBox(height: 16),
             if (_selected == _DailyDungeonSlot.enemyManager)
-              _buildEnemyManagerDungeon(context, controller, ownedCards),
+              _buildEnemyManagerDungeon(context, controller, ownedCards)
+            else if (_selected == _DailyDungeonSlot.prismRift)
+              _buildPrismRiftDungeon(context, controller),
           ],
         );
       },
@@ -327,6 +333,108 @@ class _DailyDungeonsScreenState extends State<DailyDungeonsScreen> {
     );
   }
 
+  Widget _buildPrismRiftDungeon(
+    BuildContext context,
+    LightcoreController controller,
+  ) {
+    final textTheme = Theme.of(context).textTheme;
+    final selectedLevel = _selectedLevelFor(controller);
+    final towerProfile = controller.dailyDungeonTowerProfileForLevel(
+      selectedLevel,
+    );
+    final reward = controller.dailyDungeonRewardForLevel(selectedLevel);
+    final riftStability = _prismRiftMaxStabilityFor(towerProfile);
+
+    return AuroraPanel(
+      tint: LightcorePalette.violet,
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _IconBadge(
+                icon: Icons.terrain_rounded,
+                tint: LightcorePalette.violet,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Prism Rift', style: textTheme.titleLarge),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Automation is offline inside the rift. Each clear uses the same daily tower ladder and first-clear reward track.',
+                      style: textTheme.bodyMedium?.copyWith(
+                        color: LightcorePalette.mist.withValues(alpha: 0.78),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              _StatusCapsule(label: 'Manual', tint: LightcorePalette.violet),
+            ],
+          ),
+          const SizedBox(height: 18),
+          _DungeonTowerLadder(
+            selectedLevel: selectedLevel,
+            highestUnlockedLevel:
+                controller.dailyDungeonHighestUnlockedTowerLevel,
+            highestClearedLevel:
+                controller.dailyDungeonHighestClearedTowerLevel,
+            enabled: true,
+            onSelected: (level) => _selectTowerLevel(controller, level),
+          ),
+          const SizedBox(height: 14),
+          _PrismRiftPreviewPanel(
+            towerProfile: towerProfile,
+            towerLevel: selectedLevel,
+            reward: reward,
+            riftStability: riftStability,
+            cleared: controller.isDailyDungeonTowerLevelCleared(selectedLevel),
+          ),
+          const SizedBox(height: 16),
+          Wrap(
+            spacing: 10,
+            runSpacing: 10,
+            children: [
+              _InfoChip(
+                icon: Icons.timer_rounded,
+                label: '${_timeLimit.inSeconds}s limit',
+                tint: LightcorePalette.aether,
+              ),
+              _InfoChip(
+                icon: towerProjectileIcon(towerProfile.projectileType),
+                label: '${towerProfile.affinity.shortLabel} manual shot',
+                tint: towerProfile.affinity.color,
+              ),
+              _InfoChip(
+                icon: Icons.track_changes_rounded,
+                label: '${riftStability.round()} stability',
+                tint: LightcorePalette.violet,
+              ),
+              _InfoChip(
+                icon: Icons.local_fire_department_rounded,
+                label: 'combo scoring',
+                tint: LightcorePalette.solar,
+              ),
+            ],
+          ),
+          const SizedBox(height: 18),
+          FilledButton.icon(
+            onPressed: () =>
+                _openPrismRiftRun(context, controller, selectedLevel),
+            icon: const Icon(Icons.play_arrow_rounded),
+            label: Text('Enter Rift Lv $selectedLevel'),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _selectDungeon(_DailyDungeonSlot slot) {
     if (_selected == slot) {
       return;
@@ -386,6 +494,28 @@ class _DailyDungeonsScreenState extends State<DailyDungeonsScreen> {
           towerLevel: towerLevel,
           anomalyCards: List<EnemyCardState>.unmodifiable(anomalyCards),
           apexCard: apexCard,
+        ),
+      ),
+    );
+    if (!mounted || result == null || !result.cleared) {
+      return;
+    }
+    setState(() {
+      _selectedTowerLevel = controller.dailyDungeonHighestUnlockedTowerLevel;
+    });
+  }
+
+  Future<void> _openPrismRiftRun(
+    BuildContext context,
+    LightcoreController controller,
+    int towerLevel,
+  ) async {
+    final result = await Navigator.of(context).push<_DungeonRunResult>(
+      MaterialPageRoute<_DungeonRunResult>(
+        fullscreenDialog: true,
+        builder: (_) => _PrismRiftDungeonRunScreen(
+          controller: controller,
+          towerLevel: towerLevel,
         ),
       ),
     );

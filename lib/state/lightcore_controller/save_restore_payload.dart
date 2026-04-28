@@ -186,11 +186,11 @@ extension LightcoreControllerSaveRestorePayload on LightcoreController {
     _cards = _coerceList(inventoryData['cards'])
         .map((item) => _deserializeInventoryCard(_coerceMap(item)))
         .whereType<InventoryCard>()
-        .toList(growable: false);
+        .toList();
     _enemyManagers = _coerceList(inventoryData['enemyManagers'])
         .map((item) => _deserializeEnemyManager(_coerceMap(item)))
         .whereType<EnemyManagerState>()
-        .toList(growable: false);
+        .toList();
     _enemyCards = _restoreEnemyCardInventory(
       savedCards: _coerceList(inventoryData['enemyCards']),
       defaults: _createEnemyCardInventory(),
@@ -205,7 +205,7 @@ extension LightcoreControllerSaveRestorePayload on LightcoreController {
     _equipmentInventory = _coerceList(inventoryData['equipmentInventory'])
         .map((item) => _deserializePlayerEquipmentItem(_coerceMap(item)))
         .whereType<PlayerEquipmentItem>()
-        .toList(growable: false);
+        .toList();
     _equippedPlayerItems = <EquipmentLoadoutSlot, String?>{
       for (final slot in EquipmentLoadoutSlot.values) slot: null,
     };
@@ -219,7 +219,7 @@ extension LightcoreControllerSaveRestorePayload on LightcoreController {
     final restoredLayers = _coerceList(layerData['items'])
         .map((item) => _deserializeLayerSnapshot(_coerceMap(item)))
         .whereType<TowerLayerSnapshot>()
-        .toList(growable: false);
+        .toList();
     if (restoredLayers.isNotEmpty) {
       _layers = restoredLayers;
       _layers

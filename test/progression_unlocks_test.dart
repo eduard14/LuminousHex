@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:lightcore/data/enemy_configs.dart';
 import 'package:lightcore/data/tower_configs.dart';
+import 'package:lightcore/models/lightcore_state.dart';
 import 'package:lightcore/models/lightcore_types.dart';
 import 'package:lightcore/state/lightcore_controller.dart';
 
@@ -397,6 +398,33 @@ void main() {
     expect(levelThree.maxHealth, greaterThan(levelTwo.maxHealth));
     expect(levelTwo.shotDamage, greaterThan(levelOne.shotDamage));
     expect(levelThree.shotDamage, greaterThan(levelTwo.shotDamage));
+  });
+
+  test('daily dungeon raids inherit enemy threat scaling', () {
+    final controller = LightcoreController();
+    addTearDown(controller.dispose);
+
+    final tower = controller.dailyDungeonTowerProfileForLevel(1);
+    final basic = controller.enemyCardById(EnemyLibrary.basicWhite.id)!;
+    final legendary = EnemyCardState(
+      config: EnemyLibrary.byRarity[EnemyCardRarity.legendary]!.first,
+      unlocked: true,
+      copies: 1,
+      level: 1,
+    );
+
+    expect(
+      controller.dailyDungeonRaidDamagePerSecond(legendary),
+      greaterThan(controller.dailyDungeonRaidDamagePerSecond(basic) * 10),
+    );
+    expect(
+      controller.dailyDungeonRaidMaxHealth(legendary, tower),
+      greaterThan(controller.dailyDungeonRaidMaxHealth(basic, tower) * 10),
+    );
+    expect(
+      controller.dailyDungeonRaidTotalDamage(legendary),
+      greaterThan(controller.dailyDungeonRaidTotalDamage(basic) * 12),
+    );
   });
 
   test('daily dungeon tower ladder persists in cloud saves', () {

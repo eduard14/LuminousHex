@@ -480,6 +480,12 @@ class _LightcoreMainMenuScreenState extends State<LightcoreMainMenuScreen>
       report: report,
     );
     final clientVersion = _clientDisplayVersion(report);
+    final screenSize = MediaQuery.sizeOf(context);
+    final devicePixelRatio = MediaQuery.devicePixelRatioOf(context);
+    final backgroundCacheWidth = (screenSize.width * devicePixelRatio)
+        .ceil()
+        .clamp(640, 1600)
+        .toInt();
 
     return SizedBox.expand(
       child: DecoratedBox(
@@ -491,6 +497,7 @@ class _LightcoreMainMenuScreenState extends State<LightcoreMainMenuScreen>
                 _menuBackgroundAsset,
                 fit: BoxFit.cover,
                 alignment: Alignment.center,
+                cacheWidth: backgroundCacheWidth,
                 filterQuality: FilterQuality.high,
               ),
             ),

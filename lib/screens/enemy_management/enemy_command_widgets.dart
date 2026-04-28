@@ -64,25 +64,244 @@ class _EnemyCardArt extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    return _ThreatCardArt(config: config, size: size);
+  }
+}
+
+class _ThreatCardArt extends StatelessWidget {
+  const _ThreatCardArt({required this.config, required this.size});
+
+  final EnemyConfig config;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
     final assetPath = enemyImageAssetForConfig(config);
     if (assetPath == null) {
       return _fallbackGlyph();
     }
+    final devicePixelRatio = MediaQuery.devicePixelRatioOf(context);
+    final targetCacheSize = (size * devicePixelRatio)
+        .ceil()
+        .clamp(96, 768)
+        .toInt();
 
-    return ClipOval(
-      child: Image.asset(
-        assetPath,
-        width: size,
-        height: size,
-        fit: BoxFit.cover,
-        filterQuality: FilterQuality.medium,
-        errorBuilder: (context, error, stackTrace) => _fallbackGlyph(),
-      ),
+    return Image.asset(
+      assetPath,
+      width: size,
+      height: size,
+      cacheWidth: targetCacheSize,
+      fit: BoxFit.contain,
+      filterQuality: FilterQuality.medium,
+      errorBuilder: (context, error, stackTrace) => _fallbackGlyph(),
     );
   }
 
   Widget _fallbackGlyph() {
+    if (config.isBoss) {
+      return _BossGlyph(config: config, size: size * 0.82);
+    }
     return AffinityGlyph(affinity: config.affinity, size: size * 0.68);
+  }
+}
+
+class _ThreatSummonCard extends StatelessWidget {
+  const _ThreatSummonCard({
+    required this.config,
+    required this.dimension,
+    this.artSize,
+    this.bottomLabel,
+    this.bottom,
+    this.topRight,
+    this.locked = false,
+    this.selected = false,
+    this.emphasized = false,
+    this.glowTint,
+    this.glowStrength = 0,
+    this.onTap,
+    this.semanticLabel,
+  });
+
+  final EnemyConfig config;
+  final double dimension;
+  final double? artSize;
+  final String? bottomLabel;
+  final Widget? bottom;
+  final Widget? topRight;
+  final bool locked;
+  final bool selected;
+  final bool emphasized;
+  final Color? glowTint;
+  final double glowStrength;
+  final VoidCallback? onTap;
+  final String? semanticLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    final rarityTint = _rarityTint(config.rarity);
+    final affinityTint = config.affinity.color;
+    final secondaryTint = config.secondaryAffinity?.color ?? affinityTint;
+    final radius = BorderRadius.circular(8);
+    final effectiveGlow = glowStrength.clamp(0.0, 1.0).toDouble();
+    final shadowTint = glowTint ?? rarityTint;
+    final opacity = locked ? 0.46 : 1.0;
+
+    Widget card = Container(
+      width: dimension,
+      height: dimension,
+      decoration: BoxDecoration(
+        borderRadius: radius,
+        border: Border.all(
+          color: rarityTint.withValues(alpha: locked ? 0.38 : 0.96),
+          width: selected || emphasized ? 2.4 : 2,
+        ),
+        gradient: LinearGradient(
+          colors: [
+            rarityTint.withValues(alpha: locked ? 0.08 : 0.18),
+            const Color(0xFFF7F9FC).withValues(alpha: locked ? 0.48 : 0.96),
+            const Color(0xFFE5EAF2).withValues(alpha: locked ? 0.42 : 0.9),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: shadowTint.withValues(alpha: 0.14 + (effectiveGlow * 0.22)),
+            blurRadius: 16 + (effectiveGlow * 20),
+            spreadRadius: -5 + (effectiveGlow * 2),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: radius,
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            Positioned(
+              right: -dimension * 0.16,
+              bottom: -dimension * 0.18,
+              child: Icon(
+                config.isBoss
+                    ? Icons.shield_moon_rounded
+                    : Icons.hexagon_rounded,
+                size: dimension * 0.72,
+                color: affinityTint.withValues(alpha: locked ? 0.05 : 0.08),
+              ),
+            ),
+            Positioned(
+              top: 0,
+              left: 0,
+              child: _ThreatAffinityCorner(
+                primary: affinityTint,
+                secondary: secondaryTint,
+                size: dimension * 0.28,
+              ),
+            ),
+            Align(
+              alignment: Alignment(
+                0,
+                bottomLabel != null || bottom != null ? -0.2 : 0,
+              ),
+              child: Opacity(
+                opacity: opacity,
+                child: _ThreatCardArt(
+                  config: config,
+                  size: artSize ?? dimension * 0.58,
+                ),
+              ),
+            ),
+            if (topRight != null)
+              Positioned(top: 5, right: 5, child: topRight!),
+            if (bottomLabel != null || bottom != null)
+              Positioned(
+                left: 6,
+                right: 6,
+                bottom: 6,
+                child: Container(
+                  height: 22,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1D1E28).withValues(alpha: 0.92),
+                    borderRadius: BorderRadius.circular(5),
+                  ),
+                  child: IconTheme.merge(
+                    data: const IconThemeData(
+                      color: LightcorePalette.mist,
+                      size: 11,
+                    ),
+                    child: DefaultTextStyle.merge(
+                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                        color: LightcorePalette.mist,
+                        fontWeight: FontWeight.w900,
+                        height: 1,
+                      ),
+                      child: bottom == null
+                          ? Text(
+                              bottomLabel!,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              textAlign: TextAlign.center,
+                            )
+                          : FittedBox(fit: BoxFit.scaleDown, child: bottom!),
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+
+    if (onTap != null) {
+      card = Material(
+        color: Colors.transparent,
+        child: InkWell(borderRadius: radius, onTap: onTap, child: card),
+      );
+    }
+
+    return Semantics(
+      button: onTap != null,
+      label: semanticLabel ?? config.name,
+      child: card,
+    );
+  }
+}
+
+class _ThreatAffinityCorner extends StatelessWidget {
+  const _ThreatAffinityCorner({
+    required this.primary,
+    required this.secondary,
+    required this.size,
+  });
+
+  final Color primary;
+  final Color secondary;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: size,
+      height: size * 0.82,
+      decoration: BoxDecoration(
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(6),
+          bottomRight: Radius.circular(7),
+        ),
+        gradient: LinearGradient(
+          colors: [primary, secondary],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: secondary.withValues(alpha: 0.26),
+            blurRadius: 8,
+            spreadRadius: -3,
+          ),
+        ],
+      ),
+    );
   }
 }
 
@@ -285,6 +504,15 @@ class _EnemyCommandDetails extends StatelessWidget {
             _InfoChip(label: 'Lv ${card.level}/$cap'),
             _InfoChip(label: 'Copies ${card.copies}'),
             _InfoChip(label: _enemyTileProgressLabel(controller, card)),
+            _InfoChip(
+              label: 'Threat ${controller.enemyCardThreatRatingLabel(card)}',
+            ),
+            _InfoChip(
+              label: 'HP ${controller.enemyCardPreviewHealthLabel(card)}',
+            ),
+            _InfoChip(
+              label: 'Lumens +${controller.enemyCardPreviewRewardLabel(card)}',
+            ),
             _InfoChip(
               label: 'EXP +${controller.enemyCardPreviewExperience(card)}',
             ),
@@ -512,6 +740,10 @@ class _SwarmPressurePanel extends StatelessWidget {
               _InfoChip(label: 'Every ${controller.enemySpawnCadenceLabel}'),
               _InfoChip(label: 'Threat ${bundle.threatRewardLabel}'),
               _InfoChip(label: 'Stability ${bundle.stabilityPressureLabel}'),
+              _InfoChip(label: 'DPS ${controller.activeLayerMaxDpsLabel}'),
+              _InfoChip(
+                label: 'Budget ${controller.activeLayerMaxDpsPerEnemyLabel}',
+              ),
               _InfoChip(label: 'Output ${controller.outputEfficiencyLabel}'),
               _InfoChip(label: 'Gain ${bundle.effectiveGainLabel}'),
               _InfoChip(label: controller.outputEfficiencyStatusLabel),

@@ -787,6 +787,10 @@ extension LightcoreControllerBattleTowerActions on LightcoreController {
     }
     for (var layerIndex = 0; layerIndex < _layers.length; layerIndex++) {
       final layer = _layers[layerIndex];
+      if (layer.id == activeLayer.id ||
+          layer.id == _cards[cardIndex].equippedLayerId) {
+        layer.core = layer.core.copyWith(automationCooldownRemaining: 0);
+      }
       for (var slotIndex = 0; slotIndex < layer.slots.length; slotIndex++) {
         final slot = layer.slots[slotIndex];
         if (slot.equippedCardInstanceId == cardId ||
@@ -804,6 +808,7 @@ extension LightcoreControllerBattleTowerActions on LightcoreController {
       equippedLayerId: activeLayer.id,
       clearEquippedSlotIndex: true,
     );
+    _core = _core.copyWith(automationCooldownRemaining: 0);
     if (_tutorialStep == LightcoreTutorialStep.assignTowerManager) {
       _tutorialTowerManagerAssigned = true;
       _syncTutorialStep(showBanner: false);
@@ -839,6 +844,7 @@ extension LightcoreControllerBattleTowerActions on LightcoreController {
         clearEquippedCard: true,
       );
     }
+    _core = _core.copyWith(automationCooldownRemaining: 0);
     _showBanner('Core Manager removed from the Tower Core.');
     _notifyNow();
   }

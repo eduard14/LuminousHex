@@ -322,12 +322,66 @@ extension LightcoreControllerCombatFollowups on LightcoreController {
     );
   }
 
-  double _enemyCardLevelHealthScale(int level) => 1 + ((level - 1) * 0.32);
+  double _normalEnemyRarityHealthScale(EnemyCardRarity rarity) =>
+      switch (rarity) {
+        EnemyCardRarity.basic => 1.0,
+        EnemyCardRarity.uncommon => 60.0,
+        EnemyCardRarity.rare => 5000.0,
+        EnemyCardRarity.epic => 150000.0,
+        EnemyCardRarity.legendary => 12000000.0,
+      };
 
-  double _enemyCardLevelLumenScale(int level) =>
-      pow(1.06, max(0, level - 1)).toDouble();
+  double _normalEnemyLevelHealthGrowth(EnemyCardRarity rarity) =>
+      switch (rarity) {
+        EnemyCardRarity.basic => 1.11,
+        EnemyCardRarity.uncommon => 1.13,
+        EnemyCardRarity.rare => 1.18,
+        EnemyCardRarity.epic => 1.35,
+        EnemyCardRarity.legendary => 2.3,
+      };
 
-  double _enemyCardLevelExperienceScale(int level) => 1 + ((level - 1) * 0.18);
+  double _normalEnemyRarityDefenseScale(EnemyCardRarity rarity) =>
+      switch (rarity) {
+        EnemyCardRarity.basic => 1.0,
+        EnemyCardRarity.uncommon => 1.8,
+        EnemyCardRarity.rare => 3.6,
+        EnemyCardRarity.epic => 8.0,
+        EnemyCardRarity.legendary => 16.0,
+      };
+
+  double _enemyCardThreatScale(EnemyCardState source) {
+    if (source.config.isBoss) {
+      return 1 + ((source.level - 1) * 0.32);
+    }
+    return _normalEnemyRarityHealthScale(source.config.rarity) *
+        pow(
+          _normalEnemyLevelHealthGrowth(source.config.rarity),
+          max(0, source.level - 1),
+        ).toDouble();
+  }
+
+  double _enemyCardDefenseScale(EnemyCardState source) {
+    if (source.config.isBoss) {
+      return 1 + ((source.level - 1) * 0.16);
+    }
+    final rarityScale = _normalEnemyRarityDefenseScale(source.config.rarity);
+    final levelScale = pow(1.035, max(0, source.level - 1)).toDouble();
+    return rarityScale * levelScale;
+  }
+
+  double _enemyCardLumenScale(EnemyCardState source) {
+    if (source.config.isBoss) {
+      return pow(1.06, max(0, source.level - 1)).toDouble();
+    }
+    return pow(_enemyCardThreatScale(source), 0.68).toDouble();
+  }
+
+  double _enemyCardExperienceScale(EnemyCardState source) {
+    if (source.config.isBoss) {
+      return 1 + ((source.level - 1) * 0.18);
+    }
+    return pow(_enemyCardThreatScale(source), 0.60).toDouble();
+  }
 
   double _enemyCardLevelSpeedScale(int level) => 1 + ((level - 1) * 0.04);
 
@@ -348,7 +402,7 @@ extension LightcoreControllerCombatFollowups on LightcoreController {
                 'baseExperience',
                 config.baseExperience.toDouble(),
               ) *
-              _enemyCardLevelExperienceScale(source.level) *
+              _enemyCardExperienceScale(source) *
               (splitDepth > 0 ? 0.62 : 1) *
               (config.isBoss ? 2.2 + ((activeLayer.tier - 1) * 0.45) : 1.0) *
               _managerValue(

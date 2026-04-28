@@ -5,8 +5,7 @@ double _dungeonRaidTotalDamage(
   EnemyCardState card, {
   bool apex = false,
 }) {
-  return _dungeonRaidDamagePerSecond(controller, card, apex: apex) *
-      _dungeonRaidLifetime(card, apex: apex);
+  return controller.dailyDungeonRaidTotalDamage(card, apex: apex);
 }
 
 double _dungeonRaidDamagePerSecond(
@@ -14,32 +13,7 @@ double _dungeonRaidDamagePerSecond(
   EnemyCardState card, {
   bool apex = false,
 }) {
-  final config = card.config;
-  final manager = apex ? null : controller.enemyManagerForCard(config.id);
-  final levelMultiplier = 1 + ((card.level - 1) * (apex ? 0.075 : 0.055));
-  final rarityMultiplier = 1 + (config.rarity.index * (apex ? 0.28 : 0.18));
-  final splitBonus = config.splitsOnDeath ? 1.12 : 1.0;
-  final managerMultiplier = manager == null
-      ? 1.0
-      : ((manager.spawnRateMultiplier +
-                    manager.healthMultiplier +
-                    manager.speedMultiplier +
-                    manager.experienceMultiplier) /
-                4)
-            .clamp(0.82, 1.42)
-            .toDouble();
-  final bodyPressure =
-      16 +
-      (config.baseHealth * (apex ? 0.12 : 0.3)) +
-      (config.baseDefense * (apex ? 0.34 : 0.2)) +
-      (config.baseSpeed * (apex ? 1.35 : 0.9)) +
-      (config.jamStrength * (apex ? 44 : 28));
-  return bodyPressure *
-      levelMultiplier *
-      rarityMultiplier *
-      splitBonus *
-      managerMultiplier *
-      (apex ? 0.72 : 1.0);
+  return controller.dailyDungeonRaidDamagePerSecond(card, apex: apex);
 }
 
 double _dungeonRaidMaxHealth(
@@ -48,35 +22,15 @@ double _dungeonRaidMaxHealth(
   LightcoreDailyDungeonTowerProfile towerProfile, {
   bool apex = false,
 }) {
-  final config = card.config;
-  final manager = apex ? null : controller.enemyManagerForCard(config.id);
-  final managerMultiplier = manager == null
-      ? 1.0
-      : ((manager.healthMultiplier + manager.speedMultiplier) / 2)
-            .clamp(0.86, 1.36)
-            .toDouble();
-  final levelMultiplier = 1 + ((card.level - 1) * (apex ? 0.1 : 0.075));
-  final rarityMultiplier = 1 + (config.rarity.index * (apex ? 0.42 : 0.24));
-  final towerPressure =
-      1 + ((towerProfile.towerLevel - 1) * 0.018).clamp(0.0, 0.75);
-  final body =
-      58 +
-      (config.baseHealth * (apex ? 7.5 : 4.2)) +
-      (config.baseDefense * (apex ? 3.8 : 2.4)) +
-      (config.baseSpeed * (apex ? 1.9 : 1.1)) +
-      (config.jamStrength * (apex ? 72 : 38));
-  return body *
-      levelMultiplier *
-      rarityMultiplier *
-      managerMultiplier *
-      towerPressure *
-      (apex ? 1.85 : 1.0);
+  return controller.dailyDungeonRaidMaxHealth(card, towerProfile, apex: apex);
 }
 
-double _dungeonRaidLifetime(EnemyCardState card, {bool apex = false}) {
-  final speedFactor = (card.config.baseSpeed / 28).clamp(0.62, 1.18).toDouble();
-  final rarityBonus = card.config.rarity.index * (apex ? 0.24 : 0.16);
-  return (apex ? 6.4 : 4.9) + speedFactor + rarityBonus;
+double _dungeonRaidLifetime(
+  LightcoreController controller,
+  EnemyCardState card, {
+  bool apex = false,
+}) {
+  return controller.dailyDungeonRaidLifetime(card, apex: apex);
 }
 
 double _dungeonDeployCooldown(

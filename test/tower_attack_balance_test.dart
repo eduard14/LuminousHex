@@ -18,7 +18,7 @@ double _sourceTowerBalanceScore(
     payloadType: PayloadType.none,
   );
   final passiveShieldScore = controller.towerUsesPersistentShieldRing(tower)
-      ? controller.towerPower(tower) * 24
+      ? controller.towerPower(tower) * 31
       : 0.0;
   return (controller.towerPower(tower) * 2.8) +
       (controller.towerChargeRate(tower) * 90) +
@@ -34,6 +34,79 @@ double _sourceTowerBalanceScore(
       (controller.towerDefensePenetration(tower) * 240) +
       (tower.level * 24) +
       18;
+}
+
+void _buildMaxedSourceShell(LightcoreController controller) {
+  controller.lumens = 1000000000;
+  controller.kills = LightcoreController.unlockKillsForOuterSlot(
+    LightcoreController.slotCount - 1,
+  );
+  for (var index = 0; index < LightcoreController.slotCount; index++) {
+    controller.buildTowerAt(index, TowerLibrary.all[index]);
+    while (controller.slots[index].level < LightcoreController.maxTowerLevel) {
+      controller.upgradeTower(index);
+    }
+  }
+}
+
+Map<String, dynamic> _towerStrengthSavePayload(int tier) {
+  final layerId = 'tower-strength-layer-$tier';
+  return <String, dynamic>{
+    'player': <String, dynamic>{'playerId': 'TS-L$tier'},
+    'layers': <String, dynamic>{
+      'activeLayerId': layerId,
+      'viewLayerId': layerId,
+      'runtimeLayerId': layerId,
+      'items': <Map<String, dynamic>>[
+        _towerStrengthLayerPayload(layerId, tier),
+      ],
+    },
+  };
+}
+
+Map<String, dynamic> _towerStrengthLayerPayload(String layerId, int tier) {
+  return <String, dynamic>{
+    'id': layerId,
+    'tier': tier,
+    'label': LightcoreController.shellNameForTier(tier),
+    'slots': _towerStrengthTowerSlots(),
+    'core': <String, dynamic>{
+      'coreStability': 100,
+      'flowEfficiency': 100,
+      'level': tier,
+      'projectileType': ProjectileType.threadBeam.name,
+      'payloadType': PayloadType.none.name,
+      'affinity': PrototypeAffinity.aether.name,
+    },
+    'layer2': <String, dynamic>{
+      'unlocked': tier > 1,
+      'count': LightcoreController.slotCount,
+      'projectileType': ProjectileType.threadBeam.name,
+      'payloadType': PayloadType.none.name,
+      'affinity': PrototypeAffinity.aether.name,
+    },
+    'activeEnemyCardIds': const <String>[],
+    'enemyTargetCount': 1,
+    'enemyTargetUpgradeLevel': 0,
+    'outerRingRevealed': true,
+    'swarmActivated': true,
+    'childTowerUpgrades': const <Map<String, dynamic>>[],
+  };
+}
+
+List<Map<String, dynamic>> _towerStrengthTowerSlots() {
+  return List<Map<String, dynamic>>.generate(LightcoreController.slotCount, (
+    index,
+  ) {
+    final config = TowerLibrary.all[index];
+    return <String, dynamic>{
+      'slotIndex': index,
+      'configId': config.id,
+      'level': LightcoreController.maxTowerLevel,
+      'projectileType': config.defaultProjectileType.name,
+      'payloadType': PayloadType.none.name,
+    };
+  });
 }
 
 void main() {
@@ -95,6 +168,65 @@ void main() {
     final highestScore = scores.values.reduce(max);
 
     expect(highestScore / lowestScore, lessThanOrEqualTo(1.16));
+  });
+
+  test('tower strength compounds into quadrillions by ascendant shell', () {
+    final root = LightcoreController.fromCloudSavePayload(
+      _towerStrengthSavePayload(1),
+    );
+    final ascendant = LightcoreController.fromCloudSavePayload(
+      _towerStrengthSavePayload(4),
+    );
+    addTearDown(root.dispose);
+    addTearDown(ascendant.dispose);
+
+    expect(root.activeLayer.tier, 1);
+    expect(ascendant.activeLayer.tier, 4);
+    expect(root.towerStrength, lessThan(1000000));
+    expect(ascendant.towerStrength, greaterThanOrEqualTo(1000000000000000));
+    expect(
+      ascendant.towerStrength,
+      greaterThan(root.towerStrength * 100000000000),
+    );
+    expect(ascendant.towerStrengthCompactLabel, endsWith('Q'));
+  });
+
+  test('DPS budget scales down per active enemy target', () {
+    final controller = LightcoreController();
+    addTearDown(controller.dispose);
+
+    _buildMaxedSourceShell(controller);
+    final fullShellDps = controller.activeLayerMaxDpsEstimate;
+    final sixTargetBudget = controller.activeLayerMaxDpsPerEnemyEstimate;
+
+    expect(fullShellDps, greaterThan(0));
+    expect(
+      sixTargetBudget,
+      closeTo(fullShellDps / controller.enemyTargetCount, 0.001),
+    );
+
+    expect(controller.setEnemyTargetCount(controller.enemyTargetMax), isTrue);
+    expect(
+      controller.activeLayerMaxDpsPerEnemyEstimate,
+      lessThan(sixTargetBudget),
+    );
+  });
+
+  test('promoted core starts near a completed source shell DPS budget', () {
+    final controller = LightcoreController();
+    addTearDown(controller.dispose);
+
+    _buildMaxedSourceShell(controller);
+    final fullSourceShellDps = controller.activeLayerMaxDpsEstimate;
+    expect(controller.isPromotionReady, isTrue);
+
+    controller.unlockLayer2Tower();
+
+    expect(controller.activeLayer.tier, 2);
+    expect(
+      controller.activeLayerMaxDpsEstimate,
+      greaterThan(fullSourceShellDps * 0.85),
+    );
   });
 
   test(

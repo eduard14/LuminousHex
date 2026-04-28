@@ -17,16 +17,30 @@ extension _LightcoreBattleGameProjectileRendering on LightcoreBattleGame {
           ? LightcorePalette.layer2
           : _signatureColor(burst.affinity, burst.secondaryAffinity);
       final open = Curves.easeOutCubic.transform(progress);
-      final fade = Curves.easeOutQuad.transform(1 - progress);
+      final fade =
+          Curves.easeOutQuad.transform(1 - progress) * _battleEffectAlphaScale;
       final baseRadius = _coreRadius * spec.scale;
       final muzzle = origin + _angleOffset(burst.aimAngle, baseRadius * 0.3);
 
-      canvas.drawCircle(
-        origin,
-        baseRadius * (0.16 + (open * 0.16)),
-        Paint()
-          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10)
-          ..color = color.withValues(alpha: 0.22 * fade),
+      if (!_lowPowerBattleEffects) {
+        canvas.drawCircle(
+          origin,
+          baseRadius * (0.16 + (open * 0.16)),
+          Paint()
+            ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10)
+            ..color = color.withValues(alpha: 0.22 * fade),
+        );
+      }
+
+      final sparkCount = _qualityScaledCount(
+        spec.sparkCount,
+        balanced: math.max(1, spec.sparkCount - 1),
+        lowPower: math.max(0, spec.sparkCount ~/ 2),
+      );
+      final ringCount = _qualityScaledCount(
+        spec.ringCount,
+        balanced: math.max(1, spec.ringCount),
+        lowPower: math.min(1, spec.ringCount),
       );
 
       switch (spec.style) {
@@ -39,7 +53,7 @@ extension _LightcoreBattleGameProjectileRendering on LightcoreBattleGame {
             baseRadius: baseRadius,
             open: open,
             fade: fade,
-            sparkCount: spec.sparkCount,
+            sparkCount: sparkCount,
             spread: spec.spread,
           );
         case _ShotFireBurstStyle.needle:
@@ -73,7 +87,7 @@ extension _LightcoreBattleGameProjectileRendering on LightcoreBattleGame {
             baseRadius: baseRadius,
             open: open,
             fade: fade,
-            ringCount: spec.ringCount,
+            ringCount: ringCount,
           );
         case _ShotFireBurstStyle.cluster:
           _renderClusterFireBurst(
@@ -84,7 +98,7 @@ extension _LightcoreBattleGameProjectileRendering on LightcoreBattleGame {
             baseRadius: baseRadius,
             open: open,
             fade: fade,
-            sparkCount: spec.sparkCount,
+            sparkCount: sparkCount,
             spread: spec.spread,
           );
         case _ShotFireBurstStyle.arc:
@@ -138,7 +152,7 @@ extension _LightcoreBattleGameProjectileRendering on LightcoreBattleGame {
             baseRadius: baseRadius,
             open: open,
             fade: fade,
-            ringCount: spec.ringCount,
+            ringCount: ringCount,
           );
         case _ShotFireBurstStyle.nova:
           _renderNovaFireBurst(
@@ -149,7 +163,7 @@ extension _LightcoreBattleGameProjectileRendering on LightcoreBattleGame {
             baseRadius: baseRadius,
             open: open,
             fade: fade,
-            sparkCount: spec.sparkCount,
+            sparkCount: sparkCount,
           );
         case _ShotFireBurstStyle.node:
           _renderNodeFireBurst(

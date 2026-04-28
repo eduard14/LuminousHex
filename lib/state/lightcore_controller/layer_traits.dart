@@ -732,6 +732,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
     _activeEnemyCardIds = List<String>.from(layer.activeEnemyCardIds);
     layer.activeEnemyCardIds = _activeEnemyCardIds;
     _activeBossEnemyCardId = layer.activeBossEnemyCardId;
+    _normalizeThreatAssignmentPresetSelection(layer);
     _enemyTargetUpgradeLevel = _normalizeEnemyTargetUpgradeLevel(
       layer.enemyTargetUpgradeLevel,
     );
@@ -1094,13 +1095,19 @@ extension LightcoreControllerLayerTraits on LightcoreController {
   }
 
   String towerRangeLabel(OuterTowerState tower) =>
-      towerEffectiveRange(tower).toStringAsFixed(0);
+      (towerUsesPersistentShieldRing(tower)
+              ? towerShieldRingRadius(tower)
+              : towerEffectiveRange(tower))
+          .toStringAsFixed(0);
 
   String towerDefaultProjectileRangeLabel(OuterTowerState tower) =>
-      towerEffectiveRangeForProjectile(
-        tower,
-        towerDefaultProjectileType(tower),
-      ).toStringAsFixed(0);
+      (towerUsesPersistentShieldRing(tower)
+              ? towerShieldRingRadius(tower)
+              : towerEffectiveRangeForProjectile(
+                  tower,
+                  towerDefaultProjectileType(tower),
+                ))
+          .toStringAsFixed(0);
 
   String towerGenerationLabel(OuterTowerState tower) =>
       towerUsesPersistentShieldRing(tower)

@@ -277,8 +277,8 @@ extension LightcoreControllerCombatEnemies on LightcoreController {
     final config = source.config;
     final manager = enemyManagerForCard(source.config.id);
     final managerEffect = _enemyManagerEffectMultiplier(source, manager);
-    final levelHealthScale = _enemyCardLevelHealthScale(source.level);
-    final levelLumenScale = _enemyCardLevelLumenScale(source.level);
+    final levelHealthScale = _enemyCardThreatScale(source);
+    final levelLumenScale = _enemyCardLumenScale(source);
     final levelSpeedScale = _enemyCardLevelSpeedScale(source.level);
     final layerScale = 1 + ((activeLayer.tier - 1) * 0.42);
     final worldPressureScale = config.isBoss
@@ -311,7 +311,7 @@ extension LightcoreControllerCombatEnemies on LightcoreController {
         _managerValue(1, manager?.healthMultiplier ?? 1, managerEffect);
     final defense =
         _balancedEnemyStat(config, 'baseDefense', config.baseDefense) *
-        (1 + ((source.level - 1) * 0.16)) *
+        _enemyCardDefenseScale(source) *
         layerScale *
         (config.isBoss
             ? _bossBaseDefenseScale +

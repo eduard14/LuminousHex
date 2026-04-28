@@ -31,7 +31,8 @@ extension _LightcoreBattleGameImpactRendering on LightcoreBattleGame {
             };
       final radius =
           (_coreRadius * radiusScale) + (impact.progress * _coreRadius * 0.58);
-      final fade = (1 - impact.progress).clamp(0.0, 1.0);
+      final fade =
+          (1 - impact.progress).clamp(0.0, 1.0) * _battleEffectAlphaScale;
       final fieldRadius = impact.hasLingeringField
           ? (_modelRadiusToVisual(impact.radius + impact.fieldRadius) -
                     _modelRadiusToVisual(impact.radius))
@@ -156,9 +157,10 @@ extension _LightcoreBattleGameImpactRendering on LightcoreBattleGame {
             ..strokeWidth = 3.2
             ..color = LightcorePalette.flare.withValues(alpha: 0.44 * fade),
         );
-        for (var index = 0; index < 6; index++) {
+        final rayCount = _qualityScaledCount(6, balanced: 4, lowPower: 2);
+        for (var index = 0; index < rayCount; index++) {
           final angle =
-              ((math.pi * 2) / 6) * index +
+              ((math.pi * 2) / rayCount) * index +
               (impact.id.hashCode * 0.0007) +
               (impact.progress * 0.4);
           final inner = position.translate(
@@ -196,9 +198,12 @@ extension _LightcoreBattleGameImpactRendering on LightcoreBattleGame {
         case PayloadEffectProfile.none:
           break;
         case PayloadEffectProfile.burn:
-          for (var index = 0; index < 3; index++) {
+          final emberCount = _qualityScaledCount(3, balanced: 2, lowPower: 1);
+          for (var index = 0; index < emberCount; index++) {
             final angle =
-                ((math.pi * 2) / 3) * index - (math.pi / 2) + (fade * 0.3);
+                ((math.pi * 2) / emberCount) * index -
+                (math.pi / 2) +
+                (fade * 0.3);
             final emberCenter = Offset(
               position.dx + math.cos(angle) * (radius * 0.42),
               position.dy + math.sin(angle) * (radius * 0.42),
@@ -563,8 +568,13 @@ extension _LightcoreBattleGameImpactRendering on LightcoreBattleGame {
     }
 
     final seed = impact.id.hashCode * 0.017;
-    final dropCount =
+    final fullDropCount =
         6 + (impact.defeatedEnemySizeScale * 2).round().clamp(0, 5);
+    final dropCount = _qualityScaledCount(
+      fullDropCount,
+      balanced: math.max(4, (fullDropCount * 0.7).round()),
+      lowPower: math.max(2, fullDropCount ~/ 2),
+    );
     final compact = size.x < 760 || size.y < 760;
     final targetX = compact ? 106.0 : 184.0;
     final targetY = compact ? 34.0 : 58.0;
@@ -625,13 +635,15 @@ extension _LightcoreBattleGameImpactRendering on LightcoreBattleGame {
         0.28 + (noiseA * 0.24),
       )!;
 
-      canvas.drawCircle(
-        center,
-        dropRadius * 2.2,
-        Paint()
-          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6)
-          ..color = dropColor.withValues(alpha: 0.16 * dropAlpha),
-      );
+      if (!_lowPowerBattleEffects) {
+        canvas.drawCircle(
+          center,
+          dropRadius * 2.2,
+          Paint()
+            ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6)
+            ..color = dropColor.withValues(alpha: 0.16 * dropAlpha),
+        );
+      }
       canvas.drawCircle(
         center,
         dropRadius,
@@ -686,7 +698,7 @@ extension _LightcoreBattleGameImpactRendering on LightcoreBattleGame {
         ..color = dustColor.withValues(alpha: 0.26 * fade),
     );
 
-    const particleCount = 22;
+    final particleCount = _qualityScaledCount(22, balanced: 14, lowPower: 7);
     for (var index = 0; index < particleCount; index++) {
       final noiseA = _deathNoise(seed, index, 0.17);
       final noiseB = _deathNoise(seed, index, 0.61);
@@ -715,7 +727,7 @@ extension _LightcoreBattleGameImpactRendering on LightcoreBattleGame {
           ? dustColor
           : Color.lerp(dustColor, LightcorePalette.gilded, 0.26)!;
 
-      if (index % 3 == 0) {
+      if (!_lowPowerBattleEffects && index % 3 == 0) {
         _drawGlowLine(
           canvas,
           particleCenter - (direction * radius * 0.11),
@@ -725,13 +737,15 @@ extension _LightcoreBattleGameImpactRendering on LightcoreBattleGame {
           alpha: 0.28 * particleFade,
         );
       }
-      canvas.drawCircle(
-        particleCenter,
-        particleRadius * 2.2,
-        Paint()
-          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 5)
-          ..color = particleColor.withValues(alpha: 0.1 * particleFade),
-      );
+      if (!_lowPowerBattleEffects) {
+        canvas.drawCircle(
+          particleCenter,
+          particleRadius * 2.2,
+          Paint()
+            ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 5)
+            ..color = particleColor.withValues(alpha: 0.1 * particleFade),
+        );
+      }
       canvas.drawCircle(
         particleCenter,
         particleRadius,
@@ -777,13 +791,15 @@ extension _LightcoreBattleGameImpactRendering on LightcoreBattleGame {
         ..strokeWidth = 1.8
         ..color = shellColor.withValues(alpha: 0.5 * fade),
     );
-    canvas.drawCircle(
-      position,
-      heatRadius * 2.2,
-      Paint()
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 18)
-        ..color = accentColor.withValues(alpha: 0.2 * fade),
-    );
+    if (!_lowPowerBattleEffects) {
+      canvas.drawCircle(
+        position,
+        heatRadius * 2.2,
+        Paint()
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 18)
+          ..color = accentColor.withValues(alpha: 0.2 * fade),
+      );
+    }
     canvas.drawCircle(
       position,
       heatRadius,
@@ -799,10 +815,11 @@ extension _LightcoreBattleGameImpactRendering on LightcoreBattleGame {
         ).createShader(Rect.fromCircle(center: position, radius: heatRadius)),
     );
 
-    for (var index = 0; index < 10; index++) {
+    final flareCount = _qualityScaledCount(10, balanced: 6, lowPower: 3);
+    for (var index = 0; index < flareCount; index++) {
       final angle =
           seed +
-          (((math.pi * 2) / 10) * index) +
+          (((math.pi * 2) / flareCount) * index) +
           (progress * 0.28 * (impact.id.hashCode.isEven ? 1 : -1));
       final direction = Offset(math.cos(angle), math.sin(angle));
       if (collapse > 0.02) {
@@ -876,7 +893,8 @@ extension _LightcoreBattleGameImpactRendering on LightcoreBattleGame {
         ).createShader(Rect.fromCircle(center: position, radius: radius)),
     );
 
-    for (var index = 0; index < 4; index++) {
+    final ringCount = _qualityScaledCount(4, balanced: 3, lowPower: 2);
+    for (var index = 0; index < ringCount; index++) {
       final ringT = ((progress * 1.24) - (index * 0.13)).clamp(0.0, 1.0);
       if (ringT <= 0) {
         continue;
@@ -895,8 +913,10 @@ extension _LightcoreBattleGameImpactRendering on LightcoreBattleGame {
       );
     }
 
-    for (var index = 0; index < 3; index++) {
-      final angle = seed + (((math.pi * 2) / 3) * index) + (progress * 0.42);
+    final arcCount = _qualityScaledCount(3, balanced: 2, lowPower: 1);
+    for (var index = 0; index < arcCount; index++) {
+      final angle =
+          seed + (((math.pi * 2) / arcCount) * index) + (progress * 0.42);
       canvas.drawArc(
         Rect.fromCircle(center: position, radius: radius * (0.86 + progress)),
         angle - 0.36,
@@ -910,10 +930,11 @@ extension _LightcoreBattleGameImpactRendering on LightcoreBattleGame {
       );
     }
 
-    for (var index = 0; index < 8; index++) {
+    final boltCount = _qualityScaledCount(8, balanced: 5, lowPower: 2);
+    for (var index = 0; index < boltCount; index++) {
       final angle =
           seed +
-          (((math.pi * 2) / 8) * index) +
+          (((math.pi * 2) / boltCount) * index) +
           (math.sin(progress * math.pi) * 0.16);
       final direction = Offset(math.cos(angle), math.sin(angle));
       _drawEnergyBolt(
@@ -991,11 +1012,12 @@ extension _LightcoreBattleGameImpactRendering on LightcoreBattleGame {
       return;
     }
 
-    for (var index = 0; index < 11; index++) {
+    final dropletCount = _qualityScaledCount(11, balanced: 7, lowPower: 4);
+    for (var index = 0; index < dropletCount; index++) {
       final noiseA = _deathNoise(seed, index, 0.33);
       final noiseB = _deathNoise(seed, index, 0.79);
       final angle =
-          (((math.pi * 2) / 11) * index) +
+          (((math.pi * 2) / dropletCount) * index) +
           ((noiseA - 0.5) * 0.46) -
           (progress * 0.18);
       final direction = Offset(math.cos(angle), math.sin(angle));
@@ -1005,7 +1027,7 @@ extension _LightcoreBattleGameImpactRendering on LightcoreBattleGame {
       final dropletRadius =
           radius * (0.045 + (noiseA * 0.06)) * (1 - (popT * 0.48));
       final dropletAlpha = (fade * (0.82 - (noiseB * 0.22))).clamp(0.0, 1.0);
-      if (index % 2 == 0) {
+      if (!_lowPowerBattleEffects && index % 2 == 0) {
         _drawGlowLine(
           canvas,
           position + (direction * radius * 0.34),
@@ -1015,13 +1037,15 @@ extension _LightcoreBattleGameImpactRendering on LightcoreBattleGame {
           alpha: 0.18 * dropletAlpha,
         );
       }
-      canvas.drawCircle(
-        dropletCenter,
-        dropletRadius * 2.1,
-        Paint()
-          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6)
-          ..color = accentColor.withValues(alpha: 0.16 * dropletAlpha),
-      );
+      if (!_lowPowerBattleEffects) {
+        canvas.drawCircle(
+          dropletCenter,
+          dropletRadius * 2.1,
+          Paint()
+            ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6)
+            ..color = accentColor.withValues(alpha: 0.16 * dropletAlpha),
+        );
+      }
       _drawEnergyOrb(
         canvas,
         dropletCenter,

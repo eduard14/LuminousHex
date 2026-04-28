@@ -65,6 +65,7 @@ class _LightcoreAppState extends State<LightcoreApp>
   bool _serverSyncPending = false;
   bool _serverSyncPendingForceSave = false;
   bool _skipGuestSignInPrompt = false;
+  LightcoreGraphicsQuality _graphicsQuality = LightcoreGraphicsQuality.high;
   int _missedServerSyncs = 0;
   int _battleSurfaceGeneration = 0;
   DateTime? _lastForegroundRecoveryAt;
@@ -168,6 +169,7 @@ class _LightcoreAppState extends State<LightcoreApp>
     var guestSession = _guestSession;
     LightcoreGuideProfile? guideProfile = _guideProfile;
     var skipGuestSignInPrompt = _skipGuestSignInPrompt;
+    var graphicsQuality = _graphicsQuality;
     try {
       final persistedPlayerId = await _sessionStore.readPlayerId();
       if (persistedPlayerId != null && persistedPlayerId.isNotEmpty) {
@@ -183,6 +185,11 @@ class _LightcoreAppState extends State<LightcoreApp>
         await _sessionStore.readGuideId(),
       );
       skipGuestSignInPrompt = await _sessionStore.readSkipGuestSignInPrompt();
+      graphicsQuality =
+          LightcoreGraphicsQuality.maybeFromStorageValue(
+            await _sessionStore.readGraphicsQuality(),
+          ) ??
+          graphicsQuality;
     } catch (error) {
       // Shared preferences are optional for tests and unsupported contexts.
       _logSession('bootstrap-session-store-warning', <String, Object?>{
@@ -259,6 +266,7 @@ class _LightcoreAppState extends State<LightcoreApp>
       _bootstrapReport = report;
       _guideProfile = guideProfile;
       _skipGuestSignInPrompt = skipGuestSignInPrompt;
+      _graphicsQuality = graphicsQuality;
       if (report.serverValidated) {
         _sessionNotice = null;
       }
@@ -364,6 +372,7 @@ class _LightcoreAppState extends State<LightcoreApp>
       weekKey: launchReport.serverWeekKey,
     );
     controller.syncBalanceTuning(launchReport.manifest.balanceTuning);
+    controller.setGraphicsQuality(_graphicsQuality);
     controller.setLocalhostAutoTapperEnabled(_localhostAutoTapperEnabled);
     final startupOfflineClaim = launchReport.offlineClaim.hasRewards
         ? launchReport.offlineClaim
@@ -891,6 +900,13 @@ class _LightcoreAppState extends State<LightcoreApp>
   }
 
   void _handleControllerChanged() {
+    final graphicsQuality = _controller?.graphicsQuality;
+    if (graphicsQuality != null && graphicsQuality != _graphicsQuality) {
+      _graphicsQuality = graphicsQuality;
+      unawaited(
+        _sessionStore.writeGraphicsQuality(graphicsQuality.storageValue),
+      );
+    }
     _markCloudSaveDirty();
   }
 

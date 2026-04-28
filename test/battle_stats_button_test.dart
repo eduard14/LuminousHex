@@ -211,6 +211,39 @@ void main() {
     expect(find.text('Tower Stats'), findsOneWidget);
   });
 
+  testWidgets(
+    'green shield tower shows shield icon while stats are collapsed',
+    (tester) async {
+      final controller = LightcoreController();
+      addTearDown(controller.dispose);
+      controller.debugDisableTutorial();
+      controller.lumens = 1000;
+      controller.kills = LightcoreController.unlockKillsForOuterSlot(0);
+      expect(controller.buildTowerAt(0, TowerLibrary.greenPrism), isTrue);
+      controller.selectCenter();
+
+      await _pumpBattleScreen(tester, controller);
+
+      await tester.tapAt(_slotCenter(tester, 0));
+      await tester.pump(const Duration(milliseconds: 50));
+
+      expect(controller.selectedSlotIndex, isNull);
+      expect(find.text('Tower Stats'), findsNothing);
+
+      final selectionButton = find.byKey(
+        const ValueKey<String>('battle-tower-selection-button'),
+      );
+      expect(selectionButton, findsOneWidget);
+      expect(
+        find.descendant(
+          of: selectionButton,
+          matching: find.byIcon(Icons.shield_moon_rounded),
+        ),
+        findsOneWidget,
+      );
+    },
+  );
+
   testWidgets('fabricating tower shows fabrication panel instead of stats', (
     tester,
   ) async {

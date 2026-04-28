@@ -802,6 +802,34 @@ class EnemyManagerState {
   }
 }
 
+class ThreatAssignmentPresetState {
+  const ThreatAssignmentPresetState({
+    required this.id,
+    required this.name,
+    required this.enemyCardIds,
+    this.bossCardId,
+  });
+
+  final String id;
+  final String name;
+  final List<String> enemyCardIds;
+  final String? bossCardId;
+
+  ThreatAssignmentPresetState copyWith({
+    String? name,
+    List<String>? enemyCardIds,
+    String? bossCardId,
+    bool clearBossCard = false,
+  }) {
+    return ThreatAssignmentPresetState(
+      id: id,
+      name: name ?? this.name,
+      enemyCardIds: enemyCardIds ?? this.enemyCardIds,
+      bossCardId: clearBossCard ? null : bossCardId ?? this.bossCardId,
+    );
+  }
+}
+
 class PlayerEquipmentItem {
   const PlayerEquipmentItem({
     required this.instanceId,
@@ -1126,6 +1154,7 @@ class CoreState {
     this.coreStability = 100,
     required this.flowEfficiency,
     required this.fireCooldownRemaining,
+    this.automationCooldownRemaining = 0,
     required this.level,
     required this.projectileType,
     required this.payloadType,
@@ -1143,6 +1172,7 @@ class CoreState {
   final double coreStability;
   final double flowEfficiency;
   final double fireCooldownRemaining;
+  final double automationCooldownRemaining;
   final int level;
   final ProjectileType projectileType;
   final PayloadType payloadType;
@@ -1160,6 +1190,7 @@ class CoreState {
     double? coreStability,
     double? flowEfficiency,
     double? fireCooldownRemaining,
+    double? automationCooldownRemaining,
     int? level,
     ProjectileType? projectileType,
     PayloadType? payloadType,
@@ -1178,6 +1209,8 @@ class CoreState {
       flowEfficiency: flowEfficiency ?? this.flowEfficiency,
       fireCooldownRemaining:
           fireCooldownRemaining ?? this.fireCooldownRemaining,
+      automationCooldownRemaining:
+          automationCooldownRemaining ?? this.automationCooldownRemaining,
       level: level ?? this.level,
       projectileType: projectileType ?? this.projectileType,
       payloadType: payloadType ?? this.payloadType,
@@ -1266,7 +1299,9 @@ class TowerLayerSnapshot {
     required this.normalKillsSinceBoss,
     required this.bossReady,
     required this.childTowerUpgrades,
+    this.threatAssignmentPresets = const <ThreatAssignmentPresetState>[],
     this.activeBossEnemyCardId,
+    this.selectedThreatAssignmentPresetId,
     this.selectedSlotIndex,
     this.selectedEnemyCardId,
     this.parentLayerId,
@@ -1305,7 +1340,9 @@ class TowerLayerSnapshot {
   int normalKillsSinceBoss;
   bool bossReady;
   List<ChildTowerUpgradeState> childTowerUpgrades;
+  List<ThreatAssignmentPresetState> threatAssignmentPresets;
   String? activeBossEnemyCardId;
+  String? selectedThreatAssignmentPresetId;
   String? parentLayerId;
   int? parentSlotIndex;
   String? sourceLayerId;

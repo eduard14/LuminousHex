@@ -29,6 +29,11 @@ extension LightcoreControllerSaveLayerSerialization on LightcoreController {
       'impactCounter': layer.impactCounter,
       'normalKillsSinceBoss': layer.normalKillsSinceBoss,
       'bossReady': layer.bossReady,
+      'threatAssignmentPresets': layer.threatAssignmentPresets
+          .map(_serializeThreatAssignmentPreset)
+          .toList(growable: false),
+      'selectedThreatAssignmentPresetId':
+          layer.selectedThreatAssignmentPresetId,
       'childTowerUpgrades': layer.childTowerUpgrades
           .map(
             (upgrade) => <String, dynamic>{
@@ -104,6 +109,13 @@ extension LightcoreControllerSaveLayerSerialization on LightcoreController {
       impactCounter: _intValue(data['impactCounter']),
       normalKillsSinceBoss: _intValue(data['normalKillsSinceBoss']),
       bossReady: _boolValue(data['bossReady']),
+      threatAssignmentPresets: _coerceList(data['threatAssignmentPresets'])
+          .map((item) => _deserializeThreatAssignmentPreset(_coerceMap(item)))
+          .whereType<ThreatAssignmentPresetState>()
+          .toList(growable: false),
+      selectedThreatAssignmentPresetId: _stringOrNull(
+        data['selectedThreatAssignmentPresetId'],
+      ),
       childTowerUpgrades: _coerceList(data['childTowerUpgrades'])
           .map((item) => _deserializeChildTowerUpgrade(_coerceMap(item)))
           .whereType<ChildTowerUpgradeState>()
@@ -115,6 +127,43 @@ extension LightcoreControllerSaveLayerSerialization on LightcoreController {
       promotedParentLayerId: _stringOrNull(data['promotedParentLayerId']),
       promotedIntoParentSlot: _boolValue(data['promotedIntoParentSlot']),
       promotionTraitRoll: _intValue(data['promotionTraitRoll']),
+    );
+  }
+
+  Map<String, dynamic> _serializeThreatAssignmentPreset(
+    ThreatAssignmentPresetState preset,
+  ) {
+    return <String, dynamic>{
+      'id': preset.id,
+      'name': preset.name,
+      'enemyCardIds': List<String>.from(preset.enemyCardIds),
+      'bossCardId': preset.bossCardId,
+    };
+  }
+
+  ThreatAssignmentPresetState? _deserializeThreatAssignmentPreset(
+    Map<String, dynamic> data,
+  ) {
+    final id = _stringOrNull(data['id']);
+    final name = _stringOrNull(data['name']);
+    if (id == null || name == null) {
+      return null;
+    }
+    final seen = <String>{};
+    final enemyCardIds = _coerceList(data['enemyCardIds'])
+        .map(_stringOrNull)
+        .whereType<String>()
+        .where(seen.add)
+        .take(enemyDeckLimit)
+        .toList(growable: false);
+    if (enemyCardIds.isEmpty) {
+      return null;
+    }
+    return ThreatAssignmentPresetState(
+      id: id,
+      name: name,
+      enemyCardIds: enemyCardIds,
+      bossCardId: _stringOrNull(data['bossCardId']),
     );
   }
 
@@ -421,6 +470,7 @@ extension LightcoreControllerSaveLayerSerialization on LightcoreController {
       'coreStability': core.coreStability,
       'flowEfficiency': core.flowEfficiency,
       'fireCooldownRemaining': core.fireCooldownRemaining,
+      'automationCooldownRemaining': core.automationCooldownRemaining,
       'level': core.level,
       'projectileType': core.projectileType.name,
       'payloadType': core.payloadType.name,
@@ -453,6 +503,9 @@ extension LightcoreControllerSaveLayerSerialization on LightcoreController {
       coreStability: coreStability,
       flowEfficiency: _outputEfficiencyPercentForStability(coreStability),
       fireCooldownRemaining: _doubleValue(data['fireCooldownRemaining']),
+      automationCooldownRemaining: _doubleValue(
+        data['automationCooldownRemaining'],
+      ),
       level: _intValue(data['level'], fallback: 1),
       projectileType:
           _enumByName(

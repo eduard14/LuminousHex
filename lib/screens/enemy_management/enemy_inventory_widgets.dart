@@ -57,16 +57,15 @@ class _EnemySquare extends StatelessWidget {
     final active = controller.isEnemyCardActive(card.config.id);
     final assignedManager = controller.enemyManagerForCard(card.config.id);
 
-    return SymbolGridTile(
-      tint: card.config.affinity.color,
+    return _ThreatSummonCard(
+      config: card.config,
+      dimension: kSymbolGridTileSize,
+      artSize: 52,
       locked: !card.isOwned,
+      selected: active && card.isOwned,
       semanticLabel: card.config.name,
       onTap: onTap,
-      topLeading: SymbolGridPips(
-        count: card.config.rarity.index + 1,
-        tint: _rarityTint(card.config.rarity),
-      ),
-      topTrailing: SymbolGridBadge(
+      topRight: SymbolGridBadge(
         tint: !card.isOwned
             ? LightcorePalette.mist
             : active
@@ -82,36 +81,22 @@ class _EnemySquare extends StatelessWidget {
               : Icons.open_in_full_rounded,
         ),
       ),
-      center: Stack(
-        alignment: Alignment.bottomRight,
+      bottom: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          _EnemyCardArt(config: card.config, size: 46),
-          if (card.config.splitsOnDeath)
-            SymbolGridBadge(
-              tint: card.config.affinity.color,
-              shape: BoxShape.circle,
-              size: 18,
-              child: const Icon(Icons.call_split_rounded, size: 10),
-            ),
+          const Icon(Icons.layers_rounded),
+          const SizedBox(width: 2),
+          Text('${card.level}'),
+          const SizedBox(width: 6),
+          const Icon(Icons.content_copy_rounded),
+          const SizedBox(width: 2),
+          Text('${card.copies}'),
+          if (assignedManager != null) ...[
+            const SizedBox(width: 6),
+            Icon(_enemyManagerTileIcon(assignedManager.config.id)),
+          ],
         ],
       ),
-      bottomChildren: [
-        _enemyCountBadge(
-          icon: Icons.layers_rounded,
-          value: '${card.level}',
-          tint: card.config.affinity.color,
-        ),
-        _enemyCountBadge(
-          icon: Icons.content_copy_rounded,
-          value: '${card.copies}',
-          tint: card.config.affinity.color,
-        ),
-        if (assignedManager != null)
-          _enemyIconBadge(
-            _enemyManagerTileIcon(assignedManager.config.id),
-            card.config.affinity.color,
-          ),
-      ],
     );
   }
 }
@@ -165,6 +150,15 @@ class _EnemyDetailSheet extends StatelessWidget {
             _InfoChip(label: 'Lv ${card.level}/$cap'),
             _InfoChip(label: 'Copies ${card.copies}'),
             _InfoChip(label: _enemyTileProgressLabel(controller, card)),
+            _InfoChip(
+              label: 'Threat ${controller.enemyCardThreatRatingLabel(card)}',
+            ),
+            _InfoChip(
+              label: 'HP ${controller.enemyCardPreviewHealthLabel(card)}',
+            ),
+            _InfoChip(
+              label: 'Lumens +${controller.enemyCardPreviewRewardLabel(card)}',
+            ),
             _InfoChip(
               label: 'EXP +${controller.enemyCardPreviewExperience(card)}',
             ),
@@ -574,24 +568,6 @@ class _FusionActionButtonPainter extends CustomPainter {
       oldDelegate.tint != tint || oldDelegate.progress != progress;
 }
 
-Widget _enemyIconBadge(IconData icon, Color tint) {
-  return SymbolGridBadge(tint: tint, child: Icon(icon, size: 12));
-}
-
-Widget _enemyCountBadge({
-  required IconData icon,
-  required String value,
-  required Color tint,
-}) {
-  return SymbolGridBadge(
-    tint: tint,
-    child: Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [Icon(icon, size: 11), const SizedBox(width: 2), Text(value)],
-    ),
-  );
-}
-
 IconData _enemyManagerTileIcon(String configId) => switch (configId) {
   'swarm_broker' => Icons.groups_rounded,
   'extractor' => Icons.workspace_premium_rounded,
@@ -718,19 +694,16 @@ class _BossEnemyChip extends StatelessWidget {
     return GuidedFocusFrame(
       active: controller.tutorialHighlightsBossTile(card.config.id),
       tint: LightcorePalette.quest,
-      child: SymbolGridTile(
-        tint: tint,
+      child: _ThreatSummonCard(
+        config: card.config,
         dimension: dimension,
         selected: active && card.isOwned,
         locked: !card.isOwned,
         semanticLabel:
             '${card.config.name}, ${card.isOwned ? 'owned' : 'locked'} Apex tile',
         onTap: () => onOpenDetails(card.config.id),
-        topLeading: SymbolGridPips(
-          count: card.config.rarity.index + 1,
-          tint: _rarityTint(card.config.rarity),
-        ),
-        topTrailing: SymbolGridBadge(
+        artSize: dimension * 0.4,
+        topRight: SymbolGridBadge(
           tint: !card.isOwned
               ? LightcorePalette.mist
               : active
@@ -746,28 +719,22 @@ class _BossEnemyChip extends StatelessWidget {
                 : Icons.open_in_full_rounded,
           ),
         ),
-        center: _BossGlyph(
-          config: card.config,
-          size: 42,
-          locked: !card.isOwned,
+        bottom: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.layers_rounded),
+            const SizedBox(width: 2),
+            Text('${card.level}'),
+            const SizedBox(width: 6),
+            const Icon(Icons.content_copy_rounded),
+            const SizedBox(width: 2),
+            Text('${card.copies}'),
+            const SizedBox(width: 6),
+            const Icon(Icons.lock_open_rounded),
+            const SizedBox(width: 2),
+            Text('${controller.bossLevelCap(card)}'),
+          ],
         ),
-        bottomChildren: [
-          _enemyCountBadge(
-            icon: Icons.layers_rounded,
-            value: '${card.level}',
-            tint: tint,
-          ),
-          _enemyCountBadge(
-            icon: Icons.content_copy_rounded,
-            value: '${card.copies}',
-            tint: tint,
-          ),
-          _enemyCountBadge(
-            icon: Icons.lock_open_rounded,
-            value: '${controller.bossLevelCap(card)}',
-            tint: tint,
-          ),
-        ],
       ),
     );
   }
@@ -825,6 +792,17 @@ class _BossDetailSheet extends StatelessWidget {
                   ),
                   _InfoChip(label: 'Copies ${card.copies}'),
                   _InfoChip(label: _bossTileProgressLabel(controller, card)),
+                  _InfoChip(
+                    label:
+                        'Threat ${controller.enemyCardThreatRatingLabel(card)}',
+                  ),
+                  _InfoChip(
+                    label: 'HP ${controller.enemyCardPreviewHealthLabel(card)}',
+                  ),
+                  _InfoChip(
+                    label:
+                        'Lumens +${controller.enemyCardPreviewRewardLabel(card)}',
+                  ),
                   _InfoChip(
                     label:
                         'EXP +${controller.enemyCardPreviewExperience(card)}',

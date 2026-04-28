@@ -102,6 +102,29 @@ class LightcoreBattleGame extends FlameGame with ScaleDetector {
   bool get isShellPromotionAnimating => _shellPromotion != null;
   double get debugShellPromotionElapsed => _shellPromotionElapsed;
 
+  bool get _lowPowerBattleEffects =>
+      controller.graphicsQuality == LightcoreGraphicsQuality.lowPower;
+
+  double get _battleEffectAlphaScale => switch (controller.graphicsQuality) {
+    LightcoreGraphicsQuality.high => 1.0,
+    LightcoreGraphicsQuality.balanced => 0.78,
+    LightcoreGraphicsQuality.lowPower => 0.52,
+  };
+
+  double get _battleGlowAlphaScale => switch (controller.graphicsQuality) {
+    LightcoreGraphicsQuality.high => 1.0,
+    LightcoreGraphicsQuality.balanced => 0.62,
+    LightcoreGraphicsQuality.lowPower => 0.0,
+  };
+
+  int _qualityScaledCount(int high, {int? balanced, int? lowPower}) {
+    return switch (controller.graphicsQuality) {
+      LightcoreGraphicsQuality.high => high,
+      LightcoreGraphicsQuality.balanced => balanced ?? math.max(1, high ~/ 2),
+      LightcoreGraphicsQuality.lowPower => lowPower ?? math.max(0, high ~/ 3),
+    };
+  }
+
   void resetTransientInputState() {
     _gesturePointerCount = 0;
     _lastGestureFocalPoint = null;
@@ -362,20 +385,25 @@ class LightcoreBattleGame extends FlameGame with ScaleDetector {
       ).createShader(rect);
     canvas.drawRect(rect, backgroundPaint);
 
-    final upperGlow = Paint()
-      ..shader =
-          RadialGradient(
-            colors: [
-              LightcorePalette.aether.withValues(alpha: 0.14),
-              Colors.transparent,
-            ],
-          ).createShader(
-            Rect.fromCircle(
-              center: Offset(_center.x * 0.72, _center.y * 0.7),
-              radius: _spawnRadiusVisual * 0.92,
-            ),
-          );
-    canvas.drawRect(rect, upperGlow);
+    final glowAlphaScale = _battleGlowAlphaScale;
+    if (glowAlphaScale > 0) {
+      final upperGlow = Paint()
+        ..shader =
+            RadialGradient(
+              colors: [
+                LightcorePalette.aether.withValues(
+                  alpha: 0.14 * glowAlphaScale,
+                ),
+                Colors.transparent,
+              ],
+            ).createShader(
+              Rect.fromCircle(
+                center: Offset(_center.x * 0.72, _center.y * 0.7),
+                radius: _spawnRadiusVisual * 0.92,
+              ),
+            );
+      canvas.drawRect(rect, upperGlow);
+    }
   }
 
   void _renderFallbackBackground(Canvas canvas) {
@@ -446,14 +474,21 @@ class LightcoreBattleGame extends FlameGame with ScaleDetector {
     final progress = (elapsed / _coreDamageShakeDuration).clamp(0.0, 1.0);
     final falloff = math.pow(1 - progress, 1.8).toDouble();
     final phase = elapsed * 96;
+    final shakeScale = switch (controller.graphicsQuality) {
+      LightcoreGraphicsQuality.high => 1.0,
+      LightcoreGraphicsQuality.balanced => 0.62,
+      LightcoreGraphicsQuality.lowPower => 0.28,
+    };
     final x =
         ((math.sin(phase) * 0.7) + (math.sin((phase * 1.73) + 0.8) * 0.3)) *
         _screenShakeAmplitude *
+        shakeScale *
         falloff;
     final y =
         ((math.cos((phase * 1.17) + 0.4) * 0.68) +
             (math.sin(phase * 2.1) * 0.32)) *
         _screenShakeAmplitude *
+        shakeScale *
         falloff;
     _screenShakeOffset = Vector2(x, y);
     _screenShakeRemaining = math.max(0, _screenShakeRemaining - dt);

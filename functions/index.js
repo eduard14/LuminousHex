@@ -53,10 +53,10 @@ const DEFAULT_MANIFEST = Object.freeze({
   contentSchemaVersion: 1,
   seasonKey: "preseason-alpha",
   contentEpoch: 1,
-  minimumSupportedVersion: "1.0.14",
-  minimumSupportedBuildNumber: "15",
-  recommendedVersion: "1.0.14",
-  recommendedBuildNumber: "15",
+  minimumSupportedVersion: "1.0.15",
+  minimumSupportedBuildNumber: "16",
+  recommendedVersion: "1.0.15",
+  recommendedBuildNumber: "16",
   functionsRegion: "us-central1",
   maintenanceMode: false,
   requiresMandatoryUpdate: false,
@@ -145,6 +145,7 @@ const PLAYER_SAVE_LIMITS = Object.freeze({
   maxRevision: 1000000000,
   maxCurrency: 1000000000000,
   maxCounter: 1000000000,
+  maxTowerStrength: 9000000000000000,
   maxMetricSeconds: 1000000000,
   maxLayers: 64,
   maxSlotsPerLayer: 6,
@@ -1851,7 +1852,7 @@ async function buildSocialOverview(context) {
   const selfTowerStrength = clampInt(
     selfProfile?.towerStrength,
     0,
-    PLAYER_SAVE_LIMITS.maxCounter,
+    PLAYER_SAVE_LIMITS.maxTowerStrength,
     0,
   );
   const [
@@ -2028,7 +2029,12 @@ function buildSocialPlayerResponse(uid, data, options = {}) {
     level,
     progressToNextLevel: clampNumber(data?.progressToNextLevel, 0, 1, 0),
     performanceScore: clampNumber(data?.performanceScore, 0, 1, 0.12),
-    towerStrength: clampInt(data?.towerStrength, 0, PLAYER_SAVE_LIMITS.maxCounter, 0),
+    towerStrength: clampInt(
+      data?.towerStrength,
+      0,
+      PLAYER_SAVE_LIMITS.maxTowerStrength,
+      0,
+    ),
     towerStrengthRank: clampInt(
       options.towerStrengthRank,
       1,
@@ -2252,7 +2258,7 @@ function buildSocialPublicProfileUpdate({ auth, rawPayload, payload, profileData
   const towerStrength = clampInt(
     snapshot.towerStrength,
     0,
-    PLAYER_SAVE_LIMITS.maxCounter,
+    PLAYER_SAVE_LIMITS.maxTowerStrength,
     0,
   );
   const performanceScore = computePublicPerformanceScore({

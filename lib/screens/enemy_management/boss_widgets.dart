@@ -454,6 +454,15 @@ class _BossCommandDetails extends StatelessWidget {
             _InfoChip(label: 'Copies ${card.copies}'),
             _InfoChip(label: _bossTileProgressLabel(controller, card)),
             _InfoChip(
+              label: 'Threat ${controller.enemyCardThreatRatingLabel(card)}',
+            ),
+            _InfoChip(
+              label: 'HP ${controller.enemyCardPreviewHealthLabel(card)}',
+            ),
+            _InfoChip(
+              label: 'Lumens +${controller.enemyCardPreviewRewardLabel(card)}',
+            ),
+            _InfoChip(
               label: 'EXP +${controller.enemyCardPreviewExperience(card)}',
             ),
             _InfoChip(

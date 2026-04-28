@@ -415,6 +415,17 @@ extension LightcoreControllerTowerMath on LightcoreController {
     return 1 / rate;
   }
 
+  double? get _coreAutomationInterval {
+    if (!managerAssignmentUnlocked) {
+      return null;
+    }
+    final rate = _towerCoreManagerForLayer(activeLayer)?.automationRate;
+    if (rate == null || rate <= 0) {
+      return null;
+    }
+    return 1 / rate;
+  }
+
   double towerWantedActivationRate(OuterTowerState tower) {
     if (!_slotCountsTowardRing(tower)) {
       return 0;
@@ -429,6 +440,125 @@ extension LightcoreControllerTowerMath on LightcoreController {
     }
     return 1 / cycleSeconds;
   }
+
+  double _averageCriticalMultiplier(double critChance, double critMultiplier) {
+    return 1 + (critChance.clamp(0.0, 1.0) * max(0.0, critMultiplier - 1));
+  }
+
+  double _averageDamageRangeMultiplier(OuterTowerState tower) {
+    return (towerMinDamageMultiplier(tower) + towerMaxDamageMultiplier(tower)) /
+        2;
+  }
+
+  double _towerPacketDamageEstimate(OuterTowerState tower) {
+    if (!_slotCountsTowardRing(tower) || towerUsesPersistentShieldRing(tower)) {
+      return 0;
+    }
+    final projectileType = _slotProjectileType(tower);
+    return towerPower(tower) *
+        towerFinalDamageMultiplier(tower) *
+        towerNormalDamageMultiplier(tower) *
+        _averageDamageRangeMultiplier(tower) *
+        _projectileDamageMultiplier(projectileType) *
+        _averageCriticalMultiplier(
+          towerCritChance(tower),
+          towerCritMultiplier(tower),
+        );
+  }
+
+  double _towerPacketRateEstimate(OuterTowerState tower) {
+    if (!_slotCountsTowardRing(tower) || towerUsesPersistentShieldRing(tower)) {
+      return 0;
+    }
+    return towerWantedActivationRate(tower);
+  }
+
+  double _shieldRingDpsEstimate(OuterTowerState tower) {
+    if (!towerUsesPersistentShieldRing(tower)) {
+      return 0;
+    }
+    return towerPower(tower) *
+        towerFinalDamageMultiplier(tower) *
+        towerDotDamageMultiplier(tower) *
+        towerNormalDamageMultiplier(tower) *
+        _averageDamageRangeMultiplier(tower) *
+        _projectileDamageMultiplier(ProjectileType.shieldHalo) *
+        _persistentShieldRingDamagePerSecondMultiplier;
+  }
+
+  double _coreBasicDpsEstimate() {
+    final critChance = (_coreBaseCritChance + _gearCritChanceBonus).clamp(
+      0.02,
+      0.55,
+    );
+    return _coreBasicShotPower() *
+        friendAllianceCombatMultiplier *
+        _gearPowerMultiplier *
+        _projectileDamageMultiplier(_coreProjectileType) *
+        _averageCriticalMultiplier(
+          critChance,
+          _coreBaseCritMultiplier * _gearCritDamageMultiplier,
+        ) *
+        coreEffectiveShotsPerSecond;
+  }
+
+  double _layer2TowerDpsEstimate() {
+    if (!_layer2.unlocked) {
+      return 0;
+    }
+    final shotPower =
+        (8 + (_layer2.count * 2.4) + (builtTowerCount * 1.2)) *
+        _towerDamageOutputMultiplier *
+        friendAllianceCombatMultiplier *
+        _averageFinalDamageForLayer(activeLayer) *
+        ((_averageMinDamageForLayer(activeLayer) +
+                _averageMaxDamageForLayer(activeLayer)) /
+            2) *
+        _projectileDamageMultiplier(_layer2.projectileType) *
+        _averageCriticalMultiplier(
+          _averageCritChanceForLayer(activeLayer),
+          _averageCritMultiplierForLayer(activeLayer),
+        ) *
+        _averageNormalDamageForLayer(activeLayer);
+    final cooldown =
+        0.78 * _projectileCooldownMultiplier(_layer2.projectileType);
+    return shotPower / max(0.08, cooldown);
+  }
+
+  double get activeLayerMaxDpsEstimate {
+    var totalPacketRate = 0.0;
+    var totalPacketDamageRate = 0.0;
+    var shieldDps = 0.0;
+
+    for (final tower in _slots.where(_slotCountsTowardRing)) {
+      if (towerUsesPersistentShieldRing(tower)) {
+        shieldDps += _shieldRingDpsEstimate(tower);
+        continue;
+      }
+      final packetRate = _towerPacketRateEstimate(tower);
+      final packetDamage = _towerPacketDamageEstimate(tower);
+      totalPacketRate += packetRate;
+      totalPacketDamageRate += packetRate * packetDamage;
+    }
+
+    final packetDps = totalPacketRate <= 0
+        ? 0.0
+        : totalPacketRate <= coreEffectiveShotsPerSecond
+        ? totalPacketDamageRate
+        : (totalPacketDamageRate / totalPacketRate) *
+              coreEffectiveShotsPerSecond;
+    final fallbackCoreDps = totalPacketRate <= 0 ? _coreBasicDpsEstimate() : 0;
+    return packetDps + fallbackCoreDps + shieldDps + _layer2TowerDpsEstimate();
+  }
+
+  double get activeLayerMaxDpsPerEnemyEstimate =>
+      activeLayerMaxDpsEstimate / max(1, enemyTargetCount);
+
+  String get activeLayerMaxDpsLabel =>
+      '${_compactNumber(activeLayerMaxDpsEstimate.round())}/s';
+
+  String get activeLayerMaxDpsPerEnemyLabel =>
+      '${_compactNumber(activeLayerMaxDpsPerEnemyEstimate.round())}/s each';
 
   double? towerAutomationEfficiency(OuterTowerState tower) {
     final automationRate = towerAutomationRate(tower);
@@ -535,7 +665,7 @@ extension LightcoreControllerTowerMath on LightcoreController {
       tower,
       ProjectileType.shieldHalo,
     );
-    return min(maxRange, max(112.0, maxRange * 0.7));
+    return _shieldHaloGuardRadiusForMaxRange(maxRange);
   }
 
   double towerEffectiveRangeForProjectile(
@@ -546,10 +676,14 @@ extension LightcoreControllerTowerMath on LightcoreController {
       return 0;
     }
     final combatBonus = towerPatternBonusesFor(tower) + towerInventoryBonuses;
-    return towerBaseRange(tower) *
+    final maxRange =
+        towerBaseRange(tower) *
         _projectileRangeMultiplier(projectileType) *
         _gearRangeMultiplier *
         (1 + combatBonus.range);
+    return projectileType == ProjectileType.shieldHalo
+        ? _shieldHaloGuardRadiusForMaxRange(maxRange)
+        : maxRange;
   }
 
   double towerMaxPotentialRange(OuterTowerState tower) {

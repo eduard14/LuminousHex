@@ -290,6 +290,151 @@ extension LightcoreControllerBattleEnemyActions on LightcoreController {
     _notifyNow();
   }
 
+  ThreatAssignmentPresetState? threatAssignmentPresetById(String presetId) {
+    final match = activeLayer.threatAssignmentPresets.where(
+      (preset) => preset.id == presetId,
+    );
+    return match.isEmpty ? null : match.first;
+  }
+
+  String? createThreatAssignmentPreset({String? name}) {
+    final presetName = _normalizeThreatAssignmentPresetName(name);
+    final sequence = activeLayer.threatAssignmentPresets.length + 1;
+    final resolvedName = presetName ?? 'Preset $sequence';
+    final preset = ThreatAssignmentPresetState(
+      id: 'threat_preset_${activeLayer.id}_${DateTime.now().microsecondsSinceEpoch}',
+      name: resolvedName,
+      enemyCardIds: _currentThreatPresetEnemyIds(),
+      bossCardId: _activeBossEnemyCardId,
+    );
+    activeLayer.threatAssignmentPresets = <ThreatAssignmentPresetState>[
+      ...activeLayer.threatAssignmentPresets,
+      preset,
+    ];
+    activeLayer.selectedThreatAssignmentPresetId = preset.id;
+    _showBanner('$resolvedName saved for ${activeLayer.label}.');
+    _notifyNow();
+    return preset.id;
+  }
+
+  bool updateThreatAssignmentPreset(String presetId) {
+    final index = activeLayer.threatAssignmentPresets.indexWhere(
+      (preset) => preset.id == presetId,
+    );
+    if (index == -1) {
+      return false;
+    }
+    final presets = activeLayer.threatAssignmentPresets.toList(growable: false);
+    final current = presets[index];
+    presets[index] = current.copyWith(
+      enemyCardIds: _currentThreatPresetEnemyIds(),
+      bossCardId: _activeBossEnemyCardId,
+      clearBossCard: _activeBossEnemyCardId == null,
+    );
+    activeLayer.threatAssignmentPresets = presets;
+    activeLayer.selectedThreatAssignmentPresetId = presetId;
+    _showBanner('${current.name} updated for ${activeLayer.label}.');
+    _notifyNow();
+    return true;
+  }
+
+  bool renameThreatAssignmentPreset(String presetId, String name) {
+    final normalizedName = _normalizeThreatAssignmentPresetName(name);
+    if (normalizedName == null) {
+      return false;
+    }
+    final index = activeLayer.threatAssignmentPresets.indexWhere(
+      (preset) => preset.id == presetId,
+    );
+    if (index == -1) {
+      return false;
+    }
+    final presets = activeLayer.threatAssignmentPresets.toList(growable: false);
+    presets[index] = presets[index].copyWith(name: normalizedName);
+    activeLayer.threatAssignmentPresets = presets;
+    activeLayer.selectedThreatAssignmentPresetId = presetId;
+    _showBanner('Preset renamed to $normalizedName.');
+    _notifyNow();
+    return true;
+  }
+
+  bool selectThreatAssignmentPreset(String presetId) {
+    final exists = activeLayer.threatAssignmentPresets.any(
+      (preset) => preset.id == presetId,
+    );
+    if (!exists) {
+      return false;
+    }
+    activeLayer.selectedThreatAssignmentPresetId = presetId;
+    _notifyNow();
+    return true;
+  }
+
+  bool applyThreatAssignmentPreset(String presetId) {
+    final preset = threatAssignmentPresetById(presetId);
+    if (preset == null) {
+      return false;
+    }
+    final nextEnemyIds = preset.enemyCardIds
+        .where((cardId) => enemyCardById(cardId)?.isOwned ?? false)
+        .take(enemyDeckLimit)
+        .toList(growable: false);
+    if (nextEnemyIds.isEmpty) {
+      _showBanner('${preset.name} has no owned anomalies to apply.');
+      _notifyNow();
+      return false;
+    }
+
+    _activeEnemyCardIds
+      ..clear()
+      ..addAll(nextEnemyIds);
+    activeLayer.activeEnemyCardIds = _activeEnemyCardIds;
+    selectedEnemyCardId = _activeEnemyCardIds.first;
+
+    final bossId = preset.bossCardId;
+    _activeBossEnemyCardId =
+        bossId != null && (bossEnemyCardById(bossId)?.isOwned ?? false)
+        ? bossId
+        : null;
+    activeLayer.activeBossEnemyCardId = _activeBossEnemyCardId;
+    activeLayer.selectedThreatAssignmentPresetId = presetId;
+    _showBanner('${preset.name} applied to ${activeLayer.label}.');
+    _notifyNow();
+    return true;
+  }
+
+  List<String> _currentThreatPresetEnemyIds() {
+    final seen = <String>{};
+    return _activeEnemyCardIds
+        .where((cardId) => enemyCardById(cardId)?.isOwned ?? false)
+        .where(seen.add)
+        .take(enemyDeckLimit)
+        .toList(growable: false);
+  }
+
+  String? _normalizeThreatAssignmentPresetName(String? name) {
+    final normalized = name?.trim();
+    if (normalized == null || normalized.isEmpty) {
+      return null;
+    }
+    return normalized.length <= 28 ? normalized : normalized.substring(0, 28);
+  }
+
+  void _normalizeThreatAssignmentPresetSelection(TowerLayerSnapshot layer) {
+    if (layer.threatAssignmentPresets.isEmpty) {
+      layer.selectedThreatAssignmentPresetId = null;
+      return;
+    }
+    final selectedId = layer.selectedThreatAssignmentPresetId;
+    final selectedExists =
+        selectedId != null &&
+        layer.threatAssignmentPresets.any((preset) => preset.id == selectedId);
+    if (!selectedExists) {
+      layer.selectedThreatAssignmentPresetId =
+          layer.threatAssignmentPresets.first.id;
+    }
+  }
+
   void setActiveBossEnemyCard(String cardId) {
     final card = bossEnemyCardById(cardId);
     if (card == null || !card.isOwned || _activeBossEnemyCardId == cardId) {
@@ -779,7 +924,7 @@ extension LightcoreControllerBattleEnemyActions on LightcoreController {
           'baseHealth',
           card.config.baseHealth,
         ) *
-        _enemyCardLevelHealthScale(card.level);
+        _enemyCardThreatScale(card);
   }
 
   int enemyCardPreviewReward(EnemyCardState card) {
@@ -790,9 +935,158 @@ extension LightcoreControllerBattleEnemyActions on LightcoreController {
                 'reward',
                 card.config.reward.toDouble(),
               ) *
-              _enemyCardLevelLumenScale(card.level))
+              _enemyCardLumenScale(card))
           .round(),
     );
+  }
+
+  String enemyCardPreviewHealthLabel(EnemyCardState card) =>
+      _compactNumber(enemyCardPreviewHealth(card).round());
+
+  String enemyCardPreviewRewardLabel(EnemyCardState card) =>
+      _compactNumber(enemyCardPreviewReward(card));
+
+  double enemyCardPreviewClearSeconds(EnemyCardState card) {
+    final damageBudget = card.config.isBoss
+        ? activeLayerMaxDpsEstimate
+        : activeLayerMaxDpsPerEnemyEstimate;
+    if (damageBudget <= 0) {
+      return double.infinity;
+    }
+    return enemyCardPreviewHealth(card) / damageBudget;
+  }
+
+  String enemyCardThreatRatingLabel(EnemyCardState card) {
+    final clearSeconds = enemyCardPreviewClearSeconds(card);
+    if (clearSeconds <= 4) {
+      return 'Farmable';
+    }
+    if (clearSeconds <= 14) {
+      return 'Stable';
+    }
+    if (clearSeconds <= 40) {
+      return 'Hard';
+    }
+    return 'Overwhelming';
+  }
+
+  double _enemyCardDungeonThreatRatio(EnemyCardState card) {
+    final baseHealth = max(
+      1.0,
+      _balancedEnemyStat(card.config, 'baseHealth', card.config.baseHealth),
+    );
+    return max(1.0, enemyCardPreviewHealth(card) / baseHealth);
+  }
+
+  double _enemyCardDungeonEconomyRatio(EnemyCardState card) {
+    final baseEconomy = max(
+      1.0,
+      _balancedEnemyStat(card.config, 'reward', card.config.reward.toDouble()) +
+          _balancedEnemyStat(
+            card.config,
+            'baseExperience',
+            card.config.baseExperience.toDouble(),
+          ),
+    );
+    return max(
+      1.0,
+      (enemyCardPreviewReward(card) + enemyCardPreviewExperience(card)) /
+          baseEconomy,
+    );
+  }
+
+  double dailyDungeonRaidDamagePerSecond(
+    EnemyCardState card, {
+    bool apex = false,
+  }) {
+    final config = card.config;
+    final manager = apex ? null : enemyManagerForCard(config.id);
+    final levelMultiplier = 1 + ((card.level - 1) * (apex ? 0.075 : 0.055));
+    final rarityMultiplier = 1 + (config.rarity.index * (apex ? 0.28 : 0.18));
+    final splitBonus = config.splitsOnDeath ? 1.12 : 1.0;
+    final managerMultiplier = manager == null
+        ? 1.0
+        : ((manager.spawnRateMultiplier +
+                      manager.healthMultiplier +
+                      manager.speedMultiplier +
+                      manager.experienceMultiplier) /
+                  4)
+              .clamp(0.82, 1.42)
+              .toDouble();
+    final bodyPressure =
+        16 +
+        (config.baseHealth * (apex ? 0.12 : 0.3)) +
+        (config.baseDefense * (apex ? 0.34 : 0.2)) +
+        (config.baseSpeed * (apex ? 1.35 : 0.9)) +
+        (config.jamStrength * (apex ? 44 : 28));
+    final threatMultiplier = pow(
+      _enemyCardDungeonThreatRatio(card),
+      apex ? 0.10 : 0.13,
+    ).toDouble();
+    final economyMultiplier = pow(
+      _enemyCardDungeonEconomyRatio(card),
+      apex ? 0.06 : 0.08,
+    ).toDouble();
+    return bodyPressure *
+        levelMultiplier *
+        rarityMultiplier *
+        splitBonus *
+        managerMultiplier *
+        threatMultiplier *
+        economyMultiplier *
+        (apex ? 0.72 : 1.0);
+  }
+
+  double dailyDungeonRaidMaxHealth(
+    EnemyCardState card,
+    LightcoreDailyDungeonTowerProfile towerProfile, {
+    bool apex = false,
+  }) {
+    final config = card.config;
+    final manager = apex ? null : enemyManagerForCard(config.id);
+    final managerMultiplier = manager == null
+        ? 1.0
+        : ((manager.healthMultiplier + manager.speedMultiplier) / 2)
+              .clamp(0.86, 1.36)
+              .toDouble();
+    final levelMultiplier = 1 + ((card.level - 1) * (apex ? 0.1 : 0.075));
+    final rarityMultiplier = 1 + (config.rarity.index * (apex ? 0.42 : 0.24));
+    final towerPressure =
+        1 + ((towerProfile.towerLevel - 1) * 0.018).clamp(0.0, 0.75);
+    final body =
+        58 +
+        (config.baseHealth * (apex ? 7.5 : 4.2)) +
+        (config.baseDefense * (apex ? 3.8 : 2.4)) +
+        (config.baseSpeed * (apex ? 1.9 : 1.1)) +
+        (config.jamStrength * (apex ? 72 : 38));
+    final threatMultiplier = pow(
+      _enemyCardDungeonThreatRatio(card),
+      apex ? 0.12 : 0.16,
+    ).toDouble();
+    return body *
+        levelMultiplier *
+        rarityMultiplier *
+        managerMultiplier *
+        towerPressure *
+        threatMultiplier *
+        (apex ? 1.85 : 1.0);
+  }
+
+  double dailyDungeonRaidLifetime(EnemyCardState card, {bool apex = false}) {
+    final speedFactor = (card.config.baseSpeed / 28)
+        .clamp(0.62, 1.18)
+        .toDouble();
+    final rarityBonus = card.config.rarity.index * (apex ? 0.24 : 0.16);
+    final threatBonus = log(_enemyCardDungeonThreatRatio(card)) / ln10;
+    return (apex ? 6.4 : 4.9) +
+        speedFactor +
+        rarityBonus +
+        threatBonus.clamp(0.0, apex ? 1.4 : 1.8);
+  }
+
+  double dailyDungeonRaidTotalDamage(EnemyCardState card, {bool apex = false}) {
+    return dailyDungeonRaidDamagePerSecond(card, apex: apex) *
+        dailyDungeonRaidLifetime(card, apex: apex);
   }
 
   int enemyCardPreviewExperience(EnemyCardState card) =>

@@ -23,6 +23,10 @@ needs real assets, product IDs, prices, reward values, and live-service config.
 
 ## Suggested Asset Layout
 
+Enemy sprite intake details live in
+[`docs/enemy-png-guidelines.md`](enemy-png-guidelines.md). Use that document
+when ordering, exporting, or naming new anomaly PNGs.
+
 These folders are not fully wired in `pubspec.yaml` yet. This is the intended
 layout when real assets are added.
 

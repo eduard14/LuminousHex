@@ -20,6 +20,10 @@ void _maxOutCurrentShell(LightcoreController controller, TowerConfig config) {
   expect(controller.isPromotionReady, isTrue);
 }
 
+double _healthForEnemy(LightcoreController controller, String enemyId) {
+  return controller.enemies.firstWhere((enemy) => enemy.id == enemyId).health;
+}
+
 void main() {
   test('battle slot taps activate built towers without opening stats', () {
     final controller = LightcoreController();
@@ -97,6 +101,33 @@ void main() {
     expect(controller.slots[0].charge, 0);
   });
 
+  test('core managers automate center core packet generation', () {
+    final controller = LightcoreController();
+    addTearDown(controller.dispose);
+
+    controller.experience = LightcoreController.experienceForOverallLevel(
+      LightcoreController.managerUnlockLevel,
+    );
+    controller.flux = LightcoreController.towerManagerFluxCost;
+    expect(controller.forgeTowerManager(), isTrue);
+    controller.equipCardToCore(controller.cards.single.instanceId);
+    controller.debugSpawnEnemyFromCard(
+      EnemyLibrary.basicWhite.id,
+      angle: 0,
+      radius: 220,
+    );
+
+    expect(controller.pulses, isEmpty);
+
+    controller.tick(0.1);
+
+    final corePulses = controller.pulses.where(
+      (pulse) => pulse.sourceSlotIndex == null,
+    );
+    expect(corePulses, hasLength(1));
+    expect(controller.coreState.automationCooldownRemaining, greaterThan(0));
+  });
+
   test('core managers apply across towers and enemies on the active shell', () {
     final controller = LightcoreController();
     addTearDown(controller.dispose);
@@ -156,6 +187,63 @@ void main() {
     expect(controller.pulses, isNotEmpty);
     expect(controller.slots[0].fireSequence, 1);
     expect(controller.slots[0].charge, 0);
+  });
+
+  test('red tower bomb damages nearby enemies through manual activation', () {
+    final controller = LightcoreController();
+    addTearDown(controller.dispose);
+
+    controller.lumens = 1000;
+    controller.kills = LightcoreController.unlockKillsForOuterSlot(0);
+    expect(controller.buildTowerAt(0, TowerLibrary.redPrism), isTrue);
+    expect(controller.debugSetTowerCharge(0, charge: 1.2), isTrue);
+
+    final primaryEnemy = controller.debugSpawnEnemyFromCard(
+      EnemyLibrary.basicWhite.id,
+      angle: 0,
+      radius: 180,
+      level: 1,
+    );
+    final splashEnemy = controller.debugSpawnEnemyFromCard(
+      EnemyLibrary.basicWhite.id,
+      angle: 0.12,
+      radius: 180,
+      level: 16,
+    );
+    final outsideEnemy = controller.debugSpawnEnemyFromCard(
+      EnemyLibrary.basicWhite.id,
+      angle: 0.8,
+      radius: 180,
+      level: 16,
+    );
+    expect(primaryEnemy, isNotNull);
+    expect(splashEnemy, isNotNull);
+    expect(outsideEnemy, isNotNull);
+
+    final initialSplashHealth = _healthForEnemy(controller, splashEnemy!.id);
+    final initialOutsideHealth = _healthForEnemy(controller, outsideEnemy!.id);
+
+    controller.handleBattleSlotTap(0);
+    for (
+      var step = 0;
+      step < 80 &&
+          (controller.pulses.isNotEmpty ||
+              controller.queuedAmmoPackets.isNotEmpty ||
+              controller.shots.isNotEmpty);
+      step++
+    ) {
+      controller.tick(0.05);
+    }
+
+    expect(
+      controller.enemies.any((enemy) => enemy.id == primaryEnemy!.id),
+      isFalse,
+    );
+    expect(
+      _healthForEnemy(controller, splashEnemy.id),
+      lessThan(initialSplashHealth),
+    );
+    expect(_healthForEnemy(controller, outsideEnemy.id), initialOutsideHealth);
   });
 
   test('localhost auto tapper unfolds the shell and queues core taps', () {

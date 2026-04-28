@@ -334,8 +334,8 @@ extension LightcoreBattleGameArenaSlotRendering on LightcoreBattleGame {
       Paint()
         ..shader = RadialGradient(
           colors: [
-            color.withValues(alpha: 0.22 + (pulse * 0.04)),
-            color.withValues(alpha: 0.08),
+            color.withValues(alpha: 0.38 + (pulse * 0.08)),
+            color.withValues(alpha: 0.18),
             Colors.transparent,
           ],
           stops: const [0, 0.58, 1],
@@ -369,12 +369,12 @@ extension LightcoreBattleGameArenaSlotRendering on LightcoreBattleGame {
       ringPoints.add(points);
 
       if (ring > 0) {
-        final fillAlpha = (0.06 + (reveal * 0.08)) * (1 - (ring * 0.08));
+        final fillAlpha = (0.12 + (reveal * 0.14)) * (1 - (ring * 0.08));
         canvas.drawPath(
           _polygonPath(center, ringRadius * reveal, sides, rotation),
           Paint()
             ..style = PaintingStyle.fill
-            ..color = color.withValues(alpha: fillAlpha.clamp(0.02, 0.12)),
+            ..color = color.withValues(alpha: fillAlpha.clamp(0.08, 0.24)),
         );
       }
       canvas.drawPath(
@@ -385,7 +385,7 @@ extension LightcoreBattleGameArenaSlotRendering on LightcoreBattleGame {
           ..maskFilter = ring == ringRadii.length - 1
               ? const MaskFilter.blur(BlurStyle.normal, 5)
               : null
-          ..color = color.withValues(alpha: 0.14 + (reveal * 0.2)),
+          ..color = color.withValues(alpha: 0.32 + (reveal * 0.34)),
       );
       _drawPolygonPerimeterProgress(
         canvas,
@@ -398,7 +398,7 @@ extension LightcoreBattleGameArenaSlotRendering on LightcoreBattleGame {
           ..style = PaintingStyle.stroke
           ..strokeWidth = 1.8 + (ring * 0.42)
           ..strokeCap = StrokeCap.round
-          ..color = color.withValues(alpha: 0.48 + (reveal * 0.32)),
+          ..color = color.withValues(alpha: 0.72 + (reveal * 0.28)),
       );
     }
 
@@ -425,7 +425,7 @@ extension LightcoreBattleGameArenaSlotRendering on LightcoreBattleGame {
           partial,
           basePaint
             ..strokeWidth = 0.9 + (ring * 0.22)
-            ..color = color.withValues(alpha: 0.16 + (reveal * 0.22)),
+            ..color = color.withValues(alpha: 0.34 + (reveal * 0.32)),
         );
       }
     }
@@ -454,7 +454,7 @@ extension LightcoreBattleGameArenaSlotRendering on LightcoreBattleGame {
         rayEnd,
         basePaint
           ..strokeWidth = 1.1
-          ..color = color.withValues(alpha: 0.16 + (rayProgress * 0.22)),
+          ..color = color.withValues(alpha: 0.34 + (rayProgress * 0.32)),
       );
     }
 
@@ -468,7 +468,7 @@ extension LightcoreBattleGameArenaSlotRendering on LightcoreBattleGame {
       canvas.drawCircle(
         node,
         radius * (0.026 + (0.018 * eased) + (pulse * 0.006)),
-        Paint()..color = color.withValues(alpha: 0.58 + (eased * 0.28)),
+        Paint()..color = color.withValues(alpha: 0.78 + (eased * 0.22)),
       );
     }
 
@@ -477,7 +477,7 @@ extension LightcoreBattleGameArenaSlotRendering on LightcoreBattleGame {
       Paint()
         ..style = PaintingStyle.stroke
         ..strokeWidth = 2.2
-        ..color = color.withValues(alpha: 0.2),
+        ..color = color.withValues(alpha: 0.38),
     );
     _drawPolygonPerimeterProgress(
       canvas,
@@ -488,9 +488,9 @@ extension LightcoreBattleGameArenaSlotRendering on LightcoreBattleGame {
       progress: clamped,
       paint: Paint()
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 4
+        ..strokeWidth = 4.8
         ..strokeCap = StrokeCap.round
-        ..color = color.withValues(alpha: 0.88),
+        ..color = color.withValues(alpha: 1),
     );
   }
 
@@ -748,7 +748,7 @@ extension LightcoreBattleGameArenaSlotRendering on LightcoreBattleGame {
             Paint()
               ..style = PaintingStyle.fill
               ..color = slotColor.withValues(
-                alpha: 0.12 + (constructionProgress * 0.16),
+                alpha: 0.24 + (constructionProgress * 0.24),
               ),
           );
           canvas.drawPath(
@@ -756,7 +756,7 @@ extension LightcoreBattleGameArenaSlotRendering on LightcoreBattleGame {
             Paint()
               ..style = PaintingStyle.fill
               ..color = slotColor.withValues(
-                alpha: 0.48 + (constructionProgress * 0.36),
+                alpha: 0.74 + (constructionProgress * 0.26),
               ),
           );
           canvas.drawPath(
@@ -765,7 +765,7 @@ extension LightcoreBattleGameArenaSlotRendering on LightcoreBattleGame {
               ..style = PaintingStyle.stroke
               ..strokeWidth = 1.8
               ..strokeCap = StrokeCap.round
-              ..color = slotColor.withValues(alpha: 0.72),
+              ..color = slotColor.withValues(alpha: 0.98),
           );
           for (var node = 0; node < 6; node++) {
             final angle = coreRotation + (((math.pi * 2) / 6) * node);
@@ -778,7 +778,7 @@ extension LightcoreBattleGameArenaSlotRendering on LightcoreBattleGame {
               _slotRadius * (0.018 + (constructionProgress * 0.008)),
               Paint()
                 ..color = slotColor.withValues(
-                  alpha: 0.56 + (constructionProgress * 0.28),
+                  alpha: 0.78 + (constructionProgress * 0.22),
                 ),
             );
           }

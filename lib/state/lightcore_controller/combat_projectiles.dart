@@ -129,10 +129,10 @@ extension LightcoreControllerCombatProjectiles on LightcoreController {
       max(18.0, shot.travelRadius * 0.075);
 
   double _shieldHaloTravelRadiusForMaxRange(double maxRange) =>
-      min(maxRange, max(112.0, maxRange * 0.7));
+      _shieldHaloGuardRadiusForMaxRange(maxRange);
 
   double _shieldHaloBandHalfWidthForShot(CoreShotState shot) =>
-      max(24.0, shot.travelRadius * 0.1);
+      _shieldHaloGuardBandHalfWidth;
 
   List<double> _sampleAnglesAlongMotion(
     double startAngle,
@@ -551,23 +551,7 @@ extension LightcoreControllerCombatProjectiles on LightcoreController {
 
   void _resolveBlastShot(CoreShotState shot) {
     final target = _targetNearImpactPoint(shot);
-    var spawnedPrimaryImpact = false;
-    if (target != null) {
-      _applyShotDamageToEnemy(
-        shot,
-        target,
-        applyProjectileFollowUp: false,
-        impactAngle: shot.aimAngle,
-        impactRadius: shot.travelRadius,
-      );
-      spawnedPrimaryImpact = true;
-    }
-
     final splashRadius = _projectileSplashRadius(shot.projectileType);
-    final splashDamageMultiplier =
-        shot.projectileType.behaviorProfile == ProjectileBehaviorProfile.nova
-        ? 0.34
-        : 0.28;
     final splashTargets = _enemies
         .where(
           (enemy) =>
@@ -580,6 +564,21 @@ extension LightcoreControllerCombatProjectiles on LightcoreController {
                   splashRadius,
         )
         .toList();
+    var spawnedPrimaryImpact = false;
+    if (target != null) {
+      _applyShotDamageToEnemy(
+        shot,
+        target,
+        applyProjectileFollowUp: false,
+        impactAngle: shot.aimAngle,
+        impactRadius: shot.travelRadius,
+      );
+      spawnedPrimaryImpact = true;
+    }
+
+    final splashDamageMultiplier = _blastSplashDamageMultiplier(
+      shot.projectileType,
+    );
 
     for (final enemy in splashTargets) {
       _applyShotDamageToEnemy(
@@ -773,6 +772,17 @@ extension LightcoreControllerCombatProjectiles on LightcoreController {
     return switch (projectileType.behaviorProfile) {
       ProjectileBehaviorProfile.explosion => 52,
       ProjectileBehaviorProfile.nova => 112,
+      _ => 0,
+    };
+  }
+
+  double _blastSplashDamageMultiplier(ProjectileType projectileType) {
+    if (projectileType == ProjectileType.coreBomb) {
+      return 1;
+    }
+    return switch (projectileType.behaviorProfile) {
+      ProjectileBehaviorProfile.nova => 0.34,
+      ProjectileBehaviorProfile.explosion => 0.28,
       _ => 0,
     };
   }

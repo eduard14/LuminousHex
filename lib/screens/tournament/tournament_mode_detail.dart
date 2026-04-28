@@ -133,17 +133,22 @@ class _TournamentModeDetailScreenState
   }
 
   List<EnemyCardState> get _availableEnemyCards {
-    return EnemyLibrary.all
-        .take(8)
-        .map(
-          (config) => EnemyCardState(
-            config: config,
-            unlocked: true,
-            copies: 1,
-            level: 1 + config.rarity.index,
-          ),
-        )
-        .toList(growable: false);
+    final rarityLimit = _eventEnemyRarityLimit;
+    final affinities = PrototypeAffinity.values;
+    return List<EnemyCardState>.generate(affinities.length, (index) {
+      final rarity = EnemyCardRarity.values[index % (rarityLimit + 1)];
+      final affinity = affinities[index];
+      final config = EnemyLibrary.all.firstWhere(
+        (entry) => entry.rarity == rarity && entry.affinity == affinity,
+        orElse: () => EnemyLibrary.basicWhite,
+      );
+      return EnemyCardState(
+        config: config,
+        unlocked: true,
+        copies: 1,
+        level: 1 + config.rarity.index,
+      );
+    }, growable: false);
   }
 
   List<EnemyCardState> get _availableBossCards {
@@ -158,6 +163,68 @@ class _TournamentModeDetailScreenState
           ),
         )
         .toList(growable: false);
+  }
+
+  int get _eventEnemyRarityLimit {
+    final seed = _eventSeed;
+    if (seed >= 500000000) {
+      return EnemyCardRarity.legendary.index;
+    }
+    if (seed >= 5000000) {
+      return EnemyCardRarity.epic.index;
+    }
+    if (seed >= 50000) {
+      return EnemyCardRarity.rare.index;
+    }
+    if (seed >= 5000) {
+      return EnemyCardRarity.uncommon.index;
+    }
+    return EnemyCardRarity.basic.index;
+  }
+
+  double _enemyCardTournamentThreat(EnemyCardState card) {
+    final healthPressure = pow(
+      max(1.0, widget.controller.enemyCardPreviewHealth(card)) / 9,
+      card.config.isBoss ? 0.12 : 0.16,
+    ).toDouble();
+    final economyPressure = pow(
+      max(
+            1.0,
+            widget.controller.enemyCardPreviewReward(card) +
+                widget.controller.enemyCardPreviewExperience(card),
+          ) /
+          4,
+      card.config.isBoss ? 0.08 : 0.12,
+    ).toDouble();
+    return healthPressure +
+        economyPressure +
+        (card.config.rarity.index * (card.config.isBoss ? 2.8 : 1.4));
+  }
+
+  double _enemyDraftThreatScore(Iterable<EnemyCardState> cards) {
+    final list = cards.toList(growable: false);
+    if (list.isEmpty) {
+      return 1;
+    }
+    return list.fold<double>(
+          0,
+          (sum, card) => sum + _enemyCardTournamentThreat(card),
+        ) /
+        list.length;
+  }
+
+  double _enemyDraftPayoutScore(Iterable<EnemyCardState> cards) {
+    final list = cards.toList(growable: false);
+    if (list.isEmpty) {
+      return 1;
+    }
+    return list.fold<double>(0, (sum, card) {
+          final payout =
+              widget.controller.enemyCardPreviewReward(card) +
+              widget.controller.enemyCardPreviewExperience(card);
+          return sum + pow(max(1.0, payout.toDouble()) / 4, 0.10).toDouble();
+        }) /
+        list.length;
   }
 
   void _seedSelections() {
@@ -269,12 +336,21 @@ class _TournamentModeDetailScreenState
   };
 
   int get _battleEnemyPressure => switch (_mode) {
-    LightcoreTournamentModeId.enemyBlitz => 7 + _blitzEnemyTier + _blitzWave,
+    LightcoreTournamentModeId.enemyBlitz =>
+      7 +
+          _blitzEnemyTier +
+          _blitzWave +
+          (_enemyDraftThreatScore(_selectedEnemyCards(_selectedBlitzEnemyIds)) /
+                  8)
+              .round(),
     LightcoreTournamentModeId.hexGauntlet => 8 + (_gauntletWave ~/ 2),
     LightcoreTournamentModeId.arenaFlow =>
       8 +
           _selectedArenaEnemyIds.length +
-          (_selectedArenaBossId == null ? 0 : 4),
+          (_selectedArenaBossId == null ? 0 : 4) +
+          (_enemyDraftThreatScore(_selectedEnemyCards(_selectedArenaEnemyIds)) /
+                  10)
+              .round(),
   };
 
   void _syncBattleController() {
@@ -354,6 +430,8 @@ class _TournamentModeDetailScreenState
       case LightcoreTournamentModeId.enemyBlitz:
         final draftedEnemies = _selectedEnemyCards(_selectedBlitzEnemyIds);
         final draftedLevels = _averageEnemyLevel(_selectedBlitzEnemyIds);
+        final draftThreat = _enemyDraftThreatScore(draftedEnemies);
+        final draftPayout = _enemyDraftPayoutScore(draftedEnemies);
         final affinityCount = draftedEnemies
             .map((card) => card.config.affinity)
             .toSet()
@@ -363,8 +441,9 @@ class _TournamentModeDetailScreenState
         final enemyPressure =
             30 +
             (_blitzWave * 8.5) +
-            (_blitzEnemyTier * 11) +
-            (draftedLevels * 4.2) -
+            (_blitzEnemyTier * (9.0 + (draftThreat * 0.28))) +
+            (draftedLevels * 2.2) +
+            (draftThreat * 4.4) -
             (affinityCount * 2.5);
         _blitzShield =
             (_blitzShield + ((towerOutput - enemyPressure) / 180) * dt).clamp(
@@ -372,12 +451,24 @@ class _TournamentModeDetailScreenState
               1.0,
             );
         _blitzSupplyProgress +=
-            dt * (0.44 + (_blitzEnemyTier * 0.08) + (draftedLevels * 0.012));
+            dt *
+            (0.36 +
+                (_blitzEnemyTier * 0.07) +
+                (draftedLevels * 0.008) +
+                (draftPayout * 0.014));
         while (_blitzSupplyProgress >= 1) {
           _blitzSupplyProgress -= 1;
           _blitzWave += 1;
-          _blitzResources += 62 + (_blitzEnemyTier * 18) + (affinityCount * 6);
-          nextScore += 110 + (_blitzWave * 24) + (_blitzTowerTier * 18);
+          _blitzResources +=
+              62 +
+              (_blitzEnemyTier * 18) +
+              (affinityCount * 6) +
+              (draftPayout * 4).round();
+          nextScore +=
+              110 +
+              (_blitzWave * 24) +
+              (_blitzTowerTier * 18) +
+              (draftPayout * 5).round();
           nextHint =
               'Wave $_blitzWave reached. Supply payout delivered. Reinvest into tower strength or make the anomaly draft greedier.';
         }
@@ -433,15 +524,23 @@ class _TournamentModeDetailScreenState
         break;
       case LightcoreTournamentModeId.arenaFlow:
         final draftedLevels = _averageEnemyLevel(_selectedArenaEnemyIds);
-        final bossLevel = _bossCardById(_selectedArenaBossId)?.level ?? 1;
+        final draftedEnemies = _selectedEnemyCards(_selectedArenaEnemyIds);
+        final draftThreat = _enemyDraftThreatScore(draftedEnemies);
+        final bossCard = _bossCardById(_selectedArenaBossId);
+        final bossLevel = bossCard?.level ?? 1;
+        final bossThreat = bossCard == null
+            ? 0.0
+            : _enemyCardTournamentThreat(bossCard);
         _arenaOverclockCharge =
             (_arenaOverclockCharge + dt * (0.22 + (_arenaRelayScore * 0.0025)))
                 .clamp(0.0, 1.4);
         _arenaBurstSeconds = max(0, _arenaBurstSeconds - dt);
         _arenaPressure =
             18 +
-            (draftedLevels * 2.6) +
-            (bossLevel * 4.8) +
+            (draftedLevels * 1.4) +
+            (draftThreat * 1.8) +
+            (bossLevel * 2.4) +
+            (bossThreat * 0.9) +
             (sin(nextElapsed * 1.7) * 5.2);
         final playerRate = max(
           0.0,
@@ -453,8 +552,10 @@ class _TournamentModeDetailScreenState
         final rivalRate = max(
           0.0,
           28 +
-              (draftedLevels * 2.9) +
-              (bossLevel * 5.1) +
+              (draftedLevels * 1.6) +
+              (draftThreat * 1.6) +
+              (bossLevel * 2.6) +
+              (bossThreat * 0.86) +
               (widget.modeState.leaderboard
                       .take(3)
                       .fold<double>(

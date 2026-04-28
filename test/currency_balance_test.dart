@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:lightcore/data/enemy_configs.dart';
 import 'package:lightcore/models/lightcore_currency_labels.dart';
+import 'package:lightcore/models/lightcore_types.dart';
 import 'package:lightcore/state/lightcore_controller.dart';
 
 void main() {
@@ -53,6 +54,83 @@ void main() {
 
     expect(level25, greaterThan(level1 * 3));
     expect(level50, greaterThan(level25 * 3));
+  });
+
+  test('enemy rarity health curve creates late-layer threat walls', () {
+    final controller = LightcoreController();
+    addTearDown(controller.dispose);
+
+    final basic = EnemyLibrary.basicWhite;
+    final epic = EnemyLibrary.byRarity[EnemyCardRarity.epic]!.first;
+    final legendary = EnemyLibrary.byRarity[EnemyCardRarity.legendary]!.first;
+
+    expect(
+      controller.debugSetEnemyCardLevel(
+        basic.id,
+        level: basic.rarity.levelCap,
+        copies: 1,
+      ),
+      isTrue,
+    );
+    expect(
+      controller.debugSetEnemyCardLevel(
+        epic.id,
+        level: epic.rarity.levelCap,
+        copies: 1,
+      ),
+      isTrue,
+    );
+    expect(
+      controller.debugSetEnemyCardLevel(legendary.id, level: 1, copies: 1),
+      isTrue,
+    );
+
+    final maxBasicHealth = controller.enemyCardPreviewHealth(
+      controller.enemyCardById(basic.id)!,
+    );
+    final maxEpicHealth = controller.enemyCardPreviewHealth(
+      controller.enemyCardById(epic.id)!,
+    );
+    final legendaryLevel1Health = controller.enemyCardPreviewHealth(
+      controller.enemyCardById(legendary.id)!,
+    );
+
+    expect(maxBasicHealth, greaterThan(200000));
+    expect(maxEpicHealth, greaterThan(75000000));
+    expect(legendaryLevel1Health, greaterThan(900000000));
+    expect(legendaryLevel1Health, greaterThan(maxEpicHealth * 8));
+    expect(
+      controller.enemyCardThreatRatingLabel(
+        controller.enemyCardById(legendary.id)!,
+      ),
+      'Overwhelming',
+    );
+  });
+
+  test('enemy color economy can lean toward Lumens or EXP', () {
+    final controller = LightcoreController();
+    addTearDown(controller.dispose);
+
+    final red = controller.enemyCardById(EnemyLibrary.basicRed.id)!;
+    final orange = controller.enemyCardsByRarity[EnemyCardRarity.basic]!
+        .firstWhere((card) => card.config.affinity == PrototypeAffinity.flare);
+
+    final redRewardToExp =
+        controller.enemyCardPreviewReward(red) /
+        controller.enemyCardPreviewExperience(red);
+    final orangeRewardToExp =
+        controller.enemyCardPreviewReward(orange) /
+        controller.enemyCardPreviewExperience(orange);
+
+    expect(redRewardToExp, greaterThan(orangeRewardToExp * 2));
+    expect(
+      controller.enemyCardPreviewExperience(orange),
+      greaterThan(controller.enemyCardPreviewExperience(red)),
+    );
+    expect(
+      controller.enemyCardPreviewReward(red),
+      greaterThan(controller.enemyCardPreviewReward(orange)),
+    );
   });
 
   test('enemy EXP preview varies while kills stay per clear', () {

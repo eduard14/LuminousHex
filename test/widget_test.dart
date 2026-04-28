@@ -15,6 +15,7 @@ import 'package:lightcore/models/lightcore_guide.dart';
 import 'package:lightcore/models/lightcore_social_state.dart';
 import 'package:lightcore/models/lightcore_types.dart';
 import 'package:lightcore/screens/battle_screen.dart';
+import 'package:lightcore/screens/daily_dungeons_screen.dart';
 import 'package:lightcore/screens/lightcore_shell.dart';
 import 'package:lightcore/services/lightcore_firebase_backend.dart';
 import 'package:lightcore/services/lightcore_firebase_runtime_config.dart';
@@ -87,7 +88,10 @@ Future<void> _scrollSettingsUntilVisible(
   await tester.scrollUntilVisible(
     finder,
     120,
-    scrollable: find.byType(Scrollable).last,
+    scrollable: find.descendant(
+      of: find.byKey(const ValueKey<String>('settings-scroll-view')),
+      matching: find.byType(Scrollable),
+    ).first,
   );
   await tester.pump();
 }
@@ -632,7 +636,9 @@ void main() {
 
     expect(find.text('Daily Dungeons'), findsOneWidget);
     expect(find.text('Threat Director'), findsWidgets);
-    expect(find.text('Sealed'), findsNWidgets(2));
+    expect(find.text('Prism Rift'), findsWidgets);
+    expect(find.text('Open'), findsNWidgets(2));
+    expect(find.text('Sealed'), findsOneWidget);
   });
 
   testWidgets('mentorship overlay unlocks at level 30', (tester) async {
@@ -700,6 +706,53 @@ void main() {
     expect(find.text('WHT'), findsWidgets);
     expect(find.text('RED'), findsWidgets);
     expect(find.text('Ready'), findsWidgets);
+    expect(find.byTooltip('Open Menu'), findsNothing);
+  });
+
+  testWidgets('prism rift dungeon opens manual aim run screen', (tester) async {
+    final controller = LightcoreController();
+    addTearDown(controller.dispose);
+    controller.experience = LightcoreController.experienceForOverallLevel(
+      LightcoreController.dailyDungeonUnlockLevel,
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        debugShowCheckedModeBanner: false,
+        theme: buildLightcoreTheme(),
+        home: Scaffold(
+          body: DailyDungeonsScreen(controller: controller, isActive: true),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    await tester.tap(
+      find
+          .ancestor(of: find.text('Prism Rift'), matching: find.byType(InkWell))
+          .first,
+    );
+    await tester.pump();
+    await tester.scrollUntilVisible(
+      find.text('Enter Rift Lv 1'),
+      220,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.pump();
+    await tester.tap(find.text('Enter Rift Lv 1'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 320));
+
+    expect(find.text('Prism Rift Lv 1'), findsOneWidget);
+    expect(
+      find.byWidgetPredicate(
+        (widget) => widget.runtimeType.toString().startsWith('GameWidget<'),
+      ),
+      findsOneWidget,
+    );
+    expect(find.byTooltip('Exit dungeon'), findsOneWidget);
+    expect(find.text('Charge'), findsOneWidget);
+    expect(find.text('Heat'), findsOneWidget);
     expect(find.byTooltip('Open Menu'), findsNothing);
   });
 
@@ -1281,6 +1334,18 @@ void main() {
 
     expect(controller.notificationBannersEnabled, isFalse);
     expect(controller.tutorialPromptsEnabled, isFalse);
+
+    await _scrollSettingsUntilVisible(tester, find.text('Battle Visuals'));
+    expect(controller.graphicsQuality, LightcoreGraphicsQuality.high);
+
+    await tester.tap(find.text('Low Power'));
+    await tester.pump();
+
+    expect(controller.graphicsQuality, LightcoreGraphicsQuality.lowPower);
+    expect(
+      find.text(LightcoreGraphicsQuality.lowPower.summary),
+      findsOneWidget,
+    );
   });
 
   testWidgets('settings shows the app version at the bottom', (tester) async {

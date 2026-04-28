@@ -105,6 +105,46 @@ enum LightcoreTimeWarpCurrency { flux, prismShards }
 
 enum LightcoreRadianceStat { might, focus, tempo, insight }
 
+enum LightcoreGraphicsQuality {
+  high,
+  balanced,
+  lowPower;
+
+  String get storageValue => switch (this) {
+    LightcoreGraphicsQuality.high => 'high',
+    LightcoreGraphicsQuality.balanced => 'balanced',
+    LightcoreGraphicsQuality.lowPower => 'low_power',
+  };
+
+  String get label => switch (this) {
+    LightcoreGraphicsQuality.high => 'High',
+    LightcoreGraphicsQuality.balanced => 'Balanced',
+    LightcoreGraphicsQuality.lowPower => 'Low Power',
+  };
+
+  String get summary => switch (this) {
+    LightcoreGraphicsQuality.high =>
+      'Full battle glow, particles, shakes, and transitions.',
+    LightcoreGraphicsQuality.balanced =>
+      'Keeps the battle readable while trimming extra particles and bloom.',
+    LightcoreGraphicsQuality.lowPower =>
+      'Reduces particles, glow, shake, and burst density for weaker devices.',
+  };
+
+  static LightcoreGraphicsQuality? maybeFromStorageValue(String? value) {
+    final normalized = value?.trim().toLowerCase();
+    if (normalized == null || normalized.isEmpty) {
+      return null;
+    }
+    for (final quality in LightcoreGraphicsQuality.values) {
+      if (quality.storageValue == normalized || quality.name == normalized) {
+        return quality;
+      }
+    }
+    return null;
+  }
+}
+
 class LightcoreDailyDungeonReward {
   const LightcoreDailyDungeonReward({
     required this.towerLevel,
@@ -603,6 +643,7 @@ class LightcoreController extends ChangeNotifier {
     bool guildsEnabled = true,
     int guildCreationUnlockLevel = defaultGuildCreationUnlockLevel,
     LightcoreBalanceTuning balanceTuning = LightcoreBalanceTuning.defaults,
+    LightcoreGraphicsQuality graphicsQuality = LightcoreGraphicsQuality.high,
   }) : _packRandom = packRandom ?? Random(),
        _traitRandom = traitRandom ?? Random(),
        _managerRandom = managerRandom ?? Random(),
@@ -612,7 +653,8 @@ class LightcoreController extends ChangeNotifier {
        _screenName = _normalizeOptionalScreenName(screenName),
        _guildsEnabled = guildsEnabled,
        _guildCreationUnlockLevel = max(1, guildCreationUnlockLevel),
-       _balanceTuning = balanceTuning {
+       _balanceTuning = balanceTuning,
+       _graphicsQuality = graphicsQuality {
     _cards = <InventoryCard>[];
     _enemyManagers = <EnemyManagerState>[];
     _equipmentInventory = <PlayerEquipmentItem>[];
@@ -1004,6 +1046,7 @@ class LightcoreController extends ChangeNotifier {
   bool _hasPremiumMembership = false;
   double _tournamentExperienceMultiplier = 1.0;
   DateTime? _tournamentExperienceBoostEndsAt;
+  LightcoreGraphicsQuality _graphicsQuality;
   bool _notificationBannersEnabled = true;
   bool _tutorialPromptsEnabled = true;
   bool _localhostAutoTapperEnabled = false;

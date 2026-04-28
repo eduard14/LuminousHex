@@ -1,9 +1,29 @@
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:lightcore/data/enemy_configs.dart';
 import 'package:lightcore/data/tower_configs.dart';
+import 'package:lightcore/models/lightcore_types.dart';
 import 'package:lightcore/state/lightcore_controller.dart';
 
 void main() {
+  test('cloud-restored promotion-ready shell can create the next layer', () {
+    final source = LightcoreController();
+    addTearDown(source.dispose);
+    _preparePromotionReadyRootShell(source);
+
+    final restored = LightcoreController.fromCloudSavePayload(
+      source.buildCloudSavePayload(),
+    );
+    addTearDown(restored.dispose);
+
+    expect(restored.isPromotionReady, isTrue);
+
+    restored.unlockLayer2Tower();
+
+    expect(restored.activeLayer.tier, 2);
+    expect(restored.layers.length, source.layers.length + 1);
+  });
+
   test('cloud restore re-arms a legacy dormant battle runtime', () {
     final source = LightcoreController();
     addTearDown(source.dispose);
@@ -50,4 +70,79 @@ void main() {
 
     expect(restored.enemyCount, 0);
   });
+
+  test('threat assignment presets save anomaly deck and apex per core', () {
+    final source = LightcoreController();
+    addTearDown(source.dispose);
+    source.debugDisableTutorial();
+
+    final aetherBasic = EnemyLibrary.all.firstWhere(
+      (config) =>
+          config.rarity == EnemyCardRarity.basic &&
+          config.affinity == PrototypeAffinity.aether,
+    );
+    expect(
+      source.debugSetEnemyCardLevel(EnemyLibrary.basicRed.id, level: 1),
+      isTrue,
+    );
+    expect(source.debugSetEnemyCardLevel(aetherBasic.id, level: 1), isTrue);
+    expect(
+      source.debugSetEnemyCardLevel(
+        BossEnemyLibrary.starterWhiteWarden.id,
+        level: 1,
+        boss: true,
+      ),
+      isTrue,
+    );
+
+    source.toggleEnemyCardSelection(EnemyLibrary.basicRed.id);
+    source.toggleEnemyCardSelection(aetherBasic.id);
+    source.setActiveBossEnemyCard(BossEnemyLibrary.starterWhiteWarden.id);
+    final presetId = source.createThreatAssignmentPreset(name: 'Root Push');
+
+    expect(presetId, isNotNull);
+    expect(source.activeThreatAssignmentPresets.single.name, 'Root Push');
+
+    source.toggleEnemyCardSelection(EnemyLibrary.basicRed.id);
+    expect(
+      source.activeEnemyCardIds,
+      isNot(contains(EnemyLibrary.basicRed.id)),
+    );
+    expect(source.applyThreatAssignmentPreset(presetId!), isTrue);
+    expect(source.activeEnemyCardIds, contains(EnemyLibrary.basicRed.id));
+    expect(
+      source.activeBossEnemyCard?.config.id,
+      BossEnemyLibrary.starterWhiteWarden.id,
+    );
+    expect(source.renameThreatAssignmentPreset(presetId, 'Root Farm'), isTrue);
+
+    final restored = LightcoreController.fromCloudSavePayload(
+      source.buildCloudSavePayload(),
+    );
+    addTearDown(restored.dispose);
+
+    expect(restored.activeThreatAssignmentPresets.single.name, 'Root Farm');
+    expect(restored.applyThreatAssignmentPreset(presetId), isTrue);
+    expect(restored.activeEnemyCardIds, contains(EnemyLibrary.basicRed.id));
+    expect(
+      restored.activeBossEnemyCard?.config.id,
+      BossEnemyLibrary.starterWhiteWarden.id,
+    );
+  });
+}
+
+void _preparePromotionReadyRootShell(LightcoreController controller) {
+  controller.debugDisableTutorial();
+  controller.kills = LightcoreController.unlockKillsForOuterSlot(
+    LightcoreController.slotCount - 1,
+  );
+  controller.lumens = 1000000;
+
+  for (var index = 0; index < LightcoreController.slotCount; index += 1) {
+    final config = TowerLibrary.all[index % TowerLibrary.all.length];
+    expect(controller.buildTowerAt(index, config), isTrue);
+    while (controller.slots[index].level < LightcoreController.maxTowerLevel) {
+      expect(controller.upgradeTower(index), isTrue);
+    }
+  }
 }
