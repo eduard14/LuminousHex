@@ -83,16 +83,16 @@ final _previewGuestSession = LightcoreGuestSession(
 
 final _previewReport = LightcoreBootstrapReport(
   guestSession: _previewGuestSession,
-  clientVersion: '1.0.15',
-  clientBuildNumber: '16',
+  clientVersion: '1.0.16',
+  clientBuildNumber: '17',
   manifest: const LightcoreContentManifest(
     firebaseProjectId: 'lumicore-95c8a',
     seasonKey: 'season-01',
     contentEpoch: 7,
-    minimumSupportedVersion: '1.0.15',
-    minimumSupportedBuildNumber: '16',
-    recommendedVersion: '1.0.15',
-    recommendedBuildNumber: '16',
+    minimumSupportedVersion: '1.0.16',
+    minimumSupportedBuildNumber: '17',
+    recommendedVersion: '1.0.16',
+    recommendedBuildNumber: '17',
     backendMode: LightcoreBackendMode.localFallback,
     statusMessage: 'Preview environment',
   ),
