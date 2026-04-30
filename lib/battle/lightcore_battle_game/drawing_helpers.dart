@@ -17,6 +17,7 @@ extension LightcoreBattleGameDrawingHelpers on LightcoreBattleGame {
     required double radius,
     required Color tint,
     bool showTapCue = true,
+    String? tapCueLabel,
   }) {
     final pulse = 0.5 + ((math.sin(controller.elapsed * 3.8) + 1) * 0.25);
     canvas.drawCircle(
@@ -41,6 +42,7 @@ extension LightcoreBattleGameDrawingHelpers on LightcoreBattleGame {
         center + Offset(radius * 0.48, radius * 0.48),
         radius: radius * 0.34,
         tint: tint,
+        label: tapCueLabel,
       );
     }
   }
@@ -50,6 +52,7 @@ extension LightcoreBattleGameDrawingHelpers on LightcoreBattleGame {
     Offset center, {
     required double radius,
     required Color tint,
+    String? label,
   }) {
     final cueRadius = radius.clamp(10.0, 22.0).toDouble();
     final progress = ((math.sin(controller.elapsed * 5.3) + 1) * 0.5)
@@ -59,15 +62,20 @@ extension LightcoreBattleGameDrawingHelpers on LightcoreBattleGame {
     );
     final pressOffset = Offset(0, cueRadius * 0.16 * progress);
     final iconCenter = center + pressOffset;
+    final cueLabel = label?.trim();
+    final hasLabel = cueLabel != null && cueLabel.isNotEmpty;
     final outerRingPaint = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = math.max(1.4, cueRadius * 0.08)
       ..color = tint.withValues(alpha: 0.54 * (1 - ringProgress));
+    final cueClip = Rect.fromCircle(
+      center: center,
+      radius: cueRadius * 2.2,
+    ).inflate(2);
+    final labelClip = Rect.fromLTWH(iconCenter.dx, iconCenter.dy - 32, 132, 64);
 
     canvas.save();
-    canvas.clipRect(
-      Rect.fromCircle(center: center, radius: cueRadius * 2.2).inflate(2),
-    );
+    canvas.clipRect(hasLabel ? cueClip.expandToInclude(labelClip) : cueClip);
     canvas.drawCircle(
       center,
       cueRadius * (0.8 + (0.54 * ringProgress)),
@@ -95,7 +103,69 @@ extension LightcoreBattleGameDrawingHelpers on LightcoreBattleGame {
       radius: cueRadius,
       color: LightcorePalette.night,
     );
+    if (hasLabel) {
+      _paintTapCueLabel(canvas, iconCenter, cueLabel, cueRadius, tint);
+    }
     canvas.restore();
+  }
+
+  void _paintTapCueLabel(
+    Canvas canvas,
+    Offset iconCenter,
+    String label,
+    double cueRadius,
+    Color tint,
+  ) {
+    final textPainter = TextPainter(
+      text: TextSpan(
+        text: label,
+        style: TextStyle(
+          color: LightcorePalette.mist,
+          fontSize: cueRadius.clamp(10.0, 13.0).toDouble(),
+          fontWeight: FontWeight.w900,
+          height: 1.05,
+          shadows: [
+            Shadow(
+              color: LightcorePalette.night.withValues(alpha: 0.7),
+              blurRadius: 4,
+            ),
+          ],
+        ),
+      ),
+      maxLines: 2,
+      ellipsis: '...',
+      textAlign: TextAlign.center,
+      textDirection: TextDirection.ltr,
+    )..layout(maxWidth: 96);
+    final labelRect = Rect.fromLTWH(
+      iconCenter.dx + (cueRadius * 0.82),
+      iconCenter.dy - (textPainter.height / 2) - 6,
+      textPainter.width + 18,
+      textPainter.height + 12,
+    );
+    final rounded = RRect.fromRectAndRadius(
+      labelRect,
+      Radius.circular(labelRect.height / 2),
+    );
+
+    canvas.drawRRect(
+      rounded,
+      Paint()..color = LightcorePalette.panelRaised.withValues(alpha: 0.94),
+    );
+    canvas.drawRRect(
+      rounded,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.2
+        ..color = tint.withValues(alpha: 0.72),
+    );
+    textPainter.paint(
+      canvas,
+      Offset(
+        labelRect.left + ((labelRect.width - textPainter.width) / 2),
+        labelRect.top + 6,
+      ),
+    );
   }
 
   void _paintTapCueGlyph(
@@ -667,7 +737,9 @@ extension LightcoreBattleGameDrawingHelpers on LightcoreBattleGame {
       shot.projectileType == ProjectileType.shieldHalo;
 
   bool _shotUsesCoreBasicImpact(CoreShotState shot) =>
-      !shot.layer2 && shot.sourceSlotIndex == null;
+      !shot.layer2 &&
+      shot.sourceSlotIndex == null &&
+      shot.projectileType == ProjectileType.starBolt;
 
   bool _shotUsesBlueFocusLaser(CoreShotState shot) =>
       !shot.layer2 &&

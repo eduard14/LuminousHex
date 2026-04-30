@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -88,10 +90,12 @@ Future<void> _scrollSettingsUntilVisible(
   await tester.scrollUntilVisible(
     finder,
     120,
-    scrollable: find.descendant(
-      of: find.byKey(const ValueKey<String>('settings-scroll-view')),
-      matching: find.byType(Scrollable),
-    ).first,
+    scrollable: find
+        .descendant(
+          of: find.byKey(const ValueKey<String>('settings-scroll-view')),
+          matching: find.byType(Scrollable),
+        )
+        .first,
   );
   await tester.pump();
 }
@@ -356,6 +360,67 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets(
+    'foreground resume during Google sign-in does not start a stale bootstrap',
+    (tester) async {
+      addTearDown(() async {
+        await tester.binding.setSurfaceSize(null);
+      });
+      await tester.binding.setSurfaceSize(const Size(430, 780));
+      PackageInfo.setMockInitialValues(
+        appName: 'LumiHex',
+        packageName: 'com.lightcore.test',
+        version: '1.0.6',
+        buildNumber: '7',
+        buildSignature: '',
+      );
+      SharedPreferences.setMockInitialValues(<String, Object>{
+        'lightcore.guide_id': LightcoreGuideProfile.lumo.storageId,
+      });
+      final backend = _PendingGoogleSignInBackend();
+
+      await tester.pumpWidget(LightcoreApp(backend: backend));
+      await tester.pump();
+      await _waitForMainMenu(tester);
+      for (var attempt = 0; attempt < 30; attempt += 1) {
+        if (find.text('PLAY', skipOffstage: false).evaluate().isNotEmpty) {
+          break;
+        }
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+
+      await tester.tap(find.text('PLAY', skipOffstage: false));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 250));
+      expect(find.text('Save Recovery'), findsOneWidget);
+
+      await tester.tap(
+        find.byKey(const ValueKey<String>('guest-sign-in-google-button')),
+      );
+      await tester.pump();
+      expect(backend.signInCalls, 1);
+
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+      await tester.pump();
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await tester.pump(const Duration(milliseconds: 100));
+
+      expect(backend.bootstrapCalls, 1);
+
+      backend.completeGoogleSignIn();
+      for (var attempt = 0; attempt < 30; attempt += 1) {
+        await tester.pump(const Duration(milliseconds: 100));
+        if (find.byType(LightcoreShell).evaluate().isNotEmpty) {
+          break;
+        }
+      }
+
+      expect(backend.bootstrapCalls, 3);
+      expect(find.byType(LightcoreShell), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
   testWidgets('foreground resume remounts the battle renderer surface', (
     tester,
   ) async {
@@ -566,7 +631,7 @@ void main() {
     expect(find.text('Enter Shell'), findsOneWidget);
   });
 
-  testWidgets('opens and closes management overlays from the battle view', (
+  testWidgets('tower navigation stays locked until Prism Shell is forged', (
     tester,
   ) async {
     final controller = LightcoreController();
@@ -574,18 +639,40 @@ void main() {
 
     await _pumpShell(tester, controller);
 
-    expect(find.text('Tower Matrix', skipOffstage: false), findsNothing);
+    expect(
+      find.text('Tower Archive Locked', skipOffstage: false),
+      findsNothing,
+    );
+
+    await tester.tap(find.byTooltip('Towers').first);
+    await tester.pump();
+
+    expect(
+      controller.bannerMessage,
+      contains('Towers unlock when Layer 2 is online'),
+    );
+    expect(
+      find.text('Tower Archive Locked', skipOffstage: false),
+      findsNothing,
+    );
+    expect(find.byTooltip('Return to Base Game'), findsNothing);
+
+    _promoteRootShell(controller);
+    await tester.pump();
 
     await tester.tap(find.byTooltip('Towers').first);
     await _pumpTransition(tester);
 
-    expect(find.text('Tower Matrix'), findsOneWidget);
+    expect(find.text('Completed Shells'), findsOneWidget);
     expect(find.byTooltip('Return to Base Game'), findsOneWidget);
 
     await tester.tap(find.byTooltip('Return to Base Game'));
     await _pumpTransition(tester);
 
-    expect(find.text('Tower Matrix', skipOffstage: false), findsNothing);
+    expect(
+      find.text('Tower Archive Locked', skipOffstage: false),
+      findsNothing,
+    );
     expect(find.byTooltip('Battle'), findsOneWidget);
   });
 
@@ -702,7 +789,7 @@ void main() {
       ),
       findsOneWidget,
     );
-    expect(find.byTooltip('Exit dungeon'), findsOneWidget);
+    expect(find.byTooltip('Back to dungeons'), findsOneWidget);
     expect(find.text('WHT'), findsWidgets);
     expect(find.text('RED'), findsWidgets);
     expect(find.text('Ready'), findsWidgets);
@@ -750,7 +837,9 @@ void main() {
       ),
       findsOneWidget,
     );
-    expect(find.byTooltip('Exit dungeon'), findsOneWidget);
+    expect(find.byTooltip('Back to dungeons'), findsOneWidget);
+    expect(find.byTooltip('Aim'), findsOneWidget);
+    expect(find.byTooltip('Fire rift shot'), findsOneWidget);
     expect(find.text('Charge'), findsOneWidget);
     expect(find.text('Heat'), findsOneWidget);
     expect(find.byTooltip('Open Menu'), findsNothing);
@@ -766,13 +855,13 @@ void main() {
 
     expect(find.byTooltip('Open shells'), findsNothing);
 
-    await tester.tap(find.byTooltip('Towers').first);
-    await _pumpTransition(tester);
-
-    expect(find.byTooltip('Shells'), findsNothing);
-
     _promoteRootShell(controller);
     await tester.pump();
+
+    expect(find.byTooltip('Open shells'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Towers').first);
+    await _pumpTransition(tester);
 
     expect(find.byTooltip('Shells'), findsOneWidget);
 
@@ -869,13 +958,22 @@ void main() {
 
       await _pumpShell(tester, controller);
 
+      await tester.tap(find.byTooltip('Towers').first);
+      await tester.pump();
+
+      expect(
+        controller.bannerMessage,
+        contains('Towers unlock when Layer 2 is online'),
+      );
+      expect(find.text('Completed Shells', skipOffstage: false), findsNothing);
+
       await tester.tap(find.byTooltip('Managers').first);
       await tester.pump();
 
       expect(
         controller.bannerMessage,
         contains(
-          'Manager assignment unlocks as soon as the active core reaches Layer 2',
+          'Manager assignment unlocks when the active core reaches Lv ${LightcoreController.managerCoreLevelRequirement}',
         ),
       );
       expect(find.text('Main Manager', skipOffstage: false), findsNothing);
@@ -1309,6 +1407,7 @@ void main() {
       findsOneWidget,
     );
     expect(controller.notificationBannersEnabled, isTrue);
+    expect(controller.battleNotificationBannersEnabled, isFalse);
     expect(controller.tutorialPromptsEnabled, isTrue);
 
     await tester.tap(
@@ -1327,12 +1426,25 @@ void main() {
       find.byKey(const ValueKey<String>('notification-banners-switch')),
     );
     await tester.pump();
+    await _scrollSettingsUntilVisible(
+      tester,
+      find.byKey(const ValueKey<String>('battle-alert-banners-switch')),
+    );
+    await tester.tap(
+      find.byKey(const ValueKey<String>('battle-alert-banners-switch')),
+    );
+    await tester.pump();
+    await _scrollSettingsUntilVisible(
+      tester,
+      find.byKey(const ValueKey<String>('tutorial-prompts-switch')),
+    );
     await tester.tap(
       find.byKey(const ValueKey<String>('tutorial-prompts-switch')),
     );
     await tester.pump();
 
     expect(controller.notificationBannersEnabled, isFalse);
+    expect(controller.battleNotificationBannersEnabled, isTrue);
     expect(controller.tutorialPromptsEnabled, isFalse);
 
     await _scrollSettingsUntilVisible(tester, find.text('Battle Visuals'));
@@ -1388,24 +1500,14 @@ void main() {
       find.byKey(const ValueKey<String>('battle-quest-card')),
       findsOneWidget,
     );
-    final collapsedQuestSize = tester.getSize(
-      find.byKey(const ValueKey<String>('battle-quest-card')),
-    );
-    expect(collapsedQuestSize.width, lessThanOrEqualTo(60));
-    expect(collapsedQuestSize.height, lessThanOrEqualTo(60));
     expect(
       find.byKey(const ValueKey<String>('shell-quest-sheet')),
       findsNothing,
     );
     expect(
       find.byKey(const ValueKey<String>('battle-quest-detail-card')),
-      findsNothing,
+      findsOneWidget,
     );
-
-    await tester.tap(
-      find.byKey(const ValueKey<String>('battle-quest-trigger-button')),
-    );
-    await _pumpTransition(tester);
 
     expect(
       find.byKey(const ValueKey<String>('shell-quest-sheet')),
@@ -1417,7 +1519,7 @@ void main() {
     );
     expect(
       find.text(
-        'The center is your active light core. It fires only when its queue has pulses.',
+        'Tap the center Lightcore to unfold the first shell and reveal the outer hexes.',
       ),
       findsOneWidget,
     );
@@ -1431,7 +1533,7 @@ void main() {
     addTearDown(controller.dispose);
 
     await _pumpShell(tester, controller, disableTutorial: false);
-    await tester.tap(find.byTooltip('Towers').first);
+    await tester.tap(find.byTooltip('Anomalies').first);
     await _pumpTransition(tester);
 
     expect(
@@ -1461,7 +1563,7 @@ void main() {
     );
   });
 
-  testWidgets('tracked quest expands details only after tapping', (
+  testWidgets('tracked quest shows details by default and can collapse', (
     tester,
   ) async {
     final controller = LightcoreController();
@@ -1475,21 +1577,11 @@ void main() {
     );
     expect(
       find.byKey(const ValueKey<String>('battle-quest-detail-card')),
-      findsNothing,
+      findsOneWidget,
     );
     expect(
       find.byKey(const ValueKey<String>('battle-quest-card-collapsed')),
-      findsOneWidget,
-    );
-
-    await tester.tap(
-      find.byKey(const ValueKey<String>('battle-quest-trigger-button')),
-    );
-    await _pumpTransition(tester);
-
-    expect(
-      find.byKey(const ValueKey<String>('battle-quest-detail-card')),
-      findsOneWidget,
+      findsNothing,
     );
 
     await tester.tap(
@@ -1501,11 +1593,13 @@ void main() {
       find.byKey(const ValueKey<String>('battle-quest-detail-card')),
       findsNothing,
     );
+    expect(
+      find.byKey(const ValueKey<String>('battle-quest-card-collapsed')),
+      findsOneWidget,
+    );
   });
 
-  testWidgets('tap-to-fire quest keeps details behind the battle icon', (
-    tester,
-  ) async {
+  testWidgets('queue quest opens details with beginner copy', (tester) async {
     final controller = LightcoreController();
     addTearDown(controller.dispose);
 
@@ -1523,38 +1617,26 @@ void main() {
     );
     controller.selectSlot(0);
     expect(controller.tutorialBuildTowerAt(0, TowerLibrary.redPrism), isTrue);
+    controller.markTutorialFirstTowerStatsOpened();
     expect(controller.debugSetTowerCharge(0, charge: 1), isTrue);
     expect(controller.tutorialStep, LightcoreTutorialStep.tapFirstTower);
 
     await _pumpBattleScreen(tester, controller);
 
-    expect(find.text('Queue a Pulse'), findsNothing);
-    expect(
-      find.text(
-        'Towers fire what is in their queue. Tap to add pulses while active.',
-      ),
-      findsNothing,
-    );
-    expect(
-      find.byKey(const ValueKey<String>('battle-quest-detail-card')),
-      findsNothing,
-    );
-
-    await tester.tap(
-      find.byKey(const ValueKey<String>('battle-quest-trigger-button')),
-    );
-    await _pumpTransition(tester);
-
     expect(find.text('Queue a Pulse'), findsOneWidget);
     expect(
+      find.byKey(const ValueKey<String>('battle-quest-detail-card')),
+      findsOneWidget,
+    );
+    expect(
       find.text(
-        'Towers fire what is in their queue. Tap to add pulses while active.',
+        'Tap the charged Red Prism to add a pulse to the core queue. The core spends queued pulses as outgoing shots.',
       ),
       findsOneWidget,
     );
   });
 
-  testWidgets('tracked quest details stay closed when the next step starts', (
+  testWidgets('tracked quest details reopen when the next step starts', (
     tester,
   ) async {
     final controller = LightcoreController();
@@ -1568,11 +1650,11 @@ void main() {
     expect(controller.tutorialStep, LightcoreTutorialStep.buildFirstRedTower);
     expect(
       find.byKey(const ValueKey<String>('battle-quest-card-collapsed')),
-      findsOneWidget,
+      findsNothing,
     );
     expect(
       find.byKey(const ValueKey<String>('battle-quest-detail-card')),
-      findsNothing,
+      findsOneWidget,
     );
   });
 
@@ -1723,7 +1805,7 @@ void main() {
     expect(find.text('Tower Stats'), findsOneWidget);
     expect(find.textContaining('Power '), findsOneWidget);
     expect(upgradeButton, findsOneWidget);
-    expect(find.text('Inspect Tower'), findsOneWidget);
+    expect(find.widgetWithText(OutlinedButton, 'Stats'), findsOneWidget);
     expect(
       tester.getTopLeft(find.text('Tower Upgrades')).dy,
       lessThan(tester.getTopLeft(find.text('Tower Stats')).dy),
@@ -1824,6 +1906,9 @@ void main() {
       await _pumpTransition(tester);
 
       expect(find.text('Threat Library'), findsOneWidget);
+      expect(find.text('Anomaly Assignment'), findsOneWidget);
+      expect(find.text('Main Apex'), findsOneWidget);
+      expect(find.text('Main Anomaly', skipOffstage: false), findsNothing);
       expect(find.text('Open 1', skipOffstage: false), findsNothing);
       expect(find.text('Threat Scans', skipOffstage: false), findsNothing);
     },
@@ -1915,37 +2000,15 @@ void main() {
 
     await _pumpShell(tester, controller);
 
-    expect(find.text('Target Priority'), findsNothing);
+    expect(find.text('Live Projectile Target'), findsOneWidget);
     expect(
       controller.towerTargetPriority(controller.slots[0]),
       TargetPriority.close,
     );
 
-    final inspectButton = find.widgetWithText(OutlinedButton, 'Inspect Tower');
-    await tester.ensureVisible(inspectButton);
-    await tester.tap(inspectButton);
-    await _pumpTransition(tester);
-
-    expect(find.text('Tower Detail'), findsOneWidget);
-    final detailScrollable = find.descendant(
-      of: find.byType(Dialog),
-      matching: find.byType(Scrollable),
-    );
-    await tester.scrollUntilVisible(
-      find.text('Default Projectile Range'),
-      180,
-      scrollable: detailScrollable,
-    );
-    expect(find.text('Default Projectile Range'), findsOneWidget);
-    await tester.scrollUntilVisible(
-      find.text('Projectile Targeting'),
-      240,
-      scrollable: detailScrollable,
-    );
-
-    expect(find.text('Projectile Targeting'), findsOneWidget);
-
-    controller.setTowerTargetPriority(0, TargetPriority.strong);
+    final strongTargetChip = find.widgetWithText(ChoiceChip, 'Strong');
+    await tester.ensureVisible(strongTargetChip);
+    await tester.tap(strongTargetChip);
     await tester.pump();
 
     expect(
@@ -2187,6 +2250,65 @@ class _GoogleSignInFailureBackend extends FirebaseLightcoreBackend {
   @override
   Future<void> signInWithGoogle({bool requireAnonymousLink = false}) async {
     throw StateError('Simulated Google sign-in failure.');
+  }
+}
+
+class _PendingGoogleSignInBackend extends FirebaseLightcoreBackend {
+  _PendingGoogleSignInBackend()
+    : super(runtimeConfig: lightcoreFirebaseRuntimeConfig);
+
+  final Completer<void> _googleSignInCompleter = Completer<void>();
+  int bootstrapCalls = 0;
+  int signInCalls = 0;
+  bool _signedIn = false;
+
+  @override
+  bool get canUseCloudSave => true;
+
+  @override
+  bool get hasRecoverableAccount => _signedIn;
+
+  void completeGoogleSignIn() {
+    if (!_googleSignInCompleter.isCompleted) {
+      _googleSignInCompleter.complete();
+    }
+  }
+
+  @override
+  Future<LightcoreBootstrapReport> bootstrap({
+    required LightcoreGuestSession guestSession,
+    required String clientVersion,
+    String? clientBuildNumber,
+  }) async {
+    bootstrapCalls += 1;
+    final playerId = _signedIn ? 'GOOGLE-PLAYER' : guestSession.playerId;
+    return LightcoreBootstrapReport(
+      guestSession: guestSession,
+      clientVersion: clientVersion,
+      clientBuildNumber: clientBuildNumber,
+      manifest: _testManifest(clientVersion, clientBuildNumber),
+      profile: LightcorePlayerProfileSummary(
+        playerId: playerId,
+        authUid: _signedIn ? 'google-auth' : 'anonymous-auth',
+        isAnonymous: !_signedIn,
+      ),
+      offlineClaim: LightcoreOfflineClaimResult.empty(
+        statusMessage: 'No offline rewards available yet.',
+      ),
+      integrityLevel: LightcoreIntegrityLevel.secure,
+      firebaseReady: true,
+      serverValidated: true,
+      appCheckActive: true,
+      sessionId: _signedIn ? 'google-menu-session' : 'guest-menu-session',
+      serverTime: DateTime(2026),
+    );
+  }
+
+  @override
+  Future<void> signInWithGoogle({bool requireAnonymousLink = false}) async {
+    signInCalls += 1;
+    await _googleSignInCompleter.future;
+    _signedIn = true;
   }
 }
 

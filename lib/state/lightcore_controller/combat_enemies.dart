@@ -1,7 +1,17 @@
 part of '../lightcore_controller.dart';
 
+typedef _Layer3TrialSpawn = ({
+  EnemyConfig config,
+  int level,
+  double angleOffset,
+  double radiusOffset,
+  double angularJitter,
+});
+
 extension LightcoreControllerCombatEnemies on LightcoreController {
   void _advanceImpacts(double dt) {
+    final activeImpacts = List<ImpactState>.from(_impacts);
+    _impacts.clear();
     final nextImpacts = <ImpactState>[];
     final fieldKills =
         <
@@ -15,19 +25,30 @@ extension LightcoreControllerCombatEnemies on LightcoreController {
           })
         >[];
     final removedEnemyIds = <String>{};
-    for (final impact in _impacts) {
+    for (final impact in activeImpacts) {
+      final previousProgress = impact.progress;
+      final progress =
+          impact.progress + (dt * _impactSpeed * impact.progressRate);
+      var nextImpact = impact;
       if (impact.hasLingeringField) {
         _applyLingeringFieldDamage(impact, dt, fieldKills, removedEnemyIds);
       }
-      final progress =
-          impact.progress + (dt * _impactSpeed * impact.progressRate);
+      if (impact.hasImpactSweep) {
+        nextImpact = _applyImpactSweepDamage(
+          nextImpact,
+          previousProgress: previousProgress,
+          progress: progress,
+        );
+      }
       if (progress < 1) {
-        nextImpacts.add(impact.copyWith(progress: progress));
+        nextImpacts.add(nextImpact.copyWith(progress: progress));
       }
     }
+    final spawnedImpacts = List<ImpactState>.from(_impacts);
     _impacts
       ..clear()
-      ..addAll(nextImpacts);
+      ..addAll(nextImpacts)
+      ..addAll(spawnedImpacts);
     for (final kill in fieldKills) {
       _killEnemy(
         kill.enemy,
@@ -211,7 +232,10 @@ extension LightcoreControllerCombatEnemies on LightcoreController {
           _tutorialIntroBossPending = false;
           _tutorialTrackedBossEnemyId = spawnedBoss.id;
         }
-        _showBanner('${bossCard.config.name} breached the shell perimeter.');
+        _showBanner(
+          '${bossCard.config.name} breached the shell perimeter.',
+          category: LightcoreNotificationCategory.battle,
+        );
         return;
       }
     }
@@ -237,6 +261,277 @@ extension LightcoreControllerCombatEnemies on LightcoreController {
       _buildEnemyFromCard(source, angle: baseAngle, radius: spawnRadius),
     );
     _spawnSequence += 1;
+  }
+
+  void _advanceLayer3Trial(double dt) {
+    if (!activeLayer.layer3TrialActive || activeLayer.layer3TrialCleared) {
+      return;
+    }
+
+    final plan = _layer3TrialPlan();
+    if (activeLayer.layer3TrialSpawnIndex >= plan.length) {
+      if (_enemies.isEmpty) {
+        _completeLayer3Trial();
+      }
+      return;
+    }
+
+    _spawnTimer -= dt;
+    final trialCap = min(
+      maxActiveEnemies,
+      max(_layer3TrialEnemyCap, enemyTargetCount),
+    );
+    while (_spawnTimer <= 0 &&
+        activeLayer.layer3TrialSpawnIndex < plan.length) {
+      if (_enemies.length >= trialCap) {
+        _spawnTimer = 0.16;
+        break;
+      }
+      final spawnIndex = activeLayer.layer3TrialSpawnIndex;
+      _spawnLayer3TrialEnemy(plan[spawnIndex], spawnIndex);
+      activeLayer.layer3TrialSpawnIndex += 1;
+      _spawnTimer += _layer3TrialSpawnCadence;
+    }
+  }
+
+  void _spawnLayer3TrialEnemy(_Layer3TrialSpawn spawn, int spawnIndex) {
+    final laneAngle = _slotAngle(spawnIndex % slotCount);
+    final angle =
+        laneAngle + spawn.angleOffset + _randomCentered(_spawnClusterAngleStep);
+    final radius = _spawnRadiusWithJitter(
+      _minimumSpawnRadius + spawn.radiusOffset,
+      _spawnClusterRadiusJitter,
+    );
+    final source = EnemyCardState(
+      config: spawn.config,
+      unlocked: true,
+      copies: 1,
+      level: spawn.level,
+    );
+    _enemies.add(
+      _buildEnemyFromCard(
+        source,
+        angle: angle,
+        radius: radius,
+        angularJitter: spawn.angularJitter,
+      ),
+    );
+    _spawnSequence += 1;
+  }
+
+  void _completeLayer3Trial() {
+    activeLayer.layer3TrialActive = false;
+    activeLayer.layer3TrialCleared = true;
+    activeLayer.layer3TrialSpawnIndex = _layer3TrialPlan().length;
+    _spawnTimer = 0.65;
+    _showBanner(
+      'Nexus trial cleared. Layer 3 is unlocked; open Advancement to create the Nexus Shell.',
+      duration: 3.4,
+    );
+    _needsNotify = true;
+  }
+
+  void _failLayer3Trial() {
+    if (!activeLayer.layer3TrialActive) {
+      return;
+    }
+    activeLayer.layer3TrialActive = false;
+    activeLayer.layer3TrialCleared = false;
+    activeLayer.layer3TrialSpawnIndex = 0;
+    _spawnTimer = 1.0;
+    _showBanner(
+      'Nexus trial failed. Rebuild or retune, then begin the proving battle again.',
+      duration: 3.2,
+      category: LightcoreNotificationCategory.battle,
+    );
+    _needsNotify = true;
+  }
+
+  List<_Layer3TrialSpawn> _layer3TrialPlan() {
+    final rushBasic = _trialEnemyConfig(
+      PrototypeAffinity.flare,
+      EnemyCardRarity.basic,
+    );
+    final rushUncommon = _trialEnemyConfig(
+      PrototypeAffinity.flare,
+      EnemyCardRarity.uncommon,
+    );
+    final rushRare = _trialEnemyConfig(
+      PrototypeAffinity.flare,
+      EnemyCardRarity.rare,
+    );
+    final blinkUncommon = _trialEnemyConfig(
+      PrototypeAffinity.solar,
+      EnemyCardRarity.uncommon,
+    );
+    final splitBasic = _trialEnemyConfig(
+      PrototypeAffinity.violet,
+      EnemyCardRarity.basic,
+    );
+    final splitUncommon = _trialEnemyConfig(
+      PrototypeAffinity.violet,
+      EnemyCardRarity.uncommon,
+    );
+    final tankUncommon = _trialEnemyConfig(
+      PrototypeAffinity.ember,
+      EnemyCardRarity.uncommon,
+    );
+    final regenUncommon = _trialEnemyConfig(
+      PrototypeAffinity.verdant,
+      EnemyCardRarity.uncommon,
+    );
+    final redBoss = _trialBossConfig(PrototypeAffinity.ember);
+    final greenBoss = _trialBossConfig(PrototypeAffinity.verdant);
+
+    return <_Layer3TrialSpawn>[
+      (
+        config: rushBasic,
+        level: 3,
+        angleOffset: -0.08,
+        radiusOffset: 0,
+        angularJitter: 0.18,
+      ),
+      (
+        config: rushBasic,
+        level: 3,
+        angleOffset: 0.07,
+        radiusOffset: 6,
+        angularJitter: 0.16,
+      ),
+      (
+        config: blinkUncommon,
+        level: 2,
+        angleOffset: -0.05,
+        radiusOffset: 10,
+        angularJitter: 0.22,
+      ),
+      (
+        config: rushUncommon,
+        level: 2,
+        angleOffset: 0.09,
+        radiusOffset: 4,
+        angularJitter: 0.2,
+      ),
+      (
+        config: splitBasic,
+        level: 3,
+        angleOffset: -0.03,
+        radiusOffset: 12,
+        angularJitter: 0.08,
+      ),
+      (
+        config: splitBasic,
+        level: 3,
+        angleOffset: 0.04,
+        radiusOffset: 18,
+        angularJitter: 0.1,
+      ),
+      (
+        config: splitUncommon,
+        level: 2,
+        angleOffset: -0.06,
+        radiusOffset: 16,
+        angularJitter: 0.1,
+      ),
+      (
+        config: tankUncommon,
+        level: 2,
+        angleOffset: 0.03,
+        radiusOffset: 10,
+        angularJitter: 0.02,
+      ),
+      (
+        config: redBoss,
+        level: 1,
+        angleOffset: 0,
+        radiusOffset: 24,
+        angularJitter: 0,
+      ),
+      (
+        config: rushRare,
+        level: 1,
+        angleOffset: -0.1,
+        radiusOffset: 0,
+        angularJitter: 0.24,
+      ),
+      (
+        config: rushBasic,
+        level: 4,
+        angleOffset: 0.11,
+        radiusOffset: 4,
+        angularJitter: 0.22,
+      ),
+      (
+        config: blinkUncommon,
+        level: 3,
+        angleOffset: -0.04,
+        radiusOffset: 8,
+        angularJitter: 0.24,
+      ),
+      (
+        config: splitBasic,
+        level: 4,
+        angleOffset: 0.05,
+        radiusOffset: 16,
+        angularJitter: 0.12,
+      ),
+      (
+        config: splitUncommon,
+        level: 2,
+        angleOffset: -0.07,
+        radiusOffset: 18,
+        angularJitter: 0.12,
+      ),
+      (
+        config: regenUncommon,
+        level: 2,
+        angleOffset: 0.06,
+        radiusOffset: 14,
+        angularJitter: 0.04,
+      ),
+      (
+        config: rushRare,
+        level: 1,
+        angleOffset: -0.09,
+        radiusOffset: 2,
+        angularJitter: 0.26,
+      ),
+      (
+        config: splitUncommon,
+        level: 3,
+        angleOffset: 0.08,
+        radiusOffset: 20,
+        angularJitter: 0.13,
+      ),
+      (
+        config: greenBoss,
+        level: 1,
+        angleOffset: 0,
+        radiusOffset: 28,
+        angularJitter: 0.04,
+      ),
+    ];
+  }
+
+  EnemyConfig _trialEnemyConfig(
+    PrototypeAffinity affinity,
+    EnemyCardRarity rarity,
+  ) {
+    final candidates = EnemyLibrary.byRarity[rarity] ?? EnemyLibrary.all;
+    return candidates.firstWhere(
+      (config) => config.affinity == affinity,
+      orElse: () => EnemyLibrary.basicWhite,
+    );
+  }
+
+  EnemyConfig _trialBossConfig(PrototypeAffinity affinity) {
+    final candidates =
+        BossEnemyLibrary.byRarity[EnemyCardRarity.basic] ??
+        BossEnemyLibrary.all;
+    return candidates.firstWhere(
+      (config) => config.affinity == affinity,
+      orElse: () => BossEnemyLibrary.starterWhiteWarden,
+    );
   }
 
   void _prepareRandomSpawnCluster(int clusterIndex) {

@@ -4,6 +4,9 @@ class LightcoreCurrencyLabels {
   static const String lumens = 'Lumens';
   static const String flux = 'Flux';
   static const String prismShards = 'Prism Shards';
+  static const String managerShardSingular = 'Manager Shard';
+  static const String managerShards = 'Manager Shards';
+  static const String shellCores = 'Shell Cores';
   static const String scansShort = 'Scans';
   static const String threatScanSingular = 'Threat Scan';
   static const String threatScanPlural = 'Threat Scans';
@@ -22,6 +25,14 @@ class LightcoreCurrencyLabels {
 
   static String prismShardCount(int amount) => '$amount $prismShards';
 
+  static String managerShardName(int amount) =>
+      amount == 1 ? managerShardSingular : managerShards;
+
+  static String managerShardCount(int amount) =>
+      '$amount ${managerShardName(amount)}';
+
+  static String shellCoreCount(int amount) => '$amount $shellCores';
+
   static String threatScanCount(int amount) =>
       '$amount ${threatScanName(amount)}';
 
@@ -32,6 +43,11 @@ class LightcoreCurrencyLabels {
   static String rewardFlux(int amount) => '+${fluxCount(amount)}';
 
   static String rewardPrismShards(int amount) => '+${prismShardCount(amount)}';
+
+  static String rewardManagerShards(int amount) =>
+      '+${managerShardCount(amount)}';
+
+  static String rewardShellCores(int amount) => '+${shellCoreCount(amount)}';
 
   static String rewardThreatScans(int amount) => '+${threatScanCount(amount)}';
 

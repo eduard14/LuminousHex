@@ -64,6 +64,26 @@ Map<String, dynamic> _towerStrengthSavePayload(int tier) {
   };
 }
 
+Map<String, dynamic> _towerStrengthMultiLayerSavePayload({
+  required int activeTier,
+  required int highestTier,
+}) {
+  final activeLayerId = 'tower-strength-layer-$activeTier';
+  final highestLayerId = 'tower-strength-layer-$highestTier';
+  return <String, dynamic>{
+    'player': <String, dynamic>{'playerId': 'TS-L$activeTier-L$highestTier'},
+    'layers': <String, dynamic>{
+      'activeLayerId': activeLayerId,
+      'viewLayerId': activeLayerId,
+      'runtimeLayerId': activeLayerId,
+      'items': <Map<String, dynamic>>[
+        _towerStrengthLayerPayload(activeLayerId, activeTier),
+        _towerStrengthLayerPayload(highestLayerId, highestTier),
+      ],
+    },
+  };
+}
+
 Map<String, dynamic> _towerStrengthLayerPayload(String layerId, int tier) {
   return <String, dynamic>{
     'id': layerId,
@@ -189,6 +209,31 @@ void main() {
       greaterThan(root.towerStrength * 100000000000),
     );
     expect(ascendant.towerStrengthCompactLabel, endsWith('Q'));
+  });
+
+  test('global ranking tower strength uses best current layer', () {
+    final controller = LightcoreController.fromCloudSavePayload(
+      _towerStrengthMultiLayerSavePayload(activeTier: 1, highestTier: 4),
+    );
+    addTearDown(controller.dispose);
+
+    expect(controller.activeLayer.tier, 1);
+    expect(controller.towerStrength, lessThan(1000000));
+    expect(
+      controller.globalRankingTowerStrength,
+      greaterThanOrEqualTo(1000000000000000),
+    );
+    expect(
+      controller.globalRankingTowerStrength,
+      greaterThan(controller.towerStrength * 100000000000),
+    );
+
+    final payload = controller.buildCloudSavePayload();
+    final socialSnapshot = payload['socialSnapshot'] as Map<String, dynamic>;
+    expect(
+      socialSnapshot['towerStrength'],
+      controller.globalRankingTowerStrength,
+    );
   });
 
   test('DPS budget scales down per active enemy target', () {

@@ -68,9 +68,13 @@ class _PlayerManagerDialogState extends State<_PlayerManagerDialog> {
             children: [
               Row(
                 children: [
-                  Text(
-                    'Main Manager',
-                    style: Theme.of(context).textTheme.titleLarge,
+                  Expanded(
+                    child: Text(
+                      'Main Manager',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
                   ),
                   const SizedBox(width: 6),
                   IconButton(
@@ -79,7 +83,7 @@ class _PlayerManagerDialogState extends State<_PlayerManagerDialog> {
                     visualDensity: VisualDensity.compact,
                     icon: const Icon(Icons.help_outline_rounded, size: 20),
                   ),
-                  const Spacer(),
+                  const SizedBox(width: 8),
                   Text(
                     '${controller.equipmentInventory.length}/${controller.equipmentInventoryCapacity}',
                     style: Theme.of(context).textTheme.labelLarge?.copyWith(

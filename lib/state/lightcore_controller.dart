@@ -61,6 +61,7 @@ enum LightcoreTutorialStep {
   waitForFirstHex,
   selectFirstHex,
   buildFirstRedTower,
+  inspectFirstTowerStats,
   tapBattleCore,
   tapFirstTower,
   tapSecondShellTower,
@@ -145,11 +146,15 @@ enum LightcoreGraphicsQuality {
   }
 }
 
+enum LightcoreNotificationCategory { action, battle }
+
 class LightcoreDailyDungeonReward {
   const LightcoreDailyDungeonReward({
     required this.towerLevel,
     required this.lumens,
     required this.flux,
+    required this.managerShards,
+    required this.shellCores,
     required this.threatScans,
     required this.experience,
   });
@@ -157,16 +162,26 @@ class LightcoreDailyDungeonReward {
   final int towerLevel;
   final int lumens;
   final int flux;
+  final int managerShards;
+  final int shellCores;
   final int threatScans;
   final int experience;
 
   bool get hasRewards =>
-      lumens > 0 || flux > 0 || threatScans > 0 || experience > 0;
+      lumens > 0 ||
+      flux > 0 ||
+      managerShards > 0 ||
+      shellCores > 0 ||
+      threatScans > 0 ||
+      experience > 0;
 
   String get label {
     final parts = <String>[
       if (lumens > 0) LightcoreCurrencyLabels.rewardLumens(lumens),
       if (flux > 0) LightcoreCurrencyLabels.rewardFlux(flux),
+      if (managerShards > 0)
+        LightcoreCurrencyLabels.rewardManagerShards(managerShards),
+      if (shellCores > 0) LightcoreCurrencyLabels.rewardShellCores(shellCores),
       if (threatScans > 0)
         LightcoreCurrencyLabels.rewardThreatScans(threatScans),
       if (experience > 0) '+$experience EXP',
@@ -270,43 +285,133 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
     trigger: 'New account',
     primaryClickTarget: 'Core Map > tap central core',
     coachCopy:
-        'The center is your active light core. It fires only when its queue has pulses.',
+        'Tap the center Lightcore to unfold the first shell and reveal the outer hexes.',
     completionCondition: 'Tap central core',
     reward: 'Safe White Threat Scan x1',
     failureHelpState:
         'Pulse the central core again and keep nonessential UI dimmed.',
     analyticsEvent: 'tutorial_wake_core',
   ),
-  LightcoreTutorialStep.buildFirstRedTower: LightcoreTutorialQuestDefinition(
+  LightcoreTutorialStep.waitForFirstHex: LightcoreTutorialQuestDefinition(
     id: 'TUT-002',
+    title: 'Wait for Hex 1',
+    teachGoal: 'Outer hexes unlock from battle progress before you can build.',
+    trigger: 'Shell is awake before the first lane unlocks',
+    primaryClickTarget: 'Battlefield > Hex 1',
+    coachCopy:
+        'Keep the shell open while the first lane unlocks. Early drift fights feed the EXP gate.',
+    completionCondition: 'Hex 1 unlocks',
+    reward: 'Small Lumen grant',
+    failureHelpState: 'Leave the battle view active until the first hex opens.',
+    analyticsEvent: 'tutorial_wait_first_hex',
+  ),
+  LightcoreTutorialStep.selectFirstHex: LightcoreTutorialQuestDefinition(
+    id: 'TUT-003',
+    title: 'Select Hex 1',
+    teachGoal:
+        'Selecting a hex opens the build or stats control for that lane.',
+    trigger: 'First build lane is available',
+    primaryClickTarget: 'Battlefield > first outer hex',
+    coachCopy:
+        'Tap the highlighted first hex. The lower-left prism control opens the build and stats pop-out.',
+    completionCondition: 'Hex 1 selected',
+    reward: 'Build controls revealed',
+    failureHelpState:
+        'If the shell is folded, tap the center core or the battlefield to open it.',
+    analyticsEvent: 'tutorial_select_first_hex',
+  ),
+  LightcoreTutorialStep.buildFirstRedTower: LightcoreTutorialQuestDefinition(
+    id: 'TUT-004',
     title: 'Fabricate First Light',
     teachGoal: 'Empty adjacent spaces fabricate Layer 1 towers.',
-    trigger: 'After TUT-001',
-    primaryClickTarget: 'Empty hex beside core > Fabricate',
+    trigger: 'First hex selected',
+    primaryClickTarget: 'Hex 1 controls > Red Prism > Fabricate',
     coachCopy:
-        'Build a Layer 1 tower in an empty adjacent space. Fabrication is time-gated after the first free build.',
+        'Build the Red Prism in Hex 1. This first tower teaches charge, queue packets, and color counters.',
     completionCondition: 'Start or finish first Fabrication',
     reward: 'Instant first tower',
     failureHelpState:
-        'Highlight the first available hex and the Fabricate button.',
+        'Open the first hex controls, then choose the highlighted Red Prism build button.',
     analyticsEvent: 'tutorial_fabricate_first_light',
   ),
+  LightcoreTutorialStep
+      .inspectFirstTowerStats: LightcoreTutorialQuestDefinition(
+    id: 'TUT-005',
+    title: 'Read Tower Stats',
+    teachGoal:
+        'Tower stats explain what a prism contributes before it feeds the core queue.',
+    trigger: 'First tower exists',
+    primaryClickTarget: 'Lower-left prism control > Tower Stats pop-out',
+    coachCopy:
+        'Open the Tower Stats pop-out. Power is hit strength, Charge is how fast the prism becomes ready, Cooldown is downtime after a tap, Automation shows whether a manager can tap it, and Load shows lane pressure.',
+    completionCondition: 'Open the first tower stats pop-out',
+    reward: 'Tower stat labels unlocked',
+    failureHelpState:
+        'Tap the lower-left prism control if the stats panel is hidden.',
+    analyticsEvent: 'tutorial_read_tower_stats',
+  ),
+  LightcoreTutorialStep.tapBattleCore: LightcoreTutorialQuestDefinition(
+    id: 'TUT-006',
+    title: 'Tap the Core',
+    teachGoal:
+        'The Lightcore can create a basic packet when a threat is close.',
+    trigger: 'An anomaly enters core range before tower lessons finish',
+    primaryClickTarget: 'Battlefield > center Lightcore',
+    coachCopy:
+        'Tap the glowing Lightcore to create a basic shot when an anomaly reaches core range.',
+    completionCondition: 'Generate one core shot',
+    reward: 'Small Lumen grant',
+    failureHelpState:
+        'Tap the highlighted center core while the threat is near.',
+    analyticsEvent: 'tutorial_core_shot_tap',
+  ),
   LightcoreTutorialStep.tapFirstTower: LightcoreTutorialQuestDefinition(
-    id: 'TUT-003',
+    id: 'TUT-007',
     title: 'Queue a Pulse',
     teachGoal:
         'Towers add pulses to the core queue while the player is active.',
     trigger: 'First tower exists',
-    primaryClickTarget: 'Tower > Add Pulse to Queue',
+    primaryClickTarget: 'Battlefield > charged Red Prism',
     coachCopy:
-        'Towers fire what is in their queue. Tap to add pulses while active.',
+        'Tap the charged Red Prism to add a pulse to the core queue. The core spends queued pulses as outgoing shots.',
     completionCondition: 'Add 3 queue pulses',
     reward: 'White Drift practice scan',
-    failureHelpState: 'Show charge and cooldown if the tower is not ready.',
+    failureHelpState:
+        'If the cue says CHARGING or COOLDOWN, wait until it changes to ADD TO QUEUE.',
     analyticsEvent: 'tutorial_queue_pulse',
   ),
+  LightcoreTutorialStep.tapSecondShellTower: LightcoreTutorialQuestDefinition(
+    id: 'TUT-008',
+    title: 'Queue From a Child Shell',
+    teachGoal:
+        'Child-shell towers use the same ready-tap rule before Overdrive appears.',
+    trigger: 'First child shell has a charged tower',
+    primaryClickTarget: 'Battlefield > charged child-shell tower',
+    coachCopy:
+        'Tap the charged tower in this child shell. It still feeds the core queue before the core fires.',
+    completionCondition: 'Add one child-shell queue pulse',
+    reward: 'Small Lumen grant',
+    failureHelpState:
+        'Wait for the highlighted child-shell tower to become ready.',
+    analyticsEvent: 'tutorial_second_shell_tap',
+  ),
+  LightcoreTutorialStep
+      .upgradeFirstTowerToLevel3: LightcoreTutorialQuestDefinition(
+    id: 'TUT-009',
+    title: 'Tune the Main Tower',
+    teachGoal: 'A strong first tower is safer than several weak early towers.',
+    trigger: 'First tower can be upgraded',
+    primaryClickTarget: 'Tower Stats pop-out > Upgrade',
+    coachCopy:
+        'Upgrade the Red Prism before expanding. Higher levels raise its base stats and give more stat-rank room.',
+    completionCondition: 'Red Prism reaches level 3',
+    reward: 'Small Lumen grant',
+    failureHelpState:
+        'Open Hex 1 stats and use the highlighted Upgrade button when Lumens are available.',
+    analyticsEvent: 'tutorial_upgrade_first_tower_l3',
+  ),
   LightcoreTutorialStep.pullFirstWhiteEnemy: LightcoreTutorialQuestDefinition(
-    id: 'TUT-004',
+    id: 'TUT-010',
     title: 'Run a Safe Threat Scan',
     teachGoal: 'Threat Scans choose which anomalies enter the active deck.',
     trigger: 'Queue tutorial done',
@@ -320,36 +425,22 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
     analyticsEvent: 'tutorial_safe_threat_scan',
   ),
   LightcoreTutorialStep.readEffectiveGain: LightcoreTutorialQuestDefinition(
-    id: 'TUT-005',
-    title: 'Read Effective Gain',
+    id: 'TUT-011',
+    title: 'Read Flow and Gain',
     teachGoal:
-        'Effective Gain is the real farm value after stability pressure.',
+        'Output Efficiency turns pressure into the real farming multiplier.',
     trigger: 'After first scan',
     primaryClickTarget: 'Left stat stack > Output Efficiency %',
     coachCopy:
-        'Income = Base Gain x Threat Multiplier x Output Efficiency. Bigger threats are only good if stability holds.',
+        'Open Output Efficiency. Flow is your real income pace: Base Gain x Threat Reward x Output Efficiency. Bigger threats only help if stability holds.',
     completionCondition: 'Open stability panel',
     reward: 'Small Lumen boost',
     failureHelpState:
         'Pulse the Output Efficiency stat and show the formula again.',
     analyticsEvent: 'tutorial_read_effective_gain',
   ),
-  LightcoreTutorialStep.assignTowerManager: LightcoreTutorialQuestDefinition(
-    id: 'TUT-006',
-    title: 'Assign a Core Manager',
-    teachGoal:
-        'A Core Manager sockets into the Tower Core and automates every tower in the active shell.',
-    trigger: 'After Output Efficiency shown',
-    primaryClickTarget: 'Managers > Core Manager > Assign to Tower Core',
-    coachCopy:
-        'One Core Manager runs the shell. Managers create auto-queue and add tower-wide bonuses.',
-    completionCondition: 'Assign manager to core',
-    reward: 'Starter manager',
-    failureHelpState: 'Highlight the starter manager and Tower Core socket.',
-    analyticsEvent: 'tutorial_assign_core_manager',
-  ),
   LightcoreTutorialStep.autoQueueCheck: LightcoreTutorialQuestDefinition(
-    id: 'TUT-007',
+    id: 'TUT-012',
     title: 'Auto Queue Check',
     teachGoal:
         'Managers keep queue generation moving while the player is idle.',
@@ -363,18 +454,356 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
         'Keep the managed tower in view and show generated pulse count.',
     analyticsEvent: 'tutorial_auto_queue_check',
   ),
+  LightcoreTutorialStep
+      .upgradeFirstTowerToLevel4: LightcoreTutorialQuestDefinition(
+    id: 'TUT-013',
+    title: 'Tune Before Expanding',
+    teachGoal:
+        'A level 4 anchor keeps the opening lane stable before wider pressure.',
+    trigger: 'Early red scan lesson',
+    primaryClickTarget: 'Tower Stats pop-out > Upgrade',
+    coachCopy:
+        'Upgrade the Red Prism again before spreading Lumens across more towers.',
+    completionCondition: 'Red Prism reaches level 4',
+    reward: 'Small Lumen grant',
+    failureHelpState:
+        'Open Hex 1 stats and use Upgrade when the Lumen cost is affordable.',
+    analyticsEvent: 'tutorial_upgrade_first_tower_l4',
+  ),
+  LightcoreTutorialStep.pullFirstRedEnemy: LightcoreTutorialQuestDefinition(
+    id: 'TUT-014',
+    title: 'Learn Color Counters',
+    teachGoal:
+        'Same-color attacks are resisted, so a one-color build has limits.',
+    trigger: 'After safe scan lesson',
+    primaryClickTarget: 'Threat Scan flag > run 1 scan',
+    coachCopy:
+        'Run one more Threat Scan. Red anomalies resist red shots, which teaches why mixed colors matter.',
+    completionCondition: 'Resolve second Threat Scan',
+    reward: 'Threat Scan x1',
+    failureHelpState: 'Open Scans and run the highlighted single scan.',
+    analyticsEvent: 'tutorial_red_counter_scan',
+  ),
+  LightcoreTutorialStep.setFirstEnemyTarget: LightcoreTutorialQuestDefinition(
+    id: 'TUT-015',
+    title: 'Focus a Threat',
+    teachGoal:
+        'Threat focus tells command which anomaly card you are inspecting and tuning.',
+    trigger: 'Red signature is available',
+    primaryClickTarget: 'Anomalies > Basic Red > Focus',
+    coachCopy:
+        'Open Anomalies and focus Basic Red. Focus gives the pressure tools a clear target context.',
+    completionCondition: 'Basic Red focused',
+    reward: 'Small Lumen grant',
+    failureHelpState: 'Use the highlighted Basic Red card in Anomalies.',
+    analyticsEvent: 'tutorial_focus_first_enemy',
+  ),
+  LightcoreTutorialStep.adjustEnemyCount: LightcoreTutorialQuestDefinition(
+    id: 'TUT-016',
+    title: 'Tune Swarm Pressure',
+    teachGoal:
+        'Active anomaly count controls risk, rewards, and Output Efficiency strain.',
+    trigger: 'Threat focus is set',
+    primaryClickTarget: 'Anomalies > Swarm Pressure control',
+    coachCopy:
+        'Raise Swarm Pressure above the low setting. More anomalies can pay faster, but unstable lanes reduce flow.',
+    completionCondition: 'Swarm Pressure adjusted',
+    reward: 'Small Lumen grant',
+    failureHelpState:
+        'Open Anomalies and use the highlighted pressure control.',
+    analyticsEvent: 'tutorial_adjust_enemy_count',
+  ),
+  LightcoreTutorialStep.openTowerMatrix: LightcoreTutorialQuestDefinition(
+    id: 'TUT-017',
+    title: 'Open the Tower Archive',
+    teachGoal:
+        'The Towers page unlocks at Layer 2 for completed-shell archives and shell planning.',
+    trigger: 'Prism Shell online',
+    primaryClickTarget: 'Bottom nav > Towers',
+    coachCopy:
+        'Open Towers to inspect saved completed shells and Layer 2 shell tools.',
+    completionCondition: 'Tower Archive opened',
+    reward: 'Threat Scan x1',
+    failureHelpState: 'Use the highlighted Towers button in the bottom nav.',
+    analyticsEvent: 'tutorial_open_tower_matrix',
+  ),
   LightcoreTutorialStep.upgradeCoreRange: LightcoreTutorialQuestDefinition(
-    id: 'TUT-008',
+    id: 'TUT-018',
     title: 'Upgrade a Global Stat',
-    teachGoal: 'Account and core growth unlock permanent upgrade paths.',
+    teachGoal: 'Account levels unlock permanent Global Attribute upgrades.',
     trigger: 'Player level 2',
-    primaryClickTarget: 'Profile/Level badge > Global Stats > Upgrade',
+    primaryClickTarget:
+        'Profile/Level badge > Main Manager > Global Attributes > Add Point',
     coachCopy:
         'Leveling unlocks global stats and modes. Pick a permanent stat upgrade.',
-    completionCondition: 'Buy one global stat',
+    completionCondition: 'Add one Global Attribute point',
     reward: 'Unlock Level Goals panel',
-    failureHelpState: 'Highlight the first affordable core/global upgrade.',
+    failureHelpState:
+        'Open Main Manager and use Add Point on any highlighted Global Attribute.',
     analyticsEvent: 'tutorial_upgrade_global_stat',
+  ),
+  LightcoreTutorialStep.openStore: LightcoreTutorialQuestDefinition(
+    id: 'TUT-019',
+    title: 'Inspect the Store',
+    teachGoal: 'The Store groups conversions, premium unlocks, and offers.',
+    trigger: 'Early tutorial complete',
+    primaryClickTarget: 'Top HUD > Storefront',
+    coachCopy:
+        'Open the Store and inspect the resource offers. Opening it never spends anything.',
+    completionCondition: 'Store opened',
+    reward: 'Flux and Threat Scan',
+    failureHelpState: 'Tap the highlighted Storefront icon in the top HUD.',
+    analyticsEvent: 'tutorial_open_store',
+  ),
+  LightcoreTutorialStep.claimBattlePassReward: LightcoreTutorialQuestDefinition(
+    id: 'TUT-020',
+    title: 'Claim a Pass Reward',
+    teachGoal: 'Passes convert normal play into side rewards.',
+    trigger: 'A pass reward is claimable',
+    primaryClickTarget: 'Top HUD > Passes > claim',
+    coachCopy:
+        'Open Passes and claim the waiting reward. Pass rewards are bonus progress from normal play.',
+    completionCondition: 'Claim one pass reward',
+    reward: 'Flux',
+    failureHelpState:
+        'Tap the highlighted Passes icon, then claim any lit reward.',
+    analyticsEvent: 'tutorial_claim_battle_pass',
+  ),
+  LightcoreTutorialStep.openBossPulls: LightcoreTutorialQuestDefinition(
+    id: 'TUT-021',
+    title: 'Run an Apex Scan',
+    teachGoal:
+        'Apex Scans add boss-class anomaly cards after the Prism Shell unlock.',
+    trigger: 'Prism Shell created',
+    primaryClickTarget: 'Top HUD > Scans > Apex Scan',
+    coachCopy:
+        'Open Scans and run one Apex Scan. New Apex cards can replace White Warden once armed.',
+    completionCondition: 'Resolve one Apex Scan',
+    reward: 'Apex card',
+    failureHelpState:
+        'Use the highlighted Scans icon and the Apex single-scan button.',
+    analyticsEvent: 'tutorial_open_boss_pulls',
+  ),
+  LightcoreTutorialStep.armFirstBoss: LightcoreTutorialQuestDefinition(
+    id: 'TUT-022',
+    title: 'Arm the First Apex',
+    teachGoal:
+        'Pulled Apex Anomalies do not spawn until one is armed for the shell.',
+    trigger: 'First Apex card owned',
+    primaryClickTarget: 'Anomalies > Apex > White Warden > Arm',
+    coachCopy:
+        'Open Anomalies, switch to Apex, and arm White Warden so the next Apex spawn has a target.',
+    completionCondition: 'White Warden armed',
+    reward: 'Apex lane primed',
+    failureHelpState:
+        'Use the highlighted Apex tab and White Warden arm button.',
+    analyticsEvent: 'tutorial_arm_first_boss',
+  ),
+  LightcoreTutorialStep.defeatFirstBoss: LightcoreTutorialQuestDefinition(
+    id: 'TUT-023',
+    title: 'Defeat White Warden',
+    teachGoal:
+        'Apex fights are milestone pressure checks for the active shell.',
+    trigger: 'First Apex is armed and spawned',
+    primaryClickTarget: 'Battlefield > White Warden',
+    coachCopy:
+        'Return to battle and defeat White Warden. This first Apex is weakened so you can learn the loop.',
+    completionCondition: 'White Warden defeated',
+    reward: 'Equipment unlock',
+    failureHelpState:
+        'Use the highlighted back button, then keep queueing shots.',
+    analyticsEvent: 'tutorial_defeat_first_boss',
+  ),
+  LightcoreTutorialStep.openEquipment: LightcoreTutorialQuestDefinition(
+    id: 'TUT-024',
+    title: 'Check Equipment',
+    teachGoal:
+        'Equipment lives in Main Manager and adds permanent combat bonuses.',
+    trigger: 'First Apex defeated',
+    primaryClickTarget: 'Top-left profile HUD > Main Manager > Equipment',
+    coachCopy:
+        'Open Main Manager and check the new equipment. Gear bonuses stack with tower and account stats.',
+    completionCondition: 'Main Manager opened after first Apex',
+    reward: 'Flux',
+    failureHelpState: 'Tap the highlighted profile HUD in the upper left.',
+    analyticsEvent: 'tutorial_open_equipment',
+  ),
+  LightcoreTutorialStep.openManagers: LightcoreTutorialQuestDefinition(
+    id: 'TUT-025',
+    title: 'Inspect the Foundry',
+    teachGoal: 'Managers are Flux-forged automation and threat modifiers.',
+    trigger: 'Managers unlocked',
+    primaryClickTarget: 'Bottom nav > Managers',
+    coachCopy:
+        'Open Managers. Core Managers automate tower taps, while Threat Directors reshape anomaly pressure and rewards.',
+    completionCondition: 'Managers screen opened',
+    reward: 'Flux',
+    failureHelpState: 'Use the highlighted Managers button in the bottom nav.',
+    analyticsEvent: 'tutorial_open_managers',
+  ),
+  LightcoreTutorialStep.forgeTowerManager: LightcoreTutorialQuestDefinition(
+    id: 'TUT-026',
+    title: 'Forge a Core Manager',
+    teachGoal: 'Core Managers can automate ready taps across the active shell.',
+    trigger: 'Manager foundry opened with enough Flux',
+    primaryClickTarget: 'Managers > Core Manager foundry > Forge',
+    coachCopy:
+        'Forge one Core Manager. A manager can keep ready towers feeding the queue without manual taps.',
+    completionCondition: 'Own one Core Manager',
+    reward: 'Flux',
+    failureHelpState: 'Use the highlighted Core Manager forge control.',
+    analyticsEvent: 'tutorial_forge_tower_manager',
+  ),
+  LightcoreTutorialStep.assignTowerManager: LightcoreTutorialQuestDefinition(
+    id: 'TUT-027',
+    title: 'Assign a Core Manager',
+    teachGoal:
+        'A Core Manager sockets into the Tower Core and automates every tower in the active shell.',
+    trigger: 'After Output Efficiency shown',
+    primaryClickTarget: 'Managers > Core Manager > Assign to Tower Core',
+    coachCopy:
+        'Assign the Core Manager to the Tower Core. Managers create auto-queue and add tower-wide bonuses.',
+    completionCondition: 'Assign manager to core',
+    reward: 'Starter manager',
+    failureHelpState: 'Highlight the starter manager and Tower Core socket.',
+    analyticsEvent: 'tutorial_assign_core_manager',
+  ),
+  LightcoreTutorialStep.forgeEnemyManager: LightcoreTutorialQuestDefinition(
+    id: 'TUT-028',
+    title: 'Forge a Threat Director',
+    teachGoal:
+        'Threat Directors change spawn pressure, rewards, health, and speed.',
+    trigger: 'Core Manager assigned with enough Flux',
+    primaryClickTarget: 'Managers > Threat Director foundry > Forge',
+    coachCopy:
+        'Forge one Threat Director. Directors are how you tune enemy pressure instead of only reacting to it.',
+    completionCondition: 'Own one Threat Director',
+    reward: 'Flux',
+    failureHelpState: 'Use the highlighted Threat Director forge control.',
+    analyticsEvent: 'tutorial_forge_enemy_manager',
+  ),
+  LightcoreTutorialStep.assignEnemyManager: LightcoreTutorialQuestDefinition(
+    id: 'TUT-029',
+    title: 'Assign a Threat Director',
+    teachGoal:
+        'An assigned Threat Director reshapes every matching anomaly in this shell.',
+    trigger: 'Threat Director owned',
+    primaryClickTarget: 'Managers > Threat Director > Assign to Tower Core',
+    coachCopy:
+        'Assign the Threat Director to the Tower Core. Its modifiers affect the active shell threat loop.',
+    completionCondition: 'Assign director to core',
+    reward: 'Threat Scans',
+    failureHelpState:
+        'Highlight the director tile and Tower Core assignment control.',
+    analyticsEvent: 'tutorial_assign_enemy_manager',
+  ),
+  LightcoreTutorialStep.holdOverdrive: LightcoreTutorialQuestDefinition(
+    id: 'TUT-030',
+    title: 'Hold Overdrive',
+    teachGoal:
+        'Manual Overdrive speeds up live battle time while you are active.',
+    trigger: 'First child-shell shot lesson complete',
+    primaryClickTarget: 'Battle HUD > Overdrive button',
+    coachCopy:
+        'Hold Overdrive until the battle speeds up. Use it when you are actively pushing lanes.',
+    completionCondition: 'Overdrive multiplier rises',
+    reward: 'Flux',
+    failureHelpState:
+        'Hold the highlighted Overdrive button instead of tapping it once.',
+    analyticsEvent: 'tutorial_hold_overdrive',
+  ),
+  LightcoreTutorialStep.setScreenName: LightcoreTutorialQuestDefinition(
+    id: 'TUT-031',
+    title: 'Claim Your Screen Name',
+    teachGoal: 'Public modes need a visible pilot name for leaderboards.',
+    trigger: 'Tournaments unlocked',
+    primaryClickTarget: 'Menu > Settings > Change Name',
+    coachCopy:
+        'Open Menu, choose Settings, then Change Name, and set your screen name.',
+    completionCondition: 'Screen name saved',
+    reward: 'Flux',
+    failureHelpState:
+        'Use the highlighted Menu button, then the highlighted Change Name control.',
+    analyticsEvent: 'tutorial_set_screen_name',
+  ),
+  LightcoreTutorialStep.openFriends: LightcoreTutorialQuestDefinition(
+    id: 'TUT-032',
+    title: 'Inspect Friends',
+    teachGoal:
+        'Friends are where requests and daily Apex Scan gifts are managed.',
+    trigger: 'Screen name set',
+    primaryClickTarget: 'Menu > Friends',
+    coachCopy:
+        'Open Menu, select Friends, and inspect requests plus daily Apex Scan gifts.',
+    completionCondition: 'Friends opened',
+    reward: 'Threat Scan',
+    failureHelpState: 'Use the highlighted Menu button, then Friends.',
+    analyticsEvent: 'tutorial_open_friends',
+  ),
+  LightcoreTutorialStep.openMentees: LightcoreTutorialQuestDefinition(
+    id: 'TUT-033',
+    title: 'Inspect Mentorship',
+    teachGoal: 'Mentorship shows your mentor and every mentee connection.',
+    trigger: 'Mentorship unlocked',
+    primaryClickTarget: 'Menu > Mentorship',
+    coachCopy:
+        'Open Menu, select Mentorship, and inspect your mentor plus mentee network.',
+    completionCondition: 'Mentorship opened',
+    reward: 'Threat Scan',
+    failureHelpState: 'Use the highlighted Menu button, then Mentorship.',
+    analyticsEvent: 'tutorial_open_mentees',
+  ),
+  LightcoreTutorialStep.openMentors: LightcoreTutorialQuestDefinition(
+    id: 'TUT-034',
+    title: 'Inspect Mentors',
+    teachGoal:
+        'Mentor links share progression support through the social board.',
+    trigger: 'Mentorship network is available',
+    primaryClickTarget: 'Menu > Mentorship',
+    coachCopy: 'Open Menu, select Mentorship, and inspect mentor connections.',
+    completionCondition: 'Mentorship mentor panel opened',
+    reward: 'Threat Scan',
+    failureHelpState: 'Use the highlighted Menu button, then Mentorship.',
+    analyticsEvent: 'tutorial_open_mentors',
+  ),
+  LightcoreTutorialStep.inspectEnemyBlitz: LightcoreTutorialQuestDefinition(
+    id: 'TUT-035',
+    title: 'Inspect Anomaly Blitz',
+    teachGoal: 'Anomaly Blitz is a fast survival economy tournament.',
+    trigger: 'Tournaments unlocked and social primer complete',
+    primaryClickTarget: 'Menu > Tournaments > Anomaly Blitz',
+    coachCopy: 'Open Menu, select Tournaments, and inspect Anomaly Blitz.',
+    completionCondition: 'Anomaly Blitz reviewed',
+    reward: 'Flux',
+    failureHelpState: 'Use the highlighted tournament card.',
+    analyticsEvent: 'tutorial_inspect_enemy_blitz',
+  ),
+  LightcoreTutorialStep.inspectHexGauntlet: LightcoreTutorialQuestDefinition(
+    id: 'TUT-036',
+    title: 'Inspect Hex Gauntlet',
+    teachGoal: 'Hex Gauntlet tests how far your real shell layout can climb.',
+    trigger: 'Anomaly Blitz reviewed',
+    primaryClickTarget: 'Menu > Tournaments > Hex Gauntlet',
+    coachCopy:
+        'Inspect Hex Gauntlet. It mirrors your live tower build and pushes that exact layout.',
+    completionCondition: 'Hex Gauntlet reviewed',
+    reward: 'Flux',
+    failureHelpState: 'Use the highlighted Hex Gauntlet card.',
+    analyticsEvent: 'tutorial_inspect_hex_gauntlet',
+  ),
+  LightcoreTutorialStep.inspectArenaFlow: LightcoreTutorialQuestDefinition(
+    id: 'TUT-037',
+    title: 'Inspect Arena Flow',
+    teachGoal:
+        'Arena Flow is a short duel where throughput and pressure decide score.',
+    trigger: 'Hex Gauntlet reviewed',
+    primaryClickTarget: 'Menu > Tournaments > Arena Flow',
+    coachCopy:
+        'Inspect Arena Flow. It is the quick duel format built around flow score.',
+    completionCondition: 'Arena Flow reviewed',
+    reward: 'Flux',
+    failureHelpState: 'Use the highlighted Arena Flow card.',
+    analyticsEvent: 'tutorial_inspect_arena_flow',
   ),
 };
 
@@ -393,6 +822,7 @@ const int maxTowerUpgradeOptions = LightcoreController.maxTowerUpgradeOptions;
 const int enemyDeckLimit = LightcoreController.enemyDeckLimit;
 const int bossSpawnKillRequirement =
     LightcoreController.bossSpawnKillRequirement;
+const int bossUnlockLayer = LightcoreController.bossUnlockLayer;
 const int bossUnlockLevel = LightcoreController.bossUnlockLevel;
 const int tournamentUnlockLevel = LightcoreController.tournamentUnlockLevel;
 const int mentorshipUnlockLevel = LightcoreController.mentorshipUnlockLevel;
@@ -401,6 +831,8 @@ const int dailyDungeonStartingTowerLevel =
     LightcoreController.dailyDungeonStartingTowerLevel;
 const int dailyDungeonMaxTowerLevel =
     LightcoreController.dailyDungeonMaxTowerLevel;
+const int dailyDungeonQuickClearsPerDay =
+    LightcoreController.dailyDungeonQuickClearsPerDay;
 const int bossUnlockTicketGrant = LightcoreController.bossUnlockTicketGrant;
 const int enemyTicketCost = LightcoreController.enemyTicketCost;
 const int bossTicketCost = LightcoreController.bossTicketCost;
@@ -417,10 +849,19 @@ const int bossPullsPerSummoningLevel =
     LightcoreController.bossPullsPerSummoningLevel;
 const int maxBossSummoningLevel = LightcoreController.maxBossSummoningLevel;
 const int maxBossCardLevel = LightcoreController.maxBossCardLevel;
+const int maxPromotedChildTowerRerolls =
+    LightcoreController.maxPromotedChildTowerRerolls;
 const int minScreenNameLength = LightcoreController.minScreenNameLength;
 const int maxScreenNameLength = LightcoreController.maxScreenNameLength;
 const int towerManagerFluxCost = LightcoreController.towerManagerFluxCost;
 const int enemyManagerFluxCost = LightcoreController.enemyManagerFluxCost;
+const int maxManagerPowerLevel = LightcoreController.maxManagerPowerLevel;
+const int managerPowerBaseUpgradeCost =
+    LightcoreController.managerPowerBaseUpgradeCost;
+const int managerBulkForgeFiveBonusShards =
+    LightcoreController.managerBulkForgeFiveBonusShards;
+const int managerBulkForgeTenBonusShards =
+    LightcoreController.managerBulkForgeTenBonusShards;
 const int maxEquipmentInventorySize =
     LightcoreController.maxEquipmentInventorySize;
 const int traitRefreshLumenCost = LightcoreController.traitRefreshLumenCost;
@@ -433,6 +874,8 @@ const int evenEntryTournamentPowerIndex =
     LightcoreController.evenEntryTournamentPowerIndex;
 const int minEnemyTarget = LightcoreController.minEnemyTarget;
 const int initialEnemyTarget = LightcoreController.initialEnemyTarget;
+const int _layer3TrialEnemyCap = 18;
+const double _layer3TrialSpawnCadence = 0.22;
 const int baseEnemyTargetMax = LightcoreController.baseEnemyTargetMax;
 const int enemyTargetUpgradeStep = LightcoreController.enemyTargetUpgradeStep;
 const int _legacyEnemyTargetUpgradeStep =
@@ -514,11 +957,17 @@ const int childTowerUpgradeOptionsPerLevel =
 const int childTowerUpgradeMaxRank =
     LightcoreController.childTowerUpgradeMaxRank;
 const int payloadUnlockLayer = LightcoreController.payloadUnlockLayer;
+const double rainbowPromotionChance =
+    LightcoreController.rainbowPromotionChance;
 const int managerUnlockLevel = LightcoreController.managerUnlockLevel;
+const int managerCoreLevelRequirement =
+    LightcoreController.managerCoreLevelRequirement;
 const List<PrototypeAffinity> childCoreAffinityChoices =
     LightcoreController.childCoreAffinityChoices;
 const double towerConstructionDurationSeconds =
     LightcoreController.towerConstructionDurationSeconds;
+const double layer1ChildTowerMaxConstructionDurationSeconds =
+    LightcoreController.layer1ChildTowerMaxConstructionDurationSeconds;
 const int friendRelayLevelBand = LightcoreController.friendRelayLevelBand;
 const int defaultGuildCreationUnlockLevel =
     LightcoreController.defaultGuildCreationUnlockLevel;
@@ -657,6 +1106,7 @@ class LightcoreController extends ChangeNotifier {
        _graphicsQuality = graphicsQuality {
     _cards = <InventoryCard>[];
     _enemyManagers = <EnemyManagerState>[];
+    _completedTowerShells = <CompletedTowerShellState>[];
     _equipmentInventory = <PlayerEquipmentItem>[];
     _equippedPlayerItems = <EquipmentLoadoutSlot, String?>{
       for (final slot in EquipmentLoadoutSlot.values) slot: null,
@@ -664,10 +1114,8 @@ class LightcoreController extends ChangeNotifier {
     _equippedProfileMedalId = null;
     _unlockedProfileMedalIds.clear();
     _enemyCards = _createEnemyCardInventory();
-    _bossEnemyCards = BossEnemyLibrary.all
-        .map((config) => EnemyCardState(config: config))
-        .toList();
-    _activeBossEnemyCardId = null;
+    _bossEnemyCards = _createBossEnemyCardInventory();
+    _activeBossEnemyCardId = BossEnemyLibrary.starterWhiteWarden.id;
     _seedStarterEnemyCards();
     _seedStarterManagers();
     _layers = <TowerLayerSnapshot>[];
@@ -676,6 +1124,7 @@ class LightcoreController extends ChangeNotifier {
     _viewLayerId = rootLayer.id;
     _runtimeLayerId = rootLayer.id;
     _loadLayer(rootLayer);
+    _armStarterBossForOpening();
     _battlePasses = _createBattlePassMap();
     _timeWarpPurchaseWeekKey = _currentWeekKey();
     _storeOfferPurchaseWeekKey = _currentWeekKey();
@@ -708,6 +1157,25 @@ class LightcoreController extends ChangeNotifier {
     return controller;
   }
 
+  static List<LightcoreTutorialQuestDefinition> get tutorialQuestLibrary =>
+      _tutorialQuestDefinitions.values.toList(growable: false);
+
+  static String get tutorialQuestHelpBody {
+    final sections = <String>[];
+    for (final quest in tutorialQuestLibrary) {
+      sections.add(
+        '${quest.id} ${quest.title}\n'
+        'Goal: ${quest.teachGoal}\n'
+        'What to do: ${quest.coachCopy}\n'
+        'Target: ${quest.primaryClickTarget}\n'
+        'Complete: ${quest.completionCondition}\n'
+        'Reward: ${quest.reward}\n'
+        'Tip: ${quest.failureHelpState}',
+      );
+    }
+    return sections.join('\n\n');
+  }
+
   static const int slotCount = 6;
   static const int maxShellTier = 4;
   static const int maxTowerLevel = 5;
@@ -716,12 +1184,14 @@ class LightcoreController extends ChangeNotifier {
   static const int maxTowerUpgradeOptions = 4;
   static const int enemyDeckLimit = 3;
   static const int bossSpawnKillRequirement = 100;
+  static const int bossUnlockLayer = 2;
   static const int bossUnlockLevel = 5;
   static const int tournamentUnlockLevel = 20;
   static const int mentorshipUnlockLevel = 30;
   static const int dailyDungeonUnlockLevel = 15;
   static const int dailyDungeonStartingTowerLevel = 1;
   static const int dailyDungeonMaxTowerLevel = 60;
+  static const int dailyDungeonQuickClearsPerDay = 3;
   static const int bossUnlockTicketGrant = 10;
   static const int enemyTicketCost = 1;
   static const int bossTicketCost = 1;
@@ -735,8 +1205,13 @@ class LightcoreController extends ChangeNotifier {
   static const int maxBossCardLevel = 20;
   static const int minScreenNameLength = 3;
   static const int maxScreenNameLength = 20;
+  static const int maxPromotedChildTowerRerolls = 3;
   static const int towerManagerFluxCost = 40;
   static const int enemyManagerFluxCost = 52;
+  static const int maxManagerPowerLevel = 30;
+  static const int managerPowerBaseUpgradeCost = 18;
+  static const int managerBulkForgeFiveBonusShards = 6;
+  static const int managerBulkForgeTenBonusShards = 16;
   static const int maxEquipmentInventorySize = 200;
   static const int traitRefreshLumenCost = 6;
   static const int maxActiveEnemies = 84;
@@ -788,6 +1263,8 @@ class LightcoreController extends ChangeNotifier {
       ((_minimumSpawnRadius - _relayImpactRadius) *
           _defaultTowerLaneRangeShare);
   static const double _promotedChildTowerRangeMultiplier = 1.15;
+  static const double _promotedChildTowerPowerMultiplier = 1.35;
+  static const double _promotedChildTowerPowerTierStep = 0.12;
   static const double _promotedCoreShotPowerMultiplier = 3.25;
   static const double _promotedCoreShotPowerTierStep = 0.55;
   static const double _promotedSourcePassiveMultiplier = 1 / slotCount;
@@ -802,7 +1279,9 @@ class LightcoreController extends ChangeNotifier {
   static const int childTowerUpgradeOptionsPerLevel = 4;
   static const int childTowerUpgradeMaxRank = 10;
   static const int payloadUnlockLayer = 2;
+  static const double rainbowPromotionChance = 0.10;
   static const int managerUnlockLevel = 10;
+  static const int managerCoreLevelRequirement = 3;
   static const List<PrototypeAffinity> childCoreAffinityChoices =
       <PrototypeAffinity>[
         PrototypeAffinity.ember,
@@ -813,10 +1292,12 @@ class LightcoreController extends ChangeNotifier {
         PrototypeAffinity.violet,
       ];
   static const double towerConstructionDurationSeconds = 5;
+  static const double layer1ChildTowerMaxConstructionDurationSeconds = 20 * 60;
   static const int friendRelayLevelBand = 6;
   static const int defaultGuildCreationUnlockLevel = 10;
   static const int guildMemberCap = slotCount + 1;
   static const int helpSectionTicketReward = 5;
+  static const int radianceStatResetPrismShardCost = 2000;
   static const String timeWarpFluxThirtyMinutesId = 'time_warp_flux_30m';
   static const String timeWarpPrismThirtyMinutesId = 'time_warp_prism_30m';
   static const String timeWarpPrismTwoHoursId = 'time_warp_prism_2h';
@@ -935,6 +1416,7 @@ class LightcoreController extends ChangeNotifier {
   late List<OuterTowerState> _slots;
   late List<InventoryCard> _cards;
   late List<EnemyManagerState> _enemyManagers;
+  late List<CompletedTowerShellState> _completedTowerShells;
   late List<EnemyCardState> _enemyCards;
   late List<EnemyCardState> _bossEnemyCards;
   late List<PlayerEquipmentItem> _equipmentInventory;
@@ -975,6 +1457,9 @@ class LightcoreController extends ChangeNotifier {
   int lumens = 44;
   int flux = 96;
   int prismShards = 0;
+  int managerShards = 0;
+  int managerPowerLevel = 0;
+  int shellCores = 0;
   int enemyTickets = 18;
   int bossTickets = 0;
   int bossCores = 0;
@@ -1013,6 +1498,8 @@ class LightcoreController extends ChangeNotifier {
   final Map<String, int> _storeOfferWeeklyPurchases = <String, int>{};
   int _dailyDungeonHighestUnlockedTowerLevel = dailyDungeonStartingTowerLevel;
   int _dailyDungeonHighestClearedTowerLevel = 0;
+  String _dailyDungeonQuickClearDayKey = '';
+  int _dailyDungeonQuickClearsUsed = 0;
   String? _equippedProfileMedalId;
   final Set<String> _unlockedProfileMedalIds = <String>{};
 
@@ -1048,6 +1535,7 @@ class LightcoreController extends ChangeNotifier {
   DateTime? _tournamentExperienceBoostEndsAt;
   LightcoreGraphicsQuality _graphicsQuality;
   bool _notificationBannersEnabled = true;
+  bool _battleNotificationBannersEnabled = false;
   bool _tutorialPromptsEnabled = true;
   bool _localhostAutoTapperEnabled = false;
   bool _needsNotify = false;
@@ -1069,6 +1557,7 @@ class LightcoreController extends ChangeNotifier {
   bool _tutorialFirstManagersOpened = false;
   bool _tutorialFirstEnemyTargetSet = false;
   bool _tutorialEnemyCountAdjusted = false;
+  bool _tutorialFirstTowerStatsOpened = false;
   bool _tutorialStabilityPanelOpened = false;
   bool _tutorialTowerMatrixOpened = false;
   bool _tutorialStoreOpened = false;

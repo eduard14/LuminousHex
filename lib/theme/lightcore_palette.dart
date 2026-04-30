@@ -11,6 +11,7 @@ class LightcorePalette {
   static const Color mist = Color(0xFFE8F1F7);
   static const Color ember = Color(0xFFFF744F);
   static const Color flare = Color(0xFFFFA04A);
+  static const Color scanGlow = Color(0xFFFF4FD8);
   static const Color aether = Color(0xFF49DBFF);
   static const Color solar = Color(0xFFFFD65E);
   static const Color gilded = Color(0xFFFFE7A6);

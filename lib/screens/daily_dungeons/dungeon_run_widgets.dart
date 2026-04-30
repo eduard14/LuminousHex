@@ -83,10 +83,10 @@ class _DungeonRunTopBar extends StatelessWidget {
           ),
           const SizedBox(width: 8),
           Tooltip(
-            message: 'Exit dungeon',
+            message: 'Back to dungeons',
             child: IconButton.filledTonal(
               onPressed: onExit,
-              icon: const Icon(Icons.close_rounded),
+              icon: const Icon(Icons.arrow_back_rounded),
             ),
           ),
         ],

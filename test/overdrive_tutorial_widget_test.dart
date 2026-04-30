@@ -40,6 +40,8 @@ void _promoteRootShell(LightcoreController controller) {
 void _reachOverdriveQuest(LightcoreController controller) {
   _promoteRootShell(controller);
   controller.debugCompleteBossAndEquipmentTutorial();
+  expect(controller.tutorialStep, LightcoreTutorialStep.openTowerMatrix);
+  controller.markTutorialTowerMatrixOpened();
   expect(controller.createChildLayer(0, PrototypeAffinity.aether), isTrue);
   controller.selectCenter();
   expect(controller.tutorialStep, LightcoreTutorialStep.none);
@@ -70,8 +72,10 @@ void main() {
       findsNothing,
     );
     expect(
-      find.text('Hold the Overdrive button until the battle speeds up.'),
-      findsNothing,
+      find.text(
+        'Hold Overdrive until the battle speeds up. Use it when you are actively pushing lanes.',
+      ),
+      findsOneWidget,
     );
     expect(
       find.byKey(const ValueKey<String>('battle-overdrive-frame')),
@@ -79,18 +83,9 @@ void main() {
     );
     expect(find.byIcon(Icons.touch_app_rounded), findsOneWidget);
 
-    await tester.tap(
-      find.byKey(const ValueKey<String>('battle-quest-trigger-button')),
-    );
-    await tester.pump();
-
     expect(
       find.byKey(const ValueKey<String>('battle-quest-show-button')),
       findsNothing,
-    );
-    expect(
-      find.text('Hold the Overdrive button until the battle speeds up.'),
-      findsOneWidget,
     );
     expect(tester.takeException(), isNull);
   });
@@ -147,7 +142,7 @@ void main() {
     controller.tick(0.35);
     await tester.pump();
 
-    expect(controller.tutorialStep, LightcoreTutorialStep.openTowerMatrix);
+    expect(controller.tutorialStep, LightcoreTutorialStep.upgradeCoreRange);
     expect(
       find.byKey(const ValueKey<String>('battle-quest-card')),
       findsOneWidget,

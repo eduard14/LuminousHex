@@ -128,6 +128,109 @@ void main() {
     expect(controller.coreState.automationCooldownRemaining, greaterThan(0));
   });
 
+  test('core managers keep generating queued packets without enemies', () {
+    final controller = LightcoreController();
+    addTearDown(controller.dispose);
+
+    controller.experience = LightcoreController.experienceForOverallLevel(
+      LightcoreController.managerUnlockLevel,
+    );
+    controller.flux = LightcoreController.towerManagerFluxCost;
+    expect(controller.forgeTowerManager(), isTrue);
+    controller.equipCardToCore(controller.cards.single.instanceId);
+
+    controller.tick(0.1);
+
+    final corePulses = controller.pulses.where(
+      (pulse) => pulse.sourceSlotIndex == null,
+    );
+    expect(corePulses, hasLength(1));
+    expect(controller.coreState.automationCooldownRemaining, greaterThan(0));
+  });
+
+  test('core manager assignment carries into promoted layer 2 shell', () {
+    final controller = LightcoreController();
+    addTearDown(controller.dispose);
+
+    controller.experience = LightcoreController.experienceForOverallLevel(
+      LightcoreController.managerUnlockLevel,
+    );
+    controller.flux = LightcoreController.towerManagerFluxCost;
+    expect(controller.forgeTowerManager(), isTrue);
+    final managerId = controller.cards.single.instanceId;
+    controller.equipCardToCore(managerId);
+
+    _maxOutCurrentShell(controller, TowerLibrary.redPrism);
+    controller.unlockLayer2Tower();
+
+    expect(controller.activeLayer.tier, 2);
+    expect(controller.towerCoreManager?.instanceId, managerId);
+  });
+
+  test('layer 2 core manager inherits into new child shells immediately', () {
+    final controller = LightcoreController();
+    addTearDown(controller.dispose);
+
+    controller.experience = LightcoreController.experienceForOverallLevel(
+      LightcoreController.managerUnlockLevel,
+    );
+    controller.flux = LightcoreController.towerManagerFluxCost;
+    expect(controller.forgeTowerManager(), isTrue);
+    final managerId = controller.cards.single.instanceId;
+    controller.equipCardToCore(managerId);
+
+    _maxOutCurrentShell(controller, TowerLibrary.redPrism);
+    controller.unlockLayer2Tower();
+    expect(controller.activeLayer.tier, 2);
+    expect(controller.towerCoreManager?.instanceId, managerId);
+
+    expect(controller.createChildLayer(0, PrototypeAffinity.aether), isTrue);
+    expect(controller.activeLayer.tier, 1);
+    expect(controller.towerCoreManager?.instanceId, managerId);
+
+    controller.lumens = 1000;
+    controller.kills = LightcoreController.unlockKillsForOuterSlot(0);
+    expect(controller.buildTowerAt(0, TowerLibrary.bluePrism), isTrue);
+    expect(controller.cardForSlot(controller.slots[0])?.instanceId, managerId);
+    expect(controller.debugSetTowerCharge(0, charge: 1.2), isTrue);
+
+    controller.tick(0.1);
+
+    expect(controller.pulses, isNotEmpty);
+    expect(controller.slots[0].charge, 0);
+  });
+
+  test('layer 2 core manager automates promoted child towers', () {
+    final controller = LightcoreController();
+    addTearDown(controller.dispose);
+
+    controller.experience = LightcoreController.experienceForOverallLevel(
+      LightcoreController.managerUnlockLevel,
+    );
+    controller.flux = LightcoreController.towerManagerFluxCost;
+    expect(controller.forgeTowerManager(), isTrue);
+    final managerId = controller.cards.single.instanceId;
+    controller.equipCardToCore(managerId);
+
+    _maxOutCurrentShell(controller, TowerLibrary.redPrism);
+    controller.unlockLayer2Tower();
+    expect(controller.activeLayer.tier, 2);
+
+    expect(controller.createChildLayer(0, PrototypeAffinity.aether), isTrue);
+    _maxOutCurrentShell(controller, TowerLibrary.bluePrism);
+    controller.unlockLayer2Tower();
+
+    expect(controller.activeLayer.tier, 2);
+    expect(controller.slots[0].isPromotedChildTower, isTrue);
+    expect(controller.cardForSlot(controller.slots[0])?.instanceId, managerId);
+    expect(controller.debugSetTowerCharge(0, charge: 1.2), isTrue);
+
+    controller.tick(0.1);
+
+    expect(controller.pulses, isNotEmpty);
+    expect(controller.slots[0].charge, 0);
+  });
+
   test('core managers apply across towers and enemies on the active shell', () {
     final controller = LightcoreController();
     addTearDown(controller.dispose);
@@ -275,6 +378,8 @@ void main() {
     addTearDown(controller.dispose);
     controller.debugDisableTutorial();
 
+    expect(controller.battleNotificationBannersEnabled, isFalse);
+    expect(controller.bannerMessage, isEmpty);
     expect(controller.coreState.coreStability, 100);
     expect(controller.outputEfficiencyLabel, '100%');
     expect(
@@ -291,6 +396,27 @@ void main() {
     expect(controller.enemies, isEmpty);
     expect(controller.coreState.coreStability, lessThan(99));
     expect(controller.outputEfficiencyLabel, isNot('100%'));
+    expect(controller.bannerMessage, isEmpty);
+  });
+
+  test('battle alert banners are opt-in for passive combat pressure', () {
+    final controller = LightcoreController();
+    addTearDown(controller.dispose);
+    controller.debugDisableTutorial();
+    controller.setBattleNotificationBannersEnabled(true);
+
+    expect(
+      controller.debugSpawnEnemyFromCard(
+        EnemyLibrary.basicWhite.id,
+        angle: 0,
+        radius: controller.relayImpactRadius + 1,
+      ),
+      isNotNull,
+    );
+
+    controller.tick(0.1);
+
+    expect(controller.bannerMessage, contains('Core Stability'));
   });
 
   test(

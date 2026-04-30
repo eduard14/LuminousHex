@@ -118,10 +118,11 @@ extension LightcoreControllerLayerTraits on LightcoreController {
     }
     return tower.fireSequence >= 3 &&
         enemyPullCount >= 1 &&
+        _tutorialFirstTowerStatsOpened &&
         _tutorialStabilityPanelOpened &&
         _tutorialTowerManagerAssigned &&
         _tutorialAutoQueuedPulses >= 5 &&
-        _core.rangeUpgradeLevel > 0;
+        (totalRadianceStatPointsSpent > 0 || _core.rangeUpgradeLevel > 0);
   }
 
   bool get _earlyTutorialComplete =>
@@ -145,7 +146,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
   }
 
   bool get _hasAssignedTowerManagerOnActiveLayer =>
-      _cards.any((card) => card.equippedLayerId == activeLayer.id);
+      _towerCoreManagerForLayer(activeLayer) != null;
 
   bool get _hasAssignedEnemyManagerOnActiveLayer => _enemyManagers.any(
     (manager) => manager.assignedLayerId == activeLayer.id,
@@ -179,6 +180,8 @@ extension LightcoreControllerLayerTraits on LightcoreController {
       LightcoreTutorialStep.selectFirstHex => selectedSlotIndex == 0,
       LightcoreTutorialStep.buildFirstRedTower =>
         firstTower?.config?.id == TowerLibrary.redPrism.id,
+      LightcoreTutorialStep.inspectFirstTowerStats =>
+        _tutorialFirstTowerStatsOpened,
       LightcoreTutorialStep.tapBattleCore => _tutorialCoreShotTapLearned,
       LightcoreTutorialStep.tapFirstTower =>
         firstTower != null && firstTower.fireSequence >= 3,
@@ -195,7 +198,8 @@ extension LightcoreControllerLayerTraits on LightcoreController {
       LightcoreTutorialStep.setFirstEnemyTarget => _tutorialFirstEnemyTargetSet,
       LightcoreTutorialStep.adjustEnemyCount => _tutorialEnemyCountAdjusted,
       LightcoreTutorialStep.openTowerMatrix => _tutorialTowerMatrixOpened,
-      LightcoreTutorialStep.upgradeCoreRange => _core.rangeUpgradeLevel > 0,
+      LightcoreTutorialStep.upgradeCoreRange =>
+        totalRadianceStatPointsSpent > 0 || _core.rangeUpgradeLevel > 0,
       LightcoreTutorialStep.openStore => _tutorialStoreOpened,
       LightcoreTutorialStep.claimBattlePassReward =>
         _tutorialBattlePassRewardClaimed,
@@ -255,6 +259,9 @@ extension LightcoreControllerLayerTraits on LightcoreController {
     if (firstTower.config?.id != TowerLibrary.redPrism.id) {
       return null;
     }
+    if (!_tutorialFirstTowerStatsOpened) {
+      return LightcoreTutorialStep.inspectFirstTowerStats;
+    }
     if (firstTower.fireSequence < 3) {
       return LightcoreTutorialStep.tapFirstTower;
     }
@@ -273,10 +280,10 @@ extension LightcoreControllerLayerTraits on LightcoreController {
     if (_tutorialAutoQueuedPulses < 5) {
       return LightcoreTutorialStep.autoQueueCheck;
     }
-    if (_core.rangeUpgradeLevel == 0 && canUpgradeCoreRange) {
-      return lumens >= coreRangeUpgradeCost
+    if (totalRadianceStatPointsSpent == 0) {
+      return hasUnspentRadianceStatPoints
           ? LightcoreTutorialStep.upgradeCoreRange
-          : null;
+          : LightcoreTutorialStep.none;
     }
     return null;
   }
@@ -307,13 +314,12 @@ extension LightcoreControllerLayerTraits on LightcoreController {
   }
 
   LightcoreTutorialStep? _deriveSidecarTutorialStep() {
-    if (!_tutorialTowerMatrixOpened && _earlyTutorialComplete) {
+    if (!_tutorialTowerMatrixOpened &&
+        _earlyTutorialComplete &&
+        completedShellLibraryUnlocked) {
       return LightcoreTutorialStep.openTowerMatrix;
     }
-    if (_tutorialTowerMatrixOpened &&
-        _core.rangeUpgradeLevel == 0 &&
-        canUpgradeCoreRange &&
-        lumens >= coreRangeUpgradeCost) {
+    if (totalRadianceStatPointsSpent == 0 && hasUnspentRadianceStatPoints) {
       return LightcoreTutorialStep.upgradeCoreRange;
     }
     if (!_tutorialStoreOpened && _earlyTutorialComplete) {
@@ -327,7 +333,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
   }
 
   LightcoreTutorialStep? _deriveManagerTutorialStep() {
-    if (overallLevel < managerUnlockLevel) {
+    if (!managersUnlocked) {
       return null;
     }
     if (!_tutorialFirstManagersOpened) {
@@ -384,6 +390,12 @@ extension LightcoreControllerLayerTraits on LightcoreController {
     }
     final introBossDefeated =
         _tutorialFirstBossDefeated || totalBossesDefeated > 0;
+    if (_earlyTutorialComplete &&
+        !introBossDefeated &&
+        activeBossEnemyCard != null &&
+        (_tutorialTrackedBossEnemyId != null || bossAlive)) {
+      return LightcoreTutorialStep.defeatFirstBoss;
+    }
     if (!_tutorialFirstEquipmentOpened && introBossDefeated) {
       return LightcoreTutorialStep.openEquipment;
     }
@@ -556,6 +568,66 @@ extension LightcoreControllerLayerTraits on LightcoreController {
     ];
   }
 
+  List<EnemyCardState> _createBossEnemyCardInventory() {
+    return BossEnemyLibrary.all
+        .map(
+          (config) => EnemyCardState(
+            config: config,
+            unlocked: config.id == BossEnemyLibrary.starterWhiteWarden.id,
+            copies: config.id == BossEnemyLibrary.starterWhiteWarden.id ? 1 : 0,
+          ),
+        )
+        .toList(growable: false);
+  }
+
+  void _ensureStarterBossCardAvailable() {
+    final starterId = BossEnemyLibrary.starterWhiteWarden.id;
+    final cardIndex = _bossEnemyCards.indexWhere(
+      (card) => card.config.id == starterId,
+    );
+    if (cardIndex == -1) {
+      return;
+    }
+    final current = _bossEnemyCards[cardIndex];
+    if (current.isOwned && current.copies > 0) {
+      return;
+    }
+    _bossEnemyCards[cardIndex] = current.copyWith(
+      unlocked: true,
+      copies: max(1, current.copies),
+    );
+  }
+
+  void _armStarterBossForOpening() {
+    if (_layers.isEmpty) {
+      return;
+    }
+    final starterId = BossEnemyLibrary.starterWhiteWarden.id;
+    _ensureStarterBossCardAvailable();
+    if (!bossHuntsUnlocked || _activeBossEnemyCardId == null) {
+      _activeBossEnemyCardId = starterId;
+      activeLayer.activeBossEnemyCardId = starterId;
+    }
+
+    final introBossDefeated =
+        _tutorialFirstBossDefeated || totalBossesDefeated > 0;
+    if (introBossDefeated) {
+      return;
+    }
+    final liveStarterBosses = _enemies.where(
+      (enemy) => enemy.config.id == starterId,
+    );
+    if (_tutorialTrackedBossEnemyId == null && liveStarterBosses.isNotEmpty) {
+      _tutorialTrackedBossEnemyId = liveStarterBosses.first.id;
+    }
+    if (!bossAlive && !activeLayer.bossReady) {
+      activeLayer.bossReady = true;
+      activeLayer.normalKillsSinceBoss = bossSpawnKillRequirement;
+    }
+    _tutorialIntroBossPending = true;
+    _spawnTimer = min(_spawnTimer, 0.05);
+  }
+
   EnemyConfig? _scriptedEnemyPullForTutorial() {
     final firstTower = _firstTutorialTower;
     if (firstTower?.config?.id != TowerLibrary.redPrism.id ||
@@ -571,19 +643,27 @@ extension LightcoreControllerLayerTraits on LightcoreController {
     return null;
   }
 
-  bool get _shouldScriptBossPullTutorial =>
-      bossHuntsUnlocked && bossPullCount == 0 && !_tutorialFirstBossDefeated;
+  EnemyConfig? _scriptedBossPull() {
+    if (!bossHuntsUnlocked || bossPullCount > 0) {
+      return null;
+    }
+    return BossEnemyLibrary.byRarity[EnemyCardRarity.basic]!.firstWhere(
+      (config) => config.id != BossEnemyLibrary.starterWhiteWarden.id,
+      orElse: () => BossEnemyLibrary.starterWhiteWarden,
+    );
+  }
 
   double get _layer1OpeningCadenceMultiplier {
     if (activeLayer.tier != 1) {
       return 1.0;
     }
     return switch (_tutorialStep) {
-      LightcoreTutorialStep.none => overallLevel < bossUnlockLevel ? 1.08 : 1.0,
+      LightcoreTutorialStep.none => _tutorialFirstBossDefeated ? 1.0 : 1.08,
       LightcoreTutorialStep.unfoldShell ||
       LightcoreTutorialStep.waitForFirstHex ||
       LightcoreTutorialStep.selectFirstHex ||
       LightcoreTutorialStep.buildFirstRedTower ||
+      LightcoreTutorialStep.inspectFirstTowerStats ||
       LightcoreTutorialStep.tapFirstTower ||
       LightcoreTutorialStep.tapSecondShellTower ||
       LightcoreTutorialStep.upgradeFirstTowerToLevel3 ||
@@ -671,7 +751,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
       childTowerUpgrades: parentLayerId == null
           ? <ChildTowerUpgradeState>[]
           : _rollChildTowerUpgradeBoard(),
-      activeBossEnemyCardId: null,
+      activeBossEnemyCardId: _activeBossEnemyCardId,
       parentLayerId: parentLayerId,
       parentSlotIndex: parentSlotIndex,
       sourceLayerId: sourceLayerId,
@@ -985,9 +1065,10 @@ extension LightcoreControllerLayerTraits on LightcoreController {
 
   void _enterLayer(String layerId, {String? banner}) {
     _storeActiveLayer();
+    final nextLayer = _layerById(layerId);
     _viewLayerId = layerId;
-    _runtimeLayerId = layerId;
-    _loadLayer(_layerById(layerId));
+    _runtimeLayerId = _liveLayerForLayer(nextLayer).id;
+    _loadLayer(nextLayer);
     if (banner != null) {
       _showBanner(banner);
     }
@@ -1017,7 +1098,9 @@ extension LightcoreControllerLayerTraits on LightcoreController {
       List<ProjectileType>.unmodifiable(_slotProjectileLoadout(tower));
 
   String towerProjectileArsenalLabel(OuterTowerState tower) =>
-      _arsenalSummary(_slotProjectileLoadout(tower));
+      _towerHasRainbowLoadout(tower)
+      ? 'All Prism projectiles'
+      : _arsenalSummary(_slotProjectileLoadout(tower));
 
   String towerPayloadLabel(OuterTowerState tower) =>
       _slotPayloadType(tower).label;
@@ -1029,10 +1112,17 @@ extension LightcoreControllerLayerTraits on LightcoreController {
       List<PayloadType>.unmodifiable(_slotPayloadLoadout(tower));
 
   String towerPayloadArsenalLabel(OuterTowerState tower) =>
-      _arsenalSummary(_slotPayloadLoadout(tower));
+      _towerHasRainbowLoadout(tower)
+      ? 'All Prism payloads'
+      : _arsenalSummary(_slotPayloadLoadout(tower));
 
   String towerAffinitySignatureLabel(OuterTowerState tower) =>
-      _traitSignatureLabel(_slotAffinity(tower), _slotSecondaryAffinity(tower));
+      _towerHasRainbowLoadout(tower)
+      ? 'Rainbow tower'
+      : _traitSignatureLabel(
+          _slotAffinity(tower),
+          _slotSecondaryAffinity(tower),
+        );
 
   String get corePayloadLabel => _corePayloadType.label;
 
@@ -1041,16 +1131,20 @@ extension LightcoreControllerLayerTraits on LightcoreController {
   List<ProjectileType> get coreProjectileArsenal =>
       List<ProjectileType>.unmodifiable(_coreProjectileLoadout);
 
-  String get coreProjectileArsenalLabel =>
-      _arsenalSummary(_coreProjectileLoadout);
+  String get coreProjectileArsenalLabel => _coreHasRainbowLoadout
+      ? 'All Prism projectiles'
+      : _arsenalSummary(_coreProjectileLoadout);
 
   List<PayloadType> get corePayloadArsenal =>
       List<PayloadType>.unmodifiable(_corePayloadLoadout);
 
-  String get corePayloadArsenalLabel => _arsenalSummary(_corePayloadLoadout);
+  String get corePayloadArsenalLabel => _coreHasRainbowLoadout
+      ? 'All Prism payloads'
+      : _arsenalSummary(_corePayloadLoadout);
 
-  String get coreAffinitySignatureLabel =>
-      _traitSignatureLabel(_core.affinity, _core.secondaryAffinity);
+  String get coreAffinitySignatureLabel => _coreHasRainbowLoadout
+      ? 'Rainbow tower'
+      : _traitSignatureLabel(_core.affinity, _core.secondaryAffinity);
 
   String get payloadUnlockLabel => payloadsUnlocked
       ? 'Promoted payloads online'
@@ -1058,14 +1152,37 @@ extension LightcoreControllerLayerTraits on LightcoreController {
 
   String get managerUnlockLabel => managersUnlocked
       ? 'Managers online'
-      : 'Managers unlock at Account Radiance Lv $managerUnlockLevel';
+      : 'Managers unlock at Core Lv $managerCoreLevelRequirement or Account Radiance Lv $managerUnlockLevel';
 
   String get managerAssignmentUnlockLabel => managerAssignmentUnlocked
       ? 'Manager assignment online'
-      : 'Manager assignment unlocks with a Layer 2 Core';
+      : 'Manager assignment unlocks at Core Lv $managerCoreLevelRequirement';
+
+  int promotedChildTowerRerollsUsed(OuterTowerState tower) {
+    final childLayerId = tower.childLayerId;
+    if (!tower.isPromotedChildTower || childLayerId == null) {
+      return 0;
+    }
+    return _layerById(
+      childLayerId,
+    ).promotionTraitRoll.clamp(0, maxPromotedChildTowerRerolls).toInt();
+  }
+
+  int promotedChildTowerRerollsRemaining(OuterTowerState tower) => max(
+    0,
+    maxPromotedChildTowerRerolls - promotedChildTowerRerollsUsed(tower),
+  );
+
+  String promotedChildTowerRerollLabel(OuterTowerState tower) {
+    final remaining = promotedChildTowerRerollsRemaining(tower);
+    return '$echoSeedLabel • $remaining safe';
+  }
 
   bool canRerollPromotedChildTower(OuterTowerState tower) =>
-      tower.isPromotedChildTower && tower.childLayerId != null && echoSeeds > 0;
+      tower.isPromotedChildTower &&
+      tower.childLayerId != null &&
+      echoSeeds > 0 &&
+      promotedChildTowerRerollsRemaining(tower) > 0;
 
   TargetPriority towerTargetPriority(OuterTowerState tower) =>
       towerTargetPriorityForProjectile(tower, towerProjectileType(tower));
@@ -1164,8 +1281,8 @@ extension LightcoreControllerLayerTraits on LightcoreController {
 
   String get bossSpawnStatusLabel {
     final boss = activeBossEnemyCard;
-    if (!bossHuntsUnlocked) {
-      return 'Apex Scans unlock at Account Radiance Lv $bossUnlockLevel.';
+    if (!bossHuntsUnlocked && boss == null) {
+      return 'Apex Scans and boss changes unlock in the Prism Shell.';
     }
     if (ownedBossEnemyCardCount == 0) {
       return activeLayer.bossReady
@@ -1189,6 +1306,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         LightcoreTutorialStep.waitForFirstHex => 'Hold The Lane',
         LightcoreTutorialStep.selectFirstHex => 'Select Hex 1',
         LightcoreTutorialStep.buildFirstRedTower => 'Build Red First',
+        LightcoreTutorialStep.inspectFirstTowerStats => 'Read Tower Stats',
         LightcoreTutorialStep.tapBattleCore => 'Tap The Core To Fire',
         LightcoreTutorialStep.tapFirstTower => 'Tap The Tower To Fire',
         LightcoreTutorialStep.tapSecondShellTower => 'Tap To Fire Shots',
@@ -1203,7 +1321,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         LightcoreTutorialStep.setFirstEnemyTarget => 'Focus Threat Scan',
         LightcoreTutorialStep.adjustEnemyCount => 'Tune Swarm Pressure',
         LightcoreTutorialStep.openTowerMatrix => 'Inspect Tower Lists',
-        LightcoreTutorialStep.upgradeCoreRange => 'Upgrade The Core',
+        LightcoreTutorialStep.upgradeCoreRange => 'Upgrade A Global Stat',
         LightcoreTutorialStep.openStore => 'Inspect The Store',
         LightcoreTutorialStep.claimBattlePassReward => 'Claim A Pass Reward',
         LightcoreTutorialStep.openBossPulls => 'Apex Scans Unlocked',
@@ -1235,6 +1353,8 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         LightcoreTutorialStep.selectFirstHex => 'Click Hex 1.',
         LightcoreTutorialStep.buildFirstRedTower =>
           'Click Hex 1 and build a Red Prism.',
+        LightcoreTutorialStep.inspectFirstTowerStats =>
+          'Open the first tower stats pop-out.',
         LightcoreTutorialStep.tapBattleCore =>
           'Tap the glowing Lightcore on the battlefield to generate a shot.',
         LightcoreTutorialStep.tapFirstTower =>
@@ -1258,9 +1378,9 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         LightcoreTutorialStep.adjustEnemyCount =>
           'Click Anomalies and move the Swarm Pressure slider above the low setting.',
         LightcoreTutorialStep.openTowerMatrix =>
-          'Click Towers to inspect the tower list and core upgrade board.',
+          'Click Towers to inspect completed shells and Layer 2 shell tools.',
         LightcoreTutorialStep.upgradeCoreRange =>
-          'Click Towers and buy the Core Range upgrade.',
+          'Open Main Manager and add one Global Attribute point.',
         LightcoreTutorialStep.openStore =>
           'Click Store and inspect the resource offers.',
         LightcoreTutorialStep.claimBattlePassReward =>
@@ -1312,6 +1432,8 @@ extension LightcoreControllerLayerTraits on LightcoreController {
           'Command opens the shell one lane at a time so flow stays stable while the relay network comes online.',
         LightcoreTutorialStep.buildFirstRedTower =>
           'Tower colors matter. Red Prism is your first affinity counter tool and starts the color-match lesson.',
+        LightcoreTutorialStep.inspectFirstTowerStats =>
+          'Tower stats show power, charge, cooldown, automation, and lane load before the tower starts feeding the core queue.',
         LightcoreTutorialStep.tapBattleCore =>
           'The Lightcore can generate a basic packet for the queue. Tap it when an anomaly reaches core range so the queued shot has a target.',
         LightcoreTutorialStep.tapFirstTower =>
@@ -1335,15 +1457,15 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         LightcoreTutorialStep.adjustEnemyCount =>
           'Anomaly count controls live pressure. More active anomalies can pay faster, but crowded lanes slow Output Efficiency if your towers cannot keep up.',
         LightcoreTutorialStep.openTowerMatrix =>
-          'The tower matrix is the full list view for built slots, target priorities, manager sockets, and core upgrades.',
+          'The tower archive stores completed shells and unlocks once the Prism Shell is online.',
         LightcoreTutorialStep.upgradeCoreRange =>
-          'Core upgrades are global to the active shell. Range gives queued shots more room to convert prism packets into hits.',
+          'Global Attributes are permanent account upgrades earned from Account Radiance levels.',
         LightcoreTutorialStep.openStore =>
           'The store groups conversions, premium unlocks, and resource offers in one place. Opening it does not spend anything.',
         LightcoreTutorialStep.claimBattlePassReward =>
           'Passes convert normal play into side rewards. Claim during quiet moments so active combat tutorials do not pile up.',
         LightcoreTutorialStep.openBossPulls =>
-          'Apex Scans unlock at higher Account Radiance levels. Apex Anomaly cards use a separate pull and arming loop from standard anomalies.',
+          'Apex Scans unlock in the Prism Shell. They add boss-class anomaly cards you can arm to change the active Apex fight.',
         LightcoreTutorialStep.armFirstBoss =>
           'Pulled Apex Anomalies do not spawn automatically. Arming an Apex Anomaly card sets the next apex target for the active layer.',
         LightcoreTutorialStep.defeatFirstBoss =>
@@ -1389,6 +1511,8 @@ extension LightcoreControllerLayerTraits on LightcoreController {
             'Hex 1 is the safest breach point, so command uses it as the anchor lane for the opening defense grid.',
           LightcoreTutorialStep.buildFirstRedTower =>
             'Lumo wants the first prism online before the shell fans wider, so the relay net has a stable firing spine.',
+          LightcoreTutorialStep.inspectFirstTowerStats =>
+            'The first prism report opens so the crew can label what each tower number means before combat speeds up.',
           LightcoreTutorialStep.tapBattleCore =>
             'A hostile signature has crossed the core lens. One tap starts a core pulse for the queue.',
           LightcoreTutorialStep.tapFirstTower =>
@@ -1414,7 +1538,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
           LightcoreTutorialStep.openTowerMatrix =>
             'The first combat loop is stable, so command hands you the full tower ledger instead of only the battle shortcuts.',
           LightcoreTutorialStep.upgradeCoreRange =>
-            'The core lens widens, giving queued packets more reach before the next set of anomalies closes in.',
+            'The crew routes the new Radiance point into a permanent account attribute before the next set of anomalies closes in.',
           LightcoreTutorialStep.openStore =>
             'Supply control is online. The crew wants you to know where conversions and permanent offers live before you need them.',
           LightcoreTutorialStep.claimBattlePassReward =>
@@ -1510,15 +1634,19 @@ extension LightcoreControllerLayerTraits on LightcoreController {
       _tutorialStep == LightcoreTutorialStep.armFirstBoss &&
       cardId == BossEnemyLibrary.starterWhiteWarden.id;
 
-  bool get canUpgradeCoreRange => _core.rangeUpgradeLevel < maxCoreUpgradeLevel;
+  bool get canUpgradeCoreRange =>
+      !activeLayerPassiveOnly && _core.rangeUpgradeLevel < maxCoreUpgradeLevel;
 
   bool get canUpgradeCoreFireSpeed =>
+      !activeLayerPassiveOnly &&
       _core.fireSpeedUpgradeLevel < maxCoreUpgradeLevel;
 
   bool get canUpgradeCoreQueueLimit =>
+      !activeLayerPassiveOnly &&
       _core.queueLimitUpgradeLevel < maxCoreUpgradeLevel;
 
   bool get canUpgradeCoreMultiShot =>
+      !activeLayerPassiveOnly &&
       _core.multiShotUpgradeLevel < maxCoreMultiShotUpgradeLevel;
 
   int get coreRangeUpgradeCost => canUpgradeCoreRange
@@ -1684,14 +1812,12 @@ extension LightcoreControllerLayerTraits on LightcoreController {
       return;
     }
     final source = _layerById(sourceId);
-    if (isLayerPassiveOnly(source)) {
-      _showBanner(
-        '${layerDisplayLabel(source)} is passive support now. Continue live combat from $activeLayerLabel.',
-      );
-      _notifyNow();
-      return;
-    }
-    _enterLayer(source.id);
+    _enterLayer(
+      source.id,
+      banner: isLayerPassiveOnly(source)
+          ? '${layerDisplayLabel(source)} archive opened. Its merged pieces are static, but each hex can still be inspected.'
+          : null,
+    );
   }
 
   void enterLayerById(String layerId) {
@@ -1702,16 +1828,12 @@ extension LightcoreControllerLayerTraits on LightcoreController {
     if (layer.id == _activeLayerId) {
       return;
     }
-    if (isLayerPassiveOnly(layer)) {
-      final liveParent = _liveLayerForLayer(layer);
-      final hasLiveParent = liveParent.id != layer.id;
-      _showBanner(
-        '${layerDisplayLabel(layer)} is locked as passive support${hasLiveParent ? ' for ${layerDisplayLabel(liveParent)}.' : '.'}',
-      );
-      _notifyNow();
-      return;
-    }
-    _enterLayer(layer.id);
+    _enterLayer(
+      layer.id,
+      banner: isLayerPassiveOnly(layer)
+          ? '${layerDisplayLabel(layer)} archive opened. Static support remains linked to ${layerDisplayLabel(_liveLayerForLayer(layer))}.'
+          : null,
+    );
   }
 
   void enterChildLayer(int slotIndex) {
@@ -1725,14 +1847,19 @@ extension LightcoreControllerLayerTraits on LightcoreController {
     final existingChildId = slot.childLayerId;
     if (existingChildId != null) {
       final child = _layerById(existingChildId);
-      if (isLayerPassiveOnly(child)) {
-        _showBanner(
-          '${layerDisplayLabel(child)} is locked as passive support for $activeLayerLabel.',
-        );
-        _notifyNow();
-        return;
-      }
-      _enterLayer(child.id);
+      _enterLayer(
+        child.id,
+        banner: isLayerPassiveOnly(child)
+            ? '${layerDisplayLabel(child)} archive opened. Its root pieces are static and inspectable.'
+            : null,
+      );
+      return;
+    }
+
+    final blockedLabel = childLayerCreationBlockedLabelForSlot(slotIndex);
+    if (blockedLabel != null) {
+      _showBanner(blockedLabel);
+      _notifyNow();
       return;
     }
 
@@ -1751,17 +1878,21 @@ extension LightcoreControllerLayerTraits on LightcoreController {
     final existingChildId = slot.childLayerId;
     if (existingChildId != null) {
       final child = _layerById(existingChildId);
-      if (isLayerPassiveOnly(child)) {
-        _showBanner(
-          '${layerDisplayLabel(child)} is locked as passive support for $activeLayerLabel.',
-        );
-        _notifyNow();
-        return true;
-      }
-      _enterLayer(child.id);
+      _enterLayer(
+        child.id,
+        banner: isLayerPassiveOnly(child)
+            ? '${layerDisplayLabel(child)} archive opened. Its root pieces are static and inspectable.'
+            : null,
+      );
       return true;
     }
-    if (slot.isBuilt || !childCoreAffinityChoices.contains(coreAffinity)) {
+    final blockedLabel = childLayerCreationBlockedLabelForSlot(slotIndex);
+    if (blockedLabel != null) {
+      _showBanner(blockedLabel);
+      _notifyNow();
+      return false;
+    }
+    if (!childCoreAffinityChoices.contains(coreAffinity)) {
       return false;
     }
 

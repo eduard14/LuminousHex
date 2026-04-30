@@ -12,6 +12,71 @@ void main() {
     expect(LightcoreCurrencyLabels.rewardBossScans(3), '+3 Apex Scans');
   });
 
+  test('manager shard labels match manager power currency naming', () {
+    expect(LightcoreCurrencyLabels.managerShardCount(1), '1 Manager Shard');
+    expect(LightcoreCurrencyLabels.managerShardCount(8), '8 Manager Shards');
+    expect(
+      LightcoreCurrencyLabels.rewardManagerShards(12),
+      '+12 Manager Shards',
+    );
+  });
+
+  test('daily dungeon rewards include manager shards', () {
+    final controller = LightcoreController();
+    addTearDown(controller.dispose);
+
+    final reward = controller.dailyDungeonRewardForLevel(6);
+    final quickReward = controller.dailyDungeonQuickClearRewardForLevel(6);
+
+    expect(reward.managerShards, greaterThan(0));
+    expect(quickReward.managerShards, greaterThan(0));
+    expect(quickReward.managerShards, lessThan(reward.managerShards));
+    expect(reward.label, contains('Manager Shards'));
+  });
+
+  test('bulk manager forging grants pack bonuses and a rarity floor', () {
+    final controller = LightcoreController();
+    addTearDown(controller.dispose);
+
+    controller.experience = LightcoreController.experienceForOverallLevel(
+      LightcoreController.managerUnlockLevel,
+    );
+    controller.flux = LightcoreController.towerManagerFluxCost * 10;
+
+    expect(controller.forgeTowerManagerBatch(10), isTrue);
+
+    expect(controller.cards, hasLength(10));
+    expect(controller.towerManagerPullCount, 10);
+    expect(controller.managerShards, 16);
+    expect(
+      controller.cards.fold<int>(
+        0,
+        (highest, card) =>
+            card.rarity.score > highest ? card.rarity.score : highest,
+      ),
+      greaterThanOrEqualTo(ManagerRarity.rare.score),
+    );
+  });
+
+  test('manager power upgrade spends shards and survives cloud restore', () {
+    final controller = LightcoreController();
+    addTearDown(controller.dispose);
+
+    controller.managerShards = controller.managerPowerUpgradeCost;
+    expect(controller.upgradeManagerPower(), isTrue);
+    expect(controller.managerPowerLevel, 1);
+    expect(controller.managerShards, 0);
+    expect(controller.managerPowerEffectMultiplier, closeTo(1.01, 0.0001));
+
+    final restored = LightcoreController.fromCloudSavePayload(
+      controller.buildCloudSavePayload(),
+    );
+    addTearDown(restored.dispose);
+
+    expect(restored.managerPowerLevel, 1);
+    expect(restored.managerPowerEffectMultiplier, closeTo(1.01, 0.0001));
+  });
+
   test('enemy level reward preview grows on an exponential lumen curve', () {
     final controller = LightcoreController();
     addTearDown(controller.dispose);

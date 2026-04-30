@@ -22,7 +22,6 @@ class _PrismRiftDungeonRunScreenState
   late final ValueNotifier<_PrismRiftRunSnapshot> _snapshotNotifier;
   late final _PrismRiftDungeonGame _game;
   bool _resultHandled = false;
-  int? _aimPointer;
 
   @override
   void initState() {
@@ -64,8 +63,6 @@ class _PrismRiftDungeonRunScreenState
               builder: (context, constraints) {
                 final compact =
                     constraints.maxWidth < 720 || constraints.maxHeight < 720;
-                final topSpace = compact ? 88.0 : 102.0;
-                final bottomSpace = compact ? 112.0 : 128.0;
                 return DecoratedBox(
                   decoration: const BoxDecoration(
                     gradient: LinearGradient(
@@ -81,42 +78,7 @@ class _PrismRiftDungeonRunScreenState
                   child: Stack(
                     children: [
                       Positioned.fill(
-                        top: topSpace,
-                        bottom: bottomSpace,
-                        child: Padding(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: compact ? 10 : 24,
-                          ),
-                          child: Center(
-                            child: ConstrainedBox(
-                              constraints: BoxConstraints(
-                                maxWidth: compact ? constraints.maxWidth : 820,
-                                maxHeight:
-                                    constraints.maxHeight -
-                                    topSpace -
-                                    bottomSpace,
-                              ),
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.circular(22),
-                                child: Stack(
-                                  fit: StackFit.expand,
-                                  children: [
-                                    GameWidget<_PrismRiftDungeonGame>(
-                                      game: _game,
-                                    ),
-                                    Listener(
-                                      behavior: HitTestBehavior.translucent,
-                                      onPointerDown: _handleAimPointerDown,
-                                      onPointerMove: _handleAimPointerMove,
-                                      onPointerUp: _handleAimPointerUp,
-                                      onPointerCancel: _handleAimPointerCancel,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
+                        child: GameWidget<_PrismRiftDungeonGame>(game: _game),
                       ),
                       Positioned(
                         top: compact ? 8 : 12,
@@ -141,6 +103,8 @@ class _PrismRiftDungeonRunScreenState
                           snapshot: snapshot,
                           compact: compact,
                           tint: _towerProfile.affinity.color,
+                          onAimChanged: _game.handleAimDirection,
+                          onFire: _game.fireManualShotFromAim,
                         ),
                       ),
                       if (!snapshot.running)
@@ -165,38 +129,6 @@ class _PrismRiftDungeonRunScreenState
         },
       ),
     );
-  }
-
-  void _handleAimPointerDown(PointerDownEvent event) {
-    if (_aimPointer != null ||
-        (event.buttons != 0 && (event.buttons & kPrimaryButton) == 0)) {
-      return;
-    }
-    _aimPointer = event.pointer;
-    _game.handleAimStart(event.localPosition);
-  }
-
-  void _handleAimPointerMove(PointerMoveEvent event) {
-    if (event.pointer != _aimPointer) {
-      return;
-    }
-    _game.handleAimUpdate(event.localPosition);
-  }
-
-  void _handleAimPointerUp(PointerUpEvent event) {
-    if (event.pointer != _aimPointer) {
-      return;
-    }
-    _game.handleAimEnd(event.localPosition);
-    _aimPointer = null;
-  }
-
-  void _handleAimPointerCancel(PointerCancelEvent event) {
-    if (event.pointer != _aimPointer) {
-      return;
-    }
-    _game.handleAimCancel();
-    _aimPointer = null;
   }
 
   void _exitRun() {
@@ -378,10 +310,10 @@ class _PrismRiftRunTopBar extends StatelessWidget {
           ),
           const SizedBox(width: 8),
           Tooltip(
-            message: 'Exit dungeon',
+            message: 'Back to dungeons',
             child: IconButton.filledTonal(
               onPressed: onExit,
-              icon: const Icon(Icons.close_rounded),
+              icon: const Icon(Icons.arrow_back_rounded),
             ),
           ),
         ],
@@ -395,17 +327,23 @@ class _PrismRiftStatusDock extends StatelessWidget {
     required this.snapshot,
     required this.compact,
     required this.tint,
+    required this.onAimChanged,
+    required this.onFire,
   });
 
   final _PrismRiftRunSnapshot snapshot;
   final bool compact;
   final Color tint;
+  final ValueChanged<Offset> onAimChanged;
+  final VoidCallback onFire;
 
   @override
   Widget build(BuildContext context) {
     final heatTint = snapshot.heat >= 0.72
         ? LightcorePalette.warning
         : LightcorePalette.solar;
+    final canFire =
+        snapshot.running && snapshot.charge >= 1 && snapshot.heat < 0.98;
     return AuroraPanel(
       tint: LightcorePalette.violet,
       radius: 20,
@@ -415,6 +353,14 @@ class _PrismRiftStatusDock extends StatelessWidget {
       ),
       child: LayoutBuilder(
         builder: (context, constraints) {
+          final aimControls = _PrismRiftAimControls(
+            enabled: snapshot.running,
+            canFire: canFire,
+            tint: tint,
+            compact: compact,
+            onAimChanged: onAimChanged,
+            onFire: onFire,
+          );
           final bars = Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -468,7 +414,13 @@ class _PrismRiftStatusDock extends StatelessWidget {
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
-              children: [chips, const SizedBox(height: 10), bars],
+              children: [
+                aimControls,
+                const SizedBox(height: 10),
+                chips,
+                const SizedBox(height: 10),
+                bars,
+              ],
             );
           }
           return Row(
@@ -476,9 +428,152 @@ class _PrismRiftStatusDock extends StatelessWidget {
               Expanded(child: chips),
               const SizedBox(width: 16),
               SizedBox(width: 260, child: bars),
+              const SizedBox(width: 16),
+              aimControls,
             ],
           );
         },
+      ),
+    );
+  }
+}
+
+class _PrismRiftAimControls extends StatelessWidget {
+  const _PrismRiftAimControls({
+    required this.enabled,
+    required this.canFire,
+    required this.tint,
+    required this.compact,
+    required this.onAimChanged,
+    required this.onFire,
+  });
+
+  final bool enabled;
+  final bool canFire;
+  final Color tint;
+  final bool compact;
+  final ValueChanged<Offset> onAimChanged;
+  final VoidCallback onFire;
+
+  @override
+  Widget build(BuildContext context) {
+    final padSize = compact ? 82.0 : 96.0;
+    final buttonSize = compact ? 66.0 : 76.0;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _PrismRiftAimPad(
+          enabled: enabled,
+          size: padSize,
+          tint: tint,
+          onAimChanged: onAimChanged,
+        ),
+        SizedBox(width: compact ? 10 : 14),
+        Tooltip(
+          message: canFire ? 'Fire rift shot' : 'Shot charging',
+          child: SizedBox.square(
+            dimension: buttonSize,
+            child: FilledButton(
+              style: FilledButton.styleFrom(
+                shape: const CircleBorder(),
+                padding: EdgeInsets.zero,
+                backgroundColor: canFire
+                    ? tint
+                    : LightcorePalette.stroke.withValues(alpha: 0.28),
+                foregroundColor: LightcorePalette.night,
+              ),
+              onPressed: canFire ? onFire : null,
+              child: Icon(
+                Icons.local_fire_department_rounded,
+                size: compact ? 28 : 32,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _PrismRiftAimPad extends StatefulWidget {
+  const _PrismRiftAimPad({
+    required this.enabled,
+    required this.size,
+    required this.tint,
+    required this.onAimChanged,
+  });
+
+  final bool enabled;
+  final double size;
+  final Color tint;
+  final ValueChanged<Offset> onAimChanged;
+
+  @override
+  State<_PrismRiftAimPad> createState() => _PrismRiftAimPadState();
+}
+
+class _PrismRiftAimPadState extends State<_PrismRiftAimPad> {
+  Offset _direction = const Offset(0, -1);
+
+  void _updateAim(Offset localPosition) {
+    if (!widget.enabled) {
+      return;
+    }
+    final center = Offset(widget.size / 2, widget.size / 2);
+    final delta = localPosition - center;
+    if (delta.distance <= 2) {
+      return;
+    }
+    final nextDirection = delta / delta.distance;
+    setState(() => _direction = nextDirection);
+    widget.onAimChanged(nextDirection);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final radius = widget.size / 2;
+    final knobSize = widget.size * 0.36;
+    final knobOffset = _direction * (radius - (knobSize * 0.72));
+    final activeTint = widget.enabled
+        ? widget.tint
+        : LightcorePalette.stroke.withValues(alpha: 0.72);
+    return Tooltip(
+      message: 'Aim',
+      child: GestureDetector(
+        onPanStart: (details) => _updateAim(details.localPosition),
+        onPanUpdate: (details) => _updateAim(details.localPosition),
+        onTapDown: (details) => _updateAim(details.localPosition),
+        child: SizedBox.square(
+          dimension: widget.size,
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: LightcorePalette.night.withValues(alpha: 0.72),
+              border: Border.all(color: activeTint.withValues(alpha: 0.54)),
+            ),
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                Icon(
+                  Icons.control_camera_rounded,
+                  color: activeTint.withValues(alpha: 0.32),
+                  size: widget.size * 0.42,
+                ),
+                Transform.translate(
+                  offset: knobOffset,
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: activeTint.withValues(alpha: 0.28),
+                      border: Border.all(color: activeTint),
+                    ),
+                    child: SizedBox.square(dimension: knobSize),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

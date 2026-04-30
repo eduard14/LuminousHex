@@ -463,9 +463,15 @@ extension LightcoreControllerProgressionLayers on LightcoreController {
     return 'Prism anchors $unlockedOuterSlotCount/$slotCount stable • Hex ${slotIndex + 1} opens at ${unlockExperienceForOuterSlot(slotIndex)} EXP.';
   }
 
-  String get promotionStatusLabel =>
-      '$builtTowerCount/$slotCount built • '
-      '$promotionReadyTowerCount/$slotCount ready for alignment';
+  String get promotionStatusLabel {
+    final base =
+        '$builtTowerCount/$slotCount built • '
+        '$promotionReadyTowerCount/$slotCount ready for alignment';
+    if (_requiresLayer3TrialGate && isPromotionReady) {
+      return '$base • $layer3TrialStatusLabel';
+    }
+    return base;
+  }
 
   String childShellProgressLabel(OuterTowerState tower) {
     final childLayerId = tower.childLayerId;
@@ -625,6 +631,143 @@ extension LightcoreControllerProgressionLayers on LightcoreController {
     return locked > 0 ? '$rolledLabel • $locked locked' : rolledLabel;
   }
 
+  bool _towerQualifiesForCompletedShell(OuterTowerState tower) =>
+      tower.config != null &&
+      !tower.isFabricating &&
+      tower.level >= maxTowerLevel;
+
+  String _liveCompletedShellId(String layerId, int slotIndex) =>
+      'live:$layerId:$slotIndex';
+
+  List<CompletedTowerShellState> _liveCompletedTowerShells() {
+    final entries = <CompletedTowerShellState>[];
+    for (final layer in _layers) {
+      if (layer.tier != 1) {
+        continue;
+      }
+      for (final tower in layer.slots) {
+        if (!_towerQualifiesForCompletedShell(tower)) {
+          continue;
+        }
+        entries.add(
+          CompletedTowerShellState(
+            id: _liveCompletedShellId(layer.id, tower.slotIndex),
+            sourceLayerId: layer.id,
+            sourceLayerLabel: layer.label,
+            sourceLayerTier: layer.tier,
+            sourceSlotIndex: tower.slotIndex,
+            savedAtMillis: 0,
+            tower: tower,
+            archived: false,
+          ),
+        );
+      }
+    }
+    return entries;
+  }
+
+  UnmodifiableListView<CompletedTowerShellState> get liveCompletedTowerShells =>
+      UnmodifiableListView(_liveCompletedTowerShells());
+
+  UnmodifiableListView<CompletedTowerShellState>
+  get completedTowerShellLibrary =>
+      UnmodifiableListView(<CompletedTowerShellState>[
+        ..._liveCompletedTowerShells(),
+        ..._completedTowerShells,
+      ]);
+
+  CompletedTowerShellState? completedTowerShellById(String id) {
+    for (final shell in completedTowerShellLibrary) {
+      if (shell.id == id) {
+        return shell;
+      }
+    }
+    return null;
+  }
+
+  bool saveCompletedShell(String shellId) {
+    if (!completedShellLibraryUnlocked) {
+      _showBanner('Completed shell storage unlocks at Layer 2.');
+      _notifyNow();
+      return false;
+    }
+    final shell = completedTowerShellById(shellId);
+    if (shell == null || shell.archived) {
+      return false;
+    }
+    final saved = CompletedTowerShellState(
+      id: 'shell_${_completedTowerShells.length}_${DateTime.now().microsecondsSinceEpoch}',
+      sourceLayerId: shell.sourceLayerId,
+      sourceLayerLabel: shell.sourceLayerLabel,
+      sourceLayerTier: shell.sourceLayerTier,
+      sourceSlotIndex: shell.sourceSlotIndex,
+      savedAtMillis: DateTime.now().millisecondsSinceEpoch,
+      tower: shell.tower
+          .copyForSlot(shell.sourceSlotIndex)
+          .copyWith(
+            charge: 0,
+            cooldownRemaining: 0,
+            automationCooldownRemaining: 0,
+            disruption: 0,
+            fireSequence: 0,
+            clearEquippedCard: true,
+          ),
+    );
+    _completedTowerShells.add(saved);
+    _showBanner('${towerDisplayName(shell.tower)} saved to completed shells.');
+    _notifyNow();
+    return true;
+  }
+
+  bool replaceCompletedShell({
+    required String archiveId,
+    required String targetId,
+  }) {
+    if (!completedShellLibraryUnlocked) {
+      _showBanner('Completed shell replacement unlocks at Layer 2.');
+      _notifyNow();
+      return false;
+    }
+    final archive = completedTowerShellById(archiveId);
+    final target = completedTowerShellById(targetId);
+    if (archive == null ||
+        target == null ||
+        !archive.archived ||
+        target.archived) {
+      return false;
+    }
+    final layer = _layerForId(target.sourceLayerId);
+    if (layer == null ||
+        target.sourceSlotIndex < 0 ||
+        target.sourceSlotIndex >= layer.slots.length) {
+      return false;
+    }
+
+    final replacement = archive.tower
+        .copyForSlot(target.sourceSlotIndex)
+        .copyWith(
+          charge: 0,
+          cooldownRemaining: 0,
+          automationCooldownRemaining: 0,
+          disruption: 0,
+          fireSequence: 0,
+          fabricationTotalSeconds: 0,
+          fabricationRemainingSeconds: 0,
+          clearEquippedCard: true,
+        );
+    layer.slots[target.sourceSlotIndex] = replacement;
+    if (layer.id == _activeLayerId) {
+      _slots[target.sourceSlotIndex] = replacement;
+    }
+    _syncParentSlotFromLayer(layer);
+    _updateFlowEfficiency();
+    _showBanner(
+      '${towerDisplayName(archive.tower)} replaced ${target.sourceLabel}.',
+    );
+    _notifyNow();
+    return true;
+  }
+
   String get flowSummary =>
       'Output Efficiency is the visible multiplier from hidden Core Stability. Effective Gain = Base Gain x Threat Reward x Output Efficiency.';
 
@@ -645,14 +788,38 @@ extension LightcoreControllerProgressionLayers on LightcoreController {
     return max(1, price.round());
   }
 
-  double towerFabricationDurationForConfig(TowerConfig config) =>
-      towerConstructionDurationSeconds;
+  double towerFabricationDurationForConfig(TowerConfig config) {
+    if (activeLayer.tier != 1) {
+      return towerConstructionDurationSeconds;
+    }
+    final rampIndex = builtRelayCount.clamp(0, slotCount - 1);
+    final rampProgress = slotCount <= 1 ? 1.0 : rampIndex / (slotCount - 1);
+    final duration =
+        towerConstructionDurationSeconds +
+        ((layer1ChildTowerMaxConstructionDurationSeconds -
+                towerConstructionDurationSeconds) *
+            rampProgress);
+    return min(layer1ChildTowerMaxConstructionDurationSeconds, duration);
+  }
 
   String towerFabricationDurationLabelForConfig(TowerConfig config) =>
-      '${towerFabricationDurationForConfig(config).ceil()}s';
+      _towerFabricationSecondsLabel(towerFabricationDurationForConfig(config));
 
   String towerFabricationRemainingLabel(OuterTowerState tower) =>
-      '${tower.fabricationRemainingSeconds.ceil()}s';
+      _towerFabricationSecondsLabel(tower.fabricationRemainingSeconds);
+
+  String _towerFabricationSecondsLabel(double seconds) {
+    final totalSeconds = seconds.ceil();
+    if (totalSeconds < 60) {
+      return '${totalSeconds}s';
+    }
+    final minutes = totalSeconds ~/ 60;
+    final remainingSeconds = totalSeconds % 60;
+    if (remainingSeconds == 0) {
+      return '${minutes}m';
+    }
+    return '${minutes}m ${remainingSeconds}s';
+  }
 
   String towerFabricationProgressLabel(OuterTowerState tower) {
     if (!tower.isFabricating) {
@@ -707,10 +874,11 @@ extension LightcoreControllerProgressionLayers on LightcoreController {
     return max(1, price.round());
   }
 
+  String childTowerUpgradeCostLabel(ChildTowerUpgradeState upgrade) =>
+      LightcoreCurrencyLabels.shellCoreCount(childTowerUpgradeCost(upgrade));
+
   InventoryCard? cardForSlot(OuterTowerState tower) {
-    if (tower.isChildLayerNode ||
-        !_slotCountsTowardRing(tower) ||
-        !managerAssignmentUnlocked) {
+    if (!_slotCountsTowardRing(tower) || !managerAssignmentUnlocked) {
       return null;
     }
     return _towerCoreManagerForLayer(activeLayer);
@@ -1024,6 +1192,128 @@ extension LightcoreControllerProgressionLayers on LightcoreController {
 
   bool isBossEnemyCardActive(String id) => _activeBossEnemyCardId == id;
 
+  bool debugSeedProgressionLayer(int targetLayer) {
+    if (!kDebugMode) {
+      return false;
+    }
+
+    final targetTier = targetLayer.clamp(1, maxShellTier).toInt();
+    debugDisableTutorial();
+    debugCompleteBossAndEquipmentTutorial();
+    _debugGrantLayerJumpResources(targetTier);
+
+    while (activeLayer.tier < targetTier) {
+      _debugPrepareActiveLayerForPromotion();
+      if (_requiresLayer3TrialGate) {
+        debugCompleteLayer3Trial();
+      }
+
+      final previousLayerId = activeLayer.id;
+      final previousTier = activeLayer.tier;
+      unlockLayer2Tower();
+      if (activeLayer.id == previousLayerId ||
+          activeLayer.tier <= previousTier) {
+        return false;
+      }
+    }
+
+    _debugGrantLayerJumpResources(targetTier);
+    _enemies.clear();
+    _pulses.clear();
+    _shots.clear();
+    _impacts.clear();
+    _ammoQueue.clear();
+    _outerRingRevealed = true;
+    _swarmActivated = true;
+    _core = _core.copyWith(flowEfficiency: _maxFlowEfficiency);
+    activeLayer.layer3TrialActive = false;
+    activeLayer.layer3TrialSpawnIndex = 0;
+    _storeActiveLayer();
+    _showBanner(
+      'Dev layer jump: ${layerDisplayLabel(activeLayer)} ready for testing.',
+      duration: 4.0,
+    );
+    _notifyNow();
+    return true;
+  }
+
+  void _debugGrantLayerJumpResources(int targetTier) {
+    final levelTarget = max(
+      managerUnlockLevel,
+      max(dailyDungeonUnlockLevel, bossUnlockLevel + (targetTier * 5)),
+    );
+    kills = max(kills, killsForOverallLevel(levelTarget));
+    experience = max(experience, experienceForOverallLevel(levelTarget));
+    lumens = max(lumens, 10000000 * targetTier);
+    flux = max(flux, 50000 * targetTier);
+    prismShards = max(prismShards, 5000 * targetTier);
+    managerShards = max(managerShards, 5000 * targetTier);
+    shellCores = max(shellCores, 50000 * targetTier);
+    enemyTickets = max(enemyTickets, 100 * targetTier);
+    bossTickets = max(bossTickets, 40 * targetTier);
+    bossCores = max(bossCores, 40 * targetTier);
+  }
+
+  void _debugPrepareActiveLayerForPromotion() {
+    final finalSlotExperience = unlockExperienceForOuterSlot(slotCount - 1);
+    kills = max(kills, finalSlotExperience);
+    experience = max(experience, finalSlotExperience);
+    lumens = max(lumens, 10000000 * activeLayer.tier);
+    _enemies.clear();
+    _pulses.clear();
+    _shots.clear();
+    _impacts.clear();
+    _ammoQueue.clear();
+    _outerRingRevealed = true;
+    _swarmActivated = true;
+    activeLayer.layer3TrialActive = false;
+    activeLayer.layer3TrialSpawnIndex = 0;
+    _core = _core.copyWith(
+      flowEfficiency: _maxFlowEfficiency,
+      fireCooldownRemaining: 0,
+    );
+
+    for (var index = 0; index < slotCount; index += 1) {
+      final current = _slots[index];
+      if (current.isPromotedChildTower) {
+        _slots[index] = current.copyWith(
+          charge: 0,
+          cooldownRemaining: 0,
+          automationCooldownRemaining: 0,
+          disruption: 0,
+        );
+        continue;
+      }
+
+      final config =
+          current.config ?? TowerLibrary.all[index % TowerLibrary.all.length];
+      final rolled = current.config == null
+          ? _buildRolledTowerState(
+              slotIndex: index,
+              config: config,
+              investedLumens: config.buildCost,
+            )
+          : current;
+      _slots[index] = rolled.copyWith(
+        level: maxTowerLevel,
+        charge: 0,
+        cooldownRemaining: 0,
+        automationCooldownRemaining: 0,
+        disruption: 0,
+        fabricationTotalSeconds: 0,
+        fabricationRemainingSeconds: 0,
+        towerUpgradeOptions: rolled.towerUpgradeOptions
+            .map((upgrade) => upgrade.copyWith(rank: maxTowerUpgradeRank))
+            .toList(growable: false),
+      );
+    }
+
+    selectedSlotIndex = null;
+    _towerRangePreviewSlotIndex = null;
+    _updateFlowEfficiency();
+    _storeActiveLayer();
+  }
+
   @visibleForTesting
   void debugAddBossTickets(int count) {
     if (!kDebugMode || count <= 0) {
@@ -1095,6 +1385,7 @@ extension LightcoreControllerProgressionLayers on LightcoreController {
     _tutorialFirstManagersOpened = true;
     _tutorialFirstEnemyTargetSet = true;
     _tutorialEnemyCountAdjusted = true;
+    _tutorialFirstTowerStatsOpened = true;
     _tutorialStabilityPanelOpened = false;
     _tutorialTowerMatrixOpened = true;
     _tutorialStoreOpened = true;
@@ -1111,6 +1402,12 @@ extension LightcoreControllerProgressionLayers on LightcoreController {
     _tutorialSafeScanDefeats = 5;
     _tutorialAutoQueuedPulses = 0;
     _tutorialTrackedBossEnemyId = null;
+    if (_activeBossEnemyCardId == BossEnemyLibrary.starterWhiteWarden.id &&
+        activeLayer.bossReady &&
+        totalBossesDefeated == 0) {
+      activeLayer.bossReady = false;
+      activeLayer.normalKillsSinceBoss = 0;
+    }
     _tutorialPulseTarget = null;
     _tutorialPulseSignal = 0;
     _rewardedTutorialSteps
@@ -1193,6 +1490,33 @@ extension LightcoreControllerProgressionLayers on LightcoreController {
   }
 
   @visibleForTesting
+  bool debugCompleteLayer3Trial() {
+    if (!kDebugMode || !_requiresLayer3TrialGate) {
+      return false;
+    }
+    _enemies.clear();
+    _pulses.clear();
+    _shots.clear();
+    _impacts.clear();
+    _ammoQueue.clear();
+    activeLayer.layer3TrialActive = true;
+    activeLayer.layer3TrialSpawnIndex = _layer3TrialPlan().length;
+    _completeLayer3Trial();
+    _notifyNow();
+    return true;
+  }
+
+  @visibleForTesting
+  List<EnemyConfig> debugLayer3TrialPlanConfigs() {
+    if (!kDebugMode) {
+      return const <EnemyConfig>[];
+    }
+    return _layer3TrialPlan()
+        .map((spawn) => spawn.config)
+        .toList(growable: false);
+  }
+
+  @visibleForTesting
   void debugSetAmmoQueue(List<AmmoPacket> packets) {
     if (!kDebugMode) {
       return;
@@ -1257,6 +1581,7 @@ extension LightcoreControllerProgressionLayers on LightcoreController {
     }
     _tutorialEarlyQuestChainCompleted = true;
     _tutorialSafeScanDefeats = 5;
+    _tutorialFirstTowerStatsOpened = true;
     _tutorialStabilityPanelOpened = false;
     _tutorialAutoQueuedPulses = 0;
     _syncTutorialStep(showBanner: false);

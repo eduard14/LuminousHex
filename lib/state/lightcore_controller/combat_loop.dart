@@ -16,6 +16,16 @@ extension LightcoreControllerCombatLoop on LightcoreController {
     final previousBannerSuppression = _suppressRuntimeBanners;
     _suppressRuntimeBanners = previousBannerSuppression || !foreground;
     try {
+      if (activeLayerPassiveOnly) {
+        return (
+          busy:
+              _enemies.isNotEmpty ||
+              _pulses.isNotEmpty ||
+              _shots.isNotEmpty ||
+              _impacts.isNotEmpty,
+          fabricationAdvanced: false,
+        );
+      }
       if (foreground) {
         _prepareLocalhostAutoTapper();
       }
@@ -36,7 +46,9 @@ extension LightcoreControllerCombatLoop on LightcoreController {
         );
       }
 
-      if (_swarmActivated) {
+      if (activeLayer.layer3TrialActive) {
+        _advanceLayer3Trial(battleDt);
+      } else if (_swarmActivated) {
         _spawnTimer -= battleDt;
         while (_spawnTimer <= 0) {
           if (_enemies.length >= enemyTargetCount) {
@@ -148,7 +160,7 @@ extension LightcoreControllerCombatLoop on LightcoreController {
     }
 
     var automationCooldown = max(0.0, _core.automationCooldownRemaining - dt);
-    if (automationCooldown > 0 || _enemies.isEmpty) {
+    if (automationCooldown > 0) {
       _core = _core.copyWith(automationCooldownRemaining: automationCooldown);
       return;
     }
@@ -164,12 +176,14 @@ extension LightcoreControllerCombatLoop on LightcoreController {
     _core = _core.copyWith(automationCooldownRemaining: automationInterval);
   }
 
-  double get _spawnInterval {
+  double get _spawnInterval => _spawnIntervalForDeck(activeEnemyDeck);
+
+  double _spawnIntervalForDeck(List<EnemyCardState> deck) {
     final pressure = min(1.0, elapsed / 115);
     final ringBoost = builtTowerCount * 0.018;
     final tierBoost = (activeLayer.tier - 1) * 0.09;
     final layer2Boost = _layer2.unlocked ? 0.08 : 0;
-    final managerBoost = _enemySpawnPressureMultiplier();
+    final managerBoost = _enemySpawnPressureMultiplier(deck: deck);
     final targetSpan = enemyTargetMax - minEnemyTarget;
     final targetPressure = targetSpan <= 0
         ? 1.0
@@ -228,6 +242,7 @@ extension LightcoreControllerCombatLoop on LightcoreController {
         }
         _showBanner(
           '${towerDisplayName(tower)} fabrication complete on hex ${index + 1}.',
+          category: LightcoreNotificationCategory.battle,
         );
         _syncTutorialStep(showBanner: false);
       }
@@ -379,8 +394,8 @@ extension LightcoreControllerCombatLoop on LightcoreController {
       EnergyPulseState(
         id: 'pulse_${_pulseCounter++}',
         sourceSlotIndex: tower.slotIndex,
-        affinity: _slotAffinity(tower),
-        secondaryAffinity: _slotSecondaryAffinity(tower),
+        affinity: _slotAffinityForProjectile(tower, projectileType),
+        secondaryAffinity: _slotSecondaryAffinityForPayload(tower, payloadType),
         power: towerPower(tower),
         advantageMultiplier: towerAdvantageMultiplier(tower),
         projectileType: projectileType,
@@ -498,7 +513,7 @@ extension LightcoreControllerCombatLoop on LightcoreController {
     if (_activeLayerId != viewedLayerId) {
       _loadLayer(_layerById(viewedLayerId));
     }
-    _runtimeLayerId = viewedLayerId;
+    _runtimeLayerId = _liveLayerForLayer(_layerById(viewedLayerId)).id;
 
     final resourcesChanged =
         lumens != startingLumens ||

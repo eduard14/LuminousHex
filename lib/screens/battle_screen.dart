@@ -9,6 +9,7 @@ import '../battle/lightcore_battle_game.dart';
 import '../battle/shell_promotion_presentation.dart';
 import '../models/lightcore_config.dart';
 import '../models/lightcore_state.dart';
+import '../models/lightcore_types.dart';
 import '../state/lightcore_controller.dart';
 import '../theme/lightcore_palette.dart';
 import '../widgets/aurora_panel.dart';
@@ -16,6 +17,7 @@ import '../widgets/guided_focus_frame.dart';
 import '../widgets/lightcore_quest_card.dart';
 import '../widgets/meter_bar.dart';
 import '../widgets/radiance_stat_allocator.dart';
+import '../widgets/symbol_grid_tile.dart';
 import '../widgets/tower_level_hex_badge.dart';
 import '../widgets/tower_ring_icon.dart';
 import 'tower_detail_screen.dart';
@@ -60,6 +62,9 @@ void _showChildCoreAffinityPicker(
     backgroundColor: Colors.transparent,
     builder: (sheetContext) {
       final textTheme = Theme.of(sheetContext).textTheme;
+      final blockedLabel = controller.childLayerCreationBlockedLabelForSlot(
+        slotIndex,
+      );
       return SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(16),
@@ -70,6 +75,10 @@ void _showChildCoreAffinityPicker(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text('Core Color', style: textTheme.titleLarge),
+                if (blockedLabel != null) ...[
+                  const SizedBox(height: 6),
+                  Text(blockedLabel, style: textTheme.bodyMedium),
+                ],
                 const SizedBox(height: 12),
                 Wrap(
                   spacing: 10,
@@ -78,12 +87,17 @@ void _showChildCoreAffinityPicker(
                     for (final affinity
                         in LightcoreController.childCoreAffinityChoices)
                       FilledButton.icon(
-                        onPressed: () {
-                          Navigator.of(sheetContext).pop();
-                          controller.createChildLayer(slotIndex, affinity);
-                        },
+                        onPressed: blockedLabel == null
+                            ? () {
+                                Navigator.of(sheetContext).pop();
+                                controller.createChildLayer(
+                                  slotIndex,
+                                  affinity,
+                                );
+                              }
+                            : null,
                         icon: Icon(
-                          Icons.hexagon_rounded,
+                          affinityIconFor(affinity),
                           color: affinity.color,
                         ),
                         label: Text(controller.childCoreChoiceLabel(affinity)),
@@ -469,9 +483,16 @@ class _BattleScreenState extends State<BattleScreen> {
         !slot.isFabricating &&
         !slot.isLayerProject;
     controller.handleBattleSlotTap(slotIndex);
+    final statsTarget = canOpenStats
+        ? _BattleStatsTarget.slot(slotIndex)
+        : null;
+    if (statsTarget != null) {
+      _completeTowerStatsTutorialFor(statsTarget);
+    }
     setState(() {
-      _statsTarget = canOpenStats ? _BattleStatsTarget.slot(slotIndex) : null;
+      _statsTarget = statsTarget;
       _panelFocus = _BattlePanelFocus.none;
+      _selectionControlsVisible = true;
     });
   }
 
@@ -576,9 +597,29 @@ class _BattleScreenState extends State<BattleScreen> {
     }
   }
 
+  bool _completeTowerStatsTutorialFor(_BattleStatsTarget target) {
+    if (target.kind != _BattleStatsTargetKind.slot) {
+      return false;
+    }
+    final slotIndex = target.slotIndex;
+    if (slotIndex == null ||
+        !widget.controller.tutorialHighlightsTowerStatsButton(slotIndex)) {
+      return false;
+    }
+    widget.controller.markTutorialFirstTowerStatsOpened();
+    return true;
+  }
+
   void _toggleSelectionControlsFor(_BattleStatsTarget target) {
     if (!_isStatsTargetOpen(target)) {
       _openStatsTarget(target);
+      _completeTowerStatsTutorialFor(target);
+      return;
+    }
+    if (_completeTowerStatsTutorialFor(target)) {
+      setState(() {
+        _selectionControlsVisible = true;
+      });
       return;
     }
     setState(() {
@@ -705,7 +746,30 @@ class _BattleScreenState extends State<BattleScreen> {
       case _BattleStatsTargetKind.slot:
         final slotIndex = target.slotIndex;
         return slotIndex != null &&
-            controller.tutorialHighlightsUpgradeButton(slotIndex);
+            (controller.tutorialHighlightsUpgradeButton(slotIndex) ||
+                controller.tutorialHighlightsTowerStatsButton(slotIndex));
+    }
+  }
+
+  String? _selectionButtonTapCueLabel(
+    LightcoreController controller,
+    _BattleStatsTarget target,
+  ) {
+    switch (target.kind) {
+      case _BattleStatsTargetKind.core:
+        return null;
+      case _BattleStatsTargetKind.slot:
+        final slotIndex = target.slotIndex;
+        if (slotIndex == null) {
+          return null;
+        }
+        if (controller.tutorialHighlightsTowerStatsButton(slotIndex)) {
+          return 'Open stats';
+        }
+        if (controller.tutorialHighlightsUpgradeButton(slotIndex)) {
+          return 'Open upgrades';
+        }
+        return null;
     }
   }
 
@@ -807,6 +871,7 @@ class _BattleScreenState extends State<BattleScreen> {
       icon: icon,
       selected: targetOpen && _selectionControlsVisible,
       highlighted: _selectionButtonHighlighted(controller, target),
+      tapCueLabel: _selectionButtonTapCueLabel(controller, target),
       onPressed: () => _toggleSelectionControlsFor(target),
     );
   }
@@ -821,7 +886,11 @@ class _BattleScreenState extends State<BattleScreen> {
       return null;
     }
 
-    return LightcoreQuestCard(controller: controller, compact: compact);
+    return LightcoreQuestCard(
+      controller: controller,
+      compact: compact,
+      initiallyExpanded: true,
+    );
   }
 
   Widget _buildBattleLayout({
@@ -1411,6 +1480,8 @@ class _TowerStatsPanel extends StatelessWidget {
                     ? null
                     : tower.isChildLayerNode
                     ? () => controller.enterChildLayer(tower.slotIndex)
+                    : controller.activeLayerPassiveOnly
+                    ? null
                     : tower.level < LightcoreController.maxTowerLevel
                     ? controller.tutorialUpgradeSelectedTower
                     : null,
@@ -1419,7 +1490,7 @@ class _TowerStatsPanel extends StatelessWidget {
                       ? 'Fabricating ${controller.towerFabricationRemainingLabel(tower)}'
                       : tower.isChildLayerNode
                       ? tower.isPromotedChildTower
-                            ? 'Enter Layer'
+                            ? 'Open Archive'
                             : controller.isSlotPromotionReady(tower)
                             ? 'Inner Shell Ready'
                             : 'Open Shell'
@@ -1431,6 +1502,15 @@ class _TowerStatsPanel extends StatelessWidget {
                 ),
               ),
             ),
+            if (tower.isPromotedChildTower)
+              OutlinedButton(
+                onPressed: controller.canRerollPromotedChildTower(tower)
+                    ? () => controller.rerollPromotedChildTower(tower.slotIndex)
+                    : null,
+                child: Text(
+                  'Reroll • ${controller.promotedChildTowerRerollLabel(tower)}',
+                ),
+              ),
             if ((onInspect != null || tower.isChildLayerNode) &&
                 manager == null)
               OutlinedButton(
@@ -1444,17 +1524,43 @@ class _TowerStatsPanel extends StatelessWidget {
                 ),
               ),
             if (!tower.isChildLayerNode && onInspect != null)
-              OutlinedButton(
-                onPressed: onInspect,
-                child: const Text('Inspect Tower'),
-              ),
+              OutlinedButton(onPressed: onInspect, child: const Text('Stats')),
             if (!tower.isChildLayerNode)
               OutlinedButton(
-                onPressed: () => controller.sellTower(tower.slotIndex),
+                onPressed: controller.activeLayerPassiveOnly
+                    ? null
+                    : () => controller.sellTower(tower.slotIndex),
                 child: Text('Sell ${(tower.investedLumens * 0.7).round()}L'),
               ),
           ],
         ),
+        if (!tower.isChildLayerNode) ...[
+          const SizedBox(height: 16),
+          Text(
+            'Live Projectile Target',
+            style: textTheme.titleSmall?.copyWith(
+              color: LightcorePalette.mist.withValues(alpha: 0.8),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (final priority in TargetPriority.values)
+                ChoiceChip(
+                  label: Text(priority.label),
+                  selected: controller.towerTargetPriority(tower) == priority,
+                  onSelected: controller.activeLayerPassiveOnly
+                      ? null
+                      : (_) => controller.setTowerTargetPriority(
+                          tower.slotIndex,
+                          priority,
+                        ),
+                ),
+            ],
+          ),
+        ],
         const SizedBox(height: 16),
         Text(
           tower.isChildLayerNode ? 'Shell Stats' : 'Tower Stats',
@@ -1478,6 +1584,9 @@ class _EmptySlotPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
+    final childLayerBlockedLabel = controller.isCompositeLayer
+        ? controller.childLayerCreationBlockedLabelForSlot(slot.slotIndex)
+        : null;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1492,16 +1601,27 @@ class _EmptySlotPanel extends StatelessWidget {
         ),
         const SizedBox(height: 14),
         controller.isCompositeLayer
-            ? FilledButton.icon(
-                onPressed: () => _showChildCoreAffinityPicker(
-                  context,
-                  controller,
-                  slot.slotIndex,
-                ),
-                icon: const TowerRingIcon(),
-                label: Text(
-                  'Create Layer ${controller.activeLayer.tier - 1} Shell',
-                ),
+            ? Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  FilledButton.icon(
+                    onPressed: childLayerBlockedLabel == null
+                        ? () => _showChildCoreAffinityPicker(
+                            context,
+                            controller,
+                            slot.slotIndex,
+                          )
+                        : null,
+                    icon: const TowerRingIcon(),
+                    label: Text(
+                      'Create Layer ${controller.activeLayer.tier - 1} Shell',
+                    ),
+                  ),
+                  if (childLayerBlockedLabel != null) ...[
+                    const SizedBox(height: 8),
+                    Text(childLayerBlockedLabel, style: textTheme.bodyMedium),
+                  ],
+                ],
               )
             : Wrap(
                 spacing: 10,
@@ -1540,6 +1660,7 @@ class _BattleSelectionHud extends StatelessWidget {
     required this.icon,
     required this.selected,
     required this.highlighted,
+    required this.tapCueLabel,
     required this.onPressed,
   });
 
@@ -1548,6 +1669,7 @@ class _BattleSelectionHud extends StatelessWidget {
   final IconData icon;
   final bool selected;
   final bool highlighted;
+  final String? tapCueLabel;
   final VoidCallback onPressed;
 
   @override
@@ -1558,6 +1680,7 @@ class _BattleSelectionHud extends StatelessWidget {
         active: highlighted,
         tint: LightcorePalette.quest,
         label: 'TUNE',
+        tapCueLabel: tapCueLabel,
         child: Semantics(
           button: true,
           toggled: selected,

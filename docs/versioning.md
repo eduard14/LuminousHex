@@ -6,7 +6,7 @@ LumiHex uses the Flutter version string format:
 <release version>+<build number>
 ```
 
-For example, `1.0.16+17` means release version `1.0.16` and build number `17`.
+For example, `1.0.17+18` means release version `1.0.17` and build number `18`.
 The release version is compared semantically. The build number is compared only
 when the release versions are equal.
 
@@ -15,7 +15,7 @@ when the release versions are equal.
 When incrementing the app version, update these source files together:
 
 - `pubspec.yaml`
-  - `version: 1.0.16+17`
+  - `version: 1.0.17+18`
 - `lib/app/lightcore_build_info.dart`
   - `LightcoreBuildInfo.versionName`
   - `LightcoreBuildInfo.buildNumber`
@@ -48,16 +48,16 @@ Set minimum and recommended to the same version/build when the latest build is
 mandatory:
 
 ```js
-minimumSupportedVersion: "1.0.16",
-minimumSupportedBuildNumber: "17",
-recommendedVersion: "1.0.16",
-recommendedBuildNumber: "17",
+minimumSupportedVersion: "1.0.17",
+minimumSupportedBuildNumber: "18",
+recommendedVersion: "1.0.17",
+recommendedBuildNumber: "18",
 ```
 
 ## Menu Display
 
 The main menu footer renders `LightcoreBootstrapReport.clientDisplayVersion`,
-so it should show the full client build, such as `V1.0.16+17`.
+so it should show the full client build, such as `V1.0.17+18`.
 
 Version-blocked notices render `LightcoreBootstrapReport.requiredServerVersion`,
 which includes the recommended build number when one is configured.

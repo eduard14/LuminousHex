@@ -67,6 +67,53 @@ extension LightcoreControllerTowerMath on LightcoreController {
     return <PayloadType>[tower.childPayloadType ?? PayloadType.none];
   }
 
+  bool _loadoutContainsAll<T>(List<T> loadout, List<T> requiredTypes) =>
+      requiredTypes.every(loadout.contains);
+
+  bool _isRainbowTraitLoadout({
+    required List<ProjectileType> projectileLoadout,
+    required List<PayloadType> payloadLoadout,
+  }) =>
+      _loadoutContainsAll(projectileLoadout, layer2RainbowProjectileLoadout) &&
+      _loadoutContainsAll(payloadLoadout, layer2RainbowPayloadLoadout);
+
+  bool _towerHasRainbowLoadout(OuterTowerState tower) => _isRainbowTraitLoadout(
+    projectileLoadout: _slotProjectileLoadout(tower),
+    payloadLoadout: _slotPayloadLoadout(tower),
+  );
+
+  bool get _coreHasRainbowLoadout => _isRainbowTraitLoadout(
+    projectileLoadout: _coreProjectileLoadout,
+    payloadLoadout: _corePayloadLoadout,
+  );
+
+  PrototypeAffinity _slotAffinityForProjectile(
+    OuterTowerState tower,
+    ProjectileType projectileType,
+  ) {
+    final baseAffinity = _slotAffinity(tower);
+    return _slotProjectileLoadout(
+          tower,
+        ).any((type) => type.affinity != baseAffinity)
+        ? projectileType.affinity
+        : baseAffinity;
+  }
+
+  PrototypeAffinity? _slotSecondaryAffinityForPayload(
+    OuterTowerState tower,
+    PayloadType payloadType,
+  ) {
+    final baseAffinity = _slotSecondaryAffinity(tower);
+    if (payloadType == PayloadType.none) {
+      return baseAffinity;
+    }
+    return _slotPayloadLoadout(
+          tower,
+        ).any((type) => type.affinity != null && type.affinity != baseAffinity)
+        ? payloadType.affinity ?? baseAffinity
+        : baseAffinity;
+  }
+
   PayloadType _slotPayloadType(OuterTowerState tower) {
     return _loadoutEntryAt(
       _slotPayloadLoadout(tower),
@@ -105,6 +152,24 @@ extension LightcoreControllerTowerMath on LightcoreController {
     _core.fireSequence,
     _core.payloadType,
   );
+
+  PrototypeAffinity _coreAffinityForProjectile(ProjectileType projectileType) {
+    return _coreProjectileLoadout.any((type) => type.affinity != _core.affinity)
+        ? projectileType.affinity
+        : _core.affinity;
+  }
+
+  PrototypeAffinity? _coreSecondaryAffinityForPayload(PayloadType payloadType) {
+    if (payloadType == PayloadType.none) {
+      return _core.secondaryAffinity;
+    }
+    return _corePayloadLoadout.any(
+          (type) =>
+              type.affinity != null && type.affinity != _core.secondaryAffinity,
+        )
+        ? payloadType.affinity ?? _core.secondaryAffinity
+        : _core.secondaryAffinity;
+  }
 
   double _slotCoreCooldownMultiplier(OuterTowerState tower) {
     if (tower.config != null) {
@@ -148,6 +213,16 @@ extension LightcoreControllerTowerMath on LightcoreController {
       );
     }
     return 1 + (((tower.childLayerTier ?? 1) - 1) * 0.12);
+  }
+
+  double _promotedChildTowerPowerBoost(OuterTowerState tower) {
+    final tier = tower.childLayerTier ?? 1;
+    if (tier < payloadUnlockLayer) {
+      return 1;
+    }
+    return LightcoreController._promotedChildTowerPowerMultiplier +
+        ((tier - payloadUnlockLayer) *
+            LightcoreController._promotedChildTowerPowerTierStep);
   }
 
   int _rollFluxDropForEnemy(EnemyState enemy) {
@@ -275,10 +350,18 @@ extension LightcoreControllerTowerMath on LightcoreController {
       final childLevel = tower.childCoreLevel ?? 1;
       final childTier = tower.childLayerTier ?? 1;
       final base = 9 + (childLevel * 2.4) + ((childTier - 1) * 4.5);
+      final manager = cardForSlot(tower);
+      final cardMultiplier = manager == null
+          ? 1.0
+          : managerPowerAdjustedMultiplier(manager.powerMultiplier);
+      final affinityBonus = _towerManagerAffinityBonus(tower, manager);
       return base *
           _towerDamageOutputMultiplier *
+          _promotedChildTowerPowerBoost(tower) *
           _childTowerPowerMultiplier(tower.childPowerUpgradeBonus) *
           (tower.powerFactor.clamp(0.84, 1.22)) *
+          cardMultiplier *
+          affinityBonus *
           friendAllianceCombatMultiplier *
           _gearPowerMultiplier *
           (1 + combatBonus.power);
@@ -287,7 +370,9 @@ extension LightcoreControllerTowerMath on LightcoreController {
       _towerUpgradeBonusFor(tower, TowerUpgradeStatType.power),
     );
     final manager = cardForSlot(tower);
-    final cardMultiplier = manager?.powerMultiplier ?? 1;
+    final cardMultiplier = manager == null
+        ? 1.0
+        : managerPowerAdjustedMultiplier(manager.powerMultiplier);
     final affinityBonus = _towerManagerAffinityBonus(tower, manager);
     return _balancedTowerStat(
           tower.config!,
@@ -316,9 +401,16 @@ extension LightcoreControllerTowerMath on LightcoreController {
     if (tower.isChildLayerNode) {
       final childLevel = tower.childCoreLevel ?? 1;
       final childTier = tower.childLayerTier ?? 1;
+      final manager = cardForSlot(tower);
+      final cardMultiplier = manager == null
+          ? 1.0
+          : managerPowerAdjustedMultiplier(manager.chargeMultiplier);
+      final traitBonus = _towerManagerTraitBonus(tower, manager);
       return (0.38 + (childLevel * 0.04) + ((childTier - 1) * 0.06)) *
           tower.chargeFactor *
           _childTowerChargeMultiplier(tower.childChargeUpgradeBonus) *
+          cardMultiplier *
+          traitBonus *
           _gearChargeMultiplier *
           (1 + combatBonus.chargeRate);
     }
@@ -326,7 +418,9 @@ extension LightcoreControllerTowerMath on LightcoreController {
       _towerUpgradeBonusFor(tower, TowerUpgradeStatType.chargeRate),
     );
     final manager = cardForSlot(tower);
-    final cardMultiplier = manager?.chargeMultiplier ?? 1;
+    final cardMultiplier = manager == null
+        ? 1.0
+        : managerPowerAdjustedMultiplier(manager.chargeMultiplier);
     final traitBonus = _towerManagerTraitBonus(tower, manager);
     return _balancedTowerStat(
           tower.config!,
@@ -362,19 +456,27 @@ extension LightcoreControllerTowerMath on LightcoreController {
       final childTier = tower.childLayerTier ?? 1;
       final childLevel = tower.childCoreLevel ?? 1;
       final levelMultiplier = max(0.72, 1 - ((childLevel - 1) * 0.035));
+      final manager = cardForSlot(tower);
+      final cardMultiplier = manager == null
+          ? 1.0
+          : managerPowerAdjustedCooldown(manager.cooldownMultiplier);
       return max(
         0.48,
         max(0.6, 1.38 - ((childTier - 1) * 0.08)) *
             tower.cooldownFactor *
             levelMultiplier *
             _childTowerCooldownMultiplier(tower.childCooldownUpgradeBonus) *
+            cardMultiplier *
             patternCooldownMultiplier,
       );
     }
     final cooldownUpgradeMultiplier = _towerCooldownUpgradeMultiplier(
       _towerUpgradeBonusFor(tower, TowerUpgradeStatType.cooldown),
     );
-    final cardMultiplier = cardForSlot(tower)?.cooldownMultiplier ?? 1;
+    final manager = cardForSlot(tower);
+    final cardMultiplier = manager == null
+        ? 1.0
+        : managerPowerAdjustedCooldown(manager.cooldownMultiplier);
     return max(
       0.35,
       _balancedTowerStat(
@@ -399,12 +501,13 @@ extension LightcoreControllerTowerMath on LightcoreController {
   }
 
   double? towerAutomationRate(OuterTowerState tower) {
-    if (!_slotCountsTowardRing(tower) ||
-        tower.isChildLayerNode ||
-        towerUsesPersistentShieldRing(tower)) {
+    if (!_slotCountsTowardRing(tower) || towerUsesPersistentShieldRing(tower)) {
       return null;
     }
-    return cardForSlot(tower)?.automationRate;
+    final manager = cardForSlot(tower);
+    return manager == null
+        ? null
+        : managerPowerAdjustedRate(manager.automationRate);
   }
 
   double? towerAutomationInterval(OuterTowerState tower) {
@@ -419,7 +522,10 @@ extension LightcoreControllerTowerMath on LightcoreController {
     if (!managerAssignmentUnlocked) {
       return null;
     }
-    final rate = _towerCoreManagerForLayer(activeLayer)?.automationRate;
+    final manager = _towerCoreManagerForLayer(activeLayer);
+    final rate = manager == null
+        ? null
+        : managerPowerAdjustedRate(manager.automationRate);
     if (rate == null || rate <= 0) {
       return null;
     }
@@ -595,6 +701,9 @@ extension LightcoreControllerTowerMath on LightcoreController {
   }
 
   bool canManuallyActivateTower(OuterTowerState tower) {
+    if (activeLayerPassiveOnly) {
+      return false;
+    }
     if (cardForSlot(tower) != null) {
       return false;
     }
@@ -614,12 +723,14 @@ extension LightcoreControllerTowerMath on LightcoreController {
   }
 
   double towerAdvantageMultiplier(OuterTowerState tower) {
-    if (tower.isChildLayerNode) {
-      return 1 + (((tower.childLayerTier ?? 1) - 1) * 0.08);
-    }
     final manager = cardForSlot(tower);
-    final base = manager?.advantageMultiplier ?? 1;
-    return base * _towerManagerTraitBonus(tower, manager);
+    final base = manager == null
+        ? 1.0
+        : managerPowerAdjustedMultiplier(manager.advantageMultiplier);
+    final promotedBonus = tower.isChildLayerNode
+        ? 1 + (((tower.childLayerTier ?? 1) - 1) * 0.08)
+        : 1.0;
+    return base * promotedBonus * _towerManagerTraitBonus(tower, manager);
   }
 
   double towerDisruptionFraction(OuterTowerState tower) {

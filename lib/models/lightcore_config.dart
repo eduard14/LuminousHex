@@ -124,6 +124,7 @@ class CardConfig {
     required this.id,
     required this.name,
     required this.summary,
+    required this.flavorBio,
     required this.roleLabel,
     required this.powerMultiplier,
     required this.chargeMultiplier,
@@ -135,12 +136,15 @@ class CardConfig {
   final String id;
   final String name;
   final String summary;
+  final String flavorBio;
   final String roleLabel;
   final double powerMultiplier;
   final double chargeMultiplier;
   final double cooldownMultiplier;
   final double advantageMultiplier;
   final double automationRate;
+
+  String get portraitAssetPath => 'assets/sprites/managers/core/$id.png';
 }
 
 class EnemyManagerConfig {
@@ -148,6 +152,7 @@ class EnemyManagerConfig {
     required this.id,
     required this.name,
     required this.summary,
+    required this.flavorBio,
     required this.roleLabel,
     required this.spawnRateMultiplier,
     required this.rewardMultiplier,
@@ -162,6 +167,7 @@ class EnemyManagerConfig {
   final String id;
   final String name;
   final String summary;
+  final String flavorBio;
   final String roleLabel;
   final double spawnRateMultiplier;
   final double rewardMultiplier;
@@ -171,6 +177,8 @@ class EnemyManagerConfig {
   final double stabilityDamageMultiplier;
   final double apexStabilityMultiplier;
   final double queueDisruptionMultiplier;
+
+  String get portraitAssetPath => 'assets/sprites/managers/threat/$id.png';
 }
 
 class EquipmentBonusProfile {

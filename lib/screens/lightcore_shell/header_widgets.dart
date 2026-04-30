@@ -533,7 +533,7 @@ extension on _ShellOverlayDestination {
     _ShellOverlayDestination.friends => LightcorePalette.aether,
     _ShellOverlayDestination.mentees => LightcorePalette.violet,
     _ShellOverlayDestination.mentors => LightcorePalette.violet,
-    _ShellOverlayDestination.enemies => LightcorePalette.flare,
+    _ShellOverlayDestination.enemies => LightcorePalette.scanGlow,
     _ShellOverlayDestination.dungeons => LightcorePalette.warning,
     _ShellOverlayDestination.tournaments => LightcorePalette.warning,
     _ShellOverlayDestination.prestige => LightcorePalette.violet,
@@ -558,6 +558,7 @@ extension on _ShellOverlayDestination {
   };
 
   String? lockedMessage(LightcoreController controller) => switch (this) {
+    _ShellOverlayDestination.towers => _towerArchiveLockMessage(controller),
     _ShellOverlayDestination.managers => _managerLockMessage(controller),
     _ShellOverlayDestination.mentees ||
     _ShellOverlayDestination.mentors => _mentorshipLockMessage(controller),
@@ -568,11 +569,18 @@ extension on _ShellOverlayDestination {
   };
 }
 
+String? _towerArchiveLockMessage(LightcoreController controller) {
+  if (controller.completedShellLibraryUnlocked) {
+    return null;
+  }
+  return 'Towers unlock when Layer 2 is online. Finish the Root Shell and create the Prism Shell first.';
+}
+
 String? _managerLockMessage(LightcoreController controller) {
   if (controller.managerAssignmentUnlocked) {
     return null;
   }
-  return 'Manager assignment unlocks as soon as the active core reaches Layer 2.';
+  return 'Manager assignment unlocks when the active core reaches Lv ${LightcoreController.managerCoreLevelRequirement}.';
 }
 
 String? _mentorshipLockMessage(LightcoreController controller) {

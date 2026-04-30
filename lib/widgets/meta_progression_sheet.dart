@@ -19,6 +19,8 @@ part 'meta_progression/battle_pass_track_widgets.dart';
 part 'meta_progression/battle_pass_helpers.dart';
 
 const int _permanentOverdrivePrismCost = 240;
+const int _radianceStatResetPrismCost =
+    LightcoreController.radianceStatResetPrismShardCost;
 const String _starterRelayCacheId = 'bundle_starter_relay_cache';
 const String _smallLumenCacheId = 'bundle_lumens_small';
 const String _mediumLumenCacheId = 'bundle_lumens_medium';

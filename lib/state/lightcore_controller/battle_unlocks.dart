@@ -115,23 +115,17 @@ extension LightcoreControllerBattleUnlocks on LightcoreController {
     return '$unlockedLabel Next anchor opens at ${unlockExperienceForOuterSlot(currentlyUnlocked)} EXP.';
   }
 
-  String? _grantBossUnlockIfNeeded({
-    required int previousExperience,
-    required int currentExperience,
-  }) {
+  String? _grantBossUnlockIfNeeded() {
     if (_bossUnlockGrantClaimed) {
       return null;
     }
-
-    final previousLevel = overallLevelForExperience(previousExperience);
-    final currentLevel = overallLevelForExperience(currentExperience);
-    if (previousLevel >= bossUnlockLevel || currentLevel < bossUnlockLevel) {
+    if (!bossHuntsUnlocked) {
       return null;
     }
 
     _bossUnlockGrantClaimed = true;
     bossTickets += bossUnlockTicketGrant;
-    return 'Apex Scans unlocked at Account Radiance Lv $bossUnlockLevel. ${LightcoreCurrencyLabels.rewardBossScans(bossUnlockTicketGrant)} issued.';
+    return 'Apex Scans unlocked in the Prism Shell. ${LightcoreCurrencyLabels.rewardBossScans(bossUnlockTicketGrant)} issued.';
   }
 
   String? _tournamentUnlockBannerFragment({
@@ -164,6 +158,10 @@ extension LightcoreControllerBattleUnlocks on LightcoreController {
     required int previousExperience,
     required int currentExperience,
   }) {
+    if (_managerCoreLevelUnlockedForLayer(activeLayer) ||
+        _starterManagerTutorialUnlocked) {
+      return null;
+    }
     final previousLevel = overallLevelForExperience(previousExperience);
     final currentLevel = overallLevelForExperience(currentExperience);
     if (previousLevel >= managerUnlockLevel ||

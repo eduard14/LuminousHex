@@ -25,6 +25,11 @@ extension LightcoreControllerBattleResetActions on LightcoreController {
     _resetLevelUpRadiance();
     activeLayer.normalKillsSinceBoss = 0;
     activeLayer.bossReady = false;
+    if (activeLayer.layer3TrialActive) {
+      activeLayer.layer3TrialActive = false;
+      activeLayer.layer3TrialCleared = false;
+      activeLayer.layer3TrialSpawnIndex = 0;
+    }
     _resetManualOverdrive();
     _core = _core.copyWith(
       flowEfficiency: _maxFlowEfficiency,
@@ -100,6 +105,9 @@ extension LightcoreControllerBattleResetActions on LightcoreController {
     activeLayer.childTowerUpgrades = reset.childTowerUpgrades;
     activeLayer.promotedIntoParentSlot = false;
     activeLayer.promotionTraitRoll = 0;
+    activeLayer.layer3TrialActive = false;
+    activeLayer.layer3TrialCleared = false;
+    activeLayer.layer3TrialSpawnIndex = 0;
 
     _syncParentSlotFromLayer(activeLayer);
     _loadLayer(activeLayer);
@@ -122,10 +130,8 @@ extension LightcoreControllerBattleResetActions on LightcoreController {
     _unlockedProfileMedalIds.clear();
     _equipmentDropCounter = 0;
     _enemyCards = _createEnemyCardInventory();
-    _bossEnemyCards = BossEnemyLibrary.all
-        .map((config) => EnemyCardState(config: config))
-        .toList();
-    _activeBossEnemyCardId = null;
+    _bossEnemyCards = _createBossEnemyCardInventory();
+    _activeBossEnemyCardId = BossEnemyLibrary.starterWhiteWarden.id;
     _activeEnemyCardIds.clear();
     _lastEnemyPackPulls = <PackPullResult>[];
     _lastBossPackPulls = <PackPullResult>[];
@@ -137,9 +143,13 @@ extension LightcoreControllerBattleResetActions on LightcoreController {
     _viewLayerId = rootLayer.id;
     _runtimeLayerId = rootLayer.id;
     _loadLayer(rootLayer);
+    _armStarterBossForOpening();
     lumens = 44;
     flux = 96;
     prismShards = 0;
+    managerShards = 0;
+    managerPowerLevel = 0;
+    shellCores = 0;
     enemyTickets = 18;
     bossTickets = 0;
     bossCores = 0;
@@ -178,6 +188,11 @@ extension LightcoreControllerBattleResetActions on LightcoreController {
     _timeWarpWeeklyPurchases.clear();
     _storeOfferPurchaseWeekKey = _currentWeekKey();
     _storeOfferWeeklyPurchases.clear();
+    _dailyDungeonHighestUnlockedTowerLevel = dailyDungeonStartingTowerLevel;
+    _dailyDungeonHighestClearedTowerLevel = 0;
+    _dailyDungeonQuickClearDayKey = _currentDayKey();
+    _dailyDungeonQuickClearsUsed = 0;
+    _completedTowerShells.clear();
     _initializeSharedRelayLoadout();
     _activeGuild = null;
     _guildChatCounter = 0;
@@ -187,6 +202,7 @@ extension LightcoreControllerBattleResetActions on LightcoreController {
     _tutorialFirstManagersOpened = false;
     _tutorialFirstEnemyTargetSet = false;
     _tutorialEnemyCountAdjusted = false;
+    _tutorialFirstTowerStatsOpened = false;
     _tutorialStabilityPanelOpened = false;
     _tutorialTowerMatrixOpened = false;
     _tutorialStoreOpened = false;
@@ -200,13 +216,14 @@ extension LightcoreControllerBattleResetActions on LightcoreController {
     _tutorialSecondShellShotTapLearned = false;
     _tutorialOverdriveLearned = false;
     _tutorialStep = LightcoreTutorialStep.none;
-    _tutorialIntroBossPending = false;
+    _tutorialIntroBossPending = true;
     _tutorialSafeScanDefeats = 0;
     _tutorialAutoQueuedPulses = 0;
     _tutorialTrackedBossEnemyId = null;
     _tutorialPulseTarget = null;
     _tutorialPulseSignal = 0;
     _rewardedTutorialSteps.clear();
+    _armStarterBossForOpening();
     _showBanner(
       'Cycle reset. Tap the main tower to unfold a new shell.',
       duration: 3.4,

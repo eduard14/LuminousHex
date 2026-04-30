@@ -33,6 +33,7 @@ class _LightcoreAppState extends State<LightcoreApp>
     with WidgetsBindingObserver {
   static const Duration _cloudSaveDebounce = Duration(seconds: 45);
   static const Duration _serverSyncInterval = Duration(minutes: 3);
+  static const Duration _socialOverviewRefreshInterval = Duration(minutes: 3);
   static const Duration _screenLinkDuration = Duration(milliseconds: 820);
   static const int _maxMissedServerSyncs = 2;
 
@@ -49,6 +50,7 @@ class _LightcoreAppState extends State<LightcoreApp>
   LightcoreController? _observedController;
   Timer? _cloudSaveTimer;
   Timer? _serverSyncTimer;
+  Timer? _socialOverviewTimer;
   LightcoreWebForegroundSubscription? _webForegroundSubscription;
   LightcoreOfflineClaimResult? _startupOfflineClaim;
   _ResolvedClientVersion _clientVersion = const _ResolvedClientVersion(
@@ -62,13 +64,16 @@ class _LightcoreAppState extends State<LightcoreApp>
   bool _cloudSavePending = false;
   bool _cloudSaveInFlight = false;
   bool _serverSyncInFlight = false;
+  bool _socialOverviewSyncInFlight = false;
   bool _serverSyncPending = false;
   bool _serverSyncPendingForceSave = false;
   bool _skipGuestSignInPrompt = false;
   LightcoreGraphicsQuality _graphicsQuality = LightcoreGraphicsQuality.high;
   int _missedServerSyncs = 0;
   int _battleSurfaceGeneration = 0;
+  int _bootstrapRunId = 0;
   DateTime? _lastForegroundRecoveryAt;
+  DateTime? _lastSocialOverviewSyncAt;
   String? _sessionNotice;
 
   static bool get _localhostAutoTapperEnabled {
@@ -77,6 +82,23 @@ class _LightcoreAppState extends State<LightcoreApp>
     }
     final host = Uri.base.host.toLowerCase();
     return host == 'localhost' || host == '127.0.0.1' || host == '::1';
+  }
+
+  static int? get _devLayerOverride {
+    if (!kDebugMode) {
+      return null;
+    }
+    const dartDefineLayer = int.fromEnvironment('LIGHTCORE_DEV_LAYER');
+    final parsedLayer = dartDefineLayer > 0
+        ? dartDefineLayer
+        : int.tryParse(Uri.base.queryParameters['devLayer'] ?? '');
+    if (parsedLayer == null || parsedLayer <= 1) {
+      return null;
+    }
+    if (parsedLayer > LightcoreController.maxShellTier) {
+      return LightcoreController.maxShellTier;
+    }
+    return parsedLayer;
   }
 
   @override
@@ -101,6 +123,7 @@ class _LightcoreAppState extends State<LightcoreApp>
     _webForegroundSubscription?.cancel();
     _cloudSaveTimer?.cancel();
     _serverSyncTimer?.cancel();
+    _socialOverviewTimer?.cancel();
     unawaited(_runServerSync(forceCloudSave: true));
     _observedController?.removeListener(_handleControllerChanged);
     _controller?.dispose();
@@ -127,7 +150,8 @@ class _LightcoreAppState extends State<LightcoreApp>
     if (state == AppLifecycleState.resumed &&
         !_enteredGame &&
         !_isLinkingScreen &&
-        !_isBootstrapping) {
+        !_isBootstrapping &&
+        !_authBusy) {
       unawaited(_bootstrapMainMenu(reason: 'lifecycle-resumed-main-menu'));
     }
   }
@@ -140,7 +164,7 @@ class _LightcoreAppState extends State<LightcoreApp>
       _recoverForegroundGameSession();
       return;
     }
-    if (!_enteredGame && !_isLinkingScreen && !_isBootstrapping) {
+    if (!_enteredGame && !_isLinkingScreen && !_isBootstrapping && !_authBusy) {
       unawaited(_bootstrapMainMenu(reason: 'web-foreground-main-menu'));
     }
   }
@@ -161,6 +185,7 @@ class _LightcoreAppState extends State<LightcoreApp>
   }
 
   Future<void> _bootstrapMainMenu({String reason = 'manual'}) async {
+    final runId = ++_bootstrapRunId;
     _logSession('bootstrap-start', <String, Object?>{'reason': reason});
     if (mounted) {
       setState(() => _isBootstrapping = true);
@@ -199,7 +224,13 @@ class _LightcoreAppState extends State<LightcoreApp>
     }
 
     final clientVersion = await _resolveClientVersion();
-    _clientVersion = clientVersion;
+    if (!_isCurrentBootstrapRun(runId)) {
+      _logSession('bootstrap-abandoned', <String, Object?>{
+        'reason': reason,
+        'cause': 'stale-run',
+      });
+      return;
+    }
     late final LightcoreBootstrapReport report;
     try {
       report = await _backend.bootstrap(
@@ -237,6 +268,13 @@ class _LightcoreAppState extends State<LightcoreApp>
     final cloudGuide = LightcoreGuideProfile.maybeFromStorageId(
       report.cloudSave?.guideStorageId,
     );
+    if (!_isCurrentBootstrapRun(runId)) {
+      _logSession('bootstrap-abandoned', <String, Object?>{
+        'reason': reason,
+        'cause': 'stale-run',
+      });
+      return;
+    }
     if (guideProfile == null && cloudGuide != null) {
       guideProfile = cloudGuide;
       try {
@@ -260,8 +298,16 @@ class _LightcoreAppState extends State<LightcoreApp>
       return;
     }
 
+    if (!_isCurrentBootstrapRun(runId)) {
+      _logSession('bootstrap-abandoned', <String, Object?>{
+        'reason': reason,
+        'cause': 'stale-run',
+      });
+      return;
+    }
     _logBootstrapReport('bootstrap-complete', report, reason: reason);
     setState(() {
+      _clientVersion = clientVersion;
       _guestSession = guestSession;
       _bootstrapReport = report;
       _guideProfile = guideProfile;
@@ -273,6 +319,8 @@ class _LightcoreAppState extends State<LightcoreApp>
       _isBootstrapping = false;
     });
   }
+
+  bool _isCurrentBootstrapRun(int runId) => runId == _bootstrapRunId;
 
   Future<_ResolvedClientVersion> _resolveClientVersion() async {
     try {
@@ -363,9 +411,7 @@ class _LightcoreAppState extends State<LightcoreApp>
     _logBootstrapReport(
       'enter-game-controller-created',
       launchReport,
-      reason: launchReport.cloudSave?.hasPayload == true
-          ? 'cloud-save'
-          : 'fresh-local-controller',
+      reason: _controllerCreationReason(launchReport),
     );
     controller.syncServerDateKeys(
       dayKey: launchReport.serverDayKey,
@@ -381,6 +427,10 @@ class _LightcoreAppState extends State<LightcoreApp>
       controller.applyOfflineClaim(startupOfflineClaim, showBanner: false);
     }
     controller.syncPlayerProfile(launchReport.profile, showBanner: false);
+    _applyDevLayerOverride(controller);
+    _socialOverviewTimer?.cancel();
+    _socialOverviewTimer = null;
+    _lastSocialOverviewSyncAt = null;
     unawaited(_syncSocialOverview(controller));
     _observeController(controller);
     _missedServerSyncs = 0;
@@ -403,7 +453,7 @@ class _LightcoreAppState extends State<LightcoreApp>
   LightcoreController _createControllerFromReport(
     LightcoreBootstrapReport report,
   ) {
-    if (report.cloudSave?.hasPayload == true) {
+    if (_devLayerOverride == null && report.cloudSave?.hasPayload == true) {
       return LightcoreController.fromCloudSavePayload(
         report.cloudSave!.payload,
         fallbackGuideProfile: _guideProfile ?? LightcoreGuideProfile.lumo,
@@ -414,6 +464,28 @@ class _LightcoreAppState extends State<LightcoreApp>
       guideProfile: _guideProfile ?? LightcoreGuideProfile.lumo,
       balanceTuning: report.manifest.balanceTuning,
     );
+  }
+
+  void _applyDevLayerOverride(LightcoreController controller) {
+    final targetLayer = _devLayerOverride;
+    if (targetLayer == null) {
+      return;
+    }
+    final applied = controller.debugSeedProgressionLayer(targetLayer);
+    _logSession('dev-layer-override', <String, Object?>{
+      'targetLayer': targetLayer,
+      'applied': applied,
+    });
+  }
+
+  String _controllerCreationReason(LightcoreBootstrapReport report) {
+    if (_devLayerOverride != null) {
+      return 'dev-layer-override';
+    }
+    if (report.cloudSave?.hasPayload == true) {
+      return 'cloud-save';
+    }
+    return 'fresh-local-controller';
   }
 
   bool _serverRestoreIncomplete(LightcoreBootstrapReport report) {
@@ -704,9 +776,13 @@ class _LightcoreAppState extends State<LightcoreApp>
     _stopServerSyncTimer();
     _cloudSaveTimer?.cancel();
     _cloudSaveTimer = null;
+    _socialOverviewTimer?.cancel();
+    _socialOverviewTimer = null;
     _cloudSavePending = false;
     _serverSyncPending = false;
     _serverSyncPendingForceSave = false;
+    _socialOverviewSyncInFlight = false;
+    _lastSocialOverviewSyncAt = null;
     _missedServerSyncs = 0;
 
     final expiredController = _controller;
@@ -753,15 +829,54 @@ class _LightcoreAppState extends State<LightcoreApp>
     return 'Session expired. Reconnect to claim server-calculated offline progress.';
   }
 
-  Future<void> _syncSocialOverview(LightcoreController controller) async {
+  void _scheduleSocialOverviewSync(
+    LightcoreController controller,
+    Duration delay,
+  ) {
+    if (_socialOverviewTimer != null) {
+      return;
+    }
+    _socialOverviewTimer = Timer(delay, () {
+      _socialOverviewTimer = null;
+      if (_isCurrentGameController(controller)) {
+        unawaited(_flushCloudSave(force: true));
+      }
+    });
+  }
+
+  Future<void> _syncSocialOverview(
+    LightcoreController controller, {
+    bool force = false,
+  }) async {
+    if (_socialOverviewSyncInFlight) {
+      if (!force) {
+        _scheduleSocialOverviewSync(controller, _socialOverviewRefreshInterval);
+      }
+      return;
+    }
+    final lastSync = _lastSocialOverviewSyncAt;
+    if (!force && lastSync != null) {
+      final elapsed = DateTime.now().difference(lastSync);
+      final remaining = _socialOverviewRefreshInterval - elapsed;
+      if (remaining > Duration.zero) {
+        _scheduleSocialOverviewSync(controller, remaining);
+        return;
+      }
+    }
+    _socialOverviewTimer?.cancel();
+    _socialOverviewTimer = null;
+    _socialOverviewSyncInFlight = true;
     try {
       final overview = await _backend.fetchSocialOverview();
+      _lastSocialOverviewSyncAt = DateTime.now();
       if (!_isCurrentGameController(controller)) {
         return;
       }
       controller.syncSocialOverview(overview);
     } catch (_) {
       // Social bonuses are online-only and should not block entering the game.
+    } finally {
+      _socialOverviewSyncInFlight = false;
     }
   }
 
@@ -965,6 +1080,7 @@ class _LightcoreAppState extends State<LightcoreApp>
   bool get _cloudSaveEnabled =>
       _bootstrapReport?.firebaseReady == true &&
       _backend.canUseCloudSave &&
+      _devLayerOverride == null &&
       _controller != null;
 
   static bool get _sessionDebugLoggingEnabled =>

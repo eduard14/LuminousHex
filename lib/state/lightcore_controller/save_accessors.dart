@@ -20,7 +20,11 @@ extension LightcoreControllerSaveAccessors on LightcoreController {
     final resetBattlePass = _refreshBattlePassesForToday();
     final resetTimeWarp = _refreshTimeWarpPurchaseWeek();
     final resetStoreOffers = _refreshStoreOfferPurchaseWeek();
-    if (resetBattlePass || resetTimeWarp || resetStoreOffers) {
+    final resetDailyQuickClears = _refreshDailyDungeonQuickClearsForToday();
+    if (resetBattlePass ||
+        resetTimeWarp ||
+        resetStoreOffers ||
+        resetDailyQuickClears) {
       _notifyNow();
     }
   }

@@ -3,40 +3,20 @@ part of '../tournament_screen.dart';
 class _TournamentBattleStage extends StatelessWidget {
   const _TournamentBattleStage({
     required this.controller,
-    required this.tint,
-    required this.compact,
+    required this.active,
   });
 
   final LightcoreController controller;
-  final Color tint;
-  final bool compact;
+  final bool active;
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: compact ? 320 : 430,
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(compact ? 20 : 24),
-          border: Border.all(color: tint.withValues(alpha: 0.34)),
-          color: LightcorePalette.night,
-          boxShadow: [
-            BoxShadow(
-              color: tint.withValues(alpha: 0.16),
-              blurRadius: 22,
-              spreadRadius: -12,
-            ),
-          ],
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(compact ? 20 : 24),
-          child: BattleScreen(
-            controller: controller,
-            isActive: true,
-            showQuestPanel: false,
-            showBattleHud: false,
-          ),
-        ),
+    return ClipRect(
+      child: BattleScreen(
+        controller: controller,
+        isActive: active,
+        showQuestPanel: false,
+        showBattleHud: false,
       ),
     );
   }

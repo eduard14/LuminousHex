@@ -56,10 +56,12 @@ extension LightcoreControllerCombatFiring on LightcoreController {
             : _targetForPriority(
                     ammo.targetPriority,
                     maxRadius: shotMaxRange,
+                    sourceSlotIndex: ammo.sourceSlotIndex,
                     excludedEnemyIds: volleyTargetIds,
                   ) ??
-                  _nearestEnemy(
+                  _nearestEnemyForSource(
                     maxRadius: shotMaxRange,
+                    sourceSlotIndex: ammo.sourceSlotIndex,
                     excludedEnemyIds: volleyTargetIds,
                   );
         if (target == null) {
@@ -111,8 +113,8 @@ extension LightcoreControllerCombatFiring on LightcoreController {
         if (target == null) {
           break;
         }
-        affinity = _core.affinity;
-        secondaryAffinity = _core.secondaryAffinity;
+        affinity = _coreAffinityForProjectile(projectileType);
+        secondaryAffinity = _coreSecondaryAffinityForPayload(payloadType);
         sourceSlotIndex = null;
         bossDamageMultiplier = _gearBossDamageMultiplier;
         critChance = (_coreBaseCritChance + _gearCritChanceBonus).clamp(
@@ -126,11 +128,6 @@ extension LightcoreControllerCombatFiring on LightcoreController {
             _projectileDamageMultiplier(projectileType) *
             _gearPowerMultiplier;
         advancesCoreSequence = true;
-      }
-
-      final critical = _traitRandom.nextDouble() < critChance;
-      if (critical) {
-        shotPower *= critMultiplier;
       }
 
       final aimPoint = _leadShotAimPoint(
@@ -152,7 +149,9 @@ extension LightcoreControllerCombatFiring on LightcoreController {
           payloadType: payloadType,
           progress: 0,
           layer2: false,
-          critical: critical,
+          critChance: critChance,
+          critMultiplier: critMultiplier,
+          critical: false,
           aimAngle: aimPoint.angle,
           travelRadius: _shotTravelRadiusForProjectile(
             projectileType,
@@ -160,6 +159,7 @@ extension LightcoreControllerCombatFiring on LightcoreController {
             maxRange: shotMaxRange,
             basicImpact: _shotUsesCoreBasicImpact(
               layer2: false,
+              projectileType: projectileType,
               sourceSlotIndex: sourceSlotIndex,
             ),
           ),
@@ -221,11 +221,8 @@ extension LightcoreControllerCombatFiring on LightcoreController {
           _averageMaxDamageForLayer(activeLayer),
         ) *
         _projectileDamageMultiplier(_layer2.projectileType);
-    final critical =
-        _traitRandom.nextDouble() < _averageCritChanceForLayer(activeLayer);
-    if (critical) {
-      shotPower *= _averageCritMultiplierForLayer(activeLayer);
-    }
+    final critChance = _averageCritChanceForLayer(activeLayer);
+    final critMultiplier = _averageCritMultiplierForLayer(activeLayer);
     final aimPoint = _leadShotAimPoint(
       target,
       projectileType: _layer2.projectileType,
@@ -243,7 +240,9 @@ extension LightcoreControllerCombatFiring on LightcoreController {
         payloadType: _layer2.payloadType,
         progress: 0,
         layer2: true,
-        critical: critical,
+        critChance: critChance,
+        critMultiplier: critMultiplier,
+        critical: false,
         aimAngle: aimPoint.angle,
         travelRadius: _shotTravelRadiusForProjectile(
           _layer2.projectileType,
@@ -323,10 +322,12 @@ extension LightcoreControllerCombatFiring on LightcoreController {
           _targetForPriority(
             packet.targetPriority,
             maxRadius: packet.range,
+            sourceSlotIndex: packet.sourceSlotIndex,
             excludedEnemyIds: excludedTargetIds,
           ) ??
-          _nearestEnemy(
+          _nearestEnemyForSource(
             maxRadius: packet.range,
+            sourceSlotIndex: packet.sourceSlotIndex,
             excludedEnemyIds: excludedTargetIds,
           );
       if (target == null) {
@@ -371,6 +372,7 @@ extension LightcoreControllerCombatFiring on LightcoreController {
   EnemyState? _targetForPriority(
     TargetPriority priority, {
     double? maxRadius,
+    int? sourceSlotIndex,
     Set<String> excludedEnemyIds = const <String>{},
   }) {
     if (_enemies.isEmpty) {
@@ -385,8 +387,9 @@ extension LightcoreControllerCombatFiring on LightcoreController {
     }
     switch (priority) {
       case TargetPriority.close:
-        return _nearestEnemy(
+        return _nearestEnemyForSource(
           maxRadius: maxRadius,
+          sourceSlotIndex: sourceSlotIndex,
           excludedEnemyIds: excludedEnemyIds,
         );
       case TargetPriority.strong:
@@ -430,10 +433,12 @@ extension LightcoreControllerCombatFiring on LightcoreController {
       return _targetForPriority(
             packet.targetPriority,
             maxRadius: maxRadius,
+            sourceSlotIndex: packet.sourceSlotIndex,
             excludedEnemyIds: excludedEnemyIds,
           ) ??
-          _nearestEnemy(
+          _nearestEnemyForSource(
             maxRadius: maxRadius,
+            sourceSlotIndex: packet.sourceSlotIndex,
             excludedEnemyIds: excludedEnemyIds,
           );
     }
@@ -455,9 +460,14 @@ extension LightcoreControllerCombatFiring on LightcoreController {
         _targetForPriority(
           packet.targetPriority,
           maxRadius: maxRadius,
+          sourceSlotIndex: sourceSlotIndex,
           excludedEnemyIds: excludedEnemyIds,
         ) ??
-        _nearestEnemy(maxRadius: maxRadius, excludedEnemyIds: excludedEnemyIds);
+        _nearestEnemyForSource(
+          maxRadius: maxRadius,
+          sourceSlotIndex: sourceSlotIndex,
+          excludedEnemyIds: excludedEnemyIds,
+        );
     if (target != null) {
       _blueFocusTargetEnemyIdBySlot[sourceSlotIndex] = target.id;
     }
@@ -483,6 +493,78 @@ extension LightcoreControllerCombatFiring on LightcoreController {
       }
     }
     return closest;
+  }
+
+  EnemyState? _nearestEnemyForSource({
+    double? maxRadius,
+    int? sourceSlotIndex,
+    Set<String> excludedEnemyIds = const <String>{},
+  }) {
+    if (sourceSlotIndex == null) {
+      return _nearestEnemy(
+        maxRadius: maxRadius,
+        excludedEnemyIds: excludedEnemyIds,
+      );
+    }
+    return _nearestEnemyToSlot(
+      sourceSlotIndex,
+      maxRadius: maxRadius,
+      excludedEnemyIds: excludedEnemyIds,
+    );
+  }
+
+  EnemyState? _nearestEnemyToSlot(
+    int sourceSlotIndex, {
+    double? maxRadius,
+    Set<String> excludedEnemyIds = const <String>{},
+  }) {
+    if (_enemies.isEmpty) {
+      return null;
+    }
+
+    EnemyState? closest;
+    var closestDistance = double.infinity;
+    for (final enemy in _enemies) {
+      if (excludedEnemyIds.contains(enemy.id)) {
+        continue;
+      }
+      if (maxRadius != null && enemy.radius > maxRadius) {
+        continue;
+      }
+      final distance = _enemyDistanceToSlot(enemy, sourceSlotIndex);
+      if (distance < closestDistance ||
+          (distance == closestDistance &&
+              (closest == null || enemy.radius < closest.radius))) {
+        closest = enemy;
+        closestDistance = distance;
+      }
+    }
+    return closest;
+  }
+
+  double _enemyDistanceToSlot(EnemyState enemy, int sourceSlotIndex) {
+    final slot = _slotModelPosition(sourceSlotIndex);
+    final enemyX = cos(enemy.angle) * enemy.radius;
+    final enemyY = sin(enemy.angle) * enemy.radius;
+    final dx = enemyX - slot.x;
+    final dy = enemyY - slot.y;
+    return sqrt((dx * dx) + (dy * dy));
+  }
+
+  ({double x, double y}) _slotModelPosition(int sourceSlotIndex) {
+    final slotIndex = sourceSlotIndex % slotCount;
+    final (q, r) = switch (slotIndex) {
+      0 => (1.0, 0.0),
+      1 => (1.0, -1.0),
+      2 => (0.0, -1.0),
+      3 => (-1.0, 0.0),
+      4 => (-1.0, 1.0),
+      _ => (0.0, 1.0),
+    };
+    return (
+      x: _relayImpactRadius * (q + (r / 2)),
+      y: _relayImpactRadius * ((sqrt(3) / 2) * r),
+    );
   }
 
   Iterable<EnemyState> _nearbyEnemies(

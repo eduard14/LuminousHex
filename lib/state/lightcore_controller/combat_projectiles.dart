@@ -60,13 +60,18 @@ extension LightcoreControllerCombatProjectiles on LightcoreController {
 
   bool _coreShotUsesBasicImpact(CoreShotState shot) => _shotUsesCoreBasicImpact(
     layer2: shot.layer2,
+    projectileType: shot.projectileType,
     sourceSlotIndex: shot.sourceSlotIndex,
   );
 
   bool _shotUsesCoreBasicImpact({
     required bool layer2,
+    required ProjectileType projectileType,
     required int? sourceSlotIndex,
-  }) => !layer2 && sourceSlotIndex == null;
+  }) =>
+      !layer2 &&
+      sourceSlotIndex == null &&
+      projectileType == ProjectileType.starBolt;
 
   bool _shotUsesBlueFocusLaser(CoreShotState shot) =>
       !shot.layer2 &&
@@ -375,6 +380,7 @@ extension LightcoreControllerCombatProjectiles on LightcoreController {
   }) {
     final basicImpact = _shotUsesCoreBasicImpact(
       layer2: layer2,
+      projectileType: projectileType,
       sourceSlotIndex: sourceSlotIndex,
     );
     if (!basicImpact &&
@@ -453,6 +459,7 @@ extension LightcoreControllerCombatProjectiles on LightcoreController {
       maxRange: maxRange,
       basicImpact: _shotUsesCoreBasicImpact(
         layer2: layer2,
+        projectileType: projectileType,
         sourceSlotIndex: sourceSlotIndex,
       ),
     );
@@ -518,7 +525,8 @@ extension LightcoreControllerCombatProjectiles on LightcoreController {
       sourceSlotIndex: shot.sourceSlotIndex,
       projectileType: projectileType ?? shot.projectileType,
       payloadType: payloadType ?? shot.payloadType,
-      critical: shot.critical,
+      critChance: shot.critChance,
+      critMultiplier: shot.critMultiplier,
       applyPayloadEffects: applyPayloadEffects,
       applyProjectileFollowUp: applyProjectileFollowUp,
       spawnImpact: spawnImpact,
@@ -550,6 +558,11 @@ extension LightcoreControllerCombatProjectiles on LightcoreController {
   }
 
   void _resolveBlastShot(CoreShotState shot) {
+    if (shot.projectileType == ProjectileType.coreBomb) {
+      _resolveCoreBombSweepShot(shot);
+      return;
+    }
+
     final target = _targetNearImpactPoint(shot);
     final splashRadius = _projectileSplashRadius(shot.projectileType);
     final splashTargets = _enemies
@@ -609,7 +622,7 @@ extension LightcoreControllerCombatProjectiles on LightcoreController {
         progress: 0,
         lethal: false,
         towerHit: false,
-        critical: shot.critical,
+        critical: false,
         progressRate: _impactProgressRateForProjectile(
           shot.projectileType,
           lethal: false,
@@ -625,6 +638,42 @@ extension LightcoreControllerCombatProjectiles on LightcoreController {
               shot.projectileType,
               lethal: false,
             ),
+        sourceSlotIndex: shot.sourceSlotIndex,
+      ),
+    );
+  }
+
+  void _resolveCoreBombSweepShot(CoreShotState shot) {
+    final sweepBandWidth = _waveBandWidthForProjectile(
+      ProjectileType.pulseRing,
+    );
+    _impacts.add(
+      ImpactState(
+        id: 'impact_${_impactCounter++}',
+        affinity: shot.affinity,
+        secondaryAffinity: shot.secondaryAffinity,
+        projectileType: shot.projectileType,
+        payloadType: shot.payloadType,
+        angle: shot.aimAngle,
+        radius: shot.travelRadius,
+        progress: 0,
+        lethal: false,
+        towerHit: false,
+        critical: false,
+        critChance: shot.critChance,
+        critMultiplier: shot.critMultiplier,
+        progressRate: _impactProgressRateForProjectile(
+          shot.projectileType,
+          lethal: false,
+        ),
+        fieldRadius:
+            _projectileSplashRadius(shot.projectileType) + (sweepBandWidth / 2),
+        sweepDamage: shot.power,
+        sweepBandWidth: sweepBandWidth,
+        advantageMultiplier: shot.advantageMultiplier,
+        bossDamageMultiplier: shot.bossDamageMultiplier,
+        normalDamageMultiplier: shot.normalDamageMultiplier,
+        defensePenetration: shot.defensePenetration,
         sourceSlotIndex: shot.sourceSlotIndex,
       ),
     );

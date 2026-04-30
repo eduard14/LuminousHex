@@ -2,6 +2,14 @@ part of '../lightcore_controller.dart';
 
 extension LightcoreControllerBattleActions on LightcoreController {
   bool _queueCoreBasicAttack({bool showBanner = false}) {
+    if (activeLayerPassiveOnly) {
+      if (showBanner) {
+        _showBanner(
+          '$activeLayerLabel is a static archive. Return to a live shell to fire.',
+        );
+      }
+      return false;
+    }
     if ((_ammoQueue.length + _pulses.length) >= coreQueueCapacity) {
       if (showBanner) {
         _showBanner(
@@ -18,8 +26,8 @@ extension LightcoreControllerBattleActions on LightcoreController {
       EnergyPulseState(
         id: 'core_packet_${_pulseCounter++}',
         sourceSlotIndex: null,
-        affinity: _core.affinity,
-        secondaryAffinity: _core.secondaryAffinity,
+        affinity: _coreAffinityForProjectile(projectileType),
+        secondaryAffinity: _coreSecondaryAffinityForPayload(payloadType),
         power:
             _coreBasicShotPower() *
             friendAllianceCombatMultiplier *

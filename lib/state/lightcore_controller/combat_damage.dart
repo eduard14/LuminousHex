@@ -72,6 +72,113 @@ extension LightcoreControllerCombatDamage on LightcoreController {
     }
   }
 
+  ImpactState _applyImpactSweepDamage(
+    ImpactState impact, {
+    required double previousProgress,
+    required double progress,
+  }) {
+    if (!impact.hasImpactSweep || _enemies.isEmpty) {
+      return impact;
+    }
+
+    final startRadius =
+        impact.fieldRadius * _impactSweepProgress(impact, previousProgress);
+    final endRadius =
+        impact.fieldRadius * _impactSweepProgress(impact, progress);
+    if (endRadius <= startRadius) {
+      return impact;
+    }
+
+    final hitEnemyIds = impact.hitEnemyIds.toSet();
+    final bandHalfWidth = impact.sweepBandWidth / 2;
+    final newlyHit =
+        _enemies.where((enemy) {
+          if (hitEnemyIds.contains(enemy.id)) {
+            return false;
+          }
+          final distance = _polarDistanceToEnemy(
+            enemy,
+            angle: impact.angle,
+            radius: impact.radius,
+          );
+          final bufferedHalfWidth =
+              bandHalfWidth + _enemyCollisionRadius(enemy);
+          return distance >= startRadius - bufferedHalfWidth &&
+              distance <= endRadius + bufferedHalfWidth;
+        }).toList()..sort((a, b) {
+          final distanceA = _polarDistanceToEnemy(
+            a,
+            angle: impact.angle,
+            radius: impact.radius,
+          );
+          final distanceB = _polarDistanceToEnemy(
+            b,
+            angle: impact.angle,
+            radius: impact.radius,
+          );
+          return distanceA.compareTo(distanceB);
+        });
+
+    for (final enemy in newlyHit) {
+      _applyDamage(
+        enemy.id,
+        _impactSweepDamageAgainstEnemy(impact, enemy),
+        impact.affinity,
+        layer2: false,
+        secondaryAffinity: impact.secondaryAffinity,
+        sourceSlotIndex: impact.sourceSlotIndex,
+        projectileType: impact.projectileType,
+        payloadType: impact.payloadType,
+        critical: impact.critical,
+        critChance: impact.critChance,
+        critMultiplier: impact.critMultiplier,
+        applyPayloadEffects: false,
+        applyProjectileFollowUp: false,
+        spawnImpact: false,
+      );
+      hitEnemyIds.add(enemy.id);
+    }
+
+    return impact.copyWith(hitEnemyIds: hitEnemyIds.toList(growable: false));
+  }
+
+  double _impactSweepProgress(ImpactState impact, double progress) {
+    if (impact.projectileType == ProjectileType.coreBomb) {
+      return (progress / 0.28).clamp(0.0, 1.0).toDouble();
+    }
+    return progress.clamp(0.0, 1.0).toDouble();
+  }
+
+  double _impactSweepDamageAgainstEnemy(ImpactState impact, EnemyState enemy) {
+    var damage =
+        impact.sweepDamage *
+        _enemyTypeDamageMultiplier(
+          target: enemy,
+          normalDamageMultiplier: impact.normalDamageMultiplier,
+          bossDamageMultiplier: impact.bossDamageMultiplier,
+        );
+    if (impact.sourceSlotIndex != null) {
+      final affinityScale = _affinityMultiplierAgainstEnemy(
+        impact.affinity,
+        enemy,
+      );
+      final sourceTower = _slots[impact.sourceSlotIndex!];
+      final towerAffinityScale =
+          affinityScale > 1 && _slotCountsTowardRing(sourceTower)
+          ? _slotAffinityBonusMultiplier(sourceTower)
+          : 1.0;
+      damage *=
+          affinityScale *
+          (affinityScale > 1 ? impact.advantageMultiplier : 1.0) *
+          towerAffinityScale;
+    }
+    return _applyDefenseReduction(
+      damage,
+      enemy,
+      defensePenetration: impact.defensePenetration,
+    );
+  }
+
   double _projectileDamageMultiplier(ProjectileType projectileType) {
     if (projectileType == ProjectileType.pulseRing) {
       return 0.56;
@@ -253,6 +360,8 @@ extension LightcoreControllerCombatDamage on LightcoreController {
     ProjectileType projectileType = ProjectileType.threadBeam,
     PayloadType payloadType = PayloadType.none,
     bool critical = false,
+    double critChance = 0,
+    double critMultiplier = 1,
     bool applyPayloadEffects = true,
     bool applyProjectileFollowUp = true,
     bool spawnImpact = true,
@@ -270,7 +379,18 @@ extension LightcoreControllerCombatDamage on LightcoreController {
     if (damage <= 0 || _enemyIsImmuneToAffinity(enemy, affinity)) {
       return;
     }
-    final remainingHealth = enemy.health - damage;
+
+    var resolvedDamage = damage;
+    var resolvedCritical = critical;
+    final resolvedCritChance = critChance.clamp(0.0, 1.0).toDouble();
+    if (!resolvedCritical &&
+        resolvedCritChance > 0 &&
+        _traitRandom.nextDouble() < resolvedCritChance) {
+      resolvedCritical = true;
+      resolvedDamage *= critMultiplier;
+    }
+
+    final remainingHealth = enemy.health - resolvedDamage;
     if (remainingHealth <= 0) {
       _enemies.removeAt(enemyIndex);
       _killEnemy(
@@ -280,8 +400,8 @@ extension LightcoreControllerCombatDamage on LightcoreController {
         sourceSlotIndex: sourceSlotIndex,
         projectileType: projectileType,
         payloadType: payloadType,
-        impactPower: damage,
-        critical: critical,
+        impactPower: resolvedDamage,
+        critical: resolvedCritical,
         impactAngle: impactAngle,
         impactRadius: impactRadius,
         chainSourceAngle: chainSourceAngle,
@@ -291,7 +411,7 @@ extension LightcoreControllerCombatDamage on LightcoreController {
           projectileType.behaviorProfile == ProjectileBehaviorProfile.chain) {
         _applyProjectileFollowUp(
           origin: enemy,
-          damage: damage,
+          damage: resolvedDamage,
           affinity: affinity,
           secondaryAffinity: secondaryAffinity,
           projectileType: projectileType,
@@ -305,7 +425,7 @@ extension LightcoreControllerCombatDamage on LightcoreController {
         nextEnemy = _applyPayloadEffect(
           nextEnemy,
           payloadType,
-          damage,
+          resolvedDamage,
           affinity,
           secondaryAffinity,
           sourceSlotIndex,
@@ -326,7 +446,7 @@ extension LightcoreControllerCombatDamage on LightcoreController {
             progress: 0,
             lethal: false,
             towerHit: false,
-            critical: critical,
+            critical: resolvedCritical,
             progressRate: _impactProgressRateForProjectile(
               projectileType,
               lethal: false,
@@ -336,7 +456,7 @@ extension LightcoreControllerCombatDamage on LightcoreController {
               lethal: false,
             ),
             fieldDamagePerSecond:
-                damage *
+                resolvedDamage *
                 _sourceTowerDotDamageMultiplier(sourceSlotIndex) *
                 _impactFieldDamageMultiplierForProjectile(
                   projectileType,
@@ -351,7 +471,7 @@ extension LightcoreControllerCombatDamage on LightcoreController {
       if (applyProjectileFollowUp) {
         _applyProjectileFollowUp(
           origin: nextEnemy,
-          damage: damage,
+          damage: resolvedDamage,
           affinity: affinity,
           secondaryAffinity: secondaryAffinity,
           projectileType: projectileType,
@@ -361,9 +481,13 @@ extension LightcoreControllerCombatDamage on LightcoreController {
       }
     }
 
-    if (layer2 && _enemies.isEmpty && canUnlockLayer2) {
+    if (layer2 &&
+        _enemies.isEmpty &&
+        canUnlockLayer2 &&
+        !activeLayer.layer3TrialActive) {
       _showBanner(
         'Cluster stabilized. Open Advancement to align a Prism Shell.',
+        category: LightcoreNotificationCategory.battle,
       );
     }
   }
@@ -406,10 +530,7 @@ extension LightcoreControllerCombatDamage on LightcoreController {
     }
     experience += _boostedExperienceReward(experienceReward);
     _advanceBattlePass(BattlePassType.dailyKills, killCredit);
-    final bossUnlockBanner = _grantBossUnlockIfNeeded(
-      previousExperience: previousExperience,
-      currentExperience: progressionExperience,
-    );
+    final bossUnlockBanner = _grantBossUnlockIfNeeded();
     final tournamentUnlockBanner = _tournamentUnlockBannerFragment(
       previousExperience: previousExperience,
       currentExperience: progressionExperience,
@@ -438,6 +559,7 @@ extension LightcoreControllerCombatDamage on LightcoreController {
           ownedBossEnemyCardCount == 0
               ? 'Apex lane primed. Resolve an Apex Scan to arm the next spawn.'
               : '${activeBossEnemyCard?.config.name ?? 'Apex Anomaly'} is approaching. The next spawn is an Apex Anomaly.',
+          category: LightcoreNotificationCategory.battle,
         );
       }
     }
@@ -448,8 +570,8 @@ extension LightcoreControllerCombatDamage on LightcoreController {
         secondaryAffinity: secondaryAffinity,
         projectileType: projectileType,
         payloadType: payloadType,
-        angle: enemy.angle,
-        radius: enemy.radius,
+        angle: impactAngle ?? enemy.angle,
+        radius: impactRadius ?? enemy.radius,
         progress: 0,
         lethal: true,
         towerHit: false,

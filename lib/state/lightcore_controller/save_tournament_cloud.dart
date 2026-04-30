@@ -181,6 +181,7 @@ extension LightcoreControllerSaveTournamentCloud on LightcoreController {
       'savedAtMillis': DateTime.now().millisecondsSinceEpoch,
       'settings': <String, dynamic>{
         'notificationBannersEnabled': _notificationBannersEnabled,
+        'battleNotificationBannersEnabled': _battleNotificationBannersEnabled,
         'tutorialPromptsEnabled': _tutorialPromptsEnabled,
       },
       'player': <String, dynamic>{
@@ -204,6 +205,9 @@ extension LightcoreControllerSaveTournamentCloud on LightcoreController {
         'lumens': lumens,
         'flux': flux,
         'prismShards': prismShards,
+        'managerShards': managerShards,
+        'managerPowerLevel': managerPowerLevel,
+        'shellCores': shellCores,
         'enemyTickets': enemyTickets,
         'bossTickets': bossTickets,
         'bossCores': bossCores,
@@ -245,6 +249,8 @@ extension LightcoreControllerSaveTournamentCloud on LightcoreController {
       'dailyDungeons': <String, dynamic>{
         'highestUnlockedTowerLevel': _dailyDungeonHighestUnlockedTowerLevel,
         'highestClearedTowerLevel': _dailyDungeonHighestClearedTowerLevel,
+        'quickClearDayKey': _dailyDungeonQuickClearDayKey,
+        'quickClearsUsed': _dailyDungeonQuickClearsUsed,
       },
       'socialSnapshot': _buildSocialPerformanceSnapshot(),
       'readHelpSections': _readHelpSections.toList(growable: false),
@@ -290,6 +296,9 @@ extension LightcoreControllerSaveTournamentCloud on LightcoreController {
         'runtimeLayerId': _runtimeLayerId,
         'items': _layers.map(_serializeLayerSnapshot).toList(growable: false),
       },
+      'completedTowerShells': _completedTowerShells
+          .map(_serializeCompletedTowerShellState)
+          .toList(growable: false),
       'guild': _serializeGuildState(_activeGuild),
       'tutorial': <String, dynamic>{
         'earlyQuestChainCompleted': _tutorialEarlyQuestChainCompleted,
@@ -298,6 +307,7 @@ extension LightcoreControllerSaveTournamentCloud on LightcoreController {
         'firstManagersOpened': _tutorialFirstManagersOpened,
         'firstEnemyTargetSet': _tutorialFirstEnemyTargetSet,
         'enemyCountAdjusted': _tutorialEnemyCountAdjusted,
+        'firstTowerStatsOpened': _tutorialFirstTowerStatsOpened,
         'stabilityPanelOpened': _tutorialStabilityPanelOpened,
         'towerMatrixOpened': _tutorialTowerMatrixOpened,
         'storeOpened': _tutorialStoreOpened,

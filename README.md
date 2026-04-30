@@ -131,6 +131,10 @@ For browser-only testing:
 flutter run -d chrome
 ```
 
+To jump into a higher shell while testing a debug web run, add `?devLayer=3`
+or pass `--dart-define=LIGHTCORE_DEV_LAYER=3`. The jump is debug-only and
+cloud save is disabled for that run.
+
 ## Backend Deploys
 
 Cloud Functions and Firestore deploys should explicitly target

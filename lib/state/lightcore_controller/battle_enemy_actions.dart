@@ -34,19 +34,12 @@ extension LightcoreControllerBattleEnemyActions on LightcoreController {
       }
     }
 
-    final levelRewardTickets = _grantSummoningLevelTicketRewards(
+    _grantSummoningLevelTicketRewards(
       previousLevel: previousSummoningLevel,
       currentLevel: summoningLevel,
     );
     _advanceBattlePass(BattlePassType.enemyPulls, count);
     _lastEnemyPackPulls = pulls;
-    var message =
-        'Resolved $count threat scan${count == 1 ? '' : 's'}: ${pulls.take(4).map((pull) => pull.config.name).join(', ')}${pulls.length > 4 ? '...' : ''}.';
-    if (levelRewardTickets > 0) {
-      message +=
-          ' Scan Lv $summoningLevel reached: ${LightcoreCurrencyLabels.rewardThreatScans(levelRewardTickets)}.';
-    }
-    _showBanner(message);
     _syncTutorialStep(showBanner: false);
     _notifyNow();
     return List<PackPullResult>.unmodifiable(pulls);
@@ -72,13 +65,14 @@ extension LightcoreControllerBattleEnemyActions on LightcoreController {
     bossTickets -= count;
     final pulls = <PackPullResult>[];
     for (var draw = 0; draw < count; draw++) {
-      final config = _shouldScriptBossPullTutorial
-          ? BossEnemyLibrary.starterWhiteWarden
-          : (() {
-              final rarity = _rollBossPackRarity();
-              final pool = BossEnemyLibrary.byRarity[rarity]!;
-              return pool[_packRandom.nextInt(pool.length)];
-            })();
+      final scriptedConfig = _scriptedBossPull();
+      final config =
+          scriptedConfig ??
+          (() {
+            final rarity = _rollBossPackRarity();
+            final pool = BossEnemyLibrary.byRarity[rarity]!;
+            return pool[_packRandom.nextInt(pool.length)];
+          })();
       bossPullCount += 1;
       final cardIndex = _bossEnemyCards.indexWhere(
         (card) => card.config.id == config.id,
@@ -92,18 +86,11 @@ extension LightcoreControllerBattleEnemyActions on LightcoreController {
       pulls.add(PackPullResult(config: config, isNew: wasNew));
     }
 
-    final levelRewardTickets = _grantBossSummoningLevelTicketRewards(
+    _grantBossSummoningLevelTicketRewards(
       previousLevel: previousSummoningLevel,
       currentLevel: bossSummoningLevel,
     );
     _lastBossPackPulls = pulls;
-    var message =
-        'Resolved $count apex scan${count == 1 ? '' : 's'}: ${pulls.take(4).map((pull) => pull.config.name).join(', ')}${pulls.length > 4 ? '...' : ''}.';
-    if (levelRewardTickets > 0) {
-      message +=
-          ' Apex Scan Lv $bossSummoningLevel reached: ${LightcoreCurrencyLabels.rewardBossScans(levelRewardTickets)}.';
-    }
-    _showBanner(message);
     _syncTutorialStep(showBanner: false);
     _notifyNow();
     return List<PackPullResult>.unmodifiable(pulls);
@@ -148,6 +135,15 @@ extension LightcoreControllerBattleEnemyActions on LightcoreController {
       return;
     }
     _tutorialTowerMatrixOpened = true;
+    _syncTutorialStep(showBanner: false);
+    _notifyNow();
+  }
+
+  void markTutorialFirstTowerStatsOpened() {
+    if (_tutorialFirstTowerStatsOpened) {
+      return;
+    }
+    _tutorialFirstTowerStatsOpened = true;
     _syncTutorialStep(showBanner: false);
     _notifyNow();
   }
@@ -297,6 +293,34 @@ extension LightcoreControllerBattleEnemyActions on LightcoreController {
     return match.isEmpty ? null : match.first;
   }
 
+  ThreatAssignmentGroupStatsSnapshot get activeThreatAssignmentGroupStats =>
+      _threatAssignmentGroupStatsForCards(activeEnemyDeck);
+
+  ThreatAssignmentGroupStatsSnapshot threatAssignmentGroupStatsForPreset(
+    ThreatAssignmentPresetState preset,
+  ) {
+    final seen = <String>{};
+    final cards = <EnemyCardState>[];
+    var ignoredAnomalyCount = 0;
+    for (final cardId in preset.enemyCardIds) {
+      final unique = seen.add(cardId);
+      final card = unique ? enemyCardById(cardId) : null;
+      if (!unique || card == null || !card.isOwned) {
+        ignoredAnomalyCount += 1;
+        continue;
+      }
+      if (cards.length >= enemyDeckLimit) {
+        ignoredAnomalyCount += 1;
+        continue;
+      }
+      cards.add(card);
+    }
+    return _threatAssignmentGroupStatsForCards(
+      cards,
+      ignoredAnomalyCount: ignoredAnomalyCount,
+    );
+  }
+
   String? createThreatAssignmentPreset({String? name}) {
     final presetName = _normalizeThreatAssignmentPresetName(name);
     final sequence = activeLayer.threatAssignmentPresets.length + 1;
@@ -412,6 +436,94 @@ extension LightcoreControllerBattleEnemyActions on LightcoreController {
         .toList(growable: false);
   }
 
+  ThreatAssignmentGroupStatsSnapshot _threatAssignmentGroupStatsForCards(
+    List<EnemyCardState> cards, {
+    int ignoredAnomalyCount = 0,
+  }) {
+    final spawnIntervalSeconds = _spawnIntervalForDeck(cards);
+    final spawnsPerMinute =
+        cards.isEmpty ||
+            spawnIntervalSeconds <= 0 ||
+            !spawnIntervalSeconds.isFinite
+        ? 0.0
+        : 60 / spawnIntervalSeconds;
+    if (cards.isEmpty) {
+      return ThreatAssignmentGroupStatsSnapshot(
+        anomalyCount: 0,
+        ignoredAnomalyCount: ignoredAnomalyCount,
+        spawnIntervalSeconds: spawnIntervalSeconds,
+        spawnsPerMinute: spawnsPerMinute,
+        clearsPerMinute: 0,
+        averageLumensPerClear: 0,
+        averageExperiencePerClear: 0,
+        lumensPerMinute: 0,
+        experiencePerMinute: 0,
+      );
+    }
+
+    final averageLumensPerClear =
+        cards.fold<double>(
+          0,
+          (sum, card) => sum + _projectedLumenRewardForCard(card),
+        ) /
+        cards.length;
+    final averageExperiencePerClear =
+        cards.fold<double>(
+          0,
+          (sum, card) => sum + _projectedExperienceRewardForCard(card),
+        ) /
+        cards.length;
+    final clearSeconds = cards
+        .map(enemyCardPreviewClearSeconds)
+        .where((value) => value.isFinite && value > 0)
+        .toList(growable: false);
+    final averageClearSeconds = clearSeconds.length == cards.length
+        ? clearSeconds.fold<double>(0, (sum, value) => sum + value) /
+              clearSeconds.length
+        : double.infinity;
+    final dpsLimitedClearsPerMinute = averageClearSeconds.isFinite
+        ? (60 * max(1, enemyTargetCount)) / averageClearSeconds
+        : 0.0;
+    final clearsPerMinute = min(spawnsPerMinute, dpsLimitedClearsPerMinute);
+
+    return ThreatAssignmentGroupStatsSnapshot(
+      anomalyCount: cards.length,
+      ignoredAnomalyCount: ignoredAnomalyCount,
+      spawnIntervalSeconds: spawnIntervalSeconds,
+      spawnsPerMinute: spawnsPerMinute,
+      clearsPerMinute: clearsPerMinute,
+      averageLumensPerClear: averageLumensPerClear,
+      averageExperiencePerClear: averageExperiencePerClear,
+      lumensPerMinute: averageLumensPerClear * clearsPerMinute,
+      experiencePerMinute: averageExperiencePerClear * clearsPerMinute,
+    );
+  }
+
+  double _projectedLumenRewardForCard(EnemyCardState card) {
+    return max(
+      1,
+      (enemyCardPreviewReward(card) *
+              outputEfficiencyMultiplier *
+              lumenTierMultiplier *
+              friendAllianceRewardMultiplier *
+              _gearLumenMultiplier *
+              _economyBalanceMultiplier('lumenReward'))
+          .round(),
+    ).toDouble();
+  }
+
+  double _projectedExperienceRewardForCard(EnemyCardState card) {
+    final baseExperience = enemyCardPreviewExperience(card);
+    final scaledExperience =
+        (baseExperience *
+                sharedRelayExperienceMultiplier *
+                effectiveExperienceEfficiencyMultiplier)
+            .round();
+    return _boostedExperienceReward(
+      max(baseExperience, scaledExperience),
+    ).toDouble();
+  }
+
   String? _normalizeThreatAssignmentPresetName(String? name) {
     final normalized = name?.trim();
     if (normalized == null || normalized.isEmpty) {
@@ -436,6 +548,12 @@ extension LightcoreControllerBattleEnemyActions on LightcoreController {
   }
 
   void setActiveBossEnemyCard(String cardId) {
+    if (!bossHuntsUnlocked &&
+        cardId != BossEnemyLibrary.starterWhiteWarden.id) {
+      _showBanner('Changing Apex Anomalies unlocks in the Prism Shell.');
+      _notifyNow();
+      return;
+    }
     final card = bossEnemyCardById(cardId);
     if (card == null || !card.isOwned || _activeBossEnemyCardId == cardId) {
       return;
@@ -499,54 +617,159 @@ extension LightcoreControllerBattleEnemyActions on LightcoreController {
     return true;
   }
 
-  bool forgeTowerManager() {
-    if (!managersUnlocked) {
+  bool upgradeManagerPower() {
+    if (managerPowerLevel >= maxManagerPowerLevel) {
+      _showBanner('Manager Power is already at Lv $maxManagerPowerLevel.');
+      _notifyNow();
+      return false;
+    }
+    final cost = managerPowerUpgradeCost;
+    if (managerShards < cost) {
       _showBanner(
-        'Managers unlock at Account Radiance Lv $managerUnlockLevel.',
+        'Need ${LightcoreCurrencyLabels.managerShardCount(cost)} to upgrade Manager Power.',
       );
       _notifyNow();
       return false;
     }
-    if (flux < towerManagerFluxCost) {
-      return false;
-    }
 
-    flux -= towerManagerFluxCost;
-    _recordFluxSpend(towerManagerFluxCost);
-    final manager = _generateTowerManager(forgeCost: towerManagerFluxCost);
-    _cards.add(manager);
-    _totalManagersForged += 1;
-    towerManagerPullCount += 1;
-    _advanceBattlePass(BattlePassType.towerManagerPulls, 1);
-    _syncTutorialStep(showBanner: false);
-    _showBanner('${manager.name} forged in the Core Manager foundry.');
+    managerShards -= cost;
+    managerPowerLevel += 1;
+    _showBanner(
+      'Manager Power Lv $managerPowerLevel online: $managerPowerEffectLabel.',
+    );
     _notifyNow();
     return true;
   }
 
-  bool forgeEnemyManager() {
+  bool forgeTowerManager() => forgeTowerManagerBatch(1);
+
+  bool forgeTowerManagerBatch(int count) {
+    final packCount = max(1, count);
     if (!managersUnlocked) {
       _showBanner(
-        'Managers unlock at Account Radiance Lv $managerUnlockLevel.',
+        'Managers unlock at Core Lv $managerCoreLevelRequirement or Account Radiance Lv $managerUnlockLevel.',
       );
       _notifyNow();
       return false;
     }
-    if (flux < enemyManagerFluxCost) {
+    final cost = towerManagerFluxCost * packCount;
+    if (flux < cost) {
       return false;
     }
 
-    flux -= enemyManagerFluxCost;
-    _recordFluxSpend(enemyManagerFluxCost);
-    final manager = _generateEnemyManager(forgeCost: enemyManagerFluxCost);
-    _enemyManagers.add(manager);
-    _totalManagersForged += 1;
-    enemyManagerPullCount += 1;
-    _advanceBattlePass(BattlePassType.enemyManagerPulls, 1);
+    flux -= cost;
+    _recordFluxSpend(cost);
+    final managers = <InventoryCard>[];
+    for (var index = 0; index < packCount; index += 1) {
+      managers.add(
+        _generateTowerManager(
+          forgeCost: towerManagerFluxCost,
+          forcedRarity: _rollManagerRarityWithFloor(
+            _bulkForgeRarityFloor(index, packCount),
+          ),
+        ),
+      );
+    }
+    _cards.addAll(managers);
+    final bonusShards = _managerBulkForgeBonusShards(packCount);
+    managerShards += bonusShards;
+    _totalManagersForged += packCount;
+    towerManagerPullCount += packCount;
+    _advanceBattlePass(BattlePassType.towerManagerPulls, packCount);
     _syncTutorialStep(showBanner: false);
-    _showBanner('${manager.name} forged in the Threat Director foundry.');
+    _showBanner(_managerForgeBanner('Core Manager', managers, bonusShards));
     _notifyNow();
     return true;
+  }
+
+  bool forgeEnemyManager() => forgeEnemyManagerBatch(1);
+
+  bool forgeEnemyManagerBatch(int count) {
+    final packCount = max(1, count);
+    if (!managersUnlocked) {
+      _showBanner(
+        'Managers unlock at Core Lv $managerCoreLevelRequirement or Account Radiance Lv $managerUnlockLevel.',
+      );
+      _notifyNow();
+      return false;
+    }
+    final cost = enemyManagerFluxCost * packCount;
+    if (flux < cost) {
+      return false;
+    }
+
+    flux -= cost;
+    _recordFluxSpend(cost);
+    final managers = <EnemyManagerState>[];
+    for (var index = 0; index < packCount; index += 1) {
+      managers.add(
+        _generateEnemyManager(
+          forgeCost: enemyManagerFluxCost,
+          forcedRarity: _rollManagerRarityWithFloor(
+            _bulkForgeRarityFloor(index, packCount),
+          ),
+        ),
+      );
+    }
+    _enemyManagers.addAll(managers);
+    final bonusShards = _managerBulkForgeBonusShards(packCount);
+    managerShards += bonusShards;
+    _totalManagersForged += packCount;
+    enemyManagerPullCount += packCount;
+    _advanceBattlePass(BattlePassType.enemyManagerPulls, packCount);
+    _syncTutorialStep(showBanner: false);
+    _showBanner(_managerForgeBanner('Threat Director', managers, bonusShards));
+    _notifyNow();
+    return true;
+  }
+
+  ManagerRarity? _bulkForgeRarityFloor(int index, int count) {
+    if (index != count - 1) {
+      return null;
+    }
+    if (count >= 10) {
+      return ManagerRarity.rare;
+    }
+    if (count >= 5) {
+      return ManagerRarity.uncommon;
+    }
+    return null;
+  }
+
+  ManagerRarity? _rollManagerRarityWithFloor(ManagerRarity? floor) {
+    if (floor == null) {
+      return null;
+    }
+    final rolled = _rollManagerRarity();
+    return rolled.score >= floor.score ? rolled : floor;
+  }
+
+  int _managerBulkForgeBonusShards(int count) {
+    if (count >= 10) {
+      return managerBulkForgeTenBonusShards;
+    }
+    if (count >= 5) {
+      return managerBulkForgeFiveBonusShards;
+    }
+    return 0;
+  }
+
+  String _managerForgeBanner(
+    String label,
+    Iterable<dynamic> managers,
+    int bonusShards,
+  ) {
+    final forged = managers.toList(growable: false);
+    final highest = forged
+        .map((manager) => manager.rarity as ManagerRarity)
+        .reduce((a, b) => a.score >= b.score ? a : b);
+    final bonus = bonusShards > 0
+        ? ' ${LightcoreCurrencyLabels.rewardManagerShards(bonusShards)} bulk bonus.'
+        : '';
+    if (forged.length == 1) {
+      return '${forged.first.name} forged in the $label foundry.$bonus';
+    }
+    return '${forged.length} $label rolls forged. Best roll: ${highest.label}.$bonus';
   }
 
   bool dismantleTowerManager(String managerId) {
@@ -600,7 +823,9 @@ extension LightcoreControllerBattleEnemyActions on LightcoreController {
 
   void assignEnemyManagerToCore(String managerId) {
     if (!managerAssignmentUnlocked) {
-      _showBanner('Manager assignment unlocks with a Layer 2 Core.');
+      _showBanner(
+        'Manager assignment unlocks at Core Lv $managerCoreLevelRequirement or Account Radiance Lv $managerUnlockLevel.',
+      );
       _notifyNow();
       return;
     }
@@ -857,6 +1082,9 @@ extension LightcoreControllerBattleEnemyActions on LightcoreController {
     if (slotIndex < 0 || slotIndex >= _slots.length) {
       return false;
     }
+    if (activeLayerPassiveOnly) {
+      return false;
+    }
     final tower = _slots[slotIndex];
     final rerollCost = currentTraitRefreshCost;
     if (!tower.isBuilt || tower.isChildLayerNode || lumens < rerollCost) {
@@ -878,6 +1106,9 @@ extension LightcoreControllerBattleEnemyActions on LightcoreController {
       return false;
     }
     if (slotIndex < 0 || slotIndex >= _slots.length) {
+      return false;
+    }
+    if (activeLayerPassiveOnly) {
       return false;
     }
     final tower = _slots[slotIndex];
@@ -903,6 +1134,13 @@ extension LightcoreControllerBattleEnemyActions on LightcoreController {
     final tower = _slots[slotIndex];
     final childLayerId = tower.childLayerId;
     if (!tower.isPromotedChildTower || childLayerId == null || echoSeeds <= 0) {
+      return false;
+    }
+    if (promotedChildTowerRerollsRemaining(tower) <= 0) {
+      _showBanner(
+        '${towerDisplayName(tower)} cannot stabilize another Echo Seed recalibration.',
+      );
+      _notifyNow();
       return false;
     }
 
@@ -1006,10 +1244,12 @@ extension LightcoreControllerBattleEnemyActions on LightcoreController {
     final splitBonus = config.splitsOnDeath ? 1.12 : 1.0;
     final managerMultiplier = manager == null
         ? 1.0
-        : ((manager.spawnRateMultiplier +
-                      manager.healthMultiplier +
-                      manager.speedMultiplier +
-                      manager.experienceMultiplier) /
+        : ((managerPowerAdjustedMultiplier(manager.spawnRateMultiplier) +
+                      managerPowerAdjustedMultiplier(manager.healthMultiplier) +
+                      managerPowerAdjustedMultiplier(manager.speedMultiplier) +
+                      managerPowerAdjustedMultiplier(
+                        manager.experienceMultiplier,
+                      )) /
                   4)
               .clamp(0.82, 1.42)
               .toDouble();
@@ -1046,7 +1286,9 @@ extension LightcoreControllerBattleEnemyActions on LightcoreController {
     final manager = apex ? null : enemyManagerForCard(config.id);
     final managerMultiplier = manager == null
         ? 1.0
-        : ((manager.healthMultiplier + manager.speedMultiplier) / 2)
+        : ((managerPowerAdjustedMultiplier(manager.healthMultiplier) +
+                      managerPowerAdjustedMultiplier(manager.speedMultiplier)) /
+                  2)
               .clamp(0.86, 1.36)
               .toDouble();
     final levelMultiplier = 1 + ((card.level - 1) * (apex ? 0.1 : 0.075));

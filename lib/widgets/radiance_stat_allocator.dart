@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import '../models/lightcore_currency_labels.dart';
 import '../state/lightcore_controller.dart';
 import '../theme/lightcore_palette.dart';
 import 'guided_focus_frame.dart';
@@ -25,7 +26,7 @@ class RadianceStatAllocator extends StatelessWidget {
     final earned = controller.totalRadianceStatPointsEarned;
     final spent = controller.totalRadianceStatPointsSpent;
 
-    return GuidedFocusFrame(
+    final allocator = GuidedFocusFrame(
       active: highlighted,
       tint: LightcorePalette.quest,
       label: 'STATS',
@@ -48,6 +49,10 @@ class RadianceStatAllocator extends StatelessWidget {
               _RadiancePointChip(ready: ready, spent: spent, earned: earned),
             ],
           ),
+          if (spent > 0) ...[
+            const SizedBox(height: 8),
+            _RadianceResetPanel(controller: controller),
+          ],
           const SizedBox(height: 10),
           LayoutBuilder(
             builder: (context, constraints) {
@@ -77,6 +82,15 @@ class RadianceStatAllocator extends StatelessWidget {
           ),
         ],
       ),
+    );
+
+    if (!highlighted) {
+      return allocator;
+    }
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(8, 8, 36, 38),
+      child: allocator,
     );
   }
 }
@@ -109,6 +123,119 @@ class _RadiancePointChip extends StatelessWidget {
           color: ready > 0 ? LightcorePalette.quest : LightcorePalette.mist,
           fontWeight: FontWeight.w800,
         ),
+      ),
+    );
+  }
+}
+
+class _RadianceResetPanel extends StatelessWidget {
+  const _RadianceResetPanel({required this.controller});
+
+  final LightcoreController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    const cost = LightcoreController.radianceStatResetPrismShardCost;
+    final spent = controller.totalRadianceStatPointsSpent;
+    final canReset = controller.canPurchaseRadianceStatReset;
+    final missing = math.max(0, cost - controller.prismShards);
+    final detail = canReset
+        ? '$spent allocated point${spent == 1 ? '' : 's'} can be reassigned.'
+        : 'Need ${LightcoreCurrencyLabels.prismShardCount(missing)} more.';
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: LightcorePalette.panelRaised.withValues(alpha: 0.42),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: LightcorePalette.quest.withValues(alpha: 0.28),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.restart_alt_rounded,
+                color: LightcorePalette.quest,
+                size: 20,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Global Stat Reset',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                        color: LightcorePalette.mist,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      detail,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: LightcorePalette.mist.withValues(alpha: 0.74),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              _RadianceResetCostChip(cost: cost),
+            ],
+          ),
+          const SizedBox(height: 10),
+          FilledButton.icon(
+            onPressed: canReset
+                ? () => controller.purchaseRadianceStatReset()
+                : null,
+            icon: const Icon(Icons.restart_alt_rounded),
+            label: const Text('Reset Attributes'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _RadianceResetCostChip extends StatelessWidget {
+  const _RadianceResetCostChip({required this.cost});
+
+  final int cost;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: LightcorePalette.aether.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: LightcorePalette.aether.withValues(alpha: 0.34),
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.diamond_rounded, size: 14, color: LightcorePalette.aether),
+          const SizedBox(width: 5),
+          Text(
+            cost.toString(),
+            style: Theme.of(context).textTheme.labelMedium?.copyWith(
+              color: LightcorePalette.aether,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+        ],
       ),
     );
   }

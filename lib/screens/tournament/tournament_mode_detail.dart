@@ -11,6 +11,7 @@ class _TournamentModeDetailScreen extends StatefulWidget {
     required this.onRefresh,
     required this.onClaim,
     required this.onSubmit,
+    this.onBattleSurfaceActiveChanged,
   });
 
   final LightcoreController controller;
@@ -22,6 +23,7 @@ class _TournamentModeDetailScreen extends StatefulWidget {
   final Future<void> Function() onClaim;
   final Future<void> Function(LightcoreTournamentModeState modeState, int score)
   onSubmit;
+  final ValueChanged<bool>? onBattleSurfaceActiveChanged;
 
   @override
   State<_TournamentModeDetailScreen> createState() =>
@@ -64,11 +66,19 @@ class _TournamentModeDetailScreenState
   double _arenaBurstSeconds = 0;
   double _arenaPressure = 0;
   late LightcoreController _battleController;
+  late HexTournamentRunController _hexRun;
+  late ValueNotifier<HexTournamentSnapshot> _hexSnapshotNotifier;
+  late _HexTournamentGame _hexGame;
 
   @override
   void initState() {
     super.initState();
     _battleController = _createBattleController();
+    _hexRun = HexTournamentRunController(seedPowerIndex: _eventSeed);
+    _hexSnapshotNotifier = ValueNotifier<HexTournamentSnapshot>(
+      _hexRun.snapshot,
+    );
+    _hexGame = _createHexGame();
     _gauntletLaneIntegrity = List<double>.filled(
       LightcoreController.slotCount,
       1,
@@ -81,6 +91,8 @@ class _TournamentModeDetailScreenState
   void dispose() {
     _ticker?.cancel();
     _battleController.dispose();
+    _hexGame.pauseEngine();
+    _hexSnapshotNotifier.dispose();
     super.dispose();
   }
 
@@ -103,11 +115,16 @@ class _TournamentModeDetailScreenState
       );
       _battleController.dispose();
       _battleController = _createBattleController();
+      _hexGame.pauseEngine();
+      _hexRun.reset(seedPowerIndex: _eventSeed);
+      _refreshHexSnapshot();
       _seedSelections();
       _syncBattleController();
     } else {
       _seedSelections();
       if (!_runActive) {
+        _hexRun.reset(seedPowerIndex: _eventSeed);
+        _refreshHexSnapshot();
         _syncBattleController();
       }
     }
@@ -130,6 +147,50 @@ class _TournamentModeDetailScreenState
       playerId: '${widget.controller.playerId}-TOURNEY',
       screenName: widget.controller.screenName,
     );
+  }
+
+  _HexTournamentGame _createHexGame() {
+    return _HexTournamentGame(
+      run: _hexRun,
+      snapshotNotifier: _hexSnapshotNotifier,
+      onCellTap: _handleHexCellTap,
+      onRunEnded: _handleHexRunEnded,
+    );
+  }
+
+  void _refreshHexSnapshot() {
+    final snapshot = _hexRun.snapshot;
+    _score = snapshot.score.toDouble();
+    _hexSnapshotNotifier.value = snapshot;
+  }
+
+  void _handleHexCellTap(String cellId) {
+    if (!_runActive || _runComplete) {
+      return;
+    }
+    _hexRun.tapCell(cellId);
+    _refreshHexSnapshot();
+  }
+
+  void _handleHexRunEnded() {
+    if (!_runActive || _runComplete || !_hexRun.defeated) {
+      return;
+    }
+    _hexGame.pauseEngine();
+    _completeHexRun(
+      'Hex core broke on wave ${_hexRun.wave}. Submit the score or start over.',
+    );
+    _refreshHexSnapshot();
+    widget.onBattleSurfaceActiveChanged?.call(false);
+  }
+
+  void _completeHexRun(String hint) {
+    setState(() {
+      _runActive = false;
+      _runComplete = true;
+      _score = _hexRun.score.toDouble();
+      _hint = hint;
+    });
   }
 
   List<EnemyCardState> get _availableEnemyCards {
@@ -387,16 +448,9 @@ class _TournamentModeDetailScreenState
               'Draft locked. Hold the blitz, cash wave payouts, and choose whether to upgrade the tower or the enemies.';
           break;
         case LightcoreTournamentModeId.hexGauntlet:
-          _gauntletWave = 1;
-          _gauntletCharges = 2;
-          _gauntletChargeProgress = 0.2;
-          _gauntletCoreIntegrity = 1;
-          _gauntletLaneIntegrity = List<double>.filled(
-            LightcoreController.slotCount,
-            1,
-          );
+          _hexRun.start(seedPowerIndex: _eventSeed);
           _hint =
-              'The normalized event shell is live in the hex grid. Reinforce any lane that starts to buckle.';
+              'Hex run live. Build on open hexes, send waves manually, and push enemy tier when the economy can hold it.';
           break;
         case LightcoreTournamentModeId.arenaFlow:
           _arenaFlow = 0;
@@ -409,7 +463,14 @@ class _TournamentModeDetailScreenState
           break;
       }
     });
+    if (_mode == LightcoreTournamentModeId.hexGauntlet) {
+      _refreshHexSnapshot();
+      _hexGame.resumeEngine();
+      widget.onBattleSurfaceActiveChanged?.call(true);
+      return;
+    }
     _syncBattleController();
+    widget.onBattleSurfaceActiveChanged?.call(true);
     _ticker = Timer.periodic(_tickRate, (_) => _advanceRun());
   }
 
@@ -707,9 +768,17 @@ class _TournamentModeDetailScreenState
     if (!_runComplete) {
       return;
     }
+    if (_mode == LightcoreTournamentModeId.hexGauntlet) {
+      _score = _hexRun.score.toDouble();
+    }
     await widget.onSubmit(widget.modeState, _score.round());
     if (!mounted) {
       return;
+    }
+    if (_mode == LightcoreTournamentModeId.hexGauntlet) {
+      _hexRun.reset(seedPowerIndex: _eventSeed);
+      _hexGame.pauseEngine();
+      _refreshHexSnapshot();
     }
     setState(() {
       _runComplete = false;
@@ -717,12 +786,16 @@ class _TournamentModeDetailScreenState
       _hint =
           'Score submitted. You can rerun the event to improve your standing.';
     });
+    widget.onBattleSurfaceActiveChanged?.call(false);
   }
 
   @override
   Widget build(BuildContext context) {
     final state = widget.modeState;
     final tint = _modeTint(state.mode);
+    if (state.joined && (_runActive || _runComplete)) {
+      return _buildRunPanel(context, tint);
+    }
     return SingleChildScrollView(
       padding: const EdgeInsets.all(14),
       child: Column(
@@ -847,6 +920,8 @@ class _TournamentModeDetailScreenState
             ),
           ),
           const SizedBox(height: 12),
+          _buildRulesPanel(context, tint),
+          const SizedBox(height: 12),
           if (!state.joined)
             AuroraPanel(
               tint: tint,
@@ -887,11 +962,40 @@ class _TournamentModeDetailScreenState
             )
           else ...[
             _buildPreparationPanel(context, tint),
-            const SizedBox(height: 12),
-            _buildRunPanel(context, tint),
           ],
           const SizedBox(height: 12),
           _buildRewardAndLeaderboard(context, tint),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRulesPanel(BuildContext context, Color tint) {
+    final rules = widget.modeState.mode.rules;
+    return AuroraPanel(
+      tint: tint,
+      padding: const EdgeInsets.all(18),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Rules', style: Theme.of(context).textTheme.titleLarge),
+          const SizedBox(height: 10),
+          for (final rule in rules) ...[
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(Icons.hexagon_rounded, color: tint, size: 16),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    rule,
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                ),
+              ],
+            ),
+            if (rule != rules.last) const SizedBox(height: 8),
+          ],
         ],
       ),
     );
@@ -983,6 +1087,7 @@ class _TournamentModeDetailScreenState
   }
 
   Widget _buildHexGauntletPrep(BuildContext context, Color tint) {
+    final preview = _hexRun.snapshot;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -990,27 +1095,24 @@ class _TournamentModeDetailScreenState
           spacing: 10,
           runSpacing: 10,
           children: [
-            const _HeaderChip(label: 'Event Lanes', value: '6/6'),
-            _HeaderChip(label: 'Event Power', value: '$_eventSeed'),
             _HeaderChip(
-              label: 'Event Core',
-              value: '${LightcoreController.evenEntryTournamentCoreLevel}',
+              label: 'Build Hexes',
+              value: '${preview.cells.where((cell) => cell.canBuild).length}',
             ),
+            _HeaderChip(
+              label: 'Path Hexes',
+              value: '${preview.pathCells.length}',
+            ),
+            _HeaderChip(label: 'Event Power', value: '$_eventSeed'),
+            _HeaderChip(label: 'Start Cur', value: '${preview.currency}'),
           ],
         ),
         const SizedBox(height: 12),
-        Text('Event Hex Grid', style: Theme.of(context).textTheme.titleMedium),
+        Text('Weekly Focus', style: Theme.of(context).textTheme.titleMedium),
         const SizedBox(height: 8),
-        _HexGauntletPreview(
-          laneIntegrity: const <double>[1, 1, 1, 1, 1, 1],
-          coreIntegrity: 1,
-          builtLanes: List<bool>.generate(
-            LightcoreController.slotCount,
-            (_) => true,
-            growable: false,
-          ),
-          tint: tint,
-        ),
+        _HexFocusChips(focusAffinities: preview.focusAffinities),
+        const SizedBox(height: 12),
+        _HexTournamentPreviewMap(snapshot: preview, tint: tint),
       ],
     );
   }
@@ -1079,96 +1181,199 @@ class _TournamentModeDetailScreenState
   }
 
   Widget _buildRunPanel(BuildContext context, Color tint) {
+    if (_mode == LightcoreTournamentModeId.hexGauntlet) {
+      return _buildHexTournamentRunPanel(context, tint);
+    }
     final progress = _elapsedSeconds / _runDurationSeconds;
-    return AuroraPanel(
-      tint: tint,
-      padding: const EdgeInsets.all(18),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final compact =
+            constraints.maxWidth < 720 || constraints.maxHeight < 720;
+        final inset = compact ? 10.0 : 16.0;
+        final controlsMaxHeight =
+            constraints.maxHeight * (compact ? 0.46 : 0.38);
+        return DecoratedBox(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                LightcorePalette.night,
+                LightcorePalette.abyss,
+                Color.lerp(LightcorePalette.abyss, tint, 0.18)!,
+              ],
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+            ),
+          ),
+          child: Stack(
             children: [
-              Expanded(
-                child: Text(
-                  'Live Event Run',
-                  style: Theme.of(context).textTheme.titleLarge,
+              Positioned.fill(
+                child: _TournamentBattleStage(
+                  controller: _battleController,
+                  active: _runActive,
                 ),
               ),
-              if (_runActive)
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 6,
+              Positioned(
+                top: inset,
+                left: inset,
+                right: inset,
+                child: AuroraPanel(
+                  tint: tint,
+                  radius: 18,
+                  padding: EdgeInsets.fromLTRB(
+                    compact ? 10 : 12,
+                    10,
+                    compact ? 8 : 10,
+                    10,
                   ),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(999),
-                    color: tint.withValues(alpha: 0.14),
+                  child: Row(
+                    children: [
+                      Tooltip(
+                        message: 'Back to events',
+                        child: IconButton.filledTonal(
+                          onPressed: _returnToEventSetup,
+                          icon: const Icon(Icons.arrow_back_rounded),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    widget.modeState.mode.label,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .titleMedium
+                                        ?.copyWith(fontWeight: FontWeight.w900),
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                Text(
+                                  '${max(0, (_runDurationSeconds - _elapsedSeconds).ceil())}s',
+                                  style: Theme.of(context).textTheme.titleMedium
+                                      ?.copyWith(
+                                        color: tint,
+                                        fontWeight: FontWeight.w900,
+                                      ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 7),
+                            MeterBar(
+                              value: progress.clamp(0.0, 1.0),
+                              color: tint,
+                              height: 8,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
-                  child: Text(
-                    'LIVE',
-                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                      color: tint,
-                      fontWeight: FontWeight.w900,
+                ),
+              ),
+              Positioned(
+                left: inset,
+                right: inset,
+                bottom: inset,
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(maxHeight: controlsMaxHeight),
+                  child: AuroraPanel(
+                    tint: tint,
+                    radius: 20,
+                    padding: EdgeInsets.all(compact ? 12 : 14),
+                    child: SingleChildScrollView(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Wrap(
+                            spacing: 10,
+                            runSpacing: 10,
+                            children: _buildRunStatChips(),
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            _hint,
+                            style: Theme.of(context).textTheme.bodyMedium,
+                          ),
+                          const SizedBox(height: 12),
+                          switch (_mode) {
+                            LightcoreTournamentModeId.enemyBlitz =>
+                              _buildEnemyBlitzRunControls(tint),
+                            LightcoreTournamentModeId.hexGauntlet =>
+                              _buildHexGauntletRunControls(tint),
+                            LightcoreTournamentModeId.arenaFlow =>
+                              _buildArenaFlowRunControls(tint),
+                          },
+                          const SizedBox(height: 12),
+                          Wrap(
+                            spacing: 10,
+                            runSpacing: 10,
+                            children: [
+                              FilledButton.icon(
+                                onPressed: _runComplete ? _submitScore : null,
+                                icon: const Icon(Icons.emoji_events_rounded),
+                                label: const Text('Submit Score'),
+                              ),
+                              FilledButton.tonalIcon(
+                                onPressed: widget.busy || _runActive
+                                    ? null
+                                    : _startRun,
+                                icon: const Icon(Icons.replay_rounded),
+                                label: const Text('Run Again'),
+                              ),
+                              FilledButton.tonalIcon(
+                                onPressed:
+                                    widget.busy ||
+                                        !widget.modeState.rewardReady ||
+                                        widget.modeState.rewardClaimed
+                                    ? null
+                                    : widget.onClaim,
+                                icon: const Icon(
+                                  Icons.workspace_premium_rounded,
+                                ),
+                                label: Text(
+                                  widget.modeState.rewardClaimed
+                                      ? 'Claimed'
+                                      : 'Claim Reward',
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          _TournamentBattleStage(
-            controller: _battleController,
-            tint: tint,
-            compact: MediaQuery.sizeOf(context).width < 760,
-          ),
-          const SizedBox(height: 12),
-          MeterBar(value: progress.clamp(0.0, 1.0), color: tint, height: 12),
-          const SizedBox(height: 12),
-          Wrap(spacing: 10, runSpacing: 10, children: _buildRunStatChips()),
-          const SizedBox(height: 14),
-          Text(_hint, style: Theme.of(context).textTheme.bodyMedium),
-          const SizedBox(height: 14),
-          switch (_mode) {
-            LightcoreTournamentModeId.enemyBlitz => _buildEnemyBlitzRunControls(
-              tint,
-            ),
-            LightcoreTournamentModeId.hexGauntlet =>
-              _buildHexGauntletRunControls(tint),
-            LightcoreTournamentModeId.arenaFlow => _buildArenaFlowRunControls(
-              tint,
-            ),
-          },
-          const SizedBox(height: 14),
-          Wrap(
-            spacing: 10,
-            runSpacing: 10,
-            children: [
-              FilledButton.icon(
-                onPressed: _runComplete ? _submitScore : null,
-                icon: const Icon(Icons.emoji_events_rounded),
-                label: const Text('Submit Score'),
-              ),
-              FilledButton.tonalIcon(
-                onPressed: widget.busy || _runActive ? null : _startRun,
-                icon: const Icon(Icons.replay_rounded),
-                label: const Text('Run Again'),
-              ),
-              FilledButton.tonalIcon(
-                onPressed:
-                    widget.busy ||
-                        !widget.modeState.rewardReady ||
-                        widget.modeState.rewardClaimed
-                    ? null
-                    : widget.onClaim,
-                icon: const Icon(Icons.workspace_premium_rounded),
-                label: Text(
-                  widget.modeState.rewardClaimed ? 'Claimed' : 'Claim Reward',
-                ),
               ),
             ],
           ),
-        ],
-      ),
+        );
+      },
     );
+  }
+
+  void _returnToEventSetup() {
+    _ticker?.cancel();
+    if (_mode == LightcoreTournamentModeId.hexGauntlet) {
+      _hexRun.reset(seedPowerIndex: _eventSeed);
+      _hexGame.pauseEngine();
+      _refreshHexSnapshot();
+    }
+    setState(() {
+      _runActive = false;
+      _runComplete = false;
+      _elapsedSeconds = 0;
+      _hint = 'Build your event loadout and enter the bracket.';
+    });
+    _syncBattleController();
+    widget.onBattleSurfaceActiveChanged?.call(false);
   }
 
   List<Widget> _buildRunStatChips() {

@@ -56,7 +56,7 @@ class _HelpSectionData {
   final String body;
 }
 
-const List<_HelpSectionData> _helpSections = <_HelpSectionData>[
+const List<_HelpSectionData> _baseHelpSections = <_HelpSectionData>[
   _HelpSectionData(
     id: 'mission-briefing',
     title: 'Mission Briefing',
@@ -109,7 +109,7 @@ const List<_HelpSectionData> _helpSections = <_HelpSectionData>[
     summary: 'What Lumens, Flux, and Threat Scans are for.',
     body:
         'Lumens are your main stabilization currency. Use them to anchor new prisms and upgrade existing ones. Lumen income scales hardest with active-shell progress, so it is your main growth curve.\n\n'
-        'Flux feeds the foundries. The foundry unlocks at Account Radiance Lv ${LightcoreController.managerUnlockLevel}, so early Flux is intentionally banked until managers enter the run.\n\n'
+        'Flux feeds the foundries. The foundry unlocks at Core Lv ${LightcoreController.managerCoreLevelRequirement} or Account Radiance Lv ${LightcoreController.managerUnlockLevel}, so early Flux is intentionally banked until managers enter the run.\n\n'
         'Threat Scans let you resolve anomaly signatures. Scan income starts slower than Lumen income, so each scan matters more.',
   ),
   _HelpSectionData(
@@ -153,6 +153,16 @@ const List<_HelpSectionData> _helpSections = <_HelpSectionData>[
     summary: 'How child towers bias shots and how managers modify behavior.',
     body:
         'Targeting priorities such as Close, Strong, and Weak tell a relay what kind of anomaly packet it should ask the core to focus when that tower contributes charge. This matters most once promoted child towers are online.\n\n'
-        'Core Managers are equipment for your prisms. Each one has an automation rate: if the tower becomes ready faster than the manager can tap it, the tower loses efficiency while it waits. Threat Directors modify anomaly spawn rate, reward, EXP, health, and speed. Both manager families unlock at Account Radiance Lv ${LightcoreController.managerUnlockLevel}.',
+        'Core Managers are equipment for your prisms. Each one has an automation rate: if the tower becomes ready faster than the manager can tap it, the tower loses efficiency while it waits. Threat Directors modify anomaly spawn rate, reward, EXP, health, and speed. Both manager families unlock at Core Lv ${LightcoreController.managerCoreLevelRequirement} or Account Radiance Lv ${LightcoreController.managerUnlockLevel}.',
+  ),
+];
+
+List<_HelpSectionData> get _helpSections => <_HelpSectionData>[
+  ..._baseHelpSections,
+  _HelpSectionData(
+    id: 'guide-quest-walkthrough',
+    title: 'Guide Quest Walkthrough',
+    summary: 'Every tutorial quest, what it teaches, and what to tap.',
+    body: LightcoreController.tutorialQuestHelpBody,
   ),
 ];

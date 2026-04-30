@@ -2,10 +2,28 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:lightcore/data/enemy_configs.dart';
+import 'package:lightcore/data/tower_configs.dart';
 import 'package:lightcore/models/lightcore_types.dart';
 import 'package:lightcore/screens/enemy_management_screen.dart';
 import 'package:lightcore/state/lightcore_controller.dart';
 import 'package:lightcore/theme/lightcore_theme.dart';
+
+void _unlockBossHunts(LightcoreController controller) {
+  controller.lumens = 200000;
+  controller.kills = 2000;
+  controller.experience = 2000;
+  for (var index = 0; index < LightcoreController.slotCount; index++) {
+    if (!controller.slots[index].isBuilt) {
+      controller.buildTowerAt(index, TowerLibrary.all[index]);
+    }
+    while (controller.slots[index].level < LightcoreController.maxTowerLevel) {
+      controller.upgradeTower(index);
+    }
+  }
+  if (!controller.bossHuntsUnlocked) {
+    controller.unlockLayer2Tower();
+  }
+}
 
 void main() {
   test('openEnemyTickets consumes the full requested stash', () {
@@ -17,6 +35,30 @@ void main() {
     expect(pulls, hasLength(startingTickets));
     expect(controller.enemyTickets, 0);
     expect(controller.lastEnemyPackPulls, hasLength(startingTickets));
+  });
+
+  test('openEnemyTickets does not show a pre-reveal result banner', () {
+    final controller = LightcoreController();
+    final initialBanner = controller.bannerMessage;
+
+    final pulls = controller.openEnemyTickets(1);
+
+    expect(pulls, hasLength(1));
+    expect(controller.bannerMessage, initialBanner);
+    expect(controller.bannerMessage, isNot(contains('Resolved')));
+  });
+
+  test('openBossTickets does not show a pre-reveal result banner', () {
+    final controller = LightcoreController();
+    _unlockBossHunts(controller);
+    controller.bossTickets = 1;
+    final initialBanner = controller.bannerMessage;
+
+    final pulls = controller.openBossTickets(1);
+
+    expect(pulls, hasLength(1));
+    expect(controller.bannerMessage, isNot(initialBanner));
+    expect(controller.bannerMessage, isNot(contains('Resolved')));
   });
 
   test('rewarded resources can grant apex scans', () {
@@ -281,14 +323,14 @@ void main() {
     await tester.pump(const Duration(milliseconds: 2100));
     await tester.pump();
 
-    expect(find.textContaining('Orange pulse resolving'), findsOneWidget);
+    expect(find.textContaining('Scan pulse resolving'), findsOneWidget);
     expect(find.textContaining('Azure'), findsNothing);
     expect(find.text('x3'), findsNothing);
 
     await tester.pump(const Duration(milliseconds: 1500));
     await tester.pump();
 
-    expect(find.textContaining('Orange pulse resolving'), findsOneWidget);
+    expect(find.textContaining('Scan pulse resolving'), findsOneWidget);
     expect(find.text('x3'), findsNothing);
 
     await tester.pump(const Duration(milliseconds: 1300));
@@ -341,10 +383,10 @@ void main() {
         home: Scaffold(body: EnemyPullSheet(controller: controller)),
       ),
     );
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 300));
 
     await tester.tap(find.text('Apex'));
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 300));
 
     final fakeBossButton = find.text('Fake Apex Scan');
 
@@ -365,7 +407,7 @@ void main() {
     await tester.pump(const Duration(seconds: 13));
     await tester.pump();
     await tester.tap(find.text('Close'));
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 300));
 
     expect(controller.bossTickets, startingTickets);
     expect(controller.bossPullCount, startingPullCount);
@@ -418,7 +460,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('MAX'));
+    await tester.tap(find.text('MAX').last);
     await tester.pump();
 
     expect(controller.enemyTickets, 0);
@@ -433,9 +475,9 @@ void main() {
 
   testWidgets('max option resolves every available apex scan', (tester) async {
     final controller = LightcoreController();
-    controller.experience = LightcoreController.experienceForOverallLevel(
-      LightcoreController.bossUnlockLevel,
-    );
+    _unlockBossHunts(controller);
+    controller.debugDisableTutorial();
+    controller.bossPullCount = 1;
     controller.bossTickets = 7;
     addTearDown(() {
       tester.view.resetPhysicalSize();
@@ -450,10 +492,10 @@ void main() {
         home: Scaffold(body: EnemyPullSheet(controller: controller)),
       ),
     );
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 300));
 
     await tester.tap(find.text('Apex'));
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 300));
 
     expect(find.text('Ad'), findsOneWidget);
 
@@ -462,12 +504,12 @@ void main() {
 
     expect(controller.bossTickets, 0);
     expect(controller.lastBossPackPulls, hasLength(7));
-    expect(controller.bossPullCount, 7);
+    expect(controller.bossPullCount, 8);
 
     await tester.pump(const Duration(seconds: 13));
     await tester.pump();
     await tester.tap(find.text('Close'));
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 300));
   });
 
   testWidgets('rates info button opens summon rates dialog', (tester) async {
@@ -529,12 +571,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Apex Scans'), findsOneWidget);
-    expect(
-      find.textContaining(
-        'Reach Account Radiance Lv ${LightcoreController.bossUnlockLevel}',
-      ),
-      findsOneWidget,
-    );
+    expect(find.textContaining('Create the Prism Shell'), findsOneWidget);
     expect(find.byTooltip('Show threat rates'), findsNothing);
     expect(find.byTooltip('Show apex scan rates'), findsOneWidget);
   });
@@ -542,9 +579,7 @@ void main() {
   testWidgets('pull sheet omits recent scan summaries', (tester) async {
     final controller = LightcoreController();
     controller.openEnemyTickets(1);
-    controller.experience = LightcoreController.experienceForOverallLevel(
-      LightcoreController.bossUnlockLevel,
-    );
+    _unlockBossHunts(controller);
     controller.debugAddBossTickets(1);
     controller.openBossTickets(1);
 
@@ -575,9 +610,7 @@ void main() {
     tester,
   ) async {
     final controller = LightcoreController();
-    controller.experience = LightcoreController.experienceForOverallLevel(
-      LightcoreController.bossUnlockLevel,
-    );
+    _unlockBossHunts(controller);
     final equipped = BossEnemyLibrary.byRarity[EnemyCardRarity.basic]!.first;
     final resolved = BossEnemyLibrary.byRarity[EnemyCardRarity.basic]![1];
     final available = BossEnemyLibrary.byRarity[EnemyCardRarity.basic]![2];
@@ -600,10 +633,10 @@ void main() {
         home: Scaffold(body: EnemyPullSheet(controller: controller)),
       ),
     );
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 300));
 
     await tester.tap(find.text('Apex'));
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 300));
 
     expect(find.byTooltip('${equipped.name} • tap for details'), findsNothing);
     expect(find.byTooltip('${resolved.name} • tap for details'), findsNothing);

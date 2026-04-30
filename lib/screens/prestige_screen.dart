@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../models/lightcore_currency_labels.dart';
+import '../models/lightcore_types.dart';
 import '../state/lightcore_controller.dart';
 import '../theme/lightcore_palette.dart';
 import '../widgets/aurora_panel.dart';
@@ -151,9 +152,8 @@ class PrestigeScreen extends StatelessWidget {
                   if (canUnlock)
                     _PromotionActionButton(
                       tint: LightcorePalette.solar,
-                      label: controller.activeLayerHasParentSlot
-                          ? 'Promote Into Parent Slot'
-                          : 'Create ${controller.nextShellClassLabel}',
+                      label: controller.promotionActionLabel,
+                      controller: controller,
                       onPressed:
                           onPromotionRequested ?? controller.unlockLayer2Tower,
                     )
@@ -223,11 +223,13 @@ class _PromotionActionButton extends StatefulWidget {
   const _PromotionActionButton({
     required this.tint,
     required this.label,
+    required this.controller,
     required this.onPressed,
   });
 
   final Color tint;
   final String label;
+  final LightcoreController controller;
   final VoidCallback onPressed;
 
   @override
@@ -269,6 +271,70 @@ class _PromotionActionButtonState extends State<_PromotionActionButton>
     }
   }
 
+  void _showRatesDialog() {
+    final controller = widget.controller;
+    showDialog<void>(
+      context: context,
+      builder: (context) {
+        final textTheme = Theme.of(context).textTheme;
+        final payloadRates = controller.promotionPayloadAffinityRates;
+        return AlertDialog(
+          title: const Text('Merge Rates'),
+          content: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 380),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _PromotionRateRow(
+                  label: 'Rainbow',
+                  value: controller.promotionRainbowResultChance,
+                  color: LightcorePalette.layer2,
+                  icon: Icons.auto_awesome_rounded,
+                ),
+                const SizedBox(height: 12),
+                const _PromotionRatesSectionLabel(label: 'Projectile Tower'),
+                const SizedBox(height: 6),
+                ...controller.promotionProjectileAffinityRates.entries.map(
+                  (entry) => _PromotionRateRow(
+                    label: entry.key.label,
+                    value: entry.value,
+                    color: entry.key.color,
+                  ),
+                ),
+                if (payloadRates.isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  const _PromotionRatesSectionLabel(label: 'Payload Tower'),
+                  const SizedBox(height: 6),
+                  ...payloadRates.entries.map(
+                    (entry) => _PromotionRateRow(
+                      label: entry.key.label,
+                      value: entry.value,
+                      color: entry.key.color,
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 10),
+                Text(
+                  'Projectile and payload variants split evenly inside the rolled color.',
+                  style: textTheme.bodySmall?.copyWith(
+                    color: LightcorePalette.mist.withValues(alpha: 0.72),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Close'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return ConstrainedBox(
@@ -286,15 +352,110 @@ class _PromotionActionButtonState extends State<_PromotionActionButton>
             },
           ),
           const SizedBox(height: 10),
-          FilledButton.icon(
-            onPressed: _busy ? null : _handlePressed,
-            icon: const Icon(Icons.auto_awesome_rounded),
-            label: Text(_busy ? 'Aligning Shell' : widget.label),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Flexible(
+                child: FilledButton.icon(
+                  onPressed: _busy ? null : _handlePressed,
+                  icon: const Icon(Icons.auto_awesome_rounded),
+                  label: Text(_busy ? 'Aligning Shell' : widget.label),
+                ),
+              ),
+              const SizedBox(width: 8),
+              IconButton(
+                tooltip: 'Show merge rates',
+                onPressed: _busy ? null : _showRatesDialog,
+                icon: const Icon(Icons.info_outline_rounded),
+              ),
+            ],
           ),
         ],
       ),
     );
   }
+}
+
+class _PromotionRatesSectionLabel extends StatelessWidget {
+  const _PromotionRatesSectionLabel({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      label,
+      style: Theme.of(context).textTheme.labelLarge?.copyWith(
+        color: LightcorePalette.solar,
+        fontWeight: FontWeight.w800,
+      ),
+    );
+  }
+}
+
+class _PromotionRateRow extends StatelessWidget {
+  const _PromotionRateRow({
+    required this.label,
+    required this.value,
+    required this.color,
+    this.icon,
+  });
+
+  final String label;
+  final double value;
+  final Color color;
+  final IconData? icon;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 3),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 18,
+            height: 18,
+            child: icon == null
+                ? DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: color.withValues(alpha: 0.92),
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: LightcorePalette.mist.withValues(alpha: 0.26),
+                      ),
+                    ),
+                  )
+                : Icon(icon, size: 18, color: color),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              label,
+              style: textTheme.bodyMedium?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+          Text(
+            _formatPromotionRate(value),
+            style: textTheme.bodyMedium?.copyWith(
+              color: LightcorePalette.mist,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+String _formatPromotionRate(double value) {
+  final percent = value * 100;
+  if ((percent - percent.round()).abs() < 0.05) {
+    return '${percent.round()}%';
+  }
+  return '${percent.toStringAsFixed(1)}%';
 }
 
 class _ShellFusionPreview extends StatelessWidget {

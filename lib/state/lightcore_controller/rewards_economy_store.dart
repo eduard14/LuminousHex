@@ -182,6 +182,16 @@ extension LightcoreControllerEconomyStore on LightcoreController {
         towerLevel <= _dailyDungeonHighestUnlockedTowerLevel;
   }
 
+  bool _refreshDailyDungeonQuickClearsForToday() {
+    final today = _currentDayKey();
+    if (_dailyDungeonQuickClearDayKey == today) {
+      return false;
+    }
+    _dailyDungeonQuickClearDayKey = today;
+    _dailyDungeonQuickClearsUsed = 0;
+    return true;
+  }
+
   bool isDailyDungeonTowerLevelCleared(int towerLevel) {
     return towerLevel >= dailyDungeonStartingTowerLevel &&
         towerLevel <= _dailyDungeonHighestClearedTowerLevel;
@@ -199,9 +209,88 @@ extension LightcoreControllerEconomyStore on LightcoreController {
       towerLevel: level,
       lumens: 120 + (level * 40) + (level * level * 4),
       flux: 6 + (level * 2) + (level ~/ 4),
+      managerShards: 3 + level + (level ~/ 5),
+      shellCores: 1 + (level ~/ 3),
       threatScans: 1 + (level ~/ 5),
       experience: 18 + (level * 7),
     );
+  }
+
+  LightcoreDailyDungeonReward dailyDungeonQuickClearRewardForLevel(
+    int towerLevel,
+  ) {
+    final base = dailyDungeonRewardForLevel(towerLevel);
+    return LightcoreDailyDungeonReward(
+      towerLevel: base.towerLevel,
+      lumens: (base.lumens * 0.55).round(),
+      flux: max(1, (base.flux * 0.55).round()),
+      managerShards: max(1, (base.managerShards * 0.55).round()),
+      shellCores: base.shellCores,
+      threatScans: max(0, base.threatScans - 1),
+      experience: (base.experience * 0.55).round(),
+    );
+  }
+
+  bool canQuickClearDailyDungeonTowerLevel(int towerLevel) {
+    _refreshDailyDungeonQuickClearsForToday();
+    return dailyDungeonsUnlocked &&
+        isDailyDungeonTowerLevelCleared(towerLevel) &&
+        dailyDungeonQuickClearsRemaining > 0;
+  }
+
+  String dailyDungeonQuickClearButtonLabel(int towerLevel) {
+    final reward = dailyDungeonQuickClearRewardForLevel(towerLevel);
+    if (!isDailyDungeonTowerLevelCleared(towerLevel)) {
+      return 'Clear once to quick clear';
+    }
+    if (dailyDungeonQuickClearsRemaining <= 0) {
+      return 'Quick clears used';
+    }
+    return 'Quick Clear • ${reward.label}';
+  }
+
+  LightcoreDailyDungeonReward? quickClearDailyDungeonTowerLevel(
+    int towerLevel, {
+    bool showBanner = true,
+  }) {
+    _refreshDailyDungeonQuickClearsForToday();
+    if (!canQuickClearDailyDungeonTowerLevel(towerLevel)) {
+      if (showBanner) {
+        _showBanner(
+          isDailyDungeonTowerLevelCleared(towerLevel)
+              ? 'Daily quick clears are used for today.'
+              : 'Clear Daily Tower Lv $towerLevel once before quick clearing it.',
+        );
+        _notifyNow();
+      }
+      return null;
+    }
+
+    final previousExperience = progressionExperience;
+    final reward = dailyDungeonQuickClearRewardForLevel(towerLevel);
+    lumens += reward.lumens;
+    flux += reward.flux;
+    managerShards += reward.managerShards;
+    shellCores += reward.shellCores;
+    enemyTickets += reward.threatScans;
+    experience += _boostedExperienceReward(reward.experience);
+    _dailyDungeonQuickClearsUsed += 1;
+    final levelUpBanner = _handleOverallLevelIncrease(
+      previousExperience: previousExperience,
+      currentExperience: progressionExperience,
+    );
+    if (showBanner) {
+      _showBanner(
+        [
+          'Daily Tower Lv $towerLevel quick cleared: ${reward.label}.',
+          '$dailyDungeonQuickClearsRemaining quick clears remain today.',
+          ...<String?>[levelUpBanner].whereType<String>(),
+        ].join(' '),
+      );
+    }
+    _syncTutorialStep(showBanner: false);
+    _notifyNow();
+    return reward;
   }
 
   LightcoreDailyDungeonReward? clearDailyDungeonTowerLevel(
@@ -221,6 +310,8 @@ extension LightcoreControllerEconomyStore on LightcoreController {
         towerLevel: towerLevel,
         lumens: 0,
         flux: 0,
+        shellCores: 0,
+        managerShards: 0,
         threatScans: 0,
         experience: 0,
       );
@@ -237,6 +328,8 @@ extension LightcoreControllerEconomyStore on LightcoreController {
     final reward = dailyDungeonRewardForLevel(towerLevel);
     lumens += reward.lumens;
     flux += reward.flux;
+    managerShards += reward.managerShards;
+    shellCores += reward.shellCores;
     enemyTickets += reward.threatScans;
     experience += _boostedExperienceReward(reward.experience);
     final levelUpBanner = _handleOverallLevelIncrease(
@@ -528,10 +621,7 @@ extension LightcoreControllerEconomyStore on LightcoreController {
       previousExperience: previousExperience,
       currentExperience: progressionExperience,
     );
-    final bossUnlockBanner = _grantBossUnlockIfNeeded(
-      previousExperience: previousExperience,
-      currentExperience: progressionExperience,
-    );
+    final bossUnlockBanner = _grantBossUnlockIfNeeded();
     final tournamentUnlockBanner = _tournamentUnlockBannerFragment(
       previousExperience: previousExperience,
       currentExperience: progressionExperience,

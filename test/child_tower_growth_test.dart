@@ -71,7 +71,7 @@ void main() {
 
     _promoteRootShell(controller);
     expect(controller.createChildLayer(0, PrototypeAffinity.aether), isTrue);
-    controller.lumens = 100000;
+    controller.shellCores = 100000;
 
     expect(controller.activeLayerHasParentSlot, isTrue);
     expect(controller.activeChildTowerUpgrades, hasLength(4));
@@ -99,7 +99,7 @@ void main() {
 
     _promoteRootShell(controller);
     expect(controller.createChildLayer(0, PrototypeAffinity.aether), isTrue);
-    controller.lumens = 100000;
+    controller.shellCores = 100000;
 
     final initialBoard = controller.activeChildTowerUpgrades.toList();
     final initialLevel = controller.coreState.level;

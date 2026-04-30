@@ -46,7 +46,13 @@ double _dungeonDeployCooldown(
   final speedRelief = (card.config.baseSpeed / 70).clamp(0.0, 0.42).toDouble();
   final managerRelief = manager == null
       ? 0.0
-      : ((manager.spawnRateMultiplier - 1) * 1.4).clamp(-0.25, 0.45).toDouble();
+      : ((controller.managerPowerAdjustedMultiplier(
+                      manager.spawnRateMultiplier,
+                    ) -
+                    1) *
+                1.4)
+            .clamp(-0.25, 0.45)
+            .toDouble();
   return (3.35 - speedRelief - managerRelief).clamp(1.6, 3.8).toDouble();
 }
 

@@ -143,10 +143,12 @@ extension LightcoreControllerCombatFollowups on LightcoreController {
       spawnedChildren == 1
           ? 'Purple Hexer split into one child body.'
           : 'Purple Hexer split into two child bodies.',
+      category: LightcoreNotificationCategory.battle,
     );
   }
 
   void _registerRelayHit(EnemyState enemy) {
+    _failLayer3Trial();
     final slotIndex = _slotIndexForAngle(enemy.angle);
     final tower = _slots[slotIndex];
     final slotAngle = _slotAngle(slotIndex);
@@ -181,6 +183,7 @@ extension LightcoreControllerCombatFollowups on LightcoreController {
       if (nextDisruption >= 0.82) {
         _showBanner(
           'Hex ${slotIndex + 1} is heavily jammed. Green recovers best while Yellow protects payout.',
+          category: LightcoreNotificationCategory.battle,
         );
       }
     } else {
@@ -194,6 +197,7 @@ extension LightcoreControllerCombatFollowups on LightcoreController {
       );
       _showBanner(
         'Empty lane ${slotIndex + 1} leaked one queued packet and bruised Core Stability.',
+        category: LightcoreNotificationCategory.battle,
       );
     }
   }

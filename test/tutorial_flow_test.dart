@@ -57,6 +57,8 @@ void _promoteToLayer3(LightcoreController controller) {
   }
   expect(controller.isPromotionReady, isTrue);
   controller.unlockLayer2Tower();
+  expect(controller.debugCompleteLayer3Trial(), isTrue);
+  controller.unlockLayer2Tower();
   expect(controller.activeLayer.tier, 3);
 }
 
@@ -71,8 +73,10 @@ void _completeSidecarTutorials(LightcoreController controller) {
       case LightcoreTutorialStep.openTowerMatrix:
         controller.markTutorialTowerMatrixOpened();
       case LightcoreTutorialStep.upgradeCoreRange:
-        controller.lumens = controller.coreRangeUpgradeCost;
-        expect(controller.upgradeCoreRange(), isTrue);
+        expect(
+          controller.upgradeRadianceStat(LightcoreRadianceStat.might),
+          isTrue,
+        );
       case LightcoreTutorialStep.openStore:
         controller.markTutorialStoreOpened();
       case LightcoreTutorialStep.claimBattlePassReward:
@@ -120,6 +124,21 @@ void _completeManagerTutorials(LightcoreController controller) {
 }
 
 void main() {
+  test('tutorial help library covers every active guide step', () {
+    expect(
+      LightcoreController.tutorialQuestLibrary,
+      hasLength(LightcoreTutorialStep.values.length - 1),
+    );
+    expect(
+      LightcoreController.tutorialQuestHelpBody,
+      contains('TUT-005 Read Tower Stats'),
+    );
+    expect(
+      LightcoreController.tutorialQuestHelpBody,
+      contains('TUT-037 Inspect Arena Flow'),
+    );
+  });
+
   test('starter deck defaults to White Basic and early pulls are scripted', () {
     final controller = LightcoreController();
     addTearDown(controller.dispose);
@@ -137,6 +156,11 @@ void main() {
     expect(controller.enemyTickets, initialThreatScans + 1);
     expect(controller.tutorialStep, LightcoreTutorialStep.buildFirstRedTower);
     expect(controller.tutorialBuildTowerAt(0, TowerLibrary.redPrism), isTrue);
+    expect(
+      controller.tutorialStep,
+      LightcoreTutorialStep.inspectFirstTowerStats,
+    );
+    controller.markTutorialFirstTowerStatsOpened();
     expect(controller.tutorialStep, LightcoreTutorialStep.tapFirstTower);
     for (var tap = 0; tap < 3; tap++) {
       expect(controller.debugSetTowerCharge(0, charge: 1), isTrue);
@@ -161,9 +185,15 @@ void main() {
         guard++ < 80) {
       controller.tick(0.25);
     }
+    controller.experience = LightcoreController.experienceForOverallLevel(2);
+    controller.tick(0);
     expect(controller.tutorialStep, LightcoreTutorialStep.upgradeCoreRange);
-    expect(controller.upgradeCoreRange(), isTrue);
-    expect(controller.tutorialStep, LightcoreTutorialStep.openTowerMatrix);
+    expect(controller.hasUnspentRadianceStatPoints, isTrue);
+    expect(controller.upgradeRadianceStat(LightcoreRadianceStat.might), isTrue);
+    expect(
+      controller.tutorialStep,
+      isNot(LightcoreTutorialStep.upgradeCoreRange),
+    );
     expect(controller.tutorialTowerChoices.length, greaterThan(1));
   });
 
@@ -205,6 +235,11 @@ void main() {
     final buildCost = controller.buildCostForConfig(TowerLibrary.redPrism);
     controller.lumens = buildCost;
     expect(controller.tutorialBuildTowerAt(0, TowerLibrary.redPrism), isTrue);
+    expect(
+      controller.tutorialStep,
+      LightcoreTutorialStep.inspectFirstTowerStats,
+    );
+    controller.markTutorialFirstTowerStatsOpened();
     expect(controller.tutorialStep, LightcoreTutorialStep.tapFirstTower);
     expect(controller.tutorialBattleSlotGuideLabel(0), 'CHARGING');
     expect(controller.debugSetTowerCharge(0, charge: 1), isTrue);
@@ -212,9 +247,9 @@ void main() {
     expect(controller.tutorialHeadline, 'Queue a Pulse');
     expect(
       controller.tutorialPrompt,
-      'Towers fire what is in their queue. Tap to add pulses while active.',
+      'Tap the charged Red Prism to add a pulse to the core queue. The core spends queued pulses as outgoing shots.',
     );
-    expect(controller.tutorialBattleSlotGuideLabel(0), 'TAP TO FIRE');
+    expect(controller.tutorialBattleSlotGuideLabel(0), 'ADD TO QUEUE');
     expect(controller.activateTowerSlot(0, showBanner: false), isTrue);
 
     expect(controller.tutorialStep, LightcoreTutorialStep.tapFirstTower);
@@ -254,7 +289,7 @@ void main() {
     expect(controller.tutorialBattleCoreGuideLabel, 'TAP CORE');
     expect(
       controller.tutorialPrompt,
-      'Tap the glowing Lightcore on the battlefield to generate a shot.',
+      'Tap the glowing Lightcore to create a basic shot when an anomaly reaches core range.',
     );
 
     controller.handleBattleCenterTap();
@@ -284,53 +319,30 @@ void main() {
     );
   });
 
-  test(
-    'boss tutorial pulls White Warden, requires arming, and spawns a weak intro boss',
-    () {
-      final controller = LightcoreController();
-      addTearDown(controller.dispose);
+  test('boss tutorial starts with an armed weak White Warden', () {
+    final controller = LightcoreController();
+    addTearDown(controller.dispose);
 
-      controller.selectCenter();
-      controller.debugCompleteCoreLearningTutorial();
-      controller.applyOfflineClaim(
-        LightcoreOfflineClaimResult(
-          secondsClaimed: 1,
-          lumensGranted: 0,
-          fluxGranted: 0,
-          enemyTicketsGranted: 0,
-          killsGranted: LightcoreController.killsForOverallLevel(
-            LightcoreController.bossUnlockLevel,
-          ),
-          serverValidated: true,
-        ),
-        showBanner: false,
-      );
+    expect(
+      controller.activeBossEnemyCard?.config.id,
+      BossEnemyLibrary.starterWhiteWarden.id,
+    );
+    expect(controller.activeLayer.bossReady, isTrue);
 
-      expect(controller.tutorialStep, LightcoreTutorialStep.openBossPulls);
+    controller.selectCenter();
+    controller.debugCompleteCoreLearningTutorial();
 
-      final pulls = controller.openBossTickets(1);
+    controller.tick(0.2);
 
-      expect(pulls.single.config.id, BossEnemyLibrary.starterWhiteWarden.id);
-      expect(controller.activeBossEnemyCard, isNull);
-      expect(controller.tutorialStep, LightcoreTutorialStep.armFirstBoss);
-
-      controller.setActiveBossEnemyCard(BossEnemyLibrary.starterWhiteWarden.id);
-
-      expect(controller.activeLayer.bossReady, isTrue);
-      expect(controller.tutorialStep, LightcoreTutorialStep.none);
-
-      controller.tick(0.2);
-
-      expect(controller.tutorialStep, LightcoreTutorialStep.defeatFirstBoss);
-      expect(controller.bossAlive, isTrue);
-      expect(
-        controller.enemies.single.config.id,
-        BossEnemyLibrary.starterWhiteWarden.id,
-      );
-      expect(controller.enemies.single.maxHealth, lessThan(1500));
-      expect(controller.tutorialHighlightedEnemyId, isNotNull);
-    },
-  );
+    expect(controller.tutorialStep, LightcoreTutorialStep.defeatFirstBoss);
+    expect(controller.bossAlive, isTrue);
+    expect(
+      controller.enemies.single.config.id,
+      BossEnemyLibrary.starterWhiteWarden.id,
+    );
+    expect(controller.enemies.single.maxHealth, lessThan(1500));
+    expect(controller.tutorialHighlightedEnemyId, isNotNull);
+  });
 
   test('first child shell teaches shot generation before overdrive', () {
     final controller = LightcoreController();

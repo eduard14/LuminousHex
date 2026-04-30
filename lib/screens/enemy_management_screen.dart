@@ -25,6 +25,7 @@ part 'enemy_management/enemy_command_widgets.dart';
 part 'enemy_management/boss_widgets.dart';
 part 'enemy_management/enemy_inventory_widgets.dart';
 part 'enemy_management/pack_summary_widgets.dart';
+part 'enemy_management/threat_assignment_widgets.dart';
 
 Future<void> showEnemyPullSheet(
   BuildContext context,
@@ -38,34 +39,6 @@ Future<void> showEnemyPullSheet(
     showDragHandle: false,
     backgroundColor: Colors.transparent,
     builder: (context) => EnemyPullSheet(controller: controller),
-  );
-}
-
-void _showEnemyCardDetailsSheet(
-  BuildContext context,
-  LightcoreController controller,
-  String cardId,
-) {
-  showModalBottomSheet<void>(
-    context: context,
-    isScrollControlled: true,
-    backgroundColor: Colors.transparent,
-    builder: (sheetContext) {
-      return AnimatedBuilder(
-        animation: controller,
-        builder: (context, _) {
-          final card = controller.enemyCardById(cardId);
-          if (card == null) {
-            return const SizedBox.shrink();
-          }
-
-          return LightcoreDetailSheet(
-            tint: card.config.affinity.color,
-            child: _EnemyDetailSheet(controller: controller, card: card),
-          );
-        },
-      );
-    },
   );
 }
 
@@ -134,8 +107,6 @@ class _EnemyManagementScreenState extends State<EnemyManagementScreen> {
       animation: widget.controller,
       builder: (context, _) {
         final controller = widget.controller;
-        final grouped = controller.enemyCardsByRarity;
-        final featuredEnemy = _featuredEnemyCard(controller);
         return ListView(
           key: const PageStorageKey<String>('enemy-management-scroll'),
           controller: widget.scrollController,
@@ -156,33 +127,10 @@ class _EnemyManagementScreenState extends State<EnemyManagementScreen> {
             ),
             const SizedBox(height: 8),
             if (_tab == _ThreatLibraryTab.enemies) ...[
-              Text(
-                '${controller.activeLayerLabel}  •  Active ${controller.activeEnemyDeck.length}/${LightcoreController.enemyDeckLimit}  •  Owned ${controller.ownedEnemyCardCount}  •  Target ${controller.enemyTargetCount}/${controller.enemyTargetMax}',
-                style: textTheme.labelLarge?.copyWith(
-                  color: LightcorePalette.mist.withValues(alpha: 0.78),
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              const SizedBox(height: 8),
-              _EnemyCommandPanel(
-                controller: controller,
-                card: featuredEnemy,
-                onOpenDetails: (cardId) =>
-                    _showEnemyCardDetailsSheet(context, controller, cardId),
-              ),
+              _ThreatAssignmentPanel(controller: controller),
               const SizedBox(height: 18),
               _SwarmPressurePanel(controller: controller),
               const SizedBox(height: 18),
-              for (final rarity in EnemyCardRarity.values) ...[
-                _EnemyRaritySection(
-                  controller: controller,
-                  rarity: rarity,
-                  cards: grouped[rarity] ?? const <EnemyCardState>[],
-                  onOpenDetails: (cardId) =>
-                      _showEnemyCardDetailsSheet(context, controller, cardId),
-                ),
-                const SizedBox(height: 18),
-              ],
               _MassEnemyFusePanel(controller: controller),
             ] else ...[
               Text(
@@ -387,7 +335,7 @@ class _EnemyPullSheetState extends State<EnemyPullSheet> {
                                       _InfoChip(
                                         label: bossUnlocked
                                             ? controller.bossSpawnStatusLabel
-                                            : 'Unlocks at Account Radiance Lv ${LightcoreController.bossUnlockLevel}',
+                                            : 'Scans unlock in the Prism Shell',
                                       ),
                                     ],
                                   ),
@@ -398,7 +346,7 @@ class _EnemyPullSheetState extends State<EnemyPullSheet> {
                             if (!bossUnlocked) ...[
                               _InlineEnemyNote(
                                 message:
-                                    'Reach Account Radiance Lv ${LightcoreController.bossUnlockLevel} to unlock Apex Scans, claim ${LightcoreCurrencyLabels.bossScanCount(LightcoreController.bossUnlockTicketGrant)}, and start pulling your first Apex Anomaly cards.',
+                                    'White Warden is already the starter Apex. Create the Prism Shell to unlock Apex Scans, claim ${LightcoreCurrencyLabels.bossScanCount(LightcoreController.bossUnlockTicketGrant)}, and start changing Apex Anomaly cards.',
                                 tint: LightcorePalette.warning,
                               ),
                             ] else ...[

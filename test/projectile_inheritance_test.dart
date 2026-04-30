@@ -11,6 +11,34 @@ import 'package:lightcore/state/lightcore_controller.dart';
 List<TowerConfig> _uniformShell(TowerConfig config) =>
     List<TowerConfig>.filled(LightcoreController.slotCount, config);
 
+const _chromaticShell = <TowerConfig>[
+  TowerLibrary.redPrism,
+  TowerLibrary.orangePrism,
+  TowerLibrary.yellowPrism,
+  TowerLibrary.greenPrism,
+  TowerLibrary.bluePrism,
+  TowerLibrary.purplePrism,
+];
+
+Iterable<List<TowerConfig>> _towerPermutations(
+  List<TowerConfig> configs,
+) sync* {
+  if (configs.length <= 1) {
+    yield configs;
+    return;
+  }
+  for (var index = 0; index < configs.length; index += 1) {
+    final head = configs[index];
+    final tail = <TowerConfig>[
+      ...configs.take(index),
+      ...configs.skip(index + 1),
+    ];
+    for (final permutation in _towerPermutations(tail)) {
+      yield <TowerConfig>[head, ...permutation];
+    }
+  }
+}
+
 void _maxOutCurrentShell(
   LightcoreController controller,
   List<TowerConfig> configs,
@@ -52,7 +80,70 @@ void _forgeChildShell(
   expect(controller.activeLayerHasParentSlot, isFalse);
 }
 
+void _clearLayer3Trial(LightcoreController controller) {
+  expect(controller.layer3TrialActive, isTrue);
+  expect(controller.debugCompleteLayer3Trial(), isTrue);
+  expect(controller.layer3TrialCleared, isTrue);
+}
+
 void main() {
+  test('chromatic layer 1 shell exposes rainbow merge rates', () {
+    final controller = LightcoreController(traitRandom: Random(17));
+    addTearDown(controller.dispose);
+
+    _maxOutCurrentShell(controller, _chromaticShell);
+
+    expect(controller.promotionRainbowEligible, isTrue);
+    expect(
+      controller.promotionRainbowResultChance,
+      closeTo(LightcoreController.rainbowPromotionChance, 0.0001),
+    );
+    expect(
+      controller.promotionProjectileAffinityRates.values,
+      everyElement(closeTo(0.15, 0.0001)),
+    );
+    expect(
+      controller.promotionPayloadAffinityRates.values,
+      everyElement(closeTo(0.15, 0.0001)),
+    );
+  });
+
+  test('rainbow promotion cycles every prism projectile and payload', () {
+    LightcoreController? rainbowController;
+
+    for (final configs in _towerPermutations(_chromaticShell)) {
+      final controller = LightcoreController(traitRandom: Random(23));
+      _promoteRootShell(controller, configs);
+      if (controller.coreAffinitySignatureLabel == 'Rainbow tower') {
+        rainbowController = controller;
+        break;
+      }
+      controller.dispose();
+    }
+
+    expect(rainbowController, isNotNull);
+    final controller = rainbowController!;
+    addTearDown(controller.dispose);
+
+    expect(controller.coreProjectileArsenal, layer2RainbowProjectileLoadout);
+    expect(controller.corePayloadArsenal, layer2RainbowPayloadLoadout);
+
+    controller.selectCenter();
+    controller.handleBattleCenterTap();
+    var pulse = controller.pulses.last;
+    expect(pulse.projectileType, layer2RainbowProjectileLoadout.first);
+    expect(pulse.payloadType, layer2RainbowPayloadLoadout.first);
+    expect(pulse.affinity, pulse.projectileType.affinity);
+    expect(pulse.secondaryAffinity, pulse.payloadType.affinity);
+
+    controller.handleBattleCenterTap();
+    pulse = controller.pulses.last;
+    expect(pulse.projectileType, layer2RainbowProjectileLoadout[1]);
+    expect(pulse.payloadType, layer2RainbowPayloadLoadout[1]);
+    expect(pulse.affinity, pulse.projectileType.affinity);
+    expect(pulse.secondaryAffinity, pulse.payloadType.affinity);
+  });
+
   test(
     'uniform layer 1 shell forges matching layer 2 projectile and payload',
     () {
@@ -162,6 +253,8 @@ void main() {
 
       expect(controller.isPromotionReady, isTrue);
       controller.unlockLayer2Tower();
+      _clearLayer3Trial(controller);
+      controller.unlockLayer2Tower();
 
       final core = controller.coreState;
       expect(controller.activeLayer.tier, 3);
@@ -232,6 +325,21 @@ void main() {
         ),
         contains(rerolled.childPayloadType),
       );
+
+      controller.echoSeeds = 10;
+      while (controller.promotedChildTowerRerollsRemaining(
+            controller.slots[0],
+          ) >
+          0) {
+        expect(controller.rerollPromotedChildTower(0), isTrue);
+      }
+      final seedsBeforeBlockedRoll = controller.echoSeeds;
+      expect(
+        controller.promotedChildTowerRerollsRemaining(controller.slots[0]),
+        0,
+      );
+      expect(controller.rerollPromotedChildTower(0), isFalse);
+      expect(controller.echoSeeds, seedsBeforeBlockedRoll);
     },
   );
 }

@@ -472,6 +472,12 @@ class EnemyManagerLibrary {
       id: id,
       name: name,
       summary: '$archetype archetype. $modifier $intent',
+      flavorBio: _threatDirectorBio(
+        name: name,
+        archetype: archetype,
+        modifier: modifier,
+        intent: intent,
+      ),
       roleLabel: 'Threat Director',
       spawnRateMultiplier: spawnRateMultiplier,
       rewardMultiplier: rewardMultiplier,
@@ -482,5 +488,40 @@ class EnemyManagerLibrary {
       apexStabilityMultiplier: apexStabilityMultiplier,
       queueDisruptionMultiplier: queueDisruptionMultiplier,
     );
+  }
+
+  static String _threatDirectorBio({
+    required String name,
+    required String archetype,
+    required String modifier,
+    required String intent,
+  }) {
+    final officeHabit = switch (archetype) {
+      'Swarm Director' => 'a seating chart that keeps multiplying',
+      'Titan Director' => 'one very heavy spreadsheet',
+      'Phase Director' => 'a calendar invite that keeps disappearing',
+      'Regen Director' => 'a wellness program with suspicious math',
+      'Gravity Director' => 'a policy binder dense enough to bend light',
+      'Greed Director' => 'a bonus plan nobody admits they approved',
+      'Saboteur Director' => 'an outage report marked "working as designed"',
+      'Volatile Director' => 'a launch schedule written entirely in red ink',
+      'Apex Herald' => 'a crown, a stamp, and no visible approval process',
+      _ => 'an alarming pile of meeting notes',
+    };
+    final intentLine = _lowercaseSentenceStart(intent);
+
+    return '$name runs $archetype operations with $officeHabit. '
+        'Today\'s agenda: $modifier Also, $intentLine, because apparently that counts as leadership.';
+  }
+
+  static String _lowercaseSentenceStart(String value) {
+    final trimmed = value.trim();
+    final withoutPeriod = trimmed.endsWith('.')
+        ? trimmed.substring(0, trimmed.length - 1)
+        : trimmed;
+    if (withoutPeriod.isEmpty) {
+      return withoutPeriod;
+    }
+    return withoutPeriod[0].toLowerCase() + withoutPeriod.substring(1);
   }
 }

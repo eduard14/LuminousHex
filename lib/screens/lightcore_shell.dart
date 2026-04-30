@@ -84,6 +84,7 @@ class _LightcoreShellState extends State<LightcoreShell> {
   _ShellOverlayDestination? _activeOverlay;
   ShellPromotionPresentation? _activeShellPromotionPresentation;
   bool _shellPromotionHudSuppressed = false;
+  bool _eventBattleSurfaceActive = false;
   int _shellPromotionSequence = 0;
   bool _startupOfflineClaimPresented = false;
   bool _initialSocialInviteOpened = false;
@@ -281,7 +282,7 @@ class _LightcoreShellState extends State<LightcoreShell> {
         label: 'Scans Resolved',
         value: _formatMetricCount(controller.totalPullsOpened),
         subtitle: 'Threat scans and apex scans resolved across your shell.',
-        tint: LightcorePalette.flare,
+        tint: LightcorePalette.scanGlow,
         icon: LightcoreIcons.threatScan,
       ),
       _SettingsStatEntry(
@@ -328,7 +329,12 @@ class _LightcoreShellState extends State<LightcoreShell> {
       _resetOverlayScroll(destination);
       return;
     }
-    setState(() => _activeOverlay = destination);
+    setState(() {
+      _activeOverlay = destination;
+      if (destination != _ShellOverlayDestination.tournaments) {
+        _eventBattleSurfaceActive = false;
+      }
+    });
     _syncEventOfflineTicker(destination);
     _resetOverlayScroll(destination);
   }
@@ -337,7 +343,10 @@ class _LightcoreShellState extends State<LightcoreShell> {
     if (_activeOverlay == null) {
       return;
     }
-    setState(() => _activeOverlay = null);
+    setState(() {
+      _activeOverlay = null;
+      _eventBattleSurfaceActive = false;
+    });
     _syncEventOfflineTicker(null);
   }
 
@@ -357,6 +366,7 @@ class _LightcoreShellState extends State<LightcoreShell> {
 
     setState(() {
       _activeOverlay = null;
+      _eventBattleSurfaceActive = false;
       _shellPromotionHudSuppressed = true;
       _activeShellPromotionPresentation = null;
     });
@@ -526,7 +536,7 @@ class _LightcoreShellState extends State<LightcoreShell> {
                   StatusPill(
                     label: LightcoreCurrencyLabels.scansShort,
                     value: '+${claim.enemyTicketsGranted}',
-                    tint: LightcorePalette.flare,
+                    tint: LightcorePalette.scanGlow,
                     icon: LightcoreIcons.threatScan,
                   ),
                   StatusPill(
@@ -763,6 +773,7 @@ class _LightcoreShellState extends State<LightcoreShell> {
       _ShellOverlayDestination.tournaments => TournamentScreen(
         controller: controller,
         backend: widget.backend,
+        onBattleSurfaceActiveChanged: _setEventBattleSurfaceActive,
       ),
       _ShellOverlayDestination.prestige => PrestigeScreen(
         controller: controller,
@@ -771,6 +782,13 @@ class _LightcoreShellState extends State<LightcoreShell> {
         onPromotionRequested: _handlePromotionRequestedFromOverlay,
       ),
     };
+  }
+
+  void _setEventBattleSurfaceActive(bool active) {
+    if (_eventBattleSurfaceActive == active) {
+      return;
+    }
+    setState(() => _eventBattleSurfaceActive = active);
   }
 
   Future<void> _openStats(BuildContext context) {
@@ -1185,6 +1203,7 @@ class _LightcoreShellState extends State<LightcoreShell> {
                                   destination: _activeOverlay!,
                                   onClose: _closeOverlay,
                                   onOpenLayers: () => _openLayerPicker(context),
+                                  fullscreen: _eventBattleSurfaceActive,
                                   child: _buildOverlayScreen(_activeOverlay!),
                                 ),
                               ),
@@ -1368,6 +1387,17 @@ class _LightcoreShellState extends State<LightcoreShell> {
             value: controller.notificationBannersEnabled,
             tint: LightcorePalette.quest,
             onChanged: controller.setNotificationBannersEnabled,
+          ),
+          const SizedBox(height: 10),
+          _SettingsToggleRow(
+            switchKey: const ValueKey<String>('battle-alert-banners-switch'),
+            icon: Icons.sensors_rounded,
+            title: 'Battle Alerts',
+            subtitle:
+                'Show passive combat messages like lane leaks, Apex approaches, fabrication completions, and Core Stability pressure.',
+            value: controller.battleNotificationBannersEnabled,
+            tint: LightcorePalette.warning,
+            onChanged: controller.setBattleNotificationBannersEnabled,
           ),
           const SizedBox(height: 10),
           _SettingsToggleRow(
@@ -1639,6 +1669,7 @@ class _LightcoreShellState extends State<LightcoreShell> {
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setSheetState) {
+            final helpSections = _helpSections;
             return SafeArea(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
@@ -1667,7 +1698,7 @@ class _LightcoreShellState extends State<LightcoreShell> {
                               ),
                             ),
                             child: Text(
-                              '${controller.totalHelpSectionsRead}/${_helpSections.length} read',
+                              '${controller.totalHelpSectionsRead}/${helpSections.length} read',
                               style: Theme.of(context).textTheme.labelLarge
                                   ?.copyWith(
                                     color: LightcorePalette.solar,
@@ -1685,11 +1716,11 @@ class _LightcoreShellState extends State<LightcoreShell> {
                       const SizedBox(height: 16),
                       Expanded(
                         child: ListView.separated(
-                          itemCount: _helpSections.length,
+                          itemCount: helpSections.length,
                           separatorBuilder: (context, index) =>
                               const SizedBox(height: 10),
                           itemBuilder: (context, index) {
-                            final section = _helpSections[index];
+                            final section = helpSections[index];
                             final isRead = controller.hasReadHelpSection(
                               section.id,
                             );
@@ -1838,7 +1869,9 @@ class _LightcoreShellState extends State<LightcoreShell> {
                         ),
                         const SizedBox(height: 6),
                         Text(
-                          '${controller.activeLayerLabel} is live now. Move between connected shells here, then keep upgrading in the same screen instead of backing out through multiple menus.',
+                          controller.activeLayerPassiveOnly
+                              ? '${controller.activeLayerLabel} is open as a static archive. Its merged pieces can be inspected here while ${controller.runtimeLayerLabel} remains the live shell.'
+                              : '${controller.activeLayerLabel} is live now. Move between connected shells here, then keep upgrading in the same screen instead of backing out through multiple menus.',
                           style: Theme.of(context).textTheme.bodyMedium,
                         ),
                         const SizedBox(height: 12),
@@ -1909,8 +1942,7 @@ class _LightcoreShellState extends State<LightcoreShell> {
                                     controller.layerDisplayLabel(layer),
                                   ),
                                   onPressed:
-                                      layer.id == controller.activeLayer.id ||
-                                          controller.isLayerPassiveOnly(layer)
+                                      layer.id == controller.activeLayer.id
                                       ? null
                                       : () {
                                           Navigator.of(dialogContext).pop();
@@ -2003,7 +2035,7 @@ class _LightcoreShellState extends State<LightcoreShell> {
         markerLabel: markerLabel,
         progressLabel: '$built/${LightcoreController.slotCount}',
       ),
-      onTap: passiveOnly
+      onTap: isViewed
           ? null
           : () {
               Navigator.of(dialogContext).pop();

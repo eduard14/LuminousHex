@@ -36,6 +36,10 @@ extension LightcoreControllerSaveRestorePayload on LightcoreController {
       settingsData['notificationBannersEnabled'],
       fallback: _notificationBannersEnabled,
     );
+    _battleNotificationBannersEnabled = _boolValue(
+      settingsData['battleNotificationBannersEnabled'],
+      fallback: _battleNotificationBannersEnabled,
+    );
     _tutorialPromptsEnabled = _boolValue(
       settingsData['tutorialPromptsEnabled'],
       fallback: _tutorialPromptsEnabled,
@@ -56,6 +60,15 @@ extension LightcoreControllerSaveRestorePayload on LightcoreController {
     lumens = _intValue(resourceData['lumens'], fallback: lumens);
     flux = _intValue(resourceData['flux'], fallback: flux);
     prismShards = _intValue(resourceData['prismShards'], fallback: prismShards);
+    managerShards = _intValue(
+      resourceData['managerShards'],
+      fallback: managerShards,
+    );
+    managerPowerLevel = _intValue(
+      resourceData['managerPowerLevel'],
+      fallback: managerPowerLevel,
+    ).clamp(0, LightcoreController.maxManagerPowerLevel).toInt();
+    shellCores = _intValue(resourceData['shellCores'], fallback: shellCores);
     enemyTickets = _intValue(
       resourceData['enemyTickets'],
       fallback: enemyTickets,
@@ -174,6 +187,12 @@ extension LightcoreControllerSaveRestorePayload on LightcoreController {
       restoredDailyUnlocked,
       fallbackDailyUnlocked,
     );
+    _dailyDungeonQuickClearDayKey =
+        _stringOrNull(dailyDungeonData['quickClearDayKey']) ?? '';
+    _dailyDungeonQuickClearsUsed = _intValue(
+      dailyDungeonData['quickClearsUsed'],
+    ).clamp(0, dailyDungeonQuickClearsPerDay).toInt();
+    _refreshDailyDungeonQuickClearsForToday();
 
     _readHelpSections
       ..clear()
@@ -198,9 +217,7 @@ extension LightcoreControllerSaveRestorePayload on LightcoreController {
     _seedStarterEnemyCards();
     _bossEnemyCards = _restoreEnemyCardInventory(
       savedCards: _coerceList(inventoryData['bossEnemyCards']),
-      defaults: BossEnemyLibrary.all
-          .map((config) => EnemyCardState(config: config))
-          .toList(growable: false),
+      defaults: _createBossEnemyCardInventory(),
     );
     _equipmentInventory = _coerceList(inventoryData['equipmentInventory'])
         .map((item) => _deserializePlayerEquipmentItem(_coerceMap(item)))
@@ -241,6 +258,10 @@ extension LightcoreControllerSaveRestorePayload on LightcoreController {
       _runtimeLayerId = _liveLayerForLayer(requestedRuntimeLayer).id;
       _loadLayer(resolvedActiveLayer);
     }
+    _completedTowerShells = _coerceList(payload['completedTowerShells'])
+        .map((item) => _deserializeCompletedTowerShellState(_coerceMap(item)))
+        .whereType<CompletedTowerShellState>()
+        .toList(growable: false);
 
     _activeGuild = _deserializeGuildState(_coerceMap(payload['guild']));
     _guildChatCounter = 0;
@@ -249,6 +270,9 @@ extension LightcoreControllerSaveRestorePayload on LightcoreController {
 
     final hasRestoredStabilityPanelOpened = tutorialData.containsKey(
       'stabilityPanelOpened',
+    );
+    final hasRestoredFirstTowerStatsOpened = tutorialData.containsKey(
+      'firstTowerStatsOpened',
     );
     final hasRestoredCoreShotTapLearned = tutorialData.containsKey(
       'coreShotTapLearned',
@@ -271,6 +295,9 @@ extension LightcoreControllerSaveRestorePayload on LightcoreController {
     );
     _tutorialEnemyCountAdjusted = _boolValue(
       tutorialData['enemyCountAdjusted'],
+    );
+    _tutorialFirstTowerStatsOpened = _boolValue(
+      tutorialData['firstTowerStatsOpened'],
     );
     _tutorialStabilityPanelOpened = _boolValue(
       tutorialData['stabilityPanelOpened'],
@@ -334,9 +361,11 @@ extension LightcoreControllerSaveRestorePayload on LightcoreController {
     _normalizeEquippedProfileMedal();
     _migrateRestoredTutorialState(
       hasStabilityPanelOpened: hasRestoredStabilityPanelOpened,
+      hasFirstTowerStatsOpened: hasRestoredFirstTowerStatsOpened,
       hasCoreShotTapLearned: hasRestoredCoreShotTapLearned,
       hasAutoQueuedPulses: hasRestoredAutoQueuedPulses,
     );
+    _armStarterBossForOpening();
     _tutorialStep = LightcoreTutorialStep.none;
     _syncTutorialStep(showBanner: false);
     _recoverBattleSessionRuntime(notify: false);
@@ -460,8 +489,8 @@ extension LightcoreControllerSaveRestorePayload on LightcoreController {
         layer.shotCounter > 0 ||
         layer.impactCounter > 0 ||
         layer.core.fireSequence > 0 ||
-        layer.normalKillsSinceBoss > 0 ||
-        layer.bossReady;
+        (layer.normalKillsSinceBoss > 0 && layer.outerRingRevealed) ||
+        (layer.bossReady && layer.outerRingRevealed);
   }
 
   bool get _saveHasBattleProgress =>
@@ -475,6 +504,7 @@ extension LightcoreControllerSaveRestorePayload on LightcoreController {
 
   void _migrateRestoredTutorialState({
     required bool hasStabilityPanelOpened,
+    required bool hasFirstTowerStatsOpened,
     required bool hasCoreShotTapLearned,
     required bool hasAutoQueuedPulses,
   }) {
@@ -495,6 +525,13 @@ extension LightcoreControllerSaveRestorePayload on LightcoreController {
             _tutorialTowerManagerAssigned ||
             _tutorialAutoQueuedPulses > 0)) {
       _tutorialStabilityPanelOpened = true;
+    }
+    if (!hasFirstTowerStatsOpened &&
+        (hasDurableEarlyProgress ||
+            _tutorialStabilityPanelOpened ||
+            _tutorialAutoQueuedPulses > 0 ||
+            _slots.any((slot) => slot.isBuilt && slot.fireSequence > 0))) {
+      _tutorialFirstTowerStatsOpened = true;
     }
     if (!hasAutoQueuedPulses && hasDurableEarlyProgress) {
       _tutorialAutoQueuedPulses = max(_tutorialAutoQueuedPulses, 5);

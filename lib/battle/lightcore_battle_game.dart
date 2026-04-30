@@ -493,25 +493,4 @@ class LightcoreBattleGame extends FlameGame with ScaleDetector {
     _screenShakeOffset = Vector2(x, y);
     _screenShakeRemaining = math.max(0, _screenShakeRemaining - dt);
   }
-
-  void _renderCoreManagerBadge(Canvas canvas, Offset center, Color color) {
-    final radius = _coreRadius * 0.16;
-    canvas.drawCircle(
-      center,
-      radius,
-      Paint()..color = LightcorePalette.panelRaised.withValues(alpha: 0.94),
-    );
-    canvas.drawCircle(
-      center,
-      radius,
-      Paint()
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 2
-        ..color = color.withValues(alpha: 0.9),
-    );
-    canvas.drawPath(
-      _hexPath(center, radius * 0.58),
-      Paint()..color = color.withValues(alpha: 0.84),
-    );
-  }
 }

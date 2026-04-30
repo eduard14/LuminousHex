@@ -51,6 +51,51 @@ void _tickUntil(
   }
 }
 
+class _FixedDoubleRandom implements Random {
+  _FixedDoubleRandom(this._values);
+
+  final List<double> _values;
+  var _index = 0;
+
+  @override
+  double nextDouble() {
+    if (_values.isEmpty) {
+      return 0.99;
+    }
+    if (_index >= _values.length) {
+      return _values.last;
+    }
+    return _values[_index++];
+  }
+
+  @override
+  int nextInt(int max) {
+    if (max <= 0) {
+      throw RangeError.value(max, 'max');
+    }
+    return min(max - 1, (nextDouble() * max).floor());
+  }
+
+  @override
+  bool nextBool() => nextDouble() < 0.5;
+}
+
+void _promoteRootShellToLayer2(LightcoreController controller) {
+  controller.lumens = 100000000;
+  controller.kills = LightcoreController.unlockKillsForOuterSlot(
+    LightcoreController.slotCount - 1,
+  );
+  for (var index = 0; index < LightcoreController.slotCount; index++) {
+    expect(controller.buildTowerAt(index, TowerLibrary.redPrism), isTrue);
+    while (controller.slots[index].level < LightcoreController.maxTowerLevel) {
+      expect(controller.upgradeTower(index), isTrue);
+    }
+  }
+  expect(controller.isPromotionReady, isTrue);
+  controller.unlockLayer2Tower();
+  expect(controller.activeLayer.tier, 2);
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -111,6 +156,199 @@ void main() {
       );
     },
   );
+
+  test('pulse ring rolls critical damage per enemy hit', () {
+    final controller = LightcoreController(
+      traitRandom: _FixedDoubleRandom(<double>[0.0, 0.99]),
+    );
+    addTearDown(controller.dispose);
+
+    final firstEnemy = controller.debugSpawnEnemyFromCard(
+      EnemyLibrary.basicWhite.id,
+      angle: 0.15,
+      radius: 200,
+      level: 16,
+    );
+    final secondEnemy = controller.debugSpawnEnemyFromCard(
+      EnemyLibrary.basicWhite.id,
+      angle: 1.8,
+      radius: 220,
+      level: 16,
+    );
+    expect(firstEnemy, isNotNull);
+    expect(secondEnemy, isNotNull);
+
+    final initialFirstHealth = _healthForEnemy(controller, firstEnemy!.id);
+    final initialSecondHealth = _healthForEnemy(controller, secondEnemy!.id);
+
+    controller.debugSetAmmoQueue(const [
+      AmmoPacket(
+        id: 'test_pulse_ring_enemy_crit',
+        sourceSlotIndex: null,
+        affinity: PrototypeAffinity.violet,
+        power: 40,
+        advantageMultiplier: 1,
+        projectileType: ProjectileType.pulseRing,
+        payloadType: PayloadType.none,
+        targetPriority: TargetPriority.close,
+        range: 320,
+        critChance: 0.5,
+        critMultiplier: 2,
+        finalDamageMultiplier: 1,
+        bossDamageMultiplier: 1,
+        normalDamageMultiplier: 1,
+        defensePenetration: 0,
+        minDamageMultiplier: 1,
+        maxDamageMultiplier: 1,
+      ),
+    ]);
+
+    controller.tick(0.05);
+    expect(controller.shots.single.critical, isFalse);
+
+    _tickUntil(
+      controller,
+      () =>
+          _damageTaken(controller, firstEnemy.id, initialFirstHealth) > 0 &&
+          _damageTaken(controller, secondEnemy.id, initialSecondHealth) > 0,
+      steps: 80,
+    );
+
+    final firstDamage = _damageTaken(
+      controller,
+      firstEnemy.id,
+      initialFirstHealth,
+    );
+    final secondDamage = _damageTaken(
+      controller,
+      secondEnemy.id,
+      initialSecondHealth,
+    );
+
+    expect(firstDamage, greaterThan(0));
+    expect(secondDamage, greaterThan(0));
+    expect(firstDamage, closeTo(secondDamage * 2, 0.001));
+  });
+
+  test('purple child core fires pulse rings from the selected core color', () {
+    final controller = LightcoreController();
+    addTearDown(controller.dispose);
+
+    _promoteRootShellToLayer2(controller);
+    expect(controller.createChildLayer(0, PrototypeAffinity.violet), isTrue);
+    expect(controller.coreState.projectileType, ProjectileType.pulseRing);
+
+    controller.selectCenter();
+    final frontEnemy = controller.debugSpawnEnemyFromCard(
+      EnemyLibrary.basicWhite.id,
+      angle: 0.15,
+      radius: 220,
+      level: 16,
+    );
+    final flankEnemy = controller.debugSpawnEnemyFromCard(
+      EnemyLibrary.basicWhite.id,
+      angle: 1.8,
+      radius: 220,
+      level: 16,
+    );
+    expect(frontEnemy, isNotNull);
+    expect(flankEnemy, isNotNull);
+
+    final initialFrontHealth = _healthForEnemy(controller, frontEnemy!.id);
+    final initialFlankHealth = _healthForEnemy(controller, flankEnemy!.id);
+
+    controller.handleBattleCenterTap();
+    _tickUntil(
+      controller,
+      () => controller.shots.any(
+        (shot) =>
+            shot.sourceSlotIndex == null &&
+            shot.projectileType == ProjectileType.pulseRing,
+      ),
+      steps: 80,
+    );
+    expect(
+      controller.shots.any(
+        (shot) =>
+            shot.sourceSlotIndex == null &&
+            shot.projectileType == ProjectileType.pulseRing,
+      ),
+      isTrue,
+    );
+
+    _tickUntil(
+      controller,
+      () =>
+          _enemyMissingOrDamaged(
+            controller,
+            frontEnemy.id,
+            initialFrontHealth,
+          ) &&
+          _enemyMissingOrDamaged(controller, flankEnemy.id, initialFlankHealth),
+      steps: 80,
+    );
+
+    expect(
+      _enemyMissingOrDamaged(controller, frontEnemy.id, initialFrontHealth),
+      isTrue,
+    );
+    expect(
+      _enemyMissingOrDamaged(controller, flankEnemy.id, initialFlankHealth),
+      isTrue,
+    );
+  });
+
+  test('red bomb close priority uses xy distance from its source tower', () {
+    final controller = LightcoreController();
+    addTearDown(controller.dispose);
+
+    controller.lumens = 1000;
+    controller.kills = LightcoreController.unlockKillsForOuterSlot(0);
+    expect(controller.buildTowerAt(0, TowerLibrary.redPrism), isTrue);
+
+    final pathCloserEnemy = controller.debugSpawnEnemyFromCard(
+      EnemyLibrary.basicWhite.id,
+      angle: pi,
+      radius: 170,
+      level: 16,
+    );
+    final towerCloserEnemy = controller.debugSpawnEnemyFromCard(
+      EnemyLibrary.basicWhite.id,
+      angle: 0,
+      radius: 240,
+      level: 16,
+    );
+    expect(pathCloserEnemy, isNotNull);
+    expect(towerCloserEnemy, isNotNull);
+
+    controller.debugSetAmmoQueue(const [
+      AmmoPacket(
+        id: 'test_red_bomb_xy_close',
+        sourceSlotIndex: 0,
+        affinity: PrototypeAffinity.ember,
+        power: 18,
+        advantageMultiplier: 1,
+        projectileType: ProjectileType.coreBomb,
+        payloadType: PayloadType.none,
+        targetPriority: TargetPriority.close,
+        range: 320,
+        critChance: 0,
+        critMultiplier: 1,
+        finalDamageMultiplier: 1,
+        bossDamageMultiplier: 1,
+        normalDamageMultiplier: 1,
+        defensePenetration: 0,
+        minDamageMultiplier: 1,
+        maxDamageMultiplier: 1,
+      ),
+    ]);
+
+    controller.tick(0.05);
+
+    expect(controller.shots, hasLength(1));
+    expect(controller.shots.single.enemyId, towerCloserEnemy!.id);
+    expect(controller.shots.single.enemyId, isNot(pathCloserEnemy!.id));
+  });
 
   test('green shield halo is passive, stackable, and skips generation', () {
     final single = LightcoreController(traitRandom: Random(3));

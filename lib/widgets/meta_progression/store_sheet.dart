@@ -163,6 +163,26 @@ class _LightcoreStoreSheetState extends State<LightcoreStoreSheet> {
           controller.prismShards >= _permanentOverdrivePrismCost,
       onPressed: _buyPermanentOverdrive,
     );
+    final spentRadiancePoints = controller.totalRadianceStatPointsSpent;
+    final radianceResetOffer = _StoreOffer(
+      title: 'Global Stat Reset',
+      subtitle: 'Refunds all allocated Global Attribute points.',
+      quantityLabel: spentRadiancePoints > 0
+          ? '$spentRadiancePoints spent'
+          : 'No points spent',
+      priceLabel: _radianceStatResetPrismCost.toString(),
+      currency: _StoreCurrency.prismShards,
+      limitLabel: spentRadiancePoints > 0 ? 'Account' : 'Unavailable',
+      noteLabel: spentRadiancePoints > 0
+          ? 'Reallocate earned Radiance points'
+          : 'Spend Radiance points first',
+      badgeLabel: 'Reset',
+      buttonLabel: spentRadiancePoints > 0 ? 'Reset' : 'Locked',
+      icon: Icons.restart_alt_rounded,
+      tint: LightcorePalette.quest,
+      enabled: controller.canPurchaseRadianceStatReset,
+      onPressed: () => controller.purchaseRadianceStatReset(),
+    );
     final shardPacks = _prismShardPacks
         .map(_prismShardPackOffer)
         .toList(growable: false);
@@ -219,7 +239,7 @@ class _LightcoreStoreSheetState extends State<LightcoreStoreSheet> {
       noteLabel: 'No Flux conversion',
       badgeLabel: 'Scans',
       icon: LightcoreIcons.threatScan,
-      tint: LightcorePalette.flare,
+      tint: LightcorePalette.scanGlow,
       onPurchased: () =>
           _grantThreatScans(scanAmount: 5, sourceLabel: 'Threat Scan Cache'),
     );
@@ -233,7 +253,7 @@ class _LightcoreStoreSheetState extends State<LightcoreStoreSheet> {
       noteLabel: 'Best scan value',
       badgeLabel: 'Scans',
       icon: LightcoreIcons.threatScan,
-      tint: LightcorePalette.flare,
+      tint: LightcorePalette.scanGlow,
       onPurchased: () => _grantThreatScans(
         scanAmount: 15,
         sourceLabel: 'Large Threat Scan Cache',
@@ -268,6 +288,7 @@ class _LightcoreStoreSheetState extends State<LightcoreStoreSheet> {
         threatScanFive,
         prismRelayWarp,
         overdriveOffer,
+        radianceResetOffer,
       ],
       _StoreCategory.shardPacks => shardPacks,
       _StoreCategory.bundles => [
@@ -283,7 +304,11 @@ class _LightcoreStoreSheetState extends State<LightcoreStoreSheet> {
         prismRelayWarp,
         prismDeepWarp,
       ],
-      _StoreCategory.premium => [premiumMembershipOffer, overdriveOffer],
+      _StoreCategory.premium => [
+        premiumMembershipOffer,
+        overdriveOffer,
+        radianceResetOffer,
+      ],
     };
   }
 

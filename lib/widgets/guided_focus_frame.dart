@@ -16,6 +16,7 @@ class GuidedFocusFrame extends StatefulWidget {
     this.padding,
     this.pulseSignal = 0,
     this.showTapCue = true,
+    this.tapCueLabel,
   });
 
   final bool active;
@@ -27,6 +28,7 @@ class GuidedFocusFrame extends StatefulWidget {
   final EdgeInsetsGeometry? padding;
   final int pulseSignal;
   final bool showTapCue;
+  final String? tapCueLabel;
 
   @override
   State<GuidedFocusFrame> createState() => _GuidedFocusFrameState();
@@ -180,6 +182,7 @@ class _GuidedFocusFrameState extends State<GuidedFocusFrame>
                   child: _TutorialTapCue(
                     tint: widget.tint,
                     progress: tapCueProgress,
+                    label: widget.tapCueLabel,
                   ),
                 ),
               ),
@@ -191,10 +194,15 @@ class _GuidedFocusFrameState extends State<GuidedFocusFrame>
 }
 
 class _TutorialTapCue extends StatelessWidget {
-  const _TutorialTapCue({required this.tint, required this.progress});
+  const _TutorialTapCue({
+    required this.tint,
+    required this.progress,
+    required this.label,
+  });
 
   final Color tint;
   final double progress;
+  final String? label;
 
   @override
   Widget build(BuildContext context) {
@@ -206,60 +214,112 @@ class _TutorialTapCue extends StatelessWidget {
     final pressOffset = Offset(0, 5 * pressProgress);
     final iconScale = 1 - (0.08 * pressProgress);
 
+    final cueLabel = label?.trim();
+    final hasLabel = cueLabel != null && cueLabel.isNotEmpty;
+
     return SizedBox(
-      width: 50,
+      width: hasLabel ? 164 : 50,
       height: 50,
       child: Stack(
-        alignment: Alignment.center,
+        alignment: hasLabel ? Alignment.centerRight : Alignment.center,
         children: [
-          Opacity(
-            opacity: 0.52 * (1 - ringProgress),
-            child: Transform.scale(
-              scale: 0.58 + (0.74 * ringProgress),
+          if (hasLabel)
+            Positioned(
+              right: 38,
               child: Container(
-                width: 36,
-                height: 36,
+                constraints: const BoxConstraints(maxWidth: 116),
+                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
                 decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(color: tint.withValues(alpha: 0.88)),
-                ),
-              ),
-            ),
-          ),
-          Transform.translate(
-            offset: pressOffset,
-            child: Transform.scale(
-              scale: iconScale,
-              child: Container(
-                width: 34,
-                height: 34,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: tint,
-                  border: Border.all(
-                    color: LightcorePalette.mist.withValues(alpha: 0.82),
-                  ),
+                  color: LightcorePalette.panelRaised.withValues(alpha: 0.94),
+                  borderRadius: BorderRadius.circular(999),
+                  border: Border.all(color: tint.withValues(alpha: 0.72)),
                   boxShadow: [
                     BoxShadow(
-                      color: tint.withValues(alpha: 0.44),
-                      blurRadius: 18,
+                      color: tint.withValues(alpha: 0.18),
+                      blurRadius: 12,
                       spreadRadius: 1,
-                    ),
-                    BoxShadow(
-                      color: LightcorePalette.night.withValues(alpha: 0.48),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
                     ),
                   ],
                 ),
-                child: Transform.rotate(
-                  angle: -0.28,
-                  child: const Icon(
-                    Icons.touch_app_rounded,
-                    color: LightcorePalette.night,
-                    size: 22,
+                child: Text(
+                  cueLabel,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: LightcorePalette.mist,
+                    fontWeight: FontWeight.w900,
+                    height: 1.05,
                   ),
                 ),
+              ),
+            ),
+          Align(
+            alignment: hasLabel ? Alignment.centerRight : Alignment.center,
+            child: SizedBox(
+              width: 50,
+              height: 50,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  Opacity(
+                    opacity: 0.52 * (1 - ringProgress),
+                    child: Transform.scale(
+                      scale: 0.58 + (0.74 * ringProgress),
+                      child: Container(
+                        width: 36,
+                        height: 36,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: tint.withValues(alpha: 0.88),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  Transform.translate(
+                    offset: pressOffset,
+                    child: Transform.scale(
+                      scale: iconScale,
+                      child: Container(
+                        width: 34,
+                        height: 34,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: tint,
+                          border: Border.all(
+                            color: LightcorePalette.mist.withValues(
+                              alpha: 0.82,
+                            ),
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: tint.withValues(alpha: 0.44),
+                              blurRadius: 18,
+                              spreadRadius: 1,
+                            ),
+                            BoxShadow(
+                              color: LightcorePalette.night.withValues(
+                                alpha: 0.48,
+                              ),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: Transform.rotate(
+                          angle: -0.28,
+                          child: const Icon(
+                            Icons.touch_app_rounded,
+                            color: LightcorePalette.night,
+                            size: 22,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),

@@ -85,9 +85,23 @@ class SymbolGridTile extends StatelessWidget {
                   children: [
                     Row(
                       children: [
-                        ...?(topLeading == null ? null : [topLeading!]),
-                        const Spacer(),
-                        ...?(topTrailing == null ? null : [topTrailing!]),
+                        if (topLeading == null)
+                          const Spacer()
+                        else
+                          Expanded(
+                            child: Align(
+                              alignment: Alignment.centerLeft,
+                              child: FittedBox(
+                                fit: BoxFit.scaleDown,
+                                alignment: Alignment.centerLeft,
+                                child: topLeading!,
+                              ),
+                            ),
+                          ),
+                        if (topTrailing != null) ...[
+                          const SizedBox(width: 4),
+                          topTrailing!,
+                        ],
                       ],
                     ),
                     const SizedBox(height: 7),
@@ -224,17 +238,17 @@ class AffinityGlyph extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Icon(_affinityIcon(affinity), color: affinity.color, size: size);
+    return Icon(affinityIconFor(affinity), color: affinity.color, size: size);
   }
 }
 
-IconData _affinityIcon(PrototypeAffinity affinity) => switch (affinity) {
-  PrototypeAffinity.neutral => Icons.circle_rounded,
-  PrototypeAffinity.ember => Icons.diamond_rounded,
-  PrototypeAffinity.flare => Icons.square_rounded,
-  PrototypeAffinity.solar => Icons.change_history_rounded,
-  PrototypeAffinity.verdant => Icons.hexagon_rounded,
-  PrototypeAffinity.aether => Icons.blur_on_rounded,
-  PrototypeAffinity.violet => Icons.auto_awesome_rounded,
+IconData affinityIconFor(PrototypeAffinity affinity) => switch (affinity) {
+  PrototypeAffinity.neutral => Icons.auto_awesome_rounded,
+  PrototypeAffinity.ember => Icons.flare_rounded,
+  PrototypeAffinity.flare => Icons.radio_button_checked_rounded,
+  PrototypeAffinity.solar => Icons.device_hub_rounded,
+  PrototypeAffinity.verdant => Icons.shield_moon_rounded,
+  PrototypeAffinity.aether => Icons.timeline_rounded,
+  PrototypeAffinity.violet => Icons.radar_rounded,
   PrototypeAffinity.black => Icons.lens_blur_rounded,
 };

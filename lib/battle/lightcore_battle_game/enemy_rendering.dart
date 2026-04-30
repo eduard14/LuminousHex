@@ -210,6 +210,7 @@ extension _LightcoreBattleGameEnemyRendering on LightcoreBattleGame {
         Offset(_slotPositions[index].x, _slotPositions[index].y),
         radius: _slotRadius * 1.2,
         tint: LightcorePalette.quest,
+        tapCueLabel: controller.tutorialBattleSlotGuideLabel(index),
       );
     }
   }

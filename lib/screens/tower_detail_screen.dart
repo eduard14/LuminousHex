@@ -144,6 +144,7 @@ class _TowerDetailContent extends StatelessWidget {
     final card = controller.cardForSlot(tower);
     final upgradeOptions = controller.towerUpgradeOptionsFor(tower);
     final lockedTypes = controller.towerLockedUpgradeTypesFor(tower);
+    final staticArchive = controller.activeLayerPassiveOnly;
     final hasDotStat =
         tower.dotDamageFactor > 1 ||
         controller.towerHasUpgradeOption(tower, TowerUpgradeStatType.dotDamage);
@@ -181,7 +182,7 @@ class _TowerDetailContent extends StatelessWidget {
         label: 'Core Manager',
         value: controller.managerAssignmentUnlocked
             ? card?.name ?? 'Open'
-            : 'Locked until Layer 2 Core',
+            : 'Locked until Core Lv ${LightcoreController.managerCoreLevelRequirement}',
       ),
       _TowerStatRowData(
         label: 'Automation',
@@ -259,6 +260,20 @@ class _TowerDetailContent extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(0, 0, 0, 6),
       children: [
         _TowerPortraitPanel(controller: controller, tower: tower, tint: tint),
+        if (staticArchive) ...[
+          const SizedBox(height: 14),
+          _ConsoleSection(
+            title: 'Static Archive',
+            subtitle:
+                'This merged source shell is passive support. Tower pieces can be inspected, but recalibration, upgrades, targeting, and sales stay on live shells.',
+            tint: LightcorePalette.solar,
+            child: _TowerInfoChip(
+              label: 'Mode',
+              value: 'Inspect only',
+              tint: LightcorePalette.solar,
+            ),
+          ),
+        ],
         const SizedBox(height: 14),
         _ConsoleSection(
           title: 'Upgrade Board',
@@ -307,7 +322,9 @@ class _TowerDetailContent extends StatelessWidget {
               SizedBox(
                 width: double.infinity,
                 child: OutlinedButton(
-                  onPressed: () => controller.sellTower(slotIndex),
+                  onPressed: staticArchive
+                      ? null
+                      : () => controller.sellTower(slotIndex),
                   child: Text('Sell ${(tower.investedLumens * 0.7).round()}L'),
                 ),
               ),
@@ -322,7 +339,7 @@ class _TowerDetailContent extends StatelessWidget {
           subtitle: controller.managerAssignmentUnlocked
               ? card?.summary ??
                     'Open the Managers tab to socket a Core Manager for every tower on this shell.'
-              : 'Manager assignment unlocks as soon as this core reaches Layer 2. Until then, tap ready towers manually.',
+              : 'Manager assignment unlocks when this core reaches Lv ${LightcoreController.managerCoreLevelRequirement}. Until then, tap ready towers manually.',
           tint: LightcorePalette.layer2,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -364,12 +381,14 @@ class _TowerDetailContent extends StatelessWidget {
                     tower,
                     projectile,
                   ),
-                  onSelected: (priority) =>
-                      controller.setTowerProjectileTargetPriority(
-                        slotIndex,
-                        projectile,
-                        priority,
-                      ),
+                  onSelected: staticArchive
+                      ? null
+                      : (priority) =>
+                            controller.setTowerProjectileTargetPriority(
+                              slotIndex,
+                              projectile,
+                              priority,
+                            ),
                 ),
                 if (projectile != projectiles.last) const SizedBox(height: 12),
               ],
@@ -676,7 +695,10 @@ class _TowerRankSummary extends StatelessWidget {
           SizedBox(
             width: double.infinity,
             child: FilledButton.icon(
-              onPressed: !tower.isFabricating && !isMaxed
+              onPressed:
+                  !tower.isFabricating &&
+                      !isMaxed &&
+                      !controller.activeLayerPassiveOnly
                   ? () => controller.upgradeTower(slotIndex)
                   : null,
               icon: const Icon(Icons.upgrade_rounded),
@@ -828,7 +850,7 @@ class _ProjectileTargetRow extends StatelessWidget {
   final ProjectileType projectileType;
   final bool isActive;
   final TargetPriority selectedPriority;
-  final ValueChanged<TargetPriority> onSelected;
+  final ValueChanged<TargetPriority>? onSelected;
 
   @override
   Widget build(BuildContext context) {
@@ -890,7 +912,9 @@ class _ProjectileTargetRow extends StatelessWidget {
                   ChoiceChip(
                     label: Text(priority.label),
                     selected: selectedPriority == priority,
-                    onSelected: (_) => onSelected(priority),
+                    onSelected: onSelected == null
+                        ? null
+                        : (_) => onSelected!(priority),
                   ),
               ],
             ),
@@ -922,7 +946,10 @@ class _TowerUpgradeCard extends StatelessWidget {
     final statMaxed = upgrade.rank >= LightcoreController.maxTowerUpgradeRank;
     final cost = controller.towerStatUpgradeCost(tower, upgrade);
     final canUpgrade =
-        !tower.isFabricating && !statMaxed && controller.lumens >= cost;
+        !controller.activeLayerPassiveOnly &&
+        !tower.isFabricating &&
+        !statMaxed &&
+        controller.lumens >= cost;
 
     return Container(
       width: double.infinity,

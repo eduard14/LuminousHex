@@ -494,59 +494,53 @@ extension LightcoreBattleGameArenaSlotRendering on LightcoreBattleGame {
     );
   }
 
-  void _renderFusionBuildIndicator(
+  void _renderFabricationCoreGlyph(
     Canvas canvas,
     Offset center, {
     required Color color,
     required double radius,
     required double progress,
     required double phase,
-    required double burstProgress,
   }) {
-    final clamped = progress.clamp(0.0, 1.0);
-    final spin = phase * 1.35;
-    final sourceRadius = radius * 0.78;
-    final targetRadius = radius * (0.16 + (clamped * 0.32));
+    final clamped = progress.clamp(0.0, 1.0).toDouble();
+    final constructionProgress = Curves.easeOutCubic.transform(clamped);
+    final coreRadius = radius * (0.08 + (constructionProgress * 0.18));
+    final coreRotation = -phase * 1.85;
 
-    for (var index = 0; index < 6; index++) {
-      final angle = spin + (((math.pi * 2) / 6) * index);
-      final source = Offset(
-        center.dx + math.cos(angle) * sourceRadius,
-        center.dy + math.sin(angle) * sourceRadius,
+    canvas.drawPath(
+      _polygonPath(center, coreRadius * 1.65, 3, coreRotation),
+      Paint()
+        ..style = PaintingStyle.fill
+        ..color = color.withValues(alpha: 0.24 + (constructionProgress * 0.24)),
+    );
+    canvas.drawPath(
+      _hexPath(center, coreRadius),
+      Paint()
+        ..style = PaintingStyle.fill
+        ..color = color.withValues(alpha: 0.74 + (constructionProgress * 0.26)),
+    );
+    canvas.drawPath(
+      _hexPath(center, coreRadius * 1.34),
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.8
+        ..strokeCap = StrokeCap.round
+        ..color = color.withValues(alpha: 0.98),
+    );
+
+    for (var node = 0; node < 6; node++) {
+      final angle = coreRotation + (((math.pi * 2) / 6) * node);
+      final nodeCenter = Offset(
+        center.dx + math.cos(angle) * coreRadius * 1.72,
+        center.dy + math.sin(angle) * coreRadius * 1.72,
       );
-      final target = Offset(
-        center.dx + math.cos(angle) * targetRadius,
-        center.dy + math.sin(angle) * targetRadius,
-      );
-      final control = Offset(
-        center.dx + math.cos(angle + 0.42) * (sourceRadius * 0.58),
-        center.dy + math.sin(angle + 0.42) * (sourceRadius * 0.58),
-      );
-      final path = Path()
-        ..moveTo(source.dx, source.dy)
-        ..quadraticBezierTo(control.dx, control.dy, target.dx, target.dy);
-      canvas.drawPath(
-        path,
+      canvas.drawCircle(
+        nodeCenter,
+        radius * (0.018 + (constructionProgress * 0.008)),
         Paint()
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 1.5 + (clamped * 1.2)
-          ..strokeCap = StrokeCap.round
-          ..color = color.withValues(alpha: 0.18 + (clamped * 0.34)),
-      );
-      canvas.drawPath(
-        _hexPath(source, radius * 0.045),
-        Paint()..color = color.withValues(alpha: 0.38 + (clamped * 0.34)),
-      );
-    }
-
-    if (burstProgress > 0) {
-      _renderSlotBurst(
-        canvas,
-        center,
-        color: color,
-        radius: radius,
-        progress: 1 - burstProgress.clamp(0.0, 1.0),
-        intensity: 0.72,
+          ..color = color.withValues(
+            alpha: 0.78 + (constructionProgress * 0.22),
+          ),
       );
     }
   }
@@ -611,7 +605,13 @@ extension LightcoreBattleGameArenaSlotRendering on LightcoreBattleGame {
       final unlocked = controller.isOuterSlotUnlocked(index);
       final center = Offset(_slotPositions[index].x, _slotPositions[index].y);
       final selected = controller.selectedSlotIndex == index;
-      final slotColor = activeTower
+      final coreColor = _signatureColor(
+        controller.coreState.affinity,
+        controller.coreState.secondaryAffinity,
+      );
+      final slotColor = slot.isFabricating
+          ? coreColor
+          : activeTower
           ? slot.config != null
                 ? slot.config!.affinity.color
                 : slot.childAffinity != null
@@ -655,9 +655,6 @@ extension LightcoreBattleGameArenaSlotRendering on LightcoreBattleGame {
             (slot.childBuiltCount / LightcoreController.slotCount).clamp(0, 1);
         final chargeProgress = slot.charge.clamp(0, 1);
         final persistentShield = controller.towerUsesPersistentShieldRing(slot);
-        final constructionProgress = slot.isFabricating
-            ? Curves.easeOutCubic.transform(slot.fabricationProgress)
-            : 1.0;
         if (slot.isFabricating) {
           _renderFabricationLattice(
             canvas,
@@ -679,6 +676,29 @@ extension LightcoreBattleGameArenaSlotRendering on LightcoreBattleGame {
                         LightcoreBattleGame._slotBuildBurstDuration)
                     .clamp(0.0, 1.0),
           );
+        } else if (projectShell) {
+          _renderFabricationLattice(
+            canvas,
+            center,
+            color: slotColor,
+            radius: _slotRadius,
+            progress: projectProgress.toDouble(),
+            phase: controller.elapsed,
+          );
+          if (_slotFuseBurstRemaining[index] > 0) {
+            _renderSlotBurst(
+              canvas,
+              center,
+              color: slotColor,
+              radius: _slotRadius,
+              progress:
+                  1 -
+                  (_slotFuseBurstRemaining[index] /
+                          LightcoreBattleGame._slotFuseBurstDuration)
+                      .clamp(0.0, 1.0),
+              intensity: 0.72,
+            );
+          }
         }
         if (activeTower && persistentShield) {
           _renderPersistentShieldTowerPulse(
@@ -700,17 +720,6 @@ extension LightcoreBattleGameArenaSlotRendering on LightcoreBattleGame {
           );
         }
         if (projectShell) {
-          _renderFusionBuildIndicator(
-            canvas,
-            center,
-            color: slotColor,
-            radius: _slotRadius,
-            progress: projectProgress.toDouble(),
-            phase: controller.elapsed,
-            burstProgress:
-                _slotFuseBurstRemaining[index] /
-                LightcoreBattleGame._slotFuseBurstDuration,
-          );
           final innerHex = _hexPath(
             center,
             _slotRadius * (0.24 + (projectProgress * 0.52)),
@@ -738,50 +747,36 @@ extension LightcoreBattleGameArenaSlotRendering on LightcoreBattleGame {
             slot,
             tint: slotColor,
             size: _slotRadius * 1.04,
+            coreFacingAngle: math.atan2(
+              _center.y - center.dy,
+              _center.x - center.dx,
+            ),
           );
         } else if (slot.isFabricating) {
-          final coreRadius =
-              _slotRadius * (0.08 + (constructionProgress * 0.18));
-          final coreRotation = -controller.elapsed * 1.85;
-          canvas.drawPath(
-            _polygonPath(center, coreRadius * 1.65, 3, coreRotation),
-            Paint()
-              ..style = PaintingStyle.fill
-              ..color = slotColor.withValues(
-                alpha: 0.24 + (constructionProgress * 0.24),
-              ),
+          _renderFabricationCoreGlyph(
+            canvas,
+            center,
+            color: slotColor,
+            radius: _slotRadius,
+            progress: slot.fabricationProgress,
+            phase: controller.elapsed,
           );
-          canvas.drawPath(
-            _hexPath(center, coreRadius),
-            Paint()
-              ..style = PaintingStyle.fill
-              ..color = slotColor.withValues(
-                alpha: 0.74 + (constructionProgress * 0.26),
-              ),
+        } else if (projectShell) {
+          _renderFabricationCoreGlyph(
+            canvas,
+            center,
+            color: slotColor,
+            radius: _slotRadius,
+            progress: projectProgress.toDouble(),
+            phase: controller.elapsed,
           );
-          canvas.drawPath(
-            _hexPath(center, coreRadius * 1.34),
-            Paint()
-              ..style = PaintingStyle.stroke
-              ..strokeWidth = 1.8
-              ..strokeCap = StrokeCap.round
-              ..color = slotColor.withValues(alpha: 0.98),
+          _paintBadge(
+            canvas,
+            center,
+            '${slot.childBuiltCount}',
+            color: LightcorePalette.mist,
+            size: 11,
           );
-          for (var node = 0; node < 6; node++) {
-            final angle = coreRotation + (((math.pi * 2) / 6) * node);
-            final nodeCenter = Offset(
-              center.dx + math.cos(angle) * coreRadius * 1.72,
-              center.dy + math.sin(angle) * coreRadius * 1.72,
-            );
-            canvas.drawCircle(
-              nodeCenter,
-              _slotRadius * (0.018 + (constructionProgress * 0.008)),
-              Paint()
-                ..color = slotColor.withValues(
-                  alpha: 0.78 + (constructionProgress * 0.22),
-                ),
-            );
-          }
         } else {
           final coreGlyph = _hexPath(center, _slotRadius * 0.21);
           canvas.drawPath(coreGlyph, Paint()..color = slotColor);

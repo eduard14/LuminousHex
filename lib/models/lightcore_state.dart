@@ -81,6 +81,37 @@ class ThreatScanBundleSnapshot {
       'x${effectiveGainMultiplier.toStringAsFixed(2)}';
 }
 
+class ThreatAssignmentGroupStatsSnapshot {
+  const ThreatAssignmentGroupStatsSnapshot({
+    required this.anomalyCount,
+    required this.ignoredAnomalyCount,
+    required this.spawnIntervalSeconds,
+    required this.spawnsPerMinute,
+    required this.clearsPerMinute,
+    required this.averageLumensPerClear,
+    required this.averageExperiencePerClear,
+    required this.lumensPerMinute,
+    required this.experiencePerMinute,
+  });
+
+  final int anomalyCount;
+  final int ignoredAnomalyCount;
+  final double spawnIntervalSeconds;
+  final double spawnsPerMinute;
+  final double clearsPerMinute;
+  final double averageLumensPerClear;
+  final double averageExperiencePerClear;
+  final double lumensPerMinute;
+  final double experiencePerMinute;
+
+  bool get hasAnomalies => anomalyCount > 0;
+
+  bool get hasIgnoredAnomalies => ignoredAnomalyCount > 0;
+
+  bool get isDpsLimited =>
+      hasAnomalies && clearsPerMinute < spawnsPerMinute * 0.98;
+}
+
 class OuterTowerState {
   const OuterTowerState({
     required this.slotIndex,
@@ -230,6 +261,77 @@ class OuterTowerState {
             .toDouble();
 
   bool get isBuilt => config != null || isChildLayerNode;
+
+  OuterTowerState copyForSlot(int nextSlotIndex) {
+    return OuterTowerState(
+      slotIndex: nextSlotIndex,
+      config: config,
+      level: level,
+      charge: charge,
+      cooldownRemaining: cooldownRemaining,
+      automationCooldownRemaining: automationCooldownRemaining,
+      disruption: disruption,
+      equippedCardInstanceId: equippedCardInstanceId,
+      projectileType: projectileType,
+      payloadType: payloadType,
+      targetPriority: targetPriority,
+      projectileTargetPriorities: projectileTargetPriorities,
+      fireSequence: fireSequence,
+      investedLumens: investedLumens,
+      fabricationTotalSeconds: fabricationTotalSeconds,
+      fabricationRemainingSeconds: fabricationRemainingSeconds,
+      powerFactor: powerFactor,
+      chargeFactor: chargeFactor,
+      cooldownFactor: cooldownFactor,
+      rangeFactor: rangeFactor,
+      generationFactor: generationFactor,
+      critChanceBonus: critChanceBonus,
+      critDamageFactor: critDamageFactor,
+      finalDamageFactor: finalDamageFactor,
+      bossDamageFactor: bossDamageFactor,
+      normalDamageFactor: normalDamageFactor,
+      defensePenetration: defensePenetration,
+      minDamageFactor: minDamageFactor,
+      maxDamageFactor: maxDamageFactor,
+      dotDamageFactor: dotDamageFactor,
+      towerUpgradeOptions: towerUpgradeOptions,
+      childLayerId: childLayerId,
+      childLayerTier: childLayerTier,
+      childLayerName: childLayerName,
+      childAffinity: childAffinity,
+      childSecondaryAffinity: childSecondaryAffinity,
+      childProjectileLoadout: childProjectileLoadout,
+      childPayloadLoadout: childPayloadLoadout,
+      childProjectileType: childProjectileType,
+      childPayloadType: childPayloadType,
+      childCoreLevel: childCoreLevel,
+      childRange: childRange,
+      childGenerationSpeed: childGenerationSpeed,
+      childCritChance: childCritChance,
+      childCritMultiplier: childCritMultiplier,
+      childFinalDamageMultiplier: childFinalDamageMultiplier,
+      childBossDamageMultiplier: childBossDamageMultiplier,
+      childNormalDamageMultiplier: childNormalDamageMultiplier,
+      childDefensePenetration: childDefensePenetration,
+      childMinDamageMultiplier: childMinDamageMultiplier,
+      childMaxDamageMultiplier: childMaxDamageMultiplier,
+      childPowerUpgradeBonus: childPowerUpgradeBonus,
+      childChargeUpgradeBonus: childChargeUpgradeBonus,
+      childCooldownUpgradeBonus: childCooldownUpgradeBonus,
+      childRangeUpgradeBonus: childRangeUpgradeBonus,
+      childGenerationUpgradeBonus: childGenerationUpgradeBonus,
+      childCritChanceUpgradeBonus: childCritChanceUpgradeBonus,
+      childCritDamageUpgradeBonus: childCritDamageUpgradeBonus,
+      childFinalDamageUpgradeBonus: childFinalDamageUpgradeBonus,
+      childBossDamageUpgradeBonus: childBossDamageUpgradeBonus,
+      childNormalDamageUpgradeBonus: childNormalDamageUpgradeBonus,
+      childDefensePenetrationUpgradeBonus: childDefensePenetrationUpgradeBonus,
+      childMinDamageUpgradeBonus: childMinDamageUpgradeBonus,
+      childMaxDamageUpgradeBonus: childMaxDamageUpgradeBonus,
+      childBuiltCount: childBuiltCount,
+      childPromoted: childPromoted,
+    );
+  }
 
   OuterTowerState copyWith({
     TowerConfig? config,
@@ -484,6 +586,30 @@ class ChildTowerUpgradeState {
       rank: rank ?? this.rank,
     );
   }
+}
+
+class CompletedTowerShellState {
+  const CompletedTowerShellState({
+    required this.id,
+    required this.sourceLayerId,
+    required this.sourceLayerLabel,
+    required this.sourceLayerTier,
+    required this.sourceSlotIndex,
+    required this.savedAtMillis,
+    required this.tower,
+    this.archived = true,
+  });
+
+  final String id;
+  final String sourceLayerId;
+  final String sourceLayerLabel;
+  final int sourceLayerTier;
+  final int sourceSlotIndex;
+  final int savedAtMillis;
+  final OuterTowerState tower;
+  final bool archived;
+
+  String get sourceLabel => '$sourceLayerLabel Hex ${sourceSlotIndex + 1}';
 }
 
 class InventoryCard {
@@ -1023,6 +1149,8 @@ class CoreShotState {
     required this.payloadType,
     required this.progress,
     required this.layer2,
+    required this.critChance,
+    required this.critMultiplier,
     required this.critical,
     required this.aimAngle,
     required this.travelRadius,
@@ -1043,6 +1171,8 @@ class CoreShotState {
   final PayloadType payloadType;
   final double progress;
   final bool layer2;
+  final double critChance;
+  final double critMultiplier;
   final bool critical;
   final double aimAngle;
   final double travelRadius;
@@ -1064,6 +1194,8 @@ class CoreShotState {
       payloadType: payloadType,
       progress: progress ?? this.progress,
       layer2: layer2,
+      critChance: critChance,
+      critMultiplier: critMultiplier,
       critical: critical,
       aimAngle: aimAngle,
       travelRadius: travelRadius,
@@ -1090,9 +1222,18 @@ class ImpactState {
     required this.lethal,
     required this.towerHit,
     required this.critical,
+    this.critChance = 0,
+    this.critMultiplier = 1,
     this.progressRate = 1,
     this.fieldRadius = 0,
     this.fieldDamagePerSecond = 0,
+    this.sweepDamage = 0,
+    this.sweepBandWidth = 0,
+    this.advantageMultiplier = 1,
+    this.bossDamageMultiplier = 1,
+    this.normalDamageMultiplier = 1,
+    this.defensePenetration = 0,
+    this.hitEnemyIds = const <String>[],
     this.sourceSlotIndex,
     this.chainSourceAngle,
     this.chainSourceRadius,
@@ -1111,20 +1252,34 @@ class ImpactState {
   final bool lethal;
   final bool towerHit;
   final bool critical;
+  final double critChance;
+  final double critMultiplier;
   final double progressRate;
   final double fieldRadius;
   final double fieldDamagePerSecond;
+  final double sweepDamage;
+  final double sweepBandWidth;
+  final double advantageMultiplier;
+  final double bossDamageMultiplier;
+  final double normalDamageMultiplier;
+  final double defensePenetration;
+  final List<String> hitEnemyIds;
   final int? sourceSlotIndex;
   final double? chainSourceAngle;
   final double? chainSourceRadius;
   final PrototypeAffinity? defeatedEnemyAffinity;
   final double defeatedEnemySizeScale;
 
-  bool get hasLingeringField => fieldRadius > 0 && fieldDamagePerSecond > 0;
+  bool get hasLingeringField =>
+      fieldRadius > 0 &&
+      fieldDamagePerSecond > 0 &&
+      projectileType != ProjectileType.coreBomb;
+  bool get hasImpactSweep =>
+      fieldRadius > 0 && sweepDamage > 0 && sweepBandWidth > 0;
   bool get hasChainSource =>
       chainSourceAngle != null && chainSourceRadius != null;
 
-  ImpactState copyWith({double? progress}) {
+  ImpactState copyWith({double? progress, List<String>? hitEnemyIds}) {
     return ImpactState(
       id: id,
       affinity: affinity,
@@ -1137,9 +1292,18 @@ class ImpactState {
       lethal: lethal,
       towerHit: towerHit,
       critical: critical,
+      critChance: critChance,
+      critMultiplier: critMultiplier,
       progressRate: progressRate,
       fieldRadius: fieldRadius,
       fieldDamagePerSecond: fieldDamagePerSecond,
+      sweepDamage: sweepDamage,
+      sweepBandWidth: sweepBandWidth,
+      advantageMultiplier: advantageMultiplier,
+      bossDamageMultiplier: bossDamageMultiplier,
+      normalDamageMultiplier: normalDamageMultiplier,
+      defensePenetration: defensePenetration,
+      hitEnemyIds: hitEnemyIds ?? this.hitEnemyIds,
       sourceSlotIndex: sourceSlotIndex,
       chainSourceAngle: chainSourceAngle,
       chainSourceRadius: chainSourceRadius,
@@ -1310,6 +1474,9 @@ class TowerLayerSnapshot {
     this.promotedParentLayerId,
     this.promotedIntoParentSlot = false,
     this.promotionTraitRoll = 0,
+    this.layer3TrialCleared = false,
+    this.layer3TrialActive = false,
+    this.layer3TrialSpawnIndex = 0,
   });
 
   final String id;
@@ -1349,4 +1516,7 @@ class TowerLayerSnapshot {
   String? promotedParentLayerId;
   bool promotedIntoParentSlot;
   int promotionTraitRoll;
+  bool layer3TrialCleared;
+  bool layer3TrialActive;
+  int layer3TrialSpawnIndex;
 }

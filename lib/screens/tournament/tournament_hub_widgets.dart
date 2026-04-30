@@ -51,50 +51,6 @@ class _TournamentHubScreen extends StatelessWidget {
             const SizedBox(height: 12),
             _TournamentTutorialPanel(controller: controller),
           ],
-          const SizedBox(height: 12),
-          AuroraPanel(
-            tint: LightcorePalette.aether,
-            padding: const EdgeInsets.all(18),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Same game, compressed clock.',
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Tournament events live on their own screen and run from normalized event shells. Weekly scores come from draft choices and run execution, not permanent tower power.',
-                  style: Theme.of(context).textTheme.bodyMedium,
-                ),
-                const SizedBox(height: 12),
-                Wrap(
-                  spacing: 10,
-                  runSpacing: 10,
-                  children: [
-                    _ModeSummaryChip(
-                      tint: LightcorePalette.flare,
-                      label: 'Anomaly Blitz',
-                      summary:
-                          'Weekend survival sprint with rapid reinvestment.',
-                    ),
-                    _ModeSummaryChip(
-                      tint: LightcorePalette.solar,
-                      label: 'Hex',
-                      summary:
-                          'Solo weekly path climb on the global leaderboard.',
-                    ),
-                    _ModeSummaryChip(
-                      tint: LightcorePalette.violet,
-                      label: 'Arena Flow',
-                      summary:
-                          'Weekly duel ladder. Highest flow after 20 seconds wins.',
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
           const SizedBox(height: 14),
           for (final mode in LightcoreTournamentModeId.values) ...[
             if (overview != null)
@@ -236,45 +192,6 @@ class _HeaderChip extends StatelessWidget {
               context,
             ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800),
           ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ModeSummaryChip extends StatelessWidget {
-  const _ModeSummaryChip({
-    required this.tint,
-    required this.label,
-    required this.summary,
-  });
-
-  final Color tint;
-  final String label;
-  final String summary;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      constraints: const BoxConstraints(minWidth: 180, maxWidth: 260),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(18),
-        color: tint.withValues(alpha: 0.12),
-        border: Border.all(color: tint.withValues(alpha: 0.32)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            style: Theme.of(context).textTheme.titleSmall?.copyWith(
-              color: tint,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(summary, style: Theme.of(context).textTheme.bodySmall),
         ],
       ),
     );

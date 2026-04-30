@@ -109,7 +109,7 @@ class _EnemyPackRevealTiming {
           borderSuspenseEndMilliseconds: 5200,
           neutralPulseStartMilliseconds: 1200,
           neutralPulseMilliseconds: 380,
-          // Orange breaths sit near the 80-90% suspense point.
+          // Scan breaths sit near the 80-90% suspense point.
           orangePulseStartMilliseconds: <int>[3150, 4300, 5150],
           orangePulseMilliseconds: 420,
           azurePulseStartMilliseconds: null,
@@ -140,7 +140,7 @@ class _EnemyPackRevealTiming {
           borderSuspenseEndMilliseconds: 6600,
           neutralPulseStartMilliseconds: 1150,
           neutralPulseMilliseconds: 420,
-          // Orange only appears when a rare-tier item is actually in the batch.
+          // Scan glow only appears when a rare-tier item is actually in the batch.
           orangePulseStartMilliseconds: hasRareBuildup
               ? const <int>[3250, 4700, 5750]
               : const <int>[],
@@ -176,7 +176,7 @@ class _EnemyPackRevealTiming {
   final int borderFastEndMilliseconds;
   final int borderSlowEndMilliseconds;
   final int borderSuspenseEndMilliseconds;
-  // Neutral, orange, and azure pulse windows inside the hex phase.
+  // Neutral, scan, and azure pulse windows inside the hex phase.
   final int neutralPulseStartMilliseconds;
   final int neutralPulseMilliseconds;
   final List<int> orangePulseStartMilliseconds;
@@ -454,7 +454,7 @@ class _EnemyPackRevealDialogState extends State<_EnemyPackRevealDialog>
     if (_azurePulseHasStarted) {
       final azureVisibility = _pulseVisibility(_azurePulseProgress);
       return Color.lerp(
-        _orangePulseHasStarted ? LightcorePalette.flare : _silverSignalColor,
+        _orangePulseHasStarted ? LightcorePalette.scanGlow : _silverSignalColor,
         LightcorePalette.aether,
         0.78 + (0.22 * azureVisibility),
       )!;
@@ -466,7 +466,7 @@ class _EnemyPackRevealDialogState extends State<_EnemyPackRevealDialog>
       );
       return Color.lerp(
         _silverSignalColor,
-        LightcorePalette.flare,
+        LightcorePalette.scanGlow,
         0.82 + (0.18 * orangeVisibility),
       )!;
     }
@@ -497,10 +497,10 @@ class _EnemyPackRevealDialogState extends State<_EnemyPackRevealDialog>
       return 'Azure lock held';
     }
     if (_orangePulseIsActive) {
-      return 'Orange pulse resolving';
+      return 'Scan pulse resolving';
     }
     if (_orangePulseHasStarted) {
-      return 'Orange lock held';
+      return 'Scan lock held';
     }
     if (_neutralPulseProgress > 0 && _neutralPulseProgress < 1) {
       return 'Silver pulse - no indication';
@@ -843,7 +843,7 @@ class _AnticipationHexagonPainter extends CustomPainter {
 
     if (orangeLayerVisible) {
       drawResolvedLayer(
-        LightcorePalette.flare,
+        LightcorePalette.scanGlow,
         azureLayerVisible ? 0.12 : 0.36,
         0.84,
       );
@@ -854,7 +854,7 @@ class _AnticipationHexagonPainter extends CustomPainter {
     drawResolvePulse(LightcorePalette.layer2, silverPulseProgress, 0.0);
     for (final orangePulseProgress in orangePulseProgresses) {
       drawResolvePulse(
-        LightcorePalette.flare,
+        LightcorePalette.scanGlow,
         orangePulseProgress,
         0.1,
         alphaScale: azureLayerVisible ? 0.28 : 1,
@@ -956,28 +956,6 @@ class _DialogStatPill extends StatelessWidget {
       ),
     );
   }
-}
-
-EnemyCardState? _featuredEnemyCard(LightcoreController controller) {
-  if (controller.activeEnemyDeck.isNotEmpty) {
-    return controller.activeEnemyDeck.first;
-  }
-
-  EnemyCardState? bestOwned;
-  for (final card in controller.enemyCards) {
-    if (!card.isOwned) {
-      continue;
-    }
-    if (bestOwned == null || _compareThreatDisplayPower(card, bestOwned) > 0) {
-      bestOwned = card;
-    }
-  }
-
-  if (bestOwned != null) {
-    return bestOwned;
-  }
-
-  return controller.enemyCards.isEmpty ? null : controller.enemyCards.first;
 }
 
 int _compareThreatDisplayPower(EnemyCardState a, EnemyCardState b) {

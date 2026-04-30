@@ -22,6 +22,12 @@ function createPlayerSaveHelpers({ db, logger, HttpsError, constants, helpers })
     toMillis,
     isDateKeyBeyondAllowedFuture,
   } = helpers;
+  const RADIANCE_STAT_KEYS = Object.freeze([
+    "might",
+    "focus",
+    "tempo",
+    "insight",
+  ]);
 
   function buildOfflineClaimStatusMessage({
     elapsedSeconds,
@@ -118,6 +124,7 @@ function createPlayerSaveHelpers({ db, logger, HttpsError, constants, helpers })
     rejectInvalidInventoryEnvelope(rawPayload.inventory, reasons);
     rejectInvalidLayersEnvelope(rawPayload.layers, reasons);
     rejectInvalidStoreEnvelope(rawPayload.store, reasons);
+    rejectInvalidDailyDungeonsEnvelope(rawPayload.dailyDungeons, reasons);
     rejectInvalidBattlePassEnvelope(rawPayload.battlePasses, reasons);
     rejectInvalidBattlePassTimeEnvelope(rawPayload.battlePasses, reasons);
 
@@ -144,6 +151,8 @@ function createPlayerSaveHelpers({ db, logger, HttpsError, constants, helpers })
       "lumens",
       "flux",
       "prismShards",
+      "managerShards",
+      "shellCores",
       "enemyTickets",
       "bossTickets",
     ]) {
@@ -161,6 +170,7 @@ function createPlayerSaveHelpers({ db, logger, HttpsError, constants, helpers })
       "bossPullCount",
       "towerManagerPullCount",
       "enemyManagerPullCount",
+      "managerPowerLevel",
       "kills",
       "experience",
       "echoSeeds",
@@ -322,6 +332,31 @@ function createPlayerSaveHelpers({ db, logger, HttpsError, constants, helpers })
         reasons.push(`battlePasses.${index}.seasonKey_in_future`);
       }
     }
+  }
+
+  function rejectInvalidDailyDungeonsEnvelope(value, reasons) {
+    const dailyDungeons = normalizeObject(value);
+    rejectInvalidNumericRange(
+      dailyDungeons.highestUnlockedTowerLevel,
+      "dailyDungeons.highestUnlockedTowerLevel",
+      1,
+      60,
+      reasons,
+    );
+    rejectInvalidNumericRange(
+      dailyDungeons.highestClearedTowerLevel,
+      "dailyDungeons.highestClearedTowerLevel",
+      0,
+      60,
+      reasons,
+    );
+    rejectInvalidNumericRange(
+      dailyDungeons.quickClearsUsed,
+      "dailyDungeons.quickClearsUsed",
+      0,
+      3,
+      reasons,
+    );
   }
 
   function validateTowerManagerCards(value, reasons) {
@@ -628,6 +663,28 @@ function createPlayerSaveHelpers({ db, logger, HttpsError, constants, helpers })
         .map((card) => normalizeObject(card).equippedLayerId)
         .filter((layerId) => typeof layerId === "string" && layerId.length > 0),
     );
+    const layersById = new Map(
+      layers
+        .map((layer) => [sanitizeOptionalString(layer.id), layer])
+        .filter(([layerId]) => Boolean(layerId)),
+    );
+    function hasTowerManagerForLayer(layer) {
+      const visitedLayerIds = new Set();
+      let currentLayer = layer;
+      while (currentLayer) {
+        const layerId = sanitizeOptionalString(currentLayer.id);
+        if (!layerId || visitedLayerIds.has(layerId)) {
+          return false;
+        }
+        if (managerLayerIds.has(layerId)) {
+          return true;
+        }
+        visitedLayerIds.add(layerId);
+        const parentLayerId = sanitizeOptionalString(currentLayer.parentLayerId);
+        currentLayer = parentLayerId ? layersById.get(parentLayerId) : null;
+      }
+      return false;
+    }
     let passiveLumensPerSecond = 0;
     let totalBuiltTowerCount = 0;
     const activeLayerId =
@@ -642,7 +699,7 @@ function createPlayerSaveHelpers({ db, logger, HttpsError, constants, helpers })
       const coreLevel = clampInt(core.level, 1, SAVE_INTEGRITY_LIMITS.maxCoreLevel, 1);
       const builtTowerCount = countBuiltTowers(layer);
       totalBuiltTowerCount += builtTowerCount;
-      const hasLayerManager = managerLayerIds.has(layer.id);
+      const hasLayerManager = hasTowerManagerForLayer(layer);
       const managedTowerCount = hasLayerManager ? builtTowerCount : 0;
       if (managedTowerCount <= 0) {
         continue;
@@ -671,7 +728,7 @@ function createPlayerSaveHelpers({ db, logger, HttpsError, constants, helpers })
       1,
     );
     const activeBuiltTowerCount = countBuiltTowers(activeLayer);
-    const activeManagedTowerCount = managerLayerIds.has(activeLayer.id)
+    const activeManagedTowerCount = hasTowerManagerForLayer(activeLayer)
       ? activeBuiltTowerCount
       : 0;
     const swarmActivated = activeLayer.swarmActivated === true;
@@ -770,11 +827,12 @@ function createPlayerSaveHelpers({ db, logger, HttpsError, constants, helpers })
       const slot = normalizeObject(rawSlot);
       const configId = sanitizeOptionalString(slot.configId);
       const childLayerId = sanitizeOptionalString(slot.childLayerId);
+      const childPromoted = slot.childPromoted === true;
       const fabricationRemainingSeconds = Number(slot.fabricationRemainingSeconds);
-      return Boolean(configId) &&
-        !childLayerId &&
-        (!Number.isFinite(fabricationRemainingSeconds) ||
-          fabricationRemainingSeconds <= 0);
+      const isFabricating = Number.isFinite(fabricationRemainingSeconds) &&
+        fabricationRemainingSeconds > 0;
+      return !isFabricating &&
+        ((Boolean(configId) && !childLayerId) || childPromoted);
     }).length;
   }
 
@@ -878,6 +936,12 @@ function createPlayerSaveHelpers({ db, logger, HttpsError, constants, helpers })
       flagCounterDecrease(
         previousPayload,
         payload,
+        "resources.managerPowerLevel",
+        addFlag,
+      );
+      flagCounterDecrease(
+        previousPayload,
+        payload,
         "metrics.totalBattleSeconds",
         addFlag,
       );
@@ -949,6 +1013,20 @@ function createPlayerSaveHelpers({ db, logger, HttpsError, constants, helpers })
         payload,
         "resources.prismShards",
         SAVE_INTEGRITY_LIMITS.suspiciousPrismShardsDelta,
+        addFlag,
+      );
+      flagSuspiciousIncrease(
+        previousPayload,
+        payload,
+        "resources.managerShards",
+        SAVE_INTEGRITY_LIMITS.suspiciousPrismShardsDelta,
+        addFlag,
+      );
+      flagSuspiciousIncrease(
+        previousPayload,
+        payload,
+        "resources.shellCores",
+        SAVE_INTEGRITY_LIMITS.suspiciousFluxDelta,
         addFlag,
       );
       flagSuspiciousIncrease(
@@ -1040,6 +1118,7 @@ function createPlayerSaveHelpers({ db, logger, HttpsError, constants, helpers })
       player: sanitizeSavedPlayer(value.player),
       resources: sanitizeSavedResources(value.resources),
       metrics: sanitizeSavedMetrics(value.metrics),
+      dailyDungeons: sanitizeSavedDailyDungeons(value.dailyDungeons),
       readHelpSections: sanitizeSavedStringList(
         value.readHelpSections,
         PLAYER_SAVE_LIMITS.maxHelpSections,
@@ -1051,6 +1130,7 @@ function createPlayerSaveHelpers({ db, logger, HttpsError, constants, helpers })
       store: sanitizeSavedStore(value.store),
       inventory: sanitizeSavedInventory(value.inventory),
       layers: sanitizeSavedLayers(value.layers),
+      completedTowerShells: sanitizeSavedArray(value.completedTowerShells, 96),
       guild: value.guild ? sanitizeSavedGuild(value.guild) : null,
       tutorial: sanitizeSavedTutorial(value.tutorial),
     };
@@ -1076,6 +1156,7 @@ function createPlayerSaveHelpers({ db, logger, HttpsError, constants, helpers })
         32,
         64,
       ),
+      radianceStats: sanitizeSavedRadianceStats(data.radianceStats),
       sharedRelayCenterPieceId: sanitizeSavedNullableString(
         data.sharedRelayCenterPieceId,
         96,
@@ -1089,6 +1170,16 @@ function createPlayerSaveHelpers({ db, logger, HttpsError, constants, helpers })
     };
   }
 
+  function sanitizeSavedRadianceStats(value) {
+    const data = normalizeObject(value);
+    return Object.fromEntries(
+      RADIANCE_STAT_KEYS.map((stat) => [
+        stat,
+        clampInt(data[stat], 0, PLAYER_SAVE_LIMITS.maxCounter, 0),
+      ]),
+    );
+  }
+
   function sanitizeSavedResources(value) {
     const data = normalizeObject(value);
     return {
@@ -1096,6 +1187,24 @@ function createPlayerSaveHelpers({ db, logger, HttpsError, constants, helpers })
       flux: clampInt(data.flux, 0, PLAYER_SAVE_LIMITS.maxCurrency, 0),
       prismShards: clampInt(
         data.prismShards,
+        0,
+        PLAYER_SAVE_LIMITS.maxCurrency,
+        0,
+      ),
+      managerShards: clampInt(
+        data.managerShards,
+        0,
+        PLAYER_SAVE_LIMITS.maxCurrency,
+        0,
+      ),
+      managerPowerLevel: clampInt(
+        data.managerPowerLevel,
+        0,
+        PLAYER_SAVE_LIMITS.maxCounter,
+        0,
+      ),
+      shellCores: clampInt(
+        data.shellCores,
         0,
         PLAYER_SAVE_LIMITS.maxCurrency,
         0,
@@ -1154,6 +1263,16 @@ function createPlayerSaveHelpers({ db, logger, HttpsError, constants, helpers })
         PLAYER_SAVE_LIMITS.maxCounter,
         0,
       ),
+    };
+  }
+
+  function sanitizeSavedDailyDungeons(value) {
+    const data = normalizeObject(value);
+    return {
+      highestUnlockedTowerLevel: clampInt(data.highestUnlockedTowerLevel, 1, 60, 1),
+      highestClearedTowerLevel: clampInt(data.highestClearedTowerLevel, 0, 60, 0),
+      quickClearDayKey: sanitizeSavedString(data.quickClearDayKey, "", 32),
+      quickClearsUsed: clampInt(data.quickClearsUsed, 0, 3, 0),
     };
   }
 
@@ -1319,6 +1438,7 @@ function createPlayerSaveHelpers({ db, logger, HttpsError, constants, helpers })
       firstManagersOpened: data.firstManagersOpened === true,
       firstEnemyTargetSet: data.firstEnemyTargetSet === true,
       enemyCountAdjusted: data.enemyCountAdjusted === true,
+      firstTowerStatsOpened: data.firstTowerStatsOpened === true,
       stabilityPanelOpened: data.stabilityPanelOpened === true,
       towerMatrixOpened: data.towerMatrixOpened === true,
       storeOpened: data.storeOpened === true,

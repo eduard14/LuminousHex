@@ -66,15 +66,89 @@ extension LightcoreBattleGameCoreRendering on LightcoreBattleGame {
     required double size,
     double opacity = 1,
     bool showLevelEdges = true,
+    double? coreFacingAngle,
+  }) {
+    final level = slot.config != null ? slot.level : (slot.childCoreLevel ?? 1);
+    _paintTraitBadge(
+      canvas,
+      center,
+      level: level,
+      maxLevel: LightcoreController.maxTowerLevel,
+      projectileType: controller.towerProjectileType(slot),
+      payloadType: controller.towerPayloadType(slot),
+      tint: tint,
+      size: size,
+      opacity: opacity,
+      showLevelEdges: showLevelEdges,
+      complete: controller.isTowerComplete(slot),
+      coreFacingAngle: coreFacingAngle,
+    );
+  }
+
+  void _paintCoreTowerTraitBadge(
+    Canvas canvas,
+    Offset center, {
+    required Color tint,
+    required double size,
+    bool showLevelEdges = true,
+    bool showLevelLabel = true,
+  }) {
+    _paintTraitBadge(
+      canvas,
+      center,
+      level: controller.coreState.level,
+      maxLevel: LightcoreController.maxTowerLevel,
+      projectileType: _coreProjectileTypeForBadge,
+      payloadType: _corePayloadTypeForBadge,
+      tint: tint,
+      size: size,
+      opacity: 1,
+      showLevelEdges: showLevelEdges,
+      complete: false,
+      levelLabel: showLevelLabel ? 'L${controller.coreState.level}' : null,
+    );
+  }
+
+  ProjectileType get _coreProjectileTypeForBadge {
+    final loadout = controller.coreProjectileArsenal;
+    if (loadout.isEmpty) {
+      return controller.coreState.projectileType;
+    }
+    return loadout[controller.coreState.fireSequence % loadout.length];
+  }
+
+  PayloadType get _corePayloadTypeForBadge {
+    final loadout = controller.corePayloadArsenal;
+    if (loadout.isEmpty) {
+      return controller.coreState.payloadType;
+    }
+    return loadout[controller.coreState.fireSequence % loadout.length];
+  }
+
+  void _paintTraitBadge(
+    Canvas canvas,
+    Offset center, {
+    required int level,
+    required int maxLevel,
+    required ProjectileType projectileType,
+    required PayloadType payloadType,
+    required Color tint,
+    required double size,
+    required double opacity,
+    required bool showLevelEdges,
+    required bool complete,
+    String? levelLabel,
+    double? coreFacingAngle,
   }) {
     final resolvedOpacity = opacity.clamp(0.0, 1.0).toDouble();
-    final level = slot.config != null ? slot.level : (slot.childCoreLevel ?? 1);
-    final projectileType = controller.towerProjectileType(slot);
-    final payloadType = controller.towerPayloadType(slot);
     final payloadColor = payloadType.affinity?.color ?? LightcorePalette.layer2;
     final projectileColor = projectileType.affinity.color;
     final badgeRadius = size * 0.42;
-    final vertices = _towerAlignedHexVertices(center, badgeRadius);
+    final vertices = _towerAlignedHexVertices(
+      center,
+      badgeRadius,
+      coreFacingAngle: coreFacingAngle,
+    );
     final path = Path()..moveTo(vertices.first.dx, vertices.first.dy);
     for (final vertex in vertices.skip(1)) {
       path.lineTo(vertex.dx, vertex.dy);
@@ -99,7 +173,6 @@ extension LightcoreBattleGameCoreRendering on LightcoreBattleGame {
       _drawHexEdge(canvas, vertices, edge, backgroundPaint);
     }
 
-    final complete = controller.isTowerComplete(slot);
     final activePaint = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = math.max(2.0, size * 0.065)
@@ -165,6 +238,18 @@ extension LightcoreBattleGameCoreRendering on LightcoreBattleGame {
         color: LightcorePalette.night.withValues(alpha: resolvedOpacity),
       );
     }
+
+    final resolvedLevelLabel = levelLabel?.trim();
+    if (resolvedLevelLabel != null && resolvedLevelLabel.isNotEmpty) {
+      _paintTraitBadgeLevelLabel(
+        canvas,
+        center.translate(size * 0.25, size * 0.26),
+        resolvedLevelLabel,
+        tint: tint,
+        size: size,
+        opacity: resolvedOpacity,
+      );
+    }
   }
 
   void _paintIconGlyph(
@@ -193,8 +278,67 @@ extension LightcoreBattleGameCoreRendering on LightcoreBattleGame {
     );
   }
 
-  List<Offset> _towerAlignedHexVertices(Offset center, double radius) =>
-      _polygonPoints(center, radius, 6, math.pi / 6);
+  void _paintTraitBadgeLevelLabel(
+    Canvas canvas,
+    Offset center,
+    String text, {
+    required Color tint,
+    required double size,
+    required double opacity,
+  }) {
+    final fontSize = (size * 0.14).clamp(7.0, 10.0).toDouble();
+    final painter = TextPainter(
+      text: TextSpan(
+        text: text,
+        style: TextStyle(
+          color: LightcorePalette.mist.withValues(alpha: opacity),
+          fontSize: fontSize,
+          fontWeight: FontWeight.w800,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    )..layout();
+    final horizontalPadding = size * 0.045;
+    final verticalPadding = size * 0.02;
+    final rect = Rect.fromCenter(
+      center: center,
+      width: math.max(size * 0.23, painter.width + (horizontalPadding * 2)),
+      height: math.max(size * 0.17, painter.height + (verticalPadding * 2)),
+    );
+    final radius = Radius.circular(rect.height / 2);
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(rect, radius),
+      Paint()
+        ..color = LightcorePalette.panelRaised.withValues(
+          alpha: 0.92 * opacity,
+        ),
+    );
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(rect, radius),
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = math.max(0.8, size * 0.018)
+        ..color = tint.withValues(alpha: 0.72 * opacity),
+    );
+    painter.paint(
+      canvas,
+      Offset(
+        rect.left + ((rect.width - painter.width) / 2),
+        rect.top + ((rect.height - painter.height) / 2),
+      ),
+    );
+  }
+
+  List<Offset> _towerAlignedHexVertices(
+    Offset center,
+    double radius, {
+    double? coreFacingAngle,
+  }) {
+    final rotation = coreFacingAngle == null
+        ? math.pi / 6
+        : coreFacingAngle - (math.pi / 6);
+    return _polygonPoints(center, radius, 6, rotation);
+  }
 
   void _drawHexEdge(
     Canvas canvas,
@@ -324,6 +468,10 @@ extension LightcoreBattleGameCoreRendering on LightcoreBattleGame {
             tint: childColor,
             size: childHexRadius * 1.32,
             showLevelEdges: false,
+            coreFacingAngle: math.atan2(
+              center.dy - childCenter.dy,
+              center.dx - childCenter.dx,
+            ),
           );
         } else {
           _paintBadge(
@@ -351,6 +499,14 @@ extension LightcoreBattleGameCoreRendering on LightcoreBattleGame {
         ..strokeWidth = 2.4
         ..color = LightcorePalette.mist.withValues(alpha: 0.82),
     );
+    _paintCoreTowerTraitBadge(
+      canvas,
+      center,
+      tint: shellGlowColor,
+      size: centerHexRadius * 1.56,
+      showLevelEdges: false,
+      showLevelLabel: false,
+    );
   }
 
   void _renderCore(Canvas canvas) {
@@ -363,6 +519,7 @@ extension LightcoreBattleGameCoreRendering on LightcoreBattleGame {
           center,
           radius: _coreRadius * 1.36,
           tint: LightcorePalette.quest,
+          tapCueLabel: controller.tutorialBattleCoreGuideLabel,
         );
       }
       return;
@@ -403,16 +560,11 @@ extension LightcoreBattleGameCoreRendering on LightcoreBattleGame {
           _coreHexFirePopRemaining / LightcoreBattleGame._hexChargePopDuration,
     );
 
-    canvas.drawPath(
-      _hexPath(center, _coreRadius * 0.21),
-      Paint()..color = coreColor,
-    );
-    _paintBadge(
+    _paintCoreTowerTraitBadge(
       canvas,
       center,
-      'L${controller.coreState.level}',
-      color: LightcorePalette.mist,
-      size: 11,
+      tint: coreColor,
+      size: _coreRadius * 1.14,
     );
 
     if (controller.layer2State.unlocked) {
@@ -437,29 +589,13 @@ extension LightcoreBattleGameCoreRendering on LightcoreBattleGame {
       );
     }
 
-    final towerManager = controller.towerCoreManager;
-    final enemyManager = controller.enemyCoreManager;
-    if (towerManager != null) {
-      _renderCoreManagerBadge(
-        canvas,
-        center.translate(_coreRadius * 0.72, -_coreRadius * 0.74),
-        LightcorePalette.layer2,
-      );
-    }
-    if (enemyManager != null) {
-      _renderCoreManagerBadge(
-        canvas,
-        center.translate(_coreRadius * 0.72, _coreRadius * 0.74),
-        LightcorePalette.flare,
-      );
-    }
-
     if (controller.tutorialHighlightsBattleCore) {
       _renderGuidePulse(
         canvas,
         center,
         radius: _coreRadius * 1.34,
         tint: LightcorePalette.quest,
+        tapCueLabel: controller.tutorialBattleCoreGuideLabel,
       );
     }
 

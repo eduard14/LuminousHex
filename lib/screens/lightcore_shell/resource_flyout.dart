@@ -240,7 +240,7 @@ class _BattleResourceFlyoutChip extends StatelessWidget {
     final tint = switch (entry.kind) {
       _BattleResourceFlyoutKind.lumens => LightcorePalette.solar,
       _BattleResourceFlyoutKind.flux => LightcorePalette.aether,
-      _BattleResourceFlyoutKind.scans => LightcorePalette.flare,
+      _BattleResourceFlyoutKind.scans => LightcorePalette.scanGlow,
     };
     final icon = switch (entry.kind) {
       _BattleResourceFlyoutKind.lumens => Icons.monetization_on_rounded,

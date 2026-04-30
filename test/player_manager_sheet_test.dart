@@ -11,6 +11,7 @@ import 'package:lightcore/services/lightcore_firebase_backend.dart';
 import 'package:lightcore/services/lightcore_firebase_runtime_config.dart';
 import 'package:lightcore/state/lightcore_controller.dart';
 import 'package:lightcore/theme/lightcore_theme.dart';
+import 'package:lightcore/widgets/guided_focus_frame.dart';
 
 void main() {
   testWidgets('top-left profile button opens the main manager sheet', (
@@ -173,6 +174,64 @@ void main() {
     expect(controller.unspentRadianceStatPoints, 0);
     expect(find.text('MGT 1'), findsOneWidget);
   });
+
+  testWidgets(
+    'global attributes tutorial focus has compact manager clearance',
+    (tester) async {
+      tester.view.physicalSize = const Size(390, 640);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      final controller = LightcoreController(
+        packRandom: Random(25),
+        traitRandom: Random(26),
+        managerRandom: Random(27),
+      );
+      addTearDown(controller.dispose);
+
+      final backend = FirebaseLightcoreBackend(
+        runtimeConfig: lightcoreFirebaseRuntimeConfig,
+      );
+      controller.debugDisableTutorial();
+      controller.experience = LightcoreController.experienceForOverallLevel(2);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: buildLightcoreTheme(),
+          home: LightcoreShell(controller: controller, backend: backend),
+        ),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
+
+      await tester.tap(
+        find.byTooltip('Open Main Manager (1 Radiance point ready)'),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+
+      final dialog = find.byType(Dialog);
+      final listView = find.descendant(
+        of: dialog,
+        matching: find.byType(ListView),
+      );
+      final focusFrame = find.descendant(
+        of: dialog,
+        matching: find.byType(GuidedFocusFrame),
+      );
+
+      expect(focusFrame, findsOneWidget);
+
+      final listRect = tester.getRect(listView);
+      final focusRect = tester.getRect(focusFrame);
+
+      expect(focusRect.top - listRect.top, greaterThanOrEqualTo(7));
+      expect(listRect.right - focusRect.right, greaterThanOrEqualTo(34));
+    },
+  );
 
   testWidgets('slot selection filters inventory and equips from the grid', (
     tester,

@@ -71,7 +71,7 @@ class _BossUnlockPanel extends StatelessWidget {
           Text('Apex Scans Locked', style: textTheme.titleLarge),
           const SizedBox(height: 6),
           Text(
-            'Apex Scans unlock at Account Radiance Lv ${LightcoreController.bossUnlockLevel}. You do not start with an Apex Anomaly anymore, so the first scan matters.',
+            'White Warden is already active as the starter Apex. Apex Scans and boss changes unlock in the Prism Shell.',
             style: textTheme.bodyMedium,
           ),
           const SizedBox(height: 14),
@@ -79,12 +79,10 @@ class _BossUnlockPanel extends StatelessWidget {
             spacing: 10,
             runSpacing: 10,
             children: [
-              _InfoChip(
-                label: 'Account Radiance Lv ${controller.accountRadianceLevel}',
-              ),
+              _InfoChip(label: 'Current Layer ${controller.progressionLayer}'),
               _InfoChip(
                 label:
-                    '${controller.bossLevelsRemaining} level${controller.bossLevelsRemaining == 1 ? '' : 's'} to go',
+                    '${controller.bossLevelsRemaining} layer${controller.bossLevelsRemaining == 1 ? '' : 's'} to go',
               ),
               _InfoChip(
                 label:
@@ -99,7 +97,7 @@ class _BossUnlockPanel extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            'Reach level ${LightcoreController.bossUnlockLevel}, collect your first sigils, then start pulling Apex Anomalies from Apex Scans.',
+            'Create the Prism Shell to collect the unlock scans and start pulling alternate Apex Anomaly cards.',
             style: textTheme.bodySmall?.copyWith(
               color: LightcorePalette.warning,
               fontWeight: FontWeight.w700,

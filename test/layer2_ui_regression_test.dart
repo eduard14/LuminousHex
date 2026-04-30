@@ -47,6 +47,19 @@ void main() {
       await pumpFixedFrame(tester);
 
       expect(createPrismButton, findsOneWidget);
+      expect(find.byTooltip('Show merge rates'), findsOneWidget);
+
+      await tester.tap(find.byTooltip('Show merge rates'));
+      await pumpFixedFrame(tester);
+
+      expect(find.text('Merge Rates'), findsOneWidget);
+      expect(find.text('Rainbow'), findsOneWidget);
+      expect(find.text('10%'), findsOneWidget);
+      expect(find.text('Projectile Tower'), findsOneWidget);
+      expect(find.text('Payload Tower'), findsOneWidget);
+
+      await tester.tap(find.text('Close'));
+      await pumpFixedFrame(tester);
 
       await tester.tap(createPrismButton);
       await pumpFixedFrame(tester, duration: const Duration(milliseconds: 700));

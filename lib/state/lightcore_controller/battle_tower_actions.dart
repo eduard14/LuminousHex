@@ -114,6 +114,15 @@ extension LightcoreControllerBattleTowerActions on LightcoreController {
       selectCenter();
       return;
     }
+    if (activeLayerPassiveOnly) {
+      selectedSlotIndex = null;
+      _towerRangePreviewSlotIndex = null;
+      _showBanner(
+        '$activeLayerLabel is a static archive. Inspect hexes or return to a live shell.',
+      );
+      _notifyNow();
+      return;
+    }
     _swarmActivated = true;
     selectedSlotIndex = null;
     _towerRangePreviewSlotIndex = null;
@@ -150,7 +159,11 @@ extension LightcoreControllerBattleTowerActions on LightcoreController {
       selectSlot(slotIndex);
       return;
     }
-    activateTowerSlot(slotIndex, selectForStats: false);
+    if (activeLayerPassiveOnly) {
+      selectSlot(slotIndex);
+      return;
+    }
+    activateTowerSlot(slotIndex);
   }
 
   bool activateTowerSlot(
@@ -159,6 +172,15 @@ extension LightcoreControllerBattleTowerActions on LightcoreController {
     bool selectForStats = true,
   }) {
     if (slotIndex < 0 || slotIndex >= _slots.length) {
+      return false;
+    }
+    if (activeLayerPassiveOnly) {
+      if (showBanner) {
+        _showBanner(
+          '$activeLayerLabel is a static archive. Return to a live shell to fire.',
+        );
+      }
+      _notifyNow();
       return false;
     }
     if (_guardLockedOuterSlot(slotIndex)) {
@@ -355,6 +377,11 @@ extension LightcoreControllerBattleTowerActions on LightcoreController {
     if (slotIndex < 0 || slotIndex >= _slots.length) {
       return false;
     }
+    if (activeLayerPassiveOnly) {
+      _showBanner('$activeLayerLabel is a static archive.');
+      _notifyNow();
+      return false;
+    }
     if (isCompositeLayer) {
       enterChildLayer(slotIndex);
       return false;
@@ -394,6 +421,11 @@ extension LightcoreControllerBattleTowerActions on LightcoreController {
 
   bool buildTowerAt(int slotIndex, TowerConfig config) {
     if (slotIndex < 0 || slotIndex >= _slots.length) {
+      return false;
+    }
+    if (activeLayerPassiveOnly) {
+      _showBanner('$activeLayerLabel is a static archive.');
+      _notifyNow();
       return false;
     }
     if (isCompositeLayer) {
@@ -457,6 +489,9 @@ extension LightcoreControllerBattleTowerActions on LightcoreController {
     if (slotIndex < 0 || slotIndex >= _slots.length) {
       return false;
     }
+    if (activeLayerPassiveOnly) {
+      return false;
+    }
 
     final tower = _slots[slotIndex];
     if (!tower.isBuilt ||
@@ -487,6 +522,9 @@ extension LightcoreControllerBattleTowerActions on LightcoreController {
 
   bool upgradeTowerStat(int slotIndex, TowerUpgradeStatType type) {
     if (slotIndex < 0 || slotIndex >= _slots.length) {
+      return false;
+    }
+    if (activeLayerPassiveOnly) {
       return false;
     }
 
@@ -533,7 +571,7 @@ extension LightcoreControllerBattleTowerActions on LightcoreController {
   }
 
   bool upgradeActiveChildTowerStat(ChildTowerUpgradeType type) {
-    if (!activeLayerHasParentSlot) {
+    if (activeLayerPassiveOnly || !activeLayerHasParentSlot) {
       return false;
     }
 
@@ -550,12 +588,11 @@ extension LightcoreControllerBattleTowerActions on LightcoreController {
     }
 
     final cost = childTowerUpgradeCost(currentUpgrade);
-    if (lumens < cost) {
+    if (shellCores < cost) {
       return false;
     }
 
-    lumens -= cost;
-    _recordLumenSpend(cost);
+    shellCores -= cost;
     _recordUpgradePurchase();
     final nextUpgrades = activeLayer.childTowerUpgrades.toList(growable: false);
     nextUpgrades[upgradeIndex] = currentUpgrade.copyWith(
@@ -586,14 +623,14 @@ extension LightcoreControllerBattleTowerActions on LightcoreController {
     _storeActiveLayer();
     _updateFlowEfficiency();
     _showBanner(
-      '${type.label} tuned to ${currentUpgrade.rank + 1}/$childTowerUpgradeMaxRank on ${activeLayer.label}.',
+      '${type.label} tuned to ${currentUpgrade.rank + 1}/$childTowerUpgradeMaxRank on ${activeLayer.label} for ${LightcoreCurrencyLabels.shellCoreCount(cost)}.',
     );
     _notifyNow();
     return true;
   }
 
   bool upgradeCoreRange() {
-    if (!canUpgradeCoreRange) {
+    if (activeLayerPassiveOnly || !canUpgradeCoreRange) {
       return false;
     }
 
@@ -616,7 +653,7 @@ extension LightcoreControllerBattleTowerActions on LightcoreController {
   }
 
   bool upgradeCoreFireSpeed() {
-    if (!canUpgradeCoreFireSpeed) {
+    if (activeLayerPassiveOnly || !canUpgradeCoreFireSpeed) {
       return false;
     }
 
@@ -638,7 +675,7 @@ extension LightcoreControllerBattleTowerActions on LightcoreController {
   }
 
   bool upgradeCoreQueueLimit() {
-    if (!canUpgradeCoreQueueLimit) {
+    if (activeLayerPassiveOnly || !canUpgradeCoreQueueLimit) {
       return false;
     }
 
@@ -660,7 +697,7 @@ extension LightcoreControllerBattleTowerActions on LightcoreController {
   }
 
   bool upgradeCoreMultiShot() {
-    if (!canUpgradeCoreMultiShot) {
+    if (activeLayerPassiveOnly || !canUpgradeCoreMultiShot) {
       return false;
     }
 
@@ -683,6 +720,9 @@ extension LightcoreControllerBattleTowerActions on LightcoreController {
 
   bool sellTower(int slotIndex) {
     if (slotIndex < 0 || slotIndex >= _slots.length) {
+      return false;
+    }
+    if (activeLayerPassiveOnly) {
       return false;
     }
 
@@ -717,6 +757,9 @@ extension LightcoreControllerBattleTowerActions on LightcoreController {
     if (slotIndex < 0 || slotIndex >= _slots.length) {
       return;
     }
+    if (activeLayerPassiveOnly) {
+      return;
+    }
     final tower = _slots[slotIndex];
     if (!tower.isBuilt || tower.isFabricating) {
       return;
@@ -744,6 +787,9 @@ extension LightcoreControllerBattleTowerActions on LightcoreController {
     if (slotIndex < 0 || slotIndex >= _slots.length) {
       return;
     }
+    if (activeLayerPassiveOnly) {
+      return;
+    }
     final tower = _slots[slotIndex];
     if (!tower.isBuilt || tower.isFabricating) {
       return;
@@ -769,7 +815,9 @@ extension LightcoreControllerBattleTowerActions on LightcoreController {
 
   void equipCardToCore(String cardId) {
     if (!managerAssignmentUnlocked) {
-      _showBanner('Manager assignment unlocks with a Layer 2 Core.');
+      _showBanner(
+        'Manager assignment unlocks at Core Lv $managerCoreLevelRequirement or Account Radiance Lv $managerUnlockLevel.',
+      );
       _notifyNow();
       return;
     }
@@ -832,17 +880,32 @@ extension LightcoreControllerBattleTowerActions on LightcoreController {
     if (manager == null) {
       return;
     }
+    final ownerLayerId =
+        _towerCoreManagerOwnerLayerIdForLayer(activeLayer) ?? activeLayer.id;
+    final affectedLayerIds = _layers
+        .where(
+          (layer) =>
+              _towerCoreManagerOwnerLayerIdForLayer(layer) == ownerLayerId,
+        )
+        .map((layer) => layer.id)
+        .toSet();
     for (var index = 0; index < _cards.length; index++) {
       final card = _cards[index];
-      if (card.equippedLayerId == activeLayer.id) {
+      if (card.equippedLayerId == ownerLayerId) {
         _cards[index] = card.copyWith(clearEquippedSlot: true);
       }
     }
-    for (var slotIndex = 0; slotIndex < _slots.length; slotIndex++) {
-      _slots[slotIndex] = _slots[slotIndex].copyWith(
-        automationCooldownRemaining: 0,
-        clearEquippedCard: true,
-      );
+    for (final layer in _layers) {
+      if (!affectedLayerIds.contains(layer.id)) {
+        continue;
+      }
+      layer.core = layer.core.copyWith(automationCooldownRemaining: 0);
+      for (var slotIndex = 0; slotIndex < layer.slots.length; slotIndex++) {
+        layer.slots[slotIndex] = layer.slots[slotIndex].copyWith(
+          automationCooldownRemaining: 0,
+          clearEquippedCard: true,
+        );
+      }
     }
     _core = _core.copyWith(automationCooldownRemaining: 0);
     _showBanner('Core Manager removed from the Tower Core.');
@@ -888,11 +951,14 @@ extension LightcoreControllerBattleTowerActions on LightcoreController {
       activeLayer.promotedIntoParentSlot = true;
       _storeActiveLayer();
       final forgedSlot = parent.slots[parentSlotIndex];
+      final forgedSlotLabel = _towerHasRainbowLoadout(forgedSlot)
+          ? 'Rainbow tower • ${towerProjectileArsenalLabel(forgedSlot)} • ${towerPayloadArsenalLabel(forgedSlot)}'
+          : '${towerProjectileLabel(forgedSlot)} projectile • ${towerPayloadLabel(forgedSlot)} payload';
       echoSeeds += 1;
       _enterLayer(
         parent.id,
         banner:
-            '$activeLayerLabel aligned into hex ${parentSlotIndex + 1} as a ${shellBadgeForTier(parent.tier)} tower: ${towerProjectileLabel(forgedSlot)} projectile • ${towerPayloadLabel(forgedSlot)} payload. +1 Echo Seed.',
+            '$activeLayerLabel aligned into hex ${parentSlotIndex + 1} as a ${shellBadgeForTier(parent.tier)} tower: $forgedSlotLabel. +1 Echo Seed.',
       );
       return;
     }
@@ -910,6 +976,18 @@ extension LightcoreControllerBattleTowerActions on LightcoreController {
       return;
     }
 
+    if (_requiresLayer3TrialGate && !activeLayer.layer3TrialCleared) {
+      if (!activeLayer.layer3TrialActive) {
+        _startLayer3Trial();
+      } else {
+        _showBanner(
+          'Nexus trial is already live. Clear the boss, swarm, and rush checks to open Layer 3.',
+        );
+        _notifyNow();
+      }
+      return;
+    }
+
     final nextTier = activeLayer.tier + 1;
     final nextShellName = shellNameForTier(nextTier);
     final sourceShellName = shellNameForTier(nextTier - 1);
@@ -922,7 +1000,13 @@ extension LightcoreControllerBattleTowerActions on LightcoreController {
     final forgedAffinity = forgedTraits.projectileAffinity;
     final forgedProjectile = projectileLoadout.first;
     final forgedPayload = payloadLoadout.first;
+    final forgedTraitLabel = forgedTraits.rainbow
+        ? 'Rainbow tower'
+        : _traitSignatureLabel(forgedAffinity, forgedTraits.payloadAffinity);
     final previousProgressionLayer = progressionLayer;
+    final retainedTowerManagerId = _towerCoreManagerForLayer(
+      activeLayer,
+    )?.instanceId;
     final promotedCore = _core.copyWith(
       flowEfficiency: _maxFlowEfficiency,
       fireCooldownRemaining: 0,
@@ -944,12 +1028,54 @@ extension LightcoreControllerBattleTowerActions on LightcoreController {
     );
     _layers.add(parent);
     activeLayer.promotedParentLayerId = parent.id;
+    if (retainedTowerManagerId != null) {
+      final managerIndex = _cards.indexWhere(
+        (card) => card.instanceId == retainedTowerManagerId,
+      );
+      if (managerIndex != -1) {
+        _cards[managerIndex] = _cards[managerIndex].copyWith(
+          equippedLayerId: parent.id,
+          clearEquippedSlotIndex: true,
+        );
+      }
+    }
     _storeActiveLayer();
     _viewLayerId = parent.id;
     _runtimeLayerId = parent.id;
     _loadLayer(parent);
+    final bossUnlockBanner = _grantBossUnlockIfNeeded();
     _showBanner(
-      '$nextShellName aligned with ${_traitSignatureLabel(forgedAffinity, forgedTraits.payloadAffinity)} • ${forgedProjectile.label} • ${forgedPayload.label}. Edge slots now grow $sourceShellName anchors; source + six anchors make the 7-shell cluster.${_progressionUnlockBannerFragment(previousProgressionLayer)}',
+      '$nextShellName aligned with $forgedTraitLabel • ${forgedProjectile.label} • ${forgedPayload.label}. Edge slots now grow $sourceShellName anchors; source + six anchors make the 7-shell cluster.${_progressionUnlockBannerFragment(previousProgressionLayer)}${bossUnlockBanner == null ? '' : ' $bossUnlockBanner'}',
+    );
+    _notifyNow();
+  }
+
+  void _startLayer3Trial() {
+    _enemies.clear();
+    _pulses.clear();
+    _shots.clear();
+    _impacts.clear();
+    _ammoQueue.clear();
+    _blueFocusTargetEnemyIdBySlot.clear();
+    activeLayer.layer3TrialActive = true;
+    activeLayer.layer3TrialCleared = false;
+    activeLayer.layer3TrialSpawnIndex = 0;
+    activeLayer.normalKillsSinceBoss = 0;
+    activeLayer.bossReady = false;
+    _outerRingRevealed = true;
+    _swarmActivated = true;
+    elapsed = 0;
+    _spawnTimer = 0.05;
+    _activeSpawnClusterIndex = null;
+    _core = _core.copyWith(
+      flowEfficiency: _maxFlowEfficiency,
+      fireCooldownRemaining: 0,
+    );
+    _layer2 = _layer2.copyWith(fireCooldownRemaining: 0);
+    _storeActiveLayer();
+    _showBanner(
+      'Nexus trial started. Preselected bosses, swarm bodies, and rush anomalies are testing this tower before Layer 3 opens.',
+      duration: 3.4,
     );
     _notifyNow();
   }

@@ -82,6 +82,26 @@ extension LightcoreTournamentModeIdX on LightcoreTournamentModeId {
       this == LightcoreTournamentModeId.arenaFlow;
 
   bool get supportsBossDraft => this == LightcoreTournamentModeId.arenaFlow;
+
+  List<String> get rules => switch (this) {
+    LightcoreTournamentModeId.enemyBlitz => const <String>[
+      'Manual survival sprint with tournament-only resources.',
+      'Drafted enemy pressure increases future payouts and score.',
+      'Runs score from wave depth, survival, and reinvestment timing.',
+    ],
+    LightcoreTournamentModeId.hexGauntlet => const <String>[
+      'Build fixed-stat towers on open hexes; the cut path is reserved for waves.',
+      'Send every wave manually. No offline progress is awarded.',
+      'Defeated enemies pay event currency for more towers or stronger enemy tiers.',
+      'Merge two matching towers into one payload tower, then merge two payload towers for an impact projectile.',
+      'Higher enemy tiers are riskier and worth more score.',
+    ],
+    LightcoreTournamentModeId.arenaFlow => const <String>[
+      'Draft two anomalies and one Apex for the pressure curve.',
+      'Trigger overclock during pressure dips to beat the flow target.',
+      'Runs score from final flow after the short arena duel.',
+    ],
+  };
 }
 
 LightcoreTournamentModeId tournamentModeFromWireKey(String value) {

@@ -8,6 +8,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:lightcore/battle/lightcore_battle_game.dart';
 import 'package:lightcore/data/enemy_configs.dart';
 import 'package:lightcore/data/tower_configs.dart';
+import 'package:lightcore/models/lightcore_types.dart';
 import 'package:lightcore/screens/battle_screen.dart';
 import 'package:lightcore/state/lightcore_controller.dart';
 import 'package:lightcore/theme/lightcore_theme.dart';
@@ -140,7 +141,7 @@ void main() {
     expect(find.text('Core Stats'), findsOneWidget);
   });
 
-  testWidgets('tower tap fires packet and defers stats to wrench button', (
+  testWidgets('tower tap fires packet and opens tower controls', (
     tester,
   ) async {
     final controller = LightcoreController();
@@ -157,10 +158,22 @@ void main() {
     await tester.tapAt(_slotCenter(tester, 0));
     await tester.pump(const Duration(milliseconds: 50));
 
-    expect(controller.selectedSlotIndex, isNull);
+    expect(controller.selectedSlotIndex, 0);
     expect(controller.pulses, isNotEmpty);
-    expect(find.text('Tower Stats'), findsNothing);
-    expect(find.text('Hex 1'), findsNothing);
+    expect(find.text('Tower Stats'), findsOneWidget);
+    expect(find.text('Live Projectile Target'), findsOneWidget);
+    expect(
+      controller.towerTargetPriority(controller.slots[0]),
+      TargetPriority.close,
+    );
+    final strongTargetChip = find.widgetWithText(ChoiceChip, 'Strong');
+    await tester.ensureVisible(strongTargetChip);
+    await tester.tap(strongTargetChip);
+    await tester.pump();
+    expect(
+      controller.towerTargetPriority(controller.slots[0]),
+      TargetPriority.strong,
+    );
     expect(
       find.byKey(const ValueKey<String>('battle-side-stats-button')),
       findsNothing,
@@ -174,12 +187,6 @@ void main() {
       tester.getRect(wrenchButton).left,
       lessThan(tester.getRect(find.byType(BattleScreen)).center.dx),
     );
-
-    await tester.tap(wrenchButton);
-    await tester.pump(const Duration(milliseconds: 50));
-
-    expect(controller.selectedSlotIndex, 0);
-    expect(find.text('Tower Stats'), findsOneWidget);
 
     final selectionButton = find.byKey(
       const ValueKey<String>('battle-tower-selection-button'),
@@ -211,38 +218,37 @@ void main() {
     expect(find.text('Tower Stats'), findsOneWidget);
   });
 
-  testWidgets(
-    'green shield tower shows shield icon while stats are collapsed',
-    (tester) async {
-      final controller = LightcoreController();
-      addTearDown(controller.dispose);
-      controller.debugDisableTutorial();
-      controller.lumens = 1000;
-      controller.kills = LightcoreController.unlockKillsForOuterSlot(0);
-      expect(controller.buildTowerAt(0, TowerLibrary.greenPrism), isTrue);
-      controller.selectCenter();
+  testWidgets('green shield tower shows shield icon in selection hud', (
+    tester,
+  ) async {
+    final controller = LightcoreController();
+    addTearDown(controller.dispose);
+    controller.debugDisableTutorial();
+    controller.lumens = 1000;
+    controller.kills = LightcoreController.unlockKillsForOuterSlot(0);
+    expect(controller.buildTowerAt(0, TowerLibrary.greenPrism), isTrue);
+    controller.selectCenter();
 
-      await _pumpBattleScreen(tester, controller);
+    await _pumpBattleScreen(tester, controller);
 
-      await tester.tapAt(_slotCenter(tester, 0));
-      await tester.pump(const Duration(milliseconds: 50));
+    await tester.tapAt(_slotCenter(tester, 0));
+    await tester.pump(const Duration(milliseconds: 50));
 
-      expect(controller.selectedSlotIndex, isNull);
-      expect(find.text('Tower Stats'), findsNothing);
+    expect(controller.selectedSlotIndex, 0);
+    expect(find.text('Tower Stats'), findsOneWidget);
 
-      final selectionButton = find.byKey(
-        const ValueKey<String>('battle-tower-selection-button'),
-      );
-      expect(selectionButton, findsOneWidget);
-      expect(
-        find.descendant(
-          of: selectionButton,
-          matching: find.byIcon(Icons.shield_moon_rounded),
-        ),
-        findsOneWidget,
-      );
-    },
-  );
+    final selectionButton = find.byKey(
+      const ValueKey<String>('battle-tower-selection-button'),
+    );
+    expect(selectionButton, findsOneWidget);
+    expect(
+      find.descendant(
+        of: selectionButton,
+        matching: find.byIcon(Icons.shield_moon_rounded),
+      ),
+      findsOneWidget,
+    );
+  });
 
   testWidgets('fabricating tower shows fabrication panel instead of stats', (
     tester,
@@ -268,7 +274,7 @@ void main() {
     expect(find.text('Fabrication'), findsOneWidget);
     expect(find.textContaining('Fabricating Comet Mortar'), findsOneWidget);
     expect(find.text('Tower Stats'), findsNothing);
-    expect(find.text('Inspect Tower'), findsNothing);
+    expect(find.widgetWithText(OutlinedButton, 'Stats'), findsNothing);
   });
 
   testWidgets('number key taps the matching hex', (tester) async {
@@ -286,10 +292,10 @@ void main() {
     await tester.sendKeyEvent(LogicalKeyboardKey.digit2);
     await tester.pump(const Duration(milliseconds: 50));
 
-    expect(controller.selectedSlotIndex, isNull);
+    expect(controller.selectedSlotIndex, 1);
     expect(controller.pulses, hasLength(1));
     expect(controller.pulses.single.sourceSlotIndex, 1);
-    expect(find.text('Tower Stats'), findsNothing);
+    expect(find.text('Tower Stats'), findsOneWidget);
   });
 
   testWidgets('center tap keeps core stats open until blank map tap', (

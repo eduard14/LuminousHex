@@ -44,6 +44,7 @@ class _PrismRiftDungeonGame extends FlameGame {
   bool _expired = false;
   bool _resultDispatched = false;
   bool _aiming = false;
+  Offset _aimDirection = const Offset(0, -1);
   Offset? _aimTarget;
   int _combo = 0;
   int _wave = 1;
@@ -59,6 +60,7 @@ class _PrismRiftDungeonGame extends FlameGame {
     }
     _aiming = true;
     _aimTarget = _clampAimTarget(localPosition);
+    _aimDirection = _directionForTarget(_aimTarget!);
     _emitSnapshot();
   }
 
@@ -67,6 +69,7 @@ class _PrismRiftDungeonGame extends FlameGame {
       return;
     }
     _aimTarget = _clampAimTarget(localPosition);
+    _aimDirection = _directionForTarget(_aimTarget!);
     _emitSnapshot();
   }
 
@@ -76,6 +79,7 @@ class _PrismRiftDungeonGame extends FlameGame {
       return;
     }
     _aimTarget = _clampAimTarget(localPosition);
+    _aimDirection = _directionForTarget(_aimTarget!);
     final target = _aimTarget;
     _aiming = false;
     if (target != null) {
@@ -87,6 +91,27 @@ class _PrismRiftDungeonGame extends FlameGame {
   void handleAimCancel() {
     _aiming = false;
     _aimTarget = null;
+    _emitSnapshot();
+  }
+
+  void handleAimDirection(Offset direction) {
+    if (!_running || size.x <= 0 || size.y <= 0) {
+      return;
+    }
+    _aimDirection = _normalizedAimDirection(direction);
+    _aimTarget = _aimTargetFromDirection(_aimDirection);
+    _aiming = true;
+    _emitSnapshot();
+  }
+
+  void fireManualShotFromAim() {
+    if (!_running || size.x <= 0 || size.y <= 0) {
+      return;
+    }
+    final target = _aimTarget ?? _aimTargetFromDirection(_aimDirection);
+    _aimTarget = target;
+    _aiming = true;
+    _fireManualShot(target);
     _emitSnapshot();
   }
 
@@ -530,8 +555,10 @@ class _PrismRiftDungeonGame extends FlameGame {
   }
 
   void _renderAimPreview(Canvas canvas, Offset center, double shortest) {
-    final target = _aimTarget;
-    if (!_aiming || target == null) {
+    final target =
+        _aimTarget ??
+        (_running ? _aimTargetFromDirection(_aimDirection) : null);
+    if (!_running || target == null) {
       return;
     }
     final spec = _shotSpecFor(towerProfile.projectileType);
@@ -857,6 +884,26 @@ class _PrismRiftDungeonGame extends FlameGame {
       localPosition.dx.clamp(0.0, size.x).toDouble(),
       localPosition.dy.clamp(0.0, size.y).toDouble(),
     );
+  }
+
+  Offset _aimTargetFromDirection(Offset direction) {
+    final shortest = math.min(size.x, size.y);
+    return _clampAimTarget(
+      _arenaCenter + (_normalizedAimDirection(direction) * shortest),
+    );
+  }
+
+  Offset _directionForTarget(Offset target) {
+    return _normalizedAimDirection(target - _arenaCenter);
+  }
+
+  Offset _normalizedAimDirection(Offset direction) {
+    if (direction.distance <= 0.001) {
+      return _aimDirection.distance <= 0.001
+          ? const Offset(0, -1)
+          : _aimDirection;
+    }
+    return direction / direction.distance;
   }
 
   Offset _projectAimEnd(Offset start, Offset target, double range) {

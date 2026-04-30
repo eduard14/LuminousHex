@@ -32,7 +32,7 @@ extension LightcoreControllerStateAccessors on LightcoreController {
     }
     final tower = _slots[slotIndex];
     if (canManuallyActivateTower(tower)) {
-      return 'TAP TO FIRE';
+      return 'ADD TO QUEUE';
     }
     if (tower.cooldownRemaining > 0) {
       return 'COOLDOWN';
@@ -234,6 +234,8 @@ extension LightcoreControllerStateAccessors on LightcoreController {
   bool isLayerPassiveOnly(TowerLayerSnapshot layer) =>
       layer.promotedParentLayerId != null || layer.promotedIntoParentSlot;
 
+  bool get activeLayerPassiveOnly => isLayerPassiveOnly(activeLayer);
+
   int get newEquipmentNotificationCount => _newEquipmentItemIds.length;
 
   bool get hasNewEquipmentNotifications => _newEquipmentItemIds.isNotEmpty;
@@ -241,6 +243,9 @@ extension LightcoreControllerStateAccessors on LightcoreController {
   LightcoreGraphicsQuality get graphicsQuality => _graphicsQuality;
 
   bool get notificationBannersEnabled => _notificationBannersEnabled;
+
+  bool get battleNotificationBannersEnabled =>
+      _battleNotificationBannersEnabled;
 
   bool get tutorialPromptsEnabled => _tutorialPromptsEnabled;
 
@@ -267,6 +272,14 @@ extension LightcoreControllerStateAccessors on LightcoreController {
       return;
     }
     _notificationBannersEnabled = enabled;
+    _notifyNow();
+  }
+
+  void setBattleNotificationBannersEnabled(bool enabled) {
+    if (_battleNotificationBannersEnabled == enabled) {
+      return;
+    }
+    _battleNotificationBannersEnabled = enabled;
     _notifyNow();
   }
 
@@ -411,7 +424,9 @@ extension LightcoreControllerStateAccessors on LightcoreController {
   bool get payloadsUnlocked => progressionLayer >= payloadUnlockLayer;
 
   bool get managersUnlocked =>
-      overallLevel >= managerUnlockLevel || _starterManagerTutorialUnlocked;
+      _managerCoreLevelUnlockedForLayer(activeLayer) ||
+      overallLevel >= managerUnlockLevel ||
+      _starterManagerTutorialUnlocked;
 
   bool get managerAssignmentUnlocked =>
       _managerAssignmentUnlockedForLayer(activeLayer);
@@ -427,7 +442,7 @@ extension LightcoreControllerStateAccessors on LightcoreController {
   String get accountRadianceLabel =>
       'Account Radiance Lv $accountRadianceLevel';
 
-  bool get bossHuntsUnlocked => overallLevel >= bossUnlockLevel;
+  bool get bossHuntsUnlocked => progressionLayer >= bossUnlockLayer;
 
   bool get dailyDungeonsUnlocked => overallLevel >= dailyDungeonUnlockLevel;
 
@@ -440,6 +455,25 @@ extension LightcoreControllerStateAccessors on LightcoreController {
 
   int get dailyDungeonHighestClearedTowerLevel =>
       _dailyDungeonHighestClearedTowerLevel;
+
+  int get dailyDungeonQuickClearsUsed {
+    _refreshDailyDungeonQuickClearsForToday();
+    return _dailyDungeonQuickClearsUsed;
+  }
+
+  int get dailyDungeonQuickClearsRemaining {
+    _refreshDailyDungeonQuickClearsForToday();
+    return max(0, dailyDungeonQuickClearsPerDay - _dailyDungeonQuickClearsUsed);
+  }
+
+  String get dailyDungeonQuickClearLabel =>
+      '$dailyDungeonQuickClearsRemaining/$dailyDungeonQuickClearsPerDay quick clears today';
+
+  String get shellCoreLabel =>
+      LightcoreCurrencyLabels.shellCoreCount(shellCores);
+
+  bool get completedShellLibraryUnlocked =>
+      progressionLayer >= payloadUnlockLayer;
 
   int get tournamentLevelsRemaining =>
       max(0, tournamentUnlockLevel - overallLevel);
@@ -454,10 +488,10 @@ extension LightcoreControllerStateAccessors on LightcoreController {
 
   bool get canEditScreenName => tournamentsUnlocked;
 
-  int get bossLevelsRemaining => max(0, bossUnlockLevel - overallLevel);
+  int get bossLevelsRemaining => max(0, bossUnlockLayer - progressionLayer);
 
   double get bossUnlockProgress =>
-      (overallLevel / bossUnlockLevel).clamp(0.0, 1.0);
+      bossHuntsUnlocked ? 1.0 : promotionProgress.clamp(0.0, 1.0);
 
   int get overallLevelFloorExperience =>
       experienceForOverallLevel(overallLevel);
@@ -565,10 +599,16 @@ extension LightcoreControllerStateAccessors on LightcoreController {
       _tutorialStep == LightcoreTutorialStep.readEffectiveGain ||
       _tutorialStep == LightcoreTutorialStep.autoQueueCheck;
 
+  bool tutorialHighlightsTowerStatsButton(int slotIndex) =>
+      _tutorialStep == LightcoreTutorialStep.inspectFirstTowerStats &&
+      slotIndex == 0;
+
   bool tutorialHighlightsBattleSlot(int slotIndex) {
     if (slotIndex == 0 &&
         (_tutorialStep == LightcoreTutorialStep.selectFirstHex ||
             _tutorialStep == LightcoreTutorialStep.tapFirstTower ||
+            (_tutorialStep == LightcoreTutorialStep.inspectFirstTowerStats &&
+                selectedSlotIndex != 0) ||
             ((_tutorialStep == LightcoreTutorialStep.buildFirstRedTower ||
                     _tutorialStep ==
                         LightcoreTutorialStep.upgradeFirstTowerToLevel3 ||
@@ -626,8 +666,7 @@ extension LightcoreControllerStateAccessors on LightcoreController {
       _tutorialStep == LightcoreTutorialStep.openBossPulls;
 
   bool get tutorialHighlightsTowersNav =>
-      _tutorialStep == LightcoreTutorialStep.openTowerMatrix ||
-      _tutorialStep == LightcoreTutorialStep.upgradeCoreRange;
+      _tutorialStep == LightcoreTutorialStep.openTowerMatrix;
 
   bool get tutorialHighlightsEnemiesNav =>
       _tutorialStep == LightcoreTutorialStep.armFirstBoss ||
@@ -662,6 +701,7 @@ extension LightcoreControllerStateAccessors on LightcoreController {
 
   bool get tutorialHighlightsPlayerManagerButton =>
       _tutorialStep == LightcoreTutorialStep.openEquipment ||
+      _tutorialStep == LightcoreTutorialStep.upgradeCoreRange ||
       _tutorialStep == LightcoreTutorialStep.setScreenName;
 
   bool get tutorialHighlightsOverdriveButton =>
@@ -681,6 +721,7 @@ extension LightcoreControllerStateAccessors on LightcoreController {
         LightcoreTutorialStep.openBossPulls =>
           LightcoreTutorialPulseTarget.pullsButton,
         LightcoreTutorialStep.openEquipment ||
+        LightcoreTutorialStep.upgradeCoreRange ||
         LightcoreTutorialStep.setScreenName =>
           LightcoreTutorialPulseTarget.playerManagerButton,
         LightcoreTutorialStep.holdOverdrive =>
@@ -718,6 +759,73 @@ extension LightcoreControllerStateAccessors on LightcoreController {
       !activeLayer.promotedIntoParentSlot &&
       (activeLayerHasParentSlot || activeLayer.tier < maxShellTier);
 
+  bool get _requiresLayer3TrialGate =>
+      activeLayer.tier == 2 &&
+      !activeLayerHasParentSlot &&
+      activeLayer.promotedParentLayerId == null;
+
+  bool get layer3TrialRequired =>
+      _requiresLayer3TrialGate && !activeLayer.layer3TrialCleared;
+
+  bool get layer3TrialActive =>
+      _requiresLayer3TrialGate && activeLayer.layer3TrialActive;
+
+  bool get layer3TrialCleared =>
+      _requiresLayer3TrialGate && activeLayer.layer3TrialCleared;
+
+  String get layer3TrialStatusLabel {
+    if (!_requiresLayer3TrialGate) {
+      return '';
+    }
+    if (activeLayer.layer3TrialCleared) {
+      return 'Nexus trial cleared';
+    }
+    if (activeLayer.layer3TrialActive) {
+      return 'Nexus trial active';
+    }
+    return 'Nexus trial required';
+  }
+
+  String get promotionActionLabel {
+    if (activeLayerHasParentSlot) {
+      return 'Promote Into Parent Slot';
+    }
+    if (layer3TrialActive) {
+      return 'Nexus Trial Running';
+    }
+    if (layer3TrialRequired) {
+      return 'Begin Nexus Trial';
+    }
+    return 'Create $nextShellClassLabel';
+  }
+
+  bool get promotionRainbowEligible =>
+      _layerCanRollRainbowTower(activeLayer, targetTier: activeLayerTargetTier);
+
+  double get promotionRainbowResultChance => _rainbowChanceForPromotionLayer(
+    activeLayer,
+    targetTier: activeLayerTargetTier,
+  );
+
+  Map<PrototypeAffinity, double> get promotionProjectileAffinityRates {
+    final rainbowChance = promotionRainbowResultChance;
+    return _promotionAffinityRates(
+      _projectileAffinityWeightsForLayer(activeLayer),
+      rainbowChance: rainbowChance,
+    );
+  }
+
+  Map<PrototypeAffinity, double> get promotionPayloadAffinityRates {
+    if (activeLayerTargetTier < payloadUnlockLayer) {
+      return const <PrototypeAffinity, double>{};
+    }
+    final rainbowChance = promotionRainbowResultChance;
+    return _promotionAffinityRates(
+      _payloadAffinityWeightsForLayer(activeLayer),
+      rainbowChance: rainbowChance,
+    );
+  }
+
   bool get isBattleActive => true;
 
   int get queuedCorePackets => _ammoQueue.length;
@@ -740,6 +848,31 @@ extension LightcoreControllerStateAccessors on LightcoreController {
 
   bool get canForgeEnemyManager =>
       managersUnlocked && flux >= enemyManagerFluxCost;
+
+  double get managerPowerEffectMultiplier =>
+      1 + (managerPowerLevel.clamp(0, maxManagerPowerLevel).toDouble() * 0.01);
+
+  String get managerPowerEffectLabel =>
+      '+${((managerPowerEffectMultiplier - 1) * 100).round()}% manager effect';
+
+  int get managerPowerUpgradeCost {
+    if (managerPowerLevel >= maxManagerPowerLevel) {
+      return 0;
+    }
+    return managerPowerBaseUpgradeCost +
+        (managerPowerLevel * 8) +
+        (managerPowerLevel * managerPowerLevel * 2);
+  }
+
+  bool get canUpgradeManagerPower =>
+      managerPowerLevel < maxManagerPowerLevel &&
+      managerShards >= managerPowerUpgradeCost;
+
+  bool canForgeTowerManagerBatch(int count) =>
+      managersUnlocked && count > 0 && flux >= towerManagerFluxCost * count;
+
+  bool canForgeEnemyManagerBatch(int count) =>
+      managersUnlocked && count > 0 && flux >= enemyManagerFluxCost * count;
 
   String get enemyTicketCurrencyName =>
       LightcoreCurrencyLabels.threatScanName(enemyTickets);
@@ -810,6 +943,10 @@ extension LightcoreControllerStateAccessors on LightcoreController {
   bool canUpgradeRadianceStat(LightcoreRadianceStat stat) =>
       unspentRadianceStatPoints > 0;
 
+  bool get canPurchaseRadianceStatReset =>
+      totalRadianceStatPointsSpent > 0 &&
+      prismShards >= LightcoreController.radianceStatResetPrismShardCost;
+
   bool upgradeRadianceStat(LightcoreRadianceStat stat) {
     if (!canUpgradeRadianceStat(stat)) {
       return false;
@@ -819,6 +956,27 @@ extension LightcoreControllerStateAccessors on LightcoreController {
       '${radianceStatLabel(stat)} raised to ${radianceStatRank(stat)}. ${radianceStatEffectLabel(stat)}',
     );
     _syncTutorialStep(showBanner: false);
+    _notifyNow();
+    return true;
+  }
+
+  bool purchaseRadianceStatReset({bool showBanner = true}) {
+    final spentPoints = totalRadianceStatPointsSpent;
+    const cost = LightcoreController.radianceStatResetPrismShardCost;
+    if (spentPoints <= 0 || prismShards < cost) {
+      return false;
+    }
+
+    prismShards -= cost;
+    _recordPrismShardSpend(cost);
+    _resetRadianceStats();
+    if (showBanner) {
+      final readyPoints = unspentRadianceStatPoints;
+      _showBanner(
+        'Global Attributes reset for ${LightcoreCurrencyLabels.prismShardCount(cost)}. '
+        '$readyPoints Radiance point${readyPoints == 1 ? '' : 's'} ready.',
+      );
+    }
     _notifyNow();
     return true;
   }
@@ -982,16 +1140,22 @@ extension LightcoreControllerStateAccessors on LightcoreController {
 
   String get towerStrengthCompactLabel => _compactNumber(towerStrength);
 
+  int get globalRankingTowerStrength =>
+      _computeGlobalRankingTowerStrength().round();
+
+  String get globalRankingTowerStrengthLabel =>
+      globalRankingTowerStrength.toString();
+
   bool get globalTowerStrengthRankNeedsRefresh {
     final self = _socialOverview?.self;
     return self == null ||
-        self.towerStrength != towerStrength ||
+        self.towerStrength != globalRankingTowerStrength ||
         self.towerStrengthRank == null;
   }
 
   int? get globalTowerStrengthRank {
     final self = _socialOverview?.self;
-    if (self == null || self.towerStrength != towerStrength) {
+    if (self == null || self.towerStrength != globalRankingTowerStrength) {
       return null;
     }
     return self.towerStrengthRank;
@@ -1009,11 +1173,11 @@ extension LightcoreControllerStateAccessors on LightcoreController {
   String get globalTowerStrengthRankingTooltip {
     final rank = globalTowerStrengthRank;
     if (rank == null) {
-      return 'Global ranking pending. Position is based on TS $towerStrengthLabel.';
+      return 'Global ranking pending. Position is based on TS $globalRankingTowerStrengthLabel.';
     }
     final rankedPlayers = globalTowerStrengthRankedPlayers;
     final totalLabel = rankedPlayers > 0 ? ' of $rankedPlayers' : '';
-    return 'Global ranking #$rank$totalLabel based on TS $towerStrengthLabel.';
+    return 'Global ranking #$rank$totalLabel based on TS $globalRankingTowerStrengthLabel.';
   }
 
   String get towerStrengthSummaryLabel =>
@@ -1160,6 +1324,82 @@ extension LightcoreControllerStateAccessors on LightcoreController {
   }
 
   int get childLayerTierToCreate => max(1, activeLayer.tier - 1);
+
+  bool get showsLayerOneCoreCreation =>
+      activeLayer.tier == 2 && !activeLayerHasParentSlot;
+
+  int get layerOneCoreProjectLimit => _hasPremiumMembership ? 2 : 1;
+
+  int get layerOneCoreProjectsInProgress => _layers
+      .where(
+        (layer) =>
+            layer.parentLayerId == activeLayer.id &&
+            layer.tier == 1 &&
+            !isLayerPassiveOnly(layer),
+      )
+      .length;
+
+  bool get layerOneCoreProjectLimitReached =>
+      showsLayerOneCoreCreation &&
+      layerOneCoreProjectsInProgress >= layerOneCoreProjectLimit;
+
+  int? get nextLayerOneCoreSlotIndex {
+    if (!showsLayerOneCoreCreation) {
+      return null;
+    }
+    for (var index = 0; index < _slots.length; index++) {
+      if (!_slots[index].isBuilt) {
+        return index;
+      }
+    }
+    return null;
+  }
+
+  bool get canCreateLayerOneCore =>
+      showsLayerOneCoreCreation &&
+      nextLayerOneCoreSlotIndex != null &&
+      !layerOneCoreProjectLimitReached;
+
+  String get layerOneCoreBuildStatusLabel {
+    if (!showsLayerOneCoreCreation) {
+      return '';
+    }
+    final projectCount = layerOneCoreProjectsInProgress;
+    final projectLimit = layerOneCoreProjectLimit;
+    if (nextLayerOneCoreSlotIndex == null) {
+      return 'All Layer 1 core slots are occupied.';
+    }
+    if (projectCount >= projectLimit) {
+      return _hasPremiumMembership
+          ? 'Layer 1 core build cap reached: $projectCount/$projectLimit active.'
+          : 'Layer 1 core build cap reached: $projectCount/$projectLimit active. Membership raises this to 2.';
+    }
+    return 'Layer 1 cores building: $projectCount/$projectLimit active.';
+  }
+
+  bool get _layerOneCoreCreationCapApplies =>
+      showsLayerOneCoreCreation && childLayerTierToCreate == 1;
+
+  bool canCreateChildLayerAt(int slotIndex) =>
+      childLayerCreationBlockedLabelForSlot(slotIndex) == null;
+
+  String? childLayerCreationBlockedLabelForSlot(int slotIndex) {
+    if (!isCompositeLayer || slotIndex < 0 || slotIndex >= _slots.length) {
+      return 'No lower shell can be created here.';
+    }
+    if (activeLayerPassiveOnly) {
+      return 'This static archive can only be inspected.';
+    }
+    if (_slots[slotIndex].isBuilt) {
+      return 'This hex already has a core or tower.';
+    }
+    if (_layerOneCoreCreationCapApplies && layerOneCoreProjectLimitReached) {
+      return _hasPremiumMembership
+          ? 'Finish one active Layer 1 core before starting another.'
+          : 'Finish the active Layer 1 core first. Membership can build 2 at a time.';
+    }
+    return null;
+  }
 
   String childCoreChoiceLabel(PrototypeAffinity affinity, {int? childTier}) {
     final tier = childTier ?? childLayerTierToCreate;

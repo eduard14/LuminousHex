@@ -41,19 +41,12 @@ void _assignManagersToActiveRing(LightcoreController controller) {
 }
 
 void _unlockBossHunts(LightcoreController controller) {
-  controller.applyOfflineClaim(
-    LightcoreOfflineClaimResult(
-      secondsClaimed: 1,
-      lumensGranted: 0,
-      fluxGranted: 0,
-      enemyTicketsGranted: 0,
-      killsGranted: LightcoreController.killsForOverallLevel(
-        LightcoreController.bossUnlockLevel,
-      ),
-      serverValidated: true,
-    ),
-    showBanner: false,
-  );
+  if (!controller.isPromotionReady) {
+    _buildMaxedRing(controller);
+  }
+  if (!controller.bossHuntsUnlocked) {
+    controller.unlockLayer2Tower();
+  }
 }
 
 void main() {
@@ -147,6 +140,42 @@ void main() {
     );
   });
 
+  test(
+    'global radiance stat reset spends premium currency and refunds points',
+    () {
+      final controller = LightcoreController();
+      addTearDown(controller.dispose);
+      const resetCost = LightcoreController.radianceStatResetPrismShardCost;
+
+      controller.experience = LightcoreController.experienceForOverallLevel(4);
+      expect(
+        controller.upgradeRadianceStat(LightcoreRadianceStat.might),
+        isTrue,
+      );
+      expect(
+        controller.upgradeRadianceStat(LightcoreRadianceStat.focus),
+        isTrue,
+      );
+      expect(controller.totalRadianceStatPointsSpent, 2);
+      expect(controller.unspentRadianceStatPoints, 1);
+
+      controller.prismShards = resetCost - 1;
+      expect(controller.purchaseRadianceStatReset(), isFalse);
+      expect(controller.radianceStatRank(LightcoreRadianceStat.might), 1);
+
+      controller.prismShards = resetCost;
+      expect(controller.purchaseRadianceStatReset(), isTrue);
+
+      expect(controller.prismShards, 0);
+      expect(controller.totalPrismShardsSpent, resetCost);
+      expect(controller.totalRadianceStatPointsSpent, 0);
+      expect(controller.unspentRadianceStatPoints, 3);
+      expect(controller.radianceStatRank(LightcoreRadianceStat.might), 0);
+      expect(controller.radianceStatRank(LightcoreRadianceStat.focus), 0);
+      expect(controller.bannerMessage, contains('Global Attributes reset'));
+    },
+  );
+
   test('level up radiance clears live enemies and raises a notification', () {
     final controller = LightcoreController();
     addTearDown(controller.dispose);
@@ -216,21 +245,28 @@ void main() {
   });
 
   test(
-    'apex scans unlock at level five and start with no owned apex anomalies',
+    'apex scans unlock at layer two after starter White Warden is active',
     () {
       final controller = LightcoreController();
       addTearDown(controller.dispose);
 
       expect(controller.bossHuntsUnlocked, isFalse);
-      expect(controller.ownedBossEnemyCardCount, 0);
-      expect(controller.activeBossEnemyCard, isNull);
+      expect(controller.ownedBossEnemyCardCount, 1);
+      expect(
+        controller.activeBossEnemyCard?.config.id,
+        BossEnemyLibrary.starterWhiteWarden.id,
+      );
+      expect(controller.activeLayer.bossReady, isTrue);
 
       _unlockBossHunts(controller);
 
       expect(controller.bossHuntsUnlocked, isTrue);
       expect(controller.bossTickets, LightcoreController.bossUnlockTicketGrant);
-      expect(controller.ownedBossEnemyCardCount, 0);
-      expect(controller.activeBossEnemyCard, isNull);
+      expect(controller.ownedBossEnemyCardCount, 1);
+      expect(
+        controller.activeBossEnemyCard?.config.id,
+        BossEnemyLibrary.starterWhiteWarden.id,
+      );
     },
   );
 
@@ -361,19 +397,17 @@ void main() {
     controller.lumens = 5000;
     controller.buildTowerAt(0, TowerLibrary.redPrism);
 
-    final powerBefore = controller.towerPower(controller.slots[0]);
     final tsBefore = controller.towerStrength;
 
     final pulls = controller.openBossTickets(1);
 
     expect(pulls, hasLength(1));
-    expect(controller.activeBossEnemyCard, isNull);
-    expect(controller.ownedBossEnemyCardCount, 1);
-    expect(controller.bossInventoryBonuses.isEmpty, isFalse);
     expect(
-      controller.towerPower(controller.slots[0]),
-      greaterThan(powerBefore),
+      controller.activeBossEnemyCard?.config.id,
+      BossEnemyLibrary.starterWhiteWarden.id,
     );
+    expect(controller.ownedBossEnemyCardCount, greaterThan(1));
+    expect(controller.bossInventoryBonuses.isEmpty, isFalse);
     expect(controller.towerStrength, greaterThan(tsBefore));
   });
 
@@ -551,10 +585,10 @@ void main() {
 
     _buildMaxedRing(controller);
     _assignManagersToActiveRing(controller);
-    expect(controller.bossHuntsUnlocked, isTrue);
-    final pulls = controller.openBossTickets(1);
-    expect(pulls, isNotEmpty);
-    controller.setActiveBossEnemyCard(pulls.single.config.id);
+    expect(
+      controller.activeBossEnemyCard?.config.id,
+      BossEnemyLibrary.starterWhiteWarden.id,
+    );
 
     for (var step = 0; step < 20000 && !controller.bossAlive; step++) {
       controller.tick(0.2);
@@ -566,9 +600,6 @@ void main() {
       reason:
           'bossAlive=${controller.bossAlive}, bossReady=${controller.activeLayer.bossReady}, normalKills=${controller.activeLayer.normalKillsSinceBoss}, enemies=${controller.enemyCount}, kills=${controller.kills}',
     );
-    expect(
-      controller.kills,
-      greaterThanOrEqualTo(LightcoreController.bossSpawnKillRequirement),
-    );
+    expect(controller.enemies.single.config.isBoss, isTrue);
   });
 }

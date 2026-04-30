@@ -103,6 +103,22 @@ void _tickUntil(
   }
 }
 
+void _tickThroughCoreBombSweep(LightcoreController controller) {
+  for (var step = 0; step < 20 && controller.shots.isNotEmpty; step++) {
+    controller.tick(0.05);
+  }
+  for (
+    var step = 0;
+    step < 8 &&
+        controller.impacts.any(
+          (impact) => impact.projectileType == ProjectileType.coreBomb,
+        );
+    step++
+  ) {
+    controller.tick(0.05);
+  }
+}
+
 void main() {
   test('starter core is a white tower that generates queued shots', () {
     final controller = LightcoreController();
@@ -332,9 +348,7 @@ void main() {
 
     controller.debugSetAmmoQueue([_coreBombPacket()]);
     controller.tick(0.05);
-    for (var step = 0; step < 20 && controller.shots.isNotEmpty; step++) {
-      controller.tick(0.05);
-    }
+    _tickThroughCoreBombSweep(controller);
 
     expect(
       _healthForEnemy(controller, firstEnemy.id),
@@ -386,9 +400,7 @@ void main() {
 
     controller.debugSetAmmoQueue([_redTowerBombPacket()]);
     controller.tick(0.05);
-    for (var step = 0; step < 20 && controller.shots.isNotEmpty; step++) {
-      controller.tick(0.05);
-    }
+    _tickThroughCoreBombSweep(controller);
 
     expect(
       controller.enemies.any((enemy) => enemy.id == primaryEnemy!.id),
@@ -443,9 +455,7 @@ void main() {
 
     controller.debugSetAmmoQueue([_redTowerBombPacket()]);
     controller.tick(0.05);
-    for (var step = 0; step < 20 && controller.shots.isNotEmpty; step++) {
-      controller.tick(0.05);
-    }
+    _tickThroughCoreBombSweep(controller);
 
     final primaryDamage =
         initialPrimaryHealth - _healthForEnemy(controller, primaryEnemy.id);
@@ -457,43 +467,54 @@ void main() {
     expect(_healthForEnemy(controller, outsideEnemy.id), initialOutsideHealth);
   });
 
-  test(
-    'queued core bomb does not damage enemies entering after detonation',
-    () {
-      final controller = LightcoreController();
-      addTearDown(controller.dispose);
+  test('queued core bomb does not damage enemies after its sweep passes', () {
+    final controller = LightcoreController();
+    addTearDown(controller.dispose);
 
-      final target = controller.debugSpawnEnemyFromCard(
-        EnemyLibrary.basicWhite.id,
-        angle: 0,
-        radius: 220,
-        level: 16,
-      );
-      expect(target, isNotNull);
+    final target = controller.debugSpawnEnemyFromCard(
+      EnemyLibrary.basicWhite.id,
+      angle: 0,
+      radius: 220,
+      level: 16,
+    );
+    expect(target, isNotNull);
 
-      controller.debugSetAmmoQueue([_coreBombPacket()]);
+    controller.debugSetAmmoQueue([_coreBombPacket()]);
+    controller.tick(0.05);
+    for (var step = 0; step < 20 && controller.shots.isNotEmpty; step++) {
       controller.tick(0.05);
-      for (var step = 0; step < 20 && controller.shots.isNotEmpty; step++) {
-        controller.tick(0.05);
-      }
+    }
 
-      final bombImpact = controller.impacts.firstWhere(
-        (impact) => impact.projectileType == ProjectileType.coreBomb,
-      );
-      expect(bombImpact.hasLingeringField, isFalse);
+    final bombImpact = controller.impacts.firstWhere(
+      (impact) => impact.projectileType == ProjectileType.coreBomb,
+    );
+    expect(bombImpact.hasLingeringField, isFalse);
+    expect(bombImpact.hasImpactSweep, isTrue);
+    final impactAngle = bombImpact.angle;
+    final impactRadius = bombImpact.radius;
 
-      final lateEnemy = controller.debugSpawnEnemyFromCard(
-        EnemyLibrary.basicWhite.id,
-        angle: bombImpact.angle,
-        radius: bombImpact.radius,
-        level: 16,
-      );
-      expect(lateEnemy, isNotNull);
+    for (
+      var step = 0;
+      step < 8 &&
+          controller.impacts.any(
+            (impact) => impact.projectileType == ProjectileType.coreBomb,
+          );
+      step++
+    ) {
+      controller.tick(0.05);
+    }
 
-      final initialLateHealth = _healthForEnemy(controller, lateEnemy!.id);
-      controller.tick(0.2);
+    final lateEnemy = controller.debugSpawnEnemyFromCard(
+      EnemyLibrary.basicWhite.id,
+      angle: impactAngle,
+      radius: impactRadius,
+      level: 16,
+    );
+    expect(lateEnemy, isNotNull);
 
-      expect(_healthForEnemy(controller, lateEnemy.id), initialLateHealth);
-    },
-  );
+    final initialLateHealth = _healthForEnemy(controller, lateEnemy!.id);
+    controller.tick(0.2);
+
+    expect(_healthForEnemy(controller, lateEnemy.id), initialLateHealth);
+  });
 }

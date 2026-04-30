@@ -39,7 +39,7 @@ extension LightcoreControllerSaveRestore on LightcoreController {
       'progressToNextLevel': overallLevelProgress,
       'builtTowerCount': builtTowerCount,
       'coreLevel': _core.level,
-      'towerStrength': towerStrength,
+      'towerStrength': globalRankingTowerStrength,
       'radianceStats': _serializeRadianceStats(),
       'unspentRadianceStatPoints': unspentRadianceStatPoints,
       'sharedRelayFilledPieceCount': sharedRelayFilledPieceCount,

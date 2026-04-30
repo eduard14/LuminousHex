@@ -122,8 +122,6 @@ class _ThreatDirectorDungeonRunScreenState
               builder: (context, constraints) {
                 final compact =
                     constraints.maxWidth < 720 || constraints.maxHeight < 720;
-                final topSpace = compact ? 86.0 : 98.0;
-                final bottomSpace = compact ? 126.0 : 146.0;
                 return DecoratedBox(
                   decoration: const BoxDecoration(
                     gradient: LinearGradient(
@@ -139,29 +137,8 @@ class _ThreatDirectorDungeonRunScreenState
                   child: Stack(
                     children: [
                       Positioned.fill(
-                        top: topSpace,
-                        bottom: bottomSpace,
-                        child: Padding(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: compact ? 10 : 24,
-                          ),
-                          child: Center(
-                            child: ConstrainedBox(
-                              constraints: BoxConstraints(
-                                maxWidth: compact ? constraints.maxWidth : 760,
-                                maxHeight:
-                                    constraints.maxHeight -
-                                    topSpace -
-                                    bottomSpace,
-                              ),
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.circular(22),
-                                child: GameWidget<_ThreatDirectorDungeonGame>(
-                                  game: _game,
-                                ),
-                              ),
-                            ),
-                          ),
+                        child: GameWidget<_ThreatDirectorDungeonGame>(
+                          game: _game,
                         ),
                       ),
                       Positioned(

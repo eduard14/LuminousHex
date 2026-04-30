@@ -48,6 +48,7 @@ extension LightcoreControllerSaveLayerSerialization on LightcoreController {
       'promotedParentLayerId': layer.promotedParentLayerId,
       'promotedIntoParentSlot': layer.promotedIntoParentSlot,
       'promotionTraitRoll': layer.promotionTraitRoll,
+      'layer3TrialCleared': layer.layer3TrialCleared,
     };
   }
 
@@ -127,6 +128,7 @@ extension LightcoreControllerSaveLayerSerialization on LightcoreController {
       promotedParentLayerId: _stringOrNull(data['promotedParentLayerId']),
       promotedIntoParentSlot: _boolValue(data['promotedIntoParentSlot']),
       promotionTraitRoll: _intValue(data['promotionTraitRoll']),
+      layer3TrialCleared: _boolValue(data['layer3TrialCleared']),
     );
   }
 
@@ -418,6 +420,44 @@ extension LightcoreControllerSaveLayerSerialization on LightcoreController {
       ),
       childBuiltCount: _intValue(data['childBuiltCount']),
       childPromoted: _boolValue(data['childPromoted']),
+    );
+  }
+
+  Map<String, dynamic> _serializeCompletedTowerShellState(
+    CompletedTowerShellState shell,
+  ) {
+    return <String, dynamic>{
+      'id': shell.id,
+      'sourceLayerId': shell.sourceLayerId,
+      'sourceLayerLabel': shell.sourceLayerLabel,
+      'sourceLayerTier': shell.sourceLayerTier,
+      'sourceSlotIndex': shell.sourceSlotIndex,
+      'savedAtMillis': shell.savedAtMillis,
+      'tower': _serializeOuterTowerState(shell.tower),
+    };
+  }
+
+  CompletedTowerShellState? _deserializeCompletedTowerShellState(
+    Map<String, dynamic> data,
+  ) {
+    final id = _stringOrNull(data['id']);
+    final sourceLayerId = _stringOrNull(data['sourceLayerId']);
+    final tower = _deserializeOuterTowerState(
+      _coerceMap(data['tower']),
+      slotIndex: _intValue(data['sourceSlotIndex']),
+    );
+    if (id == null || sourceLayerId == null || tower == null) {
+      return null;
+    }
+    return CompletedTowerShellState(
+      id: id,
+      sourceLayerId: sourceLayerId,
+      sourceLayerLabel:
+          _stringOrNull(data['sourceLayerLabel']) ?? shellNameForTier(1),
+      sourceLayerTier: _intValue(data['sourceLayerTier'], fallback: 1),
+      sourceSlotIndex: _intValue(data['sourceSlotIndex']),
+      savedAtMillis: _intValue(data['savedAtMillis']),
+      tower: tower,
     );
   }
 

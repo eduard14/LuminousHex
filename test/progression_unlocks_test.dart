@@ -28,6 +28,21 @@ void _promoteRootShell(LightcoreController controller) {
   expect(controller.activeLayer.tier, 2);
 }
 
+LightcoreController _restoreActiveCoreLevel(
+  LightcoreController controller,
+  int level,
+) {
+  final payload = controller.buildCloudSavePayload();
+  final layers = payload['layers'] as Map<String, dynamic>;
+  final activeLayerId = layers['activeLayerId'] as String;
+  final activeLayer = (layers['items'] as List<dynamic>)
+      .cast<Map<String, dynamic>>()
+      .firstWhere((layer) => layer['id'] == activeLayerId);
+  final core = activeLayer['core'] as Map<String, dynamic>;
+  core['level'] = level;
+  return LightcoreController.fromCloudSavePayload(payload);
+}
+
 void _promoteTier1ChildIntoCurrentCompositeSlot(
   LightcoreController controller,
   int slotIndex,
@@ -57,6 +72,12 @@ void _fillCurrentCompositeLayerWithPromotedTier1Children(
       affinities[index % affinities.length],
     );
   }
+}
+
+void _clearLayer3Trial(LightcoreController controller) {
+  expect(controller.layer3TrialActive, isTrue);
+  expect(controller.debugCompleteLayer3Trial(), isTrue);
+  expect(controller.layer3TrialCleared, isTrue);
 }
 
 void main() {
@@ -119,15 +140,135 @@ void main() {
       expect(controller.layerNavigationUnlocked, isTrue);
       expect(controller.payloadsUnlocked, isTrue);
       expect(controller.managersUnlocked, isFalse);
-      expect(controller.managerAssignmentUnlocked, isTrue);
+      expect(controller.managerAssignmentUnlocked, isFalse);
       expect(controller.coreState.projectileType.tier, 2);
       expect(controller.coreState.payloadType.tier, 2);
+
+      final coreLevel3 = _restoreActiveCoreLevel(
+        controller,
+        LightcoreController.managerCoreLevelRequirement,
+      );
+      addTearDown(coreLevel3.dispose);
+      expect(coreLevel3.managersUnlocked, isTrue);
+      expect(coreLevel3.managerAssignmentUnlocked, isTrue);
 
       expect(controller.createChildLayer(0, PrototypeAffinity.aether), isTrue);
       controller.lumens = 1000;
       controller.buildTowerAt(0, TowerLibrary.redPrism);
 
       expect(controller.towerPayloadLabel(controller.slots[0]), 'No Payload');
+    },
+  );
+
+  test(
+    'completed layer 1 shells unlock archive save and replace at layer 2',
+    () {
+      final controller = LightcoreController(traitRandom: Random(31));
+      addTearDown(controller.dispose);
+
+      expect(controller.completedShellLibraryUnlocked, isFalse);
+      _maxOutCurrentTier1Shell(controller);
+      expect(
+        controller.liveCompletedTowerShells,
+        hasLength(LightcoreController.slotCount),
+      );
+      expect(
+        controller.saveCompletedShell(
+          controller.liveCompletedTowerShells.first.id,
+        ),
+        isFalse,
+      );
+
+      final rootLayerId = controller.activeLayer.id;
+      controller.unlockLayer2Tower();
+      expect(controller.completedShellLibraryUnlocked, isTrue);
+
+      final sourceShell = controller.liveCompletedTowerShells.firstWhere(
+        (shell) => shell.sourceSlotIndex == 0,
+      );
+      final targetShell = controller.liveCompletedTowerShells.firstWhere(
+        (shell) => shell.sourceSlotIndex == 1,
+      );
+      final sourceConfigId = sourceShell.tower.config?.id;
+      expect(sourceConfigId, isNot(targetShell.tower.config?.id));
+
+      expect(controller.saveCompletedShell(sourceShell.id), isTrue);
+      final archivedShell = controller.completedTowerShellLibrary.singleWhere(
+        (shell) => shell.archived,
+      );
+      expect(archivedShell.tower.config?.id, sourceConfigId);
+
+      expect(
+        controller.replaceCompletedShell(
+          archiveId: archivedShell.id,
+          targetId: targetShell.id,
+        ),
+        isTrue,
+      );
+      final rootLayer = controller.layers.firstWhere(
+        (layer) => layer.id == rootLayerId,
+      );
+      expect(rootLayer.slots[1].config?.id, sourceConfigId);
+      expect(rootLayer.slots[1].slotIndex, 1);
+
+      final restored = LightcoreController.fromCloudSavePayload(
+        controller.buildCloudSavePayload(),
+      );
+      addTearDown(restored.dispose);
+      expect(
+        restored.completedTowerShellLibrary.where((shell) => shell.archived),
+        hasLength(1),
+      );
+      final restoredRoot = restored.layers.firstWhere(
+        (layer) => layer.id == rootLayerId,
+      );
+      expect(restoredRoot.slots[1].config?.id, sourceConfigId);
+    },
+  );
+
+  test(
+    'promoted source and child shells remain inspectable as static archives',
+    () {
+      final controller = LightcoreController(traitRandom: Random(41));
+      addTearDown(controller.dispose);
+
+      _maxOutCurrentTier1Shell(controller);
+      final rootLayerId = controller.activeLayer.id;
+      controller.unlockLayer2Tower();
+      final prismLayerId = controller.activeLayer.id;
+
+      controller.enterSourceLayer();
+      expect(controller.activeLayer.id, rootLayerId);
+      expect(controller.activeLayerPassiveOnly, isTrue);
+
+      controller.handleBattleSlotTap(0);
+      expect(controller.selectedSlotIndex, 0);
+      expect(controller.activateTowerSlot(0), isFalse);
+      expect(controller.sellTower(0), isFalse);
+      controller.setTowerTargetPriority(0, TargetPriority.strong);
+      expect(
+        controller.towerTargetPriority(controller.slots[0]),
+        TargetPriority.close,
+      );
+
+      controller.enterLayerById(prismLayerId);
+      expect(controller.activeLayer.id, prismLayerId);
+      expect(controller.activeLayerPassiveOnly, isFalse);
+
+      _promoteTier1ChildIntoCurrentCompositeSlot(
+        controller,
+        0,
+        PrototypeAffinity.aether,
+      );
+      final childLayerId = controller.slots[0].childLayerId;
+      expect(childLayerId, isNotNull);
+
+      controller.enterChildLayer(0);
+      expect(controller.activeLayer.id, childLayerId);
+      expect(controller.activeLayerPassiveOnly, isTrue);
+      expect(controller.activeLayerHasParentSlot, isTrue);
+      controller.handleBattleSlotTap(0);
+      expect(controller.selectedSlotIndex, 0);
     },
   );
 
@@ -161,8 +302,9 @@ void main() {
     );
     expect(controller.isLayerPassiveOnly(rootLayer), isTrue);
     controller.enterLayerById(rootLayerId);
-    expect(controller.activeLayer.id, prismLayerId);
-    expect(controller.bannerMessage, contains('passive support'));
+    expect(controller.activeLayer.id, rootLayerId);
+    expect(controller.activeLayerPassiveOnly, isTrue);
+    expect(controller.bannerMessage, contains('archive opened'));
 
     controller.enterLayerById(prismLayerId);
     expect(controller.createChildLayer(0, PrototypeAffinity.aether), isTrue);
@@ -202,6 +344,44 @@ void main() {
     expect(controller.queuedAmmoPackets.single.power, greaterThan(26));
   });
 
+  test('layer 3 promotion starts a fixed nexus trial before advancing', () {
+    final controller = LightcoreController(traitRandom: Random(23));
+    addTearDown(controller.dispose);
+
+    _promoteRootShell(controller);
+    _fillCurrentCompositeLayerWithPromotedTier1Children(controller);
+    expect(controller.isPromotionReady, isTrue);
+
+    final sourceLayerId = controller.activeLayer.id;
+    final trialPlan = controller.debugLayer3TrialPlanConfigs();
+    expect(trialPlan.any((config) => config.isBoss), isTrue);
+    expect(
+      trialPlan.any((config) => config.affinity == PrototypeAffinity.flare),
+      isTrue,
+    );
+    expect(trialPlan.any((config) => config.splitsOnDeath), isTrue);
+
+    controller.unlockLayer2Tower();
+    expect(controller.activeLayer.id, sourceLayerId);
+    expect(controller.activeLayer.tier, 2);
+    expect(controller.layer3TrialActive, isTrue);
+    expect(controller.layer3TrialCleared, isFalse);
+    expect(controller.promotionActionLabel, 'Nexus Trial Running');
+
+    _clearLayer3Trial(controller);
+    expect(controller.promotionActionLabel, 'Create Nexus Shell');
+
+    final restored = LightcoreController.fromCloudSavePayload(
+      controller.buildCloudSavePayload(),
+    );
+    addTearDown(restored.dispose);
+    expect(restored.layer3TrialCleared, isTrue);
+    expect(restored.promotionActionLabel, 'Create Nexus Shell');
+
+    restored.unlockLayer2Tower();
+    expect(restored.activeLayer.tier, 3);
+  });
+
   test(
     'layer 3 parent slots can be filled by promoted merged layer 2 shells',
     () {
@@ -212,6 +392,8 @@ void main() {
       _fillCurrentCompositeLayerWithPromotedTier1Children(controller);
       expect(controller.isPromotionReady, isTrue);
 
+      controller.unlockLayer2Tower();
+      _clearLayer3Trial(controller);
       controller.unlockLayer2Tower();
       final tier3LayerId = controller.activeLayer.id;
       expect(controller.activeLayer.tier, 3);
@@ -235,7 +417,7 @@ void main() {
     },
   );
 
-  test('prism shell can assign existing managers before foundry unlock', () {
+  test('core level 3 unlocks manager foundry and assignment', () {
     final controller = LightcoreController(traitRandom: Random(9));
     addTearDown(controller.dispose);
 
@@ -266,17 +448,37 @@ void main() {
       lessThan(LightcoreController.managerUnlockLevel),
     );
     expect(controller.managersUnlocked, isFalse);
-    expect(controller.managerAssignmentUnlocked, isTrue);
+    expect(controller.managerAssignmentUnlocked, isFalse);
     expect(controller.canForgeTowerManager, isFalse);
     expect(controller.canForgeEnemyManager, isFalse);
 
     controller.equipCardToCore(towerManagerId);
     controller.assignEnemyManagerToCore(enemyManagerId);
+    expect(controller.towerCoreManager, isNull);
+    expect(controller.enemyCoreManager, isNull);
 
-    expect(controller.towerCoreManager?.instanceId, towerManagerId);
-    expect(controller.enemyCoreManager?.instanceId, enemyManagerId);
+    final coreLevel3 = _restoreActiveCoreLevel(
+      controller,
+      LightcoreController.managerCoreLevelRequirement,
+    );
+    addTearDown(coreLevel3.dispose);
+
     expect(
-      controller
+      coreLevel3.overallLevel,
+      lessThan(LightcoreController.managerUnlockLevel),
+    );
+    expect(coreLevel3.managersUnlocked, isTrue);
+    expect(coreLevel3.managerAssignmentUnlocked, isTrue);
+    expect(coreLevel3.canForgeTowerManager, isTrue);
+    expect(coreLevel3.canForgeEnemyManager, isTrue);
+
+    coreLevel3.equipCardToCore(towerManagerId);
+    coreLevel3.assignEnemyManagerToCore(enemyManagerId);
+
+    expect(coreLevel3.towerCoreManager?.instanceId, towerManagerId);
+    expect(coreLevel3.enemyCoreManager?.instanceId, enemyManagerId);
+    expect(
+      coreLevel3
           .enemyManagerForCard(EnemyLibrary.starterDefault.id)
           ?.instanceId,
       enemyManagerId,
@@ -351,10 +553,15 @@ void main() {
     final levelTwoReward = controller.dailyDungeonRewardForLevel(2);
     final startingLumens = controller.lumens;
     final startingFlux = controller.flux;
+    final startingShellCores = controller.shellCores;
     final startingTickets = controller.enemyTickets;
 
     expect(levelTwoReward.lumens, greaterThan(levelOneReward.lumens));
     expect(levelTwoReward.flux, greaterThan(levelOneReward.flux));
+    expect(
+      levelTwoReward.shellCores,
+      greaterThanOrEqualTo(levelOneReward.shellCores),
+    );
     expect(controller.dailyDungeonHighestUnlockedTowerLevel, 1);
     expect(controller.isDailyDungeonTowerLevelUnlocked(2), isFalse);
 
@@ -371,6 +578,10 @@ void main() {
     expect(controller.lumens, startingLumens + levelOneReward.lumens);
     expect(controller.flux, startingFlux + levelOneReward.flux);
     expect(
+      controller.shellCores,
+      startingShellCores + levelOneReward.shellCores,
+    );
+    expect(
       controller.enemyTickets,
       startingTickets + levelOneReward.threatScans,
     );
@@ -381,6 +592,41 @@ void main() {
     );
     expect(replayReward, isNotNull);
     expect(replayReward!.hasRewards, isFalse);
+  });
+
+  test('daily dungeon quick clears grant shell cores three times per day', () {
+    final controller = LightcoreController(traitRandom: Random(20));
+    addTearDown(controller.dispose);
+    controller.experience = LightcoreController.experienceForOverallLevel(
+      LightcoreController.dailyDungeonUnlockLevel,
+    );
+    controller.clearDailyDungeonTowerLevel(1, showBanner: false);
+
+    final reward = controller.dailyDungeonQuickClearRewardForLevel(1);
+    final startingShellCores = controller.shellCores;
+
+    for (
+      var index = 0;
+      index < LightcoreController.dailyDungeonQuickClearsPerDay;
+      index++
+    ) {
+      expect(
+        controller.quickClearDailyDungeonTowerLevel(1, showBanner: false),
+        isNotNull,
+      );
+    }
+
+    expect(
+      controller.shellCores,
+      startingShellCores +
+          (reward.shellCores *
+              LightcoreController.dailyDungeonQuickClearsPerDay),
+    );
+    expect(controller.dailyDungeonQuickClearsRemaining, 0);
+    expect(
+      controller.quickClearDailyDungeonTowerLevel(1, showBanner: false),
+      isNull,
+    );
   });
 
   test('daily dungeon tower profiles are fixed and strengthen by level', () {

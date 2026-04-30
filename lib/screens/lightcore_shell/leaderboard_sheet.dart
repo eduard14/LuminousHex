@@ -69,7 +69,8 @@ class _GlobalLeaderboardSheetState extends State<_GlobalLeaderboardSheet> {
         : rankedPlayers > 0
         ? '#$ownRank of $rankedPlayers'
         : '#$ownRank';
-    final ownStrength = self?.towerStrength ?? widget.controller.towerStrength;
+    final ownStrength =
+        self?.towerStrength ?? widget.controller.globalRankingTowerStrength;
 
     return SafeArea(
       child: Padding(

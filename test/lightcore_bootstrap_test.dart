@@ -329,6 +329,7 @@ void main() {
       isTrue,
     );
     controller.setNotificationBannersEnabled(false);
+    controller.setBattleNotificationBannersEnabled(true);
     controller.setTutorialPromptsEnabled(false);
 
     expect(controller.buildTowerAt(0, TowerLibrary.all.first), isTrue);
@@ -346,6 +347,7 @@ void main() {
     expect(restored.radianceStatRank(LightcoreRadianceStat.insight), 1);
     expect(restored.unspentRadianceStatPoints, 2);
     expect(restored.notificationBannersEnabled, isFalse);
+    expect(restored.battleNotificationBannersEnabled, isTrue);
     expect(restored.tutorialPromptsEnabled, isFalse);
     expect(restored.layers.length, controller.layers.length);
     expect(restored.slots.first.config?.id, controller.slots.first.config?.id);
@@ -409,7 +411,7 @@ void main() {
     expect(restoredTutorial['stabilityPanelOpened'], isTrue);
     expect(restoredTutorial['coreShotTapLearned'], isTrue);
     expect(restoredTutorial['autoQueuedPulses'], greaterThanOrEqualTo(5));
-    expect(restored.tutorialStep, LightcoreTutorialStep.openTowerMatrix);
+    expect(restored.tutorialStep, LightcoreTutorialStep.openManagers);
   });
 
   test('outer slots unlock from cumulative kill milestones', () {

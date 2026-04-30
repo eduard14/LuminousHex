@@ -96,6 +96,56 @@ extension LightcoreControllerInventoryRuntime on LightcoreController {
     return min(_maxTowerStrengthScore, baseScore * layerScale);
   }
 
+  double _computeGlobalRankingTowerStrength() {
+    if (_layers.length <= 1) {
+      return _computeTowerStrength();
+    }
+
+    final originalActiveLayerId = _activeLayerId;
+    final originalSlots = _slots;
+    final originalCore = _core;
+    final originalLayer2 = _layer2;
+    final originalActiveEnemyCardIds = _activeEnemyCardIds;
+    final originalActiveBossEnemyCardId = _activeBossEnemyCardId;
+    final originalEnemyTargetCount = _enemyTargetCount;
+    final originalEnemyTargetUpgradeLevel = _enemyTargetUpgradeLevel;
+    final originalOuterRingRevealed = _outerRingRevealed;
+    final originalSwarmActivated = _swarmActivated;
+
+    var bestStrength = 0.0;
+    try {
+      for (final layer in _layers) {
+        _activeLayerId = layer.id;
+        _slots = layer.slots;
+        _core = layer.core;
+        _layer2 = layer.layer2;
+        _activeEnemyCardIds = layer.activeEnemyCardIds;
+        _activeBossEnemyCardId = layer.activeBossEnemyCardId;
+        _enemyTargetCount = layer.enemyTargetCount;
+        _enemyTargetUpgradeLevel = layer.enemyTargetUpgradeLevel;
+        _outerRingRevealed = layer.outerRingRevealed;
+        _swarmActivated = layer.swarmActivated;
+        bestStrength = max(bestStrength, _computeTowerStrength());
+      }
+    } finally {
+      _activeLayerId = originalActiveLayerId;
+      _slots = originalSlots;
+      _core = originalCore;
+      _layer2 = originalLayer2;
+      _activeEnemyCardIds = originalActiveEnemyCardIds;
+      _activeBossEnemyCardId = originalActiveBossEnemyCardId;
+      _enemyTargetCount = originalEnemyTargetCount;
+      _enemyTargetUpgradeLevel = originalEnemyTargetUpgradeLevel;
+      _outerRingRevealed = originalOuterRingRevealed;
+      _swarmActivated = originalSwarmActivated;
+    }
+
+    return min(
+      _maxTowerStrengthScore,
+      max(bestStrength, _computeTowerStrength()),
+    );
+  }
+
   double _towerStrengthForTower(OuterTowerState tower) {
     if (!_slotCountsTowardRing(tower)) {
       return 0;
@@ -340,10 +390,12 @@ extension LightcoreControllerInventoryRuntime on LightcoreController {
   ) {
     if (!tower.isBuilt ||
         manager == null ||
-        manager.favoredAffinity != tower.config!.affinity) {
+        manager.favoredAffinity != _slotAffinity(tower)) {
       return 1;
     }
-    return 1 + ((manager.rarity.score + 1) * 0.04);
+    return managerPowerAdjustedMultiplier(
+      1 + ((manager.rarity.score + 1) * 0.04),
+    );
   }
 
   double _towerManagerTraitBonus(
@@ -356,12 +408,14 @@ extension LightcoreControllerInventoryRuntime on LightcoreController {
 
     final projectileMatch =
         manager.projectileFocus != null &&
-        manager.projectileFocus == tower.projectileType;
+        manager.projectileFocus == _slotProjectileType(tower);
     final payloadMatch =
         manager.payloadFocus != null &&
-        manager.payloadFocus == tower.payloadType;
+        manager.payloadFocus == _slotPayloadType(tower);
     final matchCount = (projectileMatch ? 1 : 0) + (payloadMatch ? 1 : 0);
-    return 1 + (matchCount * ((manager.rarity.score + 1) * 0.025));
+    return managerPowerAdjustedMultiplier(
+      1 + (matchCount * ((manager.rarity.score + 1) * 0.025)),
+    );
   }
 
   String _threatScanBundleId(List<EnemyCardState> deck) {
@@ -485,17 +539,17 @@ extension LightcoreControllerInventoryRuntime on LightcoreController {
     };
   }
 
-  double _enemySpawnPressureMultiplier() {
-    final deck = activeEnemyDeck;
-    if (deck.isEmpty) {
+  double _enemySpawnPressureMultiplier({List<EnemyCardState>? deck}) {
+    final resolvedDeck = deck ?? activeEnemyDeck;
+    if (resolvedDeck.isEmpty) {
       return 1;
     }
-    final total = deck.fold(0.0, (sum, card) {
+    final total = resolvedDeck.fold(0.0, (sum, card) {
       final manager = enemyManagerForCard(card.config.id);
       final effect = _enemyManagerEffectMultiplier(card, manager);
       return sum + _managerValue(1, manager?.spawnRateMultiplier ?? 1, effect);
     });
-    return max(0.82, total / deck.length);
+    return max(0.82, total / resolvedDeck.length);
   }
 
   double _threatRewardMultiplierForCard(EnemyCardState card) {
@@ -564,8 +618,22 @@ extension LightcoreControllerInventoryRuntime on LightcoreController {
     return 0.45;
   }
 
+  double managerPowerAdjustedMultiplier(double target, {double base = 1}) =>
+      base + ((target - base) * managerPowerEffectMultiplier);
+
+  double managerPowerAdjustedCooldown(double target) {
+    if (target >= 1) {
+      return managerPowerAdjustedMultiplier(target);
+    }
+    return max(0.42, 1 - ((1 - target) * managerPowerEffectMultiplier));
+  }
+
+  double managerPowerAdjustedRate(double target) =>
+      target * managerPowerEffectMultiplier;
+
   double _managerValue(double base, double target, double effectMultiplier) =>
-      base + ((target - base) * effectMultiplier);
+      base +
+      ((target - base) * effectMultiplier * managerPowerEffectMultiplier);
 
   ProjectileType _rollProjectileTrait(TowerConfig config) =>
       _rollWeighted(config.projectileWeights);
@@ -629,6 +697,16 @@ extension LightcoreControllerInventoryRuntime on LightcoreController {
     }
     final counts = <PrototypeAffinity, int>{};
     for (final tower in built) {
+      if (_towerHasRainbowLoadout(tower)) {
+        for (final affinity in chromaticTowerAffinities) {
+          counts.update(
+            affinity,
+            (value) => value + _effectiveTowerLevel(tower),
+            ifAbsent: () => _effectiveTowerLevel(tower),
+          );
+        }
+        continue;
+      }
       final affinity = _slotAffinity(tower);
       counts.update(
         affinity,
@@ -650,6 +728,16 @@ extension LightcoreControllerInventoryRuntime on LightcoreController {
     }
     final counts = <PrototypeAffinity, int>{};
     for (final tower in built) {
+      if (_towerHasRainbowLoadout(tower)) {
+        for (final affinity in chromaticTowerAffinities) {
+          counts.update(
+            affinity,
+            (value) => value + _effectiveTowerLevel(tower),
+            ifAbsent: () => _effectiveTowerLevel(tower),
+          );
+        }
+        continue;
+      }
       final affinity = _slotSecondaryAffinity(tower) ?? _slotAffinity(tower);
       counts.update(
         affinity,
@@ -660,11 +748,68 @@ extension LightcoreControllerInventoryRuntime on LightcoreController {
     return counts;
   }
 
+  bool _layerCanRollRainbowTower(
+    TowerLayerSnapshot layer, {
+    required int targetTier,
+  }) {
+    if (targetTier != payloadUnlockLayer) {
+      return false;
+    }
+    final built = layer.slots.where(_slotCountsTowardRing).toList();
+    if (built.length < slotCount) {
+      return false;
+    }
+    final affinities = <PrototypeAffinity>{};
+    for (final tower in built) {
+      affinities.add(_slotAffinity(tower));
+    }
+    return chromaticTowerAffinities.every(affinities.contains);
+  }
+
+  double _rainbowChanceForPromotionLayer(
+    TowerLayerSnapshot layer, {
+    required int targetTier,
+  }) => _layerCanRollRainbowTower(layer, targetTier: targetTier)
+      ? rainbowPromotionChance
+      : 0;
+
+  Map<PrototypeAffinity, double> _promotionAffinityRates(
+    Map<PrototypeAffinity, int> weights, {
+    required double rainbowChance,
+  }) {
+    final total = weights.values.fold(0, (sum, weight) => sum + weight);
+    if (total <= 0) {
+      return const <PrototypeAffinity, double>{};
+    }
+    final rates = <PrototypeAffinity, double>{};
+    final orderedAffinities = <PrototypeAffinity>[
+      ...chromaticTowerAffinities,
+      PrototypeAffinity.neutral,
+      PrototypeAffinity.black,
+    ];
+    final normalChance = max(0.0, 1 - rainbowChance);
+    for (final affinity in orderedAffinities) {
+      final weight = weights[affinity] ?? 0;
+      if (weight <= 0) {
+        continue;
+      }
+      rates[affinity] = normalChance * weight / total;
+    }
+    for (final entry in weights.entries) {
+      if (rates.containsKey(entry.key) || entry.value <= 0) {
+        continue;
+      }
+      rates[entry.key] = normalChance * entry.value / total;
+    }
+    return Map<PrototypeAffinity, double>.unmodifiable(rates);
+  }
+
   ({
     PrototypeAffinity projectileAffinity,
     PrototypeAffinity? payloadAffinity,
     List<ProjectileType> projectileLoadout,
     List<PayloadType> payloadLoadout,
+    bool rainbow,
   })
   _resolvePromotedTraitLoadoutForLayer(
     TowerLayerSnapshot layer, {
@@ -673,6 +818,16 @@ extension LightcoreControllerInventoryRuntime on LightcoreController {
     final random = Random(
       _promotionTraitSeedForLayer(layer, targetTier: targetTier),
     );
+    if (_layerCanRollRainbowTower(layer, targetTier: targetTier) &&
+        random.nextDouble() < rainbowPromotionChance) {
+      return (
+        projectileAffinity: PrototypeAffinity.neutral,
+        payloadAffinity: null,
+        projectileLoadout: layer2RainbowProjectileLoadout,
+        payloadLoadout: layer2RainbowPayloadLoadout,
+        rainbow: true,
+      );
+    }
     final projectileAffinity = _rollWeightedWithRandom(
       _projectileAffinityWeightsForLayer(layer),
       random,
@@ -689,6 +844,7 @@ extension LightcoreControllerInventoryRuntime on LightcoreController {
         payloadAffinity: null,
         projectileLoadout: <ProjectileType>[projectile],
         payloadLoadout: const <PayloadType>[PayloadType.none],
+        rainbow: false,
       );
     }
 
@@ -706,6 +862,7 @@ extension LightcoreControllerInventoryRuntime on LightcoreController {
       payloadAffinity: payloadAffinity,
       projectileLoadout: <ProjectileType>[projectile],
       payloadLoadout: <PayloadType>[payload],
+      rainbow: false,
     );
   }
 
@@ -1013,8 +1170,17 @@ extension LightcoreControllerInventoryRuntime on LightcoreController {
     _lastLevelUpRadianceDestroyedEnemies = 0;
   }
 
-  void _showBanner(String message, {double duration = 2.8}) {
+  void _showBanner(
+    String message, {
+    double duration = 2.8,
+    LightcoreNotificationCategory category =
+        LightcoreNotificationCategory.action,
+  }) {
     if (_suppressRuntimeBanners) {
+      return;
+    }
+    if (category == LightcoreNotificationCategory.battle &&
+        !_battleNotificationBannersEnabled) {
       return;
     }
     final normalizedMessage = message.trim();

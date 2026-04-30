@@ -85,10 +85,7 @@ extension LightcoreControllerRewardsSocial on LightcoreController {
       previousExperience,
       progressionExperience,
     );
-    final bossUnlockBanner = _grantBossUnlockIfNeeded(
-      previousExperience: previousExperience,
-      currentExperience: progressionExperience,
-    );
+    final bossUnlockBanner = _grantBossUnlockIfNeeded();
     final managerUnlockBanner = _managerUnlockBannerFragment(
       previousExperience: previousExperience,
       currentExperience: progressionExperience,
@@ -164,11 +161,20 @@ extension LightcoreControllerRewardsSocial on LightcoreController {
     return _layers.firstWhere((layer) => layer.id == id);
   }
 
+  TowerLayerSnapshot? _layerByIdOrNull(String id) {
+    for (final layer in _layers) {
+      if (layer.id == id) {
+        return layer;
+      }
+    }
+    return null;
+  }
+
   bool _slotCountsTowardRing(OuterTowerState tower) =>
       (tower.config != null && !tower.isFabricating) ||
       tower.isPromotedChildTower;
 
-  InventoryCard? _towerCoreManagerForLayer(TowerLayerSnapshot layer) {
+  InventoryCard? _directTowerCoreManagerForLayer(TowerLayerSnapshot layer) {
     InventoryCard? legacyLayerManager;
     for (final card in _cards) {
       if (card.equippedLayerId != layer.id) {
@@ -180,6 +186,44 @@ extension LightcoreControllerRewardsSocial on LightcoreController {
       legacyLayerManager ??= card;
     }
     return legacyLayerManager;
+  }
+
+  String? _towerCoreManagerOwnerLayerIdForLayer(TowerLayerSnapshot layer) =>
+      _towerCoreManagerOwnerLayerIdForLayerId(layer.id, <String>{});
+
+  String? _towerCoreManagerOwnerLayerIdForLayerId(
+    String layerId,
+    Set<String> visitedLayerIds,
+  ) {
+    if (!visitedLayerIds.add(layerId)) {
+      return null;
+    }
+    final layer = _layerByIdOrNull(layerId);
+    if (layer == null) {
+      return null;
+    }
+    if (_directTowerCoreManagerForLayer(layer) != null) {
+      return layer.id;
+    }
+    final parentLayerId = layer.parentLayerId;
+    if (parentLayerId == null) {
+      return null;
+    }
+    return _towerCoreManagerOwnerLayerIdForLayerId(
+      parentLayerId,
+      visitedLayerIds,
+    );
+  }
+
+  InventoryCard? _towerCoreManagerForLayer(TowerLayerSnapshot layer) {
+    final ownerLayerId = _towerCoreManagerOwnerLayerIdForLayer(layer);
+    if (ownerLayerId == null) {
+      return null;
+    }
+    final ownerLayer = _layerByIdOrNull(ownerLayerId);
+    return ownerLayer == null
+        ? null
+        : _directTowerCoreManagerForLayer(ownerLayer);
   }
 
   EnemyManagerState? _enemyCoreManagerForLayer(TowerLayerSnapshot layer) {
@@ -243,14 +287,15 @@ extension LightcoreControllerRewardsSocial on LightcoreController {
   }
 
   bool _managerAssignmentUnlockedForLayer(TowerLayerSnapshot layer) =>
-      _managerAssignableCoreTier(layer) >= payloadUnlockLayer ||
+      _towerCoreManagerForLayer(layer) != null ||
+      _managerCoreLevelUnlockedForLayer(layer) ||
       overallLevel >= managerUnlockLevel ||
       (layer.parentLayerId == null &&
           layer.tier == 1 &&
           _starterManagerTutorialUnlocked);
 
-  int _managerAssignableCoreTier(TowerLayerSnapshot layer) =>
-      max(layer.tier, layer.core.level);
+  bool _managerCoreLevelUnlockedForLayer(TowerLayerSnapshot layer) =>
+      layer.core.level >= managerCoreLevelRequirement;
 
   int _managedTowerCountForLayer(TowerLayerSnapshot layer) => layer.slots
       .where((tower) => _slotHasAutomationManager(layer, tower))

@@ -51,7 +51,7 @@ assets/sprites/enemies/red/legendary.png
 assets/sprites/bosses/red/apex_name.png
 ```
 
-The current prototype still maps temporary art from `assets/Images/`.
+The current prototype maps runtime enemy art from `assets/sprites/`.
 
 ## Animation Direction
 

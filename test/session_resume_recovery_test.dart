@@ -102,6 +102,13 @@ void main() {
 
     expect(presetId, isNotNull);
     expect(source.activeThreatAssignmentPresets.single.name, 'Root Push');
+    final presetStats = source.threatAssignmentGroupStatsForPreset(
+      source.activeThreatAssignmentPresets.single,
+    );
+    expect(presetStats.anomalyCount, greaterThan(0));
+    expect(presetStats.lumensPerMinute, greaterThan(0));
+    expect(presetStats.experiencePerMinute, greaterThan(0));
+    expect(presetStats.clearsPerMinute, greaterThan(0));
 
     source.toggleEnemyCardSelection(EnemyLibrary.basicRed.id);
     expect(

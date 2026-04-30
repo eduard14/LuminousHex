@@ -53,10 +53,10 @@ const DEFAULT_MANIFEST = Object.freeze({
   contentSchemaVersion: 1,
   seasonKey: "preseason-alpha",
   contentEpoch: 1,
-  minimumSupportedVersion: "1.0.16",
-  minimumSupportedBuildNumber: "17",
-  recommendedVersion: "1.0.16",
-  recommendedBuildNumber: "17",
+  minimumSupportedVersion: "1.0.17",
+  minimumSupportedBuildNumber: "18",
+  recommendedVersion: "1.0.17",
+  recommendedBuildNumber: "18",
   functionsRegion: "us-central1",
   maintenanceMode: false,
   requiresMandatoryUpdate: false,
@@ -136,6 +136,7 @@ const SOCIAL_LIMITS = Object.freeze({
   maxOverviewMentees: 80,
   maxOverviewGrandMentees: 160,
   globalLeaderboardLimit: 20,
+  publicProfilePublishIntervalMillis: 3 * 60 * 1000,
   bossPullGiftAmount: 1,
   maxTargetLength: 64,
   maxInviteIdLength: 180,
@@ -1326,9 +1327,10 @@ exports.savePlayerSave = onCall({ enforceAppCheck: false }, async (request) => {
         "Player profile does not exist yet. Bootstrap first.",
       );
     }
+    const profileData = profileSnap.data() || {};
 
     const saveSnap = await transaction.get(saveRef);
-    requireActiveSession(profileSnap.data() || {}, request);
+    requireActiveSession(profileData, request);
     const previousPayload = saveSnap.exists
       ? normalizeObject(saveSnap.data()?.payload)
       : null;
@@ -1362,6 +1364,8 @@ exports.savePlayerSave = onCall({ enforceAppCheck: false }, async (request) => {
       payload,
       previousPayload,
     });
+    const publishSocialPublicProfile =
+      shouldPublishSocialPublicProfile(profileData);
     transaction.set(saveRef, {
       schemaVersion: PLAYER_SAVE_SCHEMA_VERSION,
       revision: nextRevision,
@@ -1384,6 +1388,9 @@ exports.savePlayerSave = onCall({ enforceAppCheck: false }, async (request) => {
       lastActiveAt: FieldValue.serverTimestamp(),
       lastSnapshotSyncAt: FieldValue.serverTimestamp(),
       lastHeartbeatAt: FieldValue.serverTimestamp(),
+      ...(publishSocialPublicProfile
+        ? { lastPublicProfilePublishedAt: FieldValue.serverTimestamp() }
+        : {}),
       ...(clientVersion
         ? {
             clientVersion,
@@ -1392,16 +1399,18 @@ exports.savePlayerSave = onCall({ enforceAppCheck: false }, async (request) => {
           }
         : {}),
     }, { merge: true });
-    transaction.set(
-      publicRef,
-      buildSocialPublicProfileUpdate({
-        auth,
-        rawPayload,
-        payload,
-        profileData: profileSnap.data() || {},
-      }),
-      { merge: true },
-    );
+    if (publishSocialPublicProfile) {
+      transaction.set(
+        publicRef,
+        buildSocialPublicProfileUpdate({
+          auth,
+          rawPayload,
+          payload,
+          profileData,
+        }),
+        { merge: true },
+      );
+    }
     if (integrity.flags.length > 0) {
       transaction.set(profileRef.collection("securityEvents").doc(), {
         type: "cloudSaveIntegrity",
@@ -2221,6 +2230,15 @@ function assertMentorshipUnlocked(profileData) {
     "failed-precondition",
     `Mentors and mentees unlock at Account Radiance Lv ${SOCIAL_LIMITS.mentorshipUnlockLevel}.`,
   );
+}
+
+function shouldPublishSocialPublicProfile(profileData) {
+  const lastPublishedAt = toMillis(profileData?.lastPublicProfilePublishedAt);
+  if (!lastPublishedAt) {
+    return true;
+  }
+  return Date.now() - lastPublishedAt >=
+    SOCIAL_LIMITS.publicProfilePublishIntervalMillis;
 }
 
 function buildSocialPublicProfileUpdate({ auth, rawPayload, payload, profileData }) {

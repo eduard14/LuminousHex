@@ -150,7 +150,7 @@ extension LightcoreControllerRewardPatterns on LightcoreController {
     TowerLayerSnapshot layer,
     OuterTowerState tower,
   ) {
-    if (!_slotCountsTowardRing(tower) || tower.isChildLayerNode) {
+    if (!_slotCountsTowardRing(tower)) {
       return false;
     }
     return _managerAssignmentUnlockedForLayer(layer) &&

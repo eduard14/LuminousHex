@@ -196,6 +196,7 @@ class _ShellOverlayFrame extends StatelessWidget {
     required this.destination,
     required this.onClose,
     required this.onOpenLayers,
+    this.fullscreen = false,
     required this.child,
   });
 
@@ -203,6 +204,7 @@ class _ShellOverlayFrame extends StatelessWidget {
   final _ShellOverlayDestination destination;
   final VoidCallback onClose;
   final VoidCallback onOpenLayers;
+  final bool fullscreen;
   final Widget child;
 
   @override
@@ -217,6 +219,12 @@ class _ShellOverlayFrame extends StatelessWidget {
             destination != _ShellOverlayDestination.spaceRoom &&
             destination != _ShellOverlayDestination.dungeons &&
             destination != _ShellOverlayDestination.tournaments;
+        if (fullscreen) {
+          return DecoratedBox(
+            decoration: const BoxDecoration(color: LightcorePalette.night),
+            child: SafeArea(child: child),
+          );
+        }
 
         return DecoratedBox(
           decoration: BoxDecoration(

@@ -393,7 +393,13 @@ class CardLibrary {
     return CardConfig(
       id: id,
       name: name,
-      summary: '$mechanic Bible focus: $focus. $rule',
+      summary: '$mechanic Build focus: $focus. $rule',
+      flavorBio: _coreManagerBio(
+        name: name,
+        roleLabel: roleLabel,
+        focus: focus,
+        rule: rule,
+      ),
       roleLabel: roleLabel,
       powerMultiplier: powerMultiplier,
       chargeMultiplier: chargeMultiplier,
@@ -401,5 +407,25 @@ class CardLibrary {
       advantageMultiplier: advantageMultiplier,
       automationRate: automationRate,
     );
+  }
+
+  static String _coreManagerBio({
+    required String name,
+    required String roleLabel,
+    required String focus,
+    required String rule,
+  }) {
+    final deskRelic = switch (roleLabel) {
+      'Flow Manager' => 'a mug labeled "World\'s Okayest Packet Printer"',
+      'Power Manager' => 'a motivational poster that just says "hit it harder"',
+      'Tempo Manager' => 'a stopwatch that judges everyone silently',
+      'Spectrum Manager' => 'a color wheel with several legal notes attached',
+      'Stability Manager' => 'a clipboard full of emergency calm-down forms',
+      'Burst Manager' => 'a button marked "probably fine"',
+      _ => 'an alarming number of laminated procedures',
+    };
+
+    return '$name specializes in $focus and keeps $deskRelic within arm\'s reach. '
+        '$rule Their official weakness is being asked to make the core queue less dramatic.';
   }
 }

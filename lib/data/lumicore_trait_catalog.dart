@@ -1,5 +1,14 @@
 import '../models/lightcore_types.dart';
 
+const List<PrototypeAffinity> chromaticTowerAffinities = <PrototypeAffinity>[
+  PrototypeAffinity.ember,
+  PrototypeAffinity.flare,
+  PrototypeAffinity.solar,
+  PrototypeAffinity.verdant,
+  PrototypeAffinity.aether,
+  PrototypeAffinity.violet,
+];
+
 const Map<PrototypeAffinity, ProjectileType> layer1ProjectileByAffinity =
     <PrototypeAffinity, ProjectileType>{
       PrototypeAffinity.neutral: ProjectileType.starBolt,
@@ -38,6 +47,21 @@ const Map<PrototypeAffinity, List<ProjectileType>> layer2ProjectileByAffinity =
         ProjectileType.slingNode,
       ],
     };
+
+const List<ProjectileType> layer2RainbowProjectileLoadout = <ProjectileType>[
+  ProjectileType.pulseBomb,
+  ProjectileType.clusterBomb,
+  ProjectileType.breakerShot,
+  ProjectileType.crushShot,
+  ProjectileType.forkArc,
+  ProjectileType.arcNode,
+  ProjectileType.sweepNode,
+  ProjectileType.slingNode,
+  ProjectileType.pulseBeam,
+  ProjectileType.splitBeam,
+  ProjectileType.echoRing,
+  ProjectileType.collapseRing,
+];
 
 const Map<PrototypeAffinity, List<ProjectileType>> layer3ProjectileByAffinity =
     <PrototypeAffinity, List<ProjectileType>>{
@@ -100,6 +124,21 @@ layer2PayloadByAffinity = <PrototypeAffinity, List<PayloadType>>{
     PayloadType.spread,
   ],
 };
+
+const List<PayloadType> layer2RainbowPayloadLoadout = <PayloadType>[
+  PayloadType.overheat,
+  PayloadType.detonate,
+  PayloadType.rend,
+  PayloadType.force,
+  PayloadType.shock,
+  PayloadType.disrupt,
+  PayloadType.corrupt,
+  PayloadType.spread,
+  PayloadType.chill,
+  PayloadType.fracture,
+  PayloadType.expose,
+  PayloadType.pull,
+];
 
 const Map<PrototypeAffinity, List<PayloadType>> layer3PayloadByAffinity =
     <PrototypeAffinity, List<PayloadType>>{

@@ -1,9 +1,12 @@
 import 'dart:async';
 import 'dart:math';
 
+import 'package:flame/game.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
 import '../data/enemy_configs.dart';
+import '../models/hex_tournament_run.dart';
 import '../models/lightcore_state.dart';
 import '../models/lightcore_tournament.dart';
 import '../models/lightcore_types.dart';
@@ -19,16 +22,19 @@ import 'battle_screen.dart';
 part 'tournament/tournament_hub_widgets.dart';
 part 'tournament/tournament_mode_detail.dart';
 part 'tournament/tournament_battle_widgets.dart';
+part 'tournament/hex_tournament_game.dart';
 
 class TournamentScreen extends StatefulWidget {
   const TournamentScreen({
     super.key,
     required this.controller,
     required this.backend,
+    this.onBattleSurfaceActiveChanged,
   });
 
   final LightcoreController controller;
   final FirebaseLightcoreBackend backend;
+  final ValueChanged<bool>? onBattleSurfaceActiveChanged;
 
   @override
   State<TournamentScreen> createState() => _TournamentScreenState();
@@ -169,11 +175,15 @@ class _TournamentScreenState extends State<TournamentScreen> {
         controller: widget.controller,
         modeState: overview.modeFor(selectedMode),
         busy: _busy || _loading,
-        onBack: () => setState(() => _selectedMode = null),
+        onBack: () {
+          widget.onBattleSurfaceActiveChanged?.call(false);
+          setState(() => _selectedMode = null);
+        },
         onJoin: () => _joinMode(selectedMode),
         onRefresh: _loadOverview,
         onClaim: () => _claimReward(selectedMode),
         onSubmit: _submitRun,
+        onBattleSurfaceActiveChanged: widget.onBattleSurfaceActiveChanged,
       );
     }
 

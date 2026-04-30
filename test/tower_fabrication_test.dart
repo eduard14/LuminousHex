@@ -28,6 +28,14 @@ void main() {
     controller.kills = LightcoreController.unlockKillsForOuterSlot(0);
     controller.lumens = 1000;
 
+    final initialDuration = controller.towerFabricationDurationForConfig(
+      TowerLibrary.redPrism,
+    );
+    expect(
+      initialDuration,
+      LightcoreController.towerConstructionDurationSeconds,
+    );
+
     expect(
       controller.startTowerFabricationAt(0, TowerLibrary.redPrism),
       isTrue,
@@ -35,18 +43,8 @@ void main() {
 
     final fabricatingTower = controller.slots[0];
     expect(fabricatingTower.isFabricating, isTrue);
-    expect(
-      fabricatingTower.fabricationTotalSeconds,
-      LightcoreController.towerConstructionDurationSeconds,
-    );
-    expect(
-      fabricatingTower.fabricationRemainingSeconds,
-      LightcoreController.towerConstructionDurationSeconds,
-    );
-    expect(
-      controller.towerFabricationDurationForConfig(TowerLibrary.redPrism),
-      LightcoreController.towerConstructionDurationSeconds,
-    );
+    expect(fabricatingTower.fabricationTotalSeconds, initialDuration);
+    expect(fabricatingTower.fabricationRemainingSeconds, initialDuration);
     expect(controller.builtTowerCount, 0);
     expect(controller.upgradeTower(0), isFalse);
 
@@ -85,5 +83,95 @@ void main() {
 
     expect(controller.slots[0].isFabricating, isFalse);
     expect(controller.builtTowerCount, 1);
+  });
+
+  test('root layer 1 fabrication uses the layer 1 ramp timer', () {
+    final controller = LightcoreController();
+    addTearDown(controller.dispose);
+
+    controller.kills = LightcoreController.unlockKillsForOuterSlot(
+      LightcoreController.slotCount - 1,
+    );
+    controller.lumens = 1000000000;
+
+    final durations = <double>[];
+    for (var index = 0; index < LightcoreController.slotCount; index++) {
+      final duration = controller.towerFabricationDurationForConfig(
+        TowerLibrary.redPrism,
+      );
+      durations.add(duration);
+      expect(
+        controller.startTowerFabricationAt(index, TowerLibrary.redPrism),
+        isTrue,
+      );
+      expect(controller.slots[index].fabricationTotalSeconds, duration);
+    }
+
+    expect(
+      durations.first,
+      LightcoreController.towerConstructionDurationSeconds,
+    );
+    for (var index = 1; index < durations.length; index++) {
+      expect(durations[index], greaterThan(durations[index - 1]));
+    }
+    expect(
+      durations.last,
+      LightcoreController.layer1ChildTowerMaxConstructionDurationSeconds,
+    );
+  });
+
+  test('layer 1 child-shell fabrication ramps up to twenty minutes', () {
+    final controller = LightcoreController();
+    addTearDown(controller.dispose);
+
+    _promoteRootShell(controller);
+    expect(controller.createChildLayer(0, PrototypeAffinity.aether), isTrue);
+    controller.lumens = 1000000000;
+
+    final durations = <double>[];
+    for (var index = 0; index < LightcoreController.slotCount; index++) {
+      final duration = controller.towerFabricationDurationForConfig(
+        TowerLibrary.redPrism,
+      );
+      durations.add(duration);
+      expect(
+        controller.startTowerFabricationAt(index, TowerLibrary.redPrism),
+        isTrue,
+      );
+      expect(controller.slots[index].fabricationTotalSeconds, duration);
+    }
+
+    expect(
+      durations.first,
+      LightcoreController.towerConstructionDurationSeconds,
+    );
+    for (var index = 1; index < durations.length; index++) {
+      expect(durations[index], greaterThan(durations[index - 1]));
+    }
+    expect(
+      durations.last,
+      LightcoreController.layer1ChildTowerMaxConstructionDurationSeconds,
+    );
+  });
+
+  test('layer 2 caps active layer 1 core projects by membership', () {
+    final controller = LightcoreController();
+    addTearDown(controller.dispose);
+
+    _promoteRootShell(controller);
+    final parentLayerId = controller.activeLayer.id;
+
+    expect(controller.showsLayerOneCoreCreation, isTrue);
+    expect(controller.layerOneCoreProjectLimit, 1);
+    expect(controller.createChildLayer(0, PrototypeAffinity.aether), isTrue);
+
+    controller.enterLayerById(parentLayerId);
+    expect(controller.layerOneCoreProjectsInProgress, 1);
+    expect(controller.canCreateLayerOneCore, isFalse);
+    expect(controller.createChildLayer(1, PrototypeAffinity.ember), isFalse);
+
+    expect(controller.unlockPremiumMembership(showBanner: false), isTrue);
+    expect(controller.layerOneCoreProjectLimit, 2);
+    expect(controller.createChildLayer(1, PrototypeAffinity.ember), isTrue);
   });
 }

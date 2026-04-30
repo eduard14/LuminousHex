@@ -1,7 +1,6 @@
 import 'dart:math' as math;
 
 import 'package:flame/game.dart';
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
 import '../models/lightcore_state.dart';
@@ -249,6 +248,11 @@ class _DailyDungeonsScreenState extends State<DailyDungeonsScreen> {
                 tint: LightcorePalette.verdant,
               ),
               _InfoChip(
+                icon: Icons.bolt_rounded,
+                label: controller.dailyDungeonQuickClearLabel,
+                tint: LightcorePalette.success,
+              ),
+              _InfoChip(
                 icon: Icons.shield_moon_rounded,
                 label: selectedApex == null ? 'No apex armed' : 'Apex ready',
                 tint: LightcorePalette.solar,
@@ -311,26 +315,54 @@ class _DailyDungeonsScreenState extends State<DailyDungeonsScreen> {
             onSelected: _selectApexCard,
           ),
           const SizedBox(height: 18),
-          FilledButton.icon(
-            onPressed: readyToEnter
-                ? () => _openDungeonRun(
-                    context,
-                    controller,
-                    selectedLevel,
-                    selectedCards,
-                    selectedApex,
-                  )
-                : null,
-            icon: const Icon(Icons.play_arrow_rounded),
-            label: Text(
-              readyToEnter
-                  ? 'Enter Lv $selectedLevel'
-                  : 'Select $requiredCount anomalies',
-            ),
+          Wrap(
+            spacing: 10,
+            runSpacing: 10,
+            children: [
+              FilledButton.icon(
+                onPressed: readyToEnter
+                    ? () => _openDungeonRun(
+                        context,
+                        controller,
+                        selectedLevel,
+                        selectedCards,
+                        selectedApex,
+                      )
+                    : null,
+                icon: const Icon(Icons.play_arrow_rounded),
+                label: Text(
+                  readyToEnter
+                      ? 'Enter Lv $selectedLevel'
+                      : 'Select $requiredCount anomalies',
+                ),
+              ),
+              OutlinedButton.icon(
+                onPressed:
+                    controller.canQuickClearDailyDungeonTowerLevel(
+                      selectedLevel,
+                    )
+                    ? () => _quickClearDungeon(controller, selectedLevel)
+                    : null,
+                icon: const Icon(Icons.fast_forward_rounded),
+                label: Text(
+                  controller.dailyDungeonQuickClearButtonLabel(selectedLevel),
+                ),
+              ),
+            ],
           ),
         ],
       ),
     );
+  }
+
+  void _quickClearDungeon(LightcoreController controller, int selectedLevel) {
+    final reward = controller.quickClearDailyDungeonTowerLevel(selectedLevel);
+    if (reward == null || !mounted) {
+      return;
+    }
+    setState(() {
+      _selectedTowerLevel = selectedLevel;
+    });
   }
 
   Widget _buildPrismRiftDungeon(
@@ -421,14 +453,37 @@ class _DailyDungeonsScreenState extends State<DailyDungeonsScreen> {
                 label: 'combo scoring',
                 tint: LightcorePalette.solar,
               ),
+              _InfoChip(
+                icon: Icons.bolt_rounded,
+                label: controller.dailyDungeonQuickClearLabel,
+                tint: LightcorePalette.success,
+              ),
             ],
           ),
           const SizedBox(height: 18),
-          FilledButton.icon(
-            onPressed: () =>
-                _openPrismRiftRun(context, controller, selectedLevel),
-            icon: const Icon(Icons.play_arrow_rounded),
-            label: Text('Enter Rift Lv $selectedLevel'),
+          Wrap(
+            spacing: 10,
+            runSpacing: 10,
+            children: [
+              FilledButton.icon(
+                onPressed: () =>
+                    _openPrismRiftRun(context, controller, selectedLevel),
+                icon: const Icon(Icons.play_arrow_rounded),
+                label: Text('Enter Rift Lv $selectedLevel'),
+              ),
+              OutlinedButton.icon(
+                onPressed:
+                    controller.canQuickClearDailyDungeonTowerLevel(
+                      selectedLevel,
+                    )
+                    ? () => _quickClearDungeon(controller, selectedLevel)
+                    : null,
+                icon: const Icon(Icons.fast_forward_rounded),
+                label: Text(
+                  controller.dailyDungeonQuickClearButtonLabel(selectedLevel),
+                ),
+              ),
+            ],
           ),
         ],
       ),
