@@ -149,6 +149,53 @@ void main() {
     expect(controller.enemyCardThreatRatingLabel(activeCard), 'Overwhelming');
   });
 
+  test('anomaly blitz starts manual and upgrades towers without reset', () {
+    final controller = LightcoreController();
+    addTearDown(controller.dispose);
+
+    controller.configureTournamentBattle(
+      mode: LightcoreTournamentModeId.enemyBlitz,
+      seedPowerIndex: 1400,
+      enemyDraft: [
+        EnemyCardState(
+          config: EnemyLibrary.basicRed,
+          unlocked: true,
+          copies: 1,
+          level: 1,
+        ),
+      ],
+      towerTier: 1,
+      enemyPressure: 10,
+    );
+
+    expect(controller.builtTowerCount, 0);
+    expect(controller.towerCoreManager, isNull);
+    expect(controller.outerRingRevealed, isTrue);
+    controller.tick(1);
+    expect(controller.enemies, isNotEmpty);
+    final enemyIdsBeforeUpgrade = controller.enemies
+        .map((enemy) => enemy.id)
+        .toSet();
+
+    controller.applyEnemyBlitzTowerUpgrade(seedPowerIndex: 1400, towerTier: 2);
+
+    expect(controller.builtTowerCount, 1);
+    expect(controller.towerCoreManager, isNull);
+    expect(
+      controller.enemies.map((enemy) => enemy.id).toSet(),
+      containsAll(enemyIdsBeforeUpgrade),
+    );
+
+    controller.applyEnemyBlitzTowerUpgrade(seedPowerIndex: 1400, towerTier: 3);
+
+    expect(controller.builtTowerCount, 2);
+
+    controller.applyEnemyBlitzTowerUpgrade(seedPowerIndex: 1400, towerTier: 5);
+
+    expect(controller.builtTowerCount, 2);
+    expect(controller.slots.take(2).every((slot) => slot.level >= 3), isTrue);
+  });
+
   test('daily dungeon battle runtime uses selected anomaly deck', () {
     final controller = LightcoreController();
     addTearDown(controller.dispose);

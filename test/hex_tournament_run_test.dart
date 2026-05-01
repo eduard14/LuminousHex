@@ -80,6 +80,70 @@ void main() {
     },
   );
 
+  test('mixed and uneven towers can all merge into one consolidated tower', () {
+    final run = HexTournamentRunController(
+      seedPowerIndex: 1400,
+      startingCurrency: 1000,
+    )..start();
+    final cells = run.snapshot.cells
+        .where((cell) => cell.canBuild)
+        .take(5)
+        .toList(growable: false);
+    final configs = [
+      TowerLibrary.purplePrism,
+      TowerLibrary.yellowPrism,
+      TowerLibrary.cyanPrism,
+      TowerLibrary.redPrism,
+      TowerLibrary.whitePrism,
+    ];
+
+    for (var index = 0; index < cells.length; index += 1) {
+      expect(run.placeTower(cells[index].id, config: configs[index]), isTrue);
+    }
+
+    expect(run.mergeTowers(cells[0].id, cells[1].id), isTrue);
+    expect(run.snapshot.towers.first.mergeStage, 1);
+    expect(run.mergeTowers(cells[0].id, cells[2].id), isTrue);
+    expect(run.snapshot.towers.first.mergeStage, 2);
+    expect(run.mergeTowers(cells[0].id, cells[3].id), isTrue);
+    expect(run.snapshot.towers.first.mergeStage, 3);
+    expect(run.mergeTowers(cells[0].id, cells[4].id), isTrue);
+
+    final merged = run.snapshot.towers.single;
+    expect(merged.mergeStage, 4);
+    expect(merged.payloadType, isNot(PayloadType.none));
+    expect(merged.impactProjectileType, isNotNull);
+  });
+
+  test('shot traces advance across ticks instead of disappearing', () {
+    final run = HexTournamentRunController(
+      seedPowerIndex: 1400,
+      startingCurrency: 3000,
+    )..start();
+    final cells = run.snapshot.cells
+        .where((cell) => cell.canBuild)
+        .toList(growable: false);
+
+    for (final cell in cells) {
+      expect(run.placeTower(cell.id, config: TowerLibrary.yellowPrism), isTrue);
+    }
+    expect(run.sendWave(), isTrue);
+
+    for (var frame = 0; frame < 160 && run.snapshot.shots.isEmpty; frame += 1) {
+      run.tick(0.05);
+    }
+
+    expect(run.snapshot.shots, isNotEmpty);
+    final firstShot = run.snapshot.shots.first;
+
+    run.tick(0.05);
+
+    final advancedShot = run.snapshot.shots.firstWhere(
+      (shot) => shot.id == firstShot.id,
+    );
+    expect(advancedShot.progress, greaterThan(firstShot.progress));
+  });
+
   test('weekly focus towers carry the event damage bonus', () {
     final run = HexTournamentRunController(
       seedPowerIndex: 1400,

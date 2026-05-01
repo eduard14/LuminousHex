@@ -153,16 +153,16 @@ class _HexTournamentGame extends FlameGame {
     for (final cell in snapshot.cells) {
       _drawCell(canvas, snapshot, cell);
     }
-    for (final shot in snapshot.shots) {
-      _drawShot(canvas, snapshot, shot);
-    }
     for (final tower in snapshot.towers) {
       _drawTower(canvas, tower);
     }
-    _drawDragPreview(canvas, snapshot);
     for (final enemy in snapshot.enemies.where((enemy) => enemy.isOnBoard)) {
       _drawEnemy(canvas, snapshot, enemy);
     }
+    for (final shot in snapshot.shots) {
+      _drawShot(canvas, snapshot, shot);
+    }
+    _drawDragPreview(canvas, snapshot);
     if (snapshot.paused || snapshot.defeated) {
       _drawCenterBanner(
         canvas,
@@ -561,11 +561,7 @@ class _HexTournamentGame extends FlameGame {
     }
     final sourceTower = _towerAt(snapshot, sourceCellId);
     final targetTower = _towerAt(snapshot, targetCellId);
-    return sourceTower != null &&
-        targetTower != null &&
-        sourceTower.config.id == targetTower.config.id &&
-        sourceTower.mergeStage == targetTower.mergeStage &&
-        sourceTower.mergeStage < 2;
+    return sourceTower != null && targetTower != null;
   }
 
   Offset? _cellCenterById(String cellId) {

@@ -62,6 +62,7 @@ class _TournamentModeDetailScreenState
   int _blitzEnemyTier = 1;
   double _blitzShield = 1;
   double _blitzSupplyProgress = 0;
+  int _lastBlitzScoredKills = 0;
 
   int _gauntletWave = 1;
   int _gauntletCharges = 2;
@@ -579,8 +580,9 @@ class _TournamentModeDetailScreenState
           _blitzEnemyTier = 1;
           _blitzShield = 1;
           _blitzSupplyProgress = 0;
+          _lastBlitzScoredKills = 0;
           _hint =
-              'Weekend-length session live. Keep upgrading the tower, cash wave payouts, and make the anomaly draft greedier before the session timer ends.';
+              'Weekend-length manual shell live. Tap the core, unlock one or two weekend towers, and cash faster clears before the session timer ends.';
           break;
         case LightcoreTournamentModeId.hexGauntlet:
           _hexRun.start(seedPowerIndex: _eventSeed);
@@ -609,6 +611,9 @@ class _TournamentModeDetailScreenState
       return;
     }
     _syncBattleController();
+    if (_mode == LightcoreTournamentModeId.enemyBlitz) {
+      _lastBlitzScoredKills = _battleController.kills;
+    }
     widget.onBattleSurfaceActiveChanged?.call(true);
     _ticker = Timer.periodic(_tickRate, (_) => _advanceRun());
   }
@@ -639,7 +644,13 @@ class _TournamentModeDetailScreenState
             .toSet()
             .length;
         final seed = max(200.0, _eventSeed.toDouble());
-        final towerOutput = 52 + (seed / 22) + (_blitzTowerTier * 14);
+        final builtTowers = _blitzBuiltTowerCount;
+        final weekendTowerLevel = _blitzWeekendTowerLevel;
+        final towerOutput =
+            42 +
+            (seed / 30) +
+            (builtTowers * 38) +
+            (weekendTowerLevel * builtTowers * 16);
         final enemyPressure =
             30 +
             (_blitzWave * 8.5) +
@@ -674,10 +685,25 @@ class _TournamentModeDetailScreenState
           nextHint =
               'Wave $_blitzWave reached. Supply payout delivered. Reinvest into tower strength or make the anomaly draft greedier.';
         }
+        final battleClears = max(
+          0,
+          _battleController.kills - _lastBlitzScoredKills,
+        );
+        if (battleClears > 0) {
+          _lastBlitzScoredKills = _battleController.kills;
+          final clearPayout =
+              battleClears *
+              (10 + (_blitzEnemyTier * 3) + (draftPayout * 2).round());
+          _blitzResources += clearPayout;
+          nextScore +=
+              battleClears * (38 + (_blitzWave * 3) + (_blitzEnemyTier * 7));
+          nextHint =
+              'Manual clears paid $clearPayout resources. Keep tapping the core and ready weekend towers.';
+        }
         nextScore += max(0, towerOutput - (enemyPressure * 0.3)) * dt;
         if (_blitzShield <= 0.08) {
           nextHint =
-              'Shell integrity is critical. Keep investing in the tower; the Blitz session continues until the weekend-length timer ends.';
+              'Shell integrity is critical. Manual taps and weekend tower upgrades are carrying this Blitz run.';
         }
         break;
       case LightcoreTournamentModeId.hexGauntlet:
@@ -883,17 +909,42 @@ class _TournamentModeDetailScreenState
 
   int get _enemyBlitzEnemyUpgradeCost => 55 + (_blitzEnemyTier * 30);
 
+  int get _blitzBuiltTowerCount => max(0, min(2, _blitzTowerTier - 1));
+
+  int get _blitzWeekendTowerLevel => (1 + max(0, _blitzTowerTier - 3))
+      .clamp(1, LightcoreController.maxTowerLevel)
+      .toInt();
+
+  String get _blitzTowerUpgradeLabel {
+    if (_blitzBuiltTowerCount == 0) {
+      return 'Unlock Weekend Tower';
+    }
+    if (_blitzBuiltTowerCount == 1) {
+      return 'Unlock Second Tower';
+    }
+    return 'Level Weekend Towers';
+  }
+
   void _buyBlitzTowerUpgrade() {
     if (!_runActive || _blitzResources < _enemyBlitzTowerUpgradeCost) {
       return;
     }
+    final nextBuiltTowerCount = max(0, min(2, _blitzTowerTier));
     setState(() {
       _blitzResources -= _enemyBlitzTowerUpgradeCost;
       _blitzTowerTier += 1;
       _score += 30;
-      _hint = 'Tower upgraded. The shell can hold longer waves.';
+      _hint = nextBuiltTowerCount == 1
+          ? 'Weekend tower unlocked. Tap it when charged to feed the core.'
+          : nextBuiltTowerCount == 2
+          ? 'Second weekend tower unlocked. This Blitz rotation now has its full tower pair.'
+          : 'Weekend towers leveled. Manual shots now hit harder.';
     });
-    _syncBattleController();
+    _battleController.applyEnemyBlitzTowerUpgrade(
+      seedPowerIndex: widget.modeState.seedPowerIndex,
+      towerTier: _blitzTowerTier,
+    );
+    _lastBlitzScoredKills = _battleController.kills;
   }
 
   void _buyBlitzEnemyUpgrade() {
@@ -906,7 +957,11 @@ class _TournamentModeDetailScreenState
       _score += 42;
       _hint = 'Anomaly draft upgraded. Future clears will pay out harder.';
     });
-    _syncBattleController();
+    _battleController.applyTournamentEnemyRuntime(
+      enemyDraft: _battleEnemyDraft,
+      enemyPressure: _battleEnemyPressure,
+      enemyLevelBonus: _blitzEnemyTier - 1,
+    );
   }
 
   void _reinforceGauntletLane(int lane) {
@@ -1535,7 +1590,10 @@ class _TournamentModeDetailScreenState
         chips.addAll(<Widget>[
           _HeaderChip(label: 'Wave', value: '$_blitzWave'),
           _HeaderChip(label: 'Res', value: '$_blitzResources'),
-          _HeaderChip(label: 'Tower', value: 'T$_blitzTowerTier'),
+          _HeaderChip(
+            label: 'Towers',
+            value: '$_blitzBuiltTowerCount/2 L$_blitzWeekendTowerLevel',
+          ),
           _HeaderChip(label: 'Anomaly', value: 'A$_blitzEnemyTier'),
         ]);
         break;
@@ -1581,7 +1639,7 @@ class _TournamentModeDetailScreenState
         MeterBar(value: _blitzShield, color: tint),
         const SizedBox(height: 6),
         Text(
-          'Shell integrity ${(100 * _blitzShield).round()}%',
+          'Shell integrity ${(100 * _blitzShield).round()}% • manual taps only',
           style: Theme.of(context).textTheme.bodySmall,
         ),
         const SizedBox(height: 12),
@@ -1595,7 +1653,9 @@ class _TournamentModeDetailScreenState
                   ? _buyBlitzTowerUpgrade
                   : null,
               icon: const Icon(Icons.upgrade_rounded),
-              label: Text('Upgrade Tower ($_enemyBlitzTowerUpgradeCost)'),
+              label: Text(
+                '$_blitzTowerUpgradeLabel ($_enemyBlitzTowerUpgradeCost)',
+              ),
             ),
             FilledButton.tonalIcon(
               onPressed:

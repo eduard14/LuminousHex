@@ -64,11 +64,12 @@ class HexTournamentTower {
       (18 +
           (config.basePower * 1.25) +
           (hasPayload ? 9 : 0) +
-          (hasImpactProjectile ? 7 : 0)) *
+          (hasImpactProjectile ? 7 : 0) +
+          (math.max(0, mergeStage - 2) * 7)) *
       focusDamageMultiplier;
   double get cooldownSeconds =>
-      (config.baseCooldown * (0.62 - (mergeStage * 0.04)))
-          .clamp(0.56, 1.08)
+      (config.baseCooldown * (0.62 - (math.min(mergeStage, 6) * 0.04)))
+          .clamp(0.48, 1.08)
           .toDouble();
 
   HexTournamentTower copyWith({
@@ -432,7 +433,9 @@ class HexTournamentRunController {
         return mergeTowers(selectedTower.cellId, tower.cellId);
       }
       _selectedCellId = cellId;
-      _statusLabel = tower.mergeStage >= 2
+      _statusLabel = tower.mergeStage > 2
+          ? 'Consolidated tower selected.'
+          : tower.mergeStage == 2
           ? 'Impact tower selected.'
           : tower.hasPayload
           ? 'Payload tower selected.'
@@ -523,12 +526,14 @@ class HexTournamentRunController {
       return false;
     }
 
-    final nextStage = keeper.mergeStage + 1;
+    final nextStage = math.max(keeper.mergeStage, consumed.mergeStage) + 1;
+    final payload = _mergePayloadFor(keeper, consumed);
+    final impactProjectile = _mergeImpactProjectileFor(keeper, consumed);
     late HexTournamentTower merged;
-    if (nextStage == 1) {
-      final payload = _random.nextBool()
-          ? keeper.candidatePayload
-          : consumed.candidatePayload;
+    if (payload == PayloadType.none) {
+      merged = keeper.copyWith(mergeStage: nextStage, cooldownRemaining: 0);
+      _statusLabel = 'Towers consolidated.';
+    } else if (impactProjectile == null) {
       merged = keeper.copyWith(
         payloadType: payload,
         mergeStage: nextStage,
@@ -536,19 +541,15 @@ class HexTournamentRunController {
       );
       _statusLabel = '${payload.label} payload merged into the tower.';
     } else {
-      final payload = _random.nextBool()
-          ? keeper.payloadType
-          : consumed.payloadType;
-      final impactProjectile = _random.nextBool()
-          ? keeper.candidateImpactProjectile
-          : consumed.candidateImpactProjectile;
       merged = keeper.copyWith(
         payloadType: payload,
         impactProjectileType: impactProjectile,
         mergeStage: nextStage,
         cooldownRemaining: 0,
       );
-      _statusLabel = '${impactProjectile.label} impact projectile added.';
+      _statusLabel = nextStage > 2
+          ? 'Tower consolidated to merge stage $nextStage.'
+          : '${impactProjectile.label} impact projectile added.';
     }
 
     _towers
@@ -715,10 +716,43 @@ class HexTournamentRunController {
   }
 
   bool _canMerge(HexTournamentTower left, HexTournamentTower right) {
-    return left.cellId != right.cellId &&
-        left.config.id == right.config.id &&
-        left.mergeStage == right.mergeStage &&
-        left.mergeStage < 2;
+    return left.cellId != right.cellId;
+  }
+
+  PayloadType _mergePayloadFor(
+    HexTournamentTower keeper,
+    HexTournamentTower consumed,
+  ) {
+    final payloads = <PayloadType>[
+      if (keeper.payloadType != PayloadType.none) keeper.payloadType,
+      if (consumed.payloadType != PayloadType.none) consumed.payloadType,
+    ];
+    if (payloads.isNotEmpty) {
+      return payloads[_random.nextInt(payloads.length)];
+    }
+    return _random.nextBool()
+        ? keeper.candidatePayload
+        : consumed.candidatePayload;
+  }
+
+  ProjectileType? _mergeImpactProjectileFor(
+    HexTournamentTower keeper,
+    HexTournamentTower consumed,
+  ) {
+    final projectiles = <ProjectileType>[
+      if (keeper.impactProjectileType != null) keeper.impactProjectileType!,
+      if (consumed.impactProjectileType != null) consumed.impactProjectileType!,
+    ];
+    if (projectiles.isNotEmpty) {
+      return projectiles[_random.nextInt(projectiles.length)];
+    }
+    if (keeper.payloadType == PayloadType.none &&
+        consumed.payloadType == PayloadType.none) {
+      return null;
+    }
+    return _random.nextBool()
+        ? keeper.candidateImpactProjectile
+        : consumed.candidateImpactProjectile;
   }
 
   HexTournamentEnemy _createEnemy(int waveIndex) {
@@ -932,14 +966,13 @@ class HexTournamentRunController {
   }
 
   void _updateShotTraces(double dt) {
+    final updated = _shots
+        .map((shot) => shot.copyWith(progress: shot.progress + dt * 3.4))
+        .where((shot) => shot.progress < 1)
+        .toList(growable: false);
     _shots
       ..clear()
-      ..addAll(
-        _shots
-            .map((shot) => shot.copyWith(progress: shot.progress + dt * 3.4))
-            .where((shot) => shot.progress < 1)
-            .toList(growable: false),
-      );
+      ..addAll(updated);
   }
 
   (double, double) _enemyAxialPosition(double progress) {
