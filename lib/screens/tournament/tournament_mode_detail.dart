@@ -464,22 +464,6 @@ class _TournamentModeDetailScreenState
         LightcoreController.tournamentPowerIndexCap.toDouble(),
       );
 
-  double get _arenaPlayerTowerDurability =>
-      900 + (sqrt(_eventSeed) * 2.2) + (widget.controller.homeTowerTier * 140);
-
-  double get _arenaRivalTowerDurability =>
-      900 + (sqrt(_arenaRivalPower) * 2.0) + (_arenaRivalRating * 0.05);
-
-  double get _arenaPlayerTowerIntegrity =>
-      (1 - (_arenaPlayerDamageTaken / _arenaPlayerTowerDurability))
-          .clamp(0.0, 1.0)
-          .toDouble();
-
-  double get _arenaRivalTowerIntegrity =>
-      (1 - (_arenaRivalDamageTaken / _arenaRivalTowerDurability))
-          .clamp(0.0, 1.0)
-          .toDouble();
-
   LightcoreTournamentLeaderboardEntry? get _arenaRivalEntry {
     for (final entry in widget.modeState.leaderboard) {
       if (!entry.isPlayer) {
@@ -487,43 +471,6 @@ class _TournamentModeDetailScreenState
       }
     }
     return null;
-  }
-
-  String get _arenaRivalLabel => _arenaRivalEntry?.displayName ?? 'Room Rival';
-
-  PrototypeAffinity get _arenaRivalAffinity {
-    final affinities = PrototypeAffinity.values
-        .where(
-          (affinity) =>
-              affinity != PrototypeAffinity.neutral &&
-              affinity != PrototypeAffinity.black,
-        )
-        .toList(growable: false);
-    if (affinities.isEmpty) {
-      return PrototypeAffinity.violet;
-    }
-    return affinities[(_arenaRivalRating ~/ 100) % affinities.length];
-  }
-
-  PrototypeAffinity get _arenaPlayerEnemyAffinity {
-    final selected = _selectedEnemyCards(_selectedArenaEnemyIds);
-    return selected.isEmpty
-        ? PrototypeAffinity.neutral
-        : selected.first.config.affinity;
-  }
-
-  PrototypeAffinity get _arenaRivalEnemyAffinity {
-    final affinities = PrototypeAffinity.values
-        .where(
-          (affinity) =>
-              affinity != PrototypeAffinity.neutral &&
-              affinity != PrototypeAffinity.black,
-        )
-        .toList(growable: false);
-    if (affinities.isEmpty) {
-      return PrototypeAffinity.black;
-    }
-    return affinities[((_arenaRivalRating ~/ 80) + 3) % affinities.length];
   }
 
   List<EnemyCardState> get _battleEnemyDraft => switch (_mode) {
@@ -1395,30 +1342,10 @@ class _TournamentModeDetailScreenState
           child: Stack(
             children: [
               Positioned.fill(
-                child: _mode == LightcoreTournamentModeId.arenaFlow
-                    ? _ArenaFlowDuelStage(
-                        playerLabel: widget.controller.playerDisplayName,
-                        rivalLabel: _arenaRivalLabel,
-                        playerTowerLabel: widget.controller.homeTowerLayerLabel,
-                        rivalTowerLabel:
-                            '${_arenaRivalAffinity.label} Home Tower',
-                        playerTowerAffinity:
-                            widget.controller.homeTowerLayer.core.affinity,
-                        rivalTowerAffinity: _arenaRivalAffinity,
-                        playerEnemyAffinity: _arenaPlayerEnemyAffinity,
-                        rivalEnemyAffinity: _arenaRivalEnemyAffinity,
-                        playerEnemyProgress: _arenaPlayerEnemyProgress,
-                        rivalEnemyProgress: _arenaRivalEnemyProgress,
-                        playerTowerIntegrity: _arenaPlayerTowerIntegrity,
-                        rivalTowerIntegrity: _arenaRivalTowerIntegrity,
-                        playerNetDamage: _arenaPlayerNetDamage,
-                        rivalNetDamage: _arenaRivalNetDamage,
-                        active: _runActive,
-                      )
-                    : _TournamentBattleStage(
-                        controller: _battleController,
-                        active: _runActive,
-                      ),
+                child: _TournamentBattleStage(
+                  controller: _battleController,
+                  active: _runActive,
+                ),
               ),
               Positioned(
                 top: inset,

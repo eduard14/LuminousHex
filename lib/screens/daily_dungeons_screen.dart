@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flame/game.dart';
@@ -14,6 +15,7 @@ import '../widgets/lightcore_projectile_fx.dart';
 import '../widgets/lightcore_run_loading.dart';
 import '../widgets/meter_bar.dart';
 import '../widgets/tower_level_hex_badge.dart';
+import 'battle_screen.dart';
 
 part 'daily_dungeons/dungeon_math.dart';
 part 'daily_dungeons/dungeon_run_models.dart';
@@ -204,7 +206,7 @@ class _DailyDungeonsScreenState extends State<DailyDungeonsScreen> {
   ) {
     final textTheme = Theme.of(context).textTheme;
     final selectedLevel = _selectedLevelFor(controller);
-    final towerProfile = controller.dailyDungeonBattleTowerProfileForLevel(
+    final towerProfile = controller.dailyDungeonTowerProfileForLevel(
       selectedLevel,
     );
     final towerMaxHealth = towerProfile.maxHealth;
@@ -241,7 +243,7 @@ class _DailyDungeonsScreenState extends State<DailyDungeonsScreen> {
                     Text('Threat Director', style: textTheme.titleLarge),
                     const SizedBox(height: 4),
                     Text(
-                      'Choose a tower level and lock a three-anomaly raid loadout. Combat opens as its own timed arena with launch cooldowns.',
+                      'Choose a tower level and lock a three-anomaly deck. Combat opens on the same battle field with automated manager taps.',
                       style: textTheme.bodyMedium?.copyWith(
                         color: LightcorePalette.mist.withValues(alpha: 0.78),
                       ),
@@ -293,7 +295,7 @@ class _DailyDungeonsScreenState extends State<DailyDungeonsScreen> {
               ),
               _InfoChip(
                 icon: towerProjectileIcon(towerProfile.projectileType),
-                label: '${towerProfile.affinity.shortLabel} tower shoots back',
+                label: '${towerProfile.affinity.shortLabel} battle core',
                 tint: towerProfile.affinity.color,
               ),
               _InfoChip(
@@ -425,7 +427,7 @@ class _DailyDungeonsScreenState extends State<DailyDungeonsScreen> {
   ) {
     final textTheme = Theme.of(context).textTheme;
     final selectedLevel = _selectedLevelFor(controller);
-    final towerProfile = controller.dailyDungeonBattleTowerProfileForLevel(
+    final towerProfile = controller.dailyDungeonTowerProfileForLevel(
       selectedLevel,
     );
     final reward = controller.dailyDungeonRewardForLevel(selectedLevel);
@@ -452,7 +454,7 @@ class _DailyDungeonsScreenState extends State<DailyDungeonsScreen> {
                     Text('Prism Rift', style: textTheme.titleLarge),
                     const SizedBox(height: 4),
                     Text(
-                      'Automation is offline inside the rift. Each clear uses the same daily tower ladder and first-clear reward track.',
+                      'Rift clears now run through the shared battle field with a prism-biased tower loadout and the same first-clear reward track.',
                       style: textTheme.bodyMedium?.copyWith(
                         color: LightcorePalette.mist.withValues(alpha: 0.78),
                       ),
@@ -461,7 +463,7 @@ class _DailyDungeonsScreenState extends State<DailyDungeonsScreen> {
                 ),
               ),
               const SizedBox(width: 12),
-              _StatusCapsule(label: 'Manual', tint: LightcorePalette.violet),
+              _StatusCapsule(label: 'Battle', tint: LightcorePalette.violet),
             ],
           ),
           const SizedBox(height: 18),
@@ -494,7 +496,7 @@ class _DailyDungeonsScreenState extends State<DailyDungeonsScreen> {
               ),
               _InfoChip(
                 icon: towerProjectileIcon(towerProfile.projectileType),
-                label: '${towerProfile.affinity.shortLabel} manual shot',
+                label: '${towerProfile.affinity.shortLabel} battle loadout',
                 tint: towerProfile.affinity.color,
               ),
               _InfoChip(
@@ -504,7 +506,7 @@ class _DailyDungeonsScreenState extends State<DailyDungeonsScreen> {
               ),
               _InfoChip(
                 icon: Icons.local_fire_department_rounded,
-                label: 'combo scoring',
+                label: 'battle clears',
                 tint: LightcorePalette.solar,
               ),
               _InfoChip(
@@ -603,11 +605,13 @@ class _DailyDungeonsScreenState extends State<DailyDungeonsScreen> {
           subtitle: 'Locking anomaly loadout and opening the tower arena.',
           tint: LightcorePalette.warning,
           icon: Icons.shield_rounded,
-          builder: (_) => _ThreatDirectorDungeonRunScreen(
+          builder: (_) => _DailyDungeonBattleRunScreen(
+            route: _DailyDungeonBattleRoute.threatDirector,
             controller: controller,
             towerLevel: towerLevel,
             anomalyCards: List<EnemyCardState>.unmodifiable(anomalyCards),
             apexCard: apexCard,
+            runSeed: _dailyDungeonRunSeed(towerLevel),
           ),
         ),
       ),
@@ -625,6 +629,8 @@ class _DailyDungeonsScreenState extends State<DailyDungeonsScreen> {
     LightcoreController controller,
     int towerLevel,
   ) async {
+    final ownedCards = _ownedEnemyCards(controller);
+    final anomalyCards = _selectedAnomalyCards(controller, ownedCards);
     final result = await Navigator.of(context).push<_DungeonRunResult>(
       MaterialPageRoute<_DungeonRunResult>(
         fullscreenDialog: true,
@@ -634,9 +640,14 @@ class _DailyDungeonsScreenState extends State<DailyDungeonsScreen> {
               'Charging manual controls and syncing today\'s rift pattern.',
           tint: LightcorePalette.violet,
           icon: Icons.terrain_rounded,
-          builder: (_) => _PrismRiftDungeonRunScreen(
+          builder: (_) => _DailyDungeonBattleRunScreen(
+            route: _DailyDungeonBattleRoute.prismRift,
             controller: controller,
             towerLevel: towerLevel,
+            anomalyCards: List<EnemyCardState>.unmodifiable(
+              anomalyCards.isEmpty ? controller.activeEnemyDeck : anomalyCards,
+            ),
+            apexCard: null,
             runSeed: _dailyDungeonRunSeed(towerLevel),
           ),
         ),

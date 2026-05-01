@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lightcore/data/enemy_configs.dart';
+import 'package:lightcore/data/tower_configs.dart';
 import 'package:lightcore/models/lightcore_tournament.dart';
 import 'package:lightcore/models/lightcore_state.dart';
 import 'package:lightcore/models/lightcore_types.dart';
@@ -146,6 +147,48 @@ void main() {
       greaterThan(900000000),
     );
     expect(controller.enemyCardThreatRatingLabel(activeCard), 'Overwhelming');
+  });
+
+  test('daily dungeon battle runtime uses selected anomaly deck', () {
+    final controller = LightcoreController();
+    addTearDown(controller.dispose);
+
+    controller.configureThreatDirectorDungeonBattle(
+      towerLevel: 1,
+      enemyDraft: [
+        EnemyCardState(
+          config: EnemyLibrary.basicRed,
+          unlocked: true,
+          copies: 1,
+          level: 2,
+        ),
+      ],
+    );
+
+    expect(controller.outerRingRevealed, isTrue);
+    expect(controller.swarmActivated, isTrue);
+    expect(controller.builtTowerCount, 0);
+    expect(
+      controller.coreState.projectileType,
+      TowerLibrary.whitePrism.defaultProjectileType,
+    );
+    expect(controller.activeEnemyCardIds, contains(EnemyLibrary.basicRed.id));
+    expect(controller.towerCoreManager, isNotNull);
+
+    controller.configureThreatDirectorDungeonBattle(
+      towerLevel: 4,
+      enemyDraft: [
+        EnemyCardState(
+          config: EnemyLibrary.basicWhite,
+          unlocked: true,
+          copies: 1,
+          level: 1,
+        ),
+      ],
+    );
+
+    expect(controller.builtTowerCount, 3);
+    expect(controller.slots.take(3).every((slot) => slot.isBuilt), isTrue);
   });
 
   test('event offline progress counts as claimed offline time', () {

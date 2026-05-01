@@ -52,9 +52,114 @@ extension LightcoreControllerSaveTournamentCloud on LightcoreController {
       ],
     };
 
-    final unlockExperience = unlockExperienceForOuterSlot(slotCount - 1);
-    kills = max(kills, unlockExperience);
-    experience = max(experience, unlockExperience);
+    _configureEventBattle(
+      eventLabel: mode.label,
+      seedPowerIndex: normalizedSeed,
+      coreAffinity: coreAffinity,
+      coreProjectile: coreProjectile,
+      corePayload: PayloadType.none,
+      coreLevel: evenEntryTournamentCoreLevel + normalizedTowerTier - 1,
+      coreMultiShotUpgradeLevel: mode == LightcoreTournamentModeId.arenaFlow
+          ? 1
+          : 0,
+      towerLoadout: towerLoadout,
+      towerLevel: towerLevel,
+      builtSlotCount: slotCount,
+      enemyDraft: enemyDraft,
+      bossDraft: bossDraft,
+      enemyPressure: enemyPressure,
+      layer2Unlocked: mode == LightcoreTournamentModeId.arenaFlow,
+      layer2Count: mode == LightcoreTournamentModeId.arenaFlow ? 2 : 0,
+      spawnBossImmediately: mode == LightcoreTournamentModeId.arenaFlow,
+    );
+  }
+
+  void configureThreatDirectorDungeonBattle({
+    required int towerLevel,
+    Iterable<EnemyCardState> enemyDraft = const <EnemyCardState>[],
+    EnemyCardState? bossDraft,
+  }) {
+    final profile = dailyDungeonTowerProfileForLevel(towerLevel);
+    final builtSlots = (profile.towerLevel - 1).clamp(0, slotCount).toInt();
+    final pressure =
+        (initialEnemyTarget +
+                min(18, profile.towerLevel ~/ 2) +
+                min(8, enemyDraft.length * 2) +
+                (bossDraft == null ? 0 : 4))
+            .toInt();
+    _configureEventBattle(
+      eventLabel: 'Threat Director',
+      seedPowerIndex:
+          evenEntryTournamentPowerIndex + (profile.towerLevel * 290),
+      coreAffinity: profile.affinity,
+      coreProjectile: profile.projectileType,
+      corePayload: profile.payloadType,
+      coreLevel: 1 + ((profile.towerLevel - 1) ~/ 8),
+      towerLoadout: _dailyDungeonTowerLoadout(profile.towerLevel),
+      towerLevel: profile.effectiveDisplayLevel,
+      builtSlotCount: builtSlots,
+      enemyDraft: enemyDraft,
+      bossDraft: bossDraft,
+      enemyPressure: pressure,
+      spawnBossImmediately: bossDraft != null,
+    );
+  }
+
+  void configurePrismRiftDungeonBattle({
+    required int towerLevel,
+    Iterable<EnemyCardState> enemyDraft = const <EnemyCardState>[],
+  }) {
+    final profile = dailyDungeonTowerProfileForLevel(towerLevel);
+    final builtSlots = min(slotCount, 2 + ((profile.towerLevel - 1) ~/ 2));
+    _configureEventBattle(
+      eventLabel: 'Prism Rift',
+      seedPowerIndex:
+          evenEntryTournamentPowerIndex + (profile.towerLevel * 340),
+      coreAffinity: PrototypeAffinity.violet,
+      coreProjectile: ProjectileType.prismBeam,
+      corePayload: PayloadType.fracture,
+      coreLevel: 1 + ((profile.towerLevel - 1) ~/ 6),
+      coreMultiShotUpgradeLevel: profile.towerLevel >= 10 ? 1 : 0,
+      towerLoadout: _dailyDungeonTowerLoadout(
+        profile.towerLevel,
+        prismRift: true,
+      ),
+      towerLevel: profile.effectiveDisplayLevel,
+      builtSlotCount: builtSlots,
+      enemyDraft: enemyDraft,
+      enemyPressure:
+          initialEnemyTarget + min(20, 3 + (profile.towerLevel ~/ 2)),
+      layer2Unlocked: profile.towerLevel >= 7,
+      layer2Count: profile.towerLevel >= 14 ? 2 : 1,
+    );
+  }
+
+  void _configureEventBattle({
+    required String eventLabel,
+    required int seedPowerIndex,
+    required PrototypeAffinity coreAffinity,
+    required ProjectileType coreProjectile,
+    required PayloadType corePayload,
+    required int coreLevel,
+    required List<TowerConfig> towerLoadout,
+    required int towerLevel,
+    required int builtSlotCount,
+    Iterable<EnemyCardState> enemyDraft = const <EnemyCardState>[],
+    EnemyCardState? bossDraft,
+    int enemyPressure = initialEnemyTarget,
+    bool layer2Unlocked = false,
+    int layer2Count = 0,
+    int coreMultiShotUpgradeLevel = 0,
+    bool spawnBossImmediately = false,
+  }) {
+    final normalizedSeed = max(evenEntryTournamentPowerIndex, seedPowerIndex);
+    final normalizedBuiltSlots = builtSlotCount.clamp(0, slotCount).toInt();
+    final normalizedTowerLevel = towerLevel.clamp(1, maxTowerLevel).toInt();
+    final unlockExperience = normalizedBuiltSlots <= 0
+        ? 0
+        : unlockExperienceForOuterSlot(normalizedBuiltSlots - 1);
+    kills = unlockExperience;
+    experience = unlockExperience;
     _outerRingRevealed = true;
     _swarmActivated = true;
     _tutorialStep = LightcoreTutorialStep.none;
@@ -62,19 +167,26 @@ extension LightcoreControllerSaveTournamentCloud on LightcoreController {
     bannerMessage = '';
     selectedSlotIndex = null;
     _towerRangePreviewSlotIndex = null;
+    _installEventCoreManager(
+      eventLabel: eventLabel,
+      affinity: coreAffinity,
+      projectileType: coreProjectile,
+      payloadType: corePayload,
+    );
 
     _core = _core.copyWith(
       coreStability: 100,
       flowEfficiency: _maxFlowEfficiency,
       fireCooldownRemaining: 0,
       packetCooldownRemaining: 0,
-      level: evenEntryTournamentCoreLevel + normalizedTowerTier - 1,
+      automationCooldownRemaining: 0,
+      level: coreLevel.clamp(1, maxCoreUpgradeLevel).toInt(),
       affinity: coreAffinity,
-      secondaryAffinity: null,
+      secondaryAffinity: corePayload.affinity,
       projectileType: coreProjectile,
-      payloadType: PayloadType.none,
+      payloadType: corePayload,
       projectileLoadout: <ProjectileType>[coreProjectile],
-      payloadLoadout: const <PayloadType>[PayloadType.none],
+      payloadLoadout: <PayloadType>[corePayload],
       rangeUpgradeLevel: min(maxCoreUpgradeLevel, 1 + (normalizedSeed ~/ 520)),
       fireSpeedUpgradeLevel: min(
         maxCoreUpgradeLevel,
@@ -84,21 +196,25 @@ extension LightcoreControllerSaveTournamentCloud on LightcoreController {
         maxCoreUpgradeLevel,
         1 + (normalizedSeed ~/ 720),
       ),
-      multiShotUpgradeLevel: mode == LightcoreTournamentModeId.arenaFlow
-          ? 1
-          : 0,
+      multiShotUpgradeLevel: coreMultiShotUpgradeLevel
+          .clamp(0, maxCoreMultiShotUpgradeLevel)
+          .toInt(),
     );
     _layer2 = Layer2TowerState(
-      unlocked: mode == LightcoreTournamentModeId.arenaFlow,
-      count: mode == LightcoreTournamentModeId.arenaFlow ? 2 : 0,
+      unlocked: layer2Unlocked,
+      count: layer2Unlocked ? max(1, layer2Count) : 0,
       fireCooldownRemaining: 0,
       projectileType: coreProjectile,
-      payloadType: PayloadType.none,
+      payloadType: corePayload,
       affinity: coreAffinity,
-      sourceSummary: '${mode.label} event relay',
+      sourceSummary: '$eventLabel event relay',
     );
 
     for (var slotIndex = 0; slotIndex < slotCount; slotIndex += 1) {
+      if (slotIndex >= normalizedBuiltSlots || towerLoadout.isEmpty) {
+        _slots[slotIndex] = OuterTowerState(slotIndex: slotIndex);
+        continue;
+      }
       final config = towerLoadout[slotIndex % towerLoadout.length];
       _slots[slotIndex] =
           _buildRolledTowerState(
@@ -106,9 +222,10 @@ extension LightcoreControllerSaveTournamentCloud on LightcoreController {
             config: config,
             investedLumens: config.buildCost,
           ).copyWith(
-            level: towerLevel,
+            level: normalizedTowerLevel,
             charge: 1,
             cooldownRemaining: 0,
+            automationCooldownRemaining: 0,
             fabricationTotalSeconds: 0,
             fabricationRemainingSeconds: 0,
           );
@@ -141,9 +258,8 @@ extension LightcoreControllerSaveTournamentCloud on LightcoreController {
       _forceTournamentBossCard(bossDraft);
       _activeBossEnemyCardId = bossDraft.config.id;
       activeLayer.activeBossEnemyCardId = bossDraft.config.id;
-      activeLayer.bossReady = mode == LightcoreTournamentModeId.arenaFlow;
-      activeLayer.normalKillsSinceBoss =
-          mode == LightcoreTournamentModeId.arenaFlow
+      activeLayer.bossReady = spawnBossImmediately;
+      activeLayer.normalKillsSinceBoss = spawnBossImmediately
           ? bossSpawnKillRequirement
           : 0;
     }
@@ -169,6 +285,67 @@ extension LightcoreControllerSaveTournamentCloud on LightcoreController {
     _updateFlowEfficiency();
     _storeActiveLayer();
     _notifyNow();
+  }
+
+  void _installEventCoreManager({
+    required String eventLabel,
+    required PrototypeAffinity affinity,
+    required ProjectileType projectileType,
+    required PayloadType payloadType,
+  }) {
+    _cards = _cards
+        .where((card) => !card.instanceId.startsWith('event_core_manager_'))
+        .toList(growable: true);
+    final template = CardLibrary.templates.first;
+    _cards.add(
+      InventoryCard(
+        instanceId:
+            'event_core_manager_${eventLabel.toLowerCase().replaceAll(' ', '_')}',
+        config: template,
+        rarity: ManagerRarity.legendary,
+        forgeCost: 0,
+        powerMultiplier: 1.18,
+        chargeMultiplier: 1.22,
+        cooldownMultiplier: 0.84,
+        advantageMultiplier: 1.10,
+        automationRate: 2.8,
+        primaryTraitLabel: '$eventLabel automation',
+        secondaryTraitLabel: 'Predetermined tower pilot',
+        favoredAffinity: affinity,
+        projectileFocus: projectileType,
+        payloadFocus: payloadType == PayloadType.none ? null : payloadType,
+        equippedLayerId: activeLayer.id,
+      ),
+    );
+  }
+
+  List<TowerConfig> _dailyDungeonTowerLoadout(
+    int towerLevel, {
+    bool prismRift = false,
+  }) {
+    const threatDirectorLoadout = <TowerConfig>[
+      TowerLibrary.whitePrism,
+      TowerLibrary.redPrism,
+      TowerLibrary.orangePrism,
+      TowerLibrary.yellowPrism,
+      TowerLibrary.greenPrism,
+      TowerLibrary.cyanPrism,
+      TowerLibrary.purplePrism,
+    ];
+    const prismRiftLoadout = <TowerConfig>[
+      TowerLibrary.purplePrism,
+      TowerLibrary.cyanPrism,
+      TowerLibrary.whitePrism,
+      TowerLibrary.yellowPrism,
+      TowerLibrary.greenPrism,
+      TowerLibrary.redPrism,
+    ];
+    final source = prismRift ? prismRiftLoadout : threatDirectorLoadout;
+    final offset = max(0, towerLevel - 1) % source.length;
+    return <TowerConfig>[
+      for (var index = 0; index < slotCount; index += 1)
+        source[(offset + index) % source.length],
+    ];
   }
 
   Map<String, dynamic> buildCloudSavePayload() {

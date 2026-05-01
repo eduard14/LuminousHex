@@ -405,11 +405,19 @@ class _DungeonResultPanel extends StatelessWidget {
     required this.victory,
     required this.towerLevel,
     required this.onExit,
+    this.successTitle,
+    this.failureTitle,
+    this.successMessage,
+    this.failureMessage,
   });
 
   final bool victory;
   final int towerLevel;
   final VoidCallback onExit;
+  final String? successTitle;
+  final String? failureTitle;
+  final String? successMessage;
+  final String? failureMessage;
 
   @override
   Widget build(BuildContext context) {
@@ -431,15 +439,19 @@ class _DungeonResultPanel extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             Text(
-              victory ? 'Tower Cleared' : 'Run Expired',
+              victory
+                  ? successTitle ?? 'Tower Cleared'
+                  : failureTitle ?? 'Run Expired',
               style: Theme.of(context).textTheme.titleLarge,
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 6),
             Text(
               victory
-                  ? 'Threat Director Lv $towerLevel is broken. The next level is ready from the dungeon menu.'
-                  : 'Threat Director Lv $towerLevel held. Upgrade anomalies or change the loadout before the next run.',
+                  ? successMessage ??
+                        'Threat Director Lv $towerLevel is broken. The next level is ready from the dungeon menu.'
+                  : failureMessage ??
+                        'Threat Director Lv $towerLevel held. Upgrade anomalies or change the loadout before the next run.',
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: LightcorePalette.mist.withValues(alpha: 0.78),

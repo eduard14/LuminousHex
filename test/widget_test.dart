@@ -768,7 +768,7 @@ void main() {
     await tester.pump();
     await tester.tap(find.text('Enter Lv 1'));
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 320));
+    await tester.pump(const Duration(milliseconds: 620));
 
     expect(find.text('Threat Director Lv 1'), findsOneWidget);
     expect(
@@ -784,7 +784,7 @@ void main() {
     expect(find.byTooltip('Open Menu'), findsNothing);
   });
 
-  testWidgets('prism rift dungeon opens manual aim run screen', (tester) async {
+  testWidgets('prism rift dungeon opens battle run screen', (tester) async {
     final controller = LightcoreController();
     addTearDown(controller.dispose);
     controller.experience = LightcoreController.experienceForOverallLevel(
@@ -816,7 +816,7 @@ void main() {
     await tester.pump();
     await tester.tap(find.text('Enter Rift Lv 1'));
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 320));
+    await tester.pump(const Duration(milliseconds: 620));
 
     expect(find.text('Prism Rift Lv 1'), findsOneWidget);
     expect(
@@ -826,10 +826,9 @@ void main() {
       findsOneWidget,
     );
     expect(find.byTooltip('Back to dungeons'), findsOneWidget);
-    expect(find.byTooltip('Aim'), findsOneWidget);
-    expect(find.byTooltip('Fire rift shot'), findsOneWidget);
-    expect(find.text('Charge'), findsOneWidget);
-    expect(find.text('Heat'), findsOneWidget);
+    expect(find.text('Ready'), findsOneWidget);
+    expect(find.textContaining('clears'), findsOneWidget);
+    expect(find.textContaining('% core'), findsOneWidget);
     expect(find.byTooltip('Open Menu'), findsNothing);
   });
 

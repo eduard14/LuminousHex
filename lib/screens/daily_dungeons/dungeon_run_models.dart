@@ -60,6 +60,476 @@ class _DungeonRaid {
   }
 }
 
+enum _DailyDungeonBattleRoute { threatDirector, prismRift }
+
+class _DailyDungeonBattleRunScreen extends StatefulWidget {
+  const _DailyDungeonBattleRunScreen({
+    required this.route,
+    required this.controller,
+    required this.towerLevel,
+    required this.anomalyCards,
+    required this.apexCard,
+    required this.runSeed,
+  });
+
+  final _DailyDungeonBattleRoute route;
+  final LightcoreController controller;
+  final int towerLevel;
+  final List<EnemyCardState> anomalyCards;
+  final EnemyCardState? apexCard;
+  final int runSeed;
+
+  @override
+  State<_DailyDungeonBattleRunScreen> createState() =>
+      _DailyDungeonBattleRunScreenState();
+}
+
+class _DailyDungeonBattleRunScreenState
+    extends State<_DailyDungeonBattleRunScreen> {
+  static const Duration _timeLimit = Duration(seconds: 45);
+  static const Duration _tickRate = Duration(milliseconds: 100);
+
+  late final LightcoreDailyDungeonTowerProfile _towerProfile;
+  late final LightcoreController _battleController;
+  late final int _startingKills;
+  late final int _targetKills;
+  Timer? _timer;
+  double _remainingSeconds = _timeLimit.inSeconds.toDouble();
+  bool _running = true;
+  bool _victory = false;
+  bool _expired = false;
+  bool _resultHandled = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _towerProfile = widget.controller.dailyDungeonTowerProfileForLevel(
+      widget.towerLevel,
+    );
+    _battleController = _createBattleController();
+    switch (widget.route) {
+      case _DailyDungeonBattleRoute.threatDirector:
+        _battleController.configureThreatDirectorDungeonBattle(
+          towerLevel: widget.towerLevel,
+          enemyDraft: widget.anomalyCards,
+          bossDraft: widget.apexCard,
+        );
+        break;
+      case _DailyDungeonBattleRoute.prismRift:
+        _battleController.configurePrismRiftDungeonBattle(
+          towerLevel: widget.towerLevel,
+          enemyDraft: widget.anomalyCards,
+        );
+        break;
+    }
+    _startingKills = _battleController.kills;
+    _targetKills = _battleKillTarget();
+    _timer = Timer.periodic(_tickRate, (_) => _advanceRun());
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    _battleController.dispose();
+    super.dispose();
+  }
+
+  LightcoreController _createBattleController() {
+    final seed = widget.runSeed + (widget.route.index * 1009);
+    return LightcoreController(
+      packRandom: math.Random(seed + 1),
+      traitRandom: math.Random(seed + 2),
+      managerRandom: math.Random(seed + 3),
+      spawnRandom: math.Random(seed + 4),
+      guideProfile: widget.controller.guideProfile,
+      playerId:
+          '${widget.controller.playerId}-DUNGEON-${widget.route.name.toUpperCase()}',
+      screenName: widget.controller.screenName,
+      graphicsQuality: widget.controller.graphicsQuality,
+    );
+  }
+
+  int _battleKillTarget() {
+    final anomalyPressure = math.max(1, widget.anomalyCards.length) * 2;
+    final apexPressure = widget.apexCard == null ? 0 : 4;
+    final routePressure = widget.route == _DailyDungeonBattleRoute.prismRift
+        ? 3
+        : 0;
+    return (7 +
+            widget.towerLevel +
+            anomalyPressure +
+            apexPressure +
+            routePressure)
+        .clamp(8, 42)
+        .toInt();
+  }
+
+  String get _title => switch (widget.route) {
+    _DailyDungeonBattleRoute.threatDirector =>
+      'Threat Director Lv ${widget.towerLevel}',
+    _DailyDungeonBattleRoute.prismRift => 'Prism Rift Lv ${widget.towerLevel}',
+  };
+
+  Color get _tint => switch (widget.route) {
+    _DailyDungeonBattleRoute.threatDirector => LightcorePalette.warning,
+    _DailyDungeonBattleRoute.prismRift => LightcorePalette.violet,
+  };
+
+  IconData get _icon => switch (widget.route) {
+    _DailyDungeonBattleRoute.threatDirector => Icons.account_tree_rounded,
+    _DailyDungeonBattleRoute.prismRift => Icons.terrain_rounded,
+  };
+
+  int get _runKills => math.max(0, _battleController.kills - _startingKills);
+
+  double get _timeProgress =>
+      (_remainingSeconds / _timeLimit.inSeconds).clamp(0.0, 1.0).toDouble();
+
+  double get _coreIntegrity =>
+      (_battleController.coreState.coreStability / 100).clamp(0.0, 1.0);
+
+  void _advanceRun() {
+    if (!_running || !mounted) {
+      return;
+    }
+    final nextRemaining = math.max(
+      0.0,
+      _remainingSeconds - (_tickRate.inMilliseconds / 1000),
+    );
+    final cleared = _runKills >= _targetKills;
+    final collapsed = _battleController.coreState.coreStability <= 0.5;
+    final expired = !cleared && nextRemaining <= 0;
+    setState(() {
+      _remainingSeconds = nextRemaining;
+    });
+    if (cleared || collapsed || expired) {
+      _finishRun(cleared: cleared);
+    }
+  }
+
+  void _finishRun({required bool cleared}) {
+    if (!_running || !mounted) {
+      return;
+    }
+    _timer?.cancel();
+    setState(() {
+      _running = false;
+      _victory = cleared;
+      _expired = !cleared;
+    });
+    _handleRunEnded(cleared: cleared);
+  }
+
+  void _exitRun() {
+    _timer?.cancel();
+    Navigator.of(context).pop(_DungeonRunResult(cleared: _victory));
+  }
+
+  void _handleRunEnded({required bool cleared}) {
+    if (_resultHandled || !mounted) {
+      return;
+    }
+    _resultHandled = true;
+    LightcoreDailyDungeonReward? reward;
+    if (cleared) {
+      reward = widget.controller.clearDailyDungeonTowerLevel(
+        widget.towerLevel,
+        showBanner: false,
+      );
+    }
+    final nextLevel = widget.controller.dailyDungeonHighestUnlockedTowerLevel;
+    final clearVerb = widget.route == _DailyDungeonBattleRoute.prismRift
+        ? 'stabilized'
+        : 'cleared';
+    final failVerb = widget.route == _DailyDungeonBattleRoute.prismRift
+        ? 'collapsed'
+        : 'expired';
+    final clearMessage = reward != null && reward.hasRewards
+        ? '$_title $clearVerb: ${reward.label}. Lv $nextLevel unlocked.'
+        : '$_title $clearVerb. Lv $nextLevel is ready.';
+    widget.controller.pushNotification(
+      cleared
+          ? clearMessage
+          : '$_title $failVerb. Upgrade the tower ladder or change the anomaly draft.',
+      duration: 3.2,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: LightcorePalette.night,
+      body: SafeArea(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final compact =
+                constraints.maxWidth < 720 || constraints.maxHeight < 720;
+            final inset = compact ? 8.0 : 12.0;
+            return DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    LightcorePalette.night,
+                    LightcorePalette.abyss,
+                    Color.lerp(LightcorePalette.abyss, _tint, 0.18)!,
+                  ],
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                ),
+              ),
+              child: Stack(
+                children: [
+                  Positioned.fill(
+                    child: BattleScreen(
+                      controller: _battleController,
+                      isActive: _running,
+                      showQuestPanel: false,
+                      showBattleHud: false,
+                    ),
+                  ),
+                  Positioned(
+                    top: inset,
+                    left: compact ? 10 : 16,
+                    right: compact ? 10 : 16,
+                    child: _DailyDungeonBattleTopBar(
+                      title: _title,
+                      icon: _icon,
+                      tint: _tint,
+                      remainingSeconds: _remainingSeconds,
+                      timeProgress: _timeProgress,
+                      coreIntegrity: _coreIntegrity,
+                      onExit: _exitRun,
+                    ),
+                  ),
+                  Positioned(
+                    left: compact ? 10 : 16,
+                    right: compact ? 10 : 16,
+                    bottom: inset,
+                    child: _DailyDungeonBattleStatusDock(
+                      tint: _tint,
+                      compact: compact,
+                      towerProfile: _towerProfile,
+                      anomalyCards: widget.anomalyCards,
+                      apexCard: widget.apexCard,
+                      runKills: _runKills,
+                      targetKills: _targetKills,
+                      coreIntegrity: _coreIntegrity,
+                      running: _running,
+                    ),
+                  ),
+                  if (!_running)
+                    Positioned.fill(
+                      child: Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(18),
+                          child: _DungeonResultPanel(
+                            victory: _victory,
+                            towerLevel: widget.towerLevel,
+                            successTitle:
+                                widget.route ==
+                                    _DailyDungeonBattleRoute.prismRift
+                                ? 'Rift Stabilized'
+                                : null,
+                            failureTitle: _expired ? 'Run Expired' : null,
+                            successMessage:
+                                '$_title cleared through the battle field. The next level is ready from the dungeon menu.',
+                            failureMessage:
+                                '$_title held. Upgrade anomalies or change the battle loadout before the next run.',
+                            onExit: _exitRun,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+}
+
+class _DailyDungeonBattleTopBar extends StatelessWidget {
+  const _DailyDungeonBattleTopBar({
+    required this.title,
+    required this.icon,
+    required this.tint,
+    required this.remainingSeconds,
+    required this.timeProgress,
+    required this.coreIntegrity,
+    required this.onExit,
+  });
+
+  final String title;
+  final IconData icon;
+  final Color tint;
+  final double remainingSeconds;
+  final double timeProgress;
+  final double coreIntegrity;
+  final VoidCallback onExit;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    return AuroraPanel(
+      tint: tint,
+      radius: 18,
+      padding: const EdgeInsets.fromLTRB(12, 10, 8, 10),
+      child: Row(
+        children: [
+          _IconBadge(icon: icon, tint: tint),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: textTheme.titleMedium,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Text(
+                      '${remainingSeconds.ceil()}s',
+                      style: textTheme.titleMedium?.copyWith(
+                        color: LightcorePalette.aether,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 7),
+                Row(
+                  children: [
+                    Expanded(
+                      child: MeterBar(
+                        value: timeProgress,
+                        color: LightcorePalette.aether,
+                        height: 8,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: MeterBar(
+                        value: coreIntegrity,
+                        color: tint,
+                        height: 8,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          Tooltip(
+            message: 'Back to dungeons',
+            child: IconButton.filledTonal(
+              onPressed: onExit,
+              icon: const Icon(Icons.arrow_back_rounded),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DailyDungeonBattleStatusDock extends StatelessWidget {
+  const _DailyDungeonBattleStatusDock({
+    required this.tint,
+    required this.compact,
+    required this.towerProfile,
+    required this.anomalyCards,
+    required this.apexCard,
+    required this.runKills,
+    required this.targetKills,
+    required this.coreIntegrity,
+    required this.running,
+  });
+
+  final Color tint;
+  final bool compact;
+  final LightcoreDailyDungeonTowerProfile towerProfile;
+  final List<EnemyCardState> anomalyCards;
+  final EnemyCardState? apexCard;
+  final int runKills;
+  final int targetKills;
+  final double coreIntegrity;
+  final bool running;
+
+  @override
+  Widget build(BuildContext context) {
+    final shownCards = anomalyCards.take(3).toList(growable: false);
+    return AuroraPanel(
+      tint: tint,
+      radius: 20,
+      padding: EdgeInsets.symmetric(
+        horizontal: compact ? 10 : 14,
+        vertical: compact ? 8 : 10,
+      ),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: [
+            _InfoChip(
+              icon: running
+                  ? Icons.radio_button_checked_rounded
+                  : Icons.radio_button_unchecked_rounded,
+              label: running ? 'Ready' : 'Done',
+              tint: running
+                  ? LightcorePalette.success
+                  : LightcorePalette.stroke,
+            ),
+            const SizedBox(width: 8),
+            _InfoChip(
+              icon: towerProjectileIcon(towerProfile.projectileType),
+              label:
+                  '${towerProfile.affinity.shortLabel} ${towerProfile.projectileType.label}',
+              tint: towerProfile.affinity.color,
+            ),
+            const SizedBox(width: 8),
+            _InfoChip(
+              icon: Icons.gps_fixed_rounded,
+              label: '$runKills/$targetKills clears',
+              tint: LightcorePalette.aether,
+            ),
+            const SizedBox(width: 8),
+            _InfoChip(
+              icon: Icons.health_and_safety_rounded,
+              label: '${(coreIntegrity * 100).round()}% core',
+              tint: tint,
+            ),
+            for (final card in shownCards) ...[
+              const SizedBox(width: 8),
+              _InfoChip(
+                icon: Icons.blur_on_rounded,
+                label: card.config.affinity.shortLabel,
+                tint: card.config.affinity.color,
+              ),
+            ],
+            const SizedBox(width: 8),
+            _InfoChip(
+              icon: Icons.shield_moon_rounded,
+              label: apexCard == null ? 'No apex' : 'Apex',
+              tint: apexCard == null
+                  ? LightcorePalette.stroke
+                  : LightcorePalette.solar,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _ThreatDirectorDungeonRunScreen extends StatefulWidget {
   const _ThreatDirectorDungeonRunScreen({
     required this.controller,
