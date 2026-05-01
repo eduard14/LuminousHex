@@ -78,11 +78,9 @@ extension LightcoreTournamentModeIdX on LightcoreTournamentModeId {
 
   bool get usesGlobalRating => this == LightcoreTournamentModeId.arenaFlow;
 
-  bool get supportsEnemyDraft =>
-      this == LightcoreTournamentModeId.enemyBlitz ||
-      this == LightcoreTournamentModeId.arenaFlow;
+  bool get supportsEnemyDraft => this == LightcoreTournamentModeId.enemyBlitz;
 
-  bool get supportsBossDraft => this == LightcoreTournamentModeId.arenaFlow;
+  bool get supportsBossDraft => false;
 
   List<String> get rules => switch (this) {
     LightcoreTournamentModeId.enemyBlitz => const <String>[

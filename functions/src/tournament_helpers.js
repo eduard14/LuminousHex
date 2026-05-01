@@ -23,6 +23,16 @@ function createTournamentHelpers({ db, HttpsError, FieldValue, Timestamp, consta
     roundToTwo,
   } = helpers;
   const ARENA_FLOW_SYNTHETIC_PLAYER_COUNT = 14;
+  const ARENA_FLOW_AFFINITIES = Object.freeze([
+    "neutral",
+    "ember",
+    "flare",
+    "solar",
+    "verdant",
+    "aether",
+    "violet",
+    "black",
+  ]);
   const ARENA_FLOW_SYNTHETIC_NAMES = Object.freeze([
     "Nova Relay",
     "Iris Vector",
@@ -213,6 +223,7 @@ function createTournamentHelpers({ db, HttpsError, FieldValue, Timestamp, consta
     ]);
     const realEntries = leaderboardSnap.docs.map((doc) => {
       const data = doc.data() || {};
+      const snapshot = normalizeOptionalTournamentPlayerSnapshot(data.lastSnapshot);
       return {
         displayName: sanitizeString(data.displayName, "Pilot"),
         score: clampInt(
@@ -223,6 +234,7 @@ function createTournamentHelpers({ db, HttpsError, FieldValue, Timestamp, consta
         ),
         globalRating: sanitizeTournamentRating(data.globalRating),
         isPlayer: doc.id === playerUid,
+        ...(snapshot ? { snapshot } : {}),
       };
     });
     const syntheticEntries = buildSyntheticTournamentEntries({
@@ -355,12 +367,45 @@ function createTournamentHelpers({ db, HttpsError, FieldValue, Timestamp, consta
         18,
         Math.round(55 + (botRating - 750) / 6 + scoreRoll * 190),
       );
+      const towerAffinity =
+        ARENA_FLOW_AFFINITIES[
+          positiveHash(`${bucketSeed}:tower-affinity:${index}`) %
+            ARENA_FLOW_AFFINITIES.length
+        ];
+      const enemyAffinity =
+        ARENA_FLOW_AFFINITIES[
+          positiveHash(`${bucketSeed}:enemy-affinity:${index}`) %
+            ARENA_FLOW_AFFINITIES.length
+        ];
+      const towerPowerIndex = clampInt(
+        EVEN_ENTRY_TOURNAMENT_POWER_INDEX +
+          Math.round((botRating - 800) * 18 + scoreRoll * 2400),
+        EVEN_ENTRY_TOURNAMENT_POWER_INDEX,
+        TOURNAMENT_LIMITS.towerPowerIndex,
+        EVEN_ENTRY_TOURNAMENT_POWER_INDEX,
+      );
       return {
         displayName: ARENA_FLOW_SYNTHETIC_NAMES[nameIndex],
         score,
         globalRating: botRating,
         isPlayer: false,
         synthetic: true,
+        snapshot: {
+          overallLevel: EVEN_ENTRY_TOURNAMENT_LEVEL,
+          prestigeLevel: 0,
+          activeLayerTier: Math.max(1, 1 + Math.floor((botRating - 700) / 450)),
+          builtTowerCount: EVEN_ENTRY_TOURNAMENT_BUILT_TOWER_COUNT,
+          coreLevel: Math.max(
+            EVEN_ENTRY_TOURNAMENT_CORE_LEVEL,
+            1 + Math.floor((botRating - 800) / 300),
+          ),
+          towerPowerIndex,
+          towerAffinity,
+          enemyAffinity,
+          enemyCardIds: [],
+          enemyCardLevels: {},
+          bossEnemyLevel: 1,
+        },
       };
     });
   }
@@ -674,7 +719,56 @@ function createTournamentHelpers({ db, HttpsError, FieldValue, Timestamp, consta
         TOURNAMENT_LIMITS.towerPowerIndex,
         EVEN_ENTRY_TOURNAMENT_POWER_INDEX,
       ),
+      towerAffinity: sanitizeTournamentAffinity(value.towerAffinity, "neutral"),
+      enemyAffinity: sanitizeTournamentAffinity(value.enemyAffinity, "neutral"),
+      enemyCardIds: sanitizeTournamentStringList(value.enemyCardIds, 6),
+      enemyCardLevels: sanitizeTournamentLevelMap(
+        value.enemyCardLevels,
+        value.enemyCardIds,
+      ),
+      bossEnemyCardId: sanitizeOptionalString(value.bossEnemyCardId),
+      bossEnemyLevel: clampInt(value.bossEnemyLevel, 1, 1000, 1),
     };
+  }
+
+  function normalizeOptionalTournamentPlayerSnapshot(value) {
+    if (!value || typeof value !== "object") {
+      return null;
+    }
+    return normalizeTournamentPlayerSnapshot(value);
+  }
+
+  function sanitizeTournamentAffinity(value, fallback) {
+    const key = sanitizeString(value, "");
+    return ARENA_FLOW_AFFINITIES.includes(key) ? key : fallback;
+  }
+
+  function sanitizeTournamentStringList(value, limit) {
+    if (!Array.isArray(value)) {
+      return [];
+    }
+    const unique = [];
+    for (const item of value) {
+      const key = sanitizeString(item, "").slice(0, 96);
+      if (key && !unique.includes(key)) {
+        unique.push(key);
+      }
+      if (unique.length >= limit) {
+        break;
+      }
+    }
+    return unique;
+  }
+
+  function sanitizeTournamentLevelMap(value, ids) {
+    if (!value || typeof value !== "object") {
+      return {};
+    }
+    const normalizedIds = sanitizeTournamentStringList(ids, 6);
+    return normalizedIds.reduce((levels, id) => {
+      levels[id] = clampInt(value[id], 1, 1000, 1);
+      return levels;
+    }, {});
   }
 
   function sanitizeTournamentSubmittedScore(mode, value, snapshot) {

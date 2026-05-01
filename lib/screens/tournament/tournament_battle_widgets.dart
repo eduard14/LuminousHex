@@ -522,13 +522,11 @@ class _ArenaFlowDuelPainter extends CustomPainter {
   }) {
     final lanes = active ? 12 : 8;
     for (var lane = 0; lane < lanes; lane += 1) {
-      final laneAngle =
-          (-pi / 2) +
-          (lane * pi * 2 / lanes) +
-          (mirrored ? pi / lanes : 0) +
-          (sin((progress * pi * 2) + lane) * 0.025);
-      final start = Offset(cos(laneAngle), sin(laneAngle)) * radius;
-      final end = Offset(cos(laneAngle), sin(laneAngle)) * targetRadius;
+      final laneRatio = lanes <= 1 ? 0.0 : lane / (lanes - 1);
+      final sideBias = mirrored ? -0.08 : 0.08;
+      final laneX = ((laneRatio - 0.5) * radius * 1.48) + (radius * sideBias);
+      final start = Offset(laneX, -radius);
+      final end = Offset(laneX * 0.08, -targetRadius);
       canvas.drawLine(
         start,
         end,
@@ -544,6 +542,7 @@ class _ArenaFlowDuelPainter extends CustomPainter {
         final position = Offset.lerp(start, end, eased)!;
         final packetRadius = 3.6 + ((lane + packet) % 3) * 1.1;
         final tail = Offset.lerp(position, start, 0.14)!;
+        final laneAngle = atan2(end.dy - start.dy, end.dx - start.dx);
         canvas.drawLine(
           tail,
           position,

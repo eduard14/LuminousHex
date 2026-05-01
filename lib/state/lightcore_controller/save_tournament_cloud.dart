@@ -105,14 +105,16 @@ extension LightcoreControllerSaveTournamentCloud on LightcoreController {
         continue;
       }
       final sourceSlot = homeLayer.slots[slotIndex];
-      _slots[slotIndex] = sourceSlot.copyForSlot(slotIndex).copyWith(
-        charge: max(0.35, min(1.0, sourceSlot.charge)),
-        cooldownRemaining: 0,
-        automationCooldownRemaining: 0,
-        disruption: 0,
-        fabricationTotalSeconds: 0,
-        fabricationRemainingSeconds: 0,
-      );
+      _slots[slotIndex] = sourceSlot
+          .copyForSlot(slotIndex)
+          .copyWith(
+            charge: max(0.35, min(1.0, sourceSlot.charge)),
+            cooldownRemaining: 0,
+            automationCooldownRemaining: 0,
+            disruption: 0,
+            fabricationTotalSeconds: 0,
+            fabricationRemainingSeconds: 0,
+          );
     }
 
     final builtSlots = _slots.where(_slotCountsTowardRing).length;

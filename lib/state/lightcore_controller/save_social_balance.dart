@@ -282,9 +282,9 @@ extension LightcoreControllerSaveSocialBalance on LightcoreController {
       towerAffinity: homeTowerAffinity ?? homeLayer.core.affinity,
       enemyAffinity:
           _dominantThreatAffinity(enemyDeck) ?? PrototypeAffinity.neutral,
-      enemyCardIds: enemyDeck.map((card) => card.config.id).toList(
-        growable: false,
-      ),
+      enemyCardIds: enemyDeck
+          .map((card) => card.config.id)
+          .toList(growable: false),
       enemyCardLevels: <String, int>{
         for (final card in enemyDeck) card.config.id: card.level,
       },

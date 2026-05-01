@@ -44,8 +44,6 @@ class _TournamentModeDetailScreenState
   Timer? _ticker;
 
   final Set<String> _selectedBlitzEnemyIds = <String>{};
-  final Set<String> _selectedArenaEnemyIds = <String>{};
-  String? _selectedArenaBossId;
 
   double _elapsedSeconds = 0;
   double _score = 0;
@@ -132,8 +130,6 @@ class _TournamentModeDetailScreenState
       _score = 0;
       _hint = 'Build your event loadout and enter the bracket.';
       _selectedBlitzEnemyIds.clear();
-      _selectedArenaEnemyIds.clear();
-      _selectedArenaBossId = null;
       _gauntletLaneIntegrity = List<double>.filled(
         LightcoreController.slotCount,
         1,
@@ -285,20 +281,6 @@ class _TournamentModeDetailScreenState
     }, growable: false);
   }
 
-  List<EnemyCardState> get _availableBossCards {
-    return BossEnemyLibrary.all
-        .take(4)
-        .map(
-          (config) => EnemyCardState(
-            config: config,
-            unlocked: true,
-            copies: 1,
-            level: 1 + config.rarity.index,
-          ),
-        )
-        .toList(growable: false);
-  }
-
   int get _eventEnemyRarityLimit {
     final seed = _eventSeed;
     if (seed >= 500000000) {
@@ -375,43 +357,10 @@ class _TournamentModeDetailScreenState
         _selectedBlitzEnemyIds.add(enemyCards.first.config.id);
       }
     }
-
-    if (_selectedArenaEnemyIds.isEmpty) {
-      for (final card in enemyCards.take(2)) {
-        _selectedArenaEnemyIds.add(card.config.id);
-      }
-    } else {
-      _selectedArenaEnemyIds.removeWhere(
-        (id) => !enemyCards.any((card) => card.config.id == id),
-      );
-      if (_selectedArenaEnemyIds.isEmpty && enemyCards.isNotEmpty) {
-        _selectedArenaEnemyIds.add(enemyCards.first.config.id);
-      }
-    }
-
-    final bossCards = _availableBossCards;
-    if (_selectedArenaBossId == null ||
-        !bossCards.any((card) => card.config.id == _selectedArenaBossId)) {
-      _selectedArenaBossId = bossCards.isEmpty
-          ? null
-          : bossCards.first.config.id;
-    }
   }
 
   EnemyCardState? _enemyCardById(String id) {
     for (final card in _availableEnemyCards) {
-      if (card.config.id == id) {
-        return card;
-      }
-    }
-    return null;
-  }
-
-  EnemyCardState? _bossCardById(String? id) {
-    if (id == null) {
-      return null;
-    }
-    for (final card in _availableBossCards) {
       if (card.config.id == id) {
         return card;
       }
@@ -460,10 +409,179 @@ class _TournamentModeDetailScreenState
   }
 
   double get _arenaRivalPower =>
-      (_eventSeed * (0.9 + ((_arenaRivalRating - 1000) / 5000))).clamp(
-        LightcoreController.evenEntryTournamentPowerIndex.toDouble(),
-        LightcoreController.tournamentPowerIndexCap.toDouble(),
+      (_arenaRivalSnapshot?.towerPowerIndex.toDouble() ??
+              (_eventSeed * (0.9 + ((_arenaRivalRating - 1000) / 5000))))
+          .clamp(
+            LightcoreController.evenEntryTournamentPowerIndex.toDouble(),
+            LightcoreController.tournamentPowerIndexCap.toDouble(),
+          );
+
+  LightcoreTournamentPlayerSnapshot? get _arenaRivalSnapshot =>
+      _arenaRivalEntry?.snapshot;
+
+  List<EnemyCardState> get _arenaPlayerEnemyStack {
+    final deck = widget.controller.activeEnemyDeck;
+    if (deck.isNotEmpty) {
+      return deck;
+    }
+    return <EnemyCardState>[
+      EnemyCardState(
+        config: EnemyLibrary.basicWhite,
+        unlocked: true,
+        copies: 1,
+        level: 1,
+      ),
+    ];
+  }
+
+  EnemyCardState? get _arenaPlayerBoss => widget.controller.activeBossEnemyCard;
+
+  List<EnemyCardState> get _arenaRivalEnemyStack {
+    final snapshot = _arenaRivalSnapshot;
+    if (snapshot != null && snapshot.enemyCardIds.isNotEmpty) {
+      final cards = snapshot.enemyCardIds
+          .map((id) {
+            final config = _enemyConfigById(id);
+            if (config == null) {
+              return null;
+            }
+            return _arenaEnemyState(config, snapshot.enemyCardLevels[id] ?? 1);
+          })
+          .whereType<EnemyCardState>()
+          .toList(growable: false);
+      if (cards.isNotEmpty) {
+        return cards;
+      }
+    }
+    return _syntheticArenaEnemyStack();
+  }
+
+  EnemyCardState? get _arenaRivalBoss {
+    final snapshot = _arenaRivalSnapshot;
+    final bossId = snapshot?.bossEnemyCardId;
+    if (bossId == null) {
+      return null;
+    }
+    final config = _enemyConfigById(bossId, boss: true);
+    if (config == null) {
+      return null;
+    }
+    return _arenaEnemyState(config, snapshot?.bossEnemyLevel ?? 1);
+  }
+
+  EnemyConfig? _enemyConfigById(String id, {bool boss = false}) {
+    final configs = boss ? BossEnemyLibrary.all : EnemyLibrary.all;
+    for (final config in configs) {
+      if (config.id == id) {
+        return config;
+      }
+    }
+    return null;
+  }
+
+  EnemyCardState _arenaEnemyState(EnemyConfig config, int level) {
+    return EnemyCardState(
+      config: config,
+      unlocked: true,
+      copies: 1,
+      level: level.clamp(1, config.rarity.levelCap).toInt(),
+    );
+  }
+
+  List<EnemyCardState> _syntheticArenaEnemyStack() {
+    final seed =
+        (_arenaRivalRating.round() * 31) + widget.modeState.seedPowerIndex;
+    final pool = EnemyLibrary.all.isEmpty
+        ? <EnemyConfig>[EnemyLibrary.basicWhite]
+        : EnemyLibrary.all;
+    final count = _arenaRivalRating >= 1200 ? 2 : 1;
+    return List<EnemyCardState>.generate(count, (index) {
+      final config = pool[(seed + (index * 5)).abs() % pool.length];
+      final level = (1 + ((_arenaRivalRating - 800) / 260).floor()).clamp(
+        1,
+        config.rarity.levelCap,
       );
+      return _arenaEnemyState(config, level.toInt());
+    }, growable: false);
+  }
+
+  PrototypeAffinity get _arenaPlayerTowerAffinity =>
+      widget.controller.homeTowerAffinity ??
+      widget.controller.homeTowerLayer.core.affinity;
+
+  PrototypeAffinity get _arenaRivalTowerAffinity =>
+      _arenaRivalSnapshot?.towerAffinity ??
+      PrototypeAffinity.values[_arenaRivalRating.round().abs() %
+          PrototypeAffinity.values.length];
+
+  PrototypeAffinity get _arenaPlayerEnemyAffinity =>
+      _dominantArenaEnemyAffinity(_arenaPlayerEnemyStack) ??
+      PrototypeAffinity.neutral;
+
+  PrototypeAffinity get _arenaRivalEnemyAffinity =>
+      _arenaRivalSnapshot?.enemyAffinity ??
+      _dominantArenaEnemyAffinity(_arenaRivalEnemyStack) ??
+      PrototypeAffinity.neutral;
+
+  PrototypeAffinity? _dominantArenaEnemyAffinity(List<EnemyCardState> deck) {
+    if (deck.isEmpty) {
+      return null;
+    }
+    final scores = <PrototypeAffinity, int>{};
+    for (final card in deck) {
+      for (final affinity in card.config.affinities) {
+        scores.update(affinity, (score) => score + 1, ifAbsent: () => 1);
+      }
+    }
+    PrototypeAffinity? dominant;
+    var dominantScore = 0;
+    for (final entry in scores.entries) {
+      if (dominant == null || entry.value > dominantScore) {
+        dominant = entry.key;
+        dominantScore = entry.value;
+      }
+    }
+    return dominant;
+  }
+
+  double _averageEnemyLevelForCards(List<EnemyCardState> cards) {
+    if (cards.isEmpty) {
+      return 1;
+    }
+    return cards.fold<double>(0, (sum, card) => sum + card.level) /
+        cards.length;
+  }
+
+  double get _arenaPlayerTowerIntegrity =>
+      (1 -
+              (_arenaPlayerDamageTaken /
+                  max(180.0, sqrt(widget.controller.homeTowerPowerIndex) * 8)))
+          .clamp(0.0, 1.0)
+          .toDouble();
+
+  double get _arenaRivalTowerIntegrity =>
+      (1 - (_arenaRivalDamageTaken / max(180.0, sqrt(_arenaRivalPower) * 8)))
+          .clamp(0.0, 1.0)
+          .toDouble();
+
+  String get _arenaPlayerTowerLabel =>
+      '${widget.controller.homeTowerLabel} • ${widget.controller.homeTowerLayerLabel}';
+
+  String get _arenaRivalTowerLabel {
+    final snapshot = _arenaRivalSnapshot;
+    if (snapshot == null) {
+      return '${_arenaRivalTowerAffinity.label} Rival Tower';
+    }
+    return '${snapshot.towerAffinity.label} L${snapshot.activeLayerTier} Tower';
+  }
+
+  int get _arenaBattleEnemyPressure {
+    final rivalEnemies = _arenaRivalEnemyStack;
+    return 8 +
+        rivalEnemies.length +
+        (_arenaRivalBoss == null ? 0 : 4) +
+        (_enemyDraftThreatScore(rivalEnemies) / 10).round();
+  }
 
   LightcoreTournamentLeaderboardEntry? get _arenaRivalEntry {
     for (final entry in widget.modeState.leaderboard) {
@@ -480,15 +598,11 @@ class _TournamentModeDetailScreenState
     ),
     LightcoreTournamentModeId.hexGauntlet =>
       _availableEnemyCards.take(3).toList(growable: false),
-    LightcoreTournamentModeId.arenaFlow => _selectedEnemyCards(
-      _selectedArenaEnemyIds,
-    ),
+    LightcoreTournamentModeId.arenaFlow => _arenaRivalEnemyStack,
   };
 
   EnemyCardState? get _battleBossDraft =>
-      _mode == LightcoreTournamentModeId.arenaFlow
-      ? _bossCardById(_selectedArenaBossId)
-      : null;
+      _mode == LightcoreTournamentModeId.arenaFlow ? _arenaRivalBoss : null;
 
   int get _battleTowerTier => switch (_mode) {
     LightcoreTournamentModeId.enemyBlitz => _blitzTowerTier,
@@ -506,16 +620,20 @@ class _TournamentModeDetailScreenState
                   8)
               .round(),
     LightcoreTournamentModeId.hexGauntlet => 8 + (_gauntletWave ~/ 2),
-    LightcoreTournamentModeId.arenaFlow =>
-      8 +
-          _selectedArenaEnemyIds.length +
-          (_selectedArenaBossId == null ? 0 : 4) +
-          (_enemyDraftThreatScore(_selectedEnemyCards(_selectedArenaEnemyIds)) /
-                  10)
-              .round(),
+    LightcoreTournamentModeId.arenaFlow => _arenaBattleEnemyPressure,
   };
 
   void _syncBattleController() {
+    if (_mode == LightcoreTournamentModeId.arenaFlow) {
+      _battleController.configureArenaFlowBattleFromHomeTower(
+        source: widget.controller,
+        seedPowerIndex: widget.modeState.seedPowerIndex,
+        enemyDraft: _arenaRivalEnemyStack,
+        bossDraft: _arenaRivalBoss,
+        enemyPressure: _battleEnemyPressure,
+      );
+      return;
+    }
     _battleController.configureTournamentBattle(
       mode: _mode,
       seedPowerIndex: widget.modeState.seedPowerIndex,
@@ -750,27 +868,41 @@ class _TournamentModeDetailScreenState
         }
         break;
       case LightcoreTournamentModeId.arenaFlow:
-        final draftedLevels = _averageEnemyLevel(_selectedArenaEnemyIds);
-        final draftedEnemies = _selectedEnemyCards(_selectedArenaEnemyIds);
-        final draftThreat = _enemyDraftThreatScore(draftedEnemies);
-        final bossCard = _bossCardById(_selectedArenaBossId);
-        final bossLevel = bossCard?.level ?? 1;
-        final bossThreat = bossCard == null
+        final playerEnemies = _arenaPlayerEnemyStack;
+        final playerDraftedLevels = _averageEnemyLevelForCards(playerEnemies);
+        final playerDraftThreat = _enemyDraftThreatScore(playerEnemies);
+        final playerBossCard = _arenaPlayerBoss;
+        final playerBossLevel = playerBossCard?.level ?? 1;
+        final playerBossThreat = playerBossCard == null
             ? 0.0
-            : _enemyCardTournamentThreat(bossCard);
+            : _enemyCardTournamentThreat(playerBossCard);
+        final rivalEnemies = _arenaRivalEnemyStack;
+        final rivalDraftedLevels = _averageEnemyLevelForCards(rivalEnemies);
+        final rivalDraftThreat = _enemyDraftThreatScore(rivalEnemies);
+        final rivalBossCard = _arenaRivalBoss;
+        final rivalBossLevel = rivalBossCard?.level ?? 1;
+        final rivalBossThreat = rivalBossCard == null
+            ? 0.0
+            : _enemyCardTournamentThreat(rivalBossCard);
         _arenaOverclockCharge =
             (_arenaOverclockCharge + dt * (0.22 + (_arenaRelayScore * 0.0025)))
                 .clamp(0.0, 1.4);
         _arenaBurstSeconds = max(0, _arenaBurstSeconds - dt);
         final playerThreat =
             34 +
-            (draftedLevels * 3.8) +
-            (draftThreat * 4.6) +
-            (bossLevel * 6.2) +
-            (bossThreat * 1.9);
+            (playerEnemies.length * 3.4) +
+            (playerDraftedLevels * 3.8) +
+            (playerDraftThreat * 4.6) +
+            (playerBossLevel * 6.2) +
+            (playerBossThreat * 1.9);
         final rivalThreat =
             35 +
-            (_arenaRivalRating / 38) +
+            (rivalEnemies.length * 3.2) +
+            (rivalDraftedLevels * 3.7) +
+            (rivalDraftThreat * 4.5) +
+            (rivalBossLevel * 5.8) +
+            (rivalBossThreat * 1.8) +
+            (_arenaRivalRating / 55) +
             (widget.modeState.leaderboard
                     .take(3)
                     .fold<double>(
@@ -873,35 +1005,6 @@ class _TournamentModeDetailScreenState
           ..add(id);
       }
     });
-    _syncBattleController();
-  }
-
-  void _toggleArenaEnemy(String id) {
-    if (_runActive) {
-      return;
-    }
-    setState(() {
-      if (_selectedArenaEnemyIds.contains(id)) {
-        if (_selectedArenaEnemyIds.length > 1) {
-          _selectedArenaEnemyIds.remove(id);
-        }
-      } else if (_selectedArenaEnemyIds.length < 2) {
-        _selectedArenaEnemyIds.add(id);
-      } else {
-        final first = _selectedArenaEnemyIds.first;
-        _selectedArenaEnemyIds
-          ..remove(first)
-          ..add(id);
-      }
-    });
-    _syncBattleController();
-  }
-
-  void _selectArenaBoss(String id) {
-    if (_runActive) {
-      return;
-    }
-    setState(() => _selectedArenaBossId = id);
     _syncBattleController();
   }
 
@@ -1303,6 +1406,8 @@ class _TournamentModeDetailScreenState
   }
 
   Widget _buildArenaFlowPrep(BuildContext context, Color tint) {
+    final playerEnemies = _arenaPlayerEnemyStack;
+    final playerBoss = _arenaPlayerBoss;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1325,13 +1430,13 @@ class _TournamentModeDetailScreenState
             _HeaderChip(
               label: 'Drafted',
               value:
-                  '${_selectedArenaEnemyIds.length}A / ${_selectedArenaBossId == null ? 0 : 1}X',
+                  '${playerEnemies.length}A / ${playerBoss == null ? 0 : 1}X',
             ),
           ],
         ),
         const SizedBox(height: 12),
         Text(
-          'Anomaly Pressure Draft',
+          'Current Enemy Stack',
           style: Theme.of(context).textTheme.titleMedium,
         ),
         const SizedBox(height: 8),
@@ -1339,32 +1444,33 @@ class _TournamentModeDetailScreenState
           spacing: 10,
           runSpacing: 10,
           children: [
-            for (final card in _availableEnemyCards.take(6))
+            for (final card in playerEnemies.take(6))
               _EnemyDraftTile(
                 card: card,
-                selected: _selectedArenaEnemyIds.contains(card.config.id),
+                selected: true,
                 accent: tint,
-                onTap: () => _toggleArenaEnemy(card.config.id),
+                onTap: () {},
               ),
           ],
         ),
-        const SizedBox(height: 12),
-        Text('Apex Draft', style: Theme.of(context).textTheme.titleMedium),
-        const SizedBox(height: 8),
-        Wrap(
-          spacing: 10,
-          runSpacing: 10,
-          children: [
-            for (final boss in _availableBossCards.take(4))
+        if (playerBoss != null) ...[
+          const SizedBox(height: 12),
+          Text('Current Apex', style: Theme.of(context).textTheme.titleMedium),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 10,
+            runSpacing: 10,
+            children: [
               _EnemyDraftTile(
-                card: boss,
-                selected: _selectedArenaBossId == boss.config.id,
+                card: playerBoss,
+                selected: true,
                 accent: tint,
-                onTap: () => _selectArenaBoss(boss.config.id),
+                onTap: () {},
                 boss: true,
               ),
-          ],
-        ),
+            ],
+          ),
+        ],
       ],
     );
   }
@@ -1397,10 +1503,28 @@ class _TournamentModeDetailScreenState
           child: Stack(
             children: [
               Positioned.fill(
-                child: _TournamentBattleStage(
-                  controller: _battleController,
-                  active: _runActive,
-                ),
+                child: _mode == LightcoreTournamentModeId.arenaFlow
+                    ? _ArenaFlowDuelStage(
+                        playerLabel: widget.controller.playerDisplayName,
+                        rivalLabel: _arenaRivalEntry?.displayName ?? 'Rival',
+                        playerTowerLabel: _arenaPlayerTowerLabel,
+                        rivalTowerLabel: _arenaRivalTowerLabel,
+                        playerTowerAffinity: _arenaPlayerTowerAffinity,
+                        rivalTowerAffinity: _arenaRivalTowerAffinity,
+                        playerEnemyAffinity: _arenaPlayerEnemyAffinity,
+                        rivalEnemyAffinity: _arenaRivalEnemyAffinity,
+                        playerEnemyProgress: _arenaPlayerEnemyProgress,
+                        rivalEnemyProgress: _arenaRivalEnemyProgress,
+                        playerTowerIntegrity: _arenaPlayerTowerIntegrity,
+                        rivalTowerIntegrity: _arenaRivalTowerIntegrity,
+                        playerNetDamage: _arenaPlayerNetDamage,
+                        rivalNetDamage: _arenaRivalNetDamage,
+                        active: _runActive,
+                      )
+                    : _TournamentBattleStage(
+                        controller: _battleController,
+                        active: _runActive,
+                      ),
               ),
               Positioned(
                 top: inset,

@@ -45,7 +45,8 @@ void main() {
     expect(LightcoreTournamentModeId.hexGauntlet.usesTowerSeed, isFalse);
     expect(LightcoreTournamentModeId.arenaFlow.usesTowerSeed, isTrue);
     expect(LightcoreTournamentModeId.arenaFlow.usesGlobalRating, isTrue);
-    expect(LightcoreTournamentModeId.arenaFlow.supportsBossDraft, isTrue);
+    expect(LightcoreTournamentModeId.arenaFlow.supportsEnemyDraft, isFalse);
+    expect(LightcoreTournamentModeId.arenaFlow.supportsBossDraft, isFalse);
   });
 
   test('closed events cannot start runs even when joined', () {
@@ -86,6 +87,14 @@ void main() {
     expect(snapshot.builtTowerCount, homeLayerBuiltTowerCount);
     expect(snapshot.coreLevel, controller.homeTowerLayer.core.level);
     expect(snapshot.towerPowerIndex, controller.homeTowerPowerIndex);
+    expect(
+      snapshot.towerAffinity,
+      controller.homeTowerAffinity ?? controller.homeTowerLayer.core.affinity,
+    );
+    expect(snapshot.enemyCardIds, controller.activeEnemyCardIds);
+    expect(snapshot.enemyCardLevels, <String, int>{
+      for (final card in controller.activeEnemyDeck) card.config.id: card.level,
+    });
   });
 
   test('tournament battle runtime normalizes a full flame battle shell', () {
