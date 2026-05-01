@@ -23,6 +23,34 @@ void _promoteRootShell(LightcoreController controller) {
   expect(controller.activeLayer.tier, 2);
 }
 
+void _maxOutActiveShell(LightcoreController controller) {
+  controller.lumens = 100000000;
+  controller.kills = LightcoreController.unlockKillsForOuterSlot(
+    LightcoreController.slotCount - 1,
+  );
+  for (var index = 0; index < LightcoreController.slotCount; index++) {
+    if (!controller.slots[index].isBuilt) {
+      controller.buildTowerAt(index, TowerLibrary.all[index]);
+    }
+    while (controller.slots[index].level < LightcoreController.maxTowerLevel) {
+      controller.upgradeTower(index);
+    }
+  }
+  expect(controller.isPromotionReady, isTrue);
+}
+
+void _promoteChildShellIntoParent(
+  LightcoreController controller,
+  int slotIndex,
+) {
+  final parentLayerId = controller.activeLayer.parentLayerId;
+  expect(parentLayerId, isNotNull);
+  _maxOutActiveShell(controller);
+  controller.unlockLayer2Tower();
+  expect(controller.activeLayer.id, parentLayerId);
+  expect(controller.slots[slotIndex].isPromotedChildTower, isTrue);
+}
+
 double _projectedMetricForType(
   LightcoreController controller,
   OuterTowerState tower,
@@ -132,5 +160,78 @@ void main() {
       hasLength(4),
     );
     expect(controller.activeChildTowerLevelProgress, 0);
+  });
+
+  test('promoted layer 2 child towers keep tuning and levels', () {
+    final controller = LightcoreController(traitRandom: Random(17));
+    addTearDown(controller.dispose);
+
+    _promoteRootShell(controller);
+    expect(controller.createChildLayer(0, PrototypeAffinity.aether), isTrue);
+    final childLayerId = controller.activeLayer.id;
+    _promoteChildShellIntoParent(controller, 0);
+
+    controller.enterChildLayer(0);
+    expect(controller.activeLayer.id, childLayerId);
+    expect(controller.activeLayerPassiveOnly, isTrue);
+    expect(controller.activeLayerHasParentSlot, isTrue);
+
+    controller.shellCores = 100000;
+    final initialProjectedLevel =
+        controller.activeChildTowerProjection!.childCoreLevel;
+    final firstUpgrade = controller.activeChildTowerUpgrades.first;
+
+    expect(controller.upgradeActiveChildTowerStat(firstUpgrade.type), isTrue);
+    expect(
+      controller.activeChildTowerUpgrades
+          .firstWhere((upgrade) => upgrade.type == firstUpgrade.type)
+          .rank,
+      1,
+    );
+
+    final board = controller.activeChildTowerUpgrades.toList();
+    for (final upgrade in board) {
+      final currentRank = controller.activeChildTowerUpgrades
+          .firstWhere((current) => current.type == upgrade.type)
+          .rank;
+      for (
+        var rank = currentRank;
+        rank < LightcoreController.childTowerUpgradeMaxRank;
+        rank++
+      ) {
+        expect(controller.upgradeActiveChildTowerStat(upgrade.type), isTrue);
+      }
+    }
+
+    expect(controller.coreState.level, 2);
+    expect(
+      controller.activeChildTowerProjection!.childCoreLevel,
+      (initialProjectedLevel ?? 1) + 1,
+    );
+  });
+
+  test('promoted layer 1 child cores keep core upgrades', () {
+    final controller = LightcoreController(traitRandom: Random(19));
+    addTearDown(controller.dispose);
+
+    _promoteRootShell(controller);
+    expect(controller.createChildLayer(0, PrototypeAffinity.aether), isTrue);
+    _promoteChildShellIntoParent(controller, 0);
+    controller.enterChildLayer(0);
+
+    expect(controller.activeLayerPassiveOnly, isTrue);
+    expect(controller.canUpgradeCoreRange, isTrue);
+
+    final rangeBefore = controller.towerEffectiveRange(
+      controller.activeChildTowerProjection!,
+    );
+    controller.lumens = controller.coreRangeUpgradeCost;
+
+    expect(controller.upgradeCoreRange(), isTrue);
+    expect(controller.coreState.rangeUpgradeLevel, 1);
+    expect(
+      controller.towerEffectiveRange(controller.activeChildTowerProjection!),
+      greaterThan(rangeBefore),
+    );
   });
 }

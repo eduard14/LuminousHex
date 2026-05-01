@@ -729,12 +729,7 @@ void main() {
     expect(find.byTooltip('Start run'), findsNothing);
 
     await tester.tap(
-      find
-          .ancestor(
-            of: find.text('Anomaly Blitz'),
-            matching: find.byType(InkWell),
-          )
-          .first,
+      find.ancestor(of: find.text('Hex'), matching: find.byType(InkWell)).first,
     );
     await tester.pump();
 
