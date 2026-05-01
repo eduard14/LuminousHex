@@ -147,6 +147,59 @@ void main() {
 
     expect(backend.acceptedMentorTargets, <String>['mentor-88']);
   });
+
+  testWidgets('mentor map pinches out to the mentor focus', (tester) async {
+    addTearDown(() async {
+      await tester.binding.setSurfaceSize(null);
+    });
+    await tester.binding.setSurfaceSize(const Size(900, 1200));
+
+    final controller = LightcoreController();
+    addTearDown(controller.dispose);
+    final backend = _FakeFriendBackend(_overviewWithMentorTree());
+
+    await tester.pumpWidget(
+      MaterialApp(
+        debugShowCheckedModeBanner: false,
+        theme: buildLightcoreTheme(),
+        home: Scaffold(
+          body: FriendManagementScreen(
+            controller: controller,
+            backend: backend,
+            isActive: true,
+            section: FriendManagementSection.mentors,
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+    await tester.pump();
+
+    await tester.scrollUntilVisible(
+      find.text('Mentorship Hex Map'),
+      240,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.pump();
+
+    final map = find.byKey(const ValueKey<String>('mentor-hex-map-viewport'));
+    expect(map, findsOneWidget);
+
+    final center = tester.getCenter(map);
+    final first = await tester.createGesture(pointer: 11);
+    final second = await tester.createGesture(pointer: 12);
+    await first.down(center + const Offset(-150, 0));
+    await second.down(center + const Offset(150, 0));
+    await tester.pump();
+    await first.moveTo(center + const Offset(-24, 0));
+    await second.moveTo(center + const Offset(24, 0));
+    await tester.pump();
+    await first.up();
+    await second.up();
+    await tester.pump();
+
+    expect(find.text('Mentor Tower Hex'), findsOneWidget);
+  });
 }
 
 class _FakeFriendBackend extends FirebaseLightcoreBackend {
@@ -227,6 +280,20 @@ LightcoreSocialOverview _overviewWithGiftState({
         giftAvailable: false,
         giftClaimedToday: false,
       ),
+    ],
+  );
+}
+
+LightcoreSocialOverview _overviewWithMentorTree() {
+  return LightcoreSocialOverview(
+    self: _socialPlayer('self').copyWith(mentorUid: 'mentor'),
+    mentor: _socialPlayer('mentor'),
+    directMentees: <LightcoreSocialPlayer>[
+      _socialPlayer('alpha').copyWith(mentorUid: 'self', bonusActive: true),
+      _socialPlayer('beta').copyWith(mentorUid: 'self'),
+    ],
+    grandMentees: <LightcoreSocialPlayer>[
+      _socialPlayer('gamma').copyWith(mentorUid: 'alpha'),
     ],
   );
 }
