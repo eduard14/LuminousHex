@@ -11,6 +11,9 @@ extension LightcoreBattleGameTransientVisuals on LightcoreBattleGame {
     _previousSlotCharge = controller.slots
         .map((slot) => slot.charge.clamp(0, 1).toDouble())
         .toList(growable: false);
+    _previousSlotBuilt = controller.slots
+        .map((slot) => slot.isBuilt)
+        .toList(growable: false);
     _previousSlotFabricating = controller.slots
         .map((slot) => slot.isFabricating)
         .toList(growable: false);
@@ -47,6 +50,8 @@ extension LightcoreBattleGameTransientVisuals on LightcoreBattleGame {
         .map((shot) => shot.id)
         .toSet();
     _knownShotIds = controller.shots.map((shot) => shot.id).toSet();
+    _knownImpactIds = controller.impacts.map((impact) => impact.id).toSet();
+    _knownEnemyIds = controller.enemies.map((enemy) => enemy.id).toSet();
     _shotFireBursts = <_ShotFireBurst>[];
     _coreHexFirePopRemaining = 0;
     _screenShakeRemaining = 0;
@@ -69,6 +74,41 @@ extension LightcoreBattleGameTransientVisuals on LightcoreBattleGame {
       _coreHexFirePopRemaining,
       LightcoreBattleGame._hexChargePopDuration,
     );
+    LightcoreAudio.instance.playSfx(LightcoreSfx.rewardClaim);
+  }
+
+  void _syncCombatAudio() {
+    final currentEnemyIds = controller.enemies.map((enemy) => enemy.id).toSet();
+    for (final enemy in controller.enemies) {
+      if (_knownEnemyIds.contains(enemy.id)) {
+        continue;
+      }
+      LightcoreAudio.instance.playSfx(
+        enemy.config.isBoss ? LightcoreSfx.bossSpawn : LightcoreSfx.enemySpawn,
+      );
+    }
+
+    final currentImpactIds = controller.impacts
+        .map((impact) => impact.id)
+        .toSet();
+    for (final impact in controller.impacts) {
+      if (_knownImpactIds.contains(impact.id)) {
+        continue;
+      }
+      if (impact.lethal) {
+        final isBossSized = impact.defeatedEnemySizeScale >= 1.35;
+        LightcoreAudio.instance.playSfx(
+          isBossSized ? LightcoreSfx.bossDeath : LightcoreSfx.enemyDeath,
+        );
+      } else if (impact.critical) {
+        LightcoreAudio.instance.playSfx(LightcoreSfx.critHit);
+      } else {
+        LightcoreAudio.instance.playSfx(LightcoreSfx.hit);
+      }
+    }
+
+    _knownEnemyIds = currentEnemyIds;
+    _knownImpactIds = currentImpactIds;
   }
 
   void _updateSlotVisuals(double dt) {
@@ -76,6 +116,8 @@ extension LightcoreBattleGameTransientVisuals on LightcoreBattleGame {
       final slot = controller.slots[index];
       final currentCharge = slot.charge.clamp(0, 1).toDouble();
       final previousCharge = _previousSlotCharge[index];
+      final currentlyBuilt = slot.isBuilt;
+      final wasBuilt = _previousSlotBuilt[index];
       final filledThisFrame = currentCharge >= 0.995 && previousCharge < 0.995;
       final firedAfterFill = previousCharge >= 0.9 && currentCharge <= 0.12;
       final currentFabricating = slot.isFabricating;
@@ -87,6 +129,9 @@ extension LightcoreBattleGameTransientVisuals on LightcoreBattleGame {
           (filledThisFrame || firedAfterFill)) {
         _slotHexChargePopRemaining[index] =
             LightcoreBattleGame._hexChargePopDuration;
+        if (filledThisFrame) {
+          LightcoreAudio.instance.playSfx(LightcoreSfx.relayCharge);
+        }
       } else if (_slotHexChargePopRemaining[index] > 0) {
         _slotHexChargePopRemaining[index] = math.max(
           0,
@@ -94,9 +139,14 @@ extension LightcoreBattleGameTransientVisuals on LightcoreBattleGame {
         );
       }
 
-      if (wasFabricating && !currentFabricating) {
+      if (!wasBuilt && currentlyBuilt) {
         _slotBuildBurstRemaining[index] =
             LightcoreBattleGame._slotBuildBurstDuration;
+        LightcoreAudio.instance.playSfx(LightcoreSfx.buildTower);
+      } else if (wasFabricating && !currentFabricating) {
+        _slotBuildBurstRemaining[index] =
+            LightcoreBattleGame._slotBuildBurstDuration;
+        LightcoreAudio.instance.playSfx(LightcoreSfx.buildTower);
       } else if (_slotBuildBurstRemaining[index] > 0) {
         _slotBuildBurstRemaining[index] = math.max(
           0,
@@ -108,6 +158,7 @@ extension LightcoreBattleGameTransientVisuals on LightcoreBattleGame {
           currentChildBuiltCount > previousChildBuiltCount) {
         _slotFuseBurstRemaining[index] =
             LightcoreBattleGame._slotFuseBurstDuration;
+        LightcoreAudio.instance.playSfx(LightcoreSfx.promotionComplete);
       } else if (_slotFuseBurstRemaining[index] > 0) {
         _slotFuseBurstRemaining[index] = math.max(
           0,
@@ -116,6 +167,7 @@ extension LightcoreBattleGameTransientVisuals on LightcoreBattleGame {
       }
 
       _previousSlotCharge[index] = currentCharge;
+      _previousSlotBuilt[index] = currentlyBuilt;
       _previousSlotFabricating[index] = currentFabricating;
       _previousSlotChildBuiltCount[index] = currentChildBuiltCount;
     }
@@ -134,6 +186,7 @@ extension LightcoreBattleGameTransientVisuals on LightcoreBattleGame {
 
     if (hasNewCoreShot || coreSequenceChanged) {
       _coreHexFirePopRemaining = LightcoreBattleGame._hexChargePopDuration;
+      LightcoreAudio.instance.playSfx(LightcoreSfx.coreFire);
     } else if (_coreHexFirePopRemaining > 0) {
       _coreHexFirePopRemaining = math.max(0, _coreHexFirePopRemaining - dt);
     }
@@ -141,6 +194,7 @@ extension LightcoreBattleGameTransientVisuals on LightcoreBattleGame {
     final coreDamageSequence = controller.coreDamageSequence;
     if (coreDamageSequence != _previousCoreDamageSequence) {
       _startCoreDamageShake(controller.coreDamageAmount);
+      LightcoreAudio.instance.playSfx(LightcoreSfx.coreDamage);
     }
 
     _knownCoreShotIds = coreShotIds;

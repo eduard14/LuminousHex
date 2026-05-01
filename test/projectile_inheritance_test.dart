@@ -98,13 +98,56 @@ void main() {
       controller.promotionRainbowResultChance,
       closeTo(LightcoreController.rainbowPromotionChance, 0.0001),
     );
+    final normalChance = 1 - LightcoreController.rainbowPromotionChance;
+    final totalWeight =
+        (LightcoreController.maxTowerLevel * _chromaticShell.length) + 1;
+    final chromaticRate =
+        normalChance * LightcoreController.maxTowerLevel / totalWeight;
+    final coreRate = normalChance / totalWeight;
+    for (final affinity in _chromaticShell.map((config) => config.affinity)) {
+      expect(
+        controller.promotionProjectileAffinityRates[affinity],
+        closeTo(chromaticRate, 0.0001),
+      );
+      expect(
+        controller.promotionPayloadAffinityRates[affinity],
+        closeTo(chromaticRate, 0.0001),
+      );
+    }
     expect(
-      controller.promotionProjectileAffinityRates.values,
-      everyElement(closeTo(0.15, 0.0001)),
+      controller.promotionProjectileAffinityRates[PrototypeAffinity.neutral],
+      closeTo(coreRate, 0.0001),
     );
     expect(
-      controller.promotionPayloadAffinityRates.values,
-      everyElement(closeTo(0.15, 0.0001)),
+      controller.promotionPayloadAffinityRates[PrototypeAffinity.neutral],
+      closeTo(coreRate, 0.0001),
+    );
+  });
+
+  test('the core contributes its color when a shell is promoted', () {
+    final controller = LightcoreController(traitRandom: Random(19));
+    addTearDown(controller.dispose);
+
+    _promoteRootShell(controller, _uniformShell(TowerLibrary.redPrism));
+
+    expect(controller.createChildLayer(0, PrototypeAffinity.aether), isTrue);
+    _maxOutCurrentShell(controller, _uniformShell(TowerLibrary.redPrism));
+
+    expect(
+      controller.promotionProjectileAffinityRates,
+      containsPair(PrototypeAffinity.aether, greaterThan(0)),
+    );
+    expect(
+      controller.promotionPayloadAffinityRates,
+      containsPair(PrototypeAffinity.aether, greaterThan(0)),
+    );
+    expect(
+      controller.promotionProjectileAffinityRates,
+      containsPair(PrototypeAffinity.ember, greaterThan(0)),
+    );
+    expect(
+      controller.promotionPayloadAffinityRates,
+      containsPair(PrototypeAffinity.ember, greaterThan(0)),
     );
   });
 

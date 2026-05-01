@@ -21,6 +21,10 @@ void main() {
     expect(
       layer2ProjectileByAffinity,
       equals(<PrototypeAffinity, List<ProjectileType>>{
+        PrototypeAffinity.neutral: <ProjectileType>[
+          ProjectileType.rapidBolt,
+          ProjectileType.twinBolt,
+        ],
         PrototypeAffinity.aether: <ProjectileType>[
           ProjectileType.pulseBeam,
           ProjectileType.splitBeam,
@@ -110,6 +114,10 @@ void main() {
     expect(
       layer2PayloadByAffinity,
       equals(<PrototypeAffinity, List<PayloadType>>{
+        PrototypeAffinity.neutral: <PayloadType>[
+          PayloadType.precision,
+          PayloadType.doubleTap,
+        ],
         PrototypeAffinity.aether: <PayloadType>[
           PayloadType.chill,
           PayloadType.fracture,
@@ -166,5 +174,59 @@ void main() {
         ],
       }),
     );
+  });
+
+  test('payload colors map to bible consequence families', () {
+    expect(PayloadType.precision.effectProfile, PayloadEffectProfile.bounty);
+    expect(PayloadType.doubleTap.effectProfile, PayloadEffectProfile.bounty);
+
+    for (final payload in <PayloadType>[
+      PayloadType.overheat,
+      PayloadType.detonate,
+      PayloadType.meltdown,
+      PayloadType.chainDetonate,
+      PayloadType.corrupt,
+      PayloadType.spread,
+      PayloadType.cascadeCorrupt,
+      PayloadType.viralSpread,
+    ]) {
+      expect(payload.effectProfile, PayloadEffectProfile.burn);
+    }
+
+    for (final payload in <PayloadType>[
+      PayloadType.shock,
+      PayloadType.disrupt,
+      PayloadType.overload,
+      PayloadType.empDisrupt,
+    ]) {
+      expect(payload.effectProfile, PayloadEffectProfile.shock);
+    }
+
+    for (final payload in <PayloadType>[
+      PayloadType.chill,
+      PayloadType.fracture,
+      PayloadType.deepChill,
+      PayloadType.brittleFracture,
+    ]) {
+      expect(payload.effectProfile, PayloadEffectProfile.freeze);
+    }
+
+    for (final payload in <PayloadType>[
+      PayloadType.rend,
+      PayloadType.force,
+      PayloadType.coreRend,
+      PayloadType.concussiveForce,
+    ]) {
+      expect(payload.effectProfile, PayloadEffectProfile.knockback);
+    }
+
+    for (final payload in <PayloadType>[
+      PayloadType.expose,
+      PayloadType.pull,
+      PayloadType.collapse,
+      PayloadType.singularityPull,
+    ]) {
+      expect(payload.effectProfile, PayloadEffectProfile.bounty);
+    }
   });
 }

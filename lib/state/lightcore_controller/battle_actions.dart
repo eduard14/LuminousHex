@@ -18,6 +18,14 @@ extension LightcoreControllerBattleActions on LightcoreController {
       }
       return false;
     }
+    if (activeLayer.tier == 1 && _core.packetCooldownRemaining > 0) {
+      if (showBanner) {
+        _showBanner(
+          'Lightcore packet charging for ${_core.packetCooldownRemaining.toStringAsFixed(1)}s.',
+        );
+      }
+      return false;
+    }
 
     final sequence = _core.fireSequence;
     final projectileType = _coreProjectileTypeForSequence(sequence);
@@ -59,7 +67,15 @@ extension LightcoreControllerBattleActions on LightcoreController {
       ),
     );
     _tutorialCoreShotTapLearned = true;
-    _core = _core.copyWith(fireSequence: sequence + 1);
+    _core = _core.copyWith(
+      fireSequence: sequence + 1,
+      packetCooldownRemaining: activeLayer.tier == 1
+          ? coreShotCooldownForUpgradeLevel(
+              _core.fireSpeedUpgradeLevel,
+              projectileType: projectileType,
+            )
+          : 0,
+    );
     return true;
   }
 }

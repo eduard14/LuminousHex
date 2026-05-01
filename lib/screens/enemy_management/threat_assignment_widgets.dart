@@ -540,7 +540,14 @@ class _ActiveThreatCardLine extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        _AssignmentThreatGlyph(card: card, isApex: isApex, size: 38),
+        _ThreatSummonCard(
+          config: card.config,
+          dimension: 42,
+          locked: !card.isOwned,
+          selected: true,
+          semanticLabel:
+              '${card.config.name}, active ${isApex ? 'Apex' : 'anomaly'} art',
+        ),
         const SizedBox(width: 10),
         Expanded(
           child: Column(
@@ -694,10 +701,14 @@ class _ThreatAssignmentRow extends StatelessWidget {
                 padding: const EdgeInsets.all(12),
                 child: Row(
                   children: [
-                    _AssignmentThreatGlyph(
-                      card: card,
-                      isApex: isApex,
-                      size: 46,
+                    _ThreatSummonCard(
+                      config: card.config,
+                      dimension: 58,
+                      selected: active && card.isOwned,
+                      locked: locked,
+                      emphasized: expanded,
+                      semanticLabel:
+                          '${card.config.name}, ${card.isOwned ? 'owned' : 'locked'} ${isApex ? 'Apex' : 'anomaly'} art',
                     ),
                     const SizedBox(width: 12),
                     Expanded(
@@ -788,6 +799,8 @@ class _ThreatAssignmentDetails extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        _ThreatAssignmentStatsArt(card: card, isApex: false, active: active),
+        const SizedBox(height: 12),
         Text(card.config.summary, style: Theme.of(context).textTheme.bodySmall),
         const SizedBox(height: 10),
         Wrap(
@@ -878,6 +891,8 @@ class _ThreatAssignmentDetails extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        _ThreatAssignmentStatsArt(card: card, isApex: true, active: active),
+        const SizedBox(height: 12),
         Text(card.config.summary, style: Theme.of(context).textTheme.bodySmall),
         const SizedBox(height: 10),
         Wrap(
@@ -952,6 +967,78 @@ class _ThreatAssignmentDetails extends StatelessWidget {
           ],
         ),
       ],
+    );
+  }
+}
+
+class _ThreatAssignmentStatsArt extends StatelessWidget {
+  const _ThreatAssignmentStatsArt({
+    required this.card,
+    required this.isApex,
+    required this.active,
+  });
+
+  final EnemyCardState card;
+  final bool isApex;
+  final bool active;
+
+  @override
+  Widget build(BuildContext context) {
+    final tint =
+        card.config.secondaryAffinity?.color ?? card.config.affinity.color;
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final preferredDimension = constraints.maxWidth >= 420 ? 176.0 : 152.0;
+        final dimension = math
+            .min(preferredDimension, constraints.maxWidth)
+            .clamp(112.0, 176.0)
+            .toDouble();
+
+        return Center(
+          child: _ThreatSummonCard(
+            config: card.config,
+            dimension: dimension,
+            locked: !card.isOwned,
+            selected: active && card.isOwned,
+            emphasized: true,
+            glowTint: tint,
+            glowStrength: active ? 0.84 : 0.34,
+            semanticLabel:
+                '${card.config.name}, expanded ${isApex ? 'Apex' : 'anomaly'} stats art',
+            topRight: SymbolGridBadge(
+              tint: !card.isOwned
+                  ? LightcorePalette.mist
+                  : active
+                  ? LightcorePalette.layer2
+                  : tint,
+              shape: BoxShape.circle,
+              size: 26,
+              child: Icon(
+                !card.isOwned
+                    ? Icons.lock_rounded
+                    : active
+                    ? Icons.check_rounded
+                    : isApex
+                    ? Icons.shield_moon_rounded
+                    : Icons.radar_rounded,
+              ),
+            ),
+            bottom: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.layers_rounded),
+                const SizedBox(width: 2),
+                Text('${card.level}'),
+                const SizedBox(width: 7),
+                const Icon(Icons.content_copy_rounded),
+                const SizedBox(width: 2),
+                Text('${card.copies}'),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }

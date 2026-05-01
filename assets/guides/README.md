@@ -1,8 +1,8 @@
-Guide asset placeholders for the tutorial companion system.
+Guide portrait assets for the tutorial companion system.
 
-Planned portrait filenames:
+Portrait filenames:
 - `assets/guides/lumo.png`
-- `assets/guides/luma.png`
+- `assets/guides/luna.png`
 
-These are intentionally not rendered yet. The UI uses placeholder badges until
-the real art is added.
+The alternate guide still uses the `luma` storage id for save compatibility,
+but displays as Luna in the UI.

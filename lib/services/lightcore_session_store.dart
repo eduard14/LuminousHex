@@ -4,6 +4,9 @@ class LightcoreSessionStore {
   static const String _playerIdKey = 'lightcore.player_id';
   static const String _guideIdKey = 'lightcore.guide_id';
   static const String _graphicsQualityKey = 'lightcore.graphics_quality';
+  static const String _musicEnabledKey = 'lightcore.audio.music_enabled';
+  static const String _soundEffectsEnabledKey =
+      'lightcore.audio.sound_effects_enabled';
   static const String _skipGuestSignInPromptKey =
       'lightcore.skip_guest_sign_in_prompt';
 
@@ -35,6 +38,26 @@ class LightcoreSessionStore {
   Future<void> writeGraphicsQuality(String graphicsQuality) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_graphicsQualityKey, graphicsQuality);
+  }
+
+  Future<bool> readMusicEnabled() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_musicEnabledKey) ?? true;
+  }
+
+  Future<void> writeMusicEnabled(bool enabled) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_musicEnabledKey, enabled);
+  }
+
+  Future<bool> readSoundEffectsEnabled() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_soundEffectsEnabledKey) ?? true;
+  }
+
+  Future<void> writeSoundEffectsEnabled(bool enabled) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_soundEffectsEnabledKey, enabled);
   }
 
   Future<bool> readSkipGuestSignInPrompt() async {

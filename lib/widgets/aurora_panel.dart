@@ -71,7 +71,13 @@ class _AuroraPanelState extends State<AuroraPanel> {
 
     final panel = Ink(
       decoration: decoration,
-      child: Padding(padding: widget.padding, child: widget.child),
+      child: DefaultTextStyle.merge(
+        style: const TextStyle(color: LightcorePalette.mist),
+        child: IconTheme.merge(
+          data: const IconThemeData(color: LightcorePalette.mist),
+          child: Padding(padding: widget.padding, child: widget.child),
+        ),
+      ),
     );
 
     final scaledPanel = AnimatedScale(

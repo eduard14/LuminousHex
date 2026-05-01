@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 
 import '../models/lightcore_state.dart';
 import '../models/lightcore_types.dart';
+import '../services/lightcore_audio.dart';
 import '../state/lightcore_controller.dart';
 import '../theme/lightcore_palette.dart';
 import '../widgets/tower_level_hex_badge.dart';
@@ -57,11 +58,14 @@ class LightcoreBattleGame extends FlameGame with ScaleDetector {
   List<double> _previousSlotCharge = <double>[];
   List<double> _slotHexChargePopRemaining = <double>[];
   List<bool> _previousSlotFabricating = <bool>[];
+  List<bool> _previousSlotBuilt = <bool>[];
   List<int> _previousSlotChildBuiltCount = <int>[];
   List<double> _slotBuildBurstRemaining = <double>[];
   List<double> _slotFuseBurstRemaining = <double>[];
   Set<String> _knownCoreShotIds = <String>{};
   Set<String> _knownShotIds = <String>{};
+  Set<String> _knownImpactIds = <String>{};
+  Set<String> _knownEnemyIds = <String>{};
   List<_ShotFireBurst> _shotFireBursts = <_ShotFireBurst>[];
   int _previousCoreFireSequence = 0;
   int _previousCoreDamageSequence = 0;
@@ -202,6 +206,7 @@ class LightcoreBattleGame extends FlameGame with ScaleDetector {
       _accumulator -= _fixedStep;
       safety += 1;
     }
+    _syncCombatAudio();
     _updateSlotVisuals(clamped);
     _updateCoreVisuals(clamped);
     _updateShotFireBursts(clamped);

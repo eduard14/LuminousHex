@@ -49,8 +49,8 @@ start from a targeted `rg` search.
 | Apex Anomaly cadence | Aligned | `bossSpawnKillRequirement`, `normalKillsSinceBoss`, `bossReady`, `_spawnEnemy`, `_killEnemy` | Every 100 normal anomaly clears primes the next Apex spawn if an Apex card is armed. Apex clears grant Lumens, Apex Scans, Heartcores, and sometimes other rewards. |
 | Apex pressure | Aligned | `_apexBaseStabilityDamageMultiplier`, `_apexRarityStabilityDamageStep`, `_directorApexStabilityMultiplier` | Apex enemies multiply stability damage and can inherit director pressure. There is no separate health bar fail state, consistent with V8's efficiency-defense direction. |
 | Equipment acquisition | Aligned | `equipmentDropChanceForEnemy`, `_awardEquipmentDropIfRolled`, `_grantEquipmentEventCache`, `TournamentRewardPackage` | Normal and Apex anomaly clears no longer roll equipment. Event caches and tournament reward packages are the acquisition path; debug helpers remain for tests and tools. |
-| Even-entry tournaments | Aligned | `TournamentScreen`, `LightcoreTournamentPlayerSnapshot`, `buildTournamentSnapshot`, `functions/index.js` tournament handlers | Tournament snapshots normalize permanent progress to fixed event values. Frontend event runs use normalized event shells and anomaly pools, and backend grouping/rating uses a fixed even-entry baseline. |
-| Mentor network | Partial | `LightcoreSocialOverview`, `sendMentorInvite`, `acceptMentorLink`, `computeSocialBonusProfile`, `homeTowerMentorExperienceMultiplier`, `homeTowerLabel` | Real player mentor links, level-band checks, capped first-ring bonuses, and second-ring recognition exist. Client runtime now shapes those bonuses through the active Home Tower affinity. |
+| Tournament tower snapshots | Partial | `TournamentScreen`, `LightcoreTournamentPlayerSnapshot`, `buildTournamentSnapshot`, `functions/index.js` tournament handlers | Arena Flow now uses the player's highest-layer Home Tower for tier, core, and power index. Weekly tournament entries are keyed by server window, Arena Flow pads its leaderboard with server-seeded rivals, and rewards are claimed from the last closed server board. Other tournament formats still use event-specific shells and anomaly pools. |
+| Mentor network | Partial | `LightcoreSocialOverview`, `sendMentorInvite`, `acceptMentorLink`, `computeSocialBonusProfile`, `homeTowerMentorExperienceMultiplier`, `homeTowerLabel` | Real player mentor links, level-band checks, capped first-ring bonuses, and second-ring recognition exist. Client runtime now shapes those bonuses through the highest-layer Home Tower affinity. |
 | Friends and Apex Scan gifts | Aligned | `sendBossPullGift`, `claimBossPullGift`, `applySocialBossGiftClaim` | UI and backend returned messages call these Apex Scan gifts. Callable names remain stable for compatibility. |
 | Offline simulation | Partial | `buildOfflineProgressSnapshot`, `syncIdleSnapshot`, `claimOfflineProgress`, `offlineKillsPerHour` | Offline rewards are based on a current snapshot and server claim. They use managed automation and recent effective gain, but do not simulate full per-core Threat Scans, Apex outcomes, or multiple running cores. |
 | Account Radiance / Player Level | Partial | `accountRadianceLevel`, `accountRadianceLabel`, `overallLevel`, `experience`, `_boostedExperienceReward`, `LightcoreSocialPlayer.levelLabel` | Player-facing copy now uses Account Radiance. Internal save/API fields still use `overallLevel` for compatibility. |
@@ -89,11 +89,11 @@ start from a targeted `rg` search.
 - Source Tower names match V8 player-facing names:
   `Starbolt Turret`, `Comet Mortar`, `Meteor Driver`, `Stormhook Coil`,
   `Thorn Aegis`, `Rayline Spire`, and `Quasar Ring`.
-- Core Manager display names come from the old bible manager roster, starting
-  with `Whitney Stardust`, `Reddie Mercury`, `Yella Nova`,
-  `Greta Greenlight`, `Violet Vortex`, `Orion Orange`, and
-  `Blueshift Aldrin`; each name is mapped onto an existing mechanical
-  archetype such as Flow, Power, Tempo, Spectrum, Stability, or Burst.
+- Core Manager display names, bios, board bonuses, signature rules, and portrait
+  asset ids follow `04 Tower Managers`, starting with
+  `mgr_001_whitney_stardust` through `mgr_040_the_singularity_stylist`; each
+  bible row is mapped onto an existing mechanical archetype such as Flow, Power,
+  Tempo, Spectrum, Stability, or Burst.
 - Blue/Rayline is represented internally as `PrototypeAffinity.aether`; some
   legacy ids still use `cyan_prism`, but `PrototypeAffinityX.label` returns
   `Blue`.
@@ -158,11 +158,11 @@ start from a targeted `rg` search.
   `The Gemini Maw`. Higher-rarity Apex cards keep the existing rarity prefixes
   so preview filtering can distinguish duplicated archetype seeds.
 - `EnemyManagerState` represents a Threat Director instance.
-- Threat Director display names come from the old bible enemy-manager roster,
-  starting with `Plain Jane Quasar`, `Count Huskula`, `Splinter Stella`,
-  `Blink Floyd`, `Regenade Moss`, `Blue Screen Baron`, `Fastro Naut`, and
-  `Grim Gravity`; archetype math remains Swarm, Titan, Phase, Regen,
-  Gravity, Greed, Saboteur, Volatile, or Apex Herald.
+- Threat Director display names, bios, wave modifiers, design intents, and
+  portrait asset ids follow `05 Enemy Managers`, starting with
+  `emg_001_plain_jane_quasar` through `emg_040_the_dark_spectrum`; archetype
+  math remains Swarm, Titan, Phase, Regen, Gravity, Greed, Saboteur, Volatile,
+  or Apex Herald.
 - Threat Director effects are applied through `_managerValue` and
   `_enemyManagerEffectMultiplier`.
 - Apex cadence is controlled by `bossSpawnKillRequirement`, currently 100.

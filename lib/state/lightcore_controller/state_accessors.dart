@@ -1,5 +1,7 @@
 part of '../lightcore_controller.dart';
 
+const bool _openEventLevelWallsForTesting = false;
+
 extension LightcoreControllerStateAccessors on LightcoreController {
   void _recordLumenSpend(int amount) {
     if (amount > 0) {
@@ -342,6 +344,25 @@ extension LightcoreControllerStateAccessors on LightcoreController {
 
   TowerLayerSnapshot get runtimeLayer => _layerById(_runtimeLayerId);
 
+  TowerLayerSnapshot get homeTowerLayer {
+    var bestLayer = activeLayer;
+    for (final layer in _layers) {
+      if (layer.tier > bestLayer.tier) {
+        bestLayer = layer;
+      }
+    }
+    return bestLayer;
+  }
+
+  int get homeTowerTier => homeTowerLayer.tier;
+
+  String get homeTowerLayerLabel => layerDisplayLabel(homeTowerLayer);
+
+  int get homeTowerPowerIndex => max(
+    evenEntryTournamentPowerIndex,
+    min(tournamentPowerIndexCap, globalRankingTowerStrength),
+  );
+
   OuterTowerState? get selectedSlotOrNull =>
       selectedSlotIndex == null ? null : _slots[selectedSlotIndex!];
 
@@ -444,9 +465,11 @@ extension LightcoreControllerStateAccessors on LightcoreController {
 
   bool get bossHuntsUnlocked => progressionLayer >= bossUnlockLayer;
 
-  bool get dailyDungeonsUnlocked => overallLevel >= dailyDungeonUnlockLevel;
+  bool get dailyDungeonsUnlocked =>
+      _openEventLevelWallsForTesting || overallLevel >= dailyDungeonUnlockLevel;
 
-  bool get tournamentsUnlocked => overallLevel >= tournamentUnlockLevel;
+  bool get tournamentsUnlocked =>
+      _openEventLevelWallsForTesting || overallLevel >= tournamentUnlockLevel;
 
   bool get mentorshipUnlocked => overallLevel >= mentorshipUnlockLevel;
 
@@ -476,10 +499,11 @@ extension LightcoreControllerStateAccessors on LightcoreController {
       progressionLayer >= payloadUnlockLayer;
 
   int get tournamentLevelsRemaining =>
-      max(0, tournamentUnlockLevel - overallLevel);
+      tournamentsUnlocked ? 0 : max(0, tournamentUnlockLevel - overallLevel);
 
-  int get dailyDungeonLevelsRemaining =>
-      max(0, dailyDungeonUnlockLevel - overallLevel);
+  int get dailyDungeonLevelsRemaining => dailyDungeonsUnlocked
+      ? 0
+      : max(0, dailyDungeonUnlockLevel - overallLevel);
 
   int get managerLevelsRemaining => max(0, managerUnlockLevel - overallLevel);
 
@@ -578,6 +602,8 @@ extension LightcoreControllerStateAccessors on LightcoreController {
       tutorialQuestDefinition?.completionCondition;
 
   String? get tutorialLearningReward => tutorialQuestDefinition?.reward;
+
+  String? get tutorialFailureHelp => tutorialQuestDefinition?.failureHelpState;
 
   bool get hasActiveTutorial => _tutorialStep != LightcoreTutorialStep.none;
 
@@ -1328,7 +1354,7 @@ extension LightcoreControllerStateAccessors on LightcoreController {
   bool get showsLayerOneCoreCreation =>
       activeLayer.tier == 2 && !activeLayerHasParentSlot;
 
-  int get layerOneCoreProjectLimit => _hasPremiumMembership ? 2 : 1;
+  int get layerOneCoreProjectLimit => 1;
 
   int get layerOneCoreProjectsInProgress => _layers
       .where(
@@ -1367,14 +1393,12 @@ extension LightcoreControllerStateAccessors on LightcoreController {
     final projectCount = layerOneCoreProjectsInProgress;
     final projectLimit = layerOneCoreProjectLimit;
     if (nextLayerOneCoreSlotIndex == null) {
-      return 'All Layer 1 core slots are occupied.';
+      return 'All Layer 1 set slots are occupied.';
     }
     if (projectCount >= projectLimit) {
-      return _hasPremiumMembership
-          ? 'Layer 1 core build cap reached: $projectCount/$projectLimit active.'
-          : 'Layer 1 core build cap reached: $projectCount/$projectLimit active. Membership raises this to 2.';
+      return 'Layer 1 set build cap reached: $projectCount/$projectLimit active.';
     }
-    return 'Layer 1 cores building: $projectCount/$projectLimit active.';
+    return 'Layer 1 sets building: $projectCount/$projectLimit active.';
   }
 
   bool get _layerOneCoreCreationCapApplies =>
@@ -1394,9 +1418,7 @@ extension LightcoreControllerStateAccessors on LightcoreController {
       return 'This hex already has a core or tower.';
     }
     if (_layerOneCoreCreationCapApplies && layerOneCoreProjectLimitReached) {
-      return _hasPremiumMembership
-          ? 'Finish one active Layer 1 core before starting another.'
-          : 'Finish the active Layer 1 core first. Membership can build 2 at a time.';
+      return 'Finish the active Layer 1 set before starting another.';
     }
     return null;
   }

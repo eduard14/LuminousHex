@@ -60,7 +60,7 @@ ThemeData buildLightcoreTheme() {
       backgroundColor: LightcorePalette.panel.withValues(alpha: 0.9),
       indicatorColor: LightcorePalette.aether.withValues(alpha: 0.16),
       labelTextStyle: WidgetStateProperty.all(
-        const TextStyle(fontWeight: FontWeight.w700, letterSpacing: 0.2),
+        const TextStyle(fontWeight: FontWeight.w700, letterSpacing: 0),
       ),
     ),
     filledButtonTheme: FilledButtonThemeData(
@@ -99,34 +99,69 @@ ThemeData buildLightcoreTheme() {
       headlineLarge: const TextStyle(
         fontSize: 42,
         fontWeight: FontWeight.w900,
-        letterSpacing: -1.2,
+        letterSpacing: 0,
         height: 0.96,
+        color: LightcorePalette.mist,
       ),
       headlineMedium: const TextStyle(
         fontSize: 30,
         fontWeight: FontWeight.w800,
-        letterSpacing: -0.6,
+        letterSpacing: 0,
+        color: LightcorePalette.mist,
+      ),
+      headlineSmall: const TextStyle(
+        fontSize: 24,
+        fontWeight: FontWeight.w800,
+        letterSpacing: 0,
+        color: LightcorePalette.mist,
       ),
       titleLarge: const TextStyle(
         fontSize: 22,
         fontWeight: FontWeight.w800,
-        letterSpacing: -0.4,
+        letterSpacing: 0,
+        color: LightcorePalette.mist,
       ),
-      titleMedium: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
-      bodyLarge: const TextStyle(fontSize: 16, height: 1.4),
+      titleMedium: const TextStyle(
+        fontSize: 17,
+        fontWeight: FontWeight.w700,
+        letterSpacing: 0,
+        color: LightcorePalette.mist,
+      ),
+      titleSmall: const TextStyle(
+        fontSize: 15,
+        fontWeight: FontWeight.w700,
+        letterSpacing: 0,
+        color: LightcorePalette.mist,
+      ),
+      bodyLarge: const TextStyle(
+        fontSize: 16,
+        height: 1.4,
+        color: LightcorePalette.mist,
+      ),
       bodyMedium: TextStyle(
         fontSize: 14,
         height: 1.4,
-        color: LightcorePalette.mist.withValues(alpha: 0.78),
+        color: LightcorePalette.mist.withValues(alpha: 0.86),
       ),
       bodySmall: TextStyle(
         fontSize: 12.5,
         height: 1.35,
-        color: LightcorePalette.mist.withValues(alpha: 0.68),
+        color: LightcorePalette.mist.withValues(alpha: 0.76),
       ),
       labelLarge: const TextStyle(
         fontWeight: FontWeight.w700,
-        letterSpacing: 0.2,
+        letterSpacing: 0,
+        color: LightcorePalette.mist,
+      ),
+      labelMedium: const TextStyle(
+        fontWeight: FontWeight.w700,
+        letterSpacing: 0,
+        color: LightcorePalette.mist,
+      ),
+      labelSmall: TextStyle(
+        fontWeight: FontWeight.w700,
+        letterSpacing: 0,
+        color: LightcorePalette.mist.withValues(alpha: 0.78),
       ),
     ),
   );

@@ -59,3 +59,32 @@ double _dungeonDeployCooldown(
 String _dungeonLaunchKey(EnemyCardState card, {required bool apex}) {
   return '${apex ? 'apex' : 'anomaly'}:${card.config.id}';
 }
+
+double _dungeonLaunchChainWindow({required bool apex}) {
+  return apex ? 6.2 : 4.8;
+}
+
+int _dungeonNextLaunchChainTier({
+  required int currentTier,
+  required double windowRemaining,
+  required PrototypeAffinity? previousAffinity,
+  required PrototypeAffinity nextAffinity,
+  required bool apex,
+}) {
+  if (windowRemaining <= 0 || previousAffinity == null) {
+    return apex ? 2 : 1;
+  }
+  if (apex) {
+    return (currentTier + 2).clamp(2, 6).toInt();
+  }
+  if (previousAffinity == nextAffinity) {
+    return 1;
+  }
+  return (currentTier + 1).clamp(2, 6).toInt();
+}
+
+double _dungeonLaunchChainDamageMultiplier(int chainTier, {required bool apex}) {
+  final surge = 1 + ((chainTier - 1).clamp(0, 6) * 0.14);
+  final apexBonus = apex ? 0.12 : 0.0;
+  return (surge + apexBonus).clamp(1.0, 1.86).toDouble();
+}

@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lightcore/data/tower_configs.dart';
 import 'package:lightcore/models/hex_tournament_run.dart';
 import 'package:lightcore/models/lightcore_types.dart';
 
@@ -17,7 +18,7 @@ void main() {
     expect(run.snapshot.enemies, isNotEmpty);
   });
 
-  test('path cells are cut out and open hexes build fixed towers', () {
+  test('path cells are cut out and open hexes expose all tower choices', () {
     final run = HexTournamentRunController(
       seedPowerIndex: 1400,
       startingCurrency: 500,
@@ -28,8 +29,17 @@ void main() {
     expect(run.tapCell(pathCell.id), isFalse);
     expect(run.snapshot.towers, isEmpty);
 
-    expect(run.tapCell(buildCell.id), isTrue);
+    expect(run.tapCell(buildCell.id), isFalse);
+    expect(run.snapshot.towers, isEmpty);
+    expect(run.snapshot.canBuildSelected, isTrue);
+    expect(run.snapshot.towerChoices, TowerLibrary.all);
+
+    expect(
+      run.placeTower(buildCell.id, config: TowerLibrary.purplePrism),
+      isTrue,
+    );
     expect(run.snapshot.towers, hasLength(1));
+    expect(run.snapshot.towers.single.config, TowerLibrary.purplePrism);
     expect(run.snapshot.towers.single.payloadType, PayloadType.none);
     expect(run.snapshot.currency, 500 - HexTournamentRunController.buildCost);
   });
@@ -47,7 +57,10 @@ void main() {
           .toList(growable: false);
 
       for (final cell in cells) {
-        expect(run.placeTower(cell.id), isTrue);
+        expect(
+          run.placeTower(cell.id, config: TowerLibrary.purplePrism),
+          isTrue,
+        );
       }
 
       expect(run.mergeTowers(cells[0].id, cells[1].id), isTrue);
@@ -79,7 +92,9 @@ void main() {
       seedPowerIndex: 1400,
       startingCurrency: 1000,
     )..start();
+    final scoreBeforeTierBuy = greedy.score;
     expect(greedy.buyEnemyTier(), isTrue);
+    expect(greedy.score, scoreBeforeTierBuy);
     greedy.sendWave();
     final greedyEnemy = greedy.snapshot.enemies.first;
 

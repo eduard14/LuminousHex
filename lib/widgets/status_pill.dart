@@ -66,7 +66,7 @@ class StatusPill extends StatelessWidget {
                         label.toUpperCase(),
                         style: textTheme.labelSmall?.copyWith(
                           color: LightcorePalette.mist.withValues(alpha: 0.68),
-                          letterSpacing: 0.6,
+                          letterSpacing: 0,
                         ),
                       ),
                       Text(

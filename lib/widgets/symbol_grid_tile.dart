@@ -11,6 +11,8 @@ class SymbolGridTile extends StatelessWidget {
     required this.tint,
     required this.semanticLabel,
     required this.center,
+    this.background,
+    this.backgroundOpacity = 1,
     this.dimension = kSymbolGridTileSize,
     this.onTap,
     this.topLeading,
@@ -23,6 +25,8 @@ class SymbolGridTile extends StatelessWidget {
   final Color tint;
   final String semanticLabel;
   final Widget center;
+  final Widget? background;
+  final double backgroundOpacity;
   final double dimension;
   final VoidCallback? onTap;
   final Widget? topLeading;
@@ -37,6 +41,7 @@ class SymbolGridTile extends StatelessWidget {
     final borderColor = selected
         ? LightcorePalette.layer2
         : tint.withValues(alpha: locked ? 0.24 : 0.42);
+    final hasBackground = background != null;
 
     return SizedBox.square(
       dimension: dimension,
@@ -78,64 +83,99 @@ class SymbolGridTile extends StatelessWidget {
                   ),
                 ],
               ),
-              child: Padding(
-                padding: const EdgeInsets.all(10),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+              child: ClipRRect(
+                borderRadius: radius,
+                child: Stack(
                   children: [
-                    Row(
-                      children: [
-                        if (topLeading == null)
-                          const Spacer()
-                        else
-                          Expanded(
-                            child: Align(
-                              alignment: Alignment.centerLeft,
-                              child: FittedBox(
-                                fit: BoxFit.scaleDown,
-                                alignment: Alignment.centerLeft,
-                                child: topLeading!,
-                              ),
-                            ),
-                          ),
-                        if (topTrailing != null) ...[
-                          const SizedBox(width: 4),
-                          topTrailing!,
-                        ],
-                      ],
-                    ),
-                    const SizedBox(height: 7),
-                    Expanded(
-                      child: Center(
+                    if (background != null) ...[
+                      Positioned.fill(
                         child: Opacity(
-                          opacity: locked ? 0.38 : 1,
-                          child: center,
+                          opacity:
+                              (locked ? 0.42 : 1) *
+                              backgroundOpacity.clamp(0.0, 1.0),
+                          child: background!,
                         ),
                       ),
-                    ),
-                    if (bottomChildren.isNotEmpty) ...[
-                      const SizedBox(height: 7),
-                      SizedBox(
-                        width: double.infinity,
-                        child: FittedBox(
-                          fit: BoxFit.scaleDown,
-                          alignment: Alignment.centerLeft,
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              for (
-                                var index = 0;
-                                index < bottomChildren.length;
-                                index++
-                              ) ...[
-                                if (index > 0) const SizedBox(width: 6),
-                                bottomChildren[index],
+                      Positioned.fill(
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [
+                                LightcorePalette.night.withValues(alpha: 0.46),
+                                LightcorePalette.night.withValues(alpha: 0.08),
+                                LightcorePalette.panelRaised.withValues(
+                                  alpha: 0.78,
+                                ),
                               ],
-                            ],
+                              stops: const [0, 0.5, 1],
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                            ),
                           ),
                         ),
                       ),
                     ],
+                    Padding(
+                      padding: const EdgeInsets.all(10),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              if (topLeading == null)
+                                const Spacer()
+                              else
+                                Expanded(
+                                  child: Align(
+                                    alignment: Alignment.centerLeft,
+                                    child: FittedBox(
+                                      fit: BoxFit.scaleDown,
+                                      alignment: Alignment.centerLeft,
+                                      child: topLeading!,
+                                    ),
+                                  ),
+                                ),
+                              if (topTrailing != null) ...[
+                                const SizedBox(width: 4),
+                                topTrailing!,
+                              ],
+                            ],
+                          ),
+                          const SizedBox(height: 7),
+                          Expanded(
+                            child: Center(
+                              child: Opacity(
+                                opacity: locked && !hasBackground ? 0.38 : 1,
+                                child: center,
+                              ),
+                            ),
+                          ),
+                          if (bottomChildren.isNotEmpty) ...[
+                            const SizedBox(height: 7),
+                            SizedBox(
+                              width: double.infinity,
+                              child: FittedBox(
+                                fit: BoxFit.scaleDown,
+                                alignment: Alignment.center,
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    for (
+                                      var index = 0;
+                                      index < bottomChildren.length;
+                                      index++
+                                    ) ...[
+                                      if (index > 0) const SizedBox(width: 6),
+                                      bottomChildren[index],
+                                    ],
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
                   ],
                 ),
               ),

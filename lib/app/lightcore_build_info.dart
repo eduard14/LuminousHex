@@ -3,12 +3,12 @@ class LightcoreBuildInfo {
 
   static const String versionName = String.fromEnvironment(
     'LIGHTCORE_VERSION_NAME',
-    defaultValue: '1.0.17',
+    defaultValue: '1.0.18',
   );
 
   static const String buildNumber = String.fromEnvironment(
     'LIGHTCORE_BUILD_NUMBER',
-    defaultValue: '18',
+    defaultValue: '19',
   );
 
   static const String iosAppStoreUrl = String.fromEnvironment(

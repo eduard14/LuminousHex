@@ -12,6 +12,7 @@ import '../services/lightcore_firebase_backend.dart';
 import '../state/lightcore_controller.dart';
 import '../theme/lightcore_palette.dart';
 import '../widgets/aurora_panel.dart';
+import '../widgets/lightcore_info_button.dart';
 import '../widgets/meter_bar.dart';
 import '../widgets/status_pill.dart';
 
@@ -518,6 +519,7 @@ class _FriendManagementScreenState extends State<FriendManagementScreen> {
         return ListView(
           key: PageStorageKey<String>('social-${widget.section.name}-scroll'),
           controller: widget.scrollController,
+          padding: const EdgeInsets.only(bottom: 28),
           children: [
             _SocialOverviewPanel(
               section: widget.section,

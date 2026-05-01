@@ -25,6 +25,11 @@ class _ShellProfileHeaderHud extends StatelessWidget {
     final avatarSize = compact ? 40.0 : 50.0;
     final width = compact ? 128.0 : 218.0;
     final outputEfficiency = controller.outputEfficiencyLabel;
+    final guideLoadout =
+        CosmicEquipmentLoadout.fromItems(<PlayerEquipmentItem?>[
+          for (final slot in EquipmentLoadoutSlot.values)
+            controller.equippedPlayerItemForSlot(slot),
+        ]);
 
     Widget profileButton = GestureDetector(
       behavior: HitTestBehavior.opaque,
@@ -32,6 +37,7 @@ class _ShellProfileHeaderHud extends StatelessWidget {
       child: LightcoreGuideBadge(
         guide: controller.guideProfile,
         size: avatarSize,
+        equipmentLoadout: guideLoadout,
       ),
     );
 
@@ -78,7 +84,7 @@ class _ShellProfileHeaderHud extends StatelessWidget {
                         color: LightcorePalette.mist,
                         fontWeight: FontWeight.w900,
                         height: 1.0,
-                        letterSpacing: 0.3,
+                        letterSpacing: 0,
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -342,6 +348,7 @@ class _HeaderMenuButton extends StatelessWidget {
         tooltip: 'Open Menu',
         color: LightcorePalette.panel,
         elevation: 8,
+        popUpAnimationStyle: AnimationStyle.noAnimation,
         offset: const Offset(0, 8),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(18),
@@ -547,7 +554,7 @@ extension on _ShellOverlayDestination {
     _ShellOverlayDestination.friends => const Icon(Icons.group_add_rounded),
     _ShellOverlayDestination.mentees => const Icon(Icons.account_tree_rounded),
     _ShellOverlayDestination.mentors => const Icon(Icons.school_rounded),
-    _ShellOverlayDestination.enemies => const Icon(Icons.adjust_rounded),
+    _ShellOverlayDestination.enemies => const Icon(LightcoreIcons.anomalies),
     _ShellOverlayDestination.dungeons => const Icon(Icons.grid_view_rounded),
     _ShellOverlayDestination.tournaments => const Icon(
       Icons.emoji_events_rounded,

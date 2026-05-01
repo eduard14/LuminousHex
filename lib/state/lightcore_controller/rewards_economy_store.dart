@@ -605,12 +605,31 @@ extension LightcoreControllerEconomyStore on LightcoreController {
     LightcoreOfflineClaimResult claim, {
     bool showBanner = true,
   }) {
-    if (!claim.hasRewards) {
+    if (!claim.serverValidated) {
+      return;
+    }
+
+    final claimedSeconds = max(0, claim.secondsClaimed);
+    final fabricationAdvanced = _advanceOfflineTowerFabrication(
+      claimedSeconds.toDouble(),
+      showCompletionBanners: showBanner,
+    );
+    if (!claim.hasRewards && !fabricationAdvanced) {
+      if (claimedSeconds > 0) {
+        _totalOfflineSecondsClaimed += claimedSeconds;
+        _notifyNow();
+      }
       return;
     }
 
     final previousExperience = progressionExperience;
-    _totalOfflineSecondsClaimed += max(0, claim.secondsClaimed);
+    _totalOfflineSecondsClaimed += claimedSeconds;
+    if (!claim.hasRewards) {
+      _syncTutorialStep(showBanner: false);
+      _notifyNow();
+      return;
+    }
+
     lumens += claim.lumensGranted;
     flux += claim.fluxGranted;
     enemyTickets += claim.enemyTicketsGranted;
@@ -642,7 +661,7 @@ extension LightcoreControllerEconomyStore on LightcoreController {
     if (showBanner) {
       final claimedHours = max(0, claim.secondsClaimed) / 3600;
       final summary =
-          'Offline claim applied: ${LightcoreCurrencyLabels.rewardLumens(claim.lumensGranted)}, ${LightcoreCurrencyLabels.rewardFlux(claim.fluxGranted)}, ${LightcoreCurrencyLabels.rewardThreatScans(claim.enemyTicketsGranted)}, +$grantedExperience EXP from ${claimedHours.toStringAsFixed(1)}h away.';
+          'Offline claim: +${claim.lumensGranted}L, +${claim.fluxGranted}F, +${claim.enemyTicketsGranted} scans, +$grantedExperience EXP (${claimedHours.toStringAsFixed(1)}h).';
       final unlockBanner = _towerUnlockBannerFragment(
         previousExperience,
         progressionExperience,

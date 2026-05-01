@@ -30,10 +30,10 @@ class LightcoreGuideProfile {
 
   static const luma = LightcoreGuideProfile(
     id: LightcoreGuideId.luma,
-    displayName: 'Luma',
+    displayName: 'Luna',
     playerProfileLabel: 'Girl profile',
     summary: 'Relay guide for the alternate pilot profile.',
-    assetPath: 'assets/guides/luma.png',
+    assetPath: 'assets/guides/luna.png',
   );
 
   static const all = <LightcoreGuideProfile>[lumo, luma];

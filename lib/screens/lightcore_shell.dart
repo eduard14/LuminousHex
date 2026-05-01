@@ -7,15 +7,18 @@ import '../app/lightcore_build_info.dart';
 import '../app/lightcore_bootstrap.dart';
 import '../battle/shell_promotion_presentation.dart';
 import '../models/lightcore_currency_labels.dart';
+import '../models/lightcore_types.dart';
 import '../models/lightcore_social_invite_link.dart';
 import '../models/lightcore_social_state.dart';
 import '../models/lightcore_state.dart';
 import '../services/lightcore_firebase_backend.dart';
+import '../services/lightcore_audio.dart';
 import '../services/lightcore_rewarded_ads.dart';
 import '../state/lightcore_controller.dart';
 import '../theme/lightcore_icons.dart';
 import '../theme/lightcore_palette.dart';
 import '../widgets/aurora_panel.dart';
+import '../widgets/cosmic_guide_avatar.dart';
 import '../widgets/guided_focus_frame.dart';
 import '../widgets/lightcore_guide_badge.dart';
 import '../widgets/lightcore_screen_transition.dart';
@@ -85,6 +88,7 @@ class _LightcoreShellState extends State<LightcoreShell> {
   ShellPromotionPresentation? _activeShellPromotionPresentation;
   bool _shellPromotionHudSuppressed = false;
   bool _eventBattleSurfaceActive = false;
+  bool _settingsDialogOpen = false;
   int _shellPromotionSequence = 0;
   bool _startupOfflineClaimPresented = false;
   bool _initialSocialInviteOpened = false;
@@ -940,7 +944,7 @@ class _LightcoreShellState extends State<LightcoreShell> {
                                 'battle-${identityHashCode(controller)}-${widget.battleSurfaceGeneration}',
                               ),
                               controller: controller,
-                              isActive: !overlayActive,
+                              isActive: !overlayActive && !_settingsDialogOpen,
                               showQuestPanel: battleHudVisible,
                               showBattleHud: battleHudVisible,
                               promotionPresentation:
@@ -1481,104 +1485,128 @@ class _LightcoreShellState extends State<LightcoreShell> {
   }
 
   void _openSettings(BuildContext context) {
-    showDialog<void>(
-      context: context,
-      barrierColor: LightcorePalette.night.withValues(alpha: 0.72),
-      builder: (dialogContext) {
-        return AnimatedBuilder(
-          animation: widget.controller,
-          builder: (context, _) {
-            final controller = widget.controller;
+    if (_settingsDialogOpen) {
+      return;
+    }
+    LightcoreAudio.instance.playSfx(LightcoreSfx.panelOpen);
+    setState(() => _settingsDialogOpen = true);
+    unawaited(
+      showDialog<void>(
+        context: context,
+        barrierColor: LightcorePalette.night.withValues(alpha: 0.72),
+        builder: (dialogContext) {
+          return AnimatedBuilder(
+            animation: widget.controller,
+            builder: (context, _) {
+              final controller = widget.controller;
 
-            return _SelectorDialog(
-              title: 'Settings',
-              subtitle:
-                  'Account sync, notifications, stats, help, and reset controls stay here.',
-              tint: controller.activeLayer.core.affinity.color,
-              child: Column(
-                children: [
-                  Expanded(
-                    child: ListView(
-                      key: const ValueKey<String>('settings-scroll-view'),
-                      children: [
-                        AuroraPanel(
-                          tint: controller.activeLayer.core.affinity.color,
-                          padding: const EdgeInsets.all(16),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Control Room',
-                                style: Theme.of(context).textTheme.titleMedium,
-                              ),
-                              const SizedBox(height: 6),
-                              Text(
-                                'Use Account Sync to link this save to Google, Notifications to tune in-game banners, Change Name for your tournament callsign, Stats for the save ledger, and Help for Lightcore terms. Full reset restarts Lumens, Flux, Threat Scans, managers, outfit gear, anomaly cards, towers, EXP, and advancement progress.',
-                                style: Theme.of(context).textTheme.bodyMedium,
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        _buildAccountSettingsPanel(context),
-                        const SizedBox(height: 12),
-                        _buildNotificationSettingsPanel(context, controller),
-                        const SizedBox(height: 12),
-                        _buildGraphicsSettingsPanel(context, controller),
-                        const SizedBox(height: 16),
-                        Wrap(
-                          spacing: 10,
-                          runSpacing: 10,
+              return _SelectorDialog(
+                title: 'Settings',
+                subtitle:
+                    'Account sync, notifications, stats, help, and reset controls stay here.',
+                tint: controller.activeLayer.core.affinity.color,
+                child: Column(
+                  children: [
+                    Expanded(
+                      child: SingleChildScrollView(
+                        key: const ValueKey<String>('settings-scroll-view'),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            FilledButton.tonalIcon(
-                              onPressed: () => _openStats(dialogContext),
-                              icon: const Icon(Icons.query_stats_rounded),
-                              label: const Text('Stats'),
-                            ),
-                            GuidedFocusFrame(
-                              active:
-                                  controller.tutorialStep ==
-                                  LightcoreTutorialStep.setScreenName,
-                              tint: LightcorePalette.quest,
-                              radius: 18,
-                              label: 'NAME',
-                              child: FilledButton.tonalIcon(
-                                onPressed: () =>
-                                    _openScreenNameDialog(dialogContext),
-                                icon: const Icon(Icons.badge_rounded),
-                                label: const Text('Change Name'),
+                            AuroraPanel(
+                              tint: controller.activeLayer.core.affinity.color,
+                              padding: const EdgeInsets.all(16),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Control Room',
+                                    style: Theme.of(
+                                      context,
+                                    ).textTheme.titleMedium,
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    'Use Account Sync to link this save to Google, Notifications to tune in-game banners, Change Name for your tournament callsign, Stats for the save ledger, and Help for Lightcore terms. Full reset restarts Lumens, Flux, Threat Scans, managers, outfit gear, anomaly cards, towers, EXP, and advancement progress.',
+                                    style: Theme.of(
+                                      context,
+                                    ).textTheme.bodyMedium,
+                                  ),
+                                ],
                               ),
                             ),
-                            Tooltip(
-                              message: 'Open Help',
-                              child: FilledButton.tonalIcon(
-                                onPressed: () => _openHelp(dialogContext),
-                                icon: const Icon(Icons.help_outline_rounded),
-                                label: const Text('Help'),
-                              ),
+                            const SizedBox(height: 12),
+                            _buildAccountSettingsPanel(context),
+                            const SizedBox(height: 12),
+                            _buildNotificationSettingsPanel(
+                              context,
+                              controller,
                             ),
-                            FilledButton(
-                              onPressed: () async {
-                                Navigator.of(dialogContext).pop();
-                                await _confirmReset(context);
-                              },
-                              child: const Text('Game Reset'),
+                            const SizedBox(height: 12),
+                            _buildGraphicsSettingsPanel(context, controller),
+                            const SizedBox(height: 16),
+                            Wrap(
+                              spacing: 10,
+                              runSpacing: 10,
+                              children: [
+                                FilledButton.tonalIcon(
+                                  onPressed: () => _openStats(dialogContext),
+                                  icon: const Icon(Icons.query_stats_rounded),
+                                  label: const Text('Stats'),
+                                ),
+                                GuidedFocusFrame(
+                                  active:
+                                      controller.tutorialStep ==
+                                      LightcoreTutorialStep.setScreenName,
+                                  tint: LightcorePalette.quest,
+                                  radius: 18,
+                                  label: 'NAME',
+                                  child: FilledButton.tonalIcon(
+                                    onPressed: () =>
+                                        _openScreenNameDialog(dialogContext),
+                                    icon: const Icon(Icons.badge_rounded),
+                                    label: const Text('Change Name'),
+                                  ),
+                                ),
+                                Tooltip(
+                                  message: 'Open Help',
+                                  child: FilledButton.tonalIcon(
+                                    onPressed: () => _openHelp(dialogContext),
+                                    icon: const Icon(
+                                      Icons.help_outline_rounded,
+                                    ),
+                                    label: const Text('Help'),
+                                  ),
+                                ),
+                                FilledButton(
+                                  onPressed: () async {
+                                    Navigator.of(dialogContext).pop();
+                                    await _confirmReset(context);
+                                  },
+                                  child: const Text('Game Reset'),
+                                ),
+                              ],
                             ),
                           ],
                         ),
-                      ],
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 12),
-                  _SettingsVersionFooter(
-                    version: _settingsClientDisplayVersion,
-                  ),
-                ],
-              ),
-            );
-          },
-        );
-      },
+                    const SizedBox(height: 12),
+                    _SettingsVersionFooter(
+                      version: _settingsClientDisplayVersion,
+                    ),
+                  ],
+                ),
+              );
+            },
+          );
+        },
+      ).whenComplete(() {
+        if (!mounted) {
+          return;
+        }
+        setState(() => _settingsDialogOpen = false);
+      }),
     );
   }
 
@@ -1856,6 +1884,7 @@ class _LightcoreShellState extends State<LightcoreShell> {
                   'Switch shells without losing your current workspace. If Towers or Advance is open, shell changes retarget that upgrade surface immediately.',
               tint: controller.activeLayer.core.affinity.color,
               child: ListView(
+                padding: const EdgeInsets.only(bottom: 8),
                 children: [
                   AuroraPanel(
                     tint: controller.activeLayer.core.affinity.color,

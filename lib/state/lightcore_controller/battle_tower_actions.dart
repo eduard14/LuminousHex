@@ -163,7 +163,7 @@ extension LightcoreControllerBattleTowerActions on LightcoreController {
       selectSlot(slotIndex);
       return;
     }
-    activateTowerSlot(slotIndex);
+    activateTowerSlot(slotIndex, selectForStats: false);
   }
 
   bool activateTowerSlot(
@@ -1010,6 +1010,7 @@ extension LightcoreControllerBattleTowerActions on LightcoreController {
     final promotedCore = _core.copyWith(
       flowEfficiency: _maxFlowEfficiency,
       fireCooldownRemaining: 0,
+      packetCooldownRemaining: 0,
       level: max(_core.level + 1, nextTier),
       affinity: forgedAffinity,
       secondaryAffinity: forgedTraits.payloadAffinity,
@@ -1070,6 +1071,7 @@ extension LightcoreControllerBattleTowerActions on LightcoreController {
     _core = _core.copyWith(
       flowEfficiency: _maxFlowEfficiency,
       fireCooldownRemaining: 0,
+      packetCooldownRemaining: 0,
     );
     _layer2 = _layer2.copyWith(fireCooldownRemaining: 0);
     _storeActiveLayer();

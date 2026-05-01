@@ -25,79 +25,100 @@ class _ShareInvitePanel extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: textTheme.titleLarge),
-          const SizedBox(height: 8),
-          Text(description, style: textTheme.bodyMedium),
-          const SizedBox(height: 14),
-          Wrap(
-            spacing: 16,
-            runSpacing: 14,
-            crossAxisAlignment: WrapCrossAlignment.center,
+          Row(
             children: [
-              DecoratedBox(
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(18),
-                  boxShadow: [
-                    BoxShadow(
-                      color: tint.withValues(alpha: 0.18),
-                      blurRadius: 18,
-                      spreadRadius: -6,
-                    ),
-                  ],
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(10),
-                  child: QrImageView(
-                    data: inviteUrl,
-                    version: QrVersions.auto,
-                    size: 168,
-                    backgroundColor: Colors.white,
-                    eyeStyle: const QrEyeStyle(
-                      eyeShape: QrEyeShape.square,
-                      color: LightcorePalette.night,
-                    ),
-                    dataModuleStyle: const QrDataModuleStyle(
-                      dataModuleShape: QrDataModuleShape.square,
-                      color: LightcorePalette.night,
-                    ),
-                  ),
-                ),
+              Expanded(child: Text(title, style: textTheme.titleLarge)),
+              LightcoreInfoButton(
+                title: '$title Help',
+                message: description,
+                tint: tint,
               ),
-              ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 460),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _InviteLinkField(label: codeLabel, value: code),
-                    const SizedBox(height: 10),
-                    _InviteLinkField(label: 'Invite Link', value: inviteUrl),
-                    const SizedBox(height: 12),
-                    Wrap(
-                      spacing: 10,
-                      runSpacing: 10,
-                      children: [
-                        FilledButton.icon(
-                          onPressed: () => _copyInviteValue(
-                            context,
-                            'Invite link',
-                            inviteUrl,
-                          ),
-                          icon: const Icon(Icons.link_rounded),
-                          label: const Text('Copy Link'),
-                        ),
-                        OutlinedButton.icon(
-                          onPressed: () =>
-                              _copyInviteValue(context, codeLabel, code),
-                          icon: const Icon(Icons.badge_rounded),
-                          label: const Text('Copy Code'),
+            ],
+          ),
+          const SizedBox(height: 12),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final compact = constraints.maxWidth < 360;
+              final qrSize = compact ? 140.0 : 168.0;
+              final fieldWidth = math.min(
+                460.0,
+                math.max(240.0, constraints.maxWidth),
+              );
+
+              return Wrap(
+                spacing: compact ? 12 : 16,
+                runSpacing: compact ? 12 : 14,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(18),
+                      boxShadow: [
+                        BoxShadow(
+                          color: tint.withValues(alpha: 0.18),
+                          blurRadius: 18,
+                          spreadRadius: -6,
                         ),
                       ],
                     ),
-                  ],
-                ),
-              ),
-            ],
+                    child: Padding(
+                      padding: const EdgeInsets.all(10),
+                      child: QrImageView(
+                        data: inviteUrl,
+                        version: QrVersions.auto,
+                        size: qrSize,
+                        backgroundColor: Colors.white,
+                        eyeStyle: const QrEyeStyle(
+                          eyeShape: QrEyeShape.square,
+                          color: LightcorePalette.night,
+                        ),
+                        dataModuleStyle: const QrDataModuleStyle(
+                          dataModuleShape: QrDataModuleShape.square,
+                          color: LightcorePalette.night,
+                        ),
+                      ),
+                    ),
+                  ),
+                  ConstrainedBox(
+                    constraints: BoxConstraints(maxWidth: fieldWidth),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _InviteLinkField(label: codeLabel, value: code),
+                        const SizedBox(height: 10),
+                        _InviteLinkField(
+                          label: 'Invite Link',
+                          value: inviteUrl,
+                        ),
+                        const SizedBox(height: 12),
+                        Wrap(
+                          spacing: 10,
+                          runSpacing: 10,
+                          children: [
+                            FilledButton.icon(
+                              onPressed: () => _copyInviteValue(
+                                context,
+                                'Invite link',
+                                inviteUrl,
+                              ),
+                              icon: const Icon(Icons.link_rounded),
+                              label: const Text('Copy Link'),
+                            ),
+                            OutlinedButton.icon(
+                              onPressed: () =>
+                                  _copyInviteValue(context, codeLabel, code),
+                              icon: const Icon(Icons.badge_rounded),
+                              label: const Text('Copy Code'),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              );
+            },
           ),
         ],
       ),
@@ -184,11 +205,8 @@ class _InviteLinkField extends StatelessWidget {
     final textTheme = Theme.of(context).textTheme;
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: LightcorePalette.night.withValues(alpha: 0.42),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: LightcorePalette.stroke.withValues(alpha: 0.55),
-        ),
+        color: LightcorePalette.panelRaised.withValues(alpha: 0.62),
+        borderRadius: BorderRadius.circular(12),
       ),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -247,15 +265,40 @@ class _InvitePanel extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: Theme.of(context).textTheme.titleLarge),
-          const SizedBox(height: 8),
-          Text(description, style: Theme.of(context).textTheme.bodyMedium),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  title,
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+              ),
+              LightcoreInfoButton(
+                title: '$title Help',
+                message: description,
+                tint: LightcorePalette.solar,
+              ),
+            ],
+          ),
           const SizedBox(height: 12),
           TextField(
             controller: targetController,
             enabled: !busy,
             decoration: InputDecoration(
-              border: OutlineInputBorder(),
+              filled: true,
+              fillColor: LightcorePalette.panelRaised.withValues(alpha: 0.62),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide.none,
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide.none,
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: LightcorePalette.solar),
+              ),
               labelText: targetLabel,
             ),
           ),

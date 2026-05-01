@@ -199,6 +199,11 @@ class LightcoreDailyDungeonTowerProfile {
     required this.shotDamage,
     required this.chargeRate,
     required this.cooldownSeconds,
+    this.battleTitle,
+    this.battleAffinity,
+    this.battleProjectileType,
+    this.battlePayloadType,
+    this.battleDisplayLevel,
   });
 
   final int towerLevel;
@@ -208,11 +213,18 @@ class LightcoreDailyDungeonTowerProfile {
   final double shotDamage;
   final double chargeRate;
   final double cooldownSeconds;
+  final String? battleTitle;
+  final PrototypeAffinity? battleAffinity;
+  final ProjectileType? battleProjectileType;
+  final PayloadType? battlePayloadType;
+  final int? battleDisplayLevel;
 
-  PrototypeAffinity get affinity => config.affinity;
-  ProjectileType get projectileType => config.defaultProjectileType;
-  PayloadType get payloadType => config.defaultPayloadType;
-  String get title => '${affinity.label} ${config.name}';
+  PrototypeAffinity get affinity => battleAffinity ?? config.affinity;
+  ProjectileType get projectileType =>
+      battleProjectileType ?? config.defaultProjectileType;
+  PayloadType get payloadType => battlePayloadType ?? config.defaultPayloadType;
+  int get effectiveDisplayLevel => battleDisplayLevel ?? displayLevel;
+  String get title => battleTitle ?? '${affinity.label} ${config.name}';
   String get managerLabel => 'Enemy Manager';
 }
 
@@ -281,11 +293,11 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
     id: 'TUT-001',
     title: 'Wake the Core',
     teachGoal:
-        'The core is the active battle center and only fires queued pulses.',
+        'Grow the shell by keeping the core active. The core turns queued pulses into shots that earn Lumens.',
     trigger: 'New account',
     primaryClickTarget: 'Core Map > tap central core',
     coachCopy:
-        'Tap the center Lightcore to unfold the first shell and reveal the outer hexes.',
+        'Tap the center Lightcore to wake the first shell and reveal where towers will go.',
     completionCondition: 'Tap central core',
     reward: 'Safe White Threat Scan x1',
     failureHelpState:
@@ -295,11 +307,12 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
   LightcoreTutorialStep.waitForFirstHex: LightcoreTutorialQuestDefinition(
     id: 'TUT-002',
     title: 'Wait for Hex 1',
-    teachGoal: 'Outer hexes unlock from battle progress before you can build.',
+    teachGoal:
+        'Battle progress opens build lanes. More lanes mean more places to add Lumen-producing towers.',
     trigger: 'Shell is awake before the first lane unlocks',
     primaryClickTarget: 'Battlefield > Hex 1',
     coachCopy:
-        'Keep the shell open while the first lane unlocks. Early drift fights feed the EXP gate.',
+        'Keep the shell open while early drift fights feed the EXP gate for Hex 1.',
     completionCondition: 'Hex 1 unlocks',
     reward: 'Small Lumen grant',
     failureHelpState: 'Leave the battle view active until the first hex opens.',
@@ -309,7 +322,7 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
     id: 'TUT-003',
     title: 'Select Hex 1',
     teachGoal:
-        'Selecting a hex opens the build or stats control for that lane.',
+        'A hex is a lane. Selecting one opens the controls for building or tuning that lane.',
     trigger: 'First build lane is available',
     primaryClickTarget: 'Battlefield > first outer hex',
     coachCopy:
@@ -323,11 +336,12 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
   LightcoreTutorialStep.buildFirstRedTower: LightcoreTutorialQuestDefinition(
     id: 'TUT-004',
     title: 'Fabricate First Light',
-    teachGoal: 'Empty adjacent spaces fabricate Layer 1 towers.',
+    teachGoal:
+        'Towers feed the core queue. That queue creates kills, and kills pay the Lumens used to grow the shell.',
     trigger: 'First hex selected',
     primaryClickTarget: 'Hex 1 controls > Red Prism > Fabricate',
     coachCopy:
-        'Build the Red Prism in Hex 1. This first tower teaches charge, queue packets, and color counters.',
+        'Build the Red Prism in Hex 1 so the shell has its first reliable source of queued pulses.',
     completionCondition: 'Start or finish first Fabrication',
     reward: 'Instant first tower',
     failureHelpState:
@@ -339,11 +353,11 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
     id: 'TUT-005',
     title: 'Read Tower Stats',
     teachGoal:
-        'Tower stats explain what a prism contributes before it feeds the core queue.',
+        'Stats explain why a tower is worth upgrading: power hits harder, charge readies faster, and cooldown controls repeat fire.',
     trigger: 'First tower exists',
     primaryClickTarget: 'Lower-left prism control > Tower Stats pop-out',
     coachCopy:
-        'Open the Tower Stats pop-out. Power is hit strength, Charge is how fast the prism becomes ready, Cooldown is downtime after a tap, Automation shows whether a manager can tap it, and Load shows lane pressure.',
+        'Open Tower Stats before combat speeds up. The numbers show what this Red Prism contributes to the core queue.',
     completionCondition: 'Open the first tower stats pop-out',
     reward: 'Tower stat labels unlocked',
     failureHelpState:
@@ -354,7 +368,7 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
     id: 'TUT-006',
     title: 'Tap the Core',
     teachGoal:
-        'The Lightcore can create a basic packet when a threat is close.',
+        'The Lightcore is your emergency shot source when an anomaly reaches the center range.',
     trigger: 'An anomaly enters core range before tower lessons finish',
     primaryClickTarget: 'Battlefield > center Lightcore',
     coachCopy:
@@ -369,13 +383,13 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
     id: 'TUT-007',
     title: 'Queue a Pulse',
     teachGoal:
-        'Towers add pulses to the core queue while the player is active.',
+        'Charged towers do not fire by themselves yet. Tapping one adds a packet to the core queue, then the core spends it as a shot.',
     trigger: 'First tower exists',
     primaryClickTarget: 'Battlefield > charged Red Prism',
     coachCopy:
-        'Tap the charged Red Prism to add a pulse to the core queue. The core spends queued pulses as outgoing shots.',
+        'Tap the charged Red Prism to add pulses. More queued shots means faster kills, more Lumens, and earlier upgrades.',
     completionCondition: 'Add 3 queue pulses',
-    reward: 'White Drift practice scan',
+    reward: 'Lumens and White Drift practice scan',
     failureHelpState:
         'If the cue says CHARGING or COOLDOWN, wait until it changes to ADD TO QUEUE.',
     analyticsEvent: 'tutorial_queue_pulse',
@@ -399,11 +413,12 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
       .upgradeFirstTowerToLevel3: LightcoreTutorialQuestDefinition(
     id: 'TUT-009',
     title: 'Tune the Main Tower',
-    teachGoal: 'A strong first tower is safer than several weak early towers.',
+    teachGoal:
+        'One strong anchor lane keeps Output Efficiency stable before the shell spreads into more pressure.',
     trigger: 'First tower can be upgraded',
     primaryClickTarget: 'Tower Stats pop-out > Upgrade',
     coachCopy:
-        'Upgrade the Red Prism before expanding. Higher levels raise its base stats and give more stat-rank room.',
+        'Upgrade the Red Prism before expanding. Higher levels make each queued packet matter more.',
     completionCondition: 'Red Prism reaches level 3',
     reward: 'Small Lumen grant',
     failureHelpState:
@@ -413,11 +428,12 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
   LightcoreTutorialStep.pullFirstWhiteEnemy: LightcoreTutorialQuestDefinition(
     id: 'TUT-010',
     title: 'Run a Safe Threat Scan',
-    teachGoal: 'Threat Scans choose which anomalies enter the active deck.',
+    teachGoal:
+        'Threat Scans are encounter signatures, not allies. They choose which enemies spawn and how much pressure you accept for better gains.',
     trigger: 'Queue tutorial done',
     primaryClickTarget: 'Threat Scan flag > White Drift > Begin',
     coachCopy:
-        'Threat Scans choose what anomalies spawn. Stronger scans give better gains, but pressure your core.',
+        'Run one safe Threat Scan. It adds a simple anomaly signature so you can see how risk becomes reward.',
     completionCondition: 'Resolve 1 Threat Scan',
     reward: 'Unlock Threat Scan panel',
     failureHelpState:
@@ -428,11 +444,11 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
     id: 'TUT-011',
     title: 'Read Flow and Gain',
     teachGoal:
-        'Output Efficiency turns pressure into the real farming multiplier.',
+        'Output Efficiency is the real farming limiter. Bigger threats only help when your shell stays stable enough to cash them in.',
     trigger: 'After first scan',
     primaryClickTarget: 'Left stat stack > Output Efficiency %',
     coachCopy:
-        'Open Output Efficiency. Flow is your real income pace: Base Gain x Threat Reward x Output Efficiency. Bigger threats only help if stability holds.',
+        'Open Output Efficiency to see the income formula: Base Gain x Threat Reward x Output Efficiency.',
     completionCondition: 'Open stability panel',
     reward: 'Small Lumen boost',
     failureHelpState:
@@ -443,11 +459,11 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
     id: 'TUT-012',
     title: 'Auto Queue Check',
     teachGoal:
-        'Managers keep queue generation moving while the player is idle.',
+        'Managers automate the repeated tower taps so the queue keeps filling while you are idle.',
     trigger: 'Manager assigned',
     primaryClickTarget: 'Core > Queue display',
     coachCopy:
-        'Your manager keeps the queue moving while you are idle. Tapping still helps during active play.',
+        'Watch the assigned manager generate queued pulses. You can still tap manually during active play.',
     completionCondition: 'Let manager generate 5 pulses',
     reward: 'Threat Scan x1',
     failureHelpState:
@@ -459,7 +475,7 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
     id: 'TUT-013',
     title: 'Tune Before Expanding',
     teachGoal:
-        'A level 4 anchor keeps the opening lane stable before wider pressure.',
+        'A stronger anchor lane gives you room to test harder scans without crushing Output Efficiency.',
     trigger: 'Early red scan lesson',
     primaryClickTarget: 'Tower Stats pop-out > Upgrade',
     coachCopy:
@@ -474,11 +490,11 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
     id: 'TUT-014',
     title: 'Learn Color Counters',
     teachGoal:
-        'Same-color attacks are resisted, so a one-color build has limits.',
+        'Color counters explain why the shell cannot stay one-color forever. Red enemies resist red shots.',
     trigger: 'After safe scan lesson',
     primaryClickTarget: 'Threat Scan flag > run 1 scan',
     coachCopy:
-        'Run one more Threat Scan. Red anomalies resist red shots, which teaches why mixed colors matter.',
+        'Run one more Threat Scan to add Basic Red. It resists Red Prism shots, so mixed tower colors start to matter.',
     completionCondition: 'Resolve second Threat Scan',
     reward: 'Threat Scan x1',
     failureHelpState: 'Open Scans and run the highlighted single scan.',
@@ -488,11 +504,11 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
     id: 'TUT-015',
     title: 'Focus a Threat',
     teachGoal:
-        'Threat focus tells command which anomaly card you are inspecting and tuning.',
+        'Threat focus picks the signature you are inspecting before you tune pressure or directors.',
     trigger: 'Red signature is available',
     primaryClickTarget: 'Anomalies > Basic Red > Focus',
     coachCopy:
-        'Open Anomalies and focus Basic Red. Focus gives the pressure tools a clear target context.',
+        'Open Anomalies and focus Basic Red so the pressure tools have a clear target context.',
     completionCondition: 'Basic Red focused',
     reward: 'Small Lumen grant',
     failureHelpState: 'Use the highlighted Basic Red card in Anomalies.',
@@ -502,7 +518,7 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
     id: 'TUT-016',
     title: 'Tune Swarm Pressure',
     teachGoal:
-        'Active anomaly count controls risk, rewards, and Output Efficiency strain.',
+        'Swarm Pressure is the risk dial: more active anomalies can pay faster, but too many drag down Output Efficiency.',
     trigger: 'Threat focus is set',
     primaryClickTarget: 'Anomalies > Swarm Pressure control',
     coachCopy:
@@ -521,7 +537,7 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
     trigger: 'Prism Shell online',
     primaryClickTarget: 'Bottom nav > Towers',
     coachCopy:
-        'Open Towers to inspect saved completed shells and Layer 2 shell tools.',
+        'Open Towers to inspect saved completed Layer 1 sets and Layer 2 shell tools.',
     completionCondition: 'Tower Archive opened',
     reward: 'Threat Scan x1',
     failureHelpState: 'Use the highlighted Towers button in the bottom nav.',
@@ -769,7 +785,8 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
   LightcoreTutorialStep.inspectEnemyBlitz: LightcoreTutorialQuestDefinition(
     id: 'TUT-035',
     title: 'Inspect Anomaly Blitz',
-    teachGoal: 'Anomaly Blitz is a fast survival economy tournament.',
+    teachGoal:
+        'Anomaly Blitz is a testing survival economy tournament with weekend-length sessions.',
     trigger: 'Tournaments unlocked and social primer complete',
     primaryClickTarget: 'Menu > Tournaments > Anomaly Blitz',
     coachCopy: 'Open Menu, select Tournaments, and inspect Anomaly Blitz.',
@@ -795,11 +812,11 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
     id: 'TUT-037',
     title: 'Inspect Arena Flow',
     teachGoal:
-        'Arena Flow is a short duel where throughput and pressure decide score.',
+        'Arena Flow is a short duel where Home Towers trade enemy waves and net damage decides score.',
     trigger: 'Hex Gauntlet reviewed',
     primaryClickTarget: 'Menu > Tournaments > Arena Flow',
     coachCopy:
-        'Inspect Arena Flow. It is the quick duel format built around flow score.',
+        'Inspect Arena Flow. It is the quick duel format built around Home Tower net damage.',
     completionCondition: 'Arena Flow reviewed',
     reward: 'Flux',
     failureHelpState: 'Use the highlighted Arena Flow card.',
@@ -872,6 +889,7 @@ const int evenEntryTournamentCoreLevel =
     LightcoreController.evenEntryTournamentCoreLevel;
 const int evenEntryTournamentPowerIndex =
     LightcoreController.evenEntryTournamentPowerIndex;
+const int tournamentPowerIndexCap = LightcoreController.tournamentPowerIndexCap;
 const int minEnemyTarget = LightcoreController.minEnemyTarget;
 const int initialEnemyTarget = LightcoreController.initialEnemyTarget;
 const int _layer3TrialEnemyCap = 18;
@@ -1165,12 +1183,12 @@ class LightcoreController extends ChangeNotifier {
     for (final quest in tutorialQuestLibrary) {
       sections.add(
         '${quest.id} ${quest.title}\n'
-        'Goal: ${quest.teachGoal}\n'
-        'What to do: ${quest.coachCopy}\n'
+        'Why: ${quest.teachGoal}\n'
+        'Do this: ${quest.coachCopy}\n'
         'Target: ${quest.primaryClickTarget}\n'
         'Complete: ${quest.completionCondition}\n'
-        'Reward: ${quest.reward}\n'
-        'Tip: ${quest.failureHelpState}',
+        'Result: ${quest.reward}\n'
+        'Hint: ${quest.failureHelpState}',
       );
     }
     return sections.join('\n\n');
@@ -1218,6 +1236,7 @@ class LightcoreController extends ChangeNotifier {
   static const int evenEntryTournamentLevel = 1;
   static const int evenEntryTournamentCoreLevel = 1;
   static const int evenEntryTournamentPowerIndex = 1000;
+  static const int tournamentPowerIndexCap = 500000;
   static const int minEnemyTarget = 6;
   static const int initialEnemyTarget = 6;
   static const int baseEnemyTargetMax = 20;
@@ -1245,7 +1264,7 @@ class LightcoreController extends ChangeNotifier {
   static const double _pulseSpeed = 1.8;
   static const double _shotSpeed = 3.8;
   static const double _impactSpeed = 2.8;
-  static const double _coreBombSplashRadius = 64;
+  static const double _coreBombSplashRadius = 180;
   static const double _chainArcImpactLingerSeconds = 0.5;
   static const double _blueFocusLaserDamageMultiplier = 0.38;
   static const double _towerDamageOutputMultiplier = 0.5;

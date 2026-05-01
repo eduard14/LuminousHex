@@ -15,11 +15,12 @@ class _PrismRiftDungeonGame extends FlameGame {
     required this.controller,
     required this.towerProfile,
     required this.timeLimit,
+    required int runSeed,
     required this.snapshotNotifier,
     required this.onRunEnded,
   }) : _remainingSeconds = timeLimit.inSeconds.toDouble(),
        _riftStability = _prismRiftMaxStabilityFor(towerProfile),
-       _random = math.Random(7301 + (towerProfile.towerLevel * 37));
+       _random = math.Random(runSeed);
 
   final LightcoreController controller;
   final LightcoreDailyDungeonTowerProfile towerProfile;
@@ -47,6 +48,7 @@ class _PrismRiftDungeonGame extends FlameGame {
   Offset _aimDirection = const Offset(0, -1);
   Offset? _aimTarget;
   int _combo = 0;
+  int _score = 0;
   int _wave = 1;
   int _shardCounter = 0;
   int _effectCounter = 0;
@@ -155,20 +157,21 @@ class _PrismRiftDungeonGame extends FlameGame {
       _spawnTimer = _nextSpawnDelay;
       return;
     }
-    final affinities = PrototypeAffinity.values;
-    final affinity =
-        affinities[(towerProfile.towerLevel + _wave + _shardCounter) %
-            affinities.length];
+    final enemyConfig = _riftEnemyConfigFor(_wave, _shardCounter);
+    final affinity = enemyConfig.affinity;
     final boss = _wave >= 3 && _shardCounter % 9 == 8;
+    final role = boss ? _PrismRiftShardRole.anchor : _nextShardRole;
     final healthScale = boss ? 2.65 : 1.0;
     final shardHealth =
         towerProfile.shotDamage *
         (1.55 + (_wave * 0.18) + (_random.nextDouble() * 0.62)) *
-        healthScale;
+        healthScale *
+        role.healthMultiplier;
     final angularSign = _random.nextBool() ? 1.0 : -1.0;
     _shards.add(
       _PrismRiftShard(
         id: 'rift_shard_${_shardCounter++}',
+        config: enemyConfig,
         affinity: affinity,
         angle: _random.nextDouble() * math.pi * 2,
         angularVelocity:
@@ -177,13 +180,31 @@ class _PrismRiftDungeonGame extends FlameGame {
         orbitFactor: 0.34 + (_random.nextDouble() * 0.34) + (boss ? 0.04 : 0.0),
         maxHealth: shardHealth,
         health: shardHealth,
-        radiusFactor: boss ? 0.052 : 0.034 + (_random.nextDouble() * 0.01),
+        radiusFactor:
+            boss
+                ? 0.052
+                : role == _PrismRiftShardRole.anchor
+                ? 0.044
+                : role == _PrismRiftShardRole.volatile
+                ? 0.03
+                : 0.034 + (_random.nextDouble() * 0.01),
         weakAngle: _random.nextDouble() * math.pi * 2,
         weakSpin: angularSign * (0.9 + (_random.nextDouble() * 0.8)),
+        role: role,
         boss: boss,
       ),
     );
     _spawnTimer = _nextSpawnDelay;
+  }
+
+  _PrismRiftShardRole get _nextShardRole {
+    if (_wave >= 2 && _shardCounter % 7 == 5) {
+      return _PrismRiftShardRole.volatile;
+    }
+    if (_wave >= 2 && _shardCounter % 6 == 4) {
+      return _PrismRiftShardRole.anchor;
+    }
+    return _PrismRiftShardRole.standard;
   }
 
   double get _nextSpawnDelay {
@@ -204,6 +225,18 @@ class _PrismRiftDungeonGame extends FlameGame {
     _shards
       ..clear()
       ..addAll(advanced);
+    if (_shards.isEmpty) {
+      return;
+    }
+    final pressure = _shards.fold<double>(
+      0,
+      (sum, shard) =>
+          sum + ((shard.boss ? 1.85 : 1.0) * shard.role.pressureMultiplier),
+    );
+    _riftStability = math.min(
+      _riftMaxStability,
+      _riftStability + (pressure * (2.2 + (_wave * 0.35)) * dt),
+    );
   }
 
   void _fireManualShot(Offset target) {
@@ -214,7 +247,12 @@ class _PrismRiftDungeonGame extends FlameGame {
     final center = _arenaCenter;
     final shortest = math.min(size.x, size.y);
     final spec = _shotSpecFor(towerProfile.projectileType);
-    final end = _projectAimEnd(center, target, shortest * spec.rangeFactor);
+    final end = _projectAimEnd(
+      center,
+      target,
+      shortest * spec.rangeFactor,
+      useTargetDistance: true,
+    );
     final hits = _resolveHits(center, end, shortest, spec);
     final color = towerProfile.affinity.color;
     _beams.add(
@@ -237,6 +275,10 @@ class _PrismRiftDungeonGame extends FlameGame {
       final weakHit = hits.any((hit) => hit.weak);
       _applyHits(hits, spec);
       _combo = math.min(99, _combo + (weakHit ? 2 : 1));
+      _score +=
+          (hits.length * 24) +
+          (_combo * (weakHit ? 7 : 4)) +
+          (weakHit ? 45 : 0);
       _heat = math.min(1.0, _heat + spec.heatCost);
     }
     _charge = 0;
@@ -245,7 +287,12 @@ class _PrismRiftDungeonGame extends FlameGame {
   void _addDryPulse(Offset target) {
     final center = _arenaCenter;
     final shortest = math.min(size.x, size.y);
-    final end = _projectAimEnd(center, target, shortest * 0.52);
+    final end = _projectAimEnd(
+      center,
+      target,
+      shortest * 0.52,
+      useTargetDistance: true,
+    );
     _beams.add(
       _PrismRiftBeam(
         id: 'rift_dry_${_effectCounter++}',
@@ -392,17 +439,26 @@ class _PrismRiftDungeonGame extends FlameGame {
           : 1.0;
       final weakBonus = hit.weak ? 1.88 : 1.0;
       final bossGuard = shard.boss ? 0.78 : 1.0;
+      final anchorGuard =
+          shard.role == _PrismRiftShardRole.anchor && !hit.weak ? 0.82 : 1.0;
       final damage =
           towerProfile.shotDamage *
           spec.damageMultiplier *
           (1 + comboBonus) *
           affinityBonus *
           weakBonus *
-          bossGuard;
+          bossGuard *
+          anchorGuard;
       final nextHealth = shard.health - damage;
+      final roleStabilityMultiplier = switch (shard.role) {
+        _PrismRiftShardRole.standard => 1.0,
+        _PrismRiftShardRole.anchor => hit.weak ? 1.18 : 0.76,
+        _PrismRiftShardRole.volatile => 1.08,
+      };
       _riftStability = math.max(
         0.0,
-        _riftStability - (damage * (hit.weak ? 0.92 : 0.62)),
+        _riftStability -
+            (damage * (hit.weak ? 0.92 : 0.62) * roleStabilityMultiplier),
       );
       _impacts.add(
         _PrismRiftImpact(
@@ -415,6 +471,12 @@ class _PrismRiftDungeonGame extends FlameGame {
         ),
       );
       if (nextHealth <= 0) {
+        if (shard.role == _PrismRiftShardRole.volatile) {
+          _riftStability = math.max(
+            0.0,
+            _riftStability - (towerProfile.shotDamage * 0.86),
+          );
+        }
         _shards.removeAt(targetIndex);
       } else {
         _shards[targetIndex] = shard.copyWith(health: nextHealth);
@@ -462,8 +524,15 @@ class _PrismRiftDungeonGame extends FlameGame {
       charge: _charge,
       heat: _heat,
       combo: _combo,
+      score: _score,
       wave: _wave,
       activeShards: _shards.length,
+      anchorShards: _shards
+          .where((shard) => shard.role == _PrismRiftShardRole.anchor)
+          .length,
+      volatileShards: _shards
+          .where((shard) => shard.role == _PrismRiftShardRole.volatile)
+          .length,
       aiming: _aiming,
       running: _running,
       victory: _victory,
@@ -562,7 +631,12 @@ class _PrismRiftDungeonGame extends FlameGame {
       return;
     }
     final spec = _shotSpecFor(towerProfile.projectileType);
-    final end = _projectAimEnd(center, target, shortest * spec.rangeFactor);
+    final end = _projectAimEnd(
+      center,
+      target,
+      shortest * spec.rangeFactor,
+      useTargetDistance: true,
+    );
     final ready = _charge >= 1 && _heat < 0.98;
     final color = ready
         ? towerProfile.affinity.color
@@ -576,7 +650,7 @@ class _PrismRiftDungeonGame extends FlameGame {
         ..strokeCap = StrokeCap.round
         ..color = color.withValues(alpha: ready ? 0.18 : 0.12),
     );
-    _drawGlowLine(
+    LightcoreProjectileFx.drawGlowLine(
       canvas,
       center,
       end,
@@ -614,26 +688,58 @@ class _PrismRiftDungeonGame extends FlameGame {
     for (final shard in _shards) {
       final position = _shardPosition(shard);
       final radius = _shardRadius(shortest, shard);
-      final color = shard.affinity.color;
+      final color = shard.config.affinity.color;
       final weakPoint = _weakPointPosition(position, radius, shard);
       canvas.drawCircle(
         position,
-        radius * 2.0,
+        radius * (shard.boss ? 2.45 : 2.0),
         Paint()
           ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10)
           ..color = color.withValues(alpha: shard.boss ? 0.3 : 0.18),
       );
-      canvas.drawPath(
-        _hexPath(position, radius),
-        Paint()..color = color.withValues(alpha: shard.boss ? 0.34 : 0.24),
+      if (shard.boss ||
+          shard.config.rarity.index >= EnemyCardRarity.epic.index) {
+        canvas.drawPath(
+          _hexPath(position, radius * 1.5),
+          Paint()
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = shard.boss ? 3 : 2.2
+            ..color = LightcorePalette.solar.withValues(alpha: 0.78),
+        );
+      }
+      canvas.drawCircle(
+        position,
+        radius,
+        Paint()..color = color.withValues(alpha: shard.boss ? 0.96 : 0.9),
       );
-      canvas.drawPath(
-        _hexPath(position, radius),
+      canvas.drawCircle(
+        position,
+        radius,
         Paint()
           ..style = PaintingStyle.stroke
           ..strokeWidth = shard.boss ? 3 : 2
-          ..color = color.withValues(alpha: 0.82),
+          ..color =
+              (shard.boss ? LightcorePalette.solar : LightcorePalette.mist)
+                  .withValues(alpha: 0.42),
       );
+      if (shard.role == _PrismRiftShardRole.anchor) {
+        canvas.drawPath(
+          _hexPath(position, radius * 1.82),
+          Paint()
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 2.4
+            ..color = LightcorePalette.gilded.withValues(alpha: 0.74),
+        );
+      } else if (shard.role == _PrismRiftShardRole.volatile) {
+        canvas.drawCircle(
+          position,
+          radius * 1.72,
+          Paint()
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 2.2
+            ..color = LightcorePalette.warning.withValues(alpha: 0.72),
+        );
+      }
       canvas.drawArc(
         Rect.fromCircle(center: position, radius: radius * 1.34),
         -math.pi / 2,
@@ -665,28 +771,22 @@ class _PrismRiftDungeonGame extends FlameGame {
     for (final beam in _beams) {
       final progress = Curves.easeOut.transform(beam.progress);
       final end = Offset.lerp(beam.start, beam.end, progress)!;
-      if (towerProfile.projectileType.behaviorProfile ==
-              ProjectileBehaviorProfile.chain &&
-          !beam.miss) {
-        _drawEnergyBolt(
-          canvas,
-          beam.start,
-          end,
-          beam.color,
-          width: beam.width.clamp(2.0, 8.0).toDouble(),
-          amplitude: math.min(size.x, size.y) * 0.028,
-          seed: _elapsed * 12 + beam.id.hashCode,
-        );
-      } else {
-        _drawGlowLine(
-          canvas,
-          beam.start,
-          end,
-          beam.color,
-          width: beam.width.clamp(2.0, 10.0).toDouble(),
-          alpha: beam.miss ? 0.46 : 0.88,
-        );
-      }
+      final projectileType = beam.miss
+          ? ProjectileType.starBolt
+          : towerProfile.projectileType;
+      LightcoreProjectileFx.drawProjectileTrail(
+        canvas,
+        projectileType: projectileType,
+        start: beam.start,
+        end: beam.end,
+        current: end,
+        color: beam.color,
+        width: beam.width.clamp(2.0, 10.0).toDouble(),
+        seed: _elapsed * 12 + beam.id.hashCode,
+        alpha: beam.miss ? 0.46 : 0.88,
+        unit: math.min(size.x, size.y) * 0.16,
+        progress: beam.progress,
+      );
       if (beam.critical) {
         canvas.drawCircle(
           end,
@@ -765,17 +865,19 @@ class _PrismRiftDungeonGame extends FlameGame {
         ..strokeCap = StrokeCap.round
         ..color = LightcorePalette.violet.withValues(alpha: 0.84),
     );
-    _paintIconGlyph(
+    _paintTowerTraitBadge(
       canvas,
       center,
-      towerProjectileIcon(towerProfile.projectileType),
-      size: radius * 0.58,
-      color: tint,
+      projectileType: towerProfile.projectileType,
+      payloadType: towerProfile.payloadType,
+      level: towerProfile.effectiveDisplayLevel,
+      tint: tint,
+      size: radius * 2.2,
     );
     _paintBadge(
       canvas,
       center.translate(0, radius * 0.72),
-      'L${towerProfile.displayLevel}',
+      'L${towerProfile.effectiveDisplayLevel}',
       color: LightcorePalette.mist,
       size: radius * 0.2,
     );
@@ -906,12 +1008,42 @@ class _PrismRiftDungeonGame extends FlameGame {
     return direction / direction.distance;
   }
 
-  Offset _projectAimEnd(Offset start, Offset target, double range) {
+  EnemyConfig _riftEnemyConfigFor(int wave, int index) {
+    final affinities = PrototypeAffinity.values
+        .where((affinity) => affinity != PrototypeAffinity.black)
+        .toList(growable: false);
+    final affinity =
+        affinities[(towerProfile.towerLevel + wave + index) %
+            affinities.length];
+    final rarityIndex = math.min(
+      EnemyCardRarity.values.length - 1,
+      ((towerProfile.towerLevel ~/ 10) + (wave ~/ 2) + (index ~/ 7)),
+    );
+    final rarity = EnemyCardRarity.values[rarityIndex];
+    return EnemyLibrary.all.firstWhere(
+      (entry) =>
+          !entry.isBoss && entry.affinity == affinity && entry.rarity == rarity,
+      orElse: () => EnemyLibrary.all.firstWhere(
+        (entry) => !entry.isBoss && entry.affinity == affinity,
+        orElse: () => EnemyLibrary.basicWhite,
+      ),
+    );
+  }
+
+  Offset _projectAimEnd(
+    Offset start,
+    Offset target,
+    double range, {
+    bool useTargetDistance = false,
+  }) {
     final delta = target - start;
     if (delta.distance <= 0.001) {
       return start.translate(0, -range);
     }
-    return start + (delta / delta.distance) * range;
+    final distance = useTargetDistance
+        ? math.min(range, delta.distance)
+        : range;
+    return start + (delta / delta.distance) * distance;
   }
 
   Offset _shardPosition(_PrismRiftShard shard) {
@@ -961,81 +1093,6 @@ class _PrismRiftDungeonGame extends FlameGame {
   }
 
   Offset get _arenaCenter => Offset(size.x / 2, size.y / 2);
-
-  void _drawGlowLine(
-    Canvas canvas,
-    Offset start,
-    Offset end,
-    Color color, {
-    required double width,
-    double alpha = 0.84,
-  }) {
-    canvas.drawLine(
-      start,
-      end,
-      Paint()
-        ..strokeWidth = width + 5
-        ..strokeCap = StrokeCap.round
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8)
-        ..color = color.withValues(alpha: alpha * 0.22),
-    );
-    canvas.drawLine(
-      start,
-      end,
-      Paint()
-        ..strokeWidth = width
-        ..strokeCap = StrokeCap.round
-        ..color = color.withValues(alpha: alpha),
-    );
-  }
-
-  void _drawEnergyBolt(
-    Canvas canvas,
-    Offset start,
-    Offset end,
-    Color color, {
-    required double width,
-    required double amplitude,
-    required double seed,
-  }) {
-    final delta = end - start;
-    final distance = delta.distance;
-    if (distance <= 0) {
-      return;
-    }
-    final normal = Offset(-delta.dy / distance, delta.dx / distance);
-    final path = Path()..moveTo(start.dx, start.dy);
-    const segments = 7;
-    for (var index = 1; index <= segments; index += 1) {
-      final t = index / segments;
-      final base = Offset.lerp(start, end, t)!;
-      final jitter =
-          math.sin((seed * 0.017) + (index * 2.23)) *
-          amplitude *
-          (1 - ((t - 0.5).abs() * 0.9));
-      final point = base + (normal * jitter);
-      path.lineTo(point.dx, point.dy);
-    }
-    canvas.drawPath(
-      path,
-      Paint()
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = width + 4
-        ..strokeCap = StrokeCap.round
-        ..strokeJoin = StrokeJoin.round
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8)
-        ..color = color.withValues(alpha: 0.2),
-    );
-    canvas.drawPath(
-      path,
-      Paint()
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = width
-        ..strokeCap = StrokeCap.round
-        ..strokeJoin = StrokeJoin.round
-        ..color = color.withValues(alpha: 0.86),
-    );
-  }
 
   void _paintIconGlyph(
     Canvas canvas,
@@ -1089,6 +1146,87 @@ class _PrismRiftDungeonGame extends FlameGame {
     );
   }
 
+  void _paintTowerTraitBadge(
+    Canvas canvas,
+    Offset center, {
+    required ProjectileType projectileType,
+    required PayloadType payloadType,
+    required int level,
+    required Color tint,
+    required double size,
+  }) {
+    final payloadColor = payloadType.affinity?.color ?? LightcorePalette.layer2;
+    final vertices = List<Offset>.generate(6, (index) {
+      final angle = (math.pi / 6) + (index * math.pi / 3);
+      return center.translate(
+        math.cos(angle) * size * 0.38,
+        math.sin(angle) * size * 0.38,
+      );
+    }, growable: false);
+    final path = Path()..moveTo(vertices.first.dx, vertices.first.dy);
+    for (final vertex in vertices.skip(1)) {
+      path.lineTo(vertex.dx, vertex.dy);
+    }
+    path.close();
+    canvas.drawPath(
+      path,
+      Paint()..color = payloadColor.withValues(alpha: 0.16),
+    );
+    for (var edge = 0; edge < 6; edge += 1) {
+      _drawHexEdge(
+        canvas,
+        vertices,
+        edge,
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = math.max(1.1, size * 0.032)
+          ..strokeCap = StrokeCap.round
+          ..color = LightcorePalette.stroke.withValues(alpha: 0.58),
+      );
+    }
+    final activeEdges = math.max(
+      1,
+      ((level / LightcoreController.maxTowerLevel) * 6).ceil(),
+    );
+    for (var edge = 0; edge < activeEdges; edge += 1) {
+      _drawHexEdge(
+        canvas,
+        vertices,
+        edge,
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = math.max(2.0, size * 0.055)
+          ..strokeCap = StrokeCap.round
+          ..color = tint.withValues(alpha: 0.96),
+      );
+    }
+    canvas.drawCircle(
+      center,
+      size * 0.19,
+      Paint()..color = payloadColor.withValues(alpha: 0.24),
+    );
+    _paintIconGlyph(
+      canvas,
+      center,
+      towerProjectileIcon(projectileType),
+      size: size * 0.23,
+      color: projectileType.affinity.color,
+    );
+  }
+
+  void _drawHexEdge(
+    Canvas canvas,
+    List<Offset> vertices,
+    int edge,
+    Paint paint,
+  ) {
+    canvas.drawLine(
+      vertices[edge % vertices.length],
+      vertices[(edge + 1) % vertices.length],
+      paint,
+    );
+  }
+
   Path _hexPath(Offset center, double radius) {
     final path = Path();
     for (var index = 0; index < 6; index += 1) {
@@ -1108,9 +1246,26 @@ class _PrismRiftDungeonGame extends FlameGame {
   }
 }
 
+enum _PrismRiftShardRole { standard, anchor, volatile }
+
+extension _PrismRiftShardRoleX on _PrismRiftShardRole {
+  double get healthMultiplier => switch (this) {
+    _PrismRiftShardRole.standard => 1.0,
+    _PrismRiftShardRole.anchor => 1.35,
+    _PrismRiftShardRole.volatile => 0.74,
+  };
+
+  double get pressureMultiplier => switch (this) {
+    _PrismRiftShardRole.standard => 1.0,
+    _PrismRiftShardRole.anchor => 1.48,
+    _PrismRiftShardRole.volatile => 0.82,
+  };
+}
+
 class _PrismRiftShard {
   const _PrismRiftShard({
     required this.id,
+    required this.config,
     required this.affinity,
     required this.angle,
     required this.angularVelocity,
@@ -1120,10 +1275,12 @@ class _PrismRiftShard {
     required this.radiusFactor,
     required this.weakAngle,
     required this.weakSpin,
+    required this.role,
     required this.boss,
   });
 
   final String id;
+  final EnemyConfig config;
   final PrototypeAffinity affinity;
   final double angle;
   final double angularVelocity;
@@ -1133,6 +1290,7 @@ class _PrismRiftShard {
   final double radiusFactor;
   final double weakAngle;
   final double weakSpin;
+  final _PrismRiftShardRole role;
   final bool boss;
 
   double get healthFraction =>
@@ -1141,6 +1299,7 @@ class _PrismRiftShard {
   _PrismRiftShard copyWith({double? angle, double? weakAngle, double? health}) {
     return _PrismRiftShard(
       id: id,
+      config: config,
       affinity: affinity,
       angle: angle ?? this.angle,
       angularVelocity: angularVelocity,
@@ -1150,6 +1309,7 @@ class _PrismRiftShard {
       radiusFactor: radiusFactor,
       weakAngle: weakAngle ?? this.weakAngle,
       weakSpin: weakSpin,
+      role: role,
       boss: boss,
     );
   }

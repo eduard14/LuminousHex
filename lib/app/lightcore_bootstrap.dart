@@ -461,6 +461,8 @@ class LightcoreOfflineClaimResult {
       enemyTicketsGranted > 0 ||
       killsGranted > 0;
 
+  bool get hasProgress => serverValidated && secondsClaimed > 0;
+
   factory LightcoreOfflineClaimResult.empty({String? statusMessage}) {
     return LightcoreOfflineClaimResult(
       secondsClaimed: 0,

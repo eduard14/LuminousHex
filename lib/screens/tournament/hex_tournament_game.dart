@@ -5,24 +5,66 @@ class _HexTournamentGame extends FlameGame {
     required this.run,
     required this.snapshotNotifier,
     required this.onCellTap,
+    required this.onCellDrop,
     required this.onRunEnded,
   });
 
   final HexTournamentRunController run;
   final ValueNotifier<HexTournamentSnapshot> snapshotNotifier;
   final ValueChanged<String> onCellTap;
+  final void Function(String sourceCellId, String targetCellId) onCellDrop;
   final VoidCallback onRunEnded;
 
+  static const double _dragStartDistance = 8;
+  static const double _towerBurstDuration = 0.52;
+
   bool _endDispatched = false;
+  Offset? _pointerDownPosition;
+  Offset? _dragPosition;
+  String? _dragSourceCellId;
+  String? _dragHoverCellId;
+  bool _draggingTower = false;
+  double _elapsed = 0;
+  Set<String> _knownTowerIds = <String>{};
+  Map<String, int> _knownTowerStages = <String, int>{};
+  Map<String, double> _towerBursts = <String, double>{};
 
   @override
   Color backgroundColor() => Colors.transparent;
 
+  void _syncTowerVisuals(HexTournamentSnapshot snapshot, double dt) {
+    final currentTowerIds = <String>{};
+    final nextStages = <String, int>{};
+
+    for (final tower in snapshot.towers) {
+      currentTowerIds.add(tower.id);
+      nextStages[tower.id] = tower.mergeStage;
+      final previousStage = _knownTowerStages[tower.id];
+      if (!_knownTowerIds.contains(tower.id) ||
+          (previousStage != null && previousStage != tower.mergeStage)) {
+        _towerBursts[tower.id] = _towerBurstDuration;
+      }
+    }
+
+    _towerBursts.removeWhere(
+      (towerId, _) => !currentTowerIds.contains(towerId),
+    );
+    _towerBursts = <String, double>{
+      for (final entry in _towerBursts.entries)
+        if (entry.value > 0) entry.key: max(0.0, entry.value - dt).toDouble(),
+    };
+    _knownTowerIds = currentTowerIds;
+    _knownTowerStages = nextStages;
+  }
+
   @override
   void update(double dt) {
     super.update(dt);
-    run.tick(dt.clamp(0.0, 0.05).toDouble());
+    final clamped = dt.clamp(0.0, 0.05).toDouble();
+    _elapsed += clamped;
+    run.tick(clamped);
     final snapshot = run.snapshot;
+    _syncTowerVisuals(snapshot, clamped);
     snapshotNotifier.value = snapshot;
     if (snapshot.running) {
       _endDispatched = false;
@@ -33,11 +75,56 @@ class _HexTournamentGame extends FlameGame {
     }
   }
 
-  void handleTap(Offset localPosition) {
+  void handlePointerDown(Offset localPosition) {
+    final snapshot = run.snapshot;
+    final cell = _cellAt(localPosition, snapshot);
+    _pointerDownPosition = localPosition;
+    _dragPosition = localPosition;
+    _dragSourceCellId = cell != null && _towerAt(snapshot, cell.id) != null
+        ? cell.id
+        : null;
+    _dragHoverCellId = cell?.id;
+    _draggingTower = false;
+  }
+
+  void handlePointerMove(Offset localPosition) {
+    final sourceCellId = _dragSourceCellId;
+    final downPosition = _pointerDownPosition;
+    if (sourceCellId == null || downPosition == null) {
+      return;
+    }
+    if (!_draggingTower &&
+        (localPosition - downPosition).distance < _dragStartDistance) {
+      return;
+    }
+    _draggingTower = true;
+    _dragPosition = localPosition;
+    _dragHoverCellId = _cellAt(localPosition, run.snapshot)?.id;
+  }
+
+  void handlePointerUp(Offset localPosition) {
+    if (_pointerDownPosition == null) {
+      return;
+    }
     final cell = _cellAt(localPosition, run.snapshot);
-    if (cell != null) {
+    final sourceCellId = _dragSourceCellId;
+    if (_draggingTower &&
+        sourceCellId != null &&
+        cell != null &&
+        cell.id != sourceCellId) {
+      onCellDrop(sourceCellId, cell.id);
+    } else if (cell != null) {
       onCellTap(cell.id);
     }
+    handlePointerCancel();
+  }
+
+  void handlePointerCancel() {
+    _pointerDownPosition = null;
+    _dragPosition = null;
+    _dragSourceCellId = null;
+    _dragHoverCellId = null;
+    _draggingTower = false;
   }
 
   @override
@@ -72,6 +159,7 @@ class _HexTournamentGame extends FlameGame {
     for (final tower in snapshot.towers) {
       _drawTower(canvas, tower);
     }
+    _drawDragPreview(canvas, snapshot);
     for (final enemy in snapshot.enemies.where((enemy) => enemy.isOnBoard)) {
       _drawEnemy(canvas, snapshot, enemy);
     }
@@ -125,6 +213,9 @@ class _HexTournamentGame extends FlameGame {
     final center = _cellCenter(cell);
     final selected = snapshot.selectedCellId == cell.id;
     final tower = _towerAt(snapshot, cell.id);
+    final dragSource = _dragSourceCellId == cell.id;
+    final dragHover = _draggingTower && _dragHoverCellId == cell.id;
+    final canDropMerge = dragHover && _canDropMerge(snapshot, cell.id);
     final path = _hexPath(center, _hexRadius * 0.92);
     final baseColor = cell.isPath
         ? LightcorePalette.night
@@ -136,12 +227,71 @@ class _HexTournamentGame extends FlameGame {
       path,
       Paint()
         ..style = PaintingStyle.stroke
-        ..strokeWidth = selected ? 3.0 : 1.2
-        ..color = selected
+        ..strokeWidth = dragHover || dragSource
+            ? 3.4
+            : selected
+            ? 3.0
+            : 1.2
+        ..color = dragHover
+            ? canDropMerge
+                  ? LightcorePalette.success
+                  : LightcorePalette.warning
+            : dragSource
+            ? LightcorePalette.aether
+            : selected
             ? LightcorePalette.gilded
             : cell.isPath
             ? LightcorePalette.solar.withValues(alpha: 0.34)
             : LightcorePalette.stroke.withValues(alpha: 0.55),
+    );
+  }
+
+  void _drawDragPreview(Canvas canvas, HexTournamentSnapshot snapshot) {
+    if (!_draggingTower) {
+      return;
+    }
+    final sourceCellId = _dragSourceCellId;
+    final dragPosition = _dragPosition;
+    if (sourceCellId == null || dragPosition == null) {
+      return;
+    }
+    final tower = _towerAt(snapshot, sourceCellId);
+    final sourceCenter = _cellCenterById(sourceCellId);
+    if (tower == null || sourceCenter == null) {
+      return;
+    }
+    final hoverCellId = _dragHoverCellId;
+    final validDrop =
+        hoverCellId != null &&
+        hoverCellId != sourceCellId &&
+        _canDropMerge(snapshot, hoverCellId);
+    final tint = validDrop ? LightcorePalette.success : tower.affinity.color;
+    LightcoreProjectileFx.drawGlowLine(
+      canvas,
+      sourceCenter,
+      dragPosition,
+      tint,
+      width: 2.4,
+      alpha: validDrop ? 0.72 : 0.42,
+    );
+    canvas.drawCircle(
+      dragPosition,
+      _hexRadius * 0.56,
+      Paint()
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10)
+        ..color = tint.withValues(alpha: 0.28),
+    );
+    _drawTowerTraitBadge(
+      canvas,
+      dragPosition,
+      level: (1 + (tower.mergeStage * 2)).clamp(
+        1,
+        LightcoreController.maxTowerLevel,
+      ),
+      projectileType: tower.projectileType,
+      payloadType: tower.payloadType,
+      tint: tint,
+      size: _hexRadius * 0.86,
     );
   }
 
@@ -150,45 +300,87 @@ class _HexTournamentGame extends FlameGame {
     if (center == null) {
       return;
     }
-    final radius = _hexRadius * 0.46;
-    final paint = Paint()..color = tower.affinity.color.withValues(alpha: 0.86);
-    canvas.drawCircle(center, radius, paint);
-    canvas.drawCircle(
-      center,
-      radius + 3,
+    final radius = _hexRadius * 0.58;
+    final selected = run.snapshot.selectedCellId == tower.cellId;
+    final pulse = 0.5 + (sin((_elapsed * 4.0) + tower.id.hashCode) * 0.5);
+    final chargeProgress = tower.cooldownSeconds <= 0
+        ? 1.0
+        : (1 - (tower.cooldownRemaining / tower.cooldownSeconds))
+              .clamp(0.0, 1.0)
+              .toDouble();
+
+    canvas.drawPath(
+      _hexPath(center, radius * 0.96),
+      Paint()
+        ..style = PaintingStyle.fill
+        ..color = tower.affinity.color.withValues(alpha: 0.16),
+    );
+    canvas.drawPath(
+      _hexPath(center, radius * 0.96),
       Paint()
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 2
-        ..color = tower.affinity.color.withValues(alpha: 0.44),
+        ..strokeWidth = 2.2
+        ..color = tower.affinity.color.withValues(alpha: 0.84),
     );
-    if (tower.hasPayload) {
-      canvas.drawCircle(
-        center.translate(radius * 0.52, -radius * 0.46),
-        radius * 0.25,
-        Paint()..color = (tower.payloadType.affinity ?? tower.affinity).color,
-      );
-    }
-    if (tower.hasImpactProjectile) {
-      canvas.drawCircle(
-        center.translate(-radius * 0.52, radius * 0.46),
-        radius * 0.22,
+    if (tower.weeklyFocus) {
+      canvas.drawPath(
+        _hexPath(center, radius * 1.18),
         Paint()
           ..style = PaintingStyle.stroke
-          ..strokeWidth = 2
-          ..color = tower.impactProjectileType!.affinity.color,
+          ..strokeWidth = 2.4
+          ..color = LightcorePalette.gilded.withValues(alpha: 0.76),
       );
     }
-    _drawText(
+    final burstRemaining = _towerBursts[tower.id] ?? 0;
+    if (burstRemaining > 0) {
+      _drawTowerBurst(
+        canvas,
+        center,
+        color: tower.affinity.color,
+        radius: radius,
+        progress: 1 - (burstRemaining / _towerBurstDuration),
+      );
+    }
+    if (tower.projectileType == ProjectileType.shieldHalo) {
+      _drawPersistentShieldTowerPulse(
+        canvas,
+        center,
+        color: tower.affinity.color,
+        radius: radius,
+        pulse: pulse,
+      );
+    } else {
+      _drawHexChargeIndicator(
+        canvas,
+        center,
+        color: tower.affinity.color,
+        radius: radius,
+        chargeProgress: chargeProgress,
+        popProgress: burstRemaining / _towerBurstDuration,
+      );
+    }
+    if (selected) {
+      canvas.drawPath(
+        _hexPath(center, radius * 1.12),
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 3.2
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4)
+          ..color = LightcorePalette.layer2.withValues(alpha: 0.74),
+      );
+    }
+    _drawTowerTraitBadge(
       canvas,
-      tower.mergeStage == 0
-          ? 'T'
-          : tower.mergeStage == 1
-          ? 'P'
-          : '2',
       center,
-      LightcorePalette.night,
-      _hexRadius * 0.36,
-      FontWeight.w900,
+      level: (1 + (tower.mergeStage * 2)).clamp(
+        1,
+        LightcoreController.maxTowerLevel,
+      ),
+      projectileType: tower.projectileType,
+      payloadType: tower.payloadType,
+      tint: tower.affinity.color,
+      size: radius * 1.45,
+      complete: tower.mergeStage >= 2,
     );
   }
 
@@ -199,10 +391,30 @@ class _HexTournamentGame extends FlameGame {
   ) {
     final center = _pathPosition(snapshot, enemy.progress);
     final radius = _hexRadius * (enemy.tier >= 4 ? 0.36 : 0.30);
+    final revealPulse = 0.5 + (sin(enemy.progress * 2.1) * 0.5);
+    final isBossLike = enemy.config.rarity.index >= EnemyCardRarity.epic.index;
+    canvas.drawCircle(
+      center,
+      radius * (1.25 + (revealPulse * 0.16)),
+      Paint()
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8)
+        ..color = enemy.config.affinity.color.withValues(
+          alpha: isBossLike ? 0.24 : 0.16,
+        ),
+    );
+    if (isBossLike) {
+      canvas.drawPath(
+        _hexPath(center, radius * 1.42),
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 2.4
+          ..color = LightcorePalette.solar.withValues(alpha: 0.78),
+      );
+    }
     canvas.drawCircle(
       center,
       radius,
-      Paint()..color = enemy.affinity.color.withValues(alpha: 0.92),
+      Paint()..color = enemy.config.affinity.color.withValues(alpha: 0.92),
     );
     canvas.drawCircle(
       center,
@@ -247,24 +459,53 @@ class _HexTournamentGame extends FlameGame {
       return;
     }
     final end = _pathPosition(snapshot, shot.targetProgress);
-    final color = shot.secondary
-        ? shot.projectileType.affinity.color
-        : (shot.payloadType.affinity ?? shot.projectileType.affinity).color;
+    final color = shot.projectileType.affinity.color;
+    final payloadColor = shot.payloadType.affinity?.color;
     final alpha = (1 - shot.progress).clamp(0.0, 1.0);
-    canvas.drawLine(
-      start,
-      end,
-      Paint()
-        ..style = PaintingStyle.stroke
-        ..strokeCap = StrokeCap.round
-        ..strokeWidth = shot.secondary ? 2.4 : 3.4
-        ..color = color.withValues(alpha: 0.72 * alpha),
+    final current = Offset.lerp(start, end, shot.progress.clamp(0.0, 1.0))!;
+    final angle = atan2(current.dy - start.dy, current.dx - start.dx);
+    final seed =
+        (_elapsed * 14.0) + (shot.progress * 9.0) + (shot.id.hashCode * 0.0017);
+    final width =
+        LightcoreProjectileFx.lineWidth(shot.projectileType, _hexRadius) *
+        (shot.secondary ? 0.74 : 1.0);
+
+    if (shot.progress < 0.42) {
+      LightcoreProjectileFx.drawFireBurst(
+        canvas,
+        origin: start,
+        color: color,
+        aimAngle: angle,
+        projectileType: shot.projectileType,
+        progress: (shot.progress / 0.42).clamp(0.0, 1.0).toDouble(),
+        alpha: shot.secondary ? 0.62 : 1.0,
+        unit: _hexRadius,
+        seed: _elapsed * 9,
+      );
+    }
+
+    LightcoreProjectileFx.drawProjectileTrail(
+      canvas,
+      projectileType: shot.projectileType,
+      start: start,
+      end: end,
+      current: current,
+      color: color,
+      width: width,
+      seed: seed,
+      alpha: alpha.toDouble(),
+      unit: _hexRadius,
+      progress: shot.progress,
     );
-    canvas.drawCircle(
-      Offset.lerp(start, end, shot.progress.clamp(0.0, 1.0))!,
-      _hexRadius * (shot.secondary ? 0.11 : 0.15),
-      Paint()..color = color.withValues(alpha: 0.88 * alpha),
-    );
+    if (payloadColor != null && !shot.secondary) {
+      LightcoreProjectileFx.drawEnergyOrb(
+        canvas,
+        current.translate(_hexRadius * 0.05, -_hexRadius * 0.05),
+        payloadColor,
+        _hexRadius * 0.045,
+        alpha: 0.72 * alpha.toDouble(),
+      );
+    }
   }
 
   void _drawCenterBanner(Canvas canvas, String label, Color tint) {
@@ -311,6 +552,20 @@ class _HexTournamentGame extends FlameGame {
       }
     }
     return null;
+  }
+
+  bool _canDropMerge(HexTournamentSnapshot snapshot, String targetCellId) {
+    final sourceCellId = _dragSourceCellId;
+    if (sourceCellId == null || sourceCellId == targetCellId) {
+      return false;
+    }
+    final sourceTower = _towerAt(snapshot, sourceCellId);
+    final targetTower = _towerAt(snapshot, targetCellId);
+    return sourceTower != null &&
+        targetTower != null &&
+        sourceTower.config.id == targetTower.config.id &&
+        sourceTower.mergeStage == targetTower.mergeStage &&
+        sourceTower.mergeStage < 2;
   }
 
   Offset? _cellCenterById(String cellId) {
@@ -391,6 +646,285 @@ class _HexTournamentGame extends FlameGame {
       center - Offset(painter.width / 2, painter.height / 2),
     );
   }
+
+  void _drawTowerBurst(
+    Canvas canvas,
+    Offset center, {
+    required Color color,
+    required double radius,
+    required double progress,
+  }) {
+    final clamped = progress.clamp(0.0, 1.0).toDouble();
+    final fade = 1 - Curves.easeOutCubic.transform(clamped);
+    final burstRadius = radius * (0.82 + (0.58 * clamped));
+    if (fade <= 0) {
+      return;
+    }
+    canvas.drawPath(
+      _hexPath(center, burstRadius),
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 4 - (clamped * 1.8)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8)
+        ..color = color.withValues(alpha: 0.68 * fade),
+    );
+    canvas.drawPath(
+      _hexPath(center, radius * (0.42 + (0.24 * clamped))),
+      Paint()
+        ..style = PaintingStyle.fill
+        ..color = color.withValues(alpha: 0.18 * fade),
+    );
+    for (var index = 0; index < 6; index += 1) {
+      final angle = ((pi * 2) / 6) * index;
+      final start = center.translate(
+        cos(angle) * (radius * 0.42),
+        sin(angle) * (radius * 0.42),
+      );
+      final end = center.translate(
+        cos(angle) * burstRadius,
+        sin(angle) * burstRadius,
+      );
+      canvas.drawLine(
+        start,
+        end,
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeCap = StrokeCap.round
+          ..strokeWidth = 2.2
+          ..color = color.withValues(alpha: 0.48 * fade),
+      );
+    }
+  }
+
+  void _drawPersistentShieldTowerPulse(
+    Canvas canvas,
+    Offset center, {
+    required Color color,
+    required double radius,
+    required double pulse,
+  }) {
+    canvas.drawCircle(
+      center,
+      radius * (1.34 + (pulse * 0.18)),
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = max(2.0, radius * 0.12)
+        ..color = color.withValues(alpha: 0.22 + (pulse * 0.14)),
+    );
+    canvas.drawCircle(
+      center,
+      radius * (1.65 + (pulse * 0.14)),
+      Paint()
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = max(3.0, radius * 0.18)
+        ..color = color.withValues(alpha: 0.09 + (pulse * 0.08)),
+    );
+  }
+
+  void _drawHexChargeIndicator(
+    Canvas canvas,
+    Offset center, {
+    required Color color,
+    required double radius,
+    required double chargeProgress,
+    required double popProgress,
+  }) {
+    final charge = chargeProgress.clamp(0.0, 1.0).toDouble();
+    final guideRadius = radius * 0.76;
+    final chargeRadius = radius * (0.16 + (charge * 0.56));
+    final popT = Curves.easeOut.transform(1 - popProgress.clamp(0.0, 1.0));
+
+    canvas.drawPath(
+      _hexPath(center, guideRadius),
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2.2
+        ..color = color.withValues(alpha: 0.4),
+    );
+
+    if (charge > 0) {
+      final chargeHex = _hexPath(center, chargeRadius);
+      canvas.drawPath(
+        chargeHex,
+        Paint()
+          ..style = PaintingStyle.fill
+          ..color = color.withValues(alpha: 0.16 + (charge * 0.32)),
+      );
+      canvas.drawPath(
+        chargeHex,
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 2
+          ..color = color.withValues(alpha: 0.5 + (charge * 0.28)),
+      );
+    }
+
+    if (popProgress > 0) {
+      final flashRadius = radius * (0.78 + (0.18 * popT));
+      canvas.drawPath(
+        _hexPath(center, flashRadius),
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 3 - (popT * 1.2)
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6)
+          ..color = color.withValues(alpha: 0.82 * (1 - popT)),
+      );
+      canvas.drawPath(
+        _hexPath(center, radius * (0.68 + (0.12 * popT))),
+        Paint()
+          ..style = PaintingStyle.fill
+          ..color = color.withValues(alpha: 0.14 * (1 - popT)),
+      );
+    }
+  }
+
+  void _drawTowerTraitBadge(
+    Canvas canvas,
+    Offset center, {
+    required int level,
+    required ProjectileType projectileType,
+    required PayloadType payloadType,
+    required Color tint,
+    required double size,
+    bool complete = false,
+  }) {
+    final payloadColor = payloadType.affinity?.color ?? LightcorePalette.layer2;
+    final projectileColor = projectileType.affinity.color;
+    final radius = size * 0.42;
+    final vertices = <Offset>[
+      for (var index = 0; index < 6; index += 1)
+        center.translate(
+          cos((pi / 6) + (index * pi / 3)) * radius,
+          sin((pi / 6) + (index * pi / 3)) * radius,
+        ),
+    ];
+    final path = Path()..moveTo(vertices.first.dx, vertices.first.dy);
+    for (final vertex in vertices.skip(1)) {
+      path.lineTo(vertex.dx, vertex.dy);
+    }
+    path.close();
+
+    canvas.drawPath(
+      path,
+      Paint()..color = payloadColor.withValues(alpha: 0.14),
+    );
+    for (var edge = 0; edge < 6; edge += 1) {
+      _drawHexEdge(
+        canvas,
+        vertices,
+        edge,
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = max(1.1, size * 0.035)
+          ..strokeCap = StrokeCap.round
+          ..color = LightcorePalette.stroke.withValues(alpha: 0.58),
+      );
+    }
+    for (final edge in _activeBadgeEdges(
+      level,
+      LightcoreController.maxTowerLevel,
+    )) {
+      _drawHexEdge(
+        canvas,
+        vertices,
+        edge,
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = max(2.0, size * 0.065)
+          ..strokeCap = StrokeCap.round
+          ..color = (complete ? LightcorePalette.success : tint).withValues(
+            alpha: 0.96,
+          ),
+      );
+    }
+    canvas.drawCircle(
+      center,
+      size * 0.24,
+      Paint()..color = payloadColor.withValues(alpha: 0.24),
+    );
+    canvas.drawCircle(
+      center,
+      size * 0.24,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = max(1.0, size * 0.025)
+        ..color = payloadColor.withValues(alpha: 0.72),
+    );
+    _paintIconGlyph(
+      canvas,
+      center,
+      towerProjectileIcon(projectileType),
+      size: size * 0.28,
+      color: projectileColor,
+    );
+    if (complete) {
+      canvas.drawCircle(
+        center.translate(size * 0.27, size * 0.25),
+        size * 0.11,
+        Paint()..color = LightcorePalette.success.withValues(alpha: 0.94),
+      );
+      _paintIconGlyph(
+        canvas,
+        center.translate(size * 0.27, size * 0.25),
+        Icons.check_rounded,
+        size: size * 0.13,
+        color: LightcorePalette.night,
+      );
+    }
+  }
+
+  List<int> _activeBadgeEdges(int level, int maxLevel) {
+    final clamped = level.clamp(0, maxLevel).toInt();
+    if (clamped <= 0) {
+      return const <int>[];
+    }
+    final normalized = ((clamped / maxLevel) * 5).ceil().clamp(1, 5).toInt();
+    return switch (normalized) {
+      1 => const <int>[0],
+      2 => const <int>[1, 5],
+      3 => const <int>[1, 3, 5],
+      4 => const <int>[0, 1, 3, 5],
+      _ => const <int>[0, 1, 2, 3, 4, 5],
+    };
+  }
+
+  void _drawHexEdge(
+    Canvas canvas,
+    List<Offset> vertices,
+    int edge,
+    Paint paint,
+  ) {
+    final start = vertices[edge % vertices.length];
+    final end = vertices[(edge + 1) % vertices.length];
+    canvas.drawLine(start, end, paint);
+  }
+
+  void _paintIconGlyph(
+    Canvas canvas,
+    Offset center,
+    IconData icon, {
+    required double size,
+    required Color color,
+  }) {
+    final painter = TextPainter(
+      text: TextSpan(
+        text: String.fromCharCode(icon.codePoint),
+        style: TextStyle(
+          color: color,
+          fontSize: size,
+          fontFamily: icon.fontFamily,
+          package: icon.fontPackage,
+        ),
+      ),
+      textAlign: TextAlign.center,
+      textDirection: TextDirection.ltr,
+    )..layout();
+    painter.paint(
+      canvas,
+      center.translate(-painter.width / 2, -painter.height / 2),
+    );
+  }
 }
 
 extension _HexTournamentModeDetailUi on _TournamentModeDetailScreenState {
@@ -419,9 +953,17 @@ extension _HexTournamentModeDetailUi on _TournamentModeDetailScreenState {
                         behavior: HitTestBehavior.translucent,
                         onPointerDown: (event) {
                           if (event.buttons == kPrimaryButton) {
-                            _hexGame.handleTap(event.localPosition);
+                            _hexGame.handlePointerDown(event.localPosition);
                           }
                         },
+                        onPointerMove: (event) {
+                          if (event.buttons == kPrimaryButton) {
+                            _hexGame.handlePointerMove(event.localPosition);
+                          }
+                        },
+                        onPointerUp: (event) =>
+                            _hexGame.handlePointerUp(event.localPosition),
+                        onPointerCancel: (_) => _hexGame.handlePointerCancel(),
                       ),
                     ],
                   ),
@@ -479,6 +1021,10 @@ extension _HexTournamentModeDetailUi on _TournamentModeDetailScreenState {
                                 _HeaderChip(
                                   label: 'Enemy',
                                   value: 'T${snapshot.enemyTier}',
+                                ),
+                                _HeaderChip(
+                                  label: 'Streak',
+                                  value: 'x${snapshot.flawlessStreak}',
                                 ),
                               ],
                             ),
@@ -558,29 +1104,48 @@ extension _HexTournamentModeDetailUi on _TournamentModeDetailScreenState {
     final tower = snapshot.selectedTower;
     if (tower == null) {
       final selectedCell = snapshot.selectedCell;
-      return Wrap(
-        spacing: 10,
-        runSpacing: 10,
-        crossAxisAlignment: WrapCrossAlignment.center,
+      final canChooseTower = selectedCell != null && selectedCell.canBuild;
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _HeaderChip(
-            label: 'Selected',
-            value: selectedCell == null
-                ? 'None'
-                : selectedCell.isPath
-                ? 'Path'
-                : 'Open',
+          Wrap(
+            spacing: 10,
+            runSpacing: 10,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              _HeaderChip(
+                label: 'Selected',
+                value: selectedCell == null
+                    ? 'None'
+                    : selectedCell.isPath
+                    ? 'Path'
+                    : 'Open',
+              ),
+              _HeaderChip(label: 'Build', value: '${snapshot.buildCost}'),
+            ],
           ),
-          FilledButton.tonalIcon(
-            onPressed: snapshot.canBuildSelected
-                ? () {
-                    _hexRun.placeTower(snapshot.selectedCellId!);
-                    _refreshHexSnapshot();
-                  }
-                : null,
-            icon: const Icon(Icons.add_circle_rounded),
-            label: Text('Build (${snapshot.buildCost})'),
-          ),
+          if (canChooseTower) ...[
+            const SizedBox(height: 10),
+            Wrap(
+              spacing: 10,
+              runSpacing: 10,
+              children: [
+                for (final config in snapshot.towerChoices)
+                  _HexTowerBuildButton(
+                    config: config,
+                    buildCost: snapshot.buildCost,
+                    enabled: snapshot.canBuildSelected,
+                    onPressed: () {
+                      _hexRun.placeTower(
+                        snapshot.selectedCellId!,
+                        config: config,
+                      );
+                      _refreshHexSnapshot();
+                    },
+                  ),
+              ],
+            ),
+          ],
         ],
       );
     }
@@ -592,7 +1157,7 @@ extension _HexTournamentModeDetailUi on _TournamentModeDetailScreenState {
           spacing: 10,
           runSpacing: 10,
           children: [
-            _HeaderChip(label: 'Tower', value: tower.projectileType.label),
+            _HeaderChip(label: 'Tower', value: tower.config.name),
             _HeaderChip(label: 'Payload', value: tower.payloadType.label),
             _HeaderChip(
               label: 'Impact',
@@ -602,6 +1167,15 @@ extension _HexTournamentModeDetailUi on _TournamentModeDetailScreenState {
               label: 'Merge',
               value: '${snapshot.mergeCandidateCount}',
             ),
+            _HeaderChip(
+              label: 'Focus',
+              value: tower.weeklyFocus ? '+16%' : 'Off',
+            ),
+            if (snapshot.waveLeakDamage > 0)
+              _HeaderChip(
+                label: 'Leaks',
+                value: '${snapshot.waveLeakDamage}',
+              ),
           ],
         ),
         const SizedBox(height: 10),
@@ -688,7 +1262,9 @@ extension _HexTournamentModeDetailUi on _TournamentModeDetailScreenState {
           label: const Text('Submit Score'),
         ),
         FilledButton.tonalIcon(
-          onPressed: widget.busy || _runActive ? null : _startRun,
+          onPressed: widget.busy || _launchingRun || _runActive
+              ? null
+              : _queueStartRun,
           icon: const Icon(Icons.replay_rounded),
           label: const Text('Run Again'),
         ),
@@ -742,6 +1318,58 @@ class _HexFocusChips extends StatelessWidget {
             ),
           ),
       ],
+    );
+  }
+}
+
+class _HexTowerBuildButton extends StatelessWidget {
+  const _HexTowerBuildButton({
+    required this.config,
+    required this.buildCost,
+    required this.enabled,
+    required this.onPressed,
+  });
+
+  final TowerConfig config;
+  final int buildCost;
+  final bool enabled;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 166,
+      child: FilledButton(
+        style: FilledButton.styleFrom(
+          backgroundColor: config.affinity.color.withValues(alpha: 0.92),
+          foregroundColor: LightcorePalette.night,
+          disabledBackgroundColor: LightcorePalette.panelRaised,
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+        ),
+        onPressed: enabled ? onPressed : null,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(towerProjectileIcon(config.defaultProjectileType), size: 18),
+            const SizedBox(height: 4),
+            Text(
+              config.name,
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 3),
+            Text(
+              '$buildCost Cur • ${config.defaultProjectileType.label}',
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: LightcorePalette.night.withValues(alpha: 0.72),
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

@@ -28,41 +28,61 @@ const PLAYER_SAVE_LIMITS = Object.freeze({
   maxGuildMessages: 60,
   maxStringLength: 160,
 });
-
-const { sanitizePlayerSavePayload } = createPlayerSaveHelpers({
-  db: {},
-  logger: { warn() {} },
-  HttpsError,
-  constants: {
-    PROFILE_COLLECTION: "profiles",
-    PRIVATE_PROFILE_COLLECTION: "private",
-    PLAYER_SAVE_DOCUMENT: "save",
-    PLAYER_SAVE_SCHEMA_VERSION: 1,
-    PLAYER_SAVE_LIMITS,
-    SAVE_INTEGRITY_LIMITS: {},
-    SERVER_BALANCE_LIMITS: {},
-    SNAPSHOT_LIMITS: {},
-  },
-  helpers: {
-    clampInt,
-    clampNumber,
-    sanitizeString,
-    sanitizeOptionalString,
-    sanitizePlayerId,
-    normalizeStoredScreenName,
-    normalizeObject,
-    normalizeArray,
-    timestampToIso() {
-      return null;
-    },
-    toMillis() {
-      return 0;
-    },
-    isDateKeyBeyondAllowedFuture() {
-      return false;
-    },
-  },
+const SAVE_INTEGRITY_LIMITS = Object.freeze({
+  maxSnapshotRateSlackMultiplier: 3,
+  maxLayerTier: 500,
+  maxCoreLevel: 500,
 });
+const SERVER_BALANCE_LIMITS = Object.freeze({
+  maxOfflineKillsPerHour: 600,
+  spawnIntervalSeconds: 1.35,
+  promotedSourcePassiveMultiplier: 1 / 6,
+});
+const SNAPSHOT_LIMITS = Object.freeze({
+  passiveLumensPerHour: 250000,
+  fluxPerHour: 25000,
+  enemyTicketsPerHour: 1500,
+  killsPerHour: 600,
+  activeLayerTier: 50,
+  builtTowerCount: 200,
+  prestigeLevel: 1000,
+});
+
+const { buildAuthoritativeIdleSnapshot, sanitizePlayerSavePayload } =
+  createPlayerSaveHelpers({
+    db: {},
+    logger: { warn() {} },
+    HttpsError,
+    constants: {
+      PROFILE_COLLECTION: "profiles",
+      PRIVATE_PROFILE_COLLECTION: "private",
+      PLAYER_SAVE_DOCUMENT: "save",
+      PLAYER_SAVE_SCHEMA_VERSION: 1,
+      PLAYER_SAVE_LIMITS,
+      SAVE_INTEGRITY_LIMITS,
+      SERVER_BALANCE_LIMITS,
+      SNAPSHOT_LIMITS,
+    },
+    helpers: {
+      clampInt,
+      clampNumber,
+      sanitizeString,
+      sanitizeOptionalString,
+      sanitizePlayerId,
+      normalizeStoredScreenName,
+      normalizeObject,
+      normalizeArray,
+      timestampToIso() {
+        return null;
+      },
+      toMillis() {
+        return 0;
+      },
+      isDateKeyBeyondAllowedFuture() {
+        return false;
+      },
+    },
+  });
 
 const payload = sanitizePlayerSavePayload(
   basePayload({
@@ -96,6 +116,61 @@ assert.deepEqual(missingStatsPayload.player.radianceStats, {
   tempo: 0,
   insight: 0,
 });
+
+const authoritativeSnapshot = buildAuthoritativeIdleSnapshot({
+  clientSnapshot: {
+    generatedAtMillis: Date.now(),
+    passiveLumensPerHour: 1,
+    fluxPerHour: 999999,
+    enemyTicketsPerHour: 999999,
+    killsPerHour: 1,
+    activeLayerTier: 1,
+    builtTowerCount: 1,
+    prestigeLevel: 0,
+  },
+  savePayload: basePayload({
+    inventory: {
+      cards: [{ equippedLayerId: "root" }],
+    },
+    layers: {
+      activeLayerId: "root",
+      items: [
+        {
+          id: "root",
+          tier: 1,
+          core: { level: 1 },
+          swarmActivated: true,
+          enemyTargetCount: 6,
+          slots: [{ configId: "red-prism" }],
+        },
+      ],
+    },
+  }),
+});
+
+assert.equal(authoritativeSnapshot.fluxPerHour, 0);
+assert.equal(authoritativeSnapshot.enemyTicketsPerHour, 0);
+assert.equal(authoritativeSnapshot.activeLayerTier, 1);
+assert.equal(authoritativeSnapshot.builtTowerCount, 1);
+assert.ok(authoritativeSnapshot.passiveLumensPerHour > 0);
+
+assert.throws(
+  () =>
+    buildAuthoritativeIdleSnapshot({
+      clientSnapshot: {
+        generatedAtMillis: Date.now(),
+        passiveLumensPerHour: 999999,
+        fluxPerHour: 0,
+        enemyTicketsPerHour: 0,
+        killsPerHour: 0,
+        activeLayerTier: 1,
+        builtTowerCount: 0,
+        prestigeLevel: 0,
+      },
+      savePayload: basePayload(),
+    }),
+  /Idle snapshot rejected by server progression checks/,
+);
 
 function basePayload(overrides = {}) {
   return {

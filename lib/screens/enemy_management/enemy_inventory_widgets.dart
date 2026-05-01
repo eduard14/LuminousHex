@@ -492,43 +492,75 @@ class _BossDetailSheet extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 14),
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _BossGlyph(config: card.config, size: 68, locked: !card.isOwned),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Wrap(
-                spacing: 10,
-                runSpacing: 10,
-                children: [
-                  _InfoChip(label: card.isOwned ? 'Owned' : 'Locked'),
-                  _InfoChip(
-                    label: 'Lv ${card.level}/${controller.bossLevelCap(card)}',
-                  ),
-                  _InfoChip(label: 'Copies ${card.copies}'),
-                  _InfoChip(label: _bossTileProgressLabel(controller, card)),
-                  _InfoChip(
-                    label:
-                        'Threat ${controller.enemyCardThreatRatingLabel(card)}',
-                  ),
-                  _InfoChip(
-                    label: 'HP ${controller.enemyCardPreviewHealthLabel(card)}',
-                  ),
-                  _InfoChip(
-                    label:
-                        'Lumens +${controller.enemyCardPreviewRewardLabel(card)}',
-                  ),
-                  _InfoChip(
-                    label:
-                        'EXP +${controller.enemyCardPreviewExperience(card)}',
-                  ),
-                  _InfoChip(
-                    label:
-                        'Kill +${controller.enemyCardPreviewKillCredit(card)}',
-                  ),
-                ],
+        Center(
+          child: _ThreatSummonCard(
+            config: card.config,
+            dimension: 176,
+            selected: active && card.isOwned,
+            locked: !card.isOwned,
+            emphasized: true,
+            glowTint: tint,
+            glowStrength: active ? 0.84 : 0.34,
+            semanticLabel: '${card.config.name}, expanded Apex stats art',
+            topRight: SymbolGridBadge(
+              tint: !card.isOwned
+                  ? LightcorePalette.mist
+                  : active
+                  ? LightcorePalette.layer2
+                  : tint,
+              shape: BoxShape.circle,
+              size: 26,
+              child: Icon(
+                !card.isOwned
+                    ? Icons.lock_rounded
+                    : active
+                    ? Icons.check_rounded
+                    : Icons.shield_moon_rounded,
               ),
+            ),
+            bottom: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.layers_rounded),
+                const SizedBox(width: 2),
+                Text('${card.level}'),
+                const SizedBox(width: 7),
+                const Icon(Icons.content_copy_rounded),
+                const SizedBox(width: 2),
+                Text('${card.copies}'),
+                const SizedBox(width: 7),
+                const Icon(Icons.lock_open_rounded),
+                const SizedBox(width: 2),
+                Text('${controller.bossLevelCap(card)}'),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 14),
+        Wrap(
+          spacing: 10,
+          runSpacing: 10,
+          children: [
+            _InfoChip(label: card.isOwned ? 'Owned' : 'Locked'),
+            _InfoChip(
+              label: 'Lv ${card.level}/${controller.bossLevelCap(card)}',
+            ),
+            _InfoChip(label: 'Copies ${card.copies}'),
+            _InfoChip(label: _bossTileProgressLabel(controller, card)),
+            _InfoChip(
+              label: 'Threat ${controller.enemyCardThreatRatingLabel(card)}',
+            ),
+            _InfoChip(
+              label: 'HP ${controller.enemyCardPreviewHealthLabel(card)}',
+            ),
+            _InfoChip(
+              label: 'Lumens +${controller.enemyCardPreviewRewardLabel(card)}',
+            ),
+            _InfoChip(
+              label: 'EXP +${controller.enemyCardPreviewExperience(card)}',
+            ),
+            _InfoChip(
+              label: 'Kill +${controller.enemyCardPreviewKillCredit(card)}',
             ),
           ],
         ),

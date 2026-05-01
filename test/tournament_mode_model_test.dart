@@ -23,6 +23,18 @@ void main() {
 
   test('tournament mode metadata matches weekly event concepts', () {
     expect(LightcoreTournamentModeId.enemyBlitz.label, 'Anomaly Blitz');
+    expect(
+      LightcoreTournamentModeId.enemyBlitz.queueLabel,
+      'Testing leaderboard',
+    );
+    expect(
+      LightcoreTournamentModeId.enemyBlitz.eventCadenceLabel,
+      'Open testing',
+    );
+    expect(
+      LightcoreTournamentModeId.enemyBlitz.rules,
+      contains('Each survival session runs on a weekend-length clock.'),
+    );
     expect(LightcoreTournamentModeId.hexGauntlet.label, 'Hex');
     expect(
       LightcoreTournamentModeId.hexGauntlet.queueLabel,
@@ -30,7 +42,7 @@ void main() {
     );
     expect(LightcoreTournamentModeId.enemyBlitz.usesTowerSeed, isFalse);
     expect(LightcoreTournamentModeId.hexGauntlet.usesTowerSeed, isFalse);
-    expect(LightcoreTournamentModeId.arenaFlow.usesTowerSeed, isFalse);
+    expect(LightcoreTournamentModeId.arenaFlow.usesTowerSeed, isTrue);
     expect(LightcoreTournamentModeId.arenaFlow.usesGlobalRating, isTrue);
     expect(LightcoreTournamentModeId.arenaFlow.supportsBossDraft, isTrue);
   });
@@ -50,27 +62,29 @@ void main() {
     expect(state.canStartRun, isFalse);
   });
 
-  test('tournament snapshots normalize permanent progress out of entry', () {
+  test('tournament snapshots use the highest-layer Home Tower', () {
     final controller = LightcoreController();
     addTearDown(controller.dispose);
 
     controller.kills = LightcoreController.killsForOverallLevel(80);
     controller.lumens = 100000;
+    expect(controller.debugSeedProgressionLayer(3), isTrue);
 
     final snapshot = controller.buildTournamentSnapshot();
+    final homeLayerBuiltTowerCount = controller.homeTowerLayer.slots
+        .where(
+          (slot) =>
+              (slot.config != null && !slot.isFabricating) ||
+              slot.isPromotedChildTower,
+        )
+        .length;
 
-    expect(snapshot.overallLevel, LightcoreController.evenEntryTournamentLevel);
-    expect(snapshot.prestigeLevel, 0);
-    expect(snapshot.activeLayerTier, 1);
-    expect(snapshot.builtTowerCount, LightcoreController.slotCount);
-    expect(
-      snapshot.coreLevel,
-      LightcoreController.evenEntryTournamentCoreLevel,
-    );
-    expect(
-      snapshot.towerPowerIndex,
-      LightcoreController.evenEntryTournamentPowerIndex,
-    );
+    expect(snapshot.overallLevel, controller.overallLevel);
+    expect(snapshot.prestigeLevel, controller.prestigeLevel);
+    expect(snapshot.activeLayerTier, 3);
+    expect(snapshot.builtTowerCount, homeLayerBuiltTowerCount);
+    expect(snapshot.coreLevel, controller.homeTowerLayer.core.level);
+    expect(snapshot.towerPowerIndex, controller.homeTowerPowerIndex);
   });
 
   test('tournament battle runtime normalizes a full flame battle shell', () {

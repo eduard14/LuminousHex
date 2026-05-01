@@ -75,7 +75,7 @@ void main() {
     await tester.pump();
 
     final forgeButton = find.text(
-      'x1 • ${LightcoreController.towerManagerFluxCost} Flux',
+      '${LightcoreController.towerManagerFluxCost} Flux',
     );
     await tester.scrollUntilVisible(forgeButton, 300);
     await tester.tap(forgeButton);

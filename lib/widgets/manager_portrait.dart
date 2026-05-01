@@ -16,6 +16,10 @@ class ManagerPortrait extends StatelessWidget {
     required this.family,
     this.assetPath,
     this.size = 58,
+    this.showBadge = true,
+    this.borderRadius,
+    this.borderOpacity = 0.52,
+    this.shadowOpacity = 0.12,
   });
 
   final String seed;
@@ -25,6 +29,10 @@ class ManagerPortrait extends StatelessWidget {
   final ManagerPortraitFamily family;
   final String? assetPath;
   final double size;
+  final bool showBadge;
+  final BorderRadius? borderRadius;
+  final double borderOpacity;
+  final double shadowOpacity;
 
   @override
   Widget build(BuildContext context) {
@@ -42,30 +50,34 @@ class ManagerPortrait extends StatelessWidget {
               tint: tint,
               family: family,
               assetPath: assetPath,
+              borderRadius: borderRadius,
+              borderOpacity: borderOpacity,
+              shadowOpacity: shadowOpacity,
             ),
           ),
-          Positioned(
-            right: -size * 0.02,
-            bottom: -size * 0.02,
-            child: Container(
-              width: badgeSize,
-              height: badgeSize,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: LightcorePalette.panelRaised.withValues(alpha: 0.98),
-                shape: BoxShape.circle,
-                border: Border.all(color: tint.withValues(alpha: 0.62)),
-                boxShadow: [
-                  BoxShadow(
-                    color: tint.withValues(alpha: 0.18),
-                    blurRadius: 12,
-                    spreadRadius: -3,
-                  ),
-                ],
+          if (showBadge)
+            Positioned(
+              right: -size * 0.02,
+              bottom: -size * 0.02,
+              child: Container(
+                width: badgeSize,
+                height: badgeSize,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: LightcorePalette.panelRaised.withValues(alpha: 0.98),
+                  shape: BoxShape.circle,
+                  border: Border.all(color: tint.withValues(alpha: 0.62)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: tint.withValues(alpha: 0.18),
+                      blurRadius: 12,
+                      spreadRadius: -3,
+                    ),
+                  ],
+                ),
+                child: Icon(icon, color: tint, size: badgeSize * 0.58),
               ),
-              child: Icon(icon, color: tint, size: badgeSize * 0.58),
             ),
-          ),
         ],
       ),
     );
@@ -79,6 +91,9 @@ class _ManagerPortraitArt extends StatelessWidget {
     required this.tint,
     required this.family,
     required this.assetPath,
+    required this.borderRadius,
+    required this.borderOpacity,
+    required this.shadowOpacity,
   });
 
   final String seed;
@@ -86,10 +101,13 @@ class _ManagerPortraitArt extends StatelessWidget {
   final Color tint;
   final ManagerPortraitFamily family;
   final String? assetPath;
+  final BorderRadius? borderRadius;
+  final double borderOpacity;
+  final double shadowOpacity;
 
   @override
   Widget build(BuildContext context) {
-    final radius = BorderRadius.circular(16);
+    final radius = borderRadius ?? BorderRadius.circular(16);
     final fallback = CustomPaint(
       painter: _ManagerPortraitPainter(
         seed: seed,
@@ -103,14 +121,16 @@ class _ManagerPortraitArt extends StatelessWidget {
     return DecoratedBox(
       decoration: BoxDecoration(
         borderRadius: radius,
-        border: Border.all(color: tint.withValues(alpha: 0.52)),
-        boxShadow: [
-          BoxShadow(
-            color: tint.withValues(alpha: 0.12),
-            blurRadius: 18,
-            spreadRadius: -4,
-          ),
-        ],
+        border: Border.all(color: tint.withValues(alpha: borderOpacity)),
+        boxShadow: shadowOpacity <= 0
+            ? null
+            : [
+                BoxShadow(
+                  color: tint.withValues(alpha: shadowOpacity),
+                  blurRadius: 18,
+                  spreadRadius: -4,
+                ),
+              ],
       ),
       child: ClipRRect(
         borderRadius: radius,

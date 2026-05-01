@@ -727,14 +727,10 @@ extension LightcoreBattleGameDrawingHelpers on LightcoreBattleGame {
   }
 
   bool _shotUsesOrbitNode(CoreShotState shot) =>
-      !shot.layer2 &&
-      shot.sourceSlotIndex != null &&
-      shot.projectileType == ProjectileType.orbitNode;
+      !shot.layer2 && shot.projectileType == ProjectileType.orbitNode;
 
   bool _shotUsesShieldHalo(CoreShotState shot) =>
-      !shot.layer2 &&
-      shot.sourceSlotIndex != null &&
-      shot.projectileType == ProjectileType.shieldHalo;
+      !shot.layer2 && shot.projectileType == ProjectileType.shieldHalo;
 
   bool _shotUsesCoreBasicImpact(CoreShotState shot) =>
       !shot.layer2 &&
@@ -743,8 +739,7 @@ extension LightcoreBattleGameDrawingHelpers on LightcoreBattleGame {
 
   bool _shotUsesBlueFocusLaser(CoreShotState shot) =>
       !shot.layer2 &&
-      shot.projectileType == ProjectileType.threadBeam &&
-      shot.sourceSlotIndex != null &&
+      shot.projectileType.usesBlueLaser &&
       shot.affinity == PrototypeAffinity.aether;
 
   double _orbitNodeAngleForProgress(CoreShotState shot, double progress) =>

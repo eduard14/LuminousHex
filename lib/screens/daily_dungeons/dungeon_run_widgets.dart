@@ -9,6 +9,8 @@ class _DungeonRunTopBar extends StatelessWidget {
     required this.towerHealth,
     required this.towerMaxHealth,
     required this.towerIntegrity,
+    required this.launchChain,
+    required this.launchWindowRemaining,
     required this.onExit,
   });
 
@@ -19,6 +21,8 @@ class _DungeonRunTopBar extends StatelessWidget {
   final double towerHealth;
   final double towerMaxHealth;
   final double towerIntegrity;
+  final int launchChain;
+  final double launchWindowRemaining;
   final VoidCallback onExit;
 
   @override
@@ -76,6 +80,16 @@ class _DungeonRunTopBar extends StatelessWidget {
                         height: 8,
                       ),
                     ),
+                    if (launchChain > 1) ...[
+                      const SizedBox(width: 8),
+                      Text(
+                        'x$launchChain',
+                        style: textTheme.labelLarge?.copyWith(
+                          color: LightcorePalette.solar,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ],
@@ -101,6 +115,8 @@ class _DungeonLaunchDock extends StatelessWidget {
     required this.anomalyCards,
     required this.apexCard,
     required this.cooldowns,
+    required this.launchChain,
+    required this.launchWindowRemaining,
     required this.running,
     required this.compact,
     required this.onLaunch,
@@ -110,6 +126,8 @@ class _DungeonLaunchDock extends StatelessWidget {
   final List<EnemyCardState> anomalyCards;
   final EnemyCardState? apexCard;
   final Map<String, double> cooldowns;
+  final int launchChain;
+  final double launchWindowRemaining;
   final bool running;
   final bool compact;
   final void Function(EnemyCardState card, {required bool apex}) onLaunch;
@@ -127,6 +145,12 @@ class _DungeonLaunchDock extends StatelessWidget {
         scrollDirection: Axis.horizontal,
         child: Row(
           children: [
+            _DungeonLaunchChainChip(
+              chain: launchChain,
+              windowRemaining: launchWindowRemaining,
+              compact: compact,
+            ),
+            SizedBox(width: compact ? 8 : 10),
             for (final card in anomalyCards) ...[
               _DungeonLaunchButton(
                 card: card,
@@ -156,6 +180,69 @@ class _DungeonLaunchDock extends StatelessWidget {
               )
             else
               _LockedApexButton(compact: compact),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _DungeonLaunchChainChip extends StatelessWidget {
+  const _DungeonLaunchChainChip({
+    required this.chain,
+    required this.windowRemaining,
+    required this.compact,
+  });
+
+  final int chain;
+  final double windowRemaining;
+  final bool compact;
+
+  @override
+  Widget build(BuildContext context) {
+    final active = chain > 1 && windowRemaining > 0;
+    final tint = active ? LightcorePalette.solar : LightcorePalette.stroke;
+    return Tooltip(
+      message: active
+          ? 'Alternate affinities before the timer expires to keep surging raids.'
+          : 'Alternate affinities quickly to surge the next raid.',
+      child: SizedBox(
+        width: compact ? 82 : 96,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            DecoratedBox(
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: tint.withValues(alpha: active ? 0.18 : 0.1),
+                border: Border.all(color: tint.withValues(alpha: 0.42)),
+              ),
+              child: SizedBox.square(
+                dimension: compact ? 50 : 58,
+                child: Icon(Icons.bolt_rounded, color: tint),
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              active ? 'Chain x$chain' : 'Chain',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                color: active
+                    ? LightcorePalette.mist
+                    : LightcorePalette.mist.withValues(alpha: 0.58),
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+            Text(
+              active ? '${windowRemaining.ceil()}s' : 'Alt',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                color: tint,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
           ],
         ),
       ),

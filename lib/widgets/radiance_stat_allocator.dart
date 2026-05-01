@@ -74,6 +74,7 @@ class RadianceStatAllocator extends StatelessWidget {
                         controller: controller,
                         stat: stat,
                         ready: ready,
+                        compact: compact,
                       ),
                     ),
                 ],
@@ -246,11 +247,13 @@ class _RadianceStatTile extends StatelessWidget {
     required this.controller,
     required this.stat,
     required this.ready,
+    required this.compact,
   });
 
   final LightcoreController controller;
   final LightcoreRadianceStat stat;
   final int ready;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
@@ -260,8 +263,8 @@ class _RadianceStatTile extends StatelessWidget {
     final canUpgrade = controller.canUpgradeRadianceStat(stat);
 
     return Container(
-      constraints: const BoxConstraints(minHeight: 144),
-      padding: const EdgeInsets.all(12),
+      constraints: BoxConstraints(minHeight: compact ? 124 : 144),
+      padding: EdgeInsets.all(compact ? 10 : 12),
       decoration: BoxDecoration(
         color: LightcorePalette.panelRaised.withValues(alpha: 0.48),
         borderRadius: BorderRadius.circular(8),
@@ -322,6 +325,13 @@ class _RadianceStatTile extends StatelessWidget {
               onPressed: canUpgrade
                   ? () => controller.upgradeRadianceStat(stat)
                   : null,
+              style: FilledButton.styleFrom(
+                minimumSize: Size.fromHeight(compact ? 40 : 48),
+                padding: EdgeInsets.symmetric(
+                  horizontal: compact ? 12 : 16,
+                  vertical: compact ? 10 : 12,
+                ),
+              ),
               icon: Icon(
                 ready > 0
                     ? Icons.add_circle_outline_rounded

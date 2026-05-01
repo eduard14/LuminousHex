@@ -141,7 +141,7 @@ void main() {
     expect(find.text('Core Stats'), findsOneWidget);
   });
 
-  testWidgets('tower tap fires packet and opens tower controls', (
+  testWidgets('tower tap fires packet and defers tower controls', (
     tester,
   ) async {
     final controller = LightcoreController();
@@ -158,21 +158,13 @@ void main() {
     await tester.tapAt(_slotCenter(tester, 0));
     await tester.pump(const Duration(milliseconds: 50));
 
-    expect(controller.selectedSlotIndex, 0);
+    expect(controller.selectedSlotIndex, isNull);
     expect(controller.pulses, isNotEmpty);
-    expect(find.text('Tower Stats'), findsOneWidget);
-    expect(find.text('Live Projectile Target'), findsOneWidget);
+    expect(find.text('Tower Stats'), findsNothing);
+    expect(find.text('Live Projectile Target'), findsNothing);
     expect(
       controller.towerTargetPriority(controller.slots[0]),
       TargetPriority.close,
-    );
-    final strongTargetChip = find.widgetWithText(ChoiceChip, 'Strong');
-    await tester.ensureVisible(strongTargetChip);
-    await tester.tap(strongTargetChip);
-    await tester.pump();
-    expect(
-      controller.towerTargetPriority(controller.slots[0]),
-      TargetPriority.strong,
     );
     expect(
       find.byKey(const ValueKey<String>('battle-side-stats-button')),
@@ -210,12 +202,23 @@ void main() {
     await tester.tap(selectionButton);
     await tester.pump(const Duration(milliseconds: 180));
 
-    expect(find.text('Tower Stats'), findsNothing);
+    expect(controller.selectedSlotIndex, 0);
+    expect(find.text('Tower Stats'), findsOneWidget);
+    expect(find.text('Live Projectile Target'), findsOneWidget);
+
+    final strongTargetChip = find.widgetWithText(ChoiceChip, 'Strong');
+    await tester.ensureVisible(strongTargetChip);
+    await tester.tap(strongTargetChip);
+    await tester.pump();
+    expect(
+      controller.towerTargetPriority(controller.slots[0]),
+      TargetPriority.strong,
+    );
 
     await tester.tap(selectionButton);
     await tester.pump(const Duration(milliseconds: 180));
 
-    expect(find.text('Tower Stats'), findsOneWidget);
+    expect(find.text('Tower Stats'), findsNothing);
   });
 
   testWidgets('green shield tower shows shield icon in selection hud', (
@@ -234,8 +237,8 @@ void main() {
     await tester.tapAt(_slotCenter(tester, 0));
     await tester.pump(const Duration(milliseconds: 50));
 
-    expect(controller.selectedSlotIndex, 0);
-    expect(find.text('Tower Stats'), findsOneWidget);
+    expect(controller.selectedSlotIndex, isNull);
+    expect(find.text('Tower Stats'), findsNothing);
 
     final selectionButton = find.byKey(
       const ValueKey<String>('battle-tower-selection-button'),
@@ -292,9 +295,17 @@ void main() {
     await tester.sendKeyEvent(LogicalKeyboardKey.digit2);
     await tester.pump(const Duration(milliseconds: 50));
 
-    expect(controller.selectedSlotIndex, 1);
+    expect(controller.selectedSlotIndex, isNull);
     expect(controller.pulses, hasLength(1));
     expect(controller.pulses.single.sourceSlotIndex, 1);
+    expect(find.text('Tower Stats'), findsNothing);
+
+    await tester.tap(
+      find.byKey(const ValueKey<String>('battle-tower-selection-button')),
+    );
+    await tester.pump(const Duration(milliseconds: 50));
+
+    expect(controller.selectedSlotIndex, 1);
     expect(find.text('Tower Stats'), findsOneWidget);
   });
 

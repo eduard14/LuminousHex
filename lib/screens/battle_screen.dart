@@ -10,13 +10,13 @@ import '../battle/shell_promotion_presentation.dart';
 import '../models/lightcore_config.dart';
 import '../models/lightcore_state.dart';
 import '../models/lightcore_types.dart';
+import '../services/lightcore_audio.dart';
 import '../state/lightcore_controller.dart';
 import '../theme/lightcore_palette.dart';
 import '../widgets/aurora_panel.dart';
 import '../widgets/guided_focus_frame.dart';
 import '../widgets/lightcore_quest_card.dart';
 import '../widgets/meter_bar.dart';
-import '../widgets/radiance_stat_allocator.dart';
 import '../widgets/symbol_grid_tile.dart';
 import '../widgets/tower_level_hex_badge.dart';
 import '../widgets/tower_ring_icon.dart';
@@ -454,6 +454,7 @@ class _BattleScreenState extends State<BattleScreen> {
       return;
     }
     _logBattle('center-tap');
+    LightcoreAudio.instance.playSfx(LightcoreSfx.uiTap);
     final controller = widget.controller;
     controller.handleBattleCenterTap();
     setState(() {
@@ -473,26 +474,25 @@ class _BattleScreenState extends State<BattleScreen> {
       return;
     }
     _logBattle('slot-tap', <String, Object?>{'slot': slotIndex});
+    LightcoreAudio.instance.playSfx(LightcoreSfx.uiTap);
     final controller = widget.controller;
     final slot = slotIndex >= 0 && slotIndex < controller.slots.length
         ? controller.slots[slotIndex]
         : null;
-    final canOpenStats =
-        slot != null &&
-        slot.isBuilt &&
-        !slot.isFabricating &&
-        !slot.isLayerProject;
-    controller.handleBattleSlotTap(slotIndex);
-    final statsTarget = canOpenStats
+    final target = slot != null && !slot.isLayerProject
         ? _BattleStatsTarget.slot(slotIndex)
         : null;
-    if (statsTarget != null) {
-      _completeTowerStatsTutorialFor(statsTarget);
-    }
+    final opensControls =
+        slot != null &&
+        !slot.isLayerProject &&
+        (!slot.isBuilt ||
+            slot.isFabricating ||
+            controller.activeLayerPassiveOnly);
+    controller.handleBattleSlotTap(slotIndex);
     setState(() {
-      _statsTarget = statsTarget;
+      _statsTarget = target;
       _panelFocus = _BattlePanelFocus.none;
-      _selectionControlsVisible = true;
+      _selectionControlsVisible = opensControls;
     });
   }
 
@@ -531,6 +531,7 @@ class _BattleScreenState extends State<BattleScreen> {
       return;
     }
     _logBattle('background-tap');
+    LightcoreAudio.instance.playSfx(LightcoreSfx.uiCancel);
     widget.controller.toggleShellVisibility();
     _statsTarget = null;
     _selectionControlsVisible = true;
@@ -919,8 +920,6 @@ class _BattleScreenState extends State<BattleScreen> {
     return Stack(
       children: [
         Positioned.fill(child: _buildGameCanvas(compact ? 20 : 0)),
-        if (questPanel != null)
-          Positioned(top: topInset, left: 0, child: questPanel),
         if (widget.showBattleHud && selectionHud != null)
           Positioned(left: inset, bottom: bottomInset, child: selectionHud),
         if (widget.showBattleHud)
@@ -936,6 +935,8 @@ class _BattleScreenState extends State<BattleScreen> {
             bottom: bottomInset + _overdriveHudHeight,
             child: selectionOverlay,
           ),
+        if (questPanel != null)
+          Positioned(top: topInset, left: 0, child: questPanel),
       ],
     );
   }
@@ -1231,8 +1232,6 @@ class _CoreStatsPanel extends StatelessWidget {
             child: _InlineStatList(rows: coreStats),
           ),
         ),
-        const SizedBox(height: 10),
-        RadianceStatAllocator(controller: controller),
         const SizedBox(height: 12),
         Text(
           'Core ${controller.coreAffinitySignatureLabel}  •  ${controller.coreProjectileArsenalLabel}  •  ${controller.corePayloadArsenalLabel}  •  ${controller.bossSpawnStatusLabel}',
@@ -1755,6 +1754,7 @@ class _ManualOverdriveHudState extends State<_ManualOverdriveHud> {
     _pressedAt = widget.controller.isManualOverdriveHeld
         ? null
         : DateTime.now();
+    LightcoreAudio.instance.playSfx(LightcoreSfx.overdriveStart);
     widget.controller.startManualOverdrive();
   }
 
@@ -1762,6 +1762,7 @@ class _ManualOverdriveHudState extends State<_ManualOverdriveHud> {
     final pressedAt = _pressedAt;
     _pressedAt = null;
     widget.controller.stopManualOverdrive();
+    LightcoreAudio.instance.playSfx(LightcoreSfx.overdriveEnd);
     if (pressedAt == null) {
       return;
     }

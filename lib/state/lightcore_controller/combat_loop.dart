@@ -36,6 +36,10 @@ extension LightcoreControllerCombatLoop on LightcoreController {
 
       _core = _core.copyWith(
         fireCooldownRemaining: max(0.0, _core.fireCooldownRemaining - battleDt),
+        packetCooldownRemaining: max(
+          0.0,
+          _core.packetCooldownRemaining - battleDt,
+        ),
       );
       if (_layer2.unlocked) {
         _layer2 = _layer2.copyWith(
@@ -219,7 +223,10 @@ extension LightcoreControllerCombatLoop on LightcoreController {
     return max(crowdBufferedSpawn, existingEnemyFloor);
   }
 
-  bool _advanceTowerFabrication(double dt) {
+  bool _advanceTowerFabrication(
+    double dt, {
+    bool showCompletionBanners = true,
+  }) {
     if (dt <= 0) {
       return false;
     }
@@ -240,14 +247,48 @@ extension LightcoreControllerCombatLoop on LightcoreController {
         if (selectedSlotIndex == index) {
           _towerRangePreviewSlotIndex = index;
         }
-        _showBanner(
-          '${towerDisplayName(tower)} fabrication complete on hex ${index + 1}.',
-          category: LightcoreNotificationCategory.battle,
-        );
+        if (showCompletionBanners) {
+          _showBanner(
+            '${towerDisplayName(tower)} fabrication complete on hex ${index + 1}.',
+            category: LightcoreNotificationCategory.battle,
+          );
+        }
         _syncTutorialStep(showBanner: false);
       }
       changed = true;
     }
+    return changed;
+  }
+
+  bool _advanceOfflineTowerFabrication(
+    double seconds, {
+    bool showCompletionBanners = true,
+  }) {
+    if (seconds <= 0 || _layers.isEmpty) {
+      return false;
+    }
+
+    _storeActiveLayer();
+    final viewedLayerId = _viewLayerId;
+    var changed = false;
+    for (final layer in List<TowerLayerSnapshot>.from(_layers)) {
+      _runtimeLayerId = layer.id;
+      if (_activeLayerId != layer.id) {
+        _loadLayer(layer);
+      }
+      changed =
+          _advanceTowerFabrication(
+            seconds,
+            showCompletionBanners: showCompletionBanners,
+          ) ||
+          changed;
+      _storeActiveLayer();
+    }
+
+    if (_activeLayerId != viewedLayerId) {
+      _loadLayer(_layerById(viewedLayerId));
+    }
+    _runtimeLayerId = _liveLayerForLayer(_layerById(viewedLayerId)).id;
     return changed;
   }
 

@@ -12,6 +12,7 @@ import '../services/lightcore_rewarded_ads.dart';
 import '../state/lightcore_controller.dart';
 import '../theme/lightcore_palette.dart';
 import '../widgets/guided_focus_frame.dart';
+import '../widgets/lightcore_info_button.dart';
 import '../widgets/lightcore_detail_sheet.dart';
 import '../widgets/manager_portrait.dart';
 import '../widgets/symbol_grid_tile.dart';
@@ -50,15 +51,21 @@ class CardManagementScreen extends StatelessWidget {
           controller: scrollController,
           padding: const EdgeInsets.fromLTRB(4, 4, 4, 24),
           children: [
-            Text('Main Manager', style: textTheme.titleLarge),
-            const SizedBox(height: 6),
-            Text(
-              controller.managerAssignmentUnlocked
-                  ? 'Socket one Core Manager and one Threat Director into the Tower Core. Core Managers boost every tower, and Threat Directors apply to every enemy spawned by this shell.'
-                  : 'Manager assignment unlocks at Core Lv ${LightcoreController.managerCoreLevelRequirement} or Account Radiance Lv ${LightcoreController.managerUnlockLevel}. Flux still banks now so the foundry is ready when it opens.',
-              style: textTheme.bodyMedium,
+            Row(
+              children: [
+                Expanded(
+                  child: Text('Main Manager', style: textTheme.titleLarge),
+                ),
+                LightcoreInfoButton(
+                  title: 'Main Manager Help',
+                  message: controller.managerAssignmentUnlocked
+                      ? 'Socket one Core Manager and one Threat Director into the Tower Core. Core Managers boost every tower, and Threat Directors apply to every enemy spawned by this shell.'
+                      : 'Manager assignment unlocks at Core Lv ${LightcoreController.managerCoreLevelRequirement} or Account Radiance Lv ${LightcoreController.managerUnlockLevel}. Flux still banks now so the foundry is ready when it opens.',
+                  tint: LightcorePalette.aether,
+                ),
+              ],
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 10),
             Wrap(
               spacing: 8,
               runSpacing: 8,
@@ -109,22 +116,27 @@ class CardManagementScreen extends StatelessWidget {
             Wrap(
               spacing: 10,
               runSpacing: 10,
+              alignment: WrapAlignment.center,
               children: [
                 _CoreSocketTile(
                   tint: LightcorePalette.aether,
                   icon: towerCoreManager == null
                       ? Icons.auto_awesome_rounded
                       : _towerManagerIcon(towerCoreManager),
-                  centerOverride: towerCoreManager == null
+                  background: towerCoreManager == null
                       ? null
-                      : ManagerPortrait(
+                      : _managerTileArtBackground(
                           seed: towerCoreManager.config.id,
                           name: towerCoreManager.config.name,
                           tint: LightcorePalette.aether,
                           icon: _towerManagerIcon(towerCoreManager),
                           family: ManagerPortraitFamily.core,
                           assetPath: towerCoreManager.config.portraitAssetPath,
-                          size: 50,
+                        ),
+                  centerOverride: towerCoreManager == null
+                      ? null
+                      : _managerAffinityOverlay(
+                          towerCoreManager.favoredAffinity,
                         ),
                   badgeIcon: Icons.hexagon_rounded,
                   semanticLabel:
@@ -144,16 +156,20 @@ class CardManagementScreen extends StatelessWidget {
                   icon: enemyCoreManager == null
                       ? Icons.tune_rounded
                       : _enemyManagerIcon(enemyCoreManager),
-                  centerOverride: enemyCoreManager == null
+                  background: enemyCoreManager == null
                       ? null
-                      : ManagerPortrait(
+                      : _managerTileArtBackground(
                           seed: enemyCoreManager.config.id,
                           name: enemyCoreManager.config.name,
                           tint: LightcorePalette.flare,
                           icon: _enemyManagerIcon(enemyCoreManager),
                           family: ManagerPortraitFamily.threat,
                           assetPath: enemyCoreManager.config.portraitAssetPath,
-                          size: 50,
+                        ),
+                  centerOverride: enemyCoreManager == null
+                      ? null
+                      : _managerAffinityOverlay(
+                          enemyCoreManager.targetAffinity,
                         ),
                   badgeIcon: Icons.groups_rounded,
                   semanticLabel:
@@ -210,6 +226,7 @@ class CardManagementScreen extends StatelessWidget {
             Wrap(
               spacing: 10,
               runSpacing: 10,
+              alignment: WrapAlignment.center,
               children: [
                 for (final manager in controller.cards)
                   _TowerManagerGlyphTile(
@@ -249,6 +266,7 @@ class CardManagementScreen extends StatelessWidget {
             Wrap(
               spacing: 10,
               runSpacing: 10,
+              alignment: WrapAlignment.center,
               children: [
                 for (final manager in controller.enemyManagers)
                   _EnemyManagerGlyphTile(
@@ -512,17 +530,22 @@ class _ManagerSectionHeader extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 8),
-            Text(
-              title,
-              style: textTheme.titleMedium?.copyWith(
-                color: LightcorePalette.mist,
-                fontWeight: FontWeight.w800,
+            Expanded(
+              child: Text(
+                title,
+                style: textTheme.titleMedium?.copyWith(
+                  color: LightcorePalette.mist,
+                  fontWeight: FontWeight.w800,
+                ),
               ),
+            ),
+            LightcoreInfoButton(
+              title: '$title Help',
+              message: subtitle,
+              tint: tint,
             ),
           ],
         ),
-        const SizedBox(height: 4),
-        Text(subtitle, style: textTheme.bodySmall),
       ],
     );
   }
@@ -871,29 +894,67 @@ class _ManagerForgeButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bonus = _managerBulkBonusLabel(count);
-    final label = 'x$count • $cost ${LightcoreCurrencyLabels.flux}';
-    final button = FilledButton.tonalIcon(
-      onPressed: enabled ? onPressed : null,
-      icon: Icon(
-        count == 1 ? Icons.hexagon_rounded : Icons.inventory_2_rounded,
-      ),
-      label: Text(label),
-    );
-
-    if (bonus == null) {
-      return button;
-    }
-
+    final label = 'x$count';
+    final costLabel = '$cost ${LightcoreCurrencyLabels.flux}';
     return Tooltip(
-      message: bonus,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          button,
-          const SizedBox(height: 5),
-          _Badge(label: bonus, tint: tint),
-        ],
+      message: bonus == null
+          ? '$label • $costLabel'
+          : '$label • $costLabel\n$bonus',
+      child: SizedBox(
+        width: 148,
+        child: FilledButton.tonal(
+          onPressed: enabled ? onPressed : null,
+          style: FilledButton.styleFrom(
+            minimumSize: Size(148, bonus == null ? 52 : 68),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    count == 1
+                        ? Icons.hexagon_rounded
+                        : Icons.inventory_2_rounded,
+                    size: 18,
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    label,
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Flexible(
+                    child: Text(
+                      costLabel,
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
+                    ),
+                  ),
+                ],
+              ),
+              if (bonus != null) ...[
+                const SizedBox(height: 4),
+                Text(
+                  bonus,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: tint,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -948,6 +1009,7 @@ class _ManagerForgeRevealPull {
     required this.name,
     required this.portraitSeed,
     required this.portraitName,
+    required this.assetPath,
     required this.roleLabel,
     required this.rarity,
     required this.icon,
@@ -962,6 +1024,7 @@ class _ManagerForgeRevealPull {
       name: manager.name,
       portraitSeed: manager.config.id,
       portraitName: manager.config.name,
+      assetPath: manager.config.portraitAssetPath,
       roleLabel: manager.roleLabel,
       rarity: manager.rarity,
       icon: _towerManagerIcon(manager),
@@ -983,6 +1046,7 @@ class _ManagerForgeRevealPull {
       name: manager.name,
       portraitSeed: manager.config.id,
       portraitName: manager.config.name,
+      assetPath: manager.config.portraitAssetPath,
       roleLabel: manager.roleLabel,
       rarity: manager.rarity,
       icon: _enemyManagerIcon(manager),
@@ -999,6 +1063,7 @@ class _ManagerForgeRevealPull {
   final String name;
   final String portraitSeed;
   final String portraitName;
+  final String assetPath;
   final String roleLabel;
   final ManagerRarity rarity;
   final IconData icon;
@@ -1366,6 +1431,7 @@ class _ManagerForgeRevealCard extends StatelessWidget {
             tint: accent,
             icon: pull.icon,
             family: pull.family,
+            assetPath: pull.assetPath,
             size: 64,
           ),
           const Spacer(),
@@ -1463,6 +1529,7 @@ class _ManagerForgeRevealTile extends StatelessWidget {
                   tint: accent,
                   icon: pull.icon,
                   family: pull.family,
+                  assetPath: pull.assetPath,
                   size: 44,
                 ),
               ),
@@ -1652,11 +1719,54 @@ double _curvedInterval(double value, double begin, double end, Curve curve) {
   return curve.transform(t);
 }
 
+Widget _managerTileArtBackground({
+  required String seed,
+  required String name,
+  required Color tint,
+  required IconData icon,
+  required ManagerPortraitFamily family,
+  required String assetPath,
+}) {
+  return ManagerPortrait(
+    seed: seed,
+    name: name,
+    tint: tint,
+    icon: icon,
+    family: family,
+    assetPath: assetPath,
+    size: kSymbolGridTileSize,
+    showBadge: false,
+    borderRadius: BorderRadius.circular(18),
+    borderOpacity: 0,
+    shadowOpacity: 0,
+  );
+}
+
+Widget _managerAffinityOverlay(PrototypeAffinity? affinity) {
+  if (affinity == null) {
+    return const SizedBox.shrink();
+  }
+
+  return Align(
+    alignment: Alignment.bottomRight,
+    child: Container(
+      padding: const EdgeInsets.all(5),
+      decoration: BoxDecoration(
+        color: LightcorePalette.panelRaised.withValues(alpha: 0.88),
+        shape: BoxShape.circle,
+        border: Border.all(color: affinity.color.withValues(alpha: 0.46)),
+      ),
+      child: AffinityGlyph(affinity: affinity, size: 17),
+    ),
+  );
+}
+
 class _CoreSocketTile extends StatelessWidget {
   const _CoreSocketTile({
     required this.tint,
     required this.icon,
     this.centerOverride,
+    this.background,
     required this.badgeIcon,
     required this.semanticLabel,
     required this.label,
@@ -1668,6 +1778,7 @@ class _CoreSocketTile extends StatelessWidget {
   final Color tint;
   final IconData icon;
   final Widget? centerOverride;
+  final Widget? background;
   final IconData badgeIcon;
   final String semanticLabel;
   final String label;
@@ -1682,6 +1793,7 @@ class _CoreSocketTile extends StatelessWidget {
       selected: selected,
       semanticLabel: semanticLabel,
       onTap: onTap,
+      background: background,
       topLeading: SymbolGridBadge(tint: tint, child: Text(label)),
       topTrailing: SymbolGridBadge(
         tint: selected ? LightcorePalette.layer2 : tint,
@@ -1727,6 +1839,14 @@ class _TowerManagerGlyphTile extends StatelessWidget {
         selected: equippedHere,
         semanticLabel: manager.name,
         onTap: onTap,
+        background: _managerTileArtBackground(
+          seed: manager.config.id,
+          name: manager.config.name,
+          tint: LightcorePalette.aether,
+          icon: _towerManagerIcon(manager),
+          family: ManagerPortraitFamily.core,
+          assetPath: manager.config.portraitAssetPath,
+        ),
         topLeading: SymbolGridPips(
           count: _managerRarityScore(manager.rarity) + 1,
           tint: LightcorePalette.aether,
@@ -1741,25 +1861,10 @@ class _TowerManagerGlyphTile extends StatelessWidget {
             equippedHere ? Icons.check_rounded : Icons.auto_awesome_rounded,
           ),
         ),
-        center: Stack(
-          alignment: Alignment.bottomRight,
-          children: [
-            ManagerPortrait(
-              seed: manager.config.id,
-              name: manager.config.name,
-              tint: LightcorePalette.aether,
-              icon: _towerManagerIcon(manager),
-              family: ManagerPortraitFamily.core,
-              assetPath: manager.config.portraitAssetPath,
-              size: 50,
-            ),
-            if (manager.favoredAffinity != null)
-              AffinityGlyph(affinity: manager.favoredAffinity!, size: 16),
-          ],
-        ),
+        center: _managerAffinityOverlay(manager.favoredAffinity),
         bottomChildren: [
           _deltaBadge(
-            icon: Icons.flash_on_rounded,
+            icon: Icons.handyman_rounded,
             delta:
                 controller.managerPowerAdjustedMultiplier(
                   manager.powerMultiplier,
@@ -1814,41 +1919,38 @@ class _EnemyManagerGlyphTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final assignedHere =
         controller.enemyCoreManager?.instanceId == manager.instanceId;
+    final rarityTint = _managerRarityTint(
+      manager.rarity,
+      LightcorePalette.flare,
+    );
 
     return GuidedFocusFrame(
       active: controller.tutorialHighlightsEnemyManager(manager.instanceId),
       tint: LightcorePalette.quest,
       child: SymbolGridTile(
-        tint: LightcorePalette.flare,
+        tint: rarityTint,
         selected: assignedHere,
         semanticLabel: manager.name,
         onTap: onTap,
+        background: _managerTileArtBackground(
+          seed: manager.config.id,
+          name: manager.config.name,
+          tint: LightcorePalette.flare,
+          icon: _enemyManagerIcon(manager),
+          family: ManagerPortraitFamily.threat,
+          assetPath: manager.config.portraitAssetPath,
+        ),
         topLeading: SymbolGridPips(
           count: _managerRarityScore(manager.rarity) + 1,
-          tint: LightcorePalette.flare,
+          tint: rarityTint,
         ),
         topTrailing: SymbolGridBadge(
-          tint: assignedHere ? LightcorePalette.layer2 : LightcorePalette.flare,
+          tint: assignedHere ? LightcorePalette.layer2 : rarityTint,
           shape: BoxShape.circle,
           size: 22,
           child: Icon(assignedHere ? Icons.check_rounded : Icons.tune_rounded),
         ),
-        center: Stack(
-          alignment: Alignment.bottomRight,
-          children: [
-            ManagerPortrait(
-              seed: manager.config.id,
-              name: manager.config.name,
-              tint: LightcorePalette.flare,
-              icon: _enemyManagerIcon(manager),
-              family: ManagerPortraitFamily.threat,
-              assetPath: manager.config.portraitAssetPath,
-              size: 50,
-            ),
-            if (manager.targetAffinity != null)
-              AffinityGlyph(affinity: manager.targetAffinity!, size: 16),
-          ],
-        ),
+        center: _managerAffinityOverlay(manager.targetAffinity),
         bottomChildren: [
           _deltaBadge(
             icon: Icons.groups_rounded,
@@ -1912,6 +2014,14 @@ class _LockedTowerManagerGlyphTile extends StatelessWidget {
       locked: true,
       semanticLabel: 'Locked Core Manager ${config.name}',
       onTap: onTap,
+      background: _managerTileArtBackground(
+        seed: config.id,
+        name: config.name,
+        tint: LightcorePalette.aether,
+        icon: _towerManagerIconForConfigId(config.id),
+        family: ManagerPortraitFamily.core,
+        assetPath: config.portraitAssetPath,
+      ),
       topLeading: SymbolGridBadge(
         tint: LightcorePalette.aether,
         child: const Text('Locked'),
@@ -1922,15 +2032,7 @@ class _LockedTowerManagerGlyphTile extends StatelessWidget {
         size: 22,
         child: Icon(Icons.lock_rounded),
       ),
-      center: ManagerPortrait(
-        seed: config.id,
-        name: config.name,
-        tint: LightcorePalette.aether,
-        icon: _towerManagerIconForConfigId(config.id),
-        family: ManagerPortraitFamily.core,
-        assetPath: config.portraitAssetPath,
-        size: 50,
-      ),
+      center: const SizedBox.shrink(),
       bottomChildren: [
         SymbolGridBadge(
           tint: LightcorePalette.aether,
@@ -1960,6 +2062,14 @@ class _LockedEnemyManagerGlyphTile extends StatelessWidget {
       locked: true,
       semanticLabel: 'Locked Threat Director ${config.name}',
       onTap: onTap,
+      background: _managerTileArtBackground(
+        seed: config.id,
+        name: config.name,
+        tint: LightcorePalette.flare,
+        icon: _enemyManagerIconForConfigId(config.id),
+        family: ManagerPortraitFamily.threat,
+        assetPath: config.portraitAssetPath,
+      ),
       topLeading: SymbolGridBadge(
         tint: LightcorePalette.flare,
         child: const Text('Locked'),
@@ -1970,15 +2080,7 @@ class _LockedEnemyManagerGlyphTile extends StatelessWidget {
         size: 22,
         child: Icon(Icons.lock_rounded),
       ),
-      center: ManagerPortrait(
-        seed: config.id,
-        name: config.name,
-        tint: LightcorePalette.flare,
-        icon: _enemyManagerIconForConfigId(config.id),
-        family: ManagerPortraitFamily.threat,
-        assetPath: config.portraitAssetPath,
-        size: 50,
-      ),
+      center: const SizedBox.shrink(),
       bottomChildren: [
         SymbolGridBadge(
           tint: LightcorePalette.flare,
@@ -2055,13 +2157,13 @@ IconData _towerManagerIcon(InventoryCard manager) =>
     _towerManagerIconForConfigId(manager.config.id);
 
 IconData _towerManagerIconForConfigId(String configId) => switch (configId) {
-  'flux_coil' => Icons.hub_rounded,
-  'impact_prism' => Icons.flash_on_rounded,
-  'quick_relay' => Icons.timer_rounded,
-  'spectrum_seal' => Icons.auto_awesome_rounded,
-  'anchor_array' => Icons.shield_rounded,
-  'pulse_broker' => Icons.blur_circular_rounded,
-  'overload_lens' => Icons.center_focus_strong_rounded,
+  'mgr_001_whitney_stardust' => Icons.hub_rounded,
+  'mgr_002_reddie_mercury' => Icons.flash_on_rounded,
+  'mgr_003_yella_nova' => Icons.timer_rounded,
+  'mgr_004_greta_greenlight' => Icons.auto_awesome_rounded,
+  'mgr_005_violet_vortex' => Icons.shield_rounded,
+  'mgr_006_orion_orange' => Icons.blur_circular_rounded,
+  'mgr_007_blueshift_aldrin' => Icons.center_focus_strong_rounded,
   _ => Icons.auto_awesome_rounded,
 };
 
@@ -2069,15 +2171,15 @@ IconData _enemyManagerIcon(EnemyManagerState manager) =>
     _enemyManagerIconForConfigId(manager.config.id);
 
 IconData _enemyManagerIconForConfigId(String configId) => switch (configId) {
-  'swarm_broker' => Icons.groups_rounded,
-  'extractor' => Icons.workspace_premium_rounded,
-  'phase_script' => Icons.blur_on_rounded,
-  'regen_director' => Icons.healing_rounded,
-  'gravity_director' => Icons.public_rounded,
-  'greed_director' => Icons.diamond_rounded,
-  'saboteur_director' => Icons.warning_rounded,
-  'volatile_director' => Icons.flare_rounded,
-  'apex_herald' => Icons.radio_button_checked_rounded,
+  'emg_001_plain_jane_quasar' => Icons.workspace_premium_rounded,
+  'emg_002_count_huskula' => Icons.diamond_rounded,
+  'emg_003_splinter_stella' => Icons.groups_rounded,
+  'emg_004_blink_floyd' => Icons.blur_on_rounded,
+  'emg_005_regenade_moss' => Icons.healing_rounded,
+  'emg_006_blue_screen_baron' => Icons.warning_rounded,
+  'emg_007_fastro_naut' => Icons.flare_rounded,
+  'emg_008_grim_gravity' => Icons.public_rounded,
+  'emg_009_duchess_deadweight' => Icons.radio_button_checked_rounded,
   'pursuit_script' => Icons.speed_rounded,
   'ballast_field' => Icons.shield_rounded,
   'fracture_bloom' => Icons.local_fire_department_rounded,
@@ -2101,29 +2203,51 @@ class _ManagerDetailHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
+    final titleBlock = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        portrait,
-        const SizedBox(width: 14),
-        Expanded(
-          child: Column(
+        Text(name, style: Theme.of(context).textTheme.titleLarge),
+        const SizedBox(height: 4),
+        Text(
+          roleLabel,
+          style: Theme.of(
+            context,
+          ).textTheme.bodyMedium?.copyWith(color: roleTint),
+        ),
+      ],
+    );
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxWidth < 360) {
+          return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(name, style: Theme.of(context).textTheme.titleLarge),
-              const SizedBox(height: 4),
-              Text(
-                roleLabel,
-                style: Theme.of(
-                  context,
-                ).textTheme.bodyMedium?.copyWith(color: roleTint),
+              Center(child: portrait),
+              const SizedBox(height: 12),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(child: titleBlock),
+                  const SizedBox(width: 10),
+                  _Badge(label: rarityLabel, tint: roleTint),
+                ],
               ),
             ],
-          ),
-        ),
-        const SizedBox(width: 10),
-        _Badge(label: rarityLabel, tint: roleTint),
-      ],
+          );
+        }
+
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            portrait,
+            const SizedBox(width: 14),
+            Expanded(child: titleBlock),
+            const SizedBox(width: 10),
+            _Badge(label: rarityLabel, tint: roleTint),
+          ],
+        );
+      },
     );
   }
 }
@@ -2173,7 +2297,7 @@ class _LockedTowerManagerDetailSheet extends StatelessWidget {
             icon: _towerManagerIconForConfigId(config.id),
             family: ManagerPortraitFamily.core,
             assetPath: config.portraitAssetPath,
-            size: 86,
+            size: 132,
           ),
           name: config.name,
           roleLabel: config.roleLabel,
@@ -2244,7 +2368,7 @@ class _LockedEnemyManagerDetailSheet extends StatelessWidget {
             icon: _enemyManagerIconForConfigId(config.id),
             family: ManagerPortraitFamily.threat,
             assetPath: config.portraitAssetPath,
-            size: 86,
+            size: 132,
           ),
           name: config.name,
           roleLabel: config.roleLabel,
@@ -2323,7 +2447,7 @@ class _TowerManagerDetailSheet extends StatelessWidget {
             icon: _towerManagerIcon(manager),
             family: ManagerPortraitFamily.core,
             assetPath: manager.config.portraitAssetPath,
-            size: 86,
+            size: 132,
           ),
           name: manager.name,
           roleLabel: manager.roleLabel,
@@ -2443,7 +2567,7 @@ class _EnemyManagerDetailSheet extends StatelessWidget {
             icon: _enemyManagerIcon(manager),
             family: ManagerPortraitFamily.threat,
             assetPath: manager.config.portraitAssetPath,
-            size: 86,
+            size: 132,
           ),
           name: manager.name,
           roleLabel: manager.roleLabel,

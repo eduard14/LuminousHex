@@ -67,6 +67,7 @@ extension LightcoreControllerSaveTournamentCloud on LightcoreController {
       coreStability: 100,
       flowEfficiency: _maxFlowEfficiency,
       fireCooldownRemaining: 0,
+      packetCooldownRemaining: 0,
       level: evenEntryTournamentCoreLevel + normalizedTowerTier - 1,
       affinity: coreAffinity,
       secondaryAffinity: null,

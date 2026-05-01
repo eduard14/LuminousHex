@@ -4,10 +4,12 @@ class _PrismRiftDungeonRunScreen extends StatefulWidget {
   const _PrismRiftDungeonRunScreen({
     required this.controller,
     required this.towerLevel,
+    required this.runSeed,
   });
 
   final LightcoreController controller;
   final int towerLevel;
+  final int runSeed;
 
   @override
   State<_PrismRiftDungeonRunScreen> createState() =>
@@ -26,7 +28,7 @@ class _PrismRiftDungeonRunScreenState
   @override
   void initState() {
     super.initState();
-    _towerProfile = widget.controller.dailyDungeonTowerProfileForLevel(
+    _towerProfile = widget.controller.dailyDungeonBattleTowerProfileForLevel(
       widget.towerLevel,
     );
     _snapshotNotifier = ValueNotifier<_PrismRiftRunSnapshot>(
@@ -39,6 +41,7 @@ class _PrismRiftDungeonRunScreenState
       controller: widget.controller,
       towerProfile: _towerProfile,
       timeLimit: _timeLimit,
+      runSeed: widget.runSeed,
       snapshotNotifier: _snapshotNotifier,
       onRunEnded: _handleRunEnded,
     );
@@ -171,8 +174,11 @@ class _PrismRiftRunSnapshot {
     required this.charge,
     required this.heat,
     required this.combo,
+    required this.score,
     required this.wave,
     required this.activeShards,
+    required this.anchorShards,
+    required this.volatileShards,
     required this.aiming,
     required this.running,
     required this.victory,
@@ -190,8 +196,11 @@ class _PrismRiftRunSnapshot {
       charge: 1,
       heat: 0,
       combo: 0,
+      score: 0,
       wave: 1,
       activeShards: 0,
+      anchorShards: 0,
+      volatileShards: 0,
       aiming: false,
       running: true,
       victory: false,
@@ -205,8 +214,11 @@ class _PrismRiftRunSnapshot {
   final double charge;
   final double heat;
   final int combo;
+  final int score;
   final int wave;
   final int activeShards;
+  final int anchorShards;
+  final int volatileShards;
   final bool aiming;
   final bool running;
   final bool victory;
@@ -395,10 +407,27 @@ class _PrismRiftStatusDock extends StatelessWidget {
                 label: '${snapshot.activeShards} shards',
                 tint: LightcorePalette.violet,
               ),
+              if (snapshot.anchorShards > 0)
+                _InfoChip(
+                  icon: Icons.anchor_rounded,
+                  label: '${snapshot.anchorShards} anchors',
+                  tint: LightcorePalette.gilded,
+                ),
+              if (snapshot.volatileShards > 0)
+                _InfoChip(
+                  icon: Icons.blur_on_rounded,
+                  label: '${snapshot.volatileShards} volatile',
+                  tint: LightcorePalette.warning,
+                ),
               _InfoChip(
                 icon: Icons.local_fire_department_rounded,
                 label: '${snapshot.combo} combo',
                 tint: LightcorePalette.solar,
+              ),
+              _InfoChip(
+                icon: Icons.emoji_events_rounded,
+                label: '${snapshot.score} score',
+                tint: LightcorePalette.success,
               ),
               _InfoChip(
                 icon: snapshot.aiming

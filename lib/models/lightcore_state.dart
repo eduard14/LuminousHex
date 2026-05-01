@@ -594,9 +594,9 @@ class CompletedTowerShellState {
     required this.sourceLayerId,
     required this.sourceLayerLabel,
     required this.sourceLayerTier,
-    required this.sourceSlotIndex,
     required this.savedAtMillis,
-    required this.tower,
+    required this.layer,
+    this.sourceSlotIndex,
     this.archived = true,
   });
 
@@ -604,12 +604,18 @@ class CompletedTowerShellState {
   final String sourceLayerId;
   final String sourceLayerLabel;
   final int sourceLayerTier;
-  final int sourceSlotIndex;
+  final int? sourceSlotIndex;
   final int savedAtMillis;
-  final OuterTowerState tower;
+  final TowerLayerSnapshot layer;
   final bool archived;
 
-  String get sourceLabel => '$sourceLayerLabel Hex ${sourceSlotIndex + 1}';
+  String get sourceLabel {
+    final slotIndex = sourceSlotIndex;
+    if (slotIndex == null || slotIndex < 0) {
+      return '$sourceLayerLabel set';
+    }
+    return '$sourceLayerLabel set • Layer 2 Hex ${slotIndex + 1}';
+  }
 }
 
 class InventoryCard {
@@ -1318,6 +1324,7 @@ class CoreState {
     this.coreStability = 100,
     required this.flowEfficiency,
     required this.fireCooldownRemaining,
+    this.packetCooldownRemaining = 0,
     this.automationCooldownRemaining = 0,
     required this.level,
     required this.projectileType,
@@ -1336,6 +1343,7 @@ class CoreState {
   final double coreStability;
   final double flowEfficiency;
   final double fireCooldownRemaining;
+  final double packetCooldownRemaining;
   final double automationCooldownRemaining;
   final int level;
   final ProjectileType projectileType;
@@ -1354,6 +1362,7 @@ class CoreState {
     double? coreStability,
     double? flowEfficiency,
     double? fireCooldownRemaining,
+    double? packetCooldownRemaining,
     double? automationCooldownRemaining,
     int? level,
     ProjectileType? projectileType,
@@ -1373,6 +1382,8 @@ class CoreState {
       flowEfficiency: flowEfficiency ?? this.flowEfficiency,
       fireCooldownRemaining:
           fireCooldownRemaining ?? this.fireCooldownRemaining,
+      packetCooldownRemaining:
+          packetCooldownRemaining ?? this.packetCooldownRemaining,
       automationCooldownRemaining:
           automationCooldownRemaining ?? this.automationCooldownRemaining,
       level: level ?? this.level,

@@ -37,37 +37,7 @@ class _TowerBattleCanvas extends StatelessWidget {
           running: running,
           expired: expired,
         ),
-        child: Center(
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: LightcorePalette.night.withValues(alpha: 0.58),
-              border: Border.all(color: tint.withValues(alpha: 0.42)),
-            ),
-            child: SizedBox.square(
-              dimension: 72,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    'Lv',
-                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      color: LightcorePalette.mist.withValues(alpha: 0.68),
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                  Text(
-                    '$towerLevel',
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      color: cleared ? LightcorePalette.success : tint,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
+        child: const SizedBox.expand(),
       ),
     );
   }
@@ -173,15 +143,30 @@ class _TowerBattlePainter extends CustomPainter {
       );
     }
 
-    canvas.drawCircle(center, coreRadius, towerFill);
-    canvas.drawCircle(
-      center,
-      coreRadius,
+    canvas.drawPath(_hexPath(center, coreRadius), towerFill);
+    canvas.drawPath(
+      _hexPath(center, coreRadius),
       Paint()
         ..style = PaintingStyle.stroke
         ..strokeWidth = 3
         ..color = (cleared ? LightcorePalette.success : resolvedTint)
-            .withValues(alpha: cleared ? 0.82 : 0.62),
+            .withValues(alpha: cleared ? 0.82 : 0.72),
+    );
+    _drawHexChargeIndicator(
+      canvas,
+      center,
+      color: resolvedTint,
+      radius: coreRadius,
+      chargeProgress: running ? 0.82 : integrity,
+    );
+    _paintTowerTraitBadge(
+      canvas,
+      center,
+      projectileType: towerProfile.projectileType,
+      payloadType: towerProfile.payloadType,
+      level: towerProfile.effectiveDisplayLevel,
+      tint: resolvedTint,
+      size: coreRadius * 2.2,
     );
     _paintIconGlyph(
       canvas,
@@ -240,6 +225,129 @@ class _TowerBattlePainter extends CustomPainter {
           ..color = LightcorePalette.aether.withValues(alpha: 0.22),
       );
     }
+  }
+
+  void _drawHexChargeIndicator(
+    Canvas canvas,
+    Offset center, {
+    required Color color,
+    required double radius,
+    required double chargeProgress,
+  }) {
+    final clampedCharge = chargeProgress.clamp(0.0, 1.0).toDouble();
+    final guideRadius = radius * 0.76;
+    final chargeRadius = radius * (0.16 + (clampedCharge * 0.56));
+    canvas.drawPath(
+      _hexPath(center, guideRadius),
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2.2
+        ..color = color.withValues(alpha: 0.4),
+    );
+    canvas.drawPath(
+      _hexPath(center, chargeRadius),
+      Paint()
+        ..style = PaintingStyle.fill
+        ..color = color.withValues(alpha: 0.16 + (clampedCharge * 0.24)),
+    );
+  }
+
+  Path _hexPath(Offset center, double radius) {
+    final path = Path();
+    for (var index = 0; index < 6; index += 1) {
+      final angle = (math.pi / 6) + (index * math.pi / 3);
+      final point = center.translate(
+        math.cos(angle) * radius,
+        math.sin(angle) * radius,
+      );
+      if (index == 0) {
+        path.moveTo(point.dx, point.dy);
+      } else {
+        path.lineTo(point.dx, point.dy);
+      }
+    }
+    return path..close();
+  }
+
+  void _paintTowerTraitBadge(
+    Canvas canvas,
+    Offset center, {
+    required ProjectileType projectileType,
+    required PayloadType payloadType,
+    required int level,
+    required Color tint,
+    required double size,
+  }) {
+    final payloadColor = payloadType.affinity?.color ?? LightcorePalette.layer2;
+    final vertices = List<Offset>.generate(6, (index) {
+      final angle = (math.pi / 6) + (index * math.pi / 3);
+      return center.translate(
+        math.cos(angle) * size * 0.38,
+        math.sin(angle) * size * 0.38,
+      );
+    }, growable: false);
+    final path = Path()..moveTo(vertices.first.dx, vertices.first.dy);
+    for (final vertex in vertices.skip(1)) {
+      path.lineTo(vertex.dx, vertex.dy);
+    }
+    path.close();
+    canvas.drawPath(
+      path,
+      Paint()..color = payloadColor.withValues(alpha: 0.16),
+    );
+    for (var edge = 0; edge < 6; edge += 1) {
+      _drawHexEdge(
+        canvas,
+        vertices,
+        edge,
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = math.max(1.1, size * 0.032)
+          ..strokeCap = StrokeCap.round
+          ..color = LightcorePalette.stroke.withValues(alpha: 0.58),
+      );
+    }
+    final activeEdges = math.max(
+      1,
+      ((level / LightcoreController.maxTowerLevel) * 6).ceil(),
+    );
+    for (var edge = 0; edge < activeEdges; edge += 1) {
+      _drawHexEdge(
+        canvas,
+        vertices,
+        edge,
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = math.max(2.0, size * 0.055)
+          ..strokeCap = StrokeCap.round
+          ..color = tint.withValues(alpha: 0.96),
+      );
+    }
+    canvas.drawCircle(
+      center,
+      size * 0.19,
+      Paint()..color = payloadColor.withValues(alpha: 0.24),
+    );
+    _paintIconGlyph(
+      canvas,
+      center,
+      towerProjectileIcon(projectileType),
+      size: size * 0.23,
+      color: projectileType.affinity.color,
+    );
+  }
+
+  void _drawHexEdge(
+    Canvas canvas,
+    List<Offset> vertices,
+    int edge,
+    Paint paint,
+  ) {
+    canvas.drawLine(
+      vertices[edge % vertices.length],
+      vertices[(edge + 1) % vertices.length],
+      paint,
+    );
   }
 
   void _paintIconGlyph(

@@ -212,8 +212,10 @@ class _ShellOverlayFrame extends StatelessWidget {
     return AnimatedBuilder(
       animation: controller,
       builder: (context, _) {
-        final isCompactLayout = MediaQuery.sizeOf(context).width < 760;
+        final media = MediaQuery.of(context);
+        final isCompactLayout = media.size.width < 760;
         final textTheme = Theme.of(context).textTheme;
+        final bottomContentPadding = isCompactLayout ? 20.0 : 18.0;
         final showLayerButton =
             controller.layerNavigationUnlocked &&
             destination != _ShellOverlayDestination.spaceRoom &&
@@ -312,7 +314,7 @@ class _ShellOverlayFrame extends StatelessWidget {
                           isCompactLayout ? 12 : 18,
                           10,
                           isCompactLayout ? 12 : 18,
-                          isCompactLayout ? 12 : 16,
+                          bottomContentPadding,
                         ),
                         child: child,
                       ),

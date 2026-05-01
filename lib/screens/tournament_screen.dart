@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 
 import '../data/enemy_configs.dart';
 import '../models/hex_tournament_run.dart';
+import '../models/lightcore_config.dart';
 import '../models/lightcore_state.dart';
 import '../models/lightcore_tournament.dart';
 import '../models/lightcore_types.dart';
@@ -15,8 +16,12 @@ import '../state/lightcore_controller.dart';
 import '../theme/lightcore_palette.dart';
 import '../widgets/aurora_panel.dart';
 import '../widgets/guided_focus_frame.dart';
+import '../widgets/lightcore_info_button.dart';
+import '../widgets/lightcore_projectile_fx.dart';
+import '../widgets/lightcore_run_loading.dart';
 import '../widgets/meter_bar.dart';
 import '../widgets/symbol_grid_tile.dart';
+import '../widgets/tower_level_hex_badge.dart';
 import 'battle_screen.dart';
 
 part 'tournament/tournament_hub_widgets.dart';
@@ -43,6 +48,7 @@ class TournamentScreen extends StatefulWidget {
 class _TournamentScreenState extends State<TournamentScreen> {
   LightcoreTournamentOverview? _overview;
   LightcoreTournamentModeId? _selectedMode;
+  LightcoreTournamentModeId? _autoStartMode;
   String? _errorMessage;
   bool _loading = true;
   bool _busy = false;
@@ -156,9 +162,19 @@ class _TournamentScreenState extends State<TournamentScreen> {
     });
   }
 
-  void _openMode(LightcoreTournamentModeId mode) {
+  void _openMode(LightcoreTournamentModeId mode, {bool autoStart = false}) {
     widget.controller.markTutorialTournamentModeReviewed(mode);
-    setState(() => _selectedMode = mode);
+    setState(() {
+      _selectedMode = mode;
+      _autoStartMode = autoStart ? mode : null;
+    });
+  }
+
+  void _consumeAutoStartMode(LightcoreTournamentModeId mode) {
+    if (_autoStartMode != mode || !mounted) {
+      return;
+    }
+    setState(() => _autoStartMode = null);
   }
 
   @override
@@ -177,13 +193,18 @@ class _TournamentScreenState extends State<TournamentScreen> {
         busy: _busy || _loading,
         onBack: () {
           widget.onBattleSurfaceActiveChanged?.call(false);
-          setState(() => _selectedMode = null);
+          setState(() {
+            _selectedMode = null;
+            _autoStartMode = null;
+          });
         },
         onJoin: () => _joinMode(selectedMode),
         onRefresh: _loadOverview,
         onClaim: () => _claimReward(selectedMode),
         onSubmit: _submitRun,
         onBattleSurfaceActiveChanged: widget.onBattleSurfaceActiveChanged,
+        autoStartRun: _autoStartMode == selectedMode,
+        onAutoStartConsumed: () => _consumeAutoStartMode(selectedMode),
       );
     }
 
@@ -195,6 +216,7 @@ class _TournamentScreenState extends State<TournamentScreen> {
       errorMessage: _errorMessage,
       onRefresh: _loadOverview,
       onOpenMode: _openMode,
+      onPlayMode: (mode) => _openMode(mode, autoStart: true),
       onJoinMode: _joinMode,
       onClaimReward: _claimReward,
     );

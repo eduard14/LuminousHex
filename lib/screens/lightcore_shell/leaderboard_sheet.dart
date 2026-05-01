@@ -57,6 +57,11 @@ class _GlobalLeaderboardSheetState extends State<_GlobalLeaderboardSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final media = MediaQuery.of(context);
+    final compact = media.size.width < 480;
+    final usableHeight = (media.size.height - media.padding.vertical)
+        .clamp(360.0, media.size.height)
+        .toDouble();
     final overview = _overview ?? widget.controller.socialOverview;
     final leaders =
         overview?.globalTowerStrengthLeaderboard ??
@@ -74,9 +79,14 @@ class _GlobalLeaderboardSheetState extends State<_GlobalLeaderboardSheet> {
 
     return SafeArea(
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(18, 8, 18, 22),
+        padding: EdgeInsets.fromLTRB(
+          compact ? 14 : 18,
+          8,
+          compact ? 14 : 18,
+          compact ? 18 : 22,
+        ),
         child: SizedBox(
-          height: MediaQuery.sizeOf(context).height * 0.82,
+          height: usableHeight * (compact ? 0.86 : 0.82),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [

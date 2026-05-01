@@ -232,6 +232,8 @@ def main() -> None:
     parser.add_argument("--core-b", required=True, type=Path)
     parser.add_argument("--threat-a", required=True, type=Path)
     parser.add_argument("--threat-b", required=True, type=Path)
+    parser.add_argument("--columns", type=int, default=5)
+    parser.add_argument("--rows", type=int, default=4)
     args = parser.parse_args()
 
     core_ids = _parse_ids(
@@ -244,10 +246,34 @@ def main() -> None:
     if len(threat_ids) != 40:
         raise SystemExit(f"Expected 40 threat director IDs, found {len(threat_ids)}")
 
-    _crop_grid(args.core_a, core_ids[:20], ROOT / "assets/sprites/managers/core")
-    _crop_grid(args.core_b, core_ids[20:], ROOT / "assets/sprites/managers/core")
-    _crop_grid(args.threat_a, threat_ids[:20], ROOT / "assets/sprites/managers/threat")
-    _crop_grid(args.threat_b, threat_ids[20:], ROOT / "assets/sprites/managers/threat")
+    _crop_grid(
+        args.core_a,
+        core_ids[:20],
+        ROOT / "assets/sprites/managers/core",
+        columns=args.columns,
+        rows=args.rows,
+    )
+    _crop_grid(
+        args.core_b,
+        core_ids[20:],
+        ROOT / "assets/sprites/managers/core",
+        columns=args.columns,
+        rows=args.rows,
+    )
+    _crop_grid(
+        args.threat_a,
+        threat_ids[:20],
+        ROOT / "assets/sprites/managers/threat",
+        columns=args.columns,
+        rows=args.rows,
+    )
+    _crop_grid(
+        args.threat_b,
+        threat_ids[20:],
+        ROOT / "assets/sprites/managers/threat",
+        columns=args.columns,
+        rows=args.rows,
+    )
     print("Generated 80 manager portrait PNG assets.")
 
 

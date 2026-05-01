@@ -91,12 +91,12 @@ void main() {
 
   testWidgets('main menu pumps without throwing', (tester) async {
     final report = buildReport(
-      clientVersion: '1.0.17',
-      clientBuildNumber: '18',
-      minimumSupportedVersion: '1.0.17',
-      minimumSupportedBuildNumber: '18',
-      recommendedVersion: '1.0.17',
-      recommendedBuildNumber: '18',
+      clientVersion: '1.0.18',
+      clientBuildNumber: '19',
+      minimumSupportedVersion: '1.0.18',
+      minimumSupportedBuildNumber: '19',
+      recommendedVersion: '1.0.18',
+      recommendedBuildNumber: '19',
     );
 
     await tester.pumpWidget(buildMenu(report: report));
@@ -105,7 +105,7 @@ void main() {
     expect(find.text('Lumi Core'), findsOneWidget);
     expect(find.text('BETA'), findsOneWidget);
     expect(find.text('Authentication ID'), findsOneWidget);
-    expect(find.text('V1.0.17+18'), findsOneWidget);
+    expect(find.text('V1.0.18+19'), findsOneWidget);
     expect(find.text('LIVE'), findsOneWidget);
     expect(find.text('CACHE RESTORED'), findsOneWidget);
     expect(find.text('VERSION BLOCKED'), findsNothing);
@@ -142,12 +142,12 @@ void main() {
   ) async {
     var entered = false;
     final report = buildReport(
-      clientVersion: '1.0.17',
-      clientBuildNumber: '18',
-      minimumSupportedVersion: '1.0.17',
-      minimumSupportedBuildNumber: '18',
-      recommendedVersion: '1.0.17',
-      recommendedBuildNumber: '18',
+      clientVersion: '1.0.18',
+      clientBuildNumber: '19',
+      minimumSupportedVersion: '1.0.18',
+      minimumSupportedBuildNumber: '19',
+      recommendedVersion: '1.0.18',
+      recommendedBuildNumber: '19',
       backendMode: LightcoreBackendMode.firebaseBacked,
       serverValidated: false,
     );
@@ -175,12 +175,12 @@ void main() {
     var entered = false;
     var reconnects = 0;
     final report = buildReport(
-      clientVersion: '1.0.17',
-      clientBuildNumber: '18',
-      minimumSupportedVersion: '1.0.17',
-      minimumSupportedBuildNumber: '18',
-      recommendedVersion: '1.0.17',
-      recommendedBuildNumber: '18',
+      clientVersion: '1.0.18',
+      clientBuildNumber: '19',
+      minimumSupportedVersion: '1.0.18',
+      minimumSupportedBuildNumber: '19',
+      recommendedVersion: '1.0.18',
+      recommendedBuildNumber: '19',
     );
 
     await tester.pumpWidget(
@@ -222,10 +222,10 @@ void main() {
     var googleSignInCalls = 0;
     var skippedPrompt = false;
     final report = buildReport(
-      clientVersion: '1.0.17',
-      clientBuildNumber: '18',
-      recommendedVersion: '1.0.17',
-      recommendedBuildNumber: '18',
+      clientVersion: '1.0.18',
+      clientBuildNumber: '19',
+      recommendedVersion: '1.0.18',
+      recommendedBuildNumber: '19',
     );
 
     await tester.pumpWidget(
@@ -275,10 +275,10 @@ void main() {
     var googleSignInCalls = 0;
     var skippedPrompt = false;
     final report = buildReport(
-      clientVersion: '1.0.17',
-      clientBuildNumber: '18',
-      recommendedVersion: '1.0.17',
-      recommendedBuildNumber: '18',
+      clientVersion: '1.0.18',
+      clientBuildNumber: '19',
+      recommendedVersion: '1.0.18',
+      recommendedBuildNumber: '19',
     );
 
     await tester.pumpWidget(
@@ -316,10 +316,10 @@ void main() {
     var entered = false;
     var googleSignInCalls = 0;
     final report = buildReport(
-      clientVersion: '1.0.17',
-      clientBuildNumber: '18',
-      recommendedVersion: '1.0.17',
-      recommendedBuildNumber: '18',
+      clientVersion: '1.0.18',
+      clientBuildNumber: '19',
+      recommendedVersion: '1.0.18',
+      recommendedBuildNumber: '19',
       isAnonymous: false,
     );
 

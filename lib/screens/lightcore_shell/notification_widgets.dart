@@ -30,7 +30,7 @@ class _ShellNotificationOverlayState extends State<_ShellNotificationOverlay> {
   Widget build(BuildContext context) {
     return Positioned.fill(
       child: SafeArea(
-        minimum: const EdgeInsets.fromLTRB(14, 10, 14, 0),
+        minimum: const EdgeInsets.fromLTRB(16, 8, 16, 0),
         child: AnimatedBuilder(
           animation: widget.controller,
           builder: (context, _) {
@@ -87,38 +87,53 @@ class _ShellNotificationBanner extends StatelessWidget {
           behavior: HitTestBehavior.opaque,
           onTap: onDismiss,
           child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 560),
+            constraints: const BoxConstraints(maxWidth: 460),
             child: DecoratedBox(
               key: const ValueKey<String>('shell-notification-banner'),
               decoration: BoxDecoration(
-                color: LightcorePalette.night.withValues(alpha: 0.92),
-                borderRadius: BorderRadius.circular(18),
+                color: LightcorePalette.night.withValues(alpha: 0.88),
+                borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                  color: LightcorePalette.mist.withValues(alpha: 0.16),
+                  color: LightcorePalette.aether.withValues(alpha: 0.28),
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.36),
-                    blurRadius: 24,
-                    offset: const Offset(0, 12),
+                    color: LightcorePalette.aether.withValues(alpha: 0.14),
+                    blurRadius: 18,
+                    offset: const Offset(0, 8),
                   ),
                 ],
               ),
               child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 12,
-                ),
-                child: Text(
-                  message,
-                  maxLines: 3,
-                  overflow: TextOverflow.ellipsis,
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: LightcorePalette.mist,
-                    fontWeight: FontWeight.w800,
-                    height: 1.22,
-                  ),
+                padding: const EdgeInsets.fromLTRB(12, 9, 10, 9),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.notifications_active_rounded,
+                      color: LightcorePalette.aether,
+                      size: 17,
+                    ),
+                    const SizedBox(width: 8),
+                    Flexible(
+                      child: Text(
+                        message,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: LightcorePalette.mist,
+                          fontWeight: FontWeight.w800,
+                          height: 1.15,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Icon(
+                      Icons.close_rounded,
+                      color: LightcorePalette.mist.withValues(alpha: 0.72),
+                      size: 16,
+                    ),
+                  ],
                 ),
               ),
             ),

@@ -122,17 +122,26 @@ class _ScreenNameDialogState extends State<_ScreenNameDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final media = MediaQuery.of(context);
+    final compact = media.size.width < 480;
+    final usableHeight =
+        (media.size.height - media.viewInsets.vertical - media.padding.vertical)
+            .clamp(300.0, media.size.height)
+            .toDouble();
     final unlocked = controller.canEditScreenName;
     final tutorialActive =
         controller.tutorialStep == LightcoreTutorialStep.setScreenName;
 
     return Dialog(
       backgroundColor: Colors.transparent,
-      insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      insetPadding: EdgeInsets.symmetric(
+        horizontal: compact ? 14 : 20,
+        vertical: compact ? 10 : 16,
+      ),
       child: ConstrainedBox(
         constraints: BoxConstraints(
           maxWidth: 460,
-          maxHeight: MediaQuery.sizeOf(context).height * 0.86,
+          maxHeight: usableHeight * (compact ? 0.96 : 0.86),
         ),
         child: AuroraPanel(
           tint: tutorialActive
@@ -216,6 +225,7 @@ class _ScreenNameDialogState extends State<_ScreenNameDialog> {
                   tint: LightcorePalette.quest,
                   radius: 18,
                   label: 'SAVE',
+                  showTapCue: false,
                   child: FilledButton.icon(
                     key: const ValueKey<String>('save-screen-name-button'),
                     onPressed: unlocked && !_saving ? _submit : null,
@@ -255,13 +265,22 @@ class _SelectorDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final media = MediaQuery.of(context);
+    final compact = media.size.width < 480;
+    final usableHeight =
+        (media.size.height - media.viewInsets.vertical - media.padding.vertical)
+            .clamp(320.0, media.size.height)
+            .toDouble();
     return Dialog(
       backgroundColor: Colors.transparent,
-      insetPadding: const EdgeInsets.all(20),
+      insetPadding: EdgeInsets.symmetric(
+        horizontal: compact ? 14 : 20,
+        vertical: compact ? 12 : 20,
+      ),
       child: ConstrainedBox(
         constraints: BoxConstraints(
           maxWidth: 560,
-          maxHeight: MediaQuery.sizeOf(context).height * 0.76,
+          maxHeight: usableHeight * (compact ? 0.9 : 0.76),
         ),
         child: AuroraPanel(
           tint: tint,

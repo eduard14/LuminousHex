@@ -22,6 +22,10 @@ const Map<PrototypeAffinity, ProjectileType> layer1ProjectileByAffinity =
 
 const Map<PrototypeAffinity, List<ProjectileType>> layer2ProjectileByAffinity =
     <PrototypeAffinity, List<ProjectileType>>{
+      PrototypeAffinity.neutral: <ProjectileType>[
+        ProjectileType.rapidBolt,
+        ProjectileType.twinBolt,
+      ],
       PrototypeAffinity.aether: <ProjectileType>[
         ProjectileType.pulseBeam,
         ProjectileType.splitBeam,
@@ -49,6 +53,8 @@ const Map<PrototypeAffinity, List<ProjectileType>> layer2ProjectileByAffinity =
     };
 
 const List<ProjectileType> layer2RainbowProjectileLoadout = <ProjectileType>[
+  ProjectileType.rapidBolt,
+  ProjectileType.twinBolt,
   ProjectileType.pulseBomb,
   ProjectileType.clusterBomb,
   ProjectileType.breakerShot,
@@ -105,6 +111,10 @@ const Map<PrototypeAffinity, List<ProjectileType>> layer3ProjectileByAffinity =
 
 const Map<PrototypeAffinity, List<PayloadType>>
 layer2PayloadByAffinity = <PrototypeAffinity, List<PayloadType>>{
+  PrototypeAffinity.neutral: <PayloadType>[
+    PayloadType.precision,
+    PayloadType.doubleTap,
+  ],
   PrototypeAffinity.aether: <PayloadType>[
     PayloadType.chill,
     PayloadType.fracture,
@@ -126,6 +136,8 @@ layer2PayloadByAffinity = <PrototypeAffinity, List<PayloadType>>{
 };
 
 const List<PayloadType> layer2RainbowPayloadLoadout = <PayloadType>[
+  PayloadType.precision,
+  PayloadType.doubleTap,
   PayloadType.overheat,
   PayloadType.detonate,
   PayloadType.rend,

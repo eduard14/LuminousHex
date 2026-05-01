@@ -11,6 +11,8 @@ class _TournamentModeDetailScreen extends StatefulWidget {
     required this.onRefresh,
     required this.onClaim,
     required this.onSubmit,
+    this.autoStartRun = false,
+    this.onAutoStartConsumed,
     this.onBattleSurfaceActiveChanged,
   });
 
@@ -23,6 +25,8 @@ class _TournamentModeDetailScreen extends StatefulWidget {
   final Future<void> Function() onClaim;
   final Future<void> Function(LightcoreTournamentModeState modeState, int score)
   onSubmit;
+  final bool autoStartRun;
+  final VoidCallback? onAutoStartConsumed;
   final ValueChanged<bool>? onBattleSurfaceActiveChanged;
 
   @override
@@ -32,8 +36,10 @@ class _TournamentModeDetailScreen extends StatefulWidget {
 
 class _TournamentModeDetailScreenState
     extends State<_TournamentModeDetailScreen> {
-  static const Duration _runDuration = Duration(seconds: 20);
+  static const Duration _standardRunDuration = Duration(seconds: 20);
+  static const Duration _enemyBlitzSessionDuration = Duration(days: 2);
   static const Duration _tickRate = Duration(milliseconds: 100);
+  static const Duration _launchDelay = Duration(milliseconds: 450);
 
   Timer? _ticker;
 
@@ -43,8 +49,11 @@ class _TournamentModeDetailScreenState
 
   double _elapsedSeconds = 0;
   double _score = 0;
+  DateTime? _blitzSessionStartedAt;
+  DateTime? _blitzSessionEndsAt;
   bool _runActive = false;
   bool _runComplete = false;
+  bool _launchingRun = false;
   String _hint = 'Build your event loadout and enter the bracket.';
 
   int _blitzResources = 0;
@@ -60,8 +69,12 @@ class _TournamentModeDetailScreenState
   double _gauntletCoreIntegrity = 1;
   late List<double> _gauntletLaneIntegrity;
 
-  double _arenaFlow = 0;
-  double _arenaTargetFlow = 0;
+  double _arenaPlayerDamageDealt = 0;
+  double _arenaPlayerDamageTaken = 0;
+  double _arenaRivalDamageDealt = 0;
+  double _arenaRivalDamageTaken = 0;
+  double _arenaPlayerEnemyProgress = 0;
+  double _arenaRivalEnemyProgress = 0;
   double _arenaOverclockCharge = 0;
   double _arenaBurstSeconds = 0;
   double _arenaPressure = 0;
@@ -85,6 +98,14 @@ class _TournamentModeDetailScreenState
     );
     _seedSelections();
     _syncBattleController();
+    if (widget.autoStartRun && widget.modeState.canStartRun) {
+      _launchingRun = true;
+      _hint = 'Loading ${widget.modeState.mode.label}...';
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        widget.onAutoStartConsumed?.call();
+        _startRunAfterLaunchDelay();
+      });
+    }
   }
 
   @override
@@ -103,7 +124,10 @@ class _TournamentModeDetailScreenState
       _ticker?.cancel();
       _runActive = false;
       _runComplete = false;
+      _launchingRun = false;
       _elapsedSeconds = 0;
+      _blitzSessionStartedAt = null;
+      _blitzSessionEndsAt = null;
       _score = 0;
       _hint = 'Build your event loadout and enter the bracket.';
       _selectedBlitzEnemyIds.clear();
@@ -128,11 +152,48 @@ class _TournamentModeDetailScreenState
         _syncBattleController();
       }
     }
+    if (widget.autoStartRun && !oldWidget.autoStartRun) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _queueStartRun());
+    }
   }
 
   LightcoreTournamentModeId get _mode => widget.modeState.mode;
 
-  double get _runDurationSeconds => _runDuration.inMilliseconds / 1000;
+  Duration get _activeRunDuration =>
+      _mode == LightcoreTournamentModeId.enemyBlitz
+      ? _enemyBlitzSessionDuration
+      : _standardRunDuration;
+
+  double get _runDurationSeconds => _activeRunDuration.inMilliseconds / 1000;
+
+  Duration get _runRemaining {
+    if (_mode == LightcoreTournamentModeId.enemyBlitz &&
+        _blitzSessionEndsAt != null) {
+      return _blitzSessionEndsAt!.difference(DateTime.now());
+    }
+    final remainingSeconds = max(0.0, _runDurationSeconds - _elapsedSeconds);
+    return Duration(milliseconds: (remainingSeconds * 1000).ceil());
+  }
+
+  double get _runProgress {
+    if (_mode == LightcoreTournamentModeId.enemyBlitz &&
+        _blitzSessionStartedAt != null &&
+        _blitzSessionEndsAt != null) {
+      final total = _blitzSessionEndsAt!
+          .difference(_blitzSessionStartedAt!)
+          .inMilliseconds;
+      if (total <= 0) {
+        return 1;
+      }
+      final elapsed = DateTime.now()
+          .difference(_blitzSessionStartedAt!)
+          .inMilliseconds;
+      return (elapsed / total).clamp(0.0, 1.0).toDouble();
+    }
+    return (_elapsedSeconds / _runDurationSeconds).clamp(0.0, 1.0).toDouble();
+  }
+
+  String get _runCountdownLabel => _formatRunDuration(_runRemaining);
 
   LightcoreController _createBattleController() {
     final seed =
@@ -154,6 +215,7 @@ class _TournamentModeDetailScreenState
       run: _hexRun,
       snapshotNotifier: _hexSnapshotNotifier,
       onCellTap: _handleHexCellTap,
+      onCellDrop: _handleHexCellDrop,
       onRunEnded: _handleHexRunEnded,
     );
   }
@@ -172,6 +234,15 @@ class _TournamentModeDetailScreenState
     _refreshHexSnapshot();
   }
 
+  void _handleHexCellDrop(String sourceCellId, String targetCellId) {
+    if (!_runActive || _runComplete || sourceCellId == targetCellId) {
+      return;
+    }
+    if (_hexRun.mergeTowers(targetCellId, sourceCellId)) {
+      _refreshHexSnapshot();
+    }
+  }
+
   void _handleHexRunEnded() {
     if (!_runActive || _runComplete || !_hexRun.defeated) {
       return;
@@ -188,6 +259,7 @@ class _TournamentModeDetailScreenState
     setState(() {
       _runActive = false;
       _runComplete = true;
+      _launchingRun = false;
       _score = _hexRun.score.toDouble();
       _hint = hint;
     });
@@ -372,7 +444,87 @@ class _TournamentModeDetailScreenState
     return 90 + (seed / 7).round();
   }
 
-  double get _arenaRelayScore => 62 + (_eventSeed / 45);
+  double get _arenaRelayScore =>
+      58 + (sqrt(_eventSeed) * 0.32) + (widget.controller.homeTowerTier * 10);
+
+  double get _arenaPlayerNetDamage =>
+      _arenaPlayerDamageDealt - _arenaPlayerDamageTaken;
+
+  double get _arenaRivalNetDamage =>
+      _arenaRivalDamageDealt - _arenaRivalDamageTaken;
+
+  double get _arenaRivalRating {
+    final rival = _arenaRivalEntry;
+    return (rival?.globalRating ?? 1000).toDouble();
+  }
+
+  double get _arenaRivalPower =>
+      (_eventSeed * (0.9 + ((_arenaRivalRating - 1000) / 5000))).clamp(
+        LightcoreController.evenEntryTournamentPowerIndex.toDouble(),
+        LightcoreController.tournamentPowerIndexCap.toDouble(),
+      );
+
+  double get _arenaPlayerTowerDurability =>
+      900 + (sqrt(_eventSeed) * 2.2) + (widget.controller.homeTowerTier * 140);
+
+  double get _arenaRivalTowerDurability =>
+      900 + (sqrt(_arenaRivalPower) * 2.0) + (_arenaRivalRating * 0.05);
+
+  double get _arenaPlayerTowerIntegrity =>
+      (1 - (_arenaPlayerDamageTaken / _arenaPlayerTowerDurability))
+          .clamp(0.0, 1.0)
+          .toDouble();
+
+  double get _arenaRivalTowerIntegrity =>
+      (1 - (_arenaRivalDamageTaken / _arenaRivalTowerDurability))
+          .clamp(0.0, 1.0)
+          .toDouble();
+
+  LightcoreTournamentLeaderboardEntry? get _arenaRivalEntry {
+    for (final entry in widget.modeState.leaderboard) {
+      if (!entry.isPlayer) {
+        return entry;
+      }
+    }
+    return null;
+  }
+
+  String get _arenaRivalLabel => _arenaRivalEntry?.displayName ?? 'Room Rival';
+
+  PrototypeAffinity get _arenaRivalAffinity {
+    final affinities = PrototypeAffinity.values
+        .where(
+          (affinity) =>
+              affinity != PrototypeAffinity.neutral &&
+              affinity != PrototypeAffinity.black,
+        )
+        .toList(growable: false);
+    if (affinities.isEmpty) {
+      return PrototypeAffinity.violet;
+    }
+    return affinities[(_arenaRivalRating ~/ 100) % affinities.length];
+  }
+
+  PrototypeAffinity get _arenaPlayerEnemyAffinity {
+    final selected = _selectedEnemyCards(_selectedArenaEnemyIds);
+    return selected.isEmpty
+        ? PrototypeAffinity.neutral
+        : selected.first.config.affinity;
+  }
+
+  PrototypeAffinity get _arenaRivalEnemyAffinity {
+    final affinities = PrototypeAffinity.values
+        .where(
+          (affinity) =>
+              affinity != PrototypeAffinity.neutral &&
+              affinity != PrototypeAffinity.black,
+        )
+        .toList(growable: false);
+    if (affinities.isEmpty) {
+      return PrototypeAffinity.black;
+    }
+    return affinities[((_arenaRivalRating ~/ 80) + 3) % affinities.length];
+  }
 
   List<EnemyCardState> get _battleEnemyDraft => switch (_mode) {
     LightcoreTournamentModeId.enemyBlitz => _selectedEnemyCards(
@@ -393,7 +545,8 @@ class _TournamentModeDetailScreenState
   int get _battleTowerTier => switch (_mode) {
     LightcoreTournamentModeId.enemyBlitz => _blitzTowerTier,
     LightcoreTournamentModeId.hexGauntlet => 1 + (_gauntletWave ~/ 3),
-    LightcoreTournamentModeId.arenaFlow => _arenaBurstSeconds > 0 ? 2 : 1,
+    LightcoreTournamentModeId.arenaFlow =>
+      widget.controller.homeTowerTier + (_arenaBurstSeconds > 0 ? 1 : 0),
   };
 
   int get _battleEnemyPressure => switch (_mode) {
@@ -425,8 +578,39 @@ class _TournamentModeDetailScreenState
     );
   }
 
+  void _queueStartRun() {
+    if (_launchingRun ||
+        _runActive ||
+        widget.busy ||
+        !widget.modeState.canStartRun) {
+      return;
+    }
+    widget.onAutoStartConsumed?.call();
+    _ticker?.cancel();
+    setState(() {
+      _launchingRun = true;
+      _runComplete = false;
+      _elapsedSeconds = 0;
+      _blitzSessionStartedAt = null;
+      _blitzSessionEndsAt = null;
+      _score = 0;
+      _hint = 'Loading ${widget.modeState.mode.label}...';
+    });
+    _startRunAfterLaunchDelay();
+  }
+
+  void _startRunAfterLaunchDelay() {
+    Future<void>.delayed(_launchDelay, () {
+      if (!mounted || !_launchingRun) {
+        return;
+      }
+      _startRun();
+    });
+  }
+
   void _startRun() {
     if (!widget.modeState.canStartRun) {
+      setState(() => _launchingRun = false);
       return;
     }
     _seedSelections();
@@ -436,8 +620,12 @@ class _TournamentModeDetailScreenState
       _score = 0;
       _runActive = true;
       _runComplete = false;
+      _launchingRun = false;
       switch (_mode) {
         case LightcoreTournamentModeId.enemyBlitz:
+          final startedAt = DateTime.now();
+          _blitzSessionStartedAt = startedAt;
+          _blitzSessionEndsAt = startedAt.add(_enemyBlitzSessionDuration);
           _blitzResources = _enemyBlitzStarterResources;
           _blitzWave = 1;
           _blitzTowerTier = 1;
@@ -445,7 +633,7 @@ class _TournamentModeDetailScreenState
           _blitzShield = 1;
           _blitzSupplyProgress = 0;
           _hint =
-              'Draft locked. Hold the blitz, cash wave payouts, and choose whether to upgrade the tower or the enemies.';
+              'Weekend-length session live. Keep upgrading the tower, cash wave payouts, and make the anomaly draft greedier before the session timer ends.';
           break;
         case LightcoreTournamentModeId.hexGauntlet:
           _hexRun.start(seedPowerIndex: _eventSeed);
@@ -453,13 +641,17 @@ class _TournamentModeDetailScreenState
               'Hex run live. Build on open hexes, send waves manually, and push enemy tier when the economy can hold it.';
           break;
         case LightcoreTournamentModeId.arenaFlow:
-          _arenaFlow = 0;
-          _arenaTargetFlow = 0;
+          _arenaPlayerDamageDealt = 0;
+          _arenaPlayerDamageTaken = 0;
+          _arenaRivalDamageDealt = 0;
+          _arenaRivalDamageTaken = 0;
+          _arenaPlayerEnemyProgress = 0.12;
+          _arenaRivalEnemyProgress = 0.62;
           _arenaOverclockCharge = 0.35;
           _arenaBurstSeconds = 0;
           _arenaPressure = 0;
           _hint =
-              'Arena duel live. Build overclock charge, burst through the Apex pressure, and beat the room flow.';
+              'Arena duel live. Your Home Tower and the rival tower are trading enemy waves. Win by dealing more damage than you take.';
           break;
       }
     });
@@ -481,7 +673,9 @@ class _TournamentModeDetailScreenState
     }
 
     const dt = 0.1;
-    final nextElapsed = min(_runDurationSeconds, _elapsedSeconds + dt);
+    final nextElapsed = _mode == LightcoreTournamentModeId.enemyBlitz
+        ? _elapsedSeconds + dt
+        : min(_runDurationSeconds, _elapsedSeconds + dt);
     var nextScore = _score;
     var nextHint = _hint;
     var finish = false;
@@ -534,10 +728,9 @@ class _TournamentModeDetailScreenState
               'Wave $_blitzWave reached. Supply payout delivered. Reinvest into tower strength or make the anomaly draft greedier.';
         }
         nextScore += max(0, towerOutput - (enemyPressure * 0.3)) * dt;
-        if (_blitzShield <= 0.02) {
-          finish = true;
-          finishHint =
-              'Anomaly Blitz collapsed on wave $_blitzWave. Submit the run and climb the weekend survival board.';
+        if (_blitzShield <= 0.08) {
+          nextHint =
+              'Shell integrity is critical. Keep investing in the tower; the Blitz session continues until the weekend-length timer ends.';
         }
         break;
       case LightcoreTournamentModeId.hexGauntlet:
@@ -596,44 +789,64 @@ class _TournamentModeDetailScreenState
             (_arenaOverclockCharge + dt * (0.22 + (_arenaRelayScore * 0.0025)))
                 .clamp(0.0, 1.4);
         _arenaBurstSeconds = max(0, _arenaBurstSeconds - dt);
-        _arenaPressure =
-            18 +
-            (draftedLevels * 1.4) +
-            (draftThreat * 1.8) +
-            (bossLevel * 2.4) +
-            (bossThreat * 0.9) +
-            (sin(nextElapsed * 1.7) * 5.2);
-        final playerRate = max(
+        final playerThreat =
+            34 +
+            (draftedLevels * 3.8) +
+            (draftThreat * 4.6) +
+            (bossLevel * 6.2) +
+            (bossThreat * 1.9);
+        final rivalThreat =
+            35 +
+            (_arenaRivalRating / 38) +
+            (widget.modeState.leaderboard
+                    .take(3)
+                    .fold<double>(
+                      0,
+                      (sum, entry) => sum + (entry.score / 900),
+                    ) /
+                max(1, min(widget.modeState.leaderboard.length, 3))) +
+            (sin(nextElapsed * 1.6) * 4.4);
+        final playerTowerGuard =
+            45 +
+            (sqrt(_eventSeed) * 0.18) +
+            (widget.controller.homeTowerTier * 12) +
+            (_arenaBurstSeconds > 0 ? 30 : 0);
+        final rivalTowerGuard =
+            43 + (sqrt(_arenaRivalPower) * 0.17) + (_arenaRivalRating / 170);
+        final playerWaveSpeed =
+            0.34 + (playerThreat / 360) + (_arenaBurstSeconds > 0 ? 0.14 : 0);
+        final rivalWaveSpeed = 0.32 + (rivalThreat / 380);
+        _arenaPlayerEnemyProgress += dt * playerWaveSpeed;
+        _arenaRivalEnemyProgress += dt * rivalWaveSpeed;
+        while (_arenaPlayerEnemyProgress >= 1) {
+          _arenaPlayerEnemyProgress -= 1;
+          final hit =
+              max(6.0, (playerThreat * 0.88) - (rivalTowerGuard * 0.22)) *
+              (_arenaBurstSeconds > 0 ? 1.34 : 1.0);
+          _arenaPlayerDamageDealt += hit;
+          _arenaRivalDamageTaken += hit;
+        }
+        while (_arenaRivalEnemyProgress >= 1) {
+          _arenaRivalEnemyProgress -= 1;
+          final hit = max(
+            5.0,
+            (rivalThreat * 0.86) - (playerTowerGuard * 0.24),
+          );
+          _arenaRivalDamageDealt += hit;
+          _arenaPlayerDamageTaken += hit;
+        }
+        _arenaPressure = max(playerThreat, rivalThreat);
+        nextScore = max(
           0.0,
-          (_arenaRelayScore * 0.72) +
-              (100 * 0.12) +
-              (_arenaBurstSeconds > 0 ? 22 : 0) -
-              (_arenaPressure * 0.32),
+          _arenaPlayerNetDamage - max(0.0, _arenaRivalNetDamage),
         );
-        final rivalRate = max(
-          0.0,
-          28 +
-              (draftedLevels * 1.6) +
-              (draftThreat * 1.6) +
-              (bossLevel * 2.6) +
-              (bossThreat * 0.86) +
-              (widget.modeState.leaderboard
-                      .take(3)
-                      .fold<double>(
-                        0,
-                        (sum, entry) => sum + (entry.globalRating / 3000),
-                      ) /
-                  max(1, min(widget.modeState.leaderboard.length, 3))) +
-              (nextElapsed * 0.8),
-        );
-        _arenaFlow += playerRate * dt;
-        _arenaTargetFlow += rivalRate * dt;
-        nextScore = _arenaFlow;
         nextHint = _arenaOverclockCharge >= 1
-            ? 'Overclock ready. Burst now to claw back flow.'
+            ? 'Overclock ready. Send a faster enemy wave into the rival Home Tower.'
             : _arenaBurstSeconds > 0
-            ? 'Overclock live. Push through the Apex pressure.'
-            : 'Charge the relay and wait for the pressure dip.';
+            ? 'Overclock live. Your enemies are rushing directly at the rival tower.'
+            : _arenaPlayerNetDamage >= _arenaRivalNetDamage
+            ? 'Your net damage is ahead. Keep the rival wave off your Home Tower.'
+            : 'You are behind on net damage. Time overclock before the next exchange.';
         break;
     }
 
@@ -641,14 +854,25 @@ class _TournamentModeDetailScreenState
       _elapsedSeconds = nextElapsed;
       _score = nextScore;
       _hint = nextHint;
-      if (finish || nextElapsed >= _runDurationSeconds) {
+      final blitzSessionExpired =
+          _mode == LightcoreTournamentModeId.enemyBlitz &&
+          (_blitzSessionEndsAt == null ||
+              !DateTime.now().isBefore(_blitzSessionEndsAt!));
+      final timedOut = _mode == LightcoreTournamentModeId.enemyBlitz
+          ? blitzSessionExpired
+          : nextElapsed >= _runDurationSeconds;
+      if (finish || timedOut) {
         _runActive = false;
         _runComplete = true;
         _hint = finish
             ? finishHint
             : _mode == LightcoreTournamentModeId.arenaFlow &&
-                  _arenaFlow >= _arenaTargetFlow
-            ? 'Arena Flow won the duel. Submit the score before the room rotates.'
+                  _arenaPlayerNetDamage >= _arenaRivalNetDamage
+            ? 'Arena Flow won on net damage. Submit before the room rotates.'
+            : _mode == LightcoreTournamentModeId.arenaFlow
+            ? 'Arena Flow lost on net damage. Run again to post a score.'
+            : _mode == LightcoreTournamentModeId.enemyBlitz
+            ? 'Weekend-length Blitz session ended. Submit the score for the testing board.'
             : 'Run complete. Submit the score to your weekly bracket.';
       }
     });
@@ -758,8 +982,8 @@ class _TournamentModeDetailScreenState
     setState(() {
       _arenaOverclockCharge -= 1;
       _arenaBurstSeconds = 2.2;
-      _score += 16;
-      _hint = 'Overclock fired. Push flow while the arena window is open.';
+      _hint =
+          'Overclock fired. Your enemy wave is rushing the rival Home Tower.';
     });
     _battleController.burstManualOverdrive();
   }
@@ -771,7 +995,15 @@ class _TournamentModeDetailScreenState
     if (_mode == LightcoreTournamentModeId.hexGauntlet) {
       _score = _hexRun.score.toDouble();
     }
-    await widget.onSubmit(widget.modeState, _score.round());
+    final submittedScore = _score.round();
+    if (submittedScore <= 0) {
+      setState(() {
+        _hint =
+            'This run did not post a positive score. Start another attempt.';
+      });
+      return;
+    }
+    await widget.onSubmit(widget.modeState, submittedScore);
     if (!mounted) {
       return;
     }
@@ -782,6 +1014,7 @@ class _TournamentModeDetailScreenState
     }
     setState(() {
       _runComplete = false;
+      _launchingRun = false;
       _elapsedSeconds = 0;
       _hint =
           'Score submitted. You can rerun the event to improve your standing.';
@@ -793,11 +1026,15 @@ class _TournamentModeDetailScreenState
   Widget build(BuildContext context) {
     final state = widget.modeState;
     final tint = _modeTint(state.mode);
-    if (state.joined && (_runActive || _runComplete)) {
+    final helpMessage = _modeHelpMessage(state);
+    if (state.joined && (_launchingRun || _runActive || _runComplete)) {
+      if (_launchingRun) {
+        return _buildRunLoading(context, tint);
+      }
       return _buildRunPanel(context, tint);
     }
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.fromLTRB(14, 14, 14, 30),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -834,14 +1071,15 @@ class _TournamentModeDetailScreenState
                             state.mode.label,
                             style: Theme.of(context).textTheme.headlineSmall,
                           ),
-                          const SizedBox(height: 6),
-                          Text(
-                            state.mode.subtitle,
-                            style: Theme.of(context).textTheme.bodyMedium,
-                          ),
                         ],
                       ),
                     ),
+                    LightcoreInfoButton(
+                      title: '${state.mode.label} Help',
+                      message: helpMessage,
+                      tint: tint,
+                    ),
+                    const SizedBox(width: 4),
                     Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 10,
@@ -871,7 +1109,6 @@ class _TournamentModeDetailScreenState
                       label: 'Board',
                       value: state.matchBucketLabel ?? state.mode.queueLabel,
                     ),
-                    _HeaderChip(label: 'Goal', value: state.mode.scoringLabel),
                     _HeaderChip(
                       label: 'Best',
                       value: state.joined
@@ -890,37 +1127,11 @@ class _TournamentModeDetailScreenState
                           ? 'Pending'
                           : '#${state.playerRank}',
                     ),
-                    _HeaderChip(
-                      label: 'Event',
-                      value:
-                          '${max(LightcoreController.evenEntryTournamentPowerIndex, state.seedPowerIndex)}',
-                    ),
-                    _HeaderChip(label: 'Entries', value: '${state.groupSize}'),
                   ],
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  state.mode.compressedLoopLabel,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: tint,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  '${state.mode.mechanicLabel}: ${state.mechanicSummary}',
-                  style: Theme.of(context).textTheme.bodyMedium,
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  state.statusMessage,
-                  style: Theme.of(context).textTheme.bodyMedium,
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 12),
-          _buildRulesPanel(context, tint),
           const SizedBox(height: 12),
           if (!state.joined)
             AuroraPanel(
@@ -970,37 +1181,6 @@ class _TournamentModeDetailScreenState
     );
   }
 
-  Widget _buildRulesPanel(BuildContext context, Color tint) {
-    final rules = widget.modeState.mode.rules;
-    return AuroraPanel(
-      tint: tint,
-      padding: const EdgeInsets.all(18),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('Rules', style: Theme.of(context).textTheme.titleLarge),
-          const SizedBox(height: 10),
-          for (final rule in rules) ...[
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Icon(Icons.hexagon_rounded, color: tint, size: 16),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    rule,
-                    style: Theme.of(context).textTheme.bodyMedium,
-                  ),
-                ),
-              ],
-            ),
-            if (rule != rules.last) const SizedBox(height: 8),
-          ],
-        ],
-      ),
-    );
-  }
-
   Widget _buildPreparationPanel(BuildContext context, Color tint) {
     final state = widget.modeState;
     return AuroraPanel(
@@ -1032,9 +1212,10 @@ class _TournamentModeDetailScreenState
           },
           const SizedBox(height: 14),
           FilledButton.icon(
-            onPressed: widget.busy || _runActive || !state.canStartRun
+            onPressed:
+                widget.busy || _launchingRun || _runActive || !state.canStartRun
                 ? null
-                : _startRun,
+                : _queueStartRun,
             icon: const Icon(Icons.play_circle_fill_rounded),
             label: Text(
               _runActive
@@ -1063,7 +1244,6 @@ class _TournamentModeDetailScreenState
               value: '$_enemyBlitzStarterResources',
             ),
             _HeaderChip(label: 'Drafted', value: '${drafted.length}/3'),
-            _HeaderChip(label: 'Event Seed', value: '$_eventSeed'),
           ],
         ),
         const SizedBox(height: 12),
@@ -1103,8 +1283,11 @@ class _TournamentModeDetailScreenState
               label: 'Path Hexes',
               value: '${preview.pathCells.length}',
             ),
-            _HeaderChip(label: 'Event Power', value: '$_eventSeed'),
             _HeaderChip(label: 'Start Cur', value: '${preview.currency}'),
+            _HeaderChip(
+              label: 'Tower Pool',
+              value: '${preview.towerChoices.length}',
+            ),
           ],
         ),
         const SizedBox(height: 12),
@@ -1126,12 +1309,16 @@ class _TournamentModeDetailScreenState
           runSpacing: 10,
           children: [
             _HeaderChip(
-              label: 'Relay Score',
-              value: _arenaRelayScore.toStringAsFixed(0),
+              label: 'Home Tower',
+              value: widget.controller.homeTowerLayerLabel,
             ),
             _HeaderChip(
-              label: 'Output Base',
-              value: widget.controller.outputEfficiencyLabel,
+              label: 'Layer',
+              value: 'L${widget.controller.homeTowerTier}',
+            ),
+            _HeaderChip(
+              label: 'Power',
+              value: '${widget.controller.homeTowerPowerIndex}',
             ),
             _HeaderChip(
               label: 'Drafted',
@@ -1184,7 +1371,8 @@ class _TournamentModeDetailScreenState
     if (_mode == LightcoreTournamentModeId.hexGauntlet) {
       return _buildHexTournamentRunPanel(context, tint);
     }
-    final progress = _elapsedSeconds / _runDurationSeconds;
+    final progress = _runProgress;
+    final countdownLabel = _runCountdownLabel;
     return LayoutBuilder(
       builder: (context, constraints) {
         final compact =
@@ -1207,10 +1395,30 @@ class _TournamentModeDetailScreenState
           child: Stack(
             children: [
               Positioned.fill(
-                child: _TournamentBattleStage(
-                  controller: _battleController,
-                  active: _runActive,
-                ),
+                child: _mode == LightcoreTournamentModeId.arenaFlow
+                    ? _ArenaFlowDuelStage(
+                        playerLabel: widget.controller.playerDisplayName,
+                        rivalLabel: _arenaRivalLabel,
+                        playerTowerLabel: widget.controller.homeTowerLayerLabel,
+                        rivalTowerLabel:
+                            '${_arenaRivalAffinity.label} Home Tower',
+                        playerTowerAffinity:
+                            widget.controller.homeTowerLayer.core.affinity,
+                        rivalTowerAffinity: _arenaRivalAffinity,
+                        playerEnemyAffinity: _arenaPlayerEnemyAffinity,
+                        rivalEnemyAffinity: _arenaRivalEnemyAffinity,
+                        playerEnemyProgress: _arenaPlayerEnemyProgress,
+                        rivalEnemyProgress: _arenaRivalEnemyProgress,
+                        playerTowerIntegrity: _arenaPlayerTowerIntegrity,
+                        rivalTowerIntegrity: _arenaRivalTowerIntegrity,
+                        playerNetDamage: _arenaPlayerNetDamage,
+                        rivalNetDamage: _arenaRivalNetDamage,
+                        active: _runActive,
+                      )
+                    : _TournamentBattleStage(
+                        controller: _battleController,
+                        active: _runActive,
+                      ),
               ),
               Positioned(
                 top: inset,
@@ -1255,7 +1463,7 @@ class _TournamentModeDetailScreenState
                                 ),
                                 const SizedBox(width: 10),
                                 Text(
-                                  '${max(0, (_runDurationSeconds - _elapsedSeconds).ceil())}s',
+                                  countdownLabel,
                                   style: Theme.of(context).textTheme.titleMedium
                                       ?.copyWith(
                                         color: tint,
@@ -1265,11 +1473,7 @@ class _TournamentModeDetailScreenState
                               ],
                             ),
                             const SizedBox(height: 7),
-                            MeterBar(
-                              value: progress.clamp(0.0, 1.0),
-                              color: tint,
-                              height: 8,
-                            ),
+                            MeterBar(value: progress, color: tint, height: 8),
                           ],
                         ),
                       ),
@@ -1322,9 +1526,10 @@ class _TournamentModeDetailScreenState
                                 label: const Text('Submit Score'),
                               ),
                               FilledButton.tonalIcon(
-                                onPressed: widget.busy || _runActive
+                                onPressed:
+                                    widget.busy || _launchingRun || _runActive
                                     ? null
-                                    : _startRun,
+                                    : _queueStartRun,
                                 icon: const Icon(Icons.replay_rounded),
                                 label: const Text('Run Again'),
                               ),
@@ -1359,6 +1564,15 @@ class _TournamentModeDetailScreenState
     );
   }
 
+  Widget _buildRunLoading(BuildContext context, Color tint) {
+    return LightcoreRunLoading(
+      title: 'Loading ${widget.modeState.mode.label}',
+      subtitle: 'Preparing the event rules, visuals, and run state.',
+      tint: tint,
+      icon: _modeIcon(widget.modeState.mode),
+    );
+  }
+
   void _returnToEventSetup() {
     _ticker?.cancel();
     if (_mode == LightcoreTournamentModeId.hexGauntlet) {
@@ -1369,7 +1583,10 @@ class _TournamentModeDetailScreenState
     setState(() {
       _runActive = false;
       _runComplete = false;
+      _launchingRun = false;
       _elapsedSeconds = 0;
+      _blitzSessionStartedAt = null;
+      _blitzSessionEndsAt = null;
       _hint = 'Build your event loadout and enter the bracket.';
     });
     _syncBattleController();
@@ -1379,8 +1596,10 @@ class _TournamentModeDetailScreenState
   List<Widget> _buildRunStatChips() {
     final chips = <Widget>[
       _HeaderChip(
-        label: 'Time',
-        value: '${max(0, (_runDurationSeconds - _elapsedSeconds).ceil())}s',
+        label: _mode == LightcoreTournamentModeId.enemyBlitz
+            ? 'Session'
+            : 'Time',
+        value: _runCountdownLabel,
       ),
       _HeaderChip(label: 'Score', value: '${_score.round()}'),
     ];
@@ -1405,10 +1624,13 @@ class _TournamentModeDetailScreenState
         break;
       case LightcoreTournamentModeId.arenaFlow:
         chips.addAll(<Widget>[
-          _HeaderChip(label: 'Output', value: _arenaFlow.toStringAsFixed(0)),
           _HeaderChip(
-            label: 'Target',
-            value: _arenaTargetFlow.toStringAsFixed(0),
+            label: 'Dealt',
+            value: _arenaPlayerDamageDealt.toStringAsFixed(0),
+          ),
+          _HeaderChip(
+            label: 'Taken',
+            value: _arenaPlayerDamageTaken.toStringAsFixed(0),
           ),
           _HeaderChip(
             label: 'Charge',
@@ -1425,7 +1647,7 @@ class _TournamentModeDetailScreenState
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Weekend Survival Board',
+          'Testing Survival Board',
           style: Theme.of(context).textTheme.titleMedium,
         ),
         const SizedBox(height: 8),
@@ -1491,11 +1713,15 @@ class _TournamentModeDetailScreenState
   }
 
   Widget _buildArenaFlowRunControls(Color tint) {
-    final flowLead = _arenaFlow - _arenaTargetFlow;
+    final netLead = _arenaPlayerNetDamage - _arenaRivalNetDamage;
+    final totalDamage = max(
+      1.0,
+      _arenaPlayerDamageDealt + _arenaPlayerDamageTaken,
+    );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Arena Duel', style: Theme.of(context).textTheme.titleMedium),
+        Text('Net Damage Duel', style: Theme.of(context).textTheme.titleMedium),
         const SizedBox(height: 8),
         AuroraPanel(
           tint: tint,
@@ -1505,22 +1731,19 @@ class _TournamentModeDetailScreenState
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Pressure ${_arenaPressure.toStringAsFixed(0)}',
+                'Incoming pressure ${_arenaPressure.toStringAsFixed(0)}',
                 style: Theme.of(context).textTheme.titleSmall,
               ),
               const SizedBox(height: 8),
               MeterBar(
-                value: (_arenaFlow / max(1, _arenaTargetFlow + 60)).clamp(
-                  0.0,
-                  1.0,
-                ),
+                value: (_arenaPlayerDamageDealt / totalDamage).clamp(0.0, 1.0),
                 color: tint,
               ),
               const SizedBox(height: 6),
               Text(
-                flowLead >= 0
-                    ? 'Lead +${flowLead.toStringAsFixed(0)} flow'
-                    : 'Trail ${flowLead.toStringAsFixed(0)} flow',
+                netLead >= 0
+                    ? 'Lead +${netLead.toStringAsFixed(0)} net damage'
+                    : 'Trail ${netLead.toStringAsFixed(0)} net damage',
                 style: Theme.of(context).textTheme.bodySmall,
               ),
             ],
@@ -1532,7 +1755,7 @@ class _TournamentModeDetailScreenState
               ? _triggerArenaOverclock
               : null,
           icon: const Icon(Icons.flash_on_rounded),
-          label: const Text('Trigger Overclock'),
+          label: const Text('Overclock Enemy Wave'),
         ),
       ],
     );
@@ -1559,7 +1782,7 @@ class _TournamentModeDetailScreenState
           Text(
             state.groupSize == 0
                 ? 'No submitted runs are on the board yet.'
-                : 'Showing the top ${min(state.capacity, state.leaderboard.length)} of ${state.groupSize} submitted runs.',
+                : 'Showing the top ${min(state.capacity, state.leaderboard.length)} of ${state.groupSize} server-ranked entries. Rewards unlock after this board resets.',
             style: Theme.of(context).textTheme.bodySmall,
           ),
           if (state.leaderboard.isNotEmpty) ...[
@@ -1578,4 +1801,20 @@ class _TournamentModeDetailScreenState
       ),
     );
   }
+}
+
+String _formatRunDuration(Duration remaining) {
+  if (remaining.isNegative) {
+    return 'Ended';
+  }
+  if (remaining.inDays >= 1) {
+    return '${remaining.inDays}d ${remaining.inHours.remainder(24)}h';
+  }
+  if (remaining.inHours >= 1) {
+    return '${remaining.inHours}h ${remaining.inMinutes.remainder(60)}m';
+  }
+  if (remaining.inMinutes >= 1) {
+    return '${remaining.inMinutes}m ${remaining.inSeconds.remainder(60)}s';
+  }
+  return '${max(0, remaining.inSeconds)}s';
 }

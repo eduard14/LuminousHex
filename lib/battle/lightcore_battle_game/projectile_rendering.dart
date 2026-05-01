@@ -237,6 +237,16 @@ extension _LightcoreBattleGameProjectileRendering on LightcoreBattleGame {
         scale: 1.02,
         ringCount: 2,
       ),
+      ProjectileType.rapidBolt => const _ShotFireBurstSpec(
+        style: _ShotFireBurstStyle.pulse,
+        scale: 0.9,
+        ringCount: 2,
+      ),
+      ProjectileType.twinBolt => const _ShotFireBurstSpec(
+        style: _ShotFireBurstStyle.split,
+        scale: 0.92,
+        spread: 0.3,
+      ),
       ProjectileType.pulseBeam => const _ShotFireBurstSpec(
         style: _ShotFireBurstStyle.pulse,
         scale: 0.92,

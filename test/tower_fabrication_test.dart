@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:lightcore/app/lightcore_bootstrap.dart';
 import 'package:lightcore/data/tower_configs.dart';
 import 'package:lightcore/models/lightcore_types.dart';
 import 'package:lightcore/state/lightcore_controller.dart';
@@ -59,6 +60,51 @@ void main() {
     expect(controller.slots[0].isFabricating, isFalse);
     expect(controller.builtTowerCount, 1);
     expect(controller.upgradeTower(0), isTrue);
+  });
+
+  test('server offline claim advances fabrication without rewards', () {
+    final controller = LightcoreController();
+    addTearDown(controller.dispose);
+
+    controller.kills = LightcoreController.unlockKillsForOuterSlot(0);
+    controller.lumens = 1000;
+
+    expect(
+      controller.startTowerFabricationAt(0, TowerLibrary.redPrism),
+      isTrue,
+    );
+
+    controller.applyOfflineClaim(
+      const LightcoreOfflineClaimResult(
+        secondsClaimed: 3,
+        lumensGranted: 0,
+        fluxGranted: 0,
+        enemyTicketsGranted: 0,
+        killsGranted: 0,
+        serverValidated: true,
+      ),
+      showBanner: false,
+    );
+
+    expect(controller.slots[0].isFabricating, isTrue);
+    expect(controller.slots[0].fabricationRemainingSeconds, 2);
+    expect(controller.builtTowerCount, 0);
+
+    controller.applyOfflineClaim(
+      const LightcoreOfflineClaimResult(
+        secondsClaimed: 2,
+        lumensGranted: 0,
+        fluxGranted: 0,
+        enemyTicketsGranted: 0,
+        killsGranted: 0,
+        serverValidated: true,
+      ),
+      showBanner: false,
+    );
+
+    expect(controller.slots[0].isFabricating, isFalse);
+    expect(controller.builtTowerCount, 1);
+    expect(controller.totalOfflineSecondsClaimed, 5);
   });
 
   test('background child-shell fabrication advances while viewing parent', () {
@@ -154,7 +200,7 @@ void main() {
     );
   });
 
-  test('layer 2 caps active layer 1 core projects by membership', () {
+  test('layer 2 caps active layer 1 set projects at one', () {
     final controller = LightcoreController();
     addTearDown(controller.dispose);
 
@@ -171,7 +217,7 @@ void main() {
     expect(controller.createChildLayer(1, PrototypeAffinity.ember), isFalse);
 
     expect(controller.unlockPremiumMembership(showBanner: false), isTrue);
-    expect(controller.layerOneCoreProjectLimit, 2);
-    expect(controller.createChildLayer(1, PrototypeAffinity.ember), isTrue);
+    expect(controller.layerOneCoreProjectLimit, 1);
+    expect(controller.createChildLayer(1, PrototypeAffinity.ember), isFalse);
   });
 }

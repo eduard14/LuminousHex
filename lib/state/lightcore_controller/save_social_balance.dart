@@ -212,27 +212,11 @@ extension LightcoreControllerSaveSocialBalance on LightcoreController {
   }
 
   CardConfig? _cardConfigById(String? configId) {
-    if (configId == null) {
-      return null;
-    }
-    for (final config in CardLibrary.templates) {
-      if (config.id == configId) {
-        return config;
-      }
-    }
-    return null;
+    return CardLibrary.byId(configId);
   }
 
   EnemyManagerConfig? _enemyManagerConfigById(String? configId) {
-    if (configId == null) {
-      return null;
-    }
-    for (final config in EnemyManagerLibrary.all) {
-      if (config.id == configId) {
-        return config;
-      }
-    }
-    return null;
+    return EnemyManagerLibrary.byId(configId);
   }
 
   EquipmentBonusProfile get _activeProfileBonuses =>
@@ -285,13 +269,14 @@ extension LightcoreControllerSaveSocialBalance on LightcoreController {
   }
 
   LightcoreTournamentPlayerSnapshot buildTournamentSnapshot() {
-    return const LightcoreTournamentPlayerSnapshot(
-      overallLevel: evenEntryTournamentLevel,
-      prestigeLevel: 0,
-      activeLayerTier: 1,
-      builtTowerCount: slotCount,
-      coreLevel: evenEntryTournamentCoreLevel,
-      towerPowerIndex: evenEntryTournamentPowerIndex,
+    final homeLayer = homeTowerLayer;
+    return LightcoreTournamentPlayerSnapshot(
+      overallLevel: overallLevel,
+      prestigeLevel: prestigeLevel,
+      activeLayerTier: homeLayer.tier,
+      builtTowerCount: homeLayer.slots.where(_slotCountsTowardRing).length,
+      coreLevel: homeLayer.core.level,
+      towerPowerIndex: homeTowerPowerIndex,
     );
   }
 }

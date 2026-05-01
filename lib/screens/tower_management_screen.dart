@@ -9,11 +9,18 @@ import '../state/lightcore_controller.dart';
 import '../theme/lightcore_palette.dart';
 import '../widgets/aurora_panel.dart';
 import '../widgets/guided_focus_frame.dart';
+import '../widgets/lightcore_info_button.dart';
 import '../widgets/meter_bar.dart';
 import '../widgets/symbol_grid_tile.dart';
 import '../widgets/tower_level_hex_badge.dart';
 import '../widgets/tower_ring_icon.dart';
 import 'tower_detail_screen.dart';
+
+const String _completedShellHelp =
+    'Layer 2 optimization works from finished Layer 1 sets: one core plus six edge towers. Save strong completed sets, sort them by combat role, then swap older Layer 2 sets when a better core, projectile mix, payload mix, or stat roll is ready.\n\nLayer 2 level tuning spends Shell Cores from daily dungeon clears. Higher dungeon levels award more Shell Cores, and cleared levels can be quick-cleared three times per day.';
+
+const String _towerArchiveLockedHelp =
+    'The Towers page becomes a completed-shell archive once Layer 2 is online. Finish the first Root Shell and create the Prism Shell to unlock save and replace tools.';
 
 class TowerManagementScreen extends StatefulWidget {
   const TowerManagementScreen({
@@ -62,20 +69,30 @@ class _TowerManagementScreenState extends State<TowerManagementScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      controller.completedShellLibraryUnlocked
-                          ? 'Completed Shells'
-                          : 'Tower Archive Locked',
-                      style: textTheme.titleLarge,
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            controller.completedShellLibraryUnlocked
+                                ? 'Completed Layer 1 Sets'
+                                : 'Tower Archive Locked',
+                            style: textTheme.titleLarge,
+                          ),
+                        ),
+                        LightcoreInfoButton(
+                          title: controller.completedShellLibraryUnlocked
+                              ? 'Tower Archive Help'
+                              : 'Tower Archive Locked',
+                          message: controller.completedShellLibraryUnlocked
+                              ? _completedShellHelp
+                              : _towerArchiveLockedHelp,
+                          tint: controller.completedShellLibraryUnlocked
+                              ? LightcorePalette.layer2
+                              : LightcorePalette.violet,
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 6),
-                    Text(
-                      controller.completedShellLibraryUnlocked
-                          ? 'Layer 2 optimization works from finished Layer 1 shells. Save strong builds, sort them by combat role, then replace older completed shells when a better projectile, payload, or stat roll is ready.'
-                          : 'The Towers page becomes a completed-shell archive once Layer 2 is online. Finish the first Root Shell and create the Prism Shell to unlock save and replace tools.',
-                      style: textTheme.bodyMedium,
-                    ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 12),
                     MeterBar(
                       value: controller.completedShellLibraryUnlocked
                           ? 1
@@ -87,7 +104,7 @@ class _TowerManagementScreenState extends State<TowerManagementScreen> {
                     const SizedBox(height: 8),
                     Text(
                       controller.completedShellLibraryUnlocked
-                          ? '${completedShells.length} completed shell entries • ${controller.shellCoreLabel}'
+                          ? '${completedShells.length} completed Layer 1 sets • ${controller.shellCoreLabel}'
                           : 'Layer 2 locked • ${controller.promotionStatusLabel}',
                       style: textTheme.bodyLarge,
                     ),
@@ -109,7 +126,7 @@ class _TowerManagementScreenState extends State<TowerManagementScreen> {
                                   )
                                 : null,
                             icon: const TowerRingIcon(size: 18),
-                            label: const Text('New Layer 1 Core'),
+                            label: const Text('New Layer 1 Set'),
                           ),
                           Text(
                             controller.layerOneCoreBuildStatusLabel,
@@ -122,14 +139,6 @@ class _TowerManagementScreenState extends State<TowerManagementScreen> {
                       ),
                     ],
                     if (controller.completedShellLibraryUnlocked) ...[
-                      const SizedBox(height: 10),
-                      Text(
-                        'Layer 2 level tuning spends Shell Cores from daily dungeon clears. Higher dungeon levels award more Shell Cores, and cleared levels can be quick-cleared three times per day.',
-                        style: textTheme.bodyMedium?.copyWith(
-                          color: LightcorePalette.solar,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
                       const SizedBox(height: 14),
                       _SortSelector(
                         value: _sortMode,
@@ -156,7 +165,7 @@ class _TowerManagementScreenState extends State<TowerManagementScreen> {
                 child: AuroraPanel(
                   tint: LightcorePalette.stroke,
                   child: Text(
-                    'No completed Layer 1 shells are ready to archive yet.',
+                    'No completed Layer 1 sets are ready to archive yet.',
                     style: textTheme.bodyMedium,
                   ),
                 ),
@@ -175,6 +184,7 @@ class _TowerManagementScreenState extends State<TowerManagementScreen> {
                   );
                 },
               ),
+            const SliverToBoxAdapter(child: SizedBox(height: 28)),
           ],
         );
       },
@@ -203,24 +213,27 @@ class _TowerManagementScreenState extends State<TowerManagementScreen> {
       }
 
       final modeCompare = switch (_sortMode) {
-        _TowerSortMode.slot => a.sourceSlotIndex.compareTo(b.sourceSlotIndex),
-        _TowerSortMode.level => compareNum(a.tower.level, b.tower.level),
-        _TowerSortMode.power => compareNum(
-          controller.towerPower(a.tower),
-          controller.towerPower(b.tower),
+        _TowerSortMode.slot => (a.sourceSlotIndex ?? -1).compareTo(
+          b.sourceSlotIndex ?? -1,
         ),
-        _TowerSortMode.affinity =>
-          (a.tower.config?.affinity.index ?? 0).compareTo(
-            b.tower.config?.affinity.index ?? 0,
-          ),
+        _TowerSortMode.level => compareNum(
+          a.layer.core.level,
+          b.layer.core.level,
+        ),
+        _TowerSortMode.power => compareNum(
+          _completedShellTotalPower(controller, a),
+          _completedShellTotalPower(controller, b),
+        ),
+        _TowerSortMode.affinity => a.layer.core.affinity.index.compareTo(
+          b.layer.core.affinity.index,
+        ),
         _TowerSortMode.projectile =>
-          controller
-              .towerProjectileLabel(a.tower)
-              .compareTo(controller.towerProjectileLabel(b.tower)),
-        _TowerSortMode.payload =>
-          controller
-              .towerPayloadLabel(a.tower)
-              .compareTo(controller.towerPayloadLabel(b.tower)),
+          a.layer.core.projectileType.label.compareTo(
+            b.layer.core.projectileType.label,
+          ),
+        _TowerSortMode.payload => a.layer.core.payloadType.label.compareTo(
+          b.layer.core.payloadType.label,
+        ),
       };
 
       if (modeCompare != 0) {
@@ -230,10 +243,49 @@ class _TowerManagementScreenState extends State<TowerManagementScreen> {
       if (layerCompare != 0) {
         return layerCompare;
       }
-      return a.sourceSlotIndex.compareTo(b.sourceSlotIndex);
+      return (a.sourceSlotIndex ?? -1).compareTo(b.sourceSlotIndex ?? -1);
     });
     return shells;
   }
+}
+
+List<OuterTowerState> _completedShellEdgeTowers(
+  CompletedTowerShellState shell,
+) {
+  return shell.layer.slots
+      .where((tower) => tower.config != null && !tower.isFabricating)
+      .toList(growable: false);
+}
+
+double _completedShellTotalPower(
+  LightcoreController controller,
+  CompletedTowerShellState shell,
+) {
+  return _completedShellEdgeTowers(
+    shell,
+  ).fold(0.0, (sum, tower) => sum + controller.towerPower(tower));
+}
+
+String _completedShellProjectileSummary(CompletedTowerShellState shell) {
+  final labels = <String>{
+    shell.layer.core.projectileType.label,
+    for (final tower in _completedShellEdgeTowers(shell))
+      tower.projectileType?.label ?? tower.config!.defaultProjectileType.label,
+  }.toList(growable: false);
+  return labels.length <= 3
+      ? labels.join(' / ')
+      : '${labels.take(3).join(' / ')} +${labels.length - 3}';
+}
+
+String _completedShellPayloadSummary(CompletedTowerShellState shell) {
+  final labels = <String>{
+    shell.layer.core.payloadType.label,
+    for (final tower in _completedShellEdgeTowers(shell))
+      tower.payloadType?.label ?? tower.config!.defaultPayloadType.label,
+  }.toList(growable: false);
+  return labels.length <= 3
+      ? labels.join(' / ')
+      : '${labels.take(3).join(' / ')} +${labels.length - 3}';
 }
 
 void _showChildCoreAffinityPicker(
@@ -307,27 +359,28 @@ void _showShellReplacePicker(
     backgroundColor: Colors.transparent,
     builder: (sheetContext) {
       final textTheme = Theme.of(sheetContext).textTheme;
-      final targets = controller.liveCompletedTowerShells;
+      final targets = controller.liveCompletedTowerShells
+          .where((shell) => shell.sourceSlotIndex != null)
+          .toList(growable: false);
       return SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: AuroraPanel(
-            tint:
-                archive.tower.config?.affinity.color ?? LightcorePalette.aether,
+            tint: archive.layer.core.affinity.color,
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Replace Completed Shell', style: textTheme.titleLarge),
+                Text('Swap Layer 1 Set', style: textTheme.titleLarge),
                 const SizedBox(height: 6),
                 Text(
-                  'Choose a live completed Layer 1 shell to replace with ${controller.towerDisplayName(archive.tower)}.',
+                  'Choose a live completed Layer 1 set to replace with ${archive.sourceLabel}.',
                   style: textTheme.bodyMedium,
                 ),
                 const SizedBox(height: 14),
                 if (targets.isEmpty)
                   Text(
-                    'No live completed Layer 1 shells are available.',
+                    'No live completed Layer 1 sets are available.',
                     style: textTheme.bodyMedium,
                   )
                 else
@@ -338,9 +391,7 @@ void _showShellReplacePicker(
                       separatorBuilder: (_, _) => const SizedBox(height: 8),
                       itemBuilder: (context, index) {
                         final target = targets[index];
-                        final tint =
-                            target.tower.config?.affinity.color ??
-                            LightcorePalette.aether;
+                        final tint = target.layer.core.affinity.color;
                         return OutlinedButton.icon(
                           onPressed: () {
                             controller.replaceCompletedShell(
@@ -351,7 +402,7 @@ void _showShellReplacePicker(
                           },
                           icon: Icon(Icons.swap_horiz_rounded, color: tint),
                           label: Text(
-                            '${target.sourceLabel} • ${controller.towerDisplayName(target.tower)} • ${controller.towerProjectileLabel(target.tower)} / ${controller.towerPayloadLabel(target.tower)}',
+                            '${target.sourceLabel} • Core ${target.layer.core.projectileType.label} / ${target.layer.core.payloadType.label} • ${_completedShellEdgeTowers(target).length + 1}/7 towers',
                           ),
                         );
                       },
@@ -374,10 +425,11 @@ class _CompletedShellCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final tower = shell.tower;
+    final edgeTowers = _completedShellEdgeTowers(shell);
     final textTheme = Theme.of(context).textTheme;
-    final tint = tower.config?.affinity.color ?? LightcorePalette.layer2;
-    final upgrades = controller.towerUpgradeOptionsFor(tower);
+    final tint = shell.layer.core.affinity.color;
+    final totalPower = _completedShellTotalPower(controller, shell);
+    final towerCount = edgeTowers.length + 1;
 
     return AuroraPanel(
       tint: tint,
@@ -397,12 +449,12 @@ class _CompletedShellCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      controller.towerDisplayName(tower),
+                      '${shell.layer.core.affinity.label} Layer 1 Set',
                       style: textTheme.titleLarge,
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      '${controller.towerProjectileLabel(tower)} projectile • ${controller.towerPayloadLabel(tower)} payload • ${tower.config?.passiveLabel ?? shell.sourceLayerLabel}',
+                      'Core ${shell.layer.core.projectileType.label} / ${shell.layer.core.payloadType.label} • ${edgeTowers.length} edge towers • ${shell.sourceLayerLabel}',
                       style: textTheme.bodyMedium?.copyWith(
                         color: tint,
                         fontWeight: FontWeight.w700,
@@ -411,15 +463,26 @@ class _CompletedShellCard extends StatelessWidget {
                   ],
                 ),
               ),
-              TowerLevelHexBadge(
-                level: tower.level,
-                maxLevel: LightcoreController.maxTowerLevel,
-                projectileType: controller.towerProjectileType(tower),
-                payloadType: controller.towerPayloadType(tower),
-                tint: tint,
-                complete: controller.isTowerComplete(tower),
-                semanticLabel:
-                    '${controller.towerDisplayName(tower)} ${controller.towerCompletionLabel(tower)}',
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 10,
+                ),
+                decoration: BoxDecoration(
+                  color: tint.withValues(alpha: 0.18),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TowerRingIcon(size: 18, color: tint),
+                    const SizedBox(width: 8),
+                    Text(
+                      '$towerCount/7',
+                      style: textTheme.titleMedium?.copyWith(color: tint),
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
@@ -429,51 +492,69 @@ class _CompletedShellCard extends StatelessWidget {
             runSpacing: 10,
             children: [
               _MetricTile(
-                label: 'Power',
-                value: controller.towerPower(tower).toStringAsFixed(1),
+                label: 'Total Power',
+                value: totalPower.toStringAsFixed(1),
               ),
               _MetricTile(
-                label: 'Projectile',
-                value: controller.towerProjectileLabel(tower),
+                label: 'Core Level',
+                value: '${shell.layer.core.level}',
               ),
               _MetricTile(
-                label: 'Payload',
-                value: controller.towerPayloadLabel(tower),
+                label: 'Projectiles',
+                value: _completedShellProjectileSummary(shell),
               ),
               _MetricTile(
-                label: 'Range',
-                value: controller.towerRangeLabel(tower),
+                label: 'Payloads',
+                value: _completedShellPayloadSummary(shell),
               ),
               _MetricTile(
-                label: 'Gen',
-                value: controller.towerGenerationLabel(tower),
+                label: 'Range Avg',
+                value: edgeTowers.isEmpty
+                    ? '0'
+                    : (edgeTowers.fold<double>(
+                                0,
+                                (sum, tower) =>
+                                    sum + controller.towerEffectiveRange(tower),
+                              ) /
+                              edgeTowers.length)
+                          .toStringAsFixed(0),
               ),
               _MetricTile(
-                label: 'Crit',
-                value: controller.towerCritLabel(tower),
+                label: 'Gen Avg',
+                value: edgeTowers.isEmpty
+                    ? '0'
+                    : (edgeTowers.fold<double>(
+                                0,
+                                (sum, tower) =>
+                                    sum +
+                                    controller.towerGenerationSpeed(tower),
+                              ) /
+                              edgeTowers.length)
+                          .toStringAsFixed(2),
               ),
               _MetricTile(
-                label: 'Apex',
-                value: controller.towerBossDamageLabel(tower),
+                label: 'Core Fire',
+                value: '${shell.layer.core.fireSpeedUpgradeLevel}',
               ),
               _MetricTile(
-                label: 'Def Pen',
-                value: controller.towerDefensePenetrationLabel(tower),
+                label: 'Archive',
+                value: shell.archived ? 'Saved' : 'Live',
               ),
             ],
           ),
-          if (upgrades.isNotEmpty) ...[
+          if (edgeTowers.isNotEmpty) ...[
             const SizedBox(height: 14),
             Wrap(
               spacing: 8,
               runSpacing: 8,
               children: [
-                for (final upgrade in upgrades)
+                for (final tower in edgeTowers)
                   _ShellTraitChip(
                     label:
-                        '${upgrade.type.label} ${upgrade.rank}/${LightcoreController.maxTowerUpgradeRank}',
-                    detail: controller.towerUpgradeEffectLabel(upgrade),
-                    tint: tint,
+                        'Hex ${tower.slotIndex + 1} • ${controller.towerProjectileLabel(tower)}',
+                    detail:
+                        '${controller.towerDisplayName(tower)} • ${controller.towerPayloadLabel(tower)} • Power ${controller.towerPower(tower).toStringAsFixed(1)}',
+                    tint: tower.config?.affinity.color ?? tint,
                   ),
               ],
             ),
@@ -484,7 +565,11 @@ class _CompletedShellCard extends StatelessWidget {
               Expanded(
                 child: FilledButton.icon(
                   onPressed: shell.archived
-                      ? controller.liveCompletedTowerShells.isEmpty
+                      ? controller.liveCompletedTowerShells
+                                .where(
+                                  (target) => target.sourceSlotIndex != null,
+                                )
+                                .isEmpty
                             ? null
                             : () => _showShellReplacePicker(
                                 context,
@@ -498,7 +583,7 @@ class _CompletedShellCard extends StatelessWidget {
                         : Icons.save_rounded,
                   ),
                   label: Text(
-                    shell.archived ? 'Replace Live Shell' : 'Save Copy',
+                    shell.archived ? 'Swap Into Layer 2' : 'Save Set',
                   ),
                 ),
               ),
@@ -508,7 +593,6 @@ class _CompletedShellCard extends StatelessWidget {
                   child: OutlinedButton.icon(
                     onPressed: () {
                       controller.enterLayerById(shell.sourceLayerId);
-                      controller.selectSlot(shell.sourceSlotIndex);
                     },
                     icon: const Icon(Icons.open_in_new_rounded),
                     label: const Text('Open Source'),
@@ -1206,7 +1290,7 @@ class _LockedSlotCard extends StatelessWidget {
           const SizedBox(height: 4),
           Text(
             controller.isCompositeLayer
-                ? 'This edge stays sealed until you reach $requirement total EXP. Push the viewed Home Tower shell harder or raise the swarm cap to open another child-shell lane.'
+                ? 'This edge stays sealed until you reach $requirement total EXP. Push the viewed shell harder or raise the swarm cap to open another child-shell lane.'
                 : 'This prism lane unlocks at $requirement total EXP. Let the core farm early pressure, then push a higher anomaly cap to open later hexes faster.',
             style: textTheme.bodyMedium,
           ),

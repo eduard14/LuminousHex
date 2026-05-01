@@ -49,14 +49,10 @@ extension LightcoreControllerCombatProjectiles on LightcoreController {
   }
 
   bool _shotUsesOrbitNode(CoreShotState shot) =>
-      !shot.layer2 &&
-      shot.sourceSlotIndex != null &&
-      shot.projectileType == ProjectileType.orbitNode;
+      !shot.layer2 && shot.projectileType == ProjectileType.orbitNode;
 
   bool _shotUsesShieldHalo(CoreShotState shot) =>
-      !shot.layer2 &&
-      shot.sourceSlotIndex != null &&
-      shot.projectileType == ProjectileType.shieldHalo;
+      !shot.layer2 && shot.projectileType == ProjectileType.shieldHalo;
 
   bool _coreShotUsesBasicImpact(CoreShotState shot) => _shotUsesCoreBasicImpact(
     layer2: shot.layer2,
@@ -75,13 +71,11 @@ extension LightcoreControllerCombatProjectiles on LightcoreController {
 
   bool _shotUsesBlueFocusLaser(CoreShotState shot) =>
       !shot.layer2 &&
-      shot.projectileType == ProjectileType.threadBeam &&
-      shot.sourceSlotIndex != null &&
+      shot.projectileType.usesBlueLaser &&
       shot.affinity == PrototypeAffinity.aether;
 
   bool _ammoUsesBlueFocusLaser(AmmoPacket ammo) =>
-      ammo.projectileType == ProjectileType.threadBeam &&
-      ammo.sourceSlotIndex != null &&
+      ammo.projectileType.usesBlueLaser &&
       ammo.affinity == PrototypeAffinity.aether;
 
   double _shotSpeedForProjectile(
@@ -90,19 +84,14 @@ extension LightcoreControllerCombatProjectiles on LightcoreController {
     required PrototypeAffinity affinity,
     int? sourceSlotIndex,
   }) {
-    if (!layer2 &&
-        sourceSlotIndex != null &&
-        projectileType == ProjectileType.orbitNode) {
+    if (!layer2 && projectileType == ProjectileType.orbitNode) {
       return 1.12;
     }
-    if (!layer2 &&
-        sourceSlotIndex != null &&
-        projectileType == ProjectileType.shieldHalo) {
+    if (!layer2 && projectileType == ProjectileType.shieldHalo) {
       return 0.9;
     }
     if (!layer2 &&
-        projectileType == ProjectileType.threadBeam &&
-        sourceSlotIndex != null &&
+        projectileType.usesBlueLaser &&
         affinity == PrototypeAffinity.aether) {
       return 2.08;
     }

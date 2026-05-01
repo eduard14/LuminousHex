@@ -53,10 +53,10 @@ const DEFAULT_MANIFEST = Object.freeze({
   contentSchemaVersion: 1,
   seasonKey: "preseason-alpha",
   contentEpoch: 1,
-  minimumSupportedVersion: "1.0.17",
-  minimumSupportedBuildNumber: "18",
-  recommendedVersion: "1.0.17",
-  recommendedBuildNumber: "18",
+  minimumSupportedVersion: "1.0.18",
+  minimumSupportedBuildNumber: "19",
+  recommendedVersion: "1.0.18",
+  recommendedBuildNumber: "19",
   functionsRegion: "us-central1",
   maintenanceMode: false,
   requiresMandatoryUpdate: false,
@@ -187,12 +187,13 @@ const SAVE_INTEGRITY_LIMITS = Object.freeze({
 
 const TOURNAMENT_MODE_CONFIGS = Object.freeze({
   enemyBlitz: Object.freeze({
-    label: "Enemy Blitz",
+    label: "Anomaly Blitz",
     mechanicSummary:
-      "Draft a few enemies from your tournament pool, survive rapid waves, and reinvest payouts into the tower or the enemy pack.",
+      "Draft anomalies from your tournament pool, start a weekend-length survival session, and keep upgrading the tower before rewards unlock at reset.",
     capacity: 25,
     defaultBucketLabel: null,
     schedule: "weekend",
+    testingAlwaysOpen: true,
     usesTowerSeed: false,
     rewardBase: Object.freeze({
       flux: 900,
@@ -221,7 +222,7 @@ const TOURNAMENT_MODE_CONFIGS = Object.freeze({
   arenaFlow: Object.freeze({
     label: "Arena Flow",
     mechanicSummary:
-      "Send a normalized Home Tower into a 20-second arena duel, draft anomalies and an Apex, and climb the flow room ladder.",
+      "Send your highest-layer Home Tower into a 20-second arena duel, trade enemy waves with a rival tower, and climb by net damage.",
     capacity: 15,
     defaultBucketLabel: null,
     schedule: "weekly",
@@ -264,8 +265,8 @@ const {
   buildPlayerSaveResponse,
   isRecoverableAuth,
   rejectInvalidRawSavePayload,
-  rejectImplausibleSnapshotRates,
   rejectImplausibleSaveDelta,
+  buildAuthoritativeIdleSnapshot,
   buildIdleSnapshotFromSavePayload,
   buildSaveIntegritySummary,
   sanitizePlayerSavePayload,
@@ -304,16 +305,20 @@ const {
   buildTournamentModeState,
   buildTournamentReward,
   computeNextTournamentRating,
+  computeTournamentRank,
   buildTournamentGrouping,
   touchTournamentSeason,
   tournamentEntryRef,
   computeTournamentOverviewWindow,
+  computePreviousTournamentWindowForMode,
   ensureTournamentModeOpen,
   normalizeTournamentPlayerSnapshot,
+  sanitizeTournamentSubmittedScore,
   resolveDisplayName,
   normalizeTournamentBoost,
   sanitizeTournamentMode,
   sanitizeTournamentRating,
+  buildTournamentSeasonKey,
   hasPremiumMembership,
 } = createTournamentHelpers({
   db,
@@ -1087,7 +1092,7 @@ exports.syncIdleSnapshot = onCall({ enforceAppCheck: false }, async (request) =>
   const manifest = await loadManifest();
   requireAppCheckIfNeeded(request, manifest);
 
-  const snapshot = normalizeSnapshot(request.data?.snapshot);
+  const clientSnapshot = normalizeSnapshot(request.data?.snapshot);
   const clientVersion = sanitizeVersion(request.data?.clientVersion);
   const clientBuildNumber = sanitizeBuildNumber(request.data?.clientBuildNumber);
   const platform = sanitizePlatform(request.data?.platform);
@@ -1104,11 +1109,15 @@ exports.syncIdleSnapshot = onCall({ enforceAppCheck: false }, async (request) =>
   requireActiveSession(existingProfileSnap.data() || {}, request);
   const saveRef = playerSaveRef(auth.uid);
   const saveSnap = await saveRef.get();
-  rejectImplausibleSnapshotRates(snapshot, normalizeObject(saveSnap.data()?.payload));
+  const savePayload = normalizeObject(saveSnap.data()?.payload);
+  const authoritativeSnapshot = buildAuthoritativeIdleSnapshot({
+    clientSnapshot,
+    savePayload,
+  });
 
   await profileRef.set(
     {
-      idleSnapshot: snapshot,
+      idleSnapshot: authoritativeSnapshot,
       lastActiveAt: FieldValue.serverTimestamp(),
       lastSnapshotSyncAt: FieldValue.serverTimestamp(),
       lastHeartbeatAt: FieldValue.serverTimestamp(),
@@ -1150,9 +1159,11 @@ exports.claimOfflineProgress = onCall(
     requireAppCheckIfNeeded(request, manifest);
 
     const profileRef = db.collection(PROFILE_COLLECTION).doc(auth.uid);
+    const saveRef = playerSaveRef(auth.uid);
 
     const claimResult = await db.runTransaction(async (transaction) => {
       const snap = await transaction.get(profileRef);
+      const saveSnap = await transaction.get(saveRef);
       if (!snap.exists) {
         throw new HttpsError(
           "failed-precondition",
@@ -1162,7 +1173,12 @@ exports.claimOfflineProgress = onCall(
 
       const data = snap.data() || {};
       requireActiveSession(data, request);
-      const idleSnapshot = data.idleSnapshot;
+      const savePayload = saveSnap.exists
+        ? normalizeObject(saveSnap.data()?.payload)
+        : null;
+      const idleSnapshot = savePayload
+        ? buildIdleSnapshotFromSavePayload(savePayload)
+        : null;
       if (!idleSnapshot) {
         return {
           secondsClaimed: 0,
@@ -1180,7 +1196,11 @@ exports.claimOfflineProgress = onCall(
       if (!lastActiveAt) {
         transaction.set(
           profileRef,
-          { lastActiveAt: FieldValue.serverTimestamp() },
+          {
+            idleSnapshot,
+            lastActiveAt: FieldValue.serverTimestamp(),
+            lastSnapshotSyncAt: FieldValue.serverTimestamp(),
+          },
           { merge: true },
         );
         return {
@@ -1239,6 +1259,8 @@ exports.claimOfflineProgress = onCall(
         {
           lastActiveAt: FieldValue.serverTimestamp(),
           lastIdleClaimAt: FieldValue.serverTimestamp(),
+          idleSnapshot,
+          lastSnapshotSyncAt: FieldValue.serverTimestamp(),
           lastIdleClaimResult: {
             secondsClaimed,
             lumensGranted,
@@ -1485,16 +1507,21 @@ exports.joinTournamentQueue = onCall(
   async (request) => {
     const context = await loadTournamentContext(request);
     const mode = sanitizeTournamentMode(request.data?.mode);
-    ensureTournamentModeOpen(mode);
+    const modeWindow = ensureTournamentModeOpen(mode);
     const snapshot = normalizeTournamentPlayerSnapshot(request.data?.snapshot);
-    const entryRef = tournamentEntryRef(
+    const seasonKey = buildTournamentSeasonKey(
       context.manifest.seasonKey,
+      mode,
+      modeWindow,
+    );
+    const entryRef = tournamentEntryRef(
+      seasonKey,
       mode,
       context.auth.uid,
     );
     const grouping = buildTournamentGrouping({
       mode,
-      seasonKey: context.manifest.seasonKey,
+      seasonKey,
       snapshot,
       globalRating: sanitizeTournamentRating(
         context.profileData.globalTournamentRating,
@@ -1513,8 +1540,8 @@ exports.joinTournamentQueue = onCall(
 
       touchTournamentSeason(
         transaction,
-        context.manifest,
-        computeTournamentOverviewWindow(),
+        seasonKey,
+        modeWindow,
       );
 
       transaction.set(
@@ -1530,8 +1557,7 @@ exports.joinTournamentQueue = onCall(
           joinedAt: existingData.joinedAt || FieldValue.serverTimestamp(),
           updatedAt: FieldValue.serverTimestamp(),
           bestScore,
-          rewardReady: Boolean(existingData.rewardReady && bestScore > 0),
-          rewardClaimed: Boolean(existingData.rewardClaimed && bestScore > 0),
+          rewardReady: false,
           globalRating: sanitizeTournamentRating(
             context.profileData.globalTournamentRating,
           ),
@@ -1561,13 +1587,12 @@ exports.submitTournamentRun = onCall(
   async (request) => {
     const context = await loadTournamentContext(request);
     const mode = sanitizeTournamentMode(request.data?.mode);
-    ensureTournamentModeOpen(mode);
+    const modeWindow = ensureTournamentModeOpen(mode);
     const snapshot = normalizeTournamentPlayerSnapshot(request.data?.snapshot);
-    const submittedScore = clampInt(
+    const submittedScore = sanitizeTournamentSubmittedScore(
+      mode,
       request.data?.score,
-      1,
-      TOURNAMENT_LIMITS.submittedScore,
-      0,
+      snapshot,
     );
     if (submittedScore <= 0) {
       throw new HttpsError(
@@ -1575,9 +1600,14 @@ exports.submitTournamentRun = onCall(
         "A positive tournament score is required.",
       );
     }
+    const seasonKey = buildTournamentSeasonKey(
+      context.manifest.seasonKey,
+      mode,
+      modeWindow,
+    );
 
     const entryRef = tournamentEntryRef(
-      context.manifest.seasonKey,
+      seasonKey,
       mode,
       context.auth.uid,
     );
@@ -1617,15 +1647,15 @@ exports.submitTournamentRun = onCall(
 
       const grouping = buildTournamentGrouping({
         mode,
-        seasonKey: context.manifest.seasonKey,
+        seasonKey,
         snapshot,
         globalRating: nextRating,
       });
 
       touchTournamentSeason(
         transaction,
-        context.manifest,
-        computeTournamentOverviewWindow(),
+        seasonKey,
+        modeWindow,
       );
 
       transaction.set(
@@ -1642,7 +1672,7 @@ exports.submitTournamentRun = onCall(
           lastSubmittedAt: FieldValue.serverTimestamp(),
           lastSubmittedScore: submittedScore,
           bestScore: nextBestScore,
-          rewardReady: nextBestScore > 0,
+          rewardReady: false,
           rewardClaimed: false,
           globalRating: nextRating,
           groupId: grouping.groupId,
@@ -1677,24 +1707,52 @@ exports.claimTournamentReward = onCall(
   async (request) => {
     const context = await loadTournamentContext(request);
     const mode = sanitizeTournamentMode(request.data?.mode);
-    const modeState = await buildTournamentModeState(context, mode);
-
-    if (!modeState.rewardReady || modeState.rewardClaimed) {
-      throw new HttpsError(
-        "failed-precondition",
-        "No tournament reward is ready for this mode.",
-      );
-    }
-
-    const reward = buildTournamentReward(
-      mode,
-      modeState.playerRank,
-      modeState.playerBestScore,
-    );
-    const entryRef = tournamentEntryRef(
+    const previousWindow = computePreviousTournamentWindowForMode(mode);
+    const rewardSeasonKey = buildTournamentSeasonKey(
       context.manifest.seasonKey,
       mode,
+      previousWindow,
+    );
+    const entryRef = tournamentEntryRef(
+      rewardSeasonKey,
+      mode,
       context.auth.uid,
+    );
+    const entrySnap = await entryRef.get();
+    const entryData = entrySnap.data() || {};
+    const bestScore = clampInt(
+      entryData.bestScore,
+      0,
+      TOURNAMENT_LIMITS.submittedScore,
+      0,
+    );
+    if (!entrySnap.exists || bestScore <= 0 || entryData.rewardClaimed) {
+      throw new HttpsError(
+        "failed-precondition",
+        "No closed-window tournament reward is ready for this mode.",
+      );
+    }
+    const grouping = buildTournamentGrouping({
+      mode,
+      seasonKey: rewardSeasonKey,
+      snapshot: entryData.lastSnapshot,
+      globalRating: sanitizeTournamentRating(
+        entryData.globalRating ?? context.profileData.globalTournamentRating,
+      ),
+    });
+    const rewardRank = await computeTournamentRank({
+      mode,
+      seasonKey: rewardSeasonKey,
+      score: bestScore,
+      groupId: grouping.groupId,
+      globalRating: sanitizeTournamentRating(
+        entryData.globalRating ?? context.profileData.globalTournamentRating,
+      ),
+    });
+    const reward = buildTournamentReward(
+      mode,
+      rewardRank,
+      bestScore,
     );
     const boostEndsAt = Timestamp.fromMillis(
       Date.now() + reward.experienceBuffHours * 60 * 60 * 1000,
@@ -1710,7 +1768,13 @@ exports.claimTournamentReward = onCall(
       }
 
       const entryData = entrySnap.data() || {};
-      if (!entryData.rewardReady || entryData.rewardClaimed) {
+      const transactionBestScore = clampInt(
+        entryData.bestScore,
+        0,
+        TOURNAMENT_LIMITS.submittedScore,
+        0,
+      );
+      if (transactionBestScore <= 0 || entryData.rewardClaimed) {
         throw new HttpsError(
           "failed-precondition",
           "This reward has already been claimed.",
@@ -1724,8 +1788,9 @@ exports.claimTournamentReward = onCall(
           rewardClaimed: true,
           rewardClaimedAt: FieldValue.serverTimestamp(),
           lastClaimedReward: {
-            rank: modeState.playerRank || TOURNAMENT_MODE_CONFIGS[mode].capacity,
-            bestScore: modeState.playerBestScore,
+            seasonKey: rewardSeasonKey,
+            rank: rewardRank || TOURNAMENT_MODE_CONFIGS[mode].capacity,
+            bestScore,
             reward,
           },
         },

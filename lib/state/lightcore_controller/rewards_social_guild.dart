@@ -173,7 +173,7 @@ extension LightcoreControllerSocialGuild on LightcoreController {
       .length;
 
   PrototypeAffinity? get homeTowerAffinity =>
-      _dominantTowerAffinityForLayer(activeLayer);
+      _dominantTowerAffinityForLayer(homeTowerLayer);
 
   String get homeTowerLabel {
     final affinity = homeTowerAffinity;

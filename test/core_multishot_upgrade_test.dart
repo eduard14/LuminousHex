@@ -14,6 +14,19 @@ void _tickUntil(
   }
 }
 
+void _queueCenterPackets(LightcoreController controller, int count) {
+  controller.selectCenter();
+  for (var index = 0; index < count; index++) {
+    controller.handleBattleCenterTap();
+    _tickUntil(
+      controller,
+      () => controller.coreState.packetCooldownRemaining <= 0,
+      steps: 80,
+    );
+  }
+  _tickUntil(controller, () => controller.queuedCorePackets == count);
+}
+
 void main() {
   test('core multi-shot upgrade increases volley count up to its cap', () {
     final controller = LightcoreController();
@@ -48,14 +61,10 @@ void main() {
     expect(controller.upgradeCoreMultiShot(), isTrue);
     expect(controller.coreMultiShotCount, 3);
 
-    controller.selectCenter();
-    for (var index = 0; index < controller.coreMultiShotCount; index++) {
-      controller.handleBattleCenterTap();
-    }
+    _queueCenterPackets(controller, controller.coreMultiShotCount);
 
-    expect(controller.pulses, hasLength(3));
-    expect(controller.queuedCorePackets, 0);
-    _tickUntil(controller, () => controller.queuedCorePackets == 3);
+    expect(controller.pulses, isEmpty);
+    expect(controller.queuedCorePackets, 3);
 
     for (var index = 0; index < controller.coreMultiShotCount; index++) {
       controller.debugSpawnEnemyFromCard(
@@ -84,14 +93,10 @@ void main() {
       expect(controller.upgradeCoreMultiShot(), isTrue);
       expect(controller.coreMultiShotCount, 3);
 
-      controller.selectCenter();
-      for (var index = 0; index < controller.coreMultiShotCount; index++) {
-        controller.handleBattleCenterTap();
-      }
+      _queueCenterPackets(controller, controller.coreMultiShotCount);
 
-      expect(controller.pulses, hasLength(3));
-      expect(controller.queuedCorePackets, 0);
-      _tickUntil(controller, () => controller.queuedCorePackets == 3);
+      expect(controller.pulses, isEmpty);
+      expect(controller.queuedCorePackets, 3);
 
       controller.debugSpawnEnemyFromCard(
         EnemyLibrary.basicWhite.id,

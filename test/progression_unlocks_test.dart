@@ -160,71 +160,97 @@ void main() {
     },
   );
 
-  test(
-    'completed layer 1 shells unlock archive save and replace at layer 2',
-    () {
-      final controller = LightcoreController(traitRandom: Random(31));
-      addTearDown(controller.dispose);
+  test('completed layer 1 sets unlock archive save and swap at layer 2', () {
+    final controller = LightcoreController(traitRandom: Random(31));
+    addTearDown(controller.dispose);
 
-      expect(controller.completedShellLibraryUnlocked, isFalse);
-      _maxOutCurrentTier1Shell(controller);
-      expect(
-        controller.liveCompletedTowerShells,
-        hasLength(LightcoreController.slotCount),
-      );
-      expect(
-        controller.saveCompletedShell(
-          controller.liveCompletedTowerShells.first.id,
-        ),
-        isFalse,
-      );
+    expect(controller.completedShellLibraryUnlocked, isFalse);
+    _maxOutCurrentTier1Shell(controller);
+    expect(controller.liveCompletedTowerShells, hasLength(1));
+    expect(
+      controller.saveCompletedShell(
+        controller.liveCompletedTowerShells.first.id,
+      ),
+      isFalse,
+    );
 
-      final rootLayerId = controller.activeLayer.id;
-      controller.unlockLayer2Tower();
-      expect(controller.completedShellLibraryUnlocked, isTrue);
+    final rootLayerId = controller.activeLayer.id;
+    controller.unlockLayer2Tower();
+    expect(controller.completedShellLibraryUnlocked, isTrue);
 
-      final sourceShell = controller.liveCompletedTowerShells.firstWhere(
-        (shell) => shell.sourceSlotIndex == 0,
-      );
-      final targetShell = controller.liveCompletedTowerShells.firstWhere(
-        (shell) => shell.sourceSlotIndex == 1,
-      );
-      final sourceConfigId = sourceShell.tower.config?.id;
-      expect(sourceConfigId, isNot(targetShell.tower.config?.id));
+    final sourceShell = controller.liveCompletedTowerShells.singleWhere(
+      (shell) => shell.sourceLayerId == rootLayerId,
+    );
+    final sourceConfigIds = sourceShell.layer.slots
+        .map((tower) => tower.config?.id)
+        .toList(growable: false);
 
-      expect(controller.saveCompletedShell(sourceShell.id), isTrue);
-      final archivedShell = controller.completedTowerShellLibrary.singleWhere(
-        (shell) => shell.archived,
-      );
-      expect(archivedShell.tower.config?.id, sourceConfigId);
+    expect(controller.saveCompletedShell(sourceShell.id), isTrue);
+    final archivedShell = controller.completedTowerShellLibrary.singleWhere(
+      (shell) => shell.archived,
+    );
+    expect(
+      archivedShell.layer.slots.map((tower) => tower.config?.id),
+      sourceConfigIds,
+    );
 
-      expect(
-        controller.replaceCompletedShell(
-          archiveId: archivedShell.id,
-          targetId: targetShell.id,
-        ),
-        isTrue,
-      );
-      final rootLayer = controller.layers.firstWhere(
-        (layer) => layer.id == rootLayerId,
-      );
-      expect(rootLayer.slots[1].config?.id, sourceConfigId);
-      expect(rootLayer.slots[1].slotIndex, 1);
+    final parentLayerId = controller.activeLayer.id;
+    expect(controller.createChildLayer(0, PrototypeAffinity.aether), isTrue);
+    controller.lumens = 100000000;
+    controller.kills = LightcoreController.unlockKillsForOuterSlot(
+      LightcoreController.slotCount - 1,
+    );
+    final reversedConfigs = TowerLibrary.all.reversed.toList(growable: false);
+    for (var index = 0; index < LightcoreController.slotCount; index++) {
+      controller.buildTowerAt(index, reversedConfigs[index]);
+      while (controller.slots[index].level <
+          LightcoreController.maxTowerLevel) {
+        controller.upgradeTower(index);
+      }
+    }
+    final childLayerId = controller.activeLayer.id;
+    final childConfigIds = controller.slots
+        .map((tower) => tower.config?.id)
+        .toList(growable: false);
+    expect(childConfigIds, isNot(sourceConfigIds));
+    controller.unlockLayer2Tower();
+    expect(controller.activeLayer.id, parentLayerId);
 
-      final restored = LightcoreController.fromCloudSavePayload(
-        controller.buildCloudSavePayload(),
-      );
-      addTearDown(restored.dispose);
-      expect(
-        restored.completedTowerShellLibrary.where((shell) => shell.archived),
-        hasLength(1),
-      );
-      final restoredRoot = restored.layers.firstWhere(
-        (layer) => layer.id == rootLayerId,
-      );
-      expect(restoredRoot.slots[1].config?.id, sourceConfigId);
-    },
-  );
+    final targetShell = controller.liveCompletedTowerShells.singleWhere(
+      (shell) => shell.sourceLayerId == childLayerId,
+    );
+
+    expect(
+      controller.replaceCompletedShell(
+        archiveId: archivedShell.id,
+        targetId: targetShell.id,
+      ),
+      isTrue,
+    );
+    final childLayer = controller.layers.firstWhere(
+      (layer) => layer.id == childLayerId,
+    );
+    expect(childLayer.slots.map((tower) => tower.config?.id), sourceConfigIds);
+    expect(childLayer.slots.map((tower) => tower.slotIndex), <int>[
+      for (var index = 0; index < LightcoreController.slotCount; index++) index,
+    ]);
+
+    final restored = LightcoreController.fromCloudSavePayload(
+      controller.buildCloudSavePayload(),
+    );
+    addTearDown(restored.dispose);
+    expect(
+      restored.completedTowerShellLibrary.where((shell) => shell.archived),
+      hasLength(1),
+    );
+    final restoredChild = restored.layers.firstWhere(
+      (layer) => layer.id == childLayerId,
+    );
+    expect(
+      restoredChild.slots.map((tower) => tower.config?.id),
+      sourceConfigIds,
+    );
+  });
 
   test(
     'promoted source and child shells remain inspectable as static archives',
@@ -509,20 +535,38 @@ void main() {
     expect(controller.enemyManagers, hasLength(1));
   });
 
-  test('overall level 15 unlocks daily dungeons', () {
-    final controller = LightcoreController(traitRandom: Random(13));
-    addTearDown(controller.dispose);
+  test(
+    'daily dungeons and tournaments respect Account Radiance level walls',
+    () {
+      final controller = LightcoreController(traitRandom: Random(13));
+      addTearDown(controller.dispose);
 
-    expect(controller.dailyDungeonsUnlocked, isFalse);
+      expect(controller.dailyDungeonsUnlocked, isFalse);
+      expect(
+        controller.dailyDungeonLevelsRemaining,
+        LightcoreController.dailyDungeonUnlockLevel - controller.overallLevel,
+      );
+      expect(controller.tournamentsUnlocked, isFalse);
+      expect(
+        controller.tournamentLevelsRemaining,
+        LightcoreController.tournamentUnlockLevel - controller.overallLevel,
+      );
 
-    controller.experience = LightcoreController.experienceForOverallLevel(
-      LightcoreController.dailyDungeonUnlockLevel,
-    );
+      controller.experience = LightcoreController.experienceForOverallLevel(
+        LightcoreController.dailyDungeonUnlockLevel,
+      );
 
-    expect(controller.managersUnlocked, isTrue);
-    expect(controller.dailyDungeonsUnlocked, isTrue);
-    expect(controller.tournamentsUnlocked, isFalse);
-  });
+      expect(controller.managersUnlocked, isTrue);
+      expect(controller.dailyDungeonsUnlocked, isTrue);
+      expect(controller.tournamentsUnlocked, isFalse);
+
+      controller.experience = LightcoreController.experienceForOverallLevel(
+        LightcoreController.tournamentUnlockLevel,
+      );
+
+      expect(controller.tournamentsUnlocked, isTrue);
+    },
+  );
 
   test('overall level 30 unlocks mentorship', () {
     final controller = LightcoreController(traitRandom: Random(15));

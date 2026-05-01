@@ -22,6 +22,25 @@ function createTournamentHelpers({ db, HttpsError, FieldValue, Timestamp, consta
     toMillis,
     roundToTwo,
   } = helpers;
+  const ARENA_FLOW_SYNTHETIC_PLAYER_COUNT = 14;
+  const ARENA_FLOW_SYNTHETIC_NAMES = Object.freeze([
+    "Nova Relay",
+    "Iris Vector",
+    "Pulse Vale",
+    "Cinder Lane",
+    "Halo Quill",
+    "Vega Prism",
+    "Sol Anchor",
+    "Mira Flux",
+    "Kite Aurora",
+    "Rook Ember",
+    "Luna Circuit",
+    "Echo Finch",
+    "Aster Beam",
+    "Orion Drift",
+    "Pearl Static",
+    "Nyx Signal",
+  ]);
 
   async function loadTournamentContext(request) {
     const auth = requireAuth(request);
@@ -66,7 +85,7 @@ function createTournamentHelpers({ db, HttpsError, FieldValue, Timestamp, consta
       activeExperienceBoostEndsAt: activeBoost.endsAt,
       online: true,
       statusMessage:
-        "Hex and Arena Flow run on the weekly rotation. Enemy Blitz opens on weekends.",
+        "Anomaly Blitz is open for testing with weekend-length sessions. Hex and Arena Flow run on the weekly rotation.",
       modes: modeStates,
     };
   }
@@ -74,8 +93,19 @@ function createTournamentHelpers({ db, HttpsError, FieldValue, Timestamp, consta
   async function buildTournamentModeState(context, mode) {
     const config = TOURNAMENT_MODE_CONFIGS[mode];
     const modeWindow = computeTournamentWindowForMode(mode);
-    const entryRef = tournamentEntryRef(
+    const seasonKey = buildTournamentSeasonKey(
       context.manifest.seasonKey,
+      mode,
+      modeWindow,
+    );
+    const previousWindow = computePreviousTournamentWindowForMode(mode);
+    const previousSeasonKey = buildTournamentSeasonKey(
+      context.manifest.seasonKey,
+      mode,
+      previousWindow,
+    );
+    const entryRef = tournamentEntryRef(
+      seasonKey,
       mode,
       context.auth.uid,
     );
@@ -87,34 +117,46 @@ function createTournamentHelpers({ db, HttpsError, FieldValue, Timestamp, consta
       TOURNAMENT_LIMITS.submittedScore,
       0,
     );
-    const scoringEntriesRef = tournamentEntriesRef(
-      context.manifest.seasonKey,
-      mode,
-    ).where("bestScore", ">", 0);
-    const [leaderboardSnap, scoringEntryCountSnap] = await Promise.all([
-      scoringEntriesRef.orderBy("bestScore", "desc").limit(config.capacity).get(),
-      scoringEntriesRef.count().get(),
-    ]);
-    const leaderboardDocs = leaderboardSnap.docs;
-    const submittedEntryCount = scoringEntryCountSnap.data().count;
-    const playerRank =
-      bestScore > 0
-        ? (await tournamentEntriesRef(
-            context.manifest.seasonKey,
-            mode,
-          ).where("bestScore", ">", bestScore).count().get()).data().count + 1
-        : null;
     const fallbackGrouping = buildTournamentGrouping({
       mode,
-      seasonKey: context.manifest.seasonKey,
+      seasonKey,
       snapshot: entryData.lastSnapshot,
       globalRating: sanitizeTournamentRating(
         entryData.globalRating ?? context.profileData.globalTournamentRating,
       ),
     });
+    const [leaderboardState, playerRank, rewardState] = await Promise.all([
+      buildTournamentLeaderboard({
+        mode,
+        seasonKey,
+        capacity: config.capacity,
+        groupId: fallbackGrouping.groupId,
+        globalRating: sanitizeTournamentRating(
+          entryData.globalRating ?? context.profileData.globalTournamentRating,
+        ),
+        playerUid: context.auth.uid,
+      }),
+      bestScore > 0
+        ? computeTournamentRank({
+            mode,
+            seasonKey,
+            score: bestScore,
+            groupId: fallbackGrouping.groupId,
+            globalRating: sanitizeTournamentRating(
+              entryData.globalRating ?? context.profileData.globalTournamentRating,
+            ),
+          })
+        : null,
+      buildClosedTournamentRewardState({
+        context,
+        mode,
+        seasonKey: previousSeasonKey,
+        window: previousWindow,
+      }),
+    ]);
     const joined = entryData.joined === true;
-    const rewardReady = Boolean(entryData.rewardReady && bestScore > 0);
-    const rewardClaimed = Boolean(entryData.rewardClaimed && bestScore > 0);
+    const rewardReady = rewardState.ready;
+    const rewardClaimed = rewardState.claimed;
 
     return {
       mode,
@@ -128,14 +170,15 @@ function createTournamentHelpers({ db, HttpsError, FieldValue, Timestamp, consta
         rewardClaimed,
       }),
       mechanicSummary: config.mechanicSummary,
-      rewardPreview: buildTournamentReward(mode, playerRank, bestScore),
+      rewardPreview:
+        rewardState.reward ?? buildTournamentReward(mode, playerRank, bestScore),
       startsAt: modeWindow.startsAt.toISOString(),
       endsAt: modeWindow.endsAt.toISOString(),
       groupId: sanitizeString(entryData.groupId, fallbackGrouping.groupId),
       matchBucketLabel:
         sanitizeOptionalString(entryData.matchBucketLabel) ??
         fallbackGrouping.matchBucketLabel,
-      groupSize: submittedEntryCount,
+      groupSize: leaderboardState.groupSize,
       capacity: config.capacity,
       playerBestScore: bestScore,
       playerRank,
@@ -149,21 +192,191 @@ function createTournamentHelpers({ db, HttpsError, FieldValue, Timestamp, consta
         TOURNAMENT_LIMITS.towerPowerIndex,
         0,
       ),
-      leaderboard: leaderboardDocs.map((doc) => {
-        const data = doc.data() || {};
-        return {
-          displayName: sanitizeString(data.displayName, "Pilot"),
-          score: clampInt(
-            data.bestScore,
-            0,
-            TOURNAMENT_LIMITS.submittedScore,
-            0,
-          ),
-          globalRating: sanitizeTournamentRating(data.globalRating),
-          isPlayer: doc.id === context.auth.uid,
-        };
-      }),
+      leaderboard: leaderboardState.entries,
     };
+  }
+
+  async function buildTournamentLeaderboard({
+    mode,
+    seasonKey,
+    capacity,
+    groupId,
+    globalRating,
+    playerUid,
+  }) {
+    const scoringEntriesRef = tournamentEntriesRef(seasonKey, mode)
+      .where("groupId", "==", groupId)
+      .where("bestScore", ">", 0);
+    const [leaderboardSnap, scoringEntryCountSnap] = await Promise.all([
+      scoringEntriesRef.orderBy("bestScore", "desc").limit(capacity).get(),
+      scoringEntriesRef.count().get(),
+    ]);
+    const realEntries = leaderboardSnap.docs.map((doc) => {
+      const data = doc.data() || {};
+      return {
+        displayName: sanitizeString(data.displayName, "Pilot"),
+        score: clampInt(
+          data.bestScore,
+          0,
+          TOURNAMENT_LIMITS.submittedScore,
+          0,
+        ),
+        globalRating: sanitizeTournamentRating(data.globalRating),
+        isPlayer: doc.id === playerUid,
+      };
+    });
+    const syntheticEntries = buildSyntheticTournamentEntries({
+      mode,
+      seasonKey,
+      groupId,
+      globalRating,
+      capacity,
+    });
+    const entries = [...realEntries, ...syntheticEntries]
+      .sort(compareTournamentLeaderboardEntries)
+      .slice(0, capacity);
+
+    return {
+      entries,
+      groupSize: scoringEntryCountSnap.data().count + syntheticEntries.length,
+    };
+  }
+
+  async function computeTournamentRank({
+    mode,
+    seasonKey,
+    score,
+    groupId,
+    globalRating,
+  }) {
+    const realAhead = (
+      await tournamentEntriesRef(seasonKey, mode)
+        .where("groupId", "==", groupId)
+        .where("bestScore", ">", score)
+        .count()
+        .get()
+    ).data().count;
+    const syntheticAhead = buildSyntheticTournamentEntries({
+      mode,
+      seasonKey,
+      groupId,
+      globalRating,
+      capacity: TOURNAMENT_MODE_CONFIGS[mode].capacity,
+    }).filter((entry) => entry.score > score).length;
+    return realAhead + syntheticAhead + 1;
+  }
+
+  async function buildClosedTournamentRewardState({
+    context,
+    mode,
+    seasonKey,
+    window,
+  }) {
+    const entryRef = tournamentEntryRef(seasonKey, mode, context.auth.uid);
+    const entrySnap = await entryRef.get();
+    const entryData = entrySnap.data() || {};
+    const bestScore = clampInt(
+      entryData.bestScore,
+      0,
+      TOURNAMENT_LIMITS.submittedScore,
+      0,
+    );
+    const claimed = Boolean(entryData.rewardClaimed && bestScore > 0);
+    if (!entrySnap.exists || bestScore <= 0 || Date.now() < window.endsAt.getTime()) {
+      return {
+        ready: false,
+        claimed,
+        rank: null,
+        bestScore,
+        reward: null,
+      };
+    }
+
+    const grouping = buildTournamentGrouping({
+      mode,
+      seasonKey,
+      snapshot: entryData.lastSnapshot,
+      globalRating: sanitizeTournamentRating(
+        entryData.globalRating ?? context.profileData.globalTournamentRating,
+      ),
+    });
+    const rank = await computeTournamentRank({
+      mode,
+      seasonKey,
+      score: bestScore,
+      groupId: grouping.groupId,
+      globalRating: sanitizeTournamentRating(
+        entryData.globalRating ?? context.profileData.globalTournamentRating,
+      ),
+    });
+    return {
+      ready: !claimed,
+      claimed,
+      rank,
+      bestScore,
+      reward: buildTournamentReward(mode, rank, bestScore),
+    };
+  }
+
+  function compareTournamentLeaderboardEntries(left, right) {
+    if (right.score !== left.score) {
+      return right.score - left.score;
+    }
+    if (left.isPlayer !== right.isPlayer) {
+      return left.isPlayer ? -1 : 1;
+    }
+    return left.displayName.localeCompare(right.displayName);
+  }
+
+  function buildSyntheticTournamentEntries({
+    mode,
+    seasonKey,
+    groupId,
+    globalRating,
+    capacity,
+  }) {
+    if (mode !== "arenaFlow") {
+      return [];
+    }
+    const count = Math.min(ARENA_FLOW_SYNTHETIC_PLAYER_COUNT, capacity);
+    const rating = sanitizeTournamentRating(globalRating);
+    const bucketSeed = sanitizeString(groupId, `${seasonKey}:arena`);
+    return Array.from({ length: count }, (_, index) => {
+      const roll = seededUnitFloat(`${seasonKey}:${bucketSeed}:bot:${index}`);
+      const nameIndex =
+        positiveHash(`${bucketSeed}:name:${index}`) %
+        ARENA_FLOW_SYNTHETIC_NAMES.length;
+      const ratingOffset = Math.round((roll - 0.5) * 420);
+      const botRating = sanitizeTournamentRating(
+        rating + ratingOffset + ((index % 5) - 2) * 18,
+      );
+      const scoreRoll = seededUnitFloat(`${bucketSeed}:score:${index}:${seasonKey}`);
+      const score = Math.max(
+        18,
+        Math.round(55 + (botRating - 750) / 6 + scoreRoll * 190),
+      );
+      return {
+        displayName: ARENA_FLOW_SYNTHETIC_NAMES[nameIndex],
+        score,
+        globalRating: botRating,
+        isPlayer: false,
+        synthetic: true,
+      };
+    });
+  }
+
+  function positiveHash(value) {
+    const text = String(value);
+    let hash = 2166136261;
+    for (let index = 0; index < text.length; index += 1) {
+      hash ^= text.charCodeAt(index);
+      hash = Math.imul(hash, 16777619);
+    }
+    return hash >>> 0;
+  }
+
+  function seededUnitFloat(value) {
+    return positiveHash(value) / 0xffffffff;
   }
 
   function buildTournamentStatusMessage({
@@ -183,17 +396,17 @@ function createTournamentHelpers({ db, HttpsError, FieldValue, Timestamp, consta
     }
     if (!isOpen) {
       return mode === "enemyBlitz"
-        ? "Enemy Blitz is closed right now. It reopens for the next weekend window."
+        ? "Anomaly Blitz is closed right now. It reopens when testing access is enabled."
         : `${label} is between rotations right now.`;
     }
     if (!joined) {
       switch (mode) {
         case "enemyBlitz":
-          return "Enemy Blitz is live for the weekend. Join to lock your seed and start a survival sprint.";
+          return "Anomaly Blitz is open for testing. Join to lock your seed and start a weekend-length survival session.";
         case "hexGauntlet":
           return "Hex is live. Run solo and post your best wave to the global weekly leaderboard.";
         case "arenaFlow":
-          return "Arena Flow is live for the week. Join to configure your duel loadout and chase the weekly ladder.";
+          return "Arena Flow is live for the week. Join to send your highest-layer Home Tower into the net-damage ladder.";
         default:
           return `${label} queue is open. Join to lock your current seed.`;
       }
@@ -201,7 +414,7 @@ function createTournamentHelpers({ db, HttpsError, FieldValue, Timestamp, consta
     if (bestScore > 0) {
       switch (mode) {
         case "enemyBlitz":
-          return "Run submitted. Improve your best wave before the weekend board closes.";
+          return "Run submitted. Improve your best wave before the testing board resets.";
         case "hexGauntlet":
           return "Run submitted. Improve your best wave on the global weekly leaderboard.";
         case "arenaFlow":
@@ -212,11 +425,11 @@ function createTournamentHelpers({ db, HttpsError, FieldValue, Timestamp, consta
     }
     switch (mode) {
       case "enemyBlitz":
-        return "Weekend queue joined. Start a survival sprint.";
+        return "Testing queue joined. Start a weekend-length survival session whenever you are ready.";
       case "hexGauntlet":
         return "Weekly queue joined. Start a solo hex run whenever you are ready.";
       case "arenaFlow":
-        return "Weekly queue joined. Start an arena duel whenever you are ready.";
+        return "Weekly queue joined. Start a Home Tower arena duel whenever you are ready.";
       default:
         return "Queue joined. Start a tournament run from the mobile client.";
     }
@@ -267,12 +480,13 @@ function createTournamentHelpers({ db, HttpsError, FieldValue, Timestamp, consta
     const improvement = Math.max(0, submittedScore - previousBestScore);
     const improvementDelta = Math.min(28, Math.floor(improvement / 400));
     const performanceDelta = Math.max(
-      0,
+      -18,
       Math.min(22, Math.floor(((submittedScore / baseline) - 1) * 18)),
     );
+    const participationDelta = submittedScore >= previousBestScore ? 4 : -6;
 
     return sanitizeTournamentRating(
-      currentRating + improvementDelta + performanceDelta + 6,
+      currentRating + improvementDelta + performanceDelta + participationDelta,
     );
   }
 
@@ -301,12 +515,17 @@ function createTournamentHelpers({ db, HttpsError, FieldValue, Timestamp, consta
     }
   }
 
-  function touchTournamentSeason(transaction, manifest, seasonWindow) {
-    const seasonRef = db.collection(TOURNAMENT_SEASON_COLLECTION).doc(manifest.seasonKey);
+  function buildTournamentSeasonKey(manifestSeasonKey, mode, window) {
+    const startsAtKey = window.startsAt.toISOString().slice(0, 10);
+    return `${manifestSeasonKey}:${mode}:${startsAtKey}`;
+  }
+
+  function touchTournamentSeason(transaction, seasonKey, seasonWindow) {
+    const seasonRef = db.collection(TOURNAMENT_SEASON_COLLECTION).doc(seasonKey);
     transaction.set(
       seasonRef,
       {
-        seasonKey: manifest.seasonKey,
+        seasonKey,
         startsAt: Timestamp.fromDate(seasonWindow.startsAt),
         endsAt: Timestamp.fromDate(seasonWindow.endsAt),
         updatedAt: FieldValue.serverTimestamp(),
@@ -346,13 +565,29 @@ function createTournamentHelpers({ db, HttpsError, FieldValue, Timestamp, consta
   }
 
   function computeTournamentWindowForMode(mode, now = new Date()) {
-    switch (TOURNAMENT_MODE_CONFIGS[mode].schedule) {
+    const config = TOURNAMENT_MODE_CONFIGS[mode];
+    if (config.testingAlwaysOpen === true) {
+      return computeWeeklyTournamentWindow(now);
+    }
+    switch (config.schedule) {
       case "weekend":
         return computeWeekendTournamentWindow(now);
       case "weekly":
       default:
         return computeWeeklyTournamentWindow(now);
     }
+  }
+
+  function computePreviousTournamentWindowForMode(mode, now = new Date()) {
+    const config = TOURNAMENT_MODE_CONFIGS[mode];
+    const current = computeTournamentWindowForMode(mode, now);
+    const startsAt = new Date(current.startsAt.getTime());
+    const endsAt = new Date(current.startsAt.getTime());
+    startsAt.setUTCDate(startsAt.getUTCDate() - 7);
+    if (config.schedule === "weekend" && config.testingAlwaysOpen !== true) {
+      endsAt.setUTCDate(endsAt.getUTCDate() - 4);
+    }
+    return { startsAt, endsAt, isOpen: false };
   }
 
   function computeWeeklyTournamentWindow(now = new Date()) {
@@ -413,13 +648,76 @@ function createTournamentHelpers({ db, HttpsError, FieldValue, Timestamp, consta
     }
 
     return {
-      overallLevel: EVEN_ENTRY_TOURNAMENT_LEVEL,
-      prestigeLevel: 0,
-      activeLayerTier: 1,
-      builtTowerCount: EVEN_ENTRY_TOURNAMENT_BUILT_TOWER_COUNT,
-      coreLevel: EVEN_ENTRY_TOURNAMENT_CORE_LEVEL,
-      towerPowerIndex: EVEN_ENTRY_TOURNAMENT_POWER_INDEX,
+      overallLevel: clampInt(
+        value.overallLevel,
+        EVEN_ENTRY_TOURNAMENT_LEVEL,
+        TOURNAMENT_LIMITS.overallLevel,
+        EVEN_ENTRY_TOURNAMENT_LEVEL,
+      ),
+      prestigeLevel: clampInt(value.prestigeLevel, 0, 1000, 0),
+      activeLayerTier: clampInt(value.activeLayerTier, 1, 50, 1),
+      builtTowerCount: clampInt(
+        value.builtTowerCount,
+        0,
+        EVEN_ENTRY_TOURNAMENT_BUILT_TOWER_COUNT,
+        EVEN_ENTRY_TOURNAMENT_BUILT_TOWER_COUNT,
+      ),
+      coreLevel: clampInt(
+        value.coreLevel,
+        EVEN_ENTRY_TOURNAMENT_CORE_LEVEL,
+        TOURNAMENT_LIMITS.coreLevel,
+        EVEN_ENTRY_TOURNAMENT_CORE_LEVEL,
+      ),
+      towerPowerIndex: clampInt(
+        value.towerPowerIndex,
+        EVEN_ENTRY_TOURNAMENT_POWER_INDEX,
+        TOURNAMENT_LIMITS.towerPowerIndex,
+        EVEN_ENTRY_TOURNAMENT_POWER_INDEX,
+      ),
     };
+  }
+
+  function sanitizeTournamentSubmittedScore(mode, value, snapshot) {
+    const submittedScore = clampInt(
+      value,
+      0,
+      TOURNAMENT_LIMITS.submittedScore,
+      0,
+    );
+    if (mode !== "arenaFlow" || submittedScore <= 0) {
+      return submittedScore;
+    }
+    const maxArenaScore = maxArenaFlowSubmittedScore(snapshot);
+    return Math.min(submittedScore, maxArenaScore);
+  }
+
+  function maxArenaFlowSubmittedScore(snapshot) {
+    const power = clampInt(
+      snapshot?.towerPowerIndex,
+      EVEN_ENTRY_TOURNAMENT_POWER_INDEX,
+      TOURNAMENT_LIMITS.towerPowerIndex,
+      EVEN_ENTRY_TOURNAMENT_POWER_INDEX,
+    );
+    const tier = clampInt(snapshot?.activeLayerTier, 1, 50, 1);
+    const coreLevel = clampInt(
+      snapshot?.coreLevel,
+      EVEN_ENTRY_TOURNAMENT_CORE_LEVEL,
+      TOURNAMENT_LIMITS.coreLevel,
+      EVEN_ENTRY_TOURNAMENT_CORE_LEVEL,
+    );
+    const builtTowerCount = clampInt(
+      snapshot?.builtTowerCount,
+      0,
+      EVEN_ENTRY_TOURNAMENT_BUILT_TOWER_COUNT,
+      EVEN_ENTRY_TOURNAMENT_BUILT_TOWER_COUNT,
+    );
+    return Math.round(
+      500 +
+        Math.sqrt(power) * 12 +
+        tier * 180 +
+        coreLevel * 8 +
+        builtTowerCount * 40,
+    );
   }
 
   function resolveDisplayName(profileData, auth) {
@@ -487,16 +785,21 @@ function createTournamentHelpers({ db, HttpsError, FieldValue, Timestamp, consta
     buildTournamentModeState,
     buildTournamentReward,
     computeNextTournamentRating,
+    computeTournamentRank,
     buildTournamentGrouping,
     touchTournamentSeason,
     tournamentEntryRef,
     computeTournamentOverviewWindow,
+    computeTournamentWindowForMode,
+    computePreviousTournamentWindowForMode,
     ensureTournamentModeOpen,
     normalizeTournamentPlayerSnapshot,
+    sanitizeTournamentSubmittedScore,
     resolveDisplayName,
     normalizeTournamentBoost,
     sanitizeTournamentMode,
     sanitizeTournamentRating,
+    buildTournamentSeasonKey,
     hasPremiumMembership,
   };
 }

@@ -18,15 +18,15 @@ extension LightcoreTournamentModeIdX on LightcoreTournamentModeId {
 
   String get subtitle => switch (this) {
     LightcoreTournamentModeId.enemyBlitz =>
-      'A fast survival sprint: start funded, draft a few anomalies, then buy tower or anomaly upgrades between rapid waves.',
+      'An open testing survival board: draft anomalies, keep upgrading through a weekend-length session, and improve your best wave before reset.',
     LightcoreTournamentModeId.hexGauntlet =>
       'A normalized event shell is dropped into a hex-path defense map and pushed through a weekly global wave climb.',
     LightcoreTournamentModeId.arenaFlow =>
-      'A normalized Home Tower enters a 20-second arena duel where drafted anomalies and an Apex decide the pressure curve.',
+      'Each player sends their highest-layer Home Tower into a 20-second arena duel where enemy waves attack the opposing tower directly.',
   };
 
   String get queueLabel => switch (this) {
-    LightcoreTournamentModeId.enemyBlitz => 'Weekend leaderboard',
+    LightcoreTournamentModeId.enemyBlitz => 'Testing leaderboard',
     LightcoreTournamentModeId.hexGauntlet => 'Global leaderboard',
     LightcoreTournamentModeId.arenaFlow => 'Weekly ladder',
   };
@@ -39,21 +39,22 @@ extension LightcoreTournamentModeIdX on LightcoreTournamentModeId {
 
   String get compressedLoopLabel => switch (this) {
     LightcoreTournamentModeId.enemyBlitz =>
-      'The normal survival loop is compressed into a weekend blitz where a few minutes of decisions replace days of slow build-up.',
+      'Anomaly Blitz stays open for testing, but each survival session uses a weekend-length clock instead of a quick match timer.',
     LightcoreTournamentModeId.hexGauntlet =>
       'The event shell and lane defense rules stay intact, but the wave ramp is accelerated into a weekly solo climb on the global board.',
     LightcoreTournamentModeId.arenaFlow =>
-      'A normalized Home Tower still chases Output Efficiency, but the arena condenses that contest into one short duel.',
+      'The highest-layer Home Tower becomes the arena tower, and the duel condenses damage dealt minus damage taken into one short run.',
   };
 
   String get scoringLabel => switch (this) {
     LightcoreTournamentModeId.enemyBlitz => 'Highest wave and survival score',
     LightcoreTournamentModeId.hexGauntlet => 'Deepest path clear',
-    LightcoreTournamentModeId.arenaFlow => 'Highest flow after 20 seconds',
+    LightcoreTournamentModeId.arenaFlow =>
+      'Highest net damage after 20 seconds',
   };
 
   String get eventCadenceLabel => switch (this) {
-    LightcoreTournamentModeId.enemyBlitz => 'Weekend',
+    LightcoreTournamentModeId.enemyBlitz => 'Open testing',
     LightcoreTournamentModeId.hexGauntlet => 'Weekly',
     LightcoreTournamentModeId.arenaFlow => 'Weekly',
   };
@@ -64,16 +65,16 @@ extension LightcoreTournamentModeIdX on LightcoreTournamentModeId {
     LightcoreTournamentModeId.hexGauntlet =>
       'Import the event-normalized shell into the weekly hex board.',
     LightcoreTournamentModeId.arenaFlow =>
-      'Pick two anomalies and one Apex to set the arena pressure.',
+      'Pick two anomalies and one Apex to send at the rival Home Tower.',
   };
 
   String get focusLabel => switch (this) {
     LightcoreTournamentModeId.enemyBlitz => 'Anomaly drafting',
     LightcoreTournamentModeId.hexGauntlet => 'Event shell layout',
-    LightcoreTournamentModeId.arenaFlow => 'Home Tower flow',
+    LightcoreTournamentModeId.arenaFlow => 'Highest-layer Home Tower',
   };
 
-  bool get usesTowerSeed => false;
+  bool get usesTowerSeed => this == LightcoreTournamentModeId.arenaFlow;
 
   bool get usesGlobalRating => this == LightcoreTournamentModeId.arenaFlow;
 
@@ -85,7 +86,8 @@ extension LightcoreTournamentModeIdX on LightcoreTournamentModeId {
 
   List<String> get rules => switch (this) {
     LightcoreTournamentModeId.enemyBlitz => const <String>[
-      'Manual survival sprint with tournament-only resources.',
+      'Testing access stays open while the format is being tuned.',
+      'Each survival session runs on a weekend-length clock.',
       'Drafted enemy pressure increases future payouts and score.',
       'Runs score from wave depth, survival, and reinvestment timing.',
     ],
@@ -97,9 +99,11 @@ extension LightcoreTournamentModeIdX on LightcoreTournamentModeId {
       'Higher enemy tiers are riskier and worth more score.',
     ],
     LightcoreTournamentModeId.arenaFlow => const <String>[
-      'Draft two anomalies and one Apex for the pressure curve.',
-      'Trigger overclock during pressure dips to beat the flow target.',
-      'Runs score from final flow after the short arena duel.',
+      'Your Home Tower is always your highest-layer tower.',
+      'Both Home Towers are visible, and each side faces the other player\'s enemy wave.',
+      'Server-seeded rivals keep the arena populated even before other players post runs.',
+      'Runs score from damage dealt minus damage taken after the short arena duel.',
+      'Weekly rewards are awarded from the closed server leaderboard after reset.',
     ],
   };
 }

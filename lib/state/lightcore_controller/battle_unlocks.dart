@@ -132,6 +132,9 @@ extension LightcoreControllerBattleUnlocks on LightcoreController {
     required int previousExperience,
     required int currentExperience,
   }) {
+    if (_openEventLevelWallsForTesting) {
+      return null;
+    }
     final previousLevel = overallLevelForExperience(previousExperience);
     final currentLevel = overallLevelForExperience(currentExperience);
     if (previousLevel >= tournamentUnlockLevel ||
@@ -175,6 +178,9 @@ extension LightcoreControllerBattleUnlocks on LightcoreController {
     required int previousExperience,
     required int currentExperience,
   }) {
+    if (_openEventLevelWallsForTesting) {
+      return null;
+    }
     final previousLevel = overallLevelForExperience(previousExperience);
     final currentLevel = overallLevelForExperience(currentExperience);
     if (previousLevel >= dailyDungeonUnlockLevel ||

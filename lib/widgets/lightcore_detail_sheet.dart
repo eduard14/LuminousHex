@@ -18,18 +18,31 @@ class LightcoreDetailSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final media = MediaQuery.of(context);
+    final compactHeight = media.size.height < 760;
+    final usableHeight =
+        (media.size.height - media.viewInsets.vertical - media.padding.vertical)
+            .clamp(320.0, media.size.height)
+            .toDouble();
+    final sheetHeightFactor = compactHeight
+        ? maxHeightFactor.clamp(0.0, 0.76)
+        : maxHeightFactor;
     return SafeArea(
       top: false,
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+        padding: EdgeInsets.fromLTRB(
+          14,
+          compactHeight ? 8 : 12,
+          14,
+          (compactHeight ? 12 : 16) + media.viewInsets.bottom,
+        ),
         child: ConstrainedBox(
           constraints: BoxConstraints(
-            maxHeight: media.size.height * maxHeightFactor,
+            maxHeight: usableHeight * sheetHeightFactor,
           ),
           child: AuroraPanel(
             tint: tint,
-            radius: 28,
-            padding: const EdgeInsets.all(20),
+            radius: compactHeight ? 24 : 28,
+            padding: EdgeInsets.all(compactHeight ? 16 : 20),
             child: SingleChildScrollView(child: child),
           ),
         ),

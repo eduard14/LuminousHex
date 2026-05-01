@@ -315,7 +315,7 @@ void main() {
     );
     final outsideEnemy = controller.debugSpawnEnemyFromCard(
       EnemyLibrary.basicWhite.id,
-      angle: 0.8,
+      angle: 1.6,
       radius: 180,
       level: 16,
     );

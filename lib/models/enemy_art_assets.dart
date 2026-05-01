@@ -61,7 +61,7 @@ normalEnemyImageAssets = {
   },
 };
 
-const Map<String, String> bossEnemyImageAssets = {
+const Map<String, String> bossEnemyImageAssetOverrides = {
   'boss_basic_white_warden':
       'assets/sprites/bosses/basic/the_pale_equation.jpeg',
   'boss_basic_ember_colossus': 'assets/sprites/bosses/basic/huskstar_rex.jpeg',
@@ -71,9 +71,18 @@ const Map<String, String> bossEnemyImageAssets = {
 
 String? enemyImageAssetForConfig(EnemyConfig config) {
   if (config.encounterType == EnemyEncounterType.boss) {
-    return bossEnemyImageAssets[config.id] ??
-        normalEnemyImageAssets[config.affinity]?[config.rarity];
+    return bossEnemyImageAssetOverrides[config.id] ??
+        _generatedBossImageAsset(config);
   }
 
   return normalEnemyImageAssets[config.affinity]?[config.rarity];
+}
+
+String _generatedBossImageAsset(EnemyConfig config) {
+  final rarity = config.rarity.name;
+  final prefix = 'boss_${rarity}_';
+  final stem = config.id.startsWith(prefix)
+      ? config.id.substring(prefix.length)
+      : config.id.replaceFirst('boss_', '');
+  return 'assets/sprites/bosses/$rarity/$stem.jpeg';
 }

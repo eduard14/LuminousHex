@@ -28,6 +28,8 @@ enum ProjectileType {
   pulseRing,
   orbitNode,
   shieldHalo,
+  rapidBolt,
+  twinBolt,
   pulseBeam,
   splitBeam,
   breakerShot,
@@ -68,6 +70,8 @@ enum ProjectileType {
 
 enum PayloadType {
   none,
+  precision,
+  doubleTap,
   chill,
   fracture,
   rend,
@@ -286,6 +290,8 @@ extension ProjectileTypeX on ProjectileType {
     ProjectileType.pulseRing => 'Pulse Ring',
     ProjectileType.orbitNode => 'Orbit Node',
     ProjectileType.shieldHalo => 'Shield Halo',
+    ProjectileType.rapidBolt => 'Rapid Bolt',
+    ProjectileType.twinBolt => 'Twin Bolt',
     ProjectileType.pulseBeam => 'Pulse Beam',
     ProjectileType.splitBeam => 'Split Beam',
     ProjectileType.breakerShot => 'Breaker Shot',
@@ -325,7 +331,9 @@ extension ProjectileTypeX on ProjectileType {
   };
 
   PrototypeAffinity get affinity => switch (this) {
-    ProjectileType.starBolt => PrototypeAffinity.neutral,
+    ProjectileType.starBolt ||
+    ProjectileType.rapidBolt ||
+    ProjectileType.twinBolt => PrototypeAffinity.neutral,
     ProjectileType.threadBeam ||
     ProjectileType.pulseBeam ||
     ProjectileType.splitBeam ||
@@ -380,6 +388,8 @@ extension ProjectileTypeX on ProjectileType {
     ProjectileType.pulseRing ||
     ProjectileType.orbitNode ||
     ProjectileType.shieldHalo => 1,
+    ProjectileType.rapidBolt ||
+    ProjectileType.twinBolt ||
     ProjectileType.pulseBeam ||
     ProjectileType.splitBeam ||
     ProjectileType.breakerShot ||
@@ -407,6 +417,7 @@ extension ProjectileTypeX on ProjectileType {
     ProjectileType.heavyShot ||
     ProjectileType.orbitNode ||
     ProjectileType.anchorNode => ProjectileBehaviorProfile.thread,
+    ProjectileType.rapidBolt ||
     ProjectileType.pulseBeam ||
     ProjectileType.breakerShot ||
     ProjectileType.pulseBomb ||
@@ -424,6 +435,7 @@ extension ProjectileTypeX on ProjectileType {
     ProjectileType.shadeSatellite ||
     ProjectileType.familiarShip ||
     ProjectileType.hunterShip => ProjectileBehaviorProfile.chain,
+    ProjectileType.twinBolt ||
     ProjectileType.splitBeam ||
     ProjectileType.forkArc ||
     ProjectileType.webArc => ProjectileBehaviorProfile.split,
@@ -459,6 +471,9 @@ extension ProjectileTypeX on ProjectileType {
     _ => false,
   };
 
+  bool get usesBlueLaser =>
+      affinity == PrototypeAffinity.aether && usesBeamPath;
+
   bool get usesRadialWave =>
       !usesBeamPath && behaviorProfile == ProjectileBehaviorProfile.wave;
 
@@ -492,6 +507,8 @@ extension ProjectileTypeX on ProjectileType {
 extension PayloadTypeX on PayloadType {
   String get label => switch (this) {
     PayloadType.none => 'No Payload',
+    PayloadType.precision => 'Precision',
+    PayloadType.doubleTap => 'Double Tap',
     PayloadType.chill => 'Chill',
     PayloadType.fracture => 'Fracture',
     PayloadType.rend => 'Rend',
@@ -520,6 +537,7 @@ extension PayloadTypeX on PayloadType {
 
   PrototypeAffinity? get affinity => switch (this) {
     PayloadType.none => null,
+    PayloadType.precision || PayloadType.doubleTap => PrototypeAffinity.neutral,
     PayloadType.chill ||
     PayloadType.fracture ||
     PayloadType.deepChill ||
@@ -565,29 +583,32 @@ extension PayloadTypeX on PayloadType {
 
   PayloadEffectProfile get effectProfile => switch (this) {
     PayloadType.none => PayloadEffectProfile.none,
+    PayloadType.precision ||
+    PayloadType.doubleTap => PayloadEffectProfile.bounty,
     PayloadType.chill ||
-    PayloadType.deepChill ||
-    PayloadType.disrupt ||
-    PayloadType.empDisrupt => PayloadEffectProfile.freeze,
     PayloadType.fracture ||
-    PayloadType.brittleFracture ||
-    PayloadType.force ||
-    PayloadType.concussiveForce ||
-    PayloadType.pull ||
-    PayloadType.singularityPull => PayloadEffectProfile.knockback,
+    PayloadType.deepChill ||
+    PayloadType.brittleFracture => PayloadEffectProfile.freeze,
     PayloadType.rend ||
-    PayloadType.overheat ||
+    PayloadType.force ||
     PayloadType.coreRend ||
-    PayloadType.meltdown ||
-    PayloadType.corrupt ||
-    PayloadType.cascadeCorrupt => PayloadEffectProfile.burn,
+    PayloadType.concussiveForce => PayloadEffectProfile.knockback,
+    PayloadType.overheat ||
     PayloadType.detonate ||
-    PayloadType.shock ||
-    PayloadType.overload ||
+    PayloadType.meltdown ||
     PayloadType.chainDetonate ||
+    PayloadType.corrupt ||
     PayloadType.spread ||
-    PayloadType.viralSpread => PayloadEffectProfile.shock,
-    PayloadType.expose || PayloadType.collapse => PayloadEffectProfile.bounty,
+    PayloadType.cascadeCorrupt ||
+    PayloadType.viralSpread => PayloadEffectProfile.burn,
+    PayloadType.shock ||
+    PayloadType.disrupt ||
+    PayloadType.overload ||
+    PayloadType.empDisrupt => PayloadEffectProfile.shock,
+    PayloadType.expose ||
+    PayloadType.pull ||
+    PayloadType.collapse ||
+    PayloadType.singularityPull => PayloadEffectProfile.bounty,
   };
 
   double get potencyMultiplier => tier >= 3 ? 1.35 : 1.0;

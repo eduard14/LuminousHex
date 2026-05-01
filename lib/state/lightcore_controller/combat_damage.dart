@@ -389,6 +389,9 @@ extension LightcoreControllerCombatDamage on LightcoreController {
       resolvedCritical = true;
       resolvedDamage *= critMultiplier;
     }
+    if (enemy.bountyRemaining > 0) {
+      resolvedDamage *= 1 + enemy.bountyMultiplier.clamp(0.0, 1.5);
+    }
 
     final remainingHealth = enemy.health - resolvedDamage;
     if (remainingHealth <= 0) {

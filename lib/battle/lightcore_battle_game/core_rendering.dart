@@ -545,7 +545,10 @@ extension LightcoreBattleGameCoreRendering on LightcoreBattleGame {
         ..color = coreColor.withValues(alpha: 0.92),
     );
 
-    final coreCooldown = controller.coreState.fireCooldownRemaining;
+    final coreCooldown = math.max(
+      controller.coreState.fireCooldownRemaining,
+      controller.coreState.packetCooldownRemaining,
+    );
     final coreCooldownDuration = controller.coreShotCooldown;
     final coreReadyProgress = coreCooldownDuration <= 0
         ? 1.0

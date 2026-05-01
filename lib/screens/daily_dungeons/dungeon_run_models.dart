@@ -16,6 +16,8 @@ class _DungeonRaid {
     required this.remainingHealth,
     required this.affinity,
     required this.laneIndex,
+    required this.chainTier,
+    required this.surgeMultiplier,
     this.apex = false,
   });
 
@@ -27,6 +29,8 @@ class _DungeonRaid {
   final double remainingHealth;
   final PrototypeAffinity affinity;
   final int laneIndex;
+  final int chainTier;
+  final double surgeMultiplier;
   final bool apex;
 
   double get progress => totalSeconds <= 0
@@ -49,6 +53,8 @@ class _DungeonRaid {
       remainingHealth: remainingHealth ?? this.remainingHealth,
       affinity: affinity,
       laneIndex: laneIndex,
+      chainTier: chainTier,
+      surgeMultiplier: surgeMultiplier,
       apex: apex,
     );
   }
@@ -83,7 +89,7 @@ class _ThreatDirectorDungeonRunScreenState
   @override
   void initState() {
     super.initState();
-    _towerProfile = widget.controller.dailyDungeonTowerProfileForLevel(
+    _towerProfile = widget.controller.dailyDungeonBattleTowerProfileForLevel(
       widget.towerLevel,
     );
     _snapshotNotifier = ValueNotifier<_DungeonRunSnapshot>(
@@ -153,6 +159,8 @@ class _ThreatDirectorDungeonRunScreenState
                           towerHealth: snapshot.towerHealth,
                           towerMaxHealth: snapshot.towerMaxHealth,
                           towerIntegrity: snapshot.towerIntegrity,
+                          launchChain: snapshot.launchChain,
+                          launchWindowRemaining: snapshot.launchWindowRemaining,
                           onExit: _exitRun,
                         ),
                       ),
@@ -165,6 +173,8 @@ class _ThreatDirectorDungeonRunScreenState
                           anomalyCards: widget.anomalyCards,
                           apexCard: widget.apexCard,
                           cooldowns: snapshot.cooldowns,
+                          launchChain: snapshot.launchChain,
+                          launchWindowRemaining: snapshot.launchWindowRemaining,
                           running: snapshot.running,
                           compact: compact,
                           onLaunch: _launchCard,
@@ -236,6 +246,8 @@ class _DungeonRunSnapshot {
     required this.towerHealth,
     required this.towerMaxHealth,
     required this.towerCharge,
+    required this.launchChain,
+    required this.launchWindowRemaining,
     required this.cooldowns,
     required this.running,
     required this.victory,
@@ -251,6 +263,8 @@ class _DungeonRunSnapshot {
       towerHealth: towerMaxHealth,
       towerMaxHealth: towerMaxHealth,
       towerCharge: 0,
+      launchChain: 0,
+      launchWindowRemaining: 0,
       cooldowns: const <String, double>{},
       running: true,
       victory: false,
@@ -262,6 +276,8 @@ class _DungeonRunSnapshot {
   final double towerHealth;
   final double towerMaxHealth;
   final double towerCharge;
+  final int launchChain;
+  final double launchWindowRemaining;
   final Map<String, double> cooldowns;
   final bool running;
   final bool victory;

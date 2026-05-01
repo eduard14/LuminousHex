@@ -186,6 +186,36 @@ void main() {
     },
   );
 
+  test('layer 1 center tap waits for packet cooldown before another pulse', () {
+    final controller = LightcoreController();
+    addTearDown(controller.dispose);
+
+    controller.selectCenter();
+    controller.handleBattleCenterTap();
+
+    final initialCooldown = controller.coreState.packetCooldownRemaining;
+    expect(initialCooldown, closeTo(controller.coreShotCooldown, 0.001));
+    expect(controller.coreQueueOccupancy, 1);
+
+    controller.handleBattleCenterTap();
+    expect(controller.coreQueueOccupancy, 1);
+
+    controller.tick(initialCooldown / 2);
+    controller.handleBattleCenterTap();
+    expect(controller.coreQueueOccupancy, 1);
+
+    _tickUntil(
+      controller,
+      () => controller.coreState.packetCooldownRemaining <= 0,
+    );
+    final occupancyBefore = controller.coreQueueOccupancy;
+
+    controller.handleBattleCenterTap();
+
+    expect(controller.coreQueueOccupancy, occupancyBefore + 1);
+    expect(controller.coreState.packetCooldownRemaining, greaterThan(0));
+  });
+
   test('core queue upgrade raises queue capacity and spends lumens', () {
     final controller = LightcoreController();
     addTearDown(controller.dispose);
@@ -330,20 +360,31 @@ void main() {
       radius: 220,
       level: 16,
     );
+    final visualEdgeEnemy = controller.debugSpawnEnemyFromCard(
+      EnemyLibrary.basicWhite.id,
+      angle: 0.72,
+      radius: 220,
+      level: 16,
+    );
     final outsideEnemy = controller.debugSpawnEnemyFromCard(
       EnemyLibrary.basicWhite.id,
-      angle: 0.8,
+      angle: 1.35,
       radius: 220,
       level: 16,
     );
     expect(firstEnemy, isNotNull);
     expect(secondEnemy, isNotNull);
     expect(edgeEnemy, isNotNull);
+    expect(visualEdgeEnemy, isNotNull);
     expect(outsideEnemy, isNotNull);
 
     final initialFirstHealth = _healthForEnemy(controller, firstEnemy!.id);
     final initialSecondHealth = _healthForEnemy(controller, secondEnemy!.id);
     final initialEdgeHealth = _healthForEnemy(controller, edgeEnemy!.id);
+    final initialVisualEdgeHealth = _healthForEnemy(
+      controller,
+      visualEdgeEnemy!.id,
+    );
     final initialOutsideHealth = _healthForEnemy(controller, outsideEnemy!.id);
 
     controller.debugSetAmmoQueue([_coreBombPacket()]);
@@ -361,6 +402,10 @@ void main() {
     expect(
       _healthForEnemy(controller, edgeEnemy.id),
       lessThan(initialEdgeHealth),
+    );
+    expect(
+      _healthForEnemy(controller, visualEdgeEnemy.id),
+      lessThan(initialVisualEdgeHealth),
     );
     expect(_healthForEnemy(controller, outsideEnemy.id), initialOutsideHealth);
   });
@@ -387,7 +432,7 @@ void main() {
     );
     final outsideEnemy = controller.debugSpawnEnemyFromCard(
       EnemyLibrary.basicWhite.id,
-      angle: 0.8,
+      angle: 1.35,
       radius: 220,
       level: 16,
     );
@@ -441,7 +486,7 @@ void main() {
     );
     final outsideEnemy = controller.debugSpawnEnemyFromCard(
       EnemyLibrary.basicWhite.id,
-      angle: 0.8,
+      angle: 1.35,
       radius: 220,
       level: 16,
     );

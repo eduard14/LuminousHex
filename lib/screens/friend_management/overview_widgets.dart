@@ -26,6 +26,12 @@ class _SocialOverviewPanel extends StatelessWidget {
           Row(
             children: [
               Expanded(child: Text(section.title, style: textTheme.titleLarge)),
+              LightcoreInfoButton(
+                title: '${section.title} Help',
+                message: section.description(overview),
+                tint: section.tint,
+              ),
+              const SizedBox(width: 4),
               OutlinedButton.icon(
                 onPressed: loading ? null : onRefresh,
                 icon: loading
@@ -38,9 +44,7 @@ class _SocialOverviewPanel extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 8),
-          Text(section.description(overview), style: textTheme.bodyLarge),
-          const SizedBox(height: 14),
+          const SizedBox(height: 12),
           Wrap(spacing: 10, runSpacing: 10, children: section.pills(overview)),
           if (error != null) ...[
             const SizedBox(height: 12),

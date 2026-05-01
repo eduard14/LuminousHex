@@ -170,6 +170,7 @@ class _MentorHexPanel extends StatelessWidget {
         _playerByUid(social, selectedProfileUid) ?? focusedPlayer;
     final focusedMentor =
         social.mentor != null && focusedPlayer.uid == social.mentor!.uid;
+    final compact = MediaQuery.sizeOf(context).width < 430;
     final children = focusedMentor
         ? <LightcoreSocialPlayer>[social.self]
         : social.childrenOf(focusedPlayer.uid);
@@ -215,7 +216,7 @@ class _MentorHexPanel extends StatelessWidget {
           ),
           const SizedBox(height: 14),
           SizedBox(
-            height: 430,
+            height: compact ? 340 : 430,
             child: _SocialHexMap(
               social: social,
               controller: controller,
@@ -230,6 +231,7 @@ class _MentorHexPanel extends StatelessWidget {
               mentor: focusedPlayer.uid == social.self.uid
                   ? social.mentor
                   : null,
+              onFocusChanged: onFocusChanged,
               onTapPlayer: (player) => onProfileSelected(player.uid),
             ),
           ),

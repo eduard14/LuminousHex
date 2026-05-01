@@ -40,6 +40,33 @@ double _damageTaken(
   return initialHealth - enemy.first.health;
 }
 
+AmmoPacket _corePacket({
+  required ProjectileType projectileType,
+  required PayloadType payloadType,
+  double power = 4,
+}) {
+  return AmmoPacket(
+    id: 'packet_${projectileType.name}_${payloadType.name}',
+    sourceSlotIndex: null,
+    affinity: projectileType.affinity,
+    secondaryAffinity: payloadType.affinity,
+    power: power,
+    advantageMultiplier: 1,
+    projectileType: projectileType,
+    payloadType: payloadType,
+    targetPriority: TargetPriority.close,
+    range: 420,
+    critChance: 0,
+    critMultiplier: 1,
+    finalDamageMultiplier: 1,
+    bossDamageMultiplier: 1,
+    normalDamageMultiplier: 1,
+    defensePenetration: 0,
+    minDamageMultiplier: 1,
+    maxDamageMultiplier: 1,
+  );
+}
+
 void _tickUntil(
   LightcoreController controller,
   bool Function() condition, {
@@ -467,6 +494,113 @@ void main() {
       isTrue,
     );
     expect(_healthForEnemy(controller, flankEnemy.id), initialFlankHealth);
+  });
+
+  test('core blue projectiles use the same focus laser delivery', () {
+    final controller = LightcoreController();
+    addTearDown(controller.dispose);
+
+    final frontEnemy = controller.debugSpawnEnemyFromCard(
+      EnemyLibrary.basicWhite.id,
+      angle: 0.0,
+      radius: 180,
+      level: 20,
+    );
+    final flankEnemy = controller.debugSpawnEnemyFromCard(
+      EnemyLibrary.basicWhite.id,
+      angle: 0.35,
+      radius: 200,
+      level: 20,
+    );
+
+    expect(frontEnemy, isNotNull);
+    expect(flankEnemy, isNotNull);
+
+    final initialFrontHealth = _healthForEnemy(controller, frontEnemy!.id);
+    final initialFlankHealth = _healthForEnemy(controller, flankEnemy!.id);
+
+    controller.debugSetAmmoQueue([
+      _corePacket(
+        projectileType: ProjectileType.pulseBeam,
+        payloadType: PayloadType.none,
+      ),
+    ]);
+
+    _tickUntil(controller, () => controller.shots.isNotEmpty, steps: 4);
+    expect(controller.shots.single.projectileType, ProjectileType.pulseBeam);
+    controller.tick(0.01);
+
+    expect(
+      _enemyMissingOrDamaged(controller, frontEnemy.id, initialFrontHealth),
+      isTrue,
+    );
+    expect(_healthForEnemy(controller, flankEnemy.id), initialFlankHealth);
+  });
+
+  test('core packets apply payload consequences by payload color', () {
+    final cases = <({PayloadType payload, bool Function(EnemyState) matched})>[
+      (
+        payload: PayloadType.detonate,
+        matched: (enemy) => enemy.burnRemaining > 0,
+      ),
+      (
+        payload: PayloadType.spread,
+        matched: (enemy) => enemy.burnRemaining > 0,
+      ),
+      (
+        payload: PayloadType.disrupt,
+        matched: (enemy) => enemy.shockRemaining > 0,
+      ),
+      (
+        payload: PayloadType.fracture,
+        matched: (enemy) => enemy.slowRemaining > 0,
+      ),
+      (payload: PayloadType.rend, matched: (enemy) => enemy.radius > 190),
+      (
+        payload: PayloadType.pull,
+        matched: (enemy) => enemy.bountyRemaining > 0,
+      ),
+    ];
+
+    for (final payloadCase in cases) {
+      final controller = LightcoreController();
+      addTearDown(controller.dispose);
+
+      final target = controller.debugSpawnEnemyFromCard(
+        EnemyLibrary.basicWhite.id,
+        angle: 0.0,
+        radius: 180,
+        level: 24,
+      );
+      expect(target, isNotNull);
+      controller.debugSetAmmoQueue([
+        _corePacket(
+          projectileType: ProjectileType.pulseBeam,
+          payloadType: payloadCase.payload,
+        ),
+      ]);
+
+      _tickUntil(
+        controller,
+        () {
+          final enemies = controller.enemies.where(
+            (enemy) => enemy.id == target!.id,
+          );
+          return enemies.isNotEmpty && payloadCase.matched(enemies.single);
+        },
+        steps: 8,
+        dt: 0.03,
+      );
+
+      final resolved = controller.enemies.firstWhere(
+        (enemy) => enemy.id == target!.id,
+      );
+      expect(
+        payloadCase.matched(resolved),
+        isTrue,
+        reason: '${payloadCase.payload.label} did not apply its color effect.',
+      );
+    }
   });
 
   test('chain arc briefly freezes the struck target while the zap lingers', () {

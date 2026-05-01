@@ -174,7 +174,20 @@ void main() {
 
     expect(controller.tutorialStep, LightcoreTutorialStep.readEffectiveGain);
 
+    controller.lumens = 1000;
     controller.markTutorialStabilityPanelOpened();
+    expect(
+      controller.tutorialStep,
+      LightcoreTutorialStep.upgradeFirstTowerToLevel3,
+    );
+    expect(controller.tutorialUpgradeTower(0), isTrue);
+    expect(
+      controller.tutorialStep,
+      LightcoreTutorialStep.upgradeFirstTowerToLevel3,
+    );
+    controller.lumens = controller.upgradeCost(controller.slots[0]);
+    expect(controller.tutorialUpgradeTower(0), isTrue);
+    expect(controller.slots[0].level, 3);
     expect(controller.tutorialStep, LightcoreTutorialStep.assignTowerManager);
     expect(controller.cards, isNotEmpty);
     controller.equipCardToSlot(controller.cards.first.instanceId, 0);
@@ -185,6 +198,17 @@ void main() {
         guard++ < 80) {
       controller.tick(0.25);
     }
+    expect(controller.tutorialStep, LightcoreTutorialStep.pullFirstRedEnemy);
+    final secondPull = controller.openEnemyTickets(1);
+    expect(secondPull.single.config.id, EnemyLibrary.basicRed.id);
+    expect(controller.tutorialStep, LightcoreTutorialStep.setFirstEnemyTarget);
+    controller.selectEnemyCard(EnemyLibrary.basicRed.id);
+    expect(controller.tutorialStep, LightcoreTutorialStep.adjustEnemyCount);
+    expect(
+      controller.setEnemyTargetCount(controller.enemyTargetFloor + 1),
+      isTrue,
+    );
+
     controller.experience = LightcoreController.experienceForOverallLevel(2);
     controller.tick(0);
     expect(controller.tutorialStep, LightcoreTutorialStep.upgradeCoreRange);
@@ -247,7 +271,7 @@ void main() {
     expect(controller.tutorialHeadline, 'Queue a Pulse');
     expect(
       controller.tutorialPrompt,
-      'Tap the charged Red Prism to add a pulse to the core queue. The core spends queued pulses as outgoing shots.',
+      'Tap the charged Red Prism to add pulses. More queued shots means faster kills, more Lumens, and earlier upgrades.',
     );
     expect(controller.tutorialBattleSlotGuideLabel(0), 'ADD TO QUEUE');
     expect(controller.activateTowerSlot(0, showBanner: false), isTrue);

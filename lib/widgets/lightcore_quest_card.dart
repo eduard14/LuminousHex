@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../state/lightcore_controller.dart';
@@ -21,14 +23,19 @@ class LightcoreQuestCard extends StatefulWidget {
 }
 
 class _LightcoreQuestCardState extends State<LightcoreQuestCard> {
+  static const Duration _stuckHintDelay = Duration(seconds: 10);
+
   late bool _detailsOpen;
   late LightcoreTutorialStep _trackedStep;
+  Timer? _stuckHintTimer;
+  bool _stuckHintVisible = false;
 
   @override
   void initState() {
     super.initState();
     _detailsOpen = widget.initiallyExpanded;
     _trackedStep = widget.controller.tutorialStep;
+    _scheduleStuckHint();
   }
 
   @override
@@ -40,6 +47,30 @@ class _LightcoreQuestCardState extends State<LightcoreQuestCard> {
     }
     _trackedStep = nextStep;
     _detailsOpen = widget.initiallyExpanded;
+    _stuckHintVisible = false;
+    _scheduleStuckHint();
+  }
+
+  @override
+  void dispose() {
+    _stuckHintTimer?.cancel();
+    super.dispose();
+  }
+
+  void _scheduleStuckHint() {
+    _stuckHintTimer?.cancel();
+    if (!widget.controller.hasActiveTutorial ||
+        widget.controller.tutorialFailureHelp == null) {
+      return;
+    }
+    _stuckHintTimer = Timer(_stuckHintDelay, () {
+      if (!mounted || widget.controller.tutorialStep != _trackedStep) {
+        return;
+      }
+      setState(() {
+        _stuckHintVisible = true;
+      });
+    });
   }
 
   void _toggleDetails() {
@@ -66,6 +97,7 @@ class _LightcoreQuestCardState extends State<LightcoreQuestCard> {
     final clickTarget = controller.tutorialPrimaryClickTarget;
     final completion = controller.tutorialCompletionCondition;
     final reward = controller.tutorialLearningReward;
+    final stuckHelp = controller.tutorialFailureHelp;
     final triggerSize = widget.compact ? 52.0 : 58.0;
     final detailGap = widget.compact ? 8.0 : 10.0;
     final maxDetailsWidth = widget.compact ? 318.0 : 380.0;
@@ -175,23 +207,29 @@ class _LightcoreQuestCardState extends State<LightcoreQuestCard> {
                 ),
               ],
             ),
-            const SizedBox(height: 8),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              decoration: BoxDecoration(
-                color: tint.withValues(alpha: 0.14),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: tint.withValues(alpha: 0.26)),
+            if (completion != null) ...[
+              const SizedBox(height: 10),
+              _QuestDetailText(
+                icon: Icons.flag_rounded,
+                title: 'Goal',
+                text: completion,
+                tint: LightcorePalette.warning,
               ),
-              child: Text(
-                instruction,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: LightcorePalette.mist,
-                  fontWeight: FontWeight.w800,
-                  height: 1.28,
-                ),
+            ],
+            if (mechanicHint != null) ...[
+              const SizedBox(height: 10),
+              _QuestDetailText(
+                icon: Icons.lightbulb_rounded,
+                title: 'Why',
+                text: mechanicHint,
+                tint: tint,
               ),
+            ],
+            const SizedBox(height: 12),
+            _QuestActionBlock(
+              instruction: instruction,
+              tint: tint,
+              compact: widget.compact,
             ),
             if (clickTarget != null) ...[
               const SizedBox(height: 12),
@@ -202,12 +240,12 @@ class _LightcoreQuestCardState extends State<LightcoreQuestCard> {
                 tint: tint,
               ),
             ],
-            if (completion != null) ...[
+            if (_stuckHintVisible && stuckHelp != null) ...[
               const SizedBox(height: 10),
               _QuestDetailText(
-                icon: Icons.check_circle_outline_rounded,
-                title: 'Complete',
-                text: completion,
+                icon: Icons.help_outline_rounded,
+                title: 'Hint',
+                text: stuckHelp,
                 tint: LightcorePalette.warning,
               ),
             ],
@@ -215,18 +253,9 @@ class _LightcoreQuestCardState extends State<LightcoreQuestCard> {
               const SizedBox(height: 10),
               _QuestDetailText(
                 icon: Icons.redeem_rounded,
-                title: 'Reward',
+                title: 'Result',
                 text: reward,
                 tint: LightcorePalette.success,
-              ),
-            ],
-            if (mechanicHint != null) ...[
-              const SizedBox(height: 12),
-              _QuestDetailText(
-                icon: Icons.lightbulb_rounded,
-                title: 'Why it matters',
-                text: mechanicHint,
-                tint: tint,
               ),
             ],
             if (storyBeat != null) ...[
@@ -259,6 +288,57 @@ class _LightcoreQuestCardState extends State<LightcoreQuestCard> {
             const SizedBox.shrink(
               key: ValueKey<String>('battle-quest-card-collapsed'),
             ),
+        ],
+      ),
+    );
+  }
+}
+
+class _QuestActionBlock extends StatelessWidget {
+  const _QuestActionBlock({
+    required this.instruction,
+    required this.tint,
+    required this.compact,
+  });
+
+  final String instruction;
+  final Color tint;
+  final bool compact;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.symmetric(
+        horizontal: compact ? 11 : 12,
+        vertical: compact ? 9 : 10,
+      ),
+      decoration: BoxDecoration(
+        color: tint.withValues(alpha: 0.14),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: tint.withValues(alpha: 0.26)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            'Do this',
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              color: tint,
+              fontWeight: FontWeight.w900,
+              letterSpacing: 0.36,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            instruction,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: LightcorePalette.mist,
+              fontWeight: FontWeight.w800,
+              height: 1.28,
+            ),
+          ),
         ],
       ),
     );

@@ -3,11 +3,15 @@ import 'dart:math' as math;
 import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 
+import '../data/enemy_configs.dart';
+import '../models/lightcore_config.dart';
 import '../models/lightcore_state.dart';
 import '../models/lightcore_types.dart';
 import '../state/lightcore_controller.dart';
 import '../theme/lightcore_palette.dart';
 import '../widgets/aurora_panel.dart';
+import '../widgets/lightcore_projectile_fx.dart';
+import '../widgets/lightcore_run_loading.dart';
 import '../widgets/meter_bar.dart';
 import '../widgets/tower_level_hex_badge.dart';
 
@@ -38,6 +42,56 @@ class DailyDungeonsScreen extends StatefulWidget {
 }
 
 enum _DailyDungeonSlot { enemyManager, sealedVault, prismRift }
+
+class _DungeonRunLaunchScreen extends StatefulWidget {
+  const _DungeonRunLaunchScreen({
+    required this.title,
+    required this.subtitle,
+    required this.tint,
+    required this.icon,
+    required this.builder,
+  });
+
+  final String title;
+  final String subtitle;
+  final Color tint;
+  final IconData icon;
+  final WidgetBuilder builder;
+
+  @override
+  State<_DungeonRunLaunchScreen> createState() =>
+      _DungeonRunLaunchScreenState();
+}
+
+class _DungeonRunLaunchScreenState extends State<_DungeonRunLaunchScreen> {
+  static const Duration _launchDelay = Duration(milliseconds: 450);
+
+  bool _ready = false;
+
+  @override
+  void initState() {
+    super.initState();
+    Future<void>.delayed(_launchDelay, () {
+      if (!mounted) {
+        return;
+      }
+      setState(() => _ready = true);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_ready) {
+      return widget.builder(context);
+    }
+    return LightcoreRunLoading(
+      title: widget.title,
+      subtitle: widget.subtitle,
+      tint: widget.tint,
+      icon: widget.icon,
+    );
+  }
+}
 
 class _DailyDungeonsScreenState extends State<DailyDungeonsScreen> {
   static const Duration _timeLimit = Duration(seconds: 45);
@@ -150,7 +204,7 @@ class _DailyDungeonsScreenState extends State<DailyDungeonsScreen> {
   ) {
     final textTheme = Theme.of(context).textTheme;
     final selectedLevel = _selectedLevelFor(controller);
-    final towerProfile = controller.dailyDungeonTowerProfileForLevel(
+    final towerProfile = controller.dailyDungeonBattleTowerProfileForLevel(
       selectedLevel,
     );
     final towerMaxHealth = towerProfile.maxHealth;
@@ -281,7 +335,7 @@ class _DailyDungeonsScreenState extends State<DailyDungeonsScreen> {
                   spacing: 12,
                   runSpacing: 12,
                   children: [
-                    for (final card in ownedCards.take(8))
+                    for (final card in ownedCards)
                       SizedBox(
                         width: tileWidth,
                         child: _DungeonLoadoutTile(
@@ -371,7 +425,7 @@ class _DailyDungeonsScreenState extends State<DailyDungeonsScreen> {
   ) {
     final textTheme = Theme.of(context).textTheme;
     final selectedLevel = _selectedLevelFor(controller);
-    final towerProfile = controller.dailyDungeonTowerProfileForLevel(
+    final towerProfile = controller.dailyDungeonBattleTowerProfileForLevel(
       selectedLevel,
     );
     final reward = controller.dailyDungeonRewardForLevel(selectedLevel);
@@ -544,11 +598,17 @@ class _DailyDungeonsScreenState extends State<DailyDungeonsScreen> {
     final result = await Navigator.of(context).push<_DungeonRunResult>(
       MaterialPageRoute<_DungeonRunResult>(
         fullscreenDialog: true,
-        builder: (_) => _ThreatDirectorDungeonRunScreen(
-          controller: controller,
-          towerLevel: towerLevel,
-          anomalyCards: List<EnemyCardState>.unmodifiable(anomalyCards),
-          apexCard: apexCard,
+        builder: (_) => _DungeonRunLaunchScreen(
+          title: 'Loading Threat Director',
+          subtitle: 'Locking anomaly loadout and opening the tower arena.',
+          tint: LightcorePalette.warning,
+          icon: Icons.shield_rounded,
+          builder: (_) => _ThreatDirectorDungeonRunScreen(
+            controller: controller,
+            towerLevel: towerLevel,
+            anomalyCards: List<EnemyCardState>.unmodifiable(anomalyCards),
+            apexCard: apexCard,
+          ),
         ),
       ),
     );
@@ -568,9 +628,17 @@ class _DailyDungeonsScreenState extends State<DailyDungeonsScreen> {
     final result = await Navigator.of(context).push<_DungeonRunResult>(
       MaterialPageRoute<_DungeonRunResult>(
         fullscreenDialog: true,
-        builder: (_) => _PrismRiftDungeonRunScreen(
-          controller: controller,
-          towerLevel: towerLevel,
+        builder: (_) => _DungeonRunLaunchScreen(
+          title: 'Loading Prism Rift',
+          subtitle:
+              'Charging manual controls and syncing today\'s rift pattern.',
+          tint: LightcorePalette.violet,
+          icon: Icons.terrain_rounded,
+          builder: (_) => _PrismRiftDungeonRunScreen(
+            controller: controller,
+            towerLevel: towerLevel,
+            runSeed: _dailyDungeonRunSeed(towerLevel),
+          ),
         ),
       ),
     );
@@ -580,6 +648,15 @@ class _DailyDungeonsScreenState extends State<DailyDungeonsScreen> {
     setState(() {
       _selectedTowerLevel = controller.dailyDungeonHighestUnlockedTowerLevel;
     });
+  }
+
+  int _dailyDungeonRunSeed(int towerLevel) {
+    final key = _dailyKey(DateTime.now());
+    return key.codeUnits.fold<int>(
+          7301 + (towerLevel * 37),
+          (seed, unit) => ((seed * 31) + unit) & 0x3fffffff,
+        ) +
+        (_selected.index * 1009);
   }
 
   List<EnemyCardState> _ownedEnemyCards(LightcoreController controller) {

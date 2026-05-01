@@ -631,37 +631,115 @@ extension LightcoreControllerProgressionLayers on LightcoreController {
     return locked > 0 ? '$rolledLabel • $locked locked' : rolledLabel;
   }
 
-  bool _towerQualifiesForCompletedShell(OuterTowerState tower) =>
-      tower.config != null &&
-      !tower.isFabricating &&
-      tower.level >= maxTowerLevel;
+  bool _layerQualifiesForCompletedShell(TowerLayerSnapshot layer) =>
+      layer.tier == 1 &&
+      layer.slots.where(_slotCountsTowardRing).length == slotCount &&
+      promotionReadyCountForLayer(layer) == slotCount;
 
-  String _liveCompletedShellId(String layerId, int slotIndex) =>
-      'live:$layerId:$slotIndex';
+  String _liveCompletedShellId(String layerId) => 'live:$layerId';
+
+  OuterTowerState _completedShellTowerCopy(
+    OuterTowerState tower,
+    int slotIndex,
+  ) {
+    return tower
+        .copyForSlot(slotIndex)
+        .copyWith(
+          charge: 0,
+          cooldownRemaining: 0,
+          automationCooldownRemaining: 0,
+          disruption: 0,
+          fireSequence: 0,
+          fabricationTotalSeconds: 0,
+          fabricationRemainingSeconds: 0,
+          clearEquippedCard: true,
+        );
+  }
+
+  TowerLayerSnapshot _completedShellLayerCopy(
+    TowerLayerSnapshot source, {
+    required String id,
+    required String label,
+    required int tier,
+    String? parentLayerId,
+    int? parentSlotIndex,
+    String? sourceLayerId,
+    String? promotedParentLayerId,
+    bool promotedIntoParentSlot = false,
+  }) {
+    return TowerLayerSnapshot(
+      id: id,
+      tier: tier,
+      label: label,
+      slots: List<OuterTowerState>.generate(slotCount, (index) {
+        if (index >= source.slots.length) {
+          return OuterTowerState(slotIndex: index);
+        }
+        return _completedShellTowerCopy(source.slots[index], index);
+      }),
+      core: source.core.copyWith(
+        coreStability: _maxCoreStability,
+        flowEfficiency: _maxFlowEfficiency,
+        fireCooldownRemaining: 0,
+        packetCooldownRemaining: 0,
+        automationCooldownRemaining: 0,
+        fireSequence: 0,
+      ),
+      layer2: source.layer2.copyWith(fireCooldownRemaining: 0),
+      enemies: <EnemyState>[],
+      pulses: <EnergyPulseState>[],
+      shots: <CoreShotState>[],
+      impacts: <ImpactState>[],
+      ammoQueue: <AmmoPacket>[],
+      activeEnemyCardIds: List<String>.from(source.activeEnemyCardIds),
+      enemyTargetCount: source.enemyTargetCount,
+      enemyTargetUpgradeLevel: source.enemyTargetUpgradeLevel,
+      outerRingRevealed: source.outerRingRevealed,
+      swarmActivated: source.swarmActivated,
+      elapsed: 0,
+      spawnTimer: 1.0,
+      spawnSequence: 0,
+      enemyCounter: 0,
+      pulseCounter: 0,
+      shotCounter: 0,
+      impactCounter: 0,
+      normalKillsSinceBoss: 0,
+      bossReady: false,
+      childTowerUpgrades: source.childTowerUpgrades
+          .map((upgrade) => upgrade.copyWith())
+          .toList(growable: false),
+      threatAssignmentPresets: List<ThreatAssignmentPresetState>.from(
+        source.threatAssignmentPresets,
+      ),
+      activeBossEnemyCardId: source.activeBossEnemyCardId,
+      selectedThreatAssignmentPresetId: source.selectedThreatAssignmentPresetId,
+      parentLayerId: parentLayerId,
+      parentSlotIndex: parentSlotIndex,
+      sourceLayerId: sourceLayerId,
+      promotedParentLayerId: promotedParentLayerId,
+      promotedIntoParentSlot: promotedIntoParentSlot,
+      promotionTraitRoll: source.promotionTraitRoll,
+    );
+  }
 
   List<CompletedTowerShellState> _liveCompletedTowerShells() {
     final entries = <CompletedTowerShellState>[];
     for (final layer in _layers) {
-      if (layer.tier != 1) {
+      if (!_layerQualifiesForCompletedShell(layer)) {
         continue;
       }
-      for (final tower in layer.slots) {
-        if (!_towerQualifiesForCompletedShell(tower)) {
-          continue;
-        }
-        entries.add(
-          CompletedTowerShellState(
-            id: _liveCompletedShellId(layer.id, tower.slotIndex),
-            sourceLayerId: layer.id,
-            sourceLayerLabel: layer.label,
-            sourceLayerTier: layer.tier,
-            sourceSlotIndex: tower.slotIndex,
-            savedAtMillis: 0,
-            tower: tower,
-            archived: false,
-          ),
-        );
-      }
+      entries.add(
+        CompletedTowerShellState(
+          id: _liveCompletedShellId(layer.id),
+          sourceLayerId: layer.id,
+          sourceLayerLabel: layer.label,
+          sourceLayerTier: layer.tier,
+          sourceSlotIndex: layer.parentSlotIndex,
+          savedAtMillis: 0,
+          layer: layer,
+          archived: false,
+        ),
+      );
     }
     return entries;
   }
@@ -695,26 +773,30 @@ extension LightcoreControllerProgressionLayers on LightcoreController {
     if (shell == null || shell.archived) {
       return false;
     }
+    if (!_layerQualifiesForCompletedShell(shell.layer)) {
+      _showBanner('Only complete Layer 1 sets can be saved.');
+      _notifyNow();
+      return false;
+    }
+    final now = DateTime.now();
+    final archiveId =
+        'shell_${_completedTowerShells.length}_${now.microsecondsSinceEpoch}';
     final saved = CompletedTowerShellState(
-      id: 'shell_${_completedTowerShells.length}_${DateTime.now().microsecondsSinceEpoch}',
+      id: archiveId,
       sourceLayerId: shell.sourceLayerId,
       sourceLayerLabel: shell.sourceLayerLabel,
       sourceLayerTier: shell.sourceLayerTier,
       sourceSlotIndex: shell.sourceSlotIndex,
-      savedAtMillis: DateTime.now().millisecondsSinceEpoch,
-      tower: shell.tower
-          .copyForSlot(shell.sourceSlotIndex)
-          .copyWith(
-            charge: 0,
-            cooldownRemaining: 0,
-            automationCooldownRemaining: 0,
-            disruption: 0,
-            fireSequence: 0,
-            clearEquippedCard: true,
-          ),
+      savedAtMillis: now.millisecondsSinceEpoch,
+      layer: _completedShellLayerCopy(
+        shell.layer,
+        id: 'archive_layer_$archiveId',
+        label: shell.layer.label,
+        tier: shell.layer.tier,
+      ),
     );
     _completedTowerShells.add(saved);
-    _showBanner('${towerDisplayName(shell.tower)} saved to completed shells.');
+    _showBanner('${shell.sourceLabel} saved to completed Layer 1 sets.');
     _notifyNow();
     return true;
   }
@@ -733,37 +815,41 @@ extension LightcoreControllerProgressionLayers on LightcoreController {
     if (archive == null ||
         target == null ||
         !archive.archived ||
-        target.archived) {
+        target.archived ||
+        target.sourceSlotIndex == null) {
       return false;
     }
     final layer = _layerForId(target.sourceLayerId);
-    if (layer == null ||
-        target.sourceSlotIndex < 0 ||
-        target.sourceSlotIndex >= layer.slots.length) {
+    if (layer == null || !_layerQualifiesForCompletedShell(archive.layer)) {
       return false;
     }
 
-    final replacement = archive.tower
-        .copyForSlot(target.sourceSlotIndex)
-        .copyWith(
-          charge: 0,
-          cooldownRemaining: 0,
-          automationCooldownRemaining: 0,
-          disruption: 0,
-          fireSequence: 0,
-          fabricationTotalSeconds: 0,
-          fabricationRemainingSeconds: 0,
-          clearEquippedCard: true,
-        );
-    layer.slots[target.sourceSlotIndex] = replacement;
-    if (layer.id == _activeLayerId) {
-      _slots[target.sourceSlotIndex] = replacement;
-    }
-    _syncParentSlotFromLayer(layer);
-    _updateFlowEfficiency();
-    _showBanner(
-      '${towerDisplayName(archive.tower)} replaced ${target.sourceLabel}.',
+    final replacement = _completedShellLayerCopy(
+      archive.layer,
+      id: layer.id,
+      label: layer.label,
+      tier: layer.tier,
+      parentLayerId: layer.parentLayerId,
+      parentSlotIndex: layer.parentSlotIndex,
+      sourceLayerId: layer.sourceLayerId,
+      promotedParentLayerId: layer.promotedParentLayerId,
+      promotedIntoParentSlot: layer.promotedIntoParentSlot,
     );
+    final layerIndex = _layers.indexWhere((item) => item.id == layer.id);
+    if (layerIndex == -1) {
+      return false;
+    }
+    _layers[layerIndex] = replacement;
+    if (replacement.id == _activeLayerId) {
+      _loadLayer(replacement);
+    }
+    _syncParentSlotFromLayer(replacement);
+    final parentId = replacement.parentLayerId;
+    if (parentId != null && parentId == _activeLayerId) {
+      _slots = _layerById(parentId).slots;
+    }
+    _updateFlowEfficiency();
+    _showBanner('${archive.sourceLabel} replaced ${target.sourceLabel}.');
     _notifyNow();
     return true;
   }
@@ -1271,6 +1357,7 @@ extension LightcoreControllerProgressionLayers on LightcoreController {
     _core = _core.copyWith(
       flowEfficiency: _maxFlowEfficiency,
       fireCooldownRemaining: 0,
+      packetCooldownRemaining: 0,
     );
 
     for (var index = 0; index < slotCount; index += 1) {

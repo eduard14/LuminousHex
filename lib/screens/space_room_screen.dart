@@ -3,9 +3,14 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 
+import '../data/equipment_configs.dart';
+import '../models/lightcore_guide.dart';
+import '../models/lightcore_state.dart';
+import '../models/lightcore_types.dart';
 import '../state/lightcore_controller.dart';
 import '../theme/lightcore_palette.dart';
 import '../widgets/aurora_panel.dart';
+import '../widgets/cosmic_guide_avatar.dart';
 
 class SpaceRoomScreen extends StatefulWidget {
   const SpaceRoomScreen({
@@ -160,10 +165,19 @@ class _SpaceRoomScreenState extends State<SpaceRoomScreen>
       final label = manager
           ? _managerPlaceholders[index % _managerPlaceholders.length]
           : _playerPlaceholders[index % _playerPlaceholders.length];
+      final equipmentSet = EquipmentLibrary
+          .all[(config.seed + index) % EquipmentLibrary.all.length];
       return _SpaceOccupant(
         id: '${config.id}-$index',
         label: label,
         role: manager ? _SpaceOccupantRole.manager : _SpaceOccupantRole.player,
+        guide: _guideForOccupant(index, manager: manager),
+        equipmentLoadout: CosmicEquipmentLoadout.preview(
+          setId: equipmentSet.id,
+          affinity: equipmentSet.affinity,
+          seed: config.seed + index,
+          manager: manager,
+        ),
         tint: _tintForIndex(index, manager: manager),
         position: Offset(
           0.16 + random.nextDouble() * 0.68,
@@ -181,12 +195,35 @@ class _SpaceRoomScreenState extends State<SpaceRoomScreen>
       id: _localPlayerId,
       label: widget.controller.playerDisplayName,
       role: _SpaceOccupantRole.localPlayer,
+      guide: widget.controller.guideProfile,
+      equipmentLoadout: _currentEquipmentLoadout(),
       tint: LightcorePalette.aether,
       position: const Offset(0.5, 0.58),
       velocity: Offset.zero,
       rotation: 0,
       angularVelocity: 0.9,
     );
+  }
+
+  CosmicEquipmentLoadout _currentEquipmentLoadout() {
+    return CosmicEquipmentLoadout.fromItems(<PlayerEquipmentItem?>[
+      for (final slot in EquipmentLoadoutSlot.values)
+        widget.controller.equippedPlayerItemForSlot(slot),
+    ]);
+  }
+
+  static LightcoreGuideProfile _guideForOccupant(
+    int index, {
+    required bool manager,
+  }) {
+    if (manager) {
+      return index.isEven
+          ? LightcoreGuideProfile.luma
+          : LightcoreGuideProfile.lumo;
+    }
+    return index.isEven
+        ? LightcoreGuideProfile.lumo
+        : LightcoreGuideProfile.luma;
   }
 
   static Offset _randomVelocity(math.Random random, double speed) {
@@ -364,6 +401,8 @@ class _SpaceRoomScreenState extends State<SpaceRoomScreen>
     _joinedChannel.occupants.removeWhere((occupant) => occupant.id == local.id);
     local
       ..label = widget.controller.playerDisplayName
+      ..guide = widget.controller.guideProfile
+      ..equipmentLoadout = _currentEquipmentLoadout()
       ..position = Offset(0.34 + _random.nextDouble() * 0.32, 0.44)
       ..velocity = Offset.zero;
     target.occupants.insert(0, local);
@@ -453,7 +492,10 @@ class _SpaceRoomScreenState extends State<SpaceRoomScreen>
 
     final local = _localOccupant;
     if (local != null) {
-      local.label = widget.controller.playerDisplayName;
+      local
+        ..label = widget.controller.playerDisplayName
+        ..guide = widget.controller.guideProfile
+        ..equipmentLoadout = _currentEquipmentLoadout();
     }
 
     return LayoutBuilder(
@@ -619,6 +661,8 @@ class _SpaceOccupant {
     required this.id,
     required this.label,
     required this.role,
+    required this.guide,
+    required this.equipmentLoadout,
     required this.tint,
     required this.position,
     required this.velocity,
@@ -629,6 +673,8 @@ class _SpaceOccupant {
   final String id;
   String label;
   final _SpaceOccupantRole role;
+  LightcoreGuideProfile guide;
+  CosmicEquipmentLoadout equipmentLoadout;
   final Color tint;
   Offset position;
   Offset velocity;
@@ -798,6 +844,14 @@ class _SpaceArenaPanel extends StatelessWidget {
                 ),
               ),
             ),
+            Positioned.fill(
+              child: _SpaceOccupantLayer(
+                channel: channel,
+                phase: phase,
+                boosting: boosting,
+                localPlayerId: _SpaceRoomScreenState._localPlayerId,
+              ),
+            ),
             Positioned(
               left: 12,
               right: 12,
@@ -832,6 +886,130 @@ class _SpaceArenaPanel extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _SpaceOccupantLayer extends StatelessWidget {
+  const _SpaceOccupantLayer({
+    required this.channel,
+    required this.phase,
+    required this.boosting,
+    required this.localPlayerId,
+  });
+
+  final _SpaceChannelRuntime channel;
+  final double phase;
+  final bool boosting;
+  final String localPlayerId;
+
+  @override
+  Widget build(BuildContext context) {
+    return IgnorePointer(
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final size = Size(constraints.maxWidth, constraints.maxHeight);
+          final baseRadius = math.min(size.width, size.height) * 0.045;
+          return Stack(
+            clipBehavior: Clip.none,
+            children: [
+              for (final occupant in channel.occupants)
+                _SpaceOccupantAvatar(
+                  occupant: occupant,
+                  phase: phase,
+                  boosting: boosting && occupant.id == localPlayerId,
+                  baseRadius: baseRadius,
+                  roomSize: size,
+                  local: occupant.id == localPlayerId,
+                ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _SpaceOccupantAvatar extends StatelessWidget {
+  const _SpaceOccupantAvatar({
+    required this.occupant,
+    required this.phase,
+    required this.boosting,
+    required this.baseRadius,
+    required this.roomSize,
+    required this.local,
+  });
+
+  final _SpaceOccupant occupant;
+  final double phase;
+  final bool boosting;
+  final double baseRadius;
+  final Size roomSize;
+  final bool local;
+
+  @override
+  Widget build(BuildContext context) {
+    final center = Offset(
+      occupant.position.dx * roomSize.width,
+      occupant.position.dy * roomSize.height,
+    );
+    final occupantRadius = local ? baseRadius * 1.12 : baseRadius;
+    final avatarSize = occupantRadius * 4.35;
+    final label = local ? 'You' : occupant.label;
+    final labelWidth = local ? 70.0 : 104.0;
+    final labelLeft = (center.dx - labelWidth / 2)
+        .clamp(4.0, math.max(4.0, roomSize.width - labelWidth - 4))
+        .toDouble();
+    final labelTop = (center.dy + avatarSize * 0.36)
+        .clamp(4.0, math.max(4.0, roomSize.height - 26))
+        .toDouble();
+
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        Positioned(
+          left: center.dx - avatarSize / 2,
+          top: center.dy - avatarSize / 2,
+          width: avatarSize,
+          height: avatarSize,
+          child: Transform.rotate(
+            angle: occupant.rotation * 0.08,
+            child: CosmicGuideAvatar(
+              guide: occupant.guide,
+              loadout: occupant.equipmentLoadout,
+              phase: phase + (occupant.id.hashCode * 0.001),
+              boosting: boosting,
+              size: avatarSize,
+              semanticLabel: occupant.label,
+            ),
+          ),
+        ),
+        Positioned(
+          left: labelLeft,
+          top: labelTop,
+          width: labelWidth,
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              color: LightcorePalette.night.withValues(alpha: 0.62),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+              child: Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: LightcorePalette.mist.withValues(alpha: 0.88),
+                  fontSize: local ? 12 : 10.5,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -1189,14 +1367,11 @@ class _OccupantBadge extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              occupant.isManager
-                  ? Icons.manage_accounts_rounded
-                  : local
-                  ? Icons.person_pin_circle_rounded
-                  : Icons.person_rounded,
-              size: 16,
-              color: occupant.tint,
+            CosmicGuideAvatar(
+              guide: occupant.guide,
+              loadout: occupant.equipmentLoadout,
+              size: 22,
+              semanticLabel: label,
             ),
             const SizedBox(width: 6),
             ConstrainedBox(
@@ -1285,7 +1460,13 @@ class _ChatPanel extends StatelessWidget {
                 padding: const EdgeInsets.all(10),
                 itemCount: channel.messages.length,
                 itemBuilder: (context, index) {
-                  return _ChatMessageBubble(message: channel.messages[index]);
+                  final message = channel.messages[index];
+                  return _ChatMessageBubble(
+                    message: message,
+                    author: channel.occupants
+                        .where((occupant) => occupant.id == message.authorId)
+                        .firstOrNull,
+                  );
                 },
               ),
             ),
@@ -1386,9 +1567,10 @@ class _WhisperTargetMenu extends StatelessWidget {
 }
 
 class _ChatMessageBubble extends StatelessWidget {
-  const _ChatMessageBubble({required this.message});
+  const _ChatMessageBubble({required this.message, required this.author});
 
   final _SpaceChatMessage message;
+  final _SpaceOccupant? author;
 
   @override
   Widget build(BuildContext context) {
@@ -1417,15 +1599,23 @@ class _ChatMessageBubble extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  Icon(
-                    message.system
-                        ? Icons.info_rounded
-                        : message.isWhisper
-                        ? Icons.lock_rounded
-                        : Icons.person_rounded,
-                    size: 14,
-                    color: tint,
-                  ),
+                  if (author == null)
+                    Icon(
+                      message.system
+                          ? Icons.info_rounded
+                          : message.isWhisper
+                          ? Icons.lock_rounded
+                          : Icons.person_rounded,
+                      size: 14,
+                      color: tint,
+                    )
+                  else
+                    CosmicGuideAvatar(
+                      guide: author!.guide,
+                      loadout: author!.equipmentLoadout,
+                      size: 18,
+                      semanticLabel: author!.label,
+                    ),
                   const SizedBox(width: 6),
                   Expanded(
                     child: Text(
@@ -1494,7 +1684,7 @@ class _SpaceRoomPainter extends CustomPainter {
     _drawStarfield(canvas, size);
     _drawOrbitLanes(canvas, size);
     for (final occupant in channel.occupants) {
-      _drawOccupant(canvas, size, occupant, radius);
+      _drawOccupantAura(canvas, size, occupant, radius);
     }
   }
 
@@ -1528,7 +1718,7 @@ class _SpaceRoomPainter extends CustomPainter {
     }
   }
 
-  void _drawOccupant(
+  void _drawOccupantAura(
     Canvas canvas,
     Size size,
     _SpaceOccupant occupant,
@@ -1552,81 +1742,19 @@ class _SpaceRoomPainter extends CustomPainter {
       canvas.drawCircle(center, occupantRadius * 2.08, boostPaint);
     }
 
-    canvas.save();
-    canvas.translate(center.dx, center.dy);
-    canvas.rotate(occupant.rotation);
-    final bodyPaint = Paint()
-      ..shader =
-          RadialGradient(
-            colors: [
-              LightcorePalette.mist.withValues(alpha: 0.92),
-              occupant.tint.withValues(alpha: 0.92),
-              LightcorePalette.night.withValues(alpha: 0.82),
-            ],
-          ).createShader(
-            Rect.fromCircle(center: Offset.zero, radius: occupantRadius),
-          );
-    canvas.drawCircle(Offset.zero, occupantRadius, bodyPaint);
-
-    final markerPaint = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2.3
-      ..strokeCap = StrokeCap.round
-      ..color = occupant.isManager
-          ? LightcorePalette.solar
-          : occupant.isLocal
-          ? LightcorePalette.layer2
-          : LightcorePalette.mist;
-    canvas.drawArc(
-      Rect.fromCircle(center: Offset.zero, radius: occupantRadius * 1.18),
-      -math.pi / 2,
-      occupant.isManager ? math.pi * 1.45 : math.pi * 0.92,
-      false,
-      markerPaint,
-    );
-    canvas.restore();
-
-    _drawOccupantLabel(canvas, center, occupant, occupantRadius);
-  }
-
-  void _drawOccupantLabel(
-    Canvas canvas,
-    Offset center,
-    _SpaceOccupant occupant,
-    double occupantRadius,
-  ) {
-    final label = occupant.isLocal ? 'You' : occupant.label;
-    final painter = TextPainter(
-      text: TextSpan(
-        text: label,
-        style: TextStyle(
-          color: LightcorePalette.mist.withValues(alpha: 0.88),
-          fontSize: occupant.isLocal ? 12 : 10.5,
-          fontWeight: FontWeight.w800,
-        ),
-      ),
-      maxLines: 1,
-      textDirection: TextDirection.ltr,
-      ellipsis: '...',
-    )..layout(maxWidth: 92);
-    final labelOffset = Offset(
-      center.dx - painter.width / 2,
-      center.dy + occupantRadius + 6,
-    );
-    final bg = RRect.fromRectAndRadius(
-      Rect.fromLTWH(
-        labelOffset.dx - 5,
-        labelOffset.dy - 2,
-        painter.width + 10,
-        painter.height + 4,
-      ),
-      const Radius.circular(8),
-    );
-    canvas.drawRRect(
-      bg,
-      Paint()..color = LightcorePalette.night.withValues(alpha: 0.52),
-    );
-    painter.paint(canvas, labelOffset);
+    if (occupant.velocity.distance > 0.02) {
+      final direction = occupant.velocity / occupant.velocity.distance;
+      final trailPaint = Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = occupantRadius * 0.18
+        ..strokeCap = StrokeCap.round
+        ..color = occupant.tint.withValues(alpha: 0.34);
+      canvas.drawLine(
+        center - (direction * occupantRadius * 2.6),
+        center - (direction * occupantRadius * 1.15),
+        trailPaint,
+      );
+    }
   }
 
   @override

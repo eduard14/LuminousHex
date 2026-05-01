@@ -286,6 +286,89 @@ extension LightcoreControllerRewardsSocial on LightcoreController {
     );
   }
 
+  LightcoreDailyDungeonTowerProfile dailyDungeonBattleTowerProfileForLevel(
+    int towerLevel,
+  ) {
+    final baseProfile = dailyDungeonTowerProfileForLevel(towerLevel);
+    final sourceTower = _highestLayerDungeonTower();
+    if (sourceTower == null) {
+      return baseProfile;
+    }
+    final projectileType = towerProjectileType(sourceTower);
+    final payloadType = towerPayloadType(sourceTower);
+    final config =
+        sourceTower.config ??
+        _sourceTowerConfigForAffinity(projectileType.affinity);
+    final displayLevel = sourceTower.config != null
+        ? sourceTower.level
+        : sourceTower.childCoreLevel ?? baseProfile.displayLevel;
+    final layerLabel = sourceTower.childLayerName?.trim();
+    final title = layerLabel != null && layerLabel.isNotEmpty
+        ? layerLabel
+        : towerDisplayName(sourceTower);
+    return LightcoreDailyDungeonTowerProfile(
+      towerLevel: baseProfile.towerLevel,
+      config: config,
+      displayLevel: baseProfile.displayLevel,
+      maxHealth: baseProfile.maxHealth,
+      shotDamage: baseProfile.shotDamage,
+      chargeRate: baseProfile.chargeRate,
+      cooldownSeconds: baseProfile.cooldownSeconds,
+      battleTitle: title,
+      battleAffinity:
+          sourceTower.childAffinity ??
+          sourceTower.config?.affinity ??
+          projectileType.affinity,
+      battleProjectileType: projectileType,
+      battlePayloadType: payloadType,
+      battleDisplayLevel: displayLevel.clamp(1, maxTowerLevel).toInt(),
+    );
+  }
+
+  OuterTowerState? _highestLayerDungeonTower() {
+    final candidates = <({TowerLayerSnapshot layer, OuterTowerState tower})>[];
+    for (final layer in _layers) {
+      for (final tower in layer.slots) {
+        if (_slotCountsTowardRing(tower)) {
+          candidates.add((layer: layer, tower: tower));
+        }
+      }
+    }
+    if (candidates.isEmpty) {
+      return null;
+    }
+    candidates.sort((left, right) {
+      final tierCompare = right.layer.tier.compareTo(left.layer.tier);
+      if (tierCompare != 0) {
+        return tierCompare;
+      }
+      final levelCompare = _dungeonTowerRank(
+        right.tower,
+      ).compareTo(_dungeonTowerRank(left.tower));
+      if (levelCompare != 0) {
+        return levelCompare;
+      }
+      return left.tower.slotIndex.compareTo(right.tower.slotIndex);
+    });
+    return candidates.first.tower;
+  }
+
+  double _dungeonTowerRank(OuterTowerState tower) {
+    final level = tower.config != null
+        ? tower.level
+        : tower.childCoreLevel ?? 1;
+    final power = tower.config?.basePower ?? tower.childPowerUpgradeBonus + 10;
+    final childBuilt = tower.childBuiltCount * 0.35;
+    return level + power + childBuilt;
+  }
+
+  TowerConfig _sourceTowerConfigForAffinity(PrototypeAffinity affinity) {
+    return TowerLibrary.all.firstWhere(
+      (config) => config.affinity == affinity,
+      orElse: () => TowerLibrary.whitePrism,
+    );
+  }
+
   bool _managerAssignmentUnlockedForLayer(TowerLayerSnapshot layer) =>
       _towerCoreManagerForLayer(layer) != null ||
       _managerCoreLevelUnlockedForLayer(layer) ||

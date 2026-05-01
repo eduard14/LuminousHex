@@ -572,6 +572,12 @@ function createPlayerSaveHelpers({ db, logger, HttpsError, constants, helpers })
     }
   }
 
+  function buildAuthoritativeIdleSnapshot({ clientSnapshot, savePayload }) {
+    const normalizedSavePayload = normalizeObject(savePayload);
+    rejectImplausibleSnapshotRates(clientSnapshot, normalizedSavePayload);
+    return buildIdleSnapshotFromSavePayload(normalizedSavePayload);
+  }
+
   function rejectImplausibleSaveDelta({
     previousPayload,
     nextPayload,
@@ -1541,6 +1547,7 @@ function createPlayerSaveHelpers({ db, logger, HttpsError, constants, helpers })
     rejectInvalidRawSavePayload,
     rejectImplausibleSnapshotRates,
     rejectImplausibleSaveDelta,
+    buildAuthoritativeIdleSnapshot,
     buildIdleSnapshotFromSavePayload,
     buildSaveIntegritySummary,
     sanitizePlayerSavePayload,

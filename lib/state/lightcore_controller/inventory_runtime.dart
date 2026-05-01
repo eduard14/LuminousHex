@@ -692,10 +692,8 @@ extension LightcoreControllerInventoryRuntime on LightcoreController {
     TowerLayerSnapshot layer,
   ) {
     final built = layer.slots.where(_slotCountsTowardRing).toList();
-    if (built.isEmpty) {
-      return <PrototypeAffinity, int>{layer.core.affinity: 1};
-    }
     final counts = <PrototypeAffinity, int>{};
+    _addCoreProjectileAffinityWeights(layer, counts);
     for (final tower in built) {
       if (_towerHasRainbowLoadout(tower)) {
         for (final affinity in chromaticTowerAffinities) {
@@ -714,6 +712,9 @@ extension LightcoreControllerInventoryRuntime on LightcoreController {
         ifAbsent: () => _effectiveTowerLevel(tower),
       );
     }
+    if (counts.isEmpty) {
+      counts[layer.core.affinity] = 1;
+    }
     return counts;
   }
 
@@ -721,12 +722,8 @@ extension LightcoreControllerInventoryRuntime on LightcoreController {
     TowerLayerSnapshot layer,
   ) {
     final built = layer.slots.where(_slotCountsTowardRing).toList();
-    if (built.isEmpty) {
-      return <PrototypeAffinity, int>{
-        layer.core.secondaryAffinity ?? layer.core.affinity: 1,
-      };
-    }
     final counts = <PrototypeAffinity, int>{};
+    _addCorePayloadAffinityWeights(layer, counts);
     for (final tower in built) {
       if (_towerHasRainbowLoadout(tower)) {
         for (final affinity in chromaticTowerAffinities) {
@@ -745,7 +742,52 @@ extension LightcoreControllerInventoryRuntime on LightcoreController {
         ifAbsent: () => _effectiveTowerLevel(tower),
       );
     }
+    if (counts.isEmpty) {
+      counts[layer.core.secondaryAffinity ?? layer.core.affinity] = 1;
+    }
     return counts;
+  }
+
+  void _addCoreProjectileAffinityWeights(
+    TowerLayerSnapshot layer,
+    Map<PrototypeAffinity, int> counts,
+  ) {
+    final weight = max(1, layer.core.level);
+    final loadout = layer.core.projectileLoadout.isNotEmpty
+        ? layer.core.projectileLoadout
+        : <ProjectileType>[layer.core.projectileType];
+    final affinities = loadout.map((type) => type.affinity).toSet();
+    for (final affinity in affinities) {
+      counts.update(
+        affinity,
+        (value) => value + weight,
+        ifAbsent: () => weight,
+      );
+    }
+  }
+
+  void _addCorePayloadAffinityWeights(
+    TowerLayerSnapshot layer,
+    Map<PrototypeAffinity, int> counts,
+  ) {
+    final weight = max(1, layer.core.level);
+    final loadout = layer.core.payloadLoadout.isNotEmpty
+        ? layer.core.payloadLoadout
+        : <PayloadType>[layer.core.payloadType];
+    final affinities = loadout
+        .map((type) => type.affinity)
+        .whereType<PrototypeAffinity>()
+        .toSet();
+    if (affinities.isEmpty) {
+      affinities.add(layer.core.secondaryAffinity ?? layer.core.affinity);
+    }
+    for (final affinity in affinities) {
+      counts.update(
+        affinity,
+        (value) => value + weight,
+        ifAbsent: () => weight,
+      );
+    }
   }
 
   bool _layerCanRollRainbowTower(
@@ -1121,7 +1163,7 @@ extension LightcoreControllerInventoryRuntime on LightcoreController {
     _cards.add(
       InventoryCard(
         instanceId: 'tutorial_starter_manager',
-        config: CardLibrary.quickRelay,
+        config: CardLibrary.yellaNova,
         rarity: ManagerRarity.common,
         forgeCost: 0,
         powerMultiplier: 1,

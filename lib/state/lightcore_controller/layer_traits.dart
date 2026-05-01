@@ -117,11 +117,14 @@ extension LightcoreControllerLayerTraits on LightcoreController {
       return false;
     }
     return tower.fireSequence >= 3 &&
-        enemyPullCount >= 1 &&
+        tower.level >= 3 &&
+        enemyPullCount >= 2 &&
         _tutorialFirstTowerStatsOpened &&
         _tutorialStabilityPanelOpened &&
         _tutorialTowerManagerAssigned &&
         _tutorialAutoQueuedPulses >= 5 &&
+        _tutorialFirstEnemyTargetSet &&
+        _tutorialEnemyCountAdjusted &&
         (totalRadianceStatPointsSpent > 0 || _core.rangeUpgradeLevel > 0);
   }
 
@@ -144,6 +147,10 @@ extension LightcoreControllerLayerTraits on LightcoreController {
     final coreRange = coreEffectiveRange;
     return _enemies.any((enemy) => enemy.radius <= coreRange);
   }
+
+  bool get _ownsBasicRedEnemy => _enemyCards.any(
+    (card) => card.config.id == EnemyLibrary.basicRed.id && card.isOwned,
+  );
 
   bool get _hasAssignedTowerManagerOnActiveLayer =>
       _towerCoreManagerForLayer(activeLayer) != null;
@@ -273,12 +280,36 @@ extension LightcoreControllerLayerTraits on LightcoreController {
     if (!_tutorialStabilityPanelOpened) {
       return LightcoreTutorialStep.readEffectiveGain;
     }
+    final firstTowerUpgradeCost = upgradeCost(firstTower);
+    if (firstTower.level < 3 &&
+        firstTowerUpgradeCost > 0 &&
+        lumens >= firstTowerUpgradeCost) {
+      return LightcoreTutorialStep.upgradeFirstTowerToLevel3;
+    }
     if (!_tutorialTowerManagerAssigned) {
       _ensureStarterCoreManagerForTutorial();
       return LightcoreTutorialStep.assignTowerManager;
     }
     if (_tutorialAutoQueuedPulses < 5) {
       return LightcoreTutorialStep.autoQueueCheck;
+    }
+    final nextFirstTowerUpgradeCost = upgradeCost(firstTower);
+    if (firstTower.level < 4 &&
+        firstTower.level >= 3 &&
+        nextFirstTowerUpgradeCost > 0 &&
+        lumens >= nextFirstTowerUpgradeCost) {
+      return LightcoreTutorialStep.upgradeFirstTowerToLevel4;
+    }
+    if (enemyPullCount < 2) {
+      return canOpenEnemyTickets
+          ? LightcoreTutorialStep.pullFirstRedEnemy
+          : null;
+    }
+    if (_ownsBasicRedEnemy && !_tutorialFirstEnemyTargetSet) {
+      return LightcoreTutorialStep.setFirstEnemyTarget;
+    }
+    if (_ownsBasicRedEnemy && !_tutorialEnemyCountAdjusted) {
+      return LightcoreTutorialStep.adjustEnemyCount;
     }
     if (totalRadianceStatPointsSpent == 0) {
       return hasUnspentRadianceStatPoints
@@ -495,7 +526,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
       LightcoreTutorialStep.selectFirstHex => 0,
       LightcoreTutorialStep.buildFirstRedTower => 0,
       LightcoreTutorialStep.tapBattleCore => 36,
-      LightcoreTutorialStep.tapFirstTower => 0,
+      LightcoreTutorialStep.tapFirstTower => 48,
       LightcoreTutorialStep.tapSecondShellTower => 42,
       LightcoreTutorialStep.upgradeFirstTowerToLevel3 => 48,
       LightcoreTutorialStep.readEffectiveGain => 40,
@@ -555,11 +586,51 @@ extension LightcoreControllerLayerTraits on LightcoreController {
       if (scansGranted > 0)
         LightcoreCurrencyLabels.rewardThreatScans(scansGranted),
     ];
+    final outcome = _tutorialCompletionOutcome(step);
     if (parts.isEmpty) {
-      return null;
+      return outcome;
     }
-    return 'Guide quest complete: ${parts.join(', ')}.';
+    if (outcome == null) {
+      return 'Guide quest complete: ${parts.join(', ')}.';
+    }
+    return '$outcome Reward: ${parts.join(', ')}.';
   }
+
+  String? _tutorialCompletionOutcome(
+    LightcoreTutorialStep step,
+  ) => switch (step) {
+    LightcoreTutorialStep.unfoldShell =>
+      'Core online. The shell can now open lanes and start earning.',
+    LightcoreTutorialStep.buildFirstRedTower =>
+      'Red Prism online. It will charge, then feed packets into the core queue.',
+    LightcoreTutorialStep.inspectFirstTowerStats =>
+      'Stats mapped. Use power, charge, cooldown, automation, and load to decide what to tune next.',
+    LightcoreTutorialStep.tapBattleCore =>
+      'Emergency core shot fired. Use it when an anomaly reaches core range.',
+    LightcoreTutorialStep.tapFirstTower =>
+      'Queue lesson complete. Towers feed packets; the core spends packets as shots.',
+    LightcoreTutorialStep.upgradeFirstTowerToLevel3 =>
+      'Anchor tower tuned. Higher tower levels make every queued packet hit harder.',
+    LightcoreTutorialStep.pullFirstWhiteEnemy =>
+      'Safe signature added. Threat Scans shape the encounter, not your tower roster.',
+    LightcoreTutorialStep.readEffectiveGain =>
+      'Flow mapped. Better threats only matter when Output Efficiency stays healthy.',
+    LightcoreTutorialStep.assignTowerManager =>
+      'Manager assigned. Ready tower taps can now happen automatically.',
+    LightcoreTutorialStep.autoQueueCheck =>
+      'Automation verified. The queue keeps moving even when you stop tapping.',
+    LightcoreTutorialStep.upgradeFirstTowerToLevel4 =>
+      'Opening lane reinforced. Strong anchors handle denser pressure better.',
+    LightcoreTutorialStep.pullFirstRedEnemy =>
+      'Red signature added. Same-color resistance is why mixed colors matter.',
+    LightcoreTutorialStep.setFirstEnemyTarget =>
+      'Threat focus set. Pressure tuning now has a clear target context.',
+    LightcoreTutorialStep.adjustEnemyCount =>
+      'Swarm Pressure tuned. Higher pressure can pay more, but watch Output Efficiency.',
+    LightcoreTutorialStep.upgradeCoreRange =>
+      'Global stat assigned. Account upgrades make every shell easier to grow.',
+    _ => null,
+  };
 
   List<EnemyCardState> _createEnemyCardInventory() {
     return <EnemyCardState>[
@@ -1378,7 +1449,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         LightcoreTutorialStep.adjustEnemyCount =>
           'Click Anomalies and move the Swarm Pressure slider above the low setting.',
         LightcoreTutorialStep.openTowerMatrix =>
-          'Click Towers to inspect completed shells and Layer 2 shell tools.',
+          'Click Towers to inspect completed Layer 1 sets and Layer 2 shell tools.',
         LightcoreTutorialStep.upgradeCoreRange =>
           'Open Main Manager and add one Global Attribute point.',
         LightcoreTutorialStep.openStore =>
@@ -1457,7 +1528,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         LightcoreTutorialStep.adjustEnemyCount =>
           'Anomaly count controls live pressure. More active anomalies can pay faster, but crowded lanes slow Output Efficiency if your towers cannot keep up.',
         LightcoreTutorialStep.openTowerMatrix =>
-          'The tower archive stores completed shells and unlocks once the Prism Shell is online.',
+          'The tower archive stores completed Layer 1 sets and unlocks once the Prism Shell is online.',
         LightcoreTutorialStep.upgradeCoreRange =>
           'Global Attributes are permanent account upgrades earned from Account Radiance levels.',
         LightcoreTutorialStep.openStore =>
@@ -1493,11 +1564,11 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         LightcoreTutorialStep.openMentors =>
           'Mentorship keeps your single mentor and all mentees in one relay board.',
         LightcoreTutorialStep.inspectEnemyBlitz =>
-          'Anomaly Blitz compresses the survival economy. You draft a few anomalies, survive fast waves, and reinvest between rounds.',
+          'Anomaly Blitz stays open for testing, but the survival session is weekend-length. Draft anomalies, keep upgrading, and improve your best wave before reset.',
         LightcoreTutorialStep.inspectHexGauntlet =>
           'Hex Gauntlet is the shell stress test. It mirrors your live tower build and asks how deep that exact layout can climb.',
         LightcoreTutorialStep.inspectArenaFlow =>
-          'Arena Flow is the shortest format. Shared tower throughput, anomaly pressure, and apex choice decide the score ceiling.',
+          'Arena Flow is the shortest format. Your highest-layer Home Tower trades enemy waves with a rival tower, and damage dealt minus damage taken decides the score.',
       };
 
   String? get tutorialStoryBeat => tutorialQuestDefinition == null
@@ -1576,7 +1647,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
           LightcoreTutorialStep.inspectHexGauntlet =>
             'Hex Gauntlet is where command measures how well a real shell layout survives sustained weekly pressure.',
           LightcoreTutorialStep.inspectArenaFlow =>
-            'Arena Flow is the public duel format. Once you understand it, every tournament type in the Nexus has been introduced.',
+            'Arena Flow is the public duel format for highest-layer Home Towers. Once you understand it, every tournament type in the Nexus has been introduced.',
         }
       : null;
 

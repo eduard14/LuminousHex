@@ -1,5 +1,8 @@
 import 'dart:math' as math;
 
+import '../data/enemy_configs.dart';
+import '../data/tower_configs.dart';
+import 'lightcore_config.dart';
 import 'lightcore_types.dart';
 
 class HexTournamentCell {
@@ -24,10 +27,12 @@ class HexTournamentTower {
     required this.cellId,
     required this.q,
     required this.r,
+    required this.config,
     required this.affinity,
     required this.projectileType,
     required this.candidatePayload,
     required this.candidateImpactProjectile,
+    required this.weeklyFocus,
     this.payloadType = PayloadType.none,
     this.impactProjectileType,
     this.targetPriority = TargetPriority.close,
@@ -39,23 +44,32 @@ class HexTournamentTower {
   final String cellId;
   final int q;
   final int r;
+  final TowerConfig config;
   final PrototypeAffinity affinity;
   final ProjectileType projectileType;
   final PayloadType payloadType;
   final PayloadType candidatePayload;
   final ProjectileType? impactProjectileType;
   final ProjectileType candidateImpactProjectile;
+  final bool weeklyFocus;
   final TargetPriority targetPriority;
   final double cooldownRemaining;
   final int mergeStage;
 
   bool get hasPayload => payloadType != PayloadType.none;
   bool get hasImpactProjectile => impactProjectileType != null;
-  double get range => 2.24 + (mergeStage * 0.18);
+  double get focusDamageMultiplier => weeklyFocus ? 1.16 : 1.0;
+  double get range => 1.82 + (config.baseRange / 760) + (mergeStage * 0.2);
   double get damage =>
-      32 + (hasPayload ? 9 : 0) + (hasImpactProjectile ? 7 : 0);
+      (18 +
+          (config.basePower * 1.25) +
+          (hasPayload ? 9 : 0) +
+          (hasImpactProjectile ? 7 : 0)) *
+      focusDamageMultiplier;
   double get cooldownSeconds =>
-      (0.88 - (mergeStage * 0.05)).clamp(0.66, 0.88).toDouble();
+      (config.baseCooldown * (0.62 - (mergeStage * 0.04)))
+          .clamp(0.56, 1.08)
+          .toDouble();
 
   HexTournamentTower copyWith({
     PayloadType? payloadType,
@@ -69,10 +83,12 @@ class HexTournamentTower {
       cellId: cellId,
       q: q,
       r: r,
+      config: config,
       affinity: affinity,
       projectileType: projectileType,
       candidatePayload: candidatePayload,
       candidateImpactProjectile: candidateImpactProjectile,
+      weeklyFocus: weeklyFocus,
       payloadType: payloadType ?? this.payloadType,
       impactProjectileType: impactProjectileType ?? this.impactProjectileType,
       targetPriority: targetPriority ?? this.targetPriority,
@@ -87,6 +103,7 @@ class HexTournamentEnemy {
     required this.id,
     required this.wave,
     required this.tier,
+    required this.config,
     required this.affinity,
     required this.progress,
     required this.health,
@@ -100,6 +117,7 @@ class HexTournamentEnemy {
   final String id;
   final int wave;
   final int tier;
+  final EnemyConfig config;
   final PrototypeAffinity affinity;
   final double progress;
   final double health;
@@ -116,6 +134,7 @@ class HexTournamentEnemy {
       id: id,
       wave: wave,
       tier: tier,
+      config: config,
       affinity: affinity,
       progress: progress ?? this.progress,
       health: health ?? this.health,
@@ -165,6 +184,7 @@ class HexTournamentSnapshot {
     required this.cells,
     required this.pathCells,
     required this.focusAffinities,
+    required this.towerChoices,
     required this.towers,
     required this.enemies,
     required this.shots,
@@ -183,11 +203,14 @@ class HexTournamentSnapshot {
     required this.buildCost,
     required this.enemyTierCost,
     required this.mergeCandidateCount,
+    required this.flawlessStreak,
+    required this.waveLeakDamage,
   });
 
   final List<HexTournamentCell> cells;
   final List<HexTournamentCell> pathCells;
   final List<PrototypeAffinity> focusAffinities;
+  final List<TowerConfig> towerChoices;
   final List<HexTournamentTower> towers;
   final List<HexTournamentEnemy> enemies;
   final List<HexTournamentShotTrace> shots;
@@ -206,6 +229,8 @@ class HexTournamentSnapshot {
   final int buildCost;
   final int enemyTierCost;
   final int mergeCandidateCount;
+  final int flawlessStreak;
+  final int waveLeakDamage;
 
   HexTournamentTower? get selectedTower {
     final cellId = selectedCellId;
@@ -298,6 +323,8 @@ class HexTournamentRunController {
   int _towerCounter = 0;
   int _enemyCounter = 0;
   int _shotCounter = 0;
+  int _flawlessStreak = 0;
+  int _waveLeakDamage = 0;
   bool _running = false;
   bool _paused = false;
   bool _waveInProgress = false;
@@ -322,6 +349,7 @@ class HexTournamentRunController {
       cells: List<HexTournamentCell>.unmodifiable(_cells),
       pathCells: List<HexTournamentCell>.unmodifiable(_pathCells),
       focusAffinities: focusAffinities,
+      towerChoices: List<TowerConfig>.unmodifiable(TowerLibrary.all),
       towers: List<HexTournamentTower>.unmodifiable(_towers.values),
       enemies: List<HexTournamentEnemy>.unmodifiable(_enemies),
       shots: List<HexTournamentShotTrace>.unmodifiable(_shots),
@@ -340,6 +368,8 @@ class HexTournamentRunController {
       buildCost: buildCost,
       enemyTierCost: enemyTierCost,
       mergeCandidateCount: _selectedMergeCandidates().length,
+      flawlessStreak: _flawlessStreak,
+      waveLeakDamage: _waveLeakDamage,
     );
   }
 
@@ -411,16 +441,15 @@ class HexTournamentRunController {
     }
 
     _selectedCellId = cellId;
-    if (_running && !_paused && _currency >= buildCost) {
-      return placeTower(cellId);
-    }
     _statusLabel = _running
-        ? 'Need $buildCost event currency for another tower.'
+        ? _currency >= buildCost
+              ? 'Open hex selected. Choose a tower to build.'
+              : 'Need $buildCost event currency for another tower.'
         : 'Open hex selected.';
     return false;
   }
 
-  bool placeTower(String cellId) {
+  bool placeTower(String cellId, {TowerConfig? config}) {
     final cell = _cellById(cellId);
     if (!_running || _paused || cell == null || !cell.canBuild) {
       return false;
@@ -428,21 +457,32 @@ class HexTournamentRunController {
     if (_towers.containsKey(cellId) || _currency < buildCost) {
       return false;
     }
+    final selectedConfig =
+        config ?? TowerLibrary.all[_random.nextInt(TowerLibrary.all.length)];
+    final available = TowerLibrary.all.any(
+      (candidate) => candidate.id == selectedConfig.id,
+    );
+    if (!available) {
+      return false;
+    }
     _currency -= buildCost;
-    final affinity = _focusAffinities[_random.nextInt(_focusAffinities.length)];
     final tower = HexTournamentTower(
       id: 'hex_tower_${_towerCounter++}',
       cellId: cellId,
       q: cell.q,
       r: cell.r,
-      affinity: affinity,
-      projectileType: _baseProjectileFor(affinity),
-      candidatePayload: _rollPayloadFor(affinity),
-      candidateImpactProjectile: _rollImpactProjectileFor(affinity),
+      config: selectedConfig,
+      affinity: selectedConfig.affinity,
+      projectileType: selectedConfig.defaultProjectileType,
+      candidatePayload: _rollPayloadFor(selectedConfig.affinity),
+      candidateImpactProjectile: _rollImpactProjectileFor(
+        selectedConfig.affinity,
+      ),
+      weeklyFocus: _focusAffinities.contains(selectedConfig.affinity),
     );
     _towers[cellId] = tower;
     _selectedCellId = cellId;
-    _statusLabel = 'Tower placed.';
+    _statusLabel = '${selectedConfig.name} placed.';
     return true;
   }
 
@@ -537,6 +577,7 @@ class HexTournamentRunController {
     }
     _wave += 1;
     _waveInProgress = true;
+    _waveLeakDamage = 0;
     final count = math.min(18, 4 + _wave + _enemyTier);
     for (var index = 0; index < count; index += 1) {
       _enemies.add(_createEnemy(index));
@@ -555,7 +596,6 @@ class HexTournamentRunController {
     }
     _currency -= enemyTierCost;
     _enemyTier += 1;
-    _score += 20 + (_enemyTier * 6);
     _statusLabel = 'Enemy tier increased. Future kills score higher.';
     return true;
   }
@@ -584,10 +624,19 @@ class HexTournamentRunController {
     _advanceTowers(clamped);
     if (_waveInProgress && _enemies.isEmpty && !_defeated) {
       _waveInProgress = false;
+      final flawless = _waveLeakDamage == 0;
+      _flawlessStreak = flawless ? _flawlessStreak + 1 : 0;
+      final focusTowerCount = _towers.values
+          .where((tower) => tower.weeklyFocus)
+          .length;
+      final flawlessBonus = flawless ? 16 + (_flawlessStreak * 8) : 0;
+      final focusBonus = focusTowerCount * 4;
       final clearBonus = 18 + (_wave * 4) + (_enemyTier * 3);
-      _currency += clearBonus;
-      _score += clearBonus * 2;
-      _statusLabel = 'Wave $_wave cleared.';
+      _currency += clearBonus + flawlessBonus + focusBonus;
+      _score += (clearBonus * 2) + (flawlessBonus * 4) + (focusBonus * 3);
+      _statusLabel = flawless
+          ? 'Wave $_wave flawless. Streak x$_flawlessStreak.'
+          : 'Wave $_wave cleared after $_waveLeakDamage core damage.';
     }
   }
 
@@ -613,6 +662,8 @@ class HexTournamentRunController {
     _towerCounter = 0;
     _enemyCounter = 0;
     _shotCounter = 0;
+    _flawlessStreak = 0;
+    _waveLeakDamage = 0;
     _running = running;
     _paused = false;
     _waveInProgress = false;
@@ -665,6 +716,7 @@ class HexTournamentRunController {
 
   bool _canMerge(HexTournamentTower left, HexTournamentTower right) {
     return left.cellId != right.cellId &&
+        left.config.id == right.config.id &&
         left.mergeStage == right.mergeStage &&
         left.mergeStage < 2;
   }
@@ -673,6 +725,19 @@ class HexTournamentRunController {
     final focus =
         _focusAffinities[(_wave + _enemyTier + waveIndex) %
             _focusAffinities.length];
+    final rarity =
+        EnemyCardRarity.values[math.min(
+          EnemyCardRarity.values.length - 1,
+          (_enemyTier - 1) ~/ 2,
+        )];
+    final config = EnemyLibrary.all.firstWhere(
+      (entry) =>
+          !entry.isBoss && entry.affinity == focus && entry.rarity == rarity,
+      orElse: () => EnemyLibrary.all.firstWhere(
+        (entry) => !entry.isBoss && entry.affinity == focus,
+        orElse: () => EnemyLibrary.basicWhite,
+      ),
+    );
     final health =
         44 +
         (_wave * 18) +
@@ -685,6 +750,7 @@ class HexTournamentRunController {
       id: 'hex_enemy_${_enemyCounter++}',
       wave: _wave,
       tier: _enemyTier,
+      config: config,
       affinity: focus,
       progress: -waveIndex * 0.24,
       health: health.toDouble(),
@@ -712,6 +778,8 @@ class HexTournamentRunController {
       ..clear()
       ..addAll(survivors);
     if (leakedDamage > 0) {
+      _waveLeakDamage += leakedDamage;
+      _flawlessStreak = 0;
       _health = math.max(0, _health - leakedDamage);
       _statusLabel = 'Core took $leakedDamage damage.';
       if (_health <= 0) {
@@ -890,19 +958,6 @@ class HexTournamentRunController {
     return ((q1 - q2).abs() + (r1 - r2).abs() + (s1 - s2).abs()) / 2;
   }
 
-  ProjectileType _baseProjectileFor(PrototypeAffinity affinity) {
-    return switch (affinity) {
-      PrototypeAffinity.ember => ProjectileType.coreBomb,
-      PrototypeAffinity.flare => ProjectileType.heavyShot,
-      PrototypeAffinity.solar => ProjectileType.chainArc,
-      PrototypeAffinity.verdant => ProjectileType.shieldHalo,
-      PrototypeAffinity.aether => ProjectileType.threadBeam,
-      PrototypeAffinity.violet => ProjectileType.pulseRing,
-      PrototypeAffinity.neutral ||
-      PrototypeAffinity.black => ProjectileType.starBolt,
-    };
-  }
-
   PayloadType _rollPayloadFor(PrototypeAffinity affinity) {
     final pool = switch (affinity) {
       PrototypeAffinity.ember => const <PayloadType>[
@@ -930,7 +985,7 @@ class HexTournamentRunController {
         PayloadType.pull,
       ],
       PrototypeAffinity.neutral || PrototypeAffinity.black =>
-        const <PayloadType>[PayloadType.expose, PayloadType.chill],
+        const <PayloadType>[PayloadType.precision, PayloadType.doubleTap],
     };
     return pool[_random.nextInt(pool.length)];
   }
@@ -961,8 +1016,11 @@ class HexTournamentRunController {
         ProjectileType.echoRing,
         ProjectileType.collapseRing,
       ],
-      PrototypeAffinity.neutral || PrototypeAffinity.black =>
-        const <ProjectileType>[ProjectileType.starBolt, ProjectileType.arcNode],
+      PrototypeAffinity.neutral ||
+      PrototypeAffinity.black => const <ProjectileType>[
+        ProjectileType.rapidBolt,
+        ProjectileType.twinBolt,
+      ],
     };
     return pool[_random.nextInt(pool.length)];
   }

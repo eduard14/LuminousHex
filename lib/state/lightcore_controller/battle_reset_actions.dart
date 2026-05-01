@@ -34,6 +34,7 @@ extension LightcoreControllerBattleResetActions on LightcoreController {
     _core = _core.copyWith(
       flowEfficiency: _maxFlowEfficiency,
       fireCooldownRemaining: 0,
+      packetCooldownRemaining: 0,
     );
     _layer2 = _layer2.copyWith(fireCooldownRemaining: 0);
     _slots = _slots

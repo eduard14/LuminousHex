@@ -8,6 +8,7 @@ import '../models/lightcore_guide.dart';
 import '../models/lightcore_social_invite_link.dart';
 import '../screens/lightcore_main_menu_screen.dart';
 import '../screens/lightcore_shell.dart';
+import '../services/lightcore_audio.dart';
 import '../services/lightcore_firebase_backend.dart';
 import '../services/lightcore_firebase_runtime_config.dart';
 import '../services/lightcore_session_store.dart';
@@ -19,6 +20,7 @@ import '../widgets/lightcore_loading_screen.dart';
 import '../widgets/lightcore_screen_transition.dart';
 import 'lightcore_build_info.dart';
 import 'lightcore_bootstrap.dart';
+import 'lightcore_dev_flags.dart';
 
 class LightcoreApp extends StatefulWidget {
   const LightcoreApp({super.key, this.backend});
@@ -77,11 +79,7 @@ class _LightcoreAppState extends State<LightcoreApp>
   String? _sessionNotice;
 
   static bool get _localhostAutoTapperEnabled {
-    if (!kIsWeb) {
-      return false;
-    }
-    final host = Uri.base.host.toLowerCase();
-    return host == 'localhost' || host == '127.0.0.1' || host == '::1';
+    return shouldEnableLocalhostAutoTapper(isWeb: kIsWeb, uri: Uri.base);
   }
 
   static int? get _devLayerOverride {
@@ -125,6 +123,7 @@ class _LightcoreAppState extends State<LightcoreApp>
     _serverSyncTimer?.cancel();
     _socialOverviewTimer?.cancel();
     unawaited(_runServerSync(forceCloudSave: true));
+    unawaited(LightcoreAudio.instance.dispose());
     _observedController?.removeListener(_handleControllerChanged);
     _controller?.dispose();
     super.dispose();
@@ -194,6 +193,8 @@ class _LightcoreAppState extends State<LightcoreApp>
     var guestSession = _guestSession;
     LightcoreGuideProfile? guideProfile = _guideProfile;
     var skipGuestSignInPrompt = _skipGuestSignInPrompt;
+    var musicEnabled = true;
+    var soundEffectsEnabled = true;
     var graphicsQuality = _graphicsQuality;
     try {
       final persistedPlayerId = await _sessionStore.readPlayerId();
@@ -210,6 +211,8 @@ class _LightcoreAppState extends State<LightcoreApp>
         await _sessionStore.readGuideId(),
       );
       skipGuestSignInPrompt = await _sessionStore.readSkipGuestSignInPrompt();
+      musicEnabled = await _sessionStore.readMusicEnabled();
+      soundEffectsEnabled = await _sessionStore.readSoundEffectsEnabled();
       graphicsQuality =
           LightcoreGraphicsQuality.maybeFromStorageValue(
             await _sessionStore.readGraphicsQuality(),
@@ -318,6 +321,13 @@ class _LightcoreAppState extends State<LightcoreApp>
       }
       _isBootstrapping = false;
     });
+    unawaited(
+      LightcoreAudio.instance.initialize(
+        musicEnabled: musicEnabled,
+        soundEffectsEnabled: soundEffectsEnabled,
+      ),
+    );
+    _syncMusicForCurrentScreen();
   }
 
   bool _isCurrentBootstrapRun(int runId) => runId == _bootstrapRunId;
@@ -338,6 +348,8 @@ class _LightcoreAppState extends State<LightcoreApp>
   }
 
   void _enterGame() {
+    LightcoreAudio.instance.noteUserGesture();
+    LightcoreAudio.instance.playSfx(LightcoreSfx.uiConfirm);
     unawaited(_enterGameFromServer());
   }
 
@@ -420,7 +432,7 @@ class _LightcoreAppState extends State<LightcoreApp>
     controller.syncBalanceTuning(launchReport.manifest.balanceTuning);
     controller.setGraphicsQuality(_graphicsQuality);
     controller.setLocalhostAutoTapperEnabled(_localhostAutoTapperEnabled);
-    final startupOfflineClaim = launchReport.offlineClaim.hasRewards
+    final startupOfflineClaim = launchReport.offlineClaim.hasProgress
         ? launchReport.offlineClaim
         : null;
     if (startupOfflineClaim != null) {
@@ -511,6 +523,7 @@ class _LightcoreAppState extends State<LightcoreApp>
       _enteredGame = true;
       _isLinkingScreen = false;
     });
+    _syncMusicForCurrentScreen();
     _logSession('enter-game-complete');
     _startServerSyncTimer();
   }
@@ -526,6 +539,16 @@ class _LightcoreAppState extends State<LightcoreApp>
     }
     setState(() => _skipGuestSignInPrompt = skipPrompt);
     unawaited(_sessionStore.writeSkipGuestSignInPrompt(skipPrompt));
+  }
+
+  void _syncMusicForCurrentScreen() {
+    if (_isLinkingScreen) {
+      return;
+    }
+    final track = _hasActiveGame
+        ? LightcoreMusicTrack.battle
+        : LightcoreMusicTrack.mainMenu;
+    unawaited(LightcoreAudio.instance.playMusic(track));
   }
 
   Future<LightcoreServerSyncResult?> _syncOfflineSnapshot() async {
@@ -587,7 +610,7 @@ class _LightcoreAppState extends State<LightcoreApp>
         _logSession('offline-claim-abandoned');
         return;
       }
-      if (!claim.hasRewards) {
+      if (!claim.hasProgress) {
         _logSession('offline-claim-complete', <String, Object?>{
           'hasRewards': false,
           'status': claim.statusMessage,
@@ -595,7 +618,7 @@ class _LightcoreAppState extends State<LightcoreApp>
         return;
       }
       _logSession('offline-claim-complete', <String, Object?>{
-        'hasRewards': true,
+        'hasRewards': claim.hasRewards,
         'seconds': claim.secondsClaimed,
         'lumens': claim.lumensGranted,
         'flux': claim.fluxGranted,
@@ -738,6 +761,7 @@ class _LightcoreAppState extends State<LightcoreApp>
         _stopServerSyncTimer();
       }
     });
+    _syncMusicForCurrentScreen();
   }
 
   bool get _sessionShouldExpire => _missedServerSyncs >= _maxMissedServerSyncs;
@@ -806,6 +830,7 @@ class _LightcoreAppState extends State<LightcoreApp>
       _startupOfflineClaim = null;
       _sessionNotice = _sessionExpiredMessage(message);
     });
+    _syncMusicForCurrentScreen();
     if (expiredController != null) {
       _disposeControllerAfterExit(expiredController);
     }
@@ -1240,15 +1265,19 @@ class _LightcoreAppState extends State<LightcoreApp>
       scaffoldMessengerKey: _scaffoldMessengerKey,
       home: Scaffold(
         backgroundColor: LightcorePalette.night,
-        body: LightcoreTransitionSwitcher(
-          duration: const Duration(milliseconds: 650),
-          switchInCurve: Curves.easeOutCubic,
-          switchOutCurve: Curves.easeInCubic,
-          enterOffset: hasActiveGame ? const Offset(0, 0.045) : Offset.zero,
-          tint: hasActiveGame
-              ? LightcorePalette.verdant
-              : LightcorePalette.aether,
-          child: currentScreen,
+        body: Listener(
+          behavior: HitTestBehavior.translucent,
+          onPointerDown: (_) => LightcoreAudio.instance.noteUserGesture(),
+          child: LightcoreTransitionSwitcher(
+            duration: const Duration(milliseconds: 650),
+            switchInCurve: Curves.easeOutCubic,
+            switchOutCurve: Curves.easeInCubic,
+            enterOffset: hasActiveGame ? const Offset(0, 0.045) : Offset.zero,
+            tint: hasActiveGame
+                ? LightcorePalette.verdant
+                : LightcorePalette.aether,
+            child: currentScreen,
+          ),
         ),
       ),
     );

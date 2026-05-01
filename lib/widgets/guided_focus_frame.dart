@@ -166,7 +166,7 @@ class _GuidedFocusFrameState extends State<GuidedFocusFrame>
                               ?.copyWith(
                                 color: widget.tint,
                                 fontWeight: FontWeight.w800,
-                                letterSpacing: 0.4,
+                                letterSpacing: 0,
                               ),
                         ),
                       ],

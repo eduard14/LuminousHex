@@ -1,5 +1,7 @@
 part of '../lightcore_controller.dart';
 
+const int _coreBlueFocusTargetKey = -1;
+
 extension LightcoreControllerCombatFiring on LightcoreController {
   bool _fireCoreIfPossible({bool allowDefaultShot = true}) {
     if (_core.fireCooldownRemaining > 0 || _enemies.isEmpty) {
@@ -429,21 +431,8 @@ extension LightcoreControllerCombatFiring on LightcoreController {
     Set<String> excludedEnemyIds = const <String>{},
   }) {
     final sourceSlotIndex = packet.sourceSlotIndex;
-    if (sourceSlotIndex == null) {
-      return _targetForPriority(
-            packet.targetPriority,
-            maxRadius: maxRadius,
-            sourceSlotIndex: packet.sourceSlotIndex,
-            excludedEnemyIds: excludedEnemyIds,
-          ) ??
-          _nearestEnemyForSource(
-            maxRadius: maxRadius,
-            sourceSlotIndex: packet.sourceSlotIndex,
-            excludedEnemyIds: excludedEnemyIds,
-          );
-    }
-
-    final lockedEnemyId = _blueFocusTargetEnemyIdBySlot[sourceSlotIndex];
+    final focusTargetKey = sourceSlotIndex ?? _coreBlueFocusTargetKey;
+    final lockedEnemyId = _blueFocusTargetEnemyIdBySlot[focusTargetKey];
     if (lockedEnemyId != null) {
       final lockedEnemy = _enemyById(lockedEnemyId);
       if (lockedEnemy != null &&
@@ -452,7 +441,7 @@ extension LightcoreControllerCombatFiring on LightcoreController {
         return lockedEnemy;
       }
       if (lockedEnemy == null || lockedEnemy.radius > maxRadius) {
-        _blueFocusTargetEnemyIdBySlot.remove(sourceSlotIndex);
+        _blueFocusTargetEnemyIdBySlot.remove(focusTargetKey);
       }
     }
 
@@ -469,7 +458,7 @@ extension LightcoreControllerCombatFiring on LightcoreController {
           excludedEnemyIds: excludedEnemyIds,
         );
     if (target != null) {
-      _blueFocusTargetEnemyIdBySlot[sourceSlotIndex] = target.id;
+      _blueFocusTargetEnemyIdBySlot[focusTargetKey] = target.id;
     }
     return target;
   }

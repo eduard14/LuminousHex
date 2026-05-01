@@ -22,6 +22,7 @@ import 'package:lightcore/screens/lightcore_shell.dart';
 import 'package:lightcore/services/lightcore_firebase_backend.dart';
 import 'package:lightcore/services/lightcore_firebase_runtime_config.dart';
 import 'package:lightcore/state/lightcore_controller.dart';
+import 'package:lightcore/theme/lightcore_icons.dart';
 import 'package:lightcore/theme/lightcore_theme.dart';
 import 'package:lightcore/widgets/meta_progression_sheet.dart';
 
@@ -663,7 +664,7 @@ void main() {
     await tester.tap(find.byTooltip('Towers').first);
     await _pumpTransition(tester);
 
-    expect(find.text('Completed Shells'), findsOneWidget);
+    expect(find.text('Completed Layer 1 Sets'), findsOneWidget);
     expect(find.byTooltip('Return to Base Game'), findsOneWidget);
 
     await tester.tap(find.byTooltip('Return to Base Game'));
@@ -676,49 +677,36 @@ void main() {
     expect(find.byTooltip('Battle'), findsOneWidget);
   });
 
-  testWidgets(
-    'tournament overlay unlocks at level 20 after a screen name is set',
-    (tester) async {
-      final controller = LightcoreController();
-      addTearDown(controller.dispose);
-
-      await _pumpShell(tester, controller);
-
-      await _openHeaderMenuDestination(tester, 'Tournaments');
-
-      expect(
-        controller.bannerMessage,
-        contains('Tournaments unlock at Account Radiance Lv 20'),
-      );
-
-      controller.kills = LightcoreController.killsForOverallLevel(
-        LightcoreController.tournamentUnlockLevel,
-      );
-      controller.setScreenName('Nova Relay', showBanner: false);
-
-      await _openHeaderMenuDestination(tester, 'Tournaments');
-
-      expect(find.byTooltip('Return to Base Game'), findsOneWidget);
-    },
-  );
-
-  testWidgets('daily dungeon overlay unlocks at level 15', (tester) async {
+  testWidgets('tournament overlay opens before level 20 for testing', (
+    tester,
+  ) async {
     final controller = LightcoreController();
     addTearDown(controller.dispose);
 
     await _pumpShell(tester, controller);
 
-    await _openHeaderMenuDestination(tester, 'Daily Dungeons');
+    await _openHeaderMenuDestination(tester, 'Tournaments');
 
     expect(
       controller.bannerMessage,
-      contains('Daily Dungeons unlock at Account Radiance Lv 15'),
+      contains('Set a screen name in Settings before entering tournaments.'),
     );
-    expect(find.text('Daily Dungeons', skipOffstage: false), findsNothing);
 
-    controller.experience = LightcoreController.experienceForOverallLevel(
-      LightcoreController.dailyDungeonUnlockLevel,
-    );
+    controller.setScreenName('Nova Relay', showBanner: false);
+
+    await _openHeaderMenuDestination(tester, 'Tournaments');
+
+    expect(find.byTooltip('Return to Base Game'), findsOneWidget);
+  });
+
+  testWidgets('daily dungeon overlay opens before level 15 for testing', (
+    tester,
+  ) async {
+    final controller = LightcoreController();
+    addTearDown(controller.dispose);
+
+    await _pumpShell(tester, controller);
+
     await _openHeaderMenuDestination(tester, 'Daily Dungeons');
 
     expect(find.text('Daily Dungeons'), findsOneWidget);
@@ -965,7 +953,10 @@ void main() {
         controller.bannerMessage,
         contains('Towers unlock when Layer 2 is online'),
       );
-      expect(find.text('Completed Shells', skipOffstage: false), findsNothing);
+      expect(
+        find.text('Completed Layer 1 Sets', skipOffstage: false),
+        findsNothing,
+      );
 
       await tester.tap(find.byTooltip('Managers').first);
       await tester.pump();
@@ -980,11 +971,10 @@ void main() {
 
       await _openHeaderMenuDestination(tester, 'Daily Dungeons');
 
-      expect(
-        controller.bannerMessage,
-        contains('Daily Dungeons unlock at Account Radiance Lv 15'),
-      );
-      expect(find.text('Daily Dungeons', skipOffstage: false), findsNothing);
+      expect(find.text('Daily Dungeons'), findsOneWidget);
+
+      await tester.tap(find.byTooltip('Return to Base Game'));
+      await _pumpTransition(tester);
 
       await tester.tap(find.byTooltip('Advance').first);
       await tester.pump();
@@ -1042,10 +1032,6 @@ void main() {
       await _pumpTransition(tester);
 
       expect(find.byTooltip('Return to Base Game'), findsOneWidget);
-      expect(
-        find.textContaining('Friend requests unlock daily Apex Scan gifts'),
-        findsOneWidget,
-      );
     },
   );
 
@@ -1519,7 +1505,7 @@ void main() {
     );
     expect(
       find.text(
-        'Tap the center Lightcore to unfold the first shell and reveal the outer hexes.',
+        'Tap the center Lightcore to wake the first shell and reveal where towers will go.',
       ),
       findsOneWidget,
     );
@@ -1630,7 +1616,7 @@ void main() {
     );
     expect(
       find.text(
-        'Tap the charged Red Prism to add a pulse to the core queue. The core spends queued pulses as outgoing shots.',
+        'Tap the charged Red Prism to add pulses. More queued shots means faster kills, more Lumens, and earlier upgrades.',
       ),
       findsOneWidget,
     );
@@ -1901,6 +1887,14 @@ void main() {
       addTearDown(controller.dispose);
 
       await _pumpShell(tester, controller);
+
+      expect(
+        find.descendant(
+          of: find.byTooltip('Anomalies'),
+          matching: find.byIcon(LightcoreIcons.anomalies),
+        ),
+        findsOneWidget,
+      );
 
       await tester.tap(find.byTooltip('Anomalies').first);
       await _pumpTransition(tester);

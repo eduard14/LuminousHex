@@ -43,6 +43,12 @@ class _PlayerManagerDialogState extends State<_PlayerManagerDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final media = MediaQuery.of(context);
+    final compact = media.size.width < 480;
+    final usableHeight =
+        (media.size.height - media.viewInsets.vertical - media.padding.vertical)
+            .clamp(360.0, media.size.height)
+            .toDouble();
     final selectedSlot = _selectedSlot;
     final inventory = controller.equipmentInventory.toList()
       ..sort((a, b) => _compareInventoryDisplayPriority(controller, a, b));
@@ -54,15 +60,23 @@ class _PlayerManagerDialogState extends State<_PlayerManagerDialog> {
 
     return Dialog(
       backgroundColor: Colors.transparent,
-      insetPadding: const EdgeInsets.all(20),
+      insetPadding: EdgeInsets.symmetric(
+        horizontal: compact ? 12 : 20,
+        vertical: compact ? 10 : 20,
+      ),
       child: ConstrainedBox(
         constraints: BoxConstraints(
           maxWidth: 860,
-          maxHeight: MediaQuery.sizeOf(context).height * 0.86,
+          maxHeight: usableHeight * (compact ? 0.94 : 0.86),
         ),
         child: AuroraPanel(
           tint: LightcorePalette.aether,
-          padding: const EdgeInsets.fromLTRB(20, 20, 20, 18),
+          padding: EdgeInsets.fromLTRB(
+            compact ? 16 : 20,
+            compact ? 16 : 20,
+            compact ? 16 : 20,
+            compact ? 16 : 18,
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -102,11 +116,14 @@ class _PlayerManagerDialogState extends State<_PlayerManagerDialog> {
               Expanded(
                 child: LayoutBuilder(
                   builder: (context, constraints) {
-                    final inventoryHeight = (constraints.maxHeight * 0.58)
-                        .clamp(240.0, 420.0)
-                        .toDouble();
+                    final compactContent = constraints.maxWidth < 430;
+                    final inventoryHeight =
+                        (constraints.maxHeight * (compactContent ? 0.48 : 0.58))
+                            .clamp(compactContent ? 210.0 : 240.0, 420.0)
+                            .toDouble();
                     final loadoutColumns = constraints.maxWidth >= 680 ? 3 : 2;
                     return ListView(
+                      padding: const EdgeInsets.only(bottom: 8),
                       children: [
                         if (controller.totalRadianceStatPointsEarned > 0) ...[
                           RadianceStatAllocator(
@@ -206,7 +223,7 @@ class _EquipmentLoadoutBoard extends StatelessWidget {
             crossAxisCount: columns,
             mainAxisSpacing: 8,
             crossAxisSpacing: 8,
-            mainAxisExtent: 82,
+            mainAxisExtent: columns == 2 ? 76 : 82,
           ),
           itemBuilder: (context, index) {
             final slot = EquipmentLoadoutSlot.values[index];
@@ -291,13 +308,24 @@ Future<void> _showManagerHelpDialog(BuildContext context) {
     context: context,
     barrierColor: LightcorePalette.night.withValues(alpha: 0.76),
     builder: (dialogContext) {
+      final media = MediaQuery.of(dialogContext);
+      final compact = media.size.width < 480;
+      final usableHeight =
+          (media.size.height -
+                  media.viewInsets.vertical -
+                  media.padding.vertical)
+              .clamp(300.0, media.size.height)
+              .toDouble();
       return Dialog(
         backgroundColor: Colors.transparent,
-        insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        insetPadding: EdgeInsets.symmetric(
+          horizontal: compact ? 16 : 20,
+          vertical: compact ? 12 : 16,
+        ),
         child: ConstrainedBox(
           constraints: BoxConstraints(
             maxWidth: 420,
-            maxHeight: MediaQuery.sizeOf(context).height * 0.84,
+            maxHeight: usableHeight * 0.9,
           ),
           child: AuroraPanel(
             tint: LightcorePalette.aether,
@@ -561,9 +589,10 @@ class _InventoryItemCard extends StatelessWidget {
     final statusTint = equippedSlot == null
         ? LightcorePalette.mist.withValues(alpha: 0.32)
         : LightcorePalette.solar;
+    final rarityTint = _equipmentRarityTint(item.rarity);
     final bonusLabels = _bonusLabels(item.bonuses);
     return AuroraPanel(
-      tint: item.affinity.color,
+      tint: rarityTint,
       onTap: canEquip
           ? () => controller.equipPlayerItem(item.instanceId, selectedSlot)
           : null,
@@ -577,7 +606,7 @@ class _InventoryItemCard extends StatelessWidget {
               Expanded(
                 child: _CompactGearTag(
                   label: item.rarity.label,
-                  tint: item.affinity.color,
+                  tint: rarityTint,
                 ),
               ),
               const SizedBox(width: 6),
@@ -737,7 +766,7 @@ class _CompactGearTag extends StatelessWidget {
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
         style: Theme.of(context).textTheme.labelSmall?.copyWith(
-          color: LightcorePalette.layer2,
+          color: tint,
           fontWeight: FontWeight.w900,
           height: 1,
         ),
@@ -759,6 +788,14 @@ Color _loadoutTint(LightcoreController controller) {
   }
   return LightcorePalette.aether;
 }
+
+Color _equipmentRarityTint(ManagerRarity rarity) => switch (rarity) {
+  ManagerRarity.common => LightcorePalette.mist,
+  ManagerRarity.uncommon => LightcorePalette.verdant,
+  ManagerRarity.rare => LightcorePalette.aether,
+  ManagerRarity.epic => LightcorePalette.violet,
+  ManagerRarity.legendary => LightcorePalette.gilded,
+};
 
 IconData _iconForSlot(EquipmentInventorySlot? slot) => switch (slot) {
   EquipmentInventorySlot.hat => Icons.workspace_premium_rounded,

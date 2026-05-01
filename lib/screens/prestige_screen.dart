@@ -2,11 +2,11 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
-import '../models/lightcore_currency_labels.dart';
 import '../models/lightcore_types.dart';
 import '../state/lightcore_controller.dart';
 import '../theme/lightcore_palette.dart';
 import '../widgets/aurora_panel.dart';
+import '../widgets/lightcore_info_button.dart';
 import '../widgets/meter_bar.dart';
 
 class PrestigeScreen extends StatelessWidget {
@@ -42,22 +42,27 @@ class PrestigeScreen extends StatelessWidget {
         return ListView(
           key: const PageStorageKey<String>('prestige-scroll'),
           controller: scrollController,
+          padding: const EdgeInsets.only(bottom: 28),
           children: [
             AuroraPanel(
               tint: LightcorePalette.layer2,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Advancement Path', style: textTheme.titleLarge),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Advancement works more like a job change than a wipe. Promotion forges the next shell class from the current ring traits while archiving the lower shell as passive support. Root Shells are projectile-only seeds, Prism Shells add rolled payload traits, Nexus Shells deepen recursive inheritance, and Ascendant Shell is the final shell tier.',
-                    style: textTheme.bodyLarge,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Every higher shell is a seven-shell cluster: the source shell plus six edge anchors. Only the highest live shell runs combat. Archived lower shells stay visible in the map and convert managed towers into reduced passive Lumens.',
-                    style: textTheme.bodyMedium,
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          'Advancement Path',
+                          style: textTheme.titleLarge,
+                        ),
+                      ),
+                      const LightcoreInfoButton(
+                        title: 'Advancement Help',
+                        message: _advancementPathHelp,
+                        tint: LightcorePalette.layer2,
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 16),
                   MeterBar(
@@ -66,7 +71,7 @@ class PrestigeScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    '${controller.activeLayerLabel} • ${controller.builtTowerCount}/${LightcoreController.slotCount} built',
+                    '${controller.activeLayerLabel} • ${controller.builtTowerCount}/${LightcoreController.slotCount} anchors built',
                     style: textTheme.bodyMedium,
                   ),
                   const SizedBox(height: 10),
@@ -76,7 +81,7 @@ class PrestigeScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Promotion requires all ${LightcoreController.slotCount} edge towers at level ${LightcoreController.maxTowerLevel}. ${controller.promotionStatusLabel}.',
+                    controller.promotionStatusLabel,
                     style: textTheme.bodyMedium?.copyWith(
                       color: LightcorePalette.solar,
                       fontWeight: FontWeight.w700,
@@ -101,24 +106,22 @@ class PrestigeScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    unlocked ? 'Advancement Active' : 'Advancement Gate',
-                    style: textTheme.titleLarge,
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          unlocked ? 'Advancement Active' : 'Advancement Gate',
+                          style: textTheme.titleLarge,
+                        ),
+                      ),
+                      const LightcoreInfoButton(
+                        title: 'Promotion Rules',
+                        message: _promotionRulesHelp,
+                        tint: LightcorePalette.solar,
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 10),
-                  Text(
-                    controller.activeLayerHasParentSlot
-                        ? controller.activeLayerPromotedIntoParentSlot
-                              ? 'This shell already forged its parent-slot tower. Scrap and rebuild this shell if you want different resulting traits.'
-                              : 'Finish and promote this shell to forge one adjacent ${controller.activeLayerTargetShellLabel} tower in the parent shell. Projectile and payload traits roll independently from what this shell contains.'
-                        : controller.activeLayer.promotedParentLayerId != null
-                        ? 'This shell already forged the next shell class and now contributes passive support.'
-                        : unlocked
-                        ? 'Your promoted shell is active. Lower shells remain viewable as passive support and keep their assigned anomaly decks.'
-                        : 'Build the six surrounding towers, raise every edge tower to level ${LightcoreController.maxTowerLevel}, then promote manually to forge the next shell class.',
-                    style: textTheme.bodyLarge,
-                  ),
-                  const SizedBox(height: 14),
+                  const SizedBox(height: 12),
                   Wrap(
                     spacing: 10,
                     runSpacing: 10,
@@ -197,27 +200,18 @@ class PrestigeScreen extends StatelessWidget {
                 ],
               ),
             ),
-            const SizedBox(height: 14),
-            AuroraPanel(
-              tint: LightcorePalette.aether,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Current Rules', style: textTheme.titleLarge),
-                  const SizedBox(height: 10),
-                  Text(
-                    '${LightcoreCurrencyLabels.lumens}, ${LightcoreCurrencyLabels.flux}, Threat Scans, EXP-gated edge slots, inheritable tower traits, repeatable shell advancement, and manager inventories are all part of the live loop. Promotion preserves the shell-class structure while resetting the active climb into the next build.',
-                    style: textTheme.bodyLarge,
-                  ),
-                ],
-              ),
-            ),
           ],
         );
       },
     );
   }
 }
+
+const String _advancementPathHelp =
+    'Promotion forges the next shell class from the current ring traits while archiving the lower shell as passive support. Root Shells are projectile-only seeds, Prism Shells add rolled payload traits, Nexus Shells deepen recursive inheritance, and Ascendant Shell is the final shell tier.\n\nEvery higher shell is a seven-shell cluster: the source shell plus six edge anchors. Only the highest live shell runs combat. Archived lower shells stay visible in the map and convert managed towers into reduced passive Lumens.';
+
+const String _promotionRulesHelp =
+    'Promotion requires all six edge towers at max level. If this shell is targeting a parent slot, promotion forges one adjacent tower in the parent shell. Projectile and payload traits roll independently from this shell. Promoted lower shells remain visible as passive support and keep their assigned anomaly decks.';
 
 class _PromotionActionButton extends StatefulWidget {
   const _PromotionActionButton({

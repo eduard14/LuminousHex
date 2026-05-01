@@ -9,6 +9,7 @@ class _TournamentHubScreen extends StatelessWidget {
     required this.errorMessage,
     required this.onRefresh,
     required this.onOpenMode,
+    required this.onPlayMode,
     required this.onJoinMode,
     required this.onClaimReward,
   });
@@ -20,13 +21,14 @@ class _TournamentHubScreen extends StatelessWidget {
   final String? errorMessage;
   final Future<void> Function() onRefresh;
   final ValueChanged<LightcoreTournamentModeId> onOpenMode;
+  final ValueChanged<LightcoreTournamentModeId> onPlayMode;
   final ValueChanged<LightcoreTournamentModeId> onJoinMode;
   final ValueChanged<LightcoreTournamentModeId> onClaimReward;
 
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.fromLTRB(14, 14, 14, 30),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -52,20 +54,108 @@ class _TournamentHubScreen extends StatelessWidget {
             _TournamentTutorialPanel(controller: controller),
           ],
           const SizedBox(height: 14),
-          for (final mode in LightcoreTournamentModeId.values) ...[
-            if (overview != null)
-              _TournamentModeHubCard(
-                modeState: overview!.modeFor(mode),
-                busy: busy,
-                highlighted: controller.tutorialHighlightsTournamentModeCard(
-                  mode,
-                ),
-                onOpen: () => onOpenMode(mode),
-                onJoin: () => onJoinMode(mode),
-                onClaim: () => onClaimReward(mode),
-              ),
-            if (overview != null) const SizedBox(height: 12),
+          if (overview != null) ...[
+            _TournamentRankStrip(overview: overview!),
+            const SizedBox(height: 12),
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final wide = constraints.maxWidth >= 760;
+                final tileWidth = wide
+                    ? (constraints.maxWidth - 24) / 3
+                    : constraints.maxWidth;
+                return Wrap(
+                  spacing: 12,
+                  runSpacing: 12,
+                  children: [
+                    for (final mode in LightcoreTournamentModeId.values)
+                      SizedBox(
+                        width: tileWidth,
+                        child: _TournamentModeHubCard(
+                          modeState: overview!.modeFor(mode),
+                          busy: busy,
+                          highlighted: controller
+                              .tutorialHighlightsTournamentModeCard(mode),
+                          onOpen: () => onOpenMode(mode),
+                          onPlay: () => onPlayMode(mode),
+                          onJoin: () => onJoinMode(mode),
+                          onClaim: () => onClaimReward(mode),
+                        ),
+                      ),
+                  ],
+                );
+              },
+            ),
           ],
+        ],
+      ),
+    );
+  }
+}
+
+class _TournamentRankStrip extends StatelessWidget {
+  const _TournamentRankStrip({required this.overview});
+
+  final LightcoreTournamentOverview overview;
+
+  @override
+  Widget build(BuildContext context) {
+    return AuroraPanel(
+      tint: LightcorePalette.aether,
+      padding: const EdgeInsets.all(12),
+      child: Wrap(
+        spacing: 10,
+        runSpacing: 10,
+        children: [
+          for (final mode in LightcoreTournamentModeId.values)
+            _TournamentRankChip(modeState: overview.modeFor(mode)),
+        ],
+      ),
+    );
+  }
+}
+
+class _TournamentRankChip extends StatelessWidget {
+  const _TournamentRankChip({required this.modeState});
+
+  final LightcoreTournamentModeState modeState;
+
+  @override
+  Widget build(BuildContext context) {
+    final tint = _modeTint(modeState.mode);
+    return Container(
+      constraints: const BoxConstraints(minWidth: 154),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: tint.withValues(alpha: 0.11),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: tint.withValues(alpha: 0.34)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(_modeIcon(modeState.mode), color: tint, size: 18),
+          const SizedBox(width: 8),
+          SizedBox(
+            width: 88,
+            child: Text(
+              modeState.playerRank == null
+                  ? 'Rank pending'
+                  : '#${modeState.playerRank}',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(
+                context,
+              ).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w900),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            modeState.joined ? '${modeState.playerBestScore}' : 'Join',
+            style: Theme.of(context).textTheme.labelMedium?.copyWith(
+              color: tint,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
         ],
       ),
     );
@@ -88,6 +178,10 @@ class _TournamentHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final endsAt = overview?.endsAt;
+    final helpMessage = [
+      overview?.statusMessage ?? 'Weekly events rotate on a shared schedule.',
+      _tournamentNexusHelp,
+    ].join('\n\n');
     return AuroraPanel(
       tint: LightcorePalette.warning,
       padding: const EdgeInsets.all(18),
@@ -112,6 +206,12 @@ class _TournamentHeader extends StatelessWidget {
                   ],
                 ),
               ),
+              LightcoreInfoButton(
+                title: 'Tournament Help',
+                message: helpMessage,
+                tint: LightcorePalette.warning,
+              ),
+              const SizedBox(width: 4),
               FilledButton.tonalIcon(
                 onPressed: busy ? null : onRefresh,
                 icon: const Icon(Icons.refresh_rounded),
@@ -139,26 +239,16 @@ class _TournamentHeader extends StatelessWidget {
                     ? controller.tournamentExperienceBoostLabel
                     : 'Inactive',
               ),
-              _HeaderChip(
-                label: 'Event Seed',
-                value: '${controller.tournamentPowerIndex}',
-              ),
             ],
           ),
-          if (overview != null) ...[
-            const SizedBox(height: 12),
-            Text(
-              overview!.statusMessage,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: LightcorePalette.mist.withValues(alpha: 0.78),
-              ),
-            ),
-          ],
         ],
       ),
     );
   }
 }
+
+const String _tournamentNexusHelp =
+    'Anomaly Blitz is open for testing with weekend-length survival sessions. Hex and Arena Flow run on the weekly rotation. Arena Flow uses each player\'s highest-layer Home Tower with server-seeded rivals, and rewards are awarded from the closed server leaderboard after reset.';
 
 class _HeaderChip extends StatelessWidget {
   const _HeaderChip({required this.label, required this.value});
@@ -182,7 +272,7 @@ class _HeaderChip extends StatelessWidget {
             label.toUpperCase(),
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
               color: LightcorePalette.mist.withValues(alpha: 0.72),
-              letterSpacing: 1.2,
+              letterSpacing: 0,
             ),
           ),
           const SizedBox(height: 4),
@@ -250,6 +340,7 @@ class _TournamentModeHubCard extends StatelessWidget {
     required this.busy,
     required this.highlighted,
     required this.onOpen,
+    required this.onPlay,
     required this.onJoin,
     required this.onClaim,
   });
@@ -258,177 +349,132 @@ class _TournamentModeHubCard extends StatelessWidget {
   final bool busy;
   final bool highlighted;
   final VoidCallback onOpen;
+  final VoidCallback onPlay;
   final VoidCallback onJoin;
   final VoidCallback onClaim;
 
   @override
   Widget build(BuildContext context) {
     final tint = _modeTint(modeState.mode);
+    final helpMessage = _modeHelpMessage(modeState);
     return GuidedFocusFrame(
       active: highlighted,
       tint: LightcorePalette.quest,
-      radius: 24,
+      radius: 18,
       child: AuroraPanel(
         tint: tint,
-        padding: const EdgeInsets.all(18),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        padding: const EdgeInsets.all(14),
+        onTap: onOpen,
+        child: Stack(
           children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        modeState.mode.label,
-                        style: Theme.of(context).textTheme.titleLarge,
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        modeState.mode.subtitle,
-                        style: Theme.of(context).textTheme.bodyMedium,
-                      ),
-                    ],
+            Padding(
+              padding: const EdgeInsets.only(right: 42),
+              child: Row(
+                children: [
+                  Container(
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: tint.withValues(alpha: 0.16),
+                      border: Border.all(color: tint.withValues(alpha: 0.46)),
+                    ),
+                    child: Icon(_modeIcon(modeState.mode), color: tint),
                   ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(999),
-                    color: tint.withValues(alpha: 0.14),
-                  ),
-                  child: Text(
-                    modeState.mode.eventCadenceLabel,
-                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                      color: tint,
-                      fontWeight: FontWeight.w800,
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          modeState.mode.label,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(fontWeight: FontWeight.w900),
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          modeState.mode.eventCadenceLabel,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.labelMedium
+                              ?.copyWith(
+                                color: tint,
+                                fontWeight: FontWeight.w800,
+                              ),
+                        ),
+                      ],
                     ),
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Wrap(
-              spacing: 10,
-              runSpacing: 10,
-              children: [
-                _HeaderChip(
-                  label: 'Board',
-                  value:
-                      modeState.matchBucketLabel ?? modeState.mode.queueLabel,
-                ),
-                _HeaderChip(label: 'Focus', value: modeState.mode.focusLabel),
-                _HeaderChip(label: 'Entries', value: '${modeState.groupSize}'),
-                _HeaderChip(
-                  label: 'Best',
-                  value: modeState.joined
-                      ? '${modeState.playerBestScore}'
-                      : 'Not joined',
-                ),
-                _HeaderChip(
-                  label: 'Window',
-                  value: modeState.isOpen
-                      ? 'Live'
-                      : 'Opens ${_formatCountdown(modeState.startsAt)}',
-                ),
-                _HeaderChip(
-                  label: 'Rank',
-                  value: modeState.playerRank == null
-                      ? 'Pending'
-                      : '#${modeState.playerRank}',
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Text(
-              modeState.mode.compressedLoopLabel,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: tint,
-                fontWeight: FontWeight.w700,
+                  Tooltip(
+                    message: modeState.rewardReady && !modeState.rewardClaimed
+                        ? 'Claim reward'
+                        : modeState.joined
+                        ? 'Start run'
+                        : 'Join event',
+                    child: IconButton.filledTonal(
+                      onPressed:
+                          modeState.rewardReady && !modeState.rewardClaimed
+                          ? (busy ? null : onClaim)
+                          : modeState.joined
+                          ? onPlay
+                          : busy || !modeState.isOpen
+                          ? null
+                          : onJoin,
+                      icon: Icon(
+                        modeState.rewardReady && !modeState.rewardClaimed
+                            ? Icons.workspace_premium_rounded
+                            : modeState.joined
+                            ? Icons.play_arrow_rounded
+                            : Icons.add_rounded,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 8),
-            Text(
-              '${modeState.mode.mechanicLabel}: ${modeState.mechanicSummary}',
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              modeState.statusMessage,
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-            if (modeState.leaderboard.isNotEmpty) ...[
-              const SizedBox(height: 12),
-              AuroraPanel(
+            Positioned(
+              top: 0,
+              right: 0,
+              child: LightcoreInfoButton(
+                title: '${modeState.mode.label} Details',
+                message: helpMessage,
                 tint: tint,
-                radius: 20,
-                padding: const EdgeInsets.all(14),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Top Leaderboard Snapshot',
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                    const SizedBox(height: 8),
-                    for (
-                      var index = 0;
-                      index < min(modeState.leaderboard.length, 3);
-                      index += 1
-                    ) ...[
-                      _LeaderboardRow(
-                        rank: index + 1,
-                        entry: modeState.leaderboard[index],
-                      ),
-                      if (index < min(modeState.leaderboard.length, 3) - 1)
-                        const SizedBox(height: 6),
-                    ],
-                  ],
-                ),
               ),
-            ],
-            const SizedBox(height: 14),
-            Wrap(
-              spacing: 10,
-              runSpacing: 10,
-              children: [
-                FilledButton.icon(
-                  onPressed: onOpen,
-                  icon: const Icon(Icons.open_in_new_rounded),
-                  label: Text(
-                    modeState.joined ? 'Enter Event' : 'Inspect Event',
-                  ),
-                ),
-                FilledButton.tonalIcon(
-                  onPressed: busy || modeState.joined || !modeState.isOpen
-                      ? null
-                      : onJoin,
-                  icon: const Icon(Icons.rocket_launch_rounded),
-                  label: Text(
-                    modeState.isOpen
-                        ? _joinButtonLabel(modeState.mode)
-                        : 'Event Closed',
-                  ),
-                ),
-                FilledButton.tonalIcon(
-                  onPressed:
-                      busy || !modeState.rewardReady || modeState.rewardClaimed
-                      ? null
-                      : onClaim,
-                  icon: const Icon(Icons.workspace_premium_rounded),
-                  label: Text(
-                    modeState.rewardClaimed ? 'Claimed' : 'Claim Reward',
-                  ),
-                ),
-              ],
             ),
           ],
         ),
       ),
     );
   }
+}
+
+IconData _modeIcon(LightcoreTournamentModeId mode) => switch (mode) {
+  LightcoreTournamentModeId.enemyBlitz => Icons.bolt_rounded,
+  LightcoreTournamentModeId.hexGauntlet => Icons.hexagon_rounded,
+  LightcoreTournamentModeId.arenaFlow => Icons.blur_on_rounded,
+};
+
+String _modeHelpMessage(LightcoreTournamentModeState modeState) {
+  final leaderboard = modeState.leaderboard.isEmpty
+      ? 'No leaderboard snapshot is available yet.'
+      : modeState.leaderboard
+            .take(3)
+            .indexed
+            .map(
+              (entry) =>
+                  '#${entry.$1 + 1} ${entry.$2.displayName} - ${entry.$2.score}',
+            )
+            .join('\n');
+
+  return [
+    modeState.mode.subtitle,
+    modeState.mode.compressedLoopLabel,
+    '${modeState.mode.mechanicLabel}: ${modeState.mechanicSummary}',
+    modeState.statusMessage,
+    'Focus: ${modeState.mode.focusLabel}. Entries: ${modeState.groupSize}.',
+    leaderboard,
+  ].join('\n\n');
 }

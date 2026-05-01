@@ -433,7 +433,7 @@ extension LightcoreControllerSaveLayerSerialization on LightcoreController {
       'sourceLayerTier': shell.sourceLayerTier,
       'sourceSlotIndex': shell.sourceSlotIndex,
       'savedAtMillis': shell.savedAtMillis,
-      'tower': _serializeOuterTowerState(shell.tower),
+      'layer': _serializeLayerSnapshot(shell.layer),
     };
   }
 
@@ -442,11 +442,8 @@ extension LightcoreControllerSaveLayerSerialization on LightcoreController {
   ) {
     final id = _stringOrNull(data['id']);
     final sourceLayerId = _stringOrNull(data['sourceLayerId']);
-    final tower = _deserializeOuterTowerState(
-      _coerceMap(data['tower']),
-      slotIndex: _intValue(data['sourceSlotIndex']),
-    );
-    if (id == null || sourceLayerId == null || tower == null) {
+    final layer = _deserializeLayerSnapshot(_coerceMap(data['layer']));
+    if (id == null || sourceLayerId == null || layer == null) {
       return null;
     }
     return CompletedTowerShellState(
@@ -455,9 +452,9 @@ extension LightcoreControllerSaveLayerSerialization on LightcoreController {
       sourceLayerLabel:
           _stringOrNull(data['sourceLayerLabel']) ?? shellNameForTier(1),
       sourceLayerTier: _intValue(data['sourceLayerTier'], fallback: 1),
-      sourceSlotIndex: _intValue(data['sourceSlotIndex']),
+      sourceSlotIndex: _intOrNull(data['sourceSlotIndex']),
       savedAtMillis: _intValue(data['savedAtMillis']),
-      tower: tower,
+      layer: layer,
     );
   }
 
@@ -510,6 +507,7 @@ extension LightcoreControllerSaveLayerSerialization on LightcoreController {
       'coreStability': core.coreStability,
       'flowEfficiency': core.flowEfficiency,
       'fireCooldownRemaining': core.fireCooldownRemaining,
+      'packetCooldownRemaining': core.packetCooldownRemaining,
       'automationCooldownRemaining': core.automationCooldownRemaining,
       'level': core.level,
       'projectileType': core.projectileType.name,
@@ -543,6 +541,7 @@ extension LightcoreControllerSaveLayerSerialization on LightcoreController {
       coreStability: coreStability,
       flowEfficiency: _outputEfficiencyPercentForStability(coreStability),
       fireCooldownRemaining: _doubleValue(data['fireCooldownRemaining']),
+      packetCooldownRemaining: _doubleValue(data['packetCooldownRemaining']),
       automationCooldownRemaining: _doubleValue(
         data['automationCooldownRemaining'],
       ),
