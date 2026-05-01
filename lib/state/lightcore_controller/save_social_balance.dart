@@ -270,6 +270,8 @@ extension LightcoreControllerSaveSocialBalance on LightcoreController {
 
   LightcoreTournamentPlayerSnapshot buildTournamentSnapshot() {
     final homeLayer = homeTowerLayer;
+    final enemyDeck = activeEnemyDeck;
+    final bossCard = activeBossEnemyCard;
     return LightcoreTournamentPlayerSnapshot(
       overallLevel: overallLevel,
       prestigeLevel: prestigeLevel,
@@ -277,6 +279,17 @@ extension LightcoreControllerSaveSocialBalance on LightcoreController {
       builtTowerCount: homeLayer.slots.where(_slotCountsTowardRing).length,
       coreLevel: homeLayer.core.level,
       towerPowerIndex: homeTowerPowerIndex,
+      towerAffinity: homeTowerAffinity ?? homeLayer.core.affinity,
+      enemyAffinity:
+          _dominantThreatAffinity(enemyDeck) ?? PrototypeAffinity.neutral,
+      enemyCardIds: enemyDeck.map((card) => card.config.id).toList(
+        growable: false,
+      ),
+      enemyCardLevels: <String, int>{
+        for (final card in enemyDeck) card.config.id: card.level,
+      },
+      bossEnemyCardId: bossCard?.config.id,
+      bossEnemyLevel: bossCard?.level ?? 1,
     );
   }
 }

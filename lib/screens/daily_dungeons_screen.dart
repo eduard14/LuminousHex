@@ -243,7 +243,7 @@ class _DailyDungeonsScreenState extends State<DailyDungeonsScreen> {
                     Text('Threat Director', style: textTheme.titleLarge),
                     const SizedBox(height: 4),
                     Text(
-                      'Choose a tower level and lock a three-anomaly deck. Combat opens on the same battle field with automated manager taps.',
+                      'Choose a tower level and lock a three-anomaly deck. Launch anomalies manually in the tower arena before their cooldowns cycle.',
                       style: textTheme.bodyMedium?.copyWith(
                         color: LightcorePalette.mist.withValues(alpha: 0.78),
                       ),
@@ -605,13 +605,11 @@ class _DailyDungeonsScreenState extends State<DailyDungeonsScreen> {
           subtitle: 'Locking anomaly loadout and opening the tower arena.',
           tint: LightcorePalette.warning,
           icon: Icons.shield_rounded,
-          builder: (_) => _DailyDungeonBattleRunScreen(
-            route: _DailyDungeonBattleRoute.threatDirector,
+          builder: (_) => _ThreatDirectorDungeonRunScreen(
             controller: controller,
             towerLevel: towerLevel,
             anomalyCards: List<EnemyCardState>.unmodifiable(anomalyCards),
             apexCard: apexCard,
-            runSeed: _dailyDungeonRunSeed(towerLevel),
           ),
         ),
       ),

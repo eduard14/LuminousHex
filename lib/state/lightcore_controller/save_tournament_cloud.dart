@@ -72,6 +72,63 @@ extension LightcoreControllerSaveTournamentCloud on LightcoreController {
     );
   }
 
+  void configureArenaFlowBattleFromHomeTower({
+    required LightcoreController source,
+    required int seedPowerIndex,
+    Iterable<EnemyCardState> enemyDraft = const <EnemyCardState>[],
+    EnemyCardState? bossDraft,
+    int enemyPressure = initialEnemyTarget,
+  }) {
+    configureTournamentBattle(
+      mode: LightcoreTournamentModeId.arenaFlow,
+      seedPowerIndex: seedPowerIndex,
+      enemyDraft: enemyDraft,
+      bossDraft: bossDraft,
+      towerTier: source.homeTowerTier,
+      enemyPressure: enemyPressure,
+    );
+
+    final homeLayer = source.homeTowerLayer;
+    _removeEventCoreManagers();
+    _core = homeLayer.core.copyWith(
+      coreStability: 100,
+      flowEfficiency: _maxFlowEfficiency,
+      fireCooldownRemaining: 0,
+      packetCooldownRemaining: 0,
+      automationCooldownRemaining: 0,
+    );
+    _layer2 = homeLayer.layer2.copyWith(fireCooldownRemaining: 0);
+    for (var slotIndex = 0; slotIndex < slotCount; slotIndex += 1) {
+      if (slotIndex >= homeLayer.slots.length ||
+          !source._slotCountsTowardRing(homeLayer.slots[slotIndex])) {
+        _slots[slotIndex] = OuterTowerState(slotIndex: slotIndex);
+        continue;
+      }
+      final sourceSlot = homeLayer.slots[slotIndex];
+      _slots[slotIndex] = sourceSlot.copyForSlot(slotIndex).copyWith(
+        charge: max(0.35, min(1.0, sourceSlot.charge)),
+        cooldownRemaining: 0,
+        automationCooldownRemaining: 0,
+        disruption: 0,
+        fabricationTotalSeconds: 0,
+        fabricationRemainingSeconds: 0,
+      );
+    }
+
+    final builtSlots = _slots.where(_slotCountsTowardRing).length;
+    final unlockExperience = builtSlots <= 0
+        ? 0
+        : unlockExperienceForOuterSlot(builtSlots - 1);
+    kills = unlockExperience;
+    experience = unlockExperience;
+    _towerRangePreviewSlotIndex = _slots.indexWhere(_slotCountsTowardRing);
+    if (_towerRangePreviewSlotIndex == -1) {
+      _towerRangePreviewSlotIndex = null;
+    }
+    _storeActiveLayer();
+    _notifyNow();
+  }
+
   void applyEnemyBlitzTowerUpgrade({
     required int seedPowerIndex,
     required int towerTier,

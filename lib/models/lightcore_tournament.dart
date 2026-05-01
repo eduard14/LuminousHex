@@ -65,7 +65,7 @@ extension LightcoreTournamentModeIdX on LightcoreTournamentModeId {
     LightcoreTournamentModeId.hexGauntlet =>
       'Import the event-normalized shell into the weekly hex board.',
     LightcoreTournamentModeId.arenaFlow =>
-      'Pick two anomalies and one Apex to send at the rival Home Tower.',
+      'Bring your active Home Tower and current enemy stack into the arena.',
   };
 
   String get focusLabel => switch (this) {
@@ -123,6 +123,12 @@ class LightcoreTournamentPlayerSnapshot {
     required this.builtTowerCount,
     required this.coreLevel,
     required this.towerPowerIndex,
+    this.towerAffinity = PrototypeAffinity.neutral,
+    this.enemyAffinity = PrototypeAffinity.neutral,
+    this.enemyCardIds = const <String>[],
+    this.enemyCardLevels = const <String, int>{},
+    this.bossEnemyCardId,
+    this.bossEnemyLevel = 1,
   });
 
   final int overallLevel;
@@ -131,6 +137,12 @@ class LightcoreTournamentPlayerSnapshot {
   final int builtTowerCount;
   final int coreLevel;
   final int towerPowerIndex;
+  final PrototypeAffinity towerAffinity;
+  final PrototypeAffinity enemyAffinity;
+  final List<String> enemyCardIds;
+  final Map<String, int> enemyCardLevels;
+  final String? bossEnemyCardId;
+  final int bossEnemyLevel;
 
   Map<String, dynamic> toMap() {
     return <String, dynamic>{
@@ -140,10 +152,17 @@ class LightcoreTournamentPlayerSnapshot {
       'builtTowerCount': builtTowerCount,
       'coreLevel': coreLevel,
       'towerPowerIndex': towerPowerIndex,
+      'towerAffinity': towerAffinity.name,
+      'enemyAffinity': enemyAffinity.name,
+      'enemyCardIds': List<String>.from(enemyCardIds),
+      'enemyCardLevels': Map<String, int>.from(enemyCardLevels),
+      if (bossEnemyCardId != null) 'bossEnemyCardId': bossEnemyCardId,
+      'bossEnemyLevel': bossEnemyLevel,
     };
   }
 
   factory LightcoreTournamentPlayerSnapshot.fromMap(Map<String, dynamic> data) {
+    final enemyCardLevels = _coerceIntMap(data['enemyCardLevels']);
     return LightcoreTournamentPlayerSnapshot(
       overallLevel: (data['overallLevel'] as num?)?.toInt() ?? 1,
       prestigeLevel: (data['prestigeLevel'] as num?)?.toInt() ?? 0,
@@ -151,6 +170,16 @@ class LightcoreTournamentPlayerSnapshot {
       builtTowerCount: (data['builtTowerCount'] as num?)?.toInt() ?? 0,
       coreLevel: (data['coreLevel'] as num?)?.toInt() ?? 1,
       towerPowerIndex: (data['towerPowerIndex'] as num?)?.toInt() ?? 0,
+      towerAffinity:
+          _affinityFromName(data['towerAffinity'] as String?) ??
+          PrototypeAffinity.neutral,
+      enemyAffinity:
+          _affinityFromName(data['enemyAffinity'] as String?) ??
+          PrototypeAffinity.neutral,
+      enemyCardIds: _coerceStringList(data['enemyCardIds']),
+      enemyCardLevels: enemyCardLevels,
+      bossEnemyCardId: data['bossEnemyCardId'] as String?,
+      bossEnemyLevel: (data['bossEnemyLevel'] as num?)?.toInt() ?? 1,
     );
   }
 }
@@ -234,21 +263,27 @@ class LightcoreTournamentLeaderboardEntry {
     required this.score,
     required this.globalRating,
     this.isPlayer = false,
+    this.snapshot,
   });
 
   final String displayName;
   final int score;
   final int globalRating;
   final bool isPlayer;
+  final LightcoreTournamentPlayerSnapshot? snapshot;
 
   factory LightcoreTournamentLeaderboardEntry.fromMap(
     Map<String, dynamic> data,
   ) {
+    final snapshotData = _coerceMap(data['snapshot']);
     return LightcoreTournamentLeaderboardEntry(
       displayName: (data['displayName'] as String?) ?? 'Pilot',
       score: (data['score'] as num?)?.toInt() ?? 0,
       globalRating: (data['globalRating'] as num?)?.toInt() ?? 1000,
       isPlayer: (data['isPlayer'] as bool?) ?? false,
+      snapshot: snapshotData.isEmpty
+          ? null
+          : LightcoreTournamentPlayerSnapshot.fromMap(snapshotData),
     );
   }
 }
@@ -440,6 +475,18 @@ ManagerRarity? _managerRarityFromName(String? value) {
   return null;
 }
 
+PrototypeAffinity? _affinityFromName(String? value) {
+  if (value == null || value.isEmpty) {
+    return null;
+  }
+  for (final affinity in PrototypeAffinity.values) {
+    if (affinity.name == value) {
+      return affinity;
+    }
+  }
+  return null;
+}
+
 Map<String, dynamic> _coerceMap(dynamic value) {
   if (value is Map<String, dynamic>) {
     return value;
@@ -455,4 +502,25 @@ List<Map<String, dynamic>> _coerceList(dynamic value) {
     return value.map(_coerceMap).toList(growable: false);
   }
   return const <Map<String, dynamic>>[];
+}
+
+List<String> _coerceStringList(dynamic value) {
+  if (value is List) {
+    return value
+        .whereType<Object>()
+        .map((item) => item.toString())
+        .where((item) => item.isNotEmpty)
+        .toList(growable: false);
+  }
+  return const <String>[];
+}
+
+Map<String, int> _coerceIntMap(dynamic value) {
+  if (value is! Map) {
+    return const <String, int>{};
+  }
+  return value.map((key, dynamic item) {
+    final parsed = item is num ? item.toInt() : int.tryParse('$item') ?? 1;
+    return MapEntry(key.toString(), parsed);
+  });
 }
