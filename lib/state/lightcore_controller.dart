@@ -502,24 +502,24 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
   ),
   LightcoreTutorialStep.setFirstEnemyTarget: LightcoreTutorialQuestDefinition(
     id: 'TUT-015',
-    title: 'Focus a Threat',
+    title: 'Review Red Pressure',
     teachGoal:
-        'Threat focus picks the signature you are inspecting before you tune pressure or directors.',
+        'Basic Red confirms that same-color resistance is live before you tune swarm pressure.',
     trigger: 'Red signature is available',
-    primaryClickTarget: 'Anomalies > Basic Red > Focus',
+    primaryClickTarget: 'Anomalies > Basic Red card',
     coachCopy:
-        'Open Anomalies and focus Basic Red so the pressure tools have a clear target context.',
-    completionCondition: 'Basic Red focused',
+        'Open Anomalies and review Basic Red in the active deck. No separate action is needed; the red signature is already live.',
+    completionCondition: 'Basic Red available',
     reward: 'Small Lumen grant',
     failureHelpState: 'Use the highlighted Basic Red card in Anomalies.',
-    analyticsEvent: 'tutorial_focus_first_enemy',
+    analyticsEvent: 'tutorial_review_first_red_enemy',
   ),
   LightcoreTutorialStep.adjustEnemyCount: LightcoreTutorialQuestDefinition(
     id: 'TUT-016',
     title: 'Tune Swarm Pressure',
     teachGoal:
         'Swarm Pressure is the risk dial: more active anomalies can pay faster, but too many drag down Output Efficiency.',
-    trigger: 'Threat focus is set',
+    trigger: 'Red signature is available',
     primaryClickTarget: 'Anomalies > Swarm Pressure control',
     coachCopy:
         'Raise Swarm Pressure above the low setting. More anomalies can pay faster, but unstable lanes reduce flow.',

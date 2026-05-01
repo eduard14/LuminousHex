@@ -123,7 +123,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         _tutorialStabilityPanelOpened &&
         _tutorialTowerManagerAssigned &&
         _tutorialAutoQueuedPulses >= 5 &&
-        _tutorialFirstEnemyTargetSet &&
+        (_tutorialFirstEnemyTargetSet || _ownsBasicRedEnemy) &&
         _tutorialEnemyCountAdjusted &&
         (totalRadianceStatPointsSpent > 0 || _core.rangeUpgradeLevel > 0);
   }
@@ -202,7 +202,8 @@ extension LightcoreControllerLayerTraits on LightcoreController {
       LightcoreTutorialStep.upgradeFirstTowerToLevel4 =>
         firstTower != null && firstTower.level >= 4,
       LightcoreTutorialStep.pullFirstRedEnemy => enemyPullCount >= 2,
-      LightcoreTutorialStep.setFirstEnemyTarget => _tutorialFirstEnemyTargetSet,
+      LightcoreTutorialStep.setFirstEnemyTarget =>
+        _tutorialFirstEnemyTargetSet || _ownsBasicRedEnemy,
       LightcoreTutorialStep.adjustEnemyCount => _tutorialEnemyCountAdjusted,
       LightcoreTutorialStep.openTowerMatrix => _tutorialTowerMatrixOpened,
       LightcoreTutorialStep.upgradeCoreRange =>
@@ -304,9 +305,6 @@ extension LightcoreControllerLayerTraits on LightcoreController {
       return canOpenEnemyTickets
           ? LightcoreTutorialStep.pullFirstRedEnemy
           : null;
-    }
-    if (_ownsBasicRedEnemy && !_tutorialFirstEnemyTargetSet) {
-      return LightcoreTutorialStep.setFirstEnemyTarget;
     }
     if (_ownsBasicRedEnemy && !_tutorialEnemyCountAdjusted) {
       return LightcoreTutorialStep.adjustEnemyCount;
@@ -624,7 +622,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
     LightcoreTutorialStep.pullFirstRedEnemy =>
       'Red signature added. Same-color resistance is why mixed colors matter.',
     LightcoreTutorialStep.setFirstEnemyTarget =>
-      'Threat focus set. Pressure tuning now has a clear target context.',
+      'Red pressure reviewed. Same-color resistance is active in the deck.',
     LightcoreTutorialStep.adjustEnemyCount =>
       'Swarm Pressure tuned. Higher pressure can pay more, but watch Output Efficiency.',
     LightcoreTutorialStep.upgradeCoreRange =>
@@ -1392,7 +1390,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         LightcoreTutorialStep.upgradeFirstTowerToLevel4 =>
           'Tune Before Expanding',
         LightcoreTutorialStep.pullFirstRedEnemy => 'Teach Color Counters',
-        LightcoreTutorialStep.setFirstEnemyTarget => 'Focus Threat Scan',
+        LightcoreTutorialStep.setFirstEnemyTarget => 'Review Red Pressure',
         LightcoreTutorialStep.adjustEnemyCount => 'Tune Swarm Pressure',
         LightcoreTutorialStep.openTowerMatrix => 'Inspect Tower Lists',
         LightcoreTutorialStep.upgradeCoreRange => 'Upgrade A Global Stat',
@@ -1448,7 +1446,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         LightcoreTutorialStep.pullFirstRedEnemy =>
           'Click Pulls and run 1 more threat scan.',
         LightcoreTutorialStep.setFirstEnemyTarget =>
-          'Click Managers and focus Basic Red in Threat Scan Focus.',
+          'Click Anomalies and review Basic Red in the active deck.',
         LightcoreTutorialStep.adjustEnemyCount =>
           'Click Anomalies and move the Swarm Pressure slider above the low setting.',
         LightcoreTutorialStep.openTowerMatrix =>
@@ -1527,7 +1525,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         LightcoreTutorialStep.pullFirstRedEnemy =>
           'Same-color attacks are resisted. Red anomalies punish overcommitting to one color and unlock the full counter system.',
         LightcoreTutorialStep.setFirstEnemyTarget =>
-          'The focused anomaly drives detail panels and deck tuning. Set a target before you start adjusting active pressure.',
+          'Basic Red is already live in the anomaly deck. The next step is tuning how much swarm pressure the shell can handle.',
         LightcoreTutorialStep.adjustEnemyCount =>
           'Anomaly count controls live pressure. More active anomalies can pay faster, but crowded lanes slow Output Efficiency if your towers cannot keep up.',
         LightcoreTutorialStep.openTowerMatrix =>
@@ -1606,7 +1604,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
           LightcoreTutorialStep.pullFirstRedEnemy =>
             'Anomaly scouts start adapting as soon as they detect the Prism spectrum you deployed on the shell rim.',
           LightcoreTutorialStep.setFirstEnemyTarget =>
-            'The crew pins the red signature on the command board so every later anomaly system has a real target context.',
+            'The crew marks the red signature as live so the next pressure lesson has real resistance in the deck.',
           LightcoreTutorialStep.adjustEnemyCount =>
             'Lumo opens the pressure valve a notch, enough to prove the shell can choose how dense the anomaly field becomes.',
           LightcoreTutorialStep.openTowerMatrix =>

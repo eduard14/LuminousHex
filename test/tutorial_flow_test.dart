@@ -201,8 +201,6 @@ void main() {
     expect(controller.tutorialStep, LightcoreTutorialStep.pullFirstRedEnemy);
     final secondPull = controller.openEnemyTickets(1);
     expect(secondPull.single.config.id, EnemyLibrary.basicRed.id);
-    expect(controller.tutorialStep, LightcoreTutorialStep.setFirstEnemyTarget);
-    controller.selectEnemyCard(EnemyLibrary.basicRed.id);
     expect(controller.tutorialStep, LightcoreTutorialStep.adjustEnemyCount);
     expect(
       controller.setEnemyTargetCount(controller.enemyTargetFloor + 1),
