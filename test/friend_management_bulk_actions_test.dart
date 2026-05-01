@@ -197,6 +197,7 @@ void main() {
     await first.up();
     await second.up();
     await tester.pump();
+    await tester.pump(const Duration(milliseconds: 80));
 
     expect(find.text('Mentor Tower Hex'), findsOneWidget);
   });
@@ -286,19 +287,24 @@ LightcoreSocialOverview _overviewWithGiftState({
 
 LightcoreSocialOverview _overviewWithMentorTree() {
   return LightcoreSocialOverview(
-    self: _socialPlayer('self').copyWith(mentorUid: 'mentor'),
+    self: _socialPlayer('self', mentorUid: 'mentor'),
     mentor: _socialPlayer('mentor'),
     directMentees: <LightcoreSocialPlayer>[
-      _socialPlayer('alpha').copyWith(mentorUid: 'self', bonusActive: true),
-      _socialPlayer('beta').copyWith(mentorUid: 'self'),
+      _socialPlayer('alpha', mentorUid: 'self', bonusActive: true),
+      _socialPlayer('beta', mentorUid: 'self'),
     ],
     grandMentees: <LightcoreSocialPlayer>[
-      _socialPlayer('gamma').copyWith(mentorUid: 'alpha'),
+      _socialPlayer('gamma', mentorUid: 'alpha'),
     ],
   );
 }
 
-LightcoreSocialPlayer _socialPlayer(String uid) {
+LightcoreSocialPlayer _socialPlayer(
+  String uid, {
+  String? mentorUid,
+  bool withinLevelBand = true,
+  bool bonusActive = false,
+}) {
   return LightcoreSocialPlayer(
     uid: uid,
     playerId: uid,
@@ -306,5 +312,8 @@ LightcoreSocialPlayer _socialPlayer(String uid) {
     level: 10,
     progressToNextLevel: 0.5,
     performanceScore: 0.8,
+    mentorUid: mentorUid,
+    withinLevelBand: withinLevelBand,
+    bonusActive: bonusActive,
   );
 }
