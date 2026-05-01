@@ -1172,10 +1172,7 @@ extension _HexTournamentModeDetailUi on _TournamentModeDetailScreenState {
               value: tower.weeklyFocus ? '+16%' : 'Off',
             ),
             if (snapshot.waveLeakDamage > 0)
-              _HeaderChip(
-                label: 'Leaks',
-                value: '${snapshot.waveLeakDamage}',
-              ),
+              _HeaderChip(label: 'Leaks', value: '${snapshot.waveLeakDamage}'),
           ],
         ),
         const SizedBox(height: 10),

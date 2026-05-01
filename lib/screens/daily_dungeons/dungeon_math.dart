@@ -83,7 +83,10 @@ int _dungeonNextLaunchChainTier({
   return (currentTier + 1).clamp(2, 6).toInt();
 }
 
-double _dungeonLaunchChainDamageMultiplier(int chainTier, {required bool apex}) {
+double _dungeonLaunchChainDamageMultiplier(
+  int chainTier, {
+  required bool apex,
+}) {
   final surge = 1 + ((chainTier - 1).clamp(0, 6) * 0.14);
   final apexBonus = apex ? 0.12 : 0.0;
   return (surge + apexBonus).clamp(1.0, 1.86).toDouble();

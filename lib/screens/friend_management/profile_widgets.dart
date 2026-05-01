@@ -111,7 +111,7 @@ class _SocialPlayerProfilePanel extends StatelessWidget {
   }
 }
 
-class _SocialHexMap extends StatelessWidget {
+class _SocialHexMap extends StatefulWidget {
   const _SocialHexMap({
     required this.social,
     required this.controller,
@@ -119,6 +119,7 @@ class _SocialHexMap extends StatelessWidget {
     required this.centerLabel,
     required this.children,
     required this.grandchildren,
+    required this.onFocusChanged,
     required this.onTapPlayer,
     this.mentor,
   });
@@ -130,14 +131,128 @@ class _SocialHexMap extends StatelessWidget {
   final List<LightcoreSocialPlayer> children;
   final List<LightcoreSocialPlayer> grandchildren;
   final LightcoreSocialPlayer? mentor;
+  final ValueChanged<String?> onFocusChanged;
   final ValueChanged<LightcoreSocialPlayer> onTapPlayer;
 
   @override
+  State<_SocialHexMap> createState() => _SocialHexMapState();
+}
+
+class _SocialHexMapState extends State<_SocialHexMap> {
+  static const double _minMapScale = 0.62;
+  static const double _maxMapScale = 1.52;
+  static const double _mentorZoomThreshold = 0.68;
+  static const double _selfZoomThreshold = 1.32;
+  static const double _maxPanX = 220;
+  static const double _maxPanY = 180;
+
+  Offset _mapPan = Offset.zero;
+  Offset? _lastFocalPoint;
+  double _mapScale = 1;
+  double _lastScaleSignal = 1;
+  bool _zoomFocusTransition = false;
+
+  @override
+  void didUpdateWidget(covariant _SocialHexMap oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.center.uid != widget.center.uid) {
+      if (!_zoomFocusTransition) {
+        _mapPan = Offset.zero;
+        _mapScale = 1;
+      }
+      _lastFocalPoint = null;
+      _lastScaleSignal = 1;
+      _zoomFocusTransition = false;
+    }
+  }
+
+  void _handleScaleStart(ScaleStartDetails details) {
+    _lastFocalPoint = details.focalPoint;
+    _lastScaleSignal = 1;
+  }
+
+  void _handleScaleUpdate(ScaleUpdateDetails details) {
+    final previousFocalPoint = _lastFocalPoint;
+    if (previousFocalPoint == null) {
+      _lastFocalPoint = details.focalPoint;
+      _lastScaleSignal = details.scale.clamp(0.01, double.infinity).toDouble();
+      return;
+    }
+
+    final scaleSignal = details.scale.clamp(0.01, double.infinity).toDouble();
+    final scaleDelta = scaleSignal / _lastScaleSignal;
+    final focalDelta = details.focalPoint - previousFocalPoint;
+    setState(() {
+      _mapScale = (_mapScale * scaleDelta)
+          .clamp(_minMapScale, _maxMapScale)
+          .toDouble();
+      _mapPan = _clampMapPan(_mapPan + (focalDelta / _mapScale));
+    });
+    _lastFocalPoint = details.focalPoint;
+    _lastScaleSignal = scaleSignal;
+    _maybeTransitionFocusForZoom();
+  }
+
+  void _handleScaleEnd(ScaleEndDetails details) {
+    _lastFocalPoint = null;
+    _lastScaleSignal = 1;
+  }
+
+  void _resetMapView() {
+    setState(() {
+      _mapPan = Offset.zero;
+      _mapScale = 1;
+      _lastFocalPoint = null;
+      _lastScaleSignal = 1;
+    });
+  }
+
+  void _maybeTransitionFocusForZoom() {
+    final mentor = widget.social.mentor;
+    if (_zoomFocusTransition || mentor == null) {
+      return;
+    }
+    final viewingSelf = widget.center.uid == widget.social.self.uid;
+    final viewingMentor = widget.center.uid == mentor.uid;
+    if (viewingSelf && _mapScale <= _mentorZoomThreshold) {
+      _zoomFocusTransition = true;
+      setState(() {
+        _mapPan = Offset.zero;
+        _mapScale = _mentorZoomThreshold;
+      });
+      widget.onFocusChanged(mentor.uid);
+      return;
+    }
+    if (viewingMentor && _mapScale >= _selfZoomThreshold) {
+      _zoomFocusTransition = true;
+      setState(() {
+        _mapPan = Offset.zero;
+        _mapScale = 1;
+      });
+      widget.onFocusChanged(null);
+    }
+  }
+
+  Offset _clampMapPan(Offset pan) {
+    return Offset(
+      pan.dx.clamp(-_maxPanX, _maxPanX).toDouble(),
+      pan.dy.clamp(-_maxPanY, _maxPanY).toDouble(),
+    );
+  }
+
+  double get _shellExpansion =>
+      ((_mapScale - _minMapScale) / (1.04 - _minMapScale))
+          .clamp(0.0, 1.0)
+          .toDouble();
+
+  @override
   Widget build(BuildContext context) {
-    final orderedChildren = children.toList(growable: true)
+    final orderedChildren = widget.children.toList(growable: true)
       ..sort(_compareSocialBranchPriority);
     final primaryChildren = orderedChildren.take(6).toList(growable: false);
     final reserveChildren = orderedChildren.skip(6).toList(growable: false);
+    final orderedGrandchildren = widget.grandchildren.toList(growable: true)
+      ..sort(_compareSocialBranchPriority);
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -146,11 +261,22 @@ class _SocialHexMap extends StatelessWidget {
         final centerPoint = Offset(width / 2, height * 0.53);
         final orbitRadius = math.min(width * 0.3, height * 0.27);
         final reserveRadius = math.min(width * 0.43, height * 0.39);
+        final grandchildRadius = math.min(width * 0.49, height * 0.44);
+        final shellExpansion = _shellExpansion;
+        final shellCollapsed = shellExpansion < 0.42;
         final tileWidth = math.min(138.0, math.max(116.0, width * 0.31));
         final tileHeight = tileWidth * 1.1;
-        final centerTileWidth = math.min(154.0, tileWidth + 18);
+        final centerTileWidth = _lerpDouble(
+          math.min(116.0, tileWidth),
+          math.min(154.0, tileWidth + 18),
+          shellExpansion,
+        );
         final centerTileHeight = centerTileWidth * 1.08;
-        final compactWidth = math.min(108.0, math.max(90.0, width * 0.24));
+        final compactWidth = _lerpDouble(
+          math.min(88.0, math.max(76.0, width * 0.2)),
+          math.min(108.0, math.max(90.0, width * 0.24)),
+          shellExpansion,
+        );
         final compactHeight = compactWidth * 1.08;
         final nodes = <Widget>[
           _positionedNode(
@@ -158,18 +284,20 @@ class _SocialHexMap extends StatelessWidget {
             centerTileWidth,
             centerTileHeight,
             _SocialHexTile(
-              player: center,
+              player: widget.center,
               tint: LightcorePalette.aether,
-              label: centerLabel,
-              tower: _towerForPlayer(center),
-              branchCount: children.length,
+              label: widget.centerLabel,
+              tower: _towerForPlayer(widget.center),
+              branchCount: widget.children.length,
               isCenter: true,
-              onTap: () => onTapPlayer(center),
+              compact: shellCollapsed,
+              shellExpansion: shellExpansion,
+              onTap: () => widget.onTapPlayer(widget.center),
             ),
           ),
         ];
 
-        final parent = mentor;
+        final parent = widget.mentor;
         if (parent != null) {
           nodes.add(
             _positionedNode(
@@ -185,7 +313,8 @@ class _SocialHexMap extends StatelessWidget {
                 tower: _towerForPlayer(parent),
                 branchCount: _branchCountFor(parent),
                 compact: true,
-                onTap: () => onTapPlayer(parent),
+                shellExpansion: shellExpansion,
+                onTap: () => widget.onTapPlayer(parent),
               ),
             ),
           );
@@ -207,7 +336,9 @@ class _SocialHexMap extends StatelessWidget {
                 label: 'Mentee',
                 tower: _towerForPlayer(player),
                 branchCount: _branchCountFor(player),
-                onTap: () => onTapPlayer(player),
+                compact: shellCollapsed,
+                shellExpansion: shellExpansion,
+                onTap: () => widget.onTapPlayer(player),
               ),
             ),
           );
@@ -242,13 +373,56 @@ class _SocialHexMap extends StatelessWidget {
                 tower: _towerForPlayer(player),
                 branchCount: _branchCountFor(player),
                 compact: true,
-                onTap: () => onTapPlayer(player),
+                shellExpansion: shellExpansion,
+                onTap: () => widget.onTapPlayer(player),
               ),
             ),
           );
         }
 
+        if (shellExpansion > 0.58) {
+          final visibleGrandchildren = orderedGrandchildren
+              .take(12)
+              .toList(growable: false);
+          for (var index = 0; index < visibleGrandchildren.length; index += 1) {
+            final angle =
+                (-math.pi / 2) +
+                ((math.pi * 2) * (index + 0.5) / visibleGrandchildren.length);
+            final rawPoint =
+                centerPoint +
+                Offset(math.cos(angle), math.sin(angle)) * grandchildRadius;
+            final point = _clampPoint(
+              rawPoint,
+              compactWidth,
+              compactHeight,
+              width,
+              height,
+            );
+            final player = visibleGrandchildren[index];
+            nodes.add(
+              _positionedNode(
+                point,
+                compactWidth,
+                compactHeight,
+                _SocialHexTile(
+                  player: player,
+                  tint: player.withinLevelBand
+                      ? LightcorePalette.violet
+                      : LightcorePalette.warning,
+                  label: 'Next',
+                  tower: _towerForPlayer(player),
+                  branchCount: _branchCountFor(player),
+                  compact: true,
+                  shellExpansion: shellExpansion,
+                  onTap: () => widget.onTapPlayer(player),
+                ),
+              ),
+            );
+          }
+        }
+
         return DecoratedBox(
+          key: const ValueKey('mentor-hex-map-viewport'),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(26),
             border: Border.all(
@@ -263,20 +437,39 @@ class _SocialHexMap extends StatelessWidget {
           ),
           child: ClipRRect(
             borderRadius: BorderRadius.circular(26),
-            child: CustomPaint(
-              painter: _SocialTowerMapPainter(
-                tint: LightcorePalette.violet,
-                hasMentorAnchor: mentor != null,
-              ),
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onDoubleTap: _resetMapView,
+              onScaleStart: _handleScaleStart,
+              onScaleUpdate: _handleScaleUpdate,
+              onScaleEnd: _handleScaleEnd,
               child: Stack(
                 children: [
-                  ...nodes,
+                  Transform.scale(
+                    scale: _mapScale,
+                    alignment: Alignment.center,
+                    child: Transform.translate(
+                      offset: _mapPan,
+                      child: SizedBox(
+                        width: width,
+                        height: height,
+                        child: CustomPaint(
+                          painter: _SocialTowerMapPainter(
+                            tint: LightcorePalette.violet,
+                            hasMentorAnchor: widget.mentor != null,
+                            shellExpansion: shellExpansion,
+                          ),
+                          child: Stack(children: nodes),
+                        ),
+                      ),
+                    ),
+                  ),
                   Positioned(
                     right: 14,
                     top: 12,
                     child: _MiniBadge(
                       label:
-                          '${children.length} direct • ${grandchildren.length} next',
+                          '${widget.children.length} direct • ${widget.grandchildren.length} next',
                       tint: LightcorePalette.aether,
                     ),
                   ),
@@ -317,17 +510,17 @@ class _SocialHexMap extends StatelessWidget {
   int _priorityBool(bool value) => value ? 1 : 0;
 
   int _branchCountFor(LightcoreSocialPlayer player) {
-    if (social.mentor?.uid == player.uid) {
+    if (widget.social.mentor?.uid == player.uid) {
       return 1;
     }
-    return social.childrenOf(player.uid).length;
+    return widget.social.childrenOf(player.uid).length;
   }
 
   FriendRelayTower? _towerForPlayer(LightcoreSocialPlayer player) {
-    if (player.uid == social.self.uid) {
-      return controller.sharedRelayTower;
+    if (player.uid == widget.social.self.uid) {
+      return widget.controller.sharedRelayTower;
     }
-    for (final profile in controller.friendRelayProfiles) {
+    for (final profile in widget.controller.friendRelayProfiles) {
       if (profile.playerId == player.uid ||
           profile.playerId == player.playerId) {
         return profile.sharedTower;
@@ -376,6 +569,11 @@ class _SocialHexMap extends StatelessWidget {
       child: child,
     );
   }
+
+  double _lerpDouble(double begin, double end, double t) {
+    final clamped = t.clamp(0.0, 1.0).toDouble();
+    return begin + ((end - begin) * clamped);
+  }
 }
 
 class _SocialHexTile extends StatelessWidget {
@@ -388,6 +586,7 @@ class _SocialHexTile extends StatelessWidget {
     required this.onTap,
     this.compact = false,
     this.isCenter = false,
+    this.shellExpansion = 1,
   });
 
   final LightcoreSocialPlayer player;
@@ -398,6 +597,7 @@ class _SocialHexTile extends StatelessWidget {
   final VoidCallback? onTap;
   final bool compact;
   final bool isCenter;
+  final double shellExpansion;
 
   @override
   Widget build(BuildContext context) {
@@ -449,6 +649,7 @@ class _SocialHexTile extends StatelessWidget {
                         tower: tower,
                         tint: tint,
                         size: compact ? 30 : 42,
+                        shellExpansion: shellExpansion,
                       ),
                       SizedBox(height: compact ? 3 : 5),
                       Text(
@@ -458,7 +659,7 @@ class _SocialHexTile extends StatelessWidget {
                         style: textTheme.labelSmall?.copyWith(
                           color: tint,
                           fontWeight: FontWeight.w900,
-                          letterSpacing: 0.5,
+                          letterSpacing: 0,
                         ),
                       ),
                       Text(
@@ -507,12 +708,14 @@ class _SocialTowerGlyph extends StatelessWidget {
     required this.tower,
     required this.tint,
     required this.size,
+    this.shellExpansion = 1,
   });
 
   final LightcoreSocialPlayer player;
   final FriendRelayTower? tower;
   final Color tint;
   final double size;
+  final double shellExpansion;
 
   @override
   Widget build(BuildContext context) {
@@ -523,6 +726,7 @@ class _SocialTowerGlyph extends StatelessWidget {
           player: player,
           tower: tower,
           tint: tint,
+          shellExpansion: shellExpansion,
         ),
       ),
     );
@@ -534,18 +738,21 @@ class _SocialTowerGlyphPainter extends CustomPainter {
     required this.player,
     required this.tower,
     required this.tint,
+    required this.shellExpansion,
   });
 
   final LightcoreSocialPlayer player;
   final FriendRelayTower? tower;
   final Color tint;
+  final double shellExpansion;
 
   @override
   void paint(Canvas canvas, Size size) {
     final shortest = math.min(size.width, size.height);
     final center = Offset(size.width / 2, size.height / 2);
+    final expansion = shellExpansion.clamp(0.0, 1.0).toDouble();
     final orbitRadius = shortest * 0.3;
-    final nodeRadius = shortest * 0.105;
+    final nodeRadius = shortest * (0.07 + (0.035 * expansion));
     final centerRadius = shortest * 0.14;
     final outerPieces = tower?.outerPieces ?? const <FriendRelayPiece?>[];
     final fallbackFilled = _fallbackFilledTowerCount(player);
@@ -554,7 +761,7 @@ class _SocialTowerGlyphPainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeWidth = shortest * 0.035
       ..strokeCap = StrokeCap.round
-      ..color = tint.withValues(alpha: 0.42);
+      ..color = tint.withValues(alpha: 0.08 + (0.34 * expansion));
     final emptyFill = Paint()
       ..style = PaintingStyle.fill
       ..color = LightcorePalette.panel.withValues(alpha: 0.64);
@@ -563,9 +770,34 @@ class _SocialTowerGlyphPainter extends CustomPainter {
       ..strokeWidth = shortest * 0.026
       ..color = LightcorePalette.stroke.withValues(alpha: 0.5);
 
+    final points = List<Offset>.generate(
+      6,
+      (index) => Offset.lerp(
+        center,
+        _hexOrbitPoint(center, orbitRadius, index),
+        expansion,
+      )!,
+      growable: false,
+    );
+    if (expansion > 0.05) {
+      for (final point in points) {
+        canvas.drawLine(center, point, linePaint);
+      }
+    }
+
     for (var index = 0; index < 6; index += 1) {
-      final point = _hexOrbitPoint(center, orbitRadius, index);
-      canvas.drawLine(center, point, linePaint);
+      final point = points[index];
+      final piece = index < outerPieces.length ? outerPieces[index] : null;
+      final fallbackFilledSlot = !hasRealTower && index < fallbackFilled - 1;
+      _paintTowerNode(
+        canvas,
+        point,
+        nodeRadius,
+        color: piece?.affinity.color ?? _fallbackTowerColor(player.uid, index),
+        filled: piece != null || fallbackFilledSlot,
+        emptyFill: emptyFill,
+        emptyStroke: emptyStroke,
+      );
     }
 
     final centerColor =
@@ -579,21 +811,6 @@ class _SocialTowerGlyphPainter extends CustomPainter {
       emptyFill: emptyFill,
       emptyStroke: emptyStroke,
     );
-
-    for (var index = 0; index < 6; index += 1) {
-      final point = _hexOrbitPoint(center, orbitRadius, index);
-      final piece = index < outerPieces.length ? outerPieces[index] : null;
-      final fallbackFilledSlot = !hasRealTower && index < fallbackFilled - 1;
-      _paintTowerNode(
-        canvas,
-        point,
-        nodeRadius,
-        color: piece?.affinity.color ?? _fallbackTowerColor(player.uid, index),
-        filled: piece != null || fallbackFilledSlot,
-        emptyFill: emptyFill,
-        emptyStroke: emptyStroke,
-      );
-    }
   }
 
   void _paintTowerNode(
@@ -631,7 +848,8 @@ class _SocialTowerGlyphPainter extends CustomPainter {
   bool shouldRepaint(covariant _SocialTowerGlyphPainter oldDelegate) =>
       oldDelegate.player != player ||
       oldDelegate.tower != tower ||
-      oldDelegate.tint != tint;
+      oldDelegate.tint != tint ||
+      oldDelegate.shellExpansion != shellExpansion;
 }
 
 class _SocialHexTilePainter extends CustomPainter {
@@ -696,35 +914,40 @@ class _SocialTowerMapPainter extends CustomPainter {
   const _SocialTowerMapPainter({
     required this.tint,
     required this.hasMentorAnchor,
+    required this.shellExpansion,
   });
 
   final Color tint;
   final bool hasMentorAnchor;
+  final double shellExpansion;
 
   @override
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height * 0.53);
+    final expansion = shellExpansion.clamp(0.0, 1.0).toDouble();
     final orbitRadius = math.min(size.width * 0.3, size.height * 0.27);
-    final slotRadius = math.min(size.width, size.height) * 0.058;
+    final activeOrbitRadius = orbitRadius * (0.28 + (0.72 * expansion));
+    final slotRadius =
+        math.min(size.width, size.height) * (0.036 + (0.022 * expansion));
     final guidePaint = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.2
-      ..color = tint.withValues(alpha: 0.18);
+      ..color = tint.withValues(alpha: 0.08 + (0.1 * expansion));
     final spokePaint = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.4
       ..strokeCap = StrokeCap.round
-      ..color = tint.withValues(alpha: 0.16);
+      ..color = tint.withValues(alpha: 0.05 + (0.11 * expansion));
 
     for (var ring = 1; ring <= 2; ring += 1) {
       canvas.drawPath(
-        _hexagonPath(center, orbitRadius * (ring == 1 ? 0.72 : 1.18)),
+        _hexagonPath(center, activeOrbitRadius * (ring == 1 ? 0.72 : 1.18)),
         guidePaint,
       );
     }
 
     for (var index = 0; index < 6; index += 1) {
-      final point = _hexOrbitPoint(center, orbitRadius, index);
+      final point = _hexOrbitPoint(center, activeOrbitRadius, index);
       canvas.drawLine(center, point, spokePaint);
       canvas.drawPath(_hexagonPath(point, slotRadius), guidePaint);
     }
@@ -755,7 +978,8 @@ class _SocialTowerMapPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant _SocialTowerMapPainter oldDelegate) =>
       oldDelegate.tint != tint ||
-      oldDelegate.hasMentorAnchor != hasMentorAnchor;
+      oldDelegate.hasMentorAnchor != hasMentorAnchor ||
+      oldDelegate.shellExpansion != shellExpansion;
 }
 
 class _HexClipper extends CustomClipper<Path> {

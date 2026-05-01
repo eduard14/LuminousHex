@@ -82,11 +82,8 @@ class _ThreatDirectorDungeonGame extends FlameGame {
     _raids.add(
       _DungeonRaid(
         id: 'dungeon_raid_$raidIndex',
-        damagePerSecond: _dungeonRaidDamagePerSecond(
-              controller,
-              card,
-              apex: apex,
-            ) *
+        damagePerSecond:
+            _dungeonRaidDamagePerSecond(controller, card, apex: apex) *
             surgeMultiplier,
         totalSeconds: lifetime,
         remainingSeconds: lifetime,

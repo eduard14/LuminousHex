@@ -180,14 +180,13 @@ class _PrismRiftDungeonGame extends FlameGame {
         orbitFactor: 0.34 + (_random.nextDouble() * 0.34) + (boss ? 0.04 : 0.0),
         maxHealth: shardHealth,
         health: shardHealth,
-        radiusFactor:
-            boss
-                ? 0.052
-                : role == _PrismRiftShardRole.anchor
-                ? 0.044
-                : role == _PrismRiftShardRole.volatile
-                ? 0.03
-                : 0.034 + (_random.nextDouble() * 0.01),
+        radiusFactor: boss
+            ? 0.052
+            : role == _PrismRiftShardRole.anchor
+            ? 0.044
+            : role == _PrismRiftShardRole.volatile
+            ? 0.03
+            : 0.034 + (_random.nextDouble() * 0.01),
         weakAngle: _random.nextDouble() * math.pi * 2,
         weakSpin: angularSign * (0.9 + (_random.nextDouble() * 0.8)),
         role: role,
@@ -439,8 +438,9 @@ class _PrismRiftDungeonGame extends FlameGame {
           : 1.0;
       final weakBonus = hit.weak ? 1.88 : 1.0;
       final bossGuard = shard.boss ? 0.78 : 1.0;
-      final anchorGuard =
-          shard.role == _PrismRiftShardRole.anchor && !hit.weak ? 0.82 : 1.0;
+      final anchorGuard = shard.role == _PrismRiftShardRole.anchor && !hit.weak
+          ? 0.82
+          : 1.0;
       final damage =
           towerProfile.shotDamage *
           spec.damageMultiplier *

@@ -80,6 +80,65 @@ void main() {
     },
   );
 
+  test('weekly focus towers carry the event damage bonus', () {
+    final run = HexTournamentRunController(
+      seedPowerIndex: 1400,
+      startingCurrency: 1000,
+    )..start();
+    expect(run.snapshot.focusAffinities, contains(PrototypeAffinity.solar));
+
+    final cells = run.snapshot.cells
+        .where((cell) => cell.canBuild)
+        .take(2)
+        .toList(growable: false);
+    expect(
+      run.placeTower(cells[0].id, config: TowerLibrary.yellowPrism),
+      isTrue,
+    );
+    expect(run.placeTower(cells[1].id, config: TowerLibrary.redPrism), isTrue);
+
+    final focused = run.snapshot.towers.firstWhere(
+      (tower) => tower.config.id == TowerLibrary.yellowPrism.id,
+    );
+    final offFocus = run.snapshot.towers.firstWhere(
+      (tower) => tower.config.id == TowerLibrary.redPrism.id,
+    );
+
+    expect(focused.weeklyFocus, isTrue);
+    expect(focused.focusDamageMultiplier, 1.16);
+    expect(offFocus.weeklyFocus, isFalse);
+    expect(offFocus.focusDamageMultiplier, 1.0);
+  });
+
+  test('clearing a wave without leaks awards a flawless streak', () {
+    final run = HexTournamentRunController(
+      seedPowerIndex: 1400,
+      startingCurrency: 10000,
+    )..start();
+    final cells = run.snapshot.cells
+        .where((cell) => cell.canBuild)
+        .take(14)
+        .toList(growable: false);
+    for (final cell in cells) {
+      expect(run.placeTower(cell.id, config: TowerLibrary.yellowPrism), isTrue);
+    }
+
+    expect(run.sendWave(), isTrue);
+    for (
+      var frame = 0;
+      frame < 2400 && run.snapshot.waveInProgress;
+      frame += 1
+    ) {
+      run.tick(0.05);
+    }
+
+    expect(run.snapshot.waveInProgress, isFalse);
+    expect(run.snapshot.health, run.snapshot.maxHealth);
+    expect(run.snapshot.waveLeakDamage, 0);
+    expect(run.snapshot.flawlessStreak, 1);
+    expect(run.snapshot.statusLabel, contains('flawless'));
+  });
+
   test('buying enemy tier makes future wave enemies worth more score', () {
     final baseline = HexTournamentRunController(
       seedPowerIndex: 1400,
