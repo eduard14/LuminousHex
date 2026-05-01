@@ -221,8 +221,6 @@ class _TournamentScreenState extends State<TournamentScreen> {
       errorMessage: _errorMessage,
       onRefresh: _loadOverview,
       onOpenMode: _openMode,
-      onPlayMode: (mode) => _openMode(mode, autoStart: true),
-      onClaimReward: _claimReward,
     );
   }
 }

@@ -239,6 +239,9 @@ extension LightcoreControllerStateAccessors on LightcoreController {
 
   bool get activeLayerPassiveOnly => isLayerPassiveOnly(activeLayer);
 
+  bool get _activeLayerAllowsProgressionUpgrades =>
+      !activeLayerPassiveOnly || activeLayerHasParentSlot;
+
   int get newEquipmentNotificationCount => _newEquipmentItemIds.length;
 
   bool get hasNewEquipmentNotifications => _newEquipmentItemIds.isNotEmpty;

@@ -127,9 +127,9 @@ class _EnemyManagementScreenState extends State<EnemyManagementScreen> {
             ),
             const SizedBox(height: 8),
             if (_tab == _ThreatLibraryTab.enemies) ...[
-              _ThreatAssignmentPanel(controller: controller),
-              const SizedBox(height: 18),
               _SwarmPressurePanel(controller: controller),
+              const SizedBox(height: 18),
+              _ThreatAssignmentPanel(controller: controller),
               const SizedBox(height: 18),
               _MassEnemyFusePanel(controller: controller),
             ] else ...[

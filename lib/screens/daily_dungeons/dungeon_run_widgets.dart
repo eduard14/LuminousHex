@@ -471,15 +471,10 @@ class _DungeonResultPanel extends StatelessWidget {
 }
 
 class _DungeonHeader extends StatelessWidget {
-  const _DungeonHeader({
-    required this.dailyKey,
-    required this.ownedEnemyCount,
-    required this.selectedLoadoutCount,
-  });
+  const _DungeonHeader({required this.dailyKey, required this.ownedEnemyCount});
 
   final String dailyKey;
   final int ownedEnemyCount;
-  final int selectedLoadoutCount;
 
   @override
   Widget build(BuildContext context) {
@@ -490,7 +485,7 @@ class _DungeonHeader extends StatelessWidget {
         Text('Daily Dungeons', style: textTheme.titleLarge),
         const SizedBox(height: 6),
         Text(
-          'Event combat runs on its own screen while the base shell is parked in idle progress. The first route is live now; the other two are reserved for future rotations.',
+          'Choose a route to open setup, rewards, and play.',
           style: textTheme.bodyMedium?.copyWith(
             color: LightcorePalette.mist.withValues(alpha: 0.76),
           ),
@@ -509,11 +504,6 @@ class _DungeonHeader extends StatelessWidget {
               icon: Icons.adjust_rounded,
               label: '$ownedEnemyCount anomalies',
               tint: LightcorePalette.verdant,
-            ),
-            _InfoChip(
-              icon: Icons.toll_rounded,
-              label: '$selectedLoadoutCount selected',
-              tint: LightcorePalette.solar,
             ),
           ],
         ),

@@ -15,10 +15,12 @@ import 'package:lightcore/data/tower_configs.dart';
 import 'package:lightcore/models/lightcore_cloud_save.dart';
 import 'package:lightcore/models/lightcore_guide.dart';
 import 'package:lightcore/models/lightcore_social_state.dart';
+import 'package:lightcore/models/lightcore_tournament.dart';
 import 'package:lightcore/models/lightcore_types.dart';
 import 'package:lightcore/screens/battle_screen.dart';
 import 'package:lightcore/screens/daily_dungeons_screen.dart';
 import 'package:lightcore/screens/lightcore_shell.dart';
+import 'package:lightcore/screens/tournament_screen.dart';
 import 'package:lightcore/services/lightcore_firebase_backend.dart';
 import 'package:lightcore/services/lightcore_firebase_runtime_config.dart';
 import 'package:lightcore/state/lightcore_controller.dart';
@@ -699,6 +701,48 @@ void main() {
     expect(find.byTooltip('Return to Base Game'), findsOneWidget);
   });
 
+  testWidgets('tournament hub opens mode details before run controls', (
+    tester,
+  ) async {
+    addTearDown(() async => tester.binding.setSurfaceSize(null));
+    await tester.binding.setSurfaceSize(const Size(1200, 1000));
+
+    final controller = LightcoreController();
+    addTearDown(controller.dispose);
+    final backend = _TournamentOverviewBackend();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        debugShowCheckedModeBanner: false,
+        theme: buildLightcoreTheme(),
+        home: Scaffold(
+          body: TournamentScreen(controller: controller, backend: backend),
+        ),
+      ),
+    );
+    await tester.pump();
+    await tester.pump();
+
+    expect(find.text('Tournament Nexus'), findsOneWidget);
+    expect(find.text('Anomaly Blitz'), findsOneWidget);
+    expect(find.text('Start Run'), findsNothing);
+    expect(find.byTooltip('Start run'), findsNothing);
+
+    await tester.tap(
+      find
+          .ancestor(
+            of: find.text('Anomaly Blitz'),
+            matching: find.byType(InkWell),
+          )
+          .first,
+    );
+    await tester.pump();
+
+    expect(find.text('Back to Events'), findsOneWidget);
+    expect(find.text('Event Setup'), findsOneWidget);
+    expect(find.text('Start Run'), findsOneWidget);
+  });
+
   testWidgets('daily dungeon overlay opens before level 15 for testing', (
     tester,
   ) async {
@@ -712,8 +756,9 @@ void main() {
     expect(find.text('Daily Dungeons'), findsOneWidget);
     expect(find.text('Threat Director'), findsWidgets);
     expect(find.text('Prism Rift'), findsWidgets);
-    expect(find.text('Joined'), findsWidgets);
+    expect(find.text('Open'), findsWidgets);
     expect(find.text('Sealed'), findsOneWidget);
+    expect(find.text('Select Anomalies'), findsNothing);
   });
 
   testWidgets('mentorship overlay unlocks at level 30', (tester) async {
@@ -760,6 +805,15 @@ void main() {
     await _pumpShell(tester, controller);
     await _openHeaderMenuDestination(tester, 'Daily Dungeons');
 
+    await tester.tap(
+      find
+          .ancestor(
+            of: find.text('Threat Director'),
+            matching: find.byType(InkWell),
+          )
+          .first,
+    );
+    await tester.pump();
     await tester.scrollUntilVisible(
       find.text('Enter Lv 1'),
       220,
@@ -1902,8 +1956,12 @@ void main() {
       await _pumpTransition(tester);
 
       expect(find.text('Threat Library'), findsOneWidget);
-      expect(find.text('Anomaly Assignment'), findsOneWidget);
-      expect(find.text('Main Apex'), findsOneWidget);
+      expect(find.text('Threat Scan Pressure'), findsOneWidget);
+      expect(
+        find.text('Anomaly Assignment', skipOffstage: false),
+        findsOneWidget,
+      );
+      expect(find.text('Main Apex', skipOffstage: false), findsOneWidget);
       expect(find.text('Main Anomaly', skipOffstage: false), findsNothing);
       expect(find.text('Open 1', skipOffstage: false), findsNothing);
       expect(find.text('Threat Scans', skipOffstage: false), findsNothing);
@@ -2077,6 +2135,75 @@ void main() {
       expect(tester.takeException(), isNull);
     },
   );
+}
+
+class _TournamentOverviewBackend extends FirebaseLightcoreBackend {
+  _TournamentOverviewBackend()
+    : super(runtimeConfig: lightcoreFirebaseRuntimeConfig);
+
+  static final DateTime _startsAt = DateTime(2026);
+  static final DateTime _endsAt = DateTime(2026, 1, 8);
+
+  LightcoreTournamentOverview get _overview => LightcoreTournamentOverview(
+    seasonKey: 'test-week',
+    seasonLabel: 'Test Week',
+    startsAt: _startsAt,
+    endsAt: _endsAt,
+    globalTournamentRating: 1000,
+    activeExperienceMultiplier: 1,
+    online: true,
+    statusMessage: 'Tournament test season is live.',
+    modes: [
+      for (final mode in LightcoreTournamentModeId.values)
+        LightcoreTournamentModeState(
+          mode: mode,
+          statusMessage: '${mode.label} is live.',
+          mechanicSummary: mode.mechanicLabel,
+          rewardPreview: const LightcoreTournamentRewardPackage(
+            flux: 100,
+            tickets: 2,
+            experienceMultiplier: 1.1,
+            experienceBuffHours: 1,
+          ),
+          startsAt: _startsAt,
+          endsAt: _endsAt,
+          isOpen: true,
+          seedPowerIndex: 1400,
+        ),
+    ],
+  );
+
+  @override
+  Future<LightcoreTournamentOverview> fetchTournamentOverview() async {
+    return _overview;
+  }
+
+  @override
+  Future<LightcoreTournamentOverview> joinTournamentQueue({
+    required LightcoreTournamentModeId mode,
+    required LightcoreTournamentPlayerSnapshot snapshot,
+  }) async {
+    return _overview;
+  }
+
+  @override
+  Future<LightcoreTournamentOverview> submitTournamentRun({
+    required LightcoreTournamentModeId mode,
+    required int score,
+    required LightcoreTournamentPlayerSnapshot snapshot,
+  }) async {
+    return _overview;
+  }
+
+  @override
+  Future<LightcoreTournamentClaimResult> claimTournamentReward({
+    required LightcoreTournamentModeId mode,
+  }) async {
+    return LightcoreTournamentClaimResult(
+      reward: _overview.modeFor(mode).rewardPreview,
+      overview: _overview,
+    );
+  }
 }
 
 class _ExpiringSessionBackend extends FirebaseLightcoreBackend {

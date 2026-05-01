@@ -6,7 +6,6 @@ class _DungeonSelectCard extends StatelessWidget {
     required this.subtitle,
     required this.icon,
     required this.tint,
-    required this.selected,
     required this.enabled,
     required this.statusLabel,
     required this.onTap,
@@ -16,7 +15,6 @@ class _DungeonSelectCard extends StatelessWidget {
   final String subtitle;
   final IconData icon;
   final Color tint;
-  final bool selected;
   final bool enabled;
   final String statusLabel;
   final VoidCallback? onTap;
@@ -62,8 +60,11 @@ class _DungeonSelectCard extends StatelessWidget {
             children: [
               _StatusCapsule(label: statusLabel, tint: activeTint),
               const Spacer(),
-              if (selected)
-                Icon(Icons.check_circle_rounded, color: activeTint, size: 20),
+              Icon(
+                enabled ? Icons.chevron_right_rounded : Icons.lock_rounded,
+                color: activeTint,
+                size: 20,
+              ),
             ],
           ),
         ],

@@ -9,8 +9,6 @@ class _TournamentHubScreen extends StatelessWidget {
     required this.errorMessage,
     required this.onRefresh,
     required this.onOpenMode,
-    required this.onPlayMode,
-    required this.onClaimReward,
   });
 
   final LightcoreTournamentOverview? overview;
@@ -20,8 +18,6 @@ class _TournamentHubScreen extends StatelessWidget {
   final String? errorMessage;
   final Future<void> Function() onRefresh;
   final ValueChanged<LightcoreTournamentModeId> onOpenMode;
-  final ValueChanged<LightcoreTournamentModeId> onPlayMode;
-  final ValueChanged<LightcoreTournamentModeId> onClaimReward;
 
   @override
   Widget build(BuildContext context) {
@@ -53,8 +49,6 @@ class _TournamentHubScreen extends StatelessWidget {
           ],
           const SizedBox(height: 14),
           if (overview != null) ...[
-            _TournamentRankStrip(overview: overview!),
-            const SizedBox(height: 12),
             LayoutBuilder(
               builder: (context, constraints) {
                 final wide = constraints.maxWidth >= 760;
@@ -70,12 +64,9 @@ class _TournamentHubScreen extends StatelessWidget {
                         width: tileWidth,
                         child: _TournamentModeHubCard(
                           modeState: overview!.modeFor(mode),
-                          busy: busy,
                           highlighted: controller
                               .tutorialHighlightsTournamentModeCard(mode),
                           onOpen: () => onOpenMode(mode),
-                          onPlay: () => onPlayMode(mode),
-                          onClaim: () => onClaimReward(mode),
                         ),
                       ),
                   ],
@@ -83,78 +74,6 @@ class _TournamentHubScreen extends StatelessWidget {
               },
             ),
           ],
-        ],
-      ),
-    );
-  }
-}
-
-class _TournamentRankStrip extends StatelessWidget {
-  const _TournamentRankStrip({required this.overview});
-
-  final LightcoreTournamentOverview overview;
-
-  @override
-  Widget build(BuildContext context) {
-    return AuroraPanel(
-      tint: LightcorePalette.aether,
-      padding: const EdgeInsets.all(12),
-      child: Wrap(
-        spacing: 10,
-        runSpacing: 10,
-        children: [
-          for (final mode in LightcoreTournamentModeId.values)
-            _TournamentRankChip(modeState: overview.modeFor(mode)),
-        ],
-      ),
-    );
-  }
-}
-
-class _TournamentRankChip extends StatelessWidget {
-  const _TournamentRankChip({required this.modeState});
-
-  final LightcoreTournamentModeState modeState;
-
-  @override
-  Widget build(BuildContext context) {
-    final tint = _modeTint(modeState.mode);
-    return Container(
-      constraints: const BoxConstraints(minWidth: 154),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: BoxDecoration(
-        color: tint.withValues(alpha: 0.11),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: tint.withValues(alpha: 0.34)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(_modeIcon(modeState.mode), color: tint, size: 18),
-          const SizedBox(width: 8),
-          SizedBox(
-            width: 88,
-            child: Text(
-              modeState.playerRank == null
-                  ? 'Rank pending'
-                  : '#${modeState.playerRank}',
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: Theme.of(
-                context,
-              ).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w900),
-            ),
-          ),
-          const SizedBox(width: 8),
-          Text(
-            modeState.playerBestScore > 0
-                ? '${modeState.playerBestScore}'
-                : 'Play',
-            style: Theme.of(context).textTheme.labelMedium?.copyWith(
-              color: tint,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
         ],
       ),
     );
@@ -177,10 +96,6 @@ class _TournamentHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final endsAt = overview?.endsAt;
-    final helpMessage = [
-      overview?.statusMessage ?? 'Weekly events rotate on a shared schedule.',
-      _tournamentNexusHelp,
-    ].join('\n\n');
     return AuroraPanel(
       tint: LightcorePalette.warning,
       padding: const EdgeInsets.all(18),
@@ -199,18 +114,12 @@ class _TournamentHeader extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      overview?.seasonLabel ?? 'Weekly event rotation',
+                      overview?.seasonLabel ?? 'Choose a mode to open setup.',
                       style: Theme.of(context).textTheme.bodyMedium,
                     ),
                   ],
                 ),
               ),
-              LightcoreInfoButton(
-                title: 'Tournament Help',
-                message: helpMessage,
-                tint: LightcorePalette.warning,
-              ),
-              const SizedBox(width: 4),
               FilledButton.tonalIcon(
                 onPressed: busy ? null : onRefresh,
                 icon: const Icon(Icons.refresh_rounded),
@@ -245,9 +154,6 @@ class _TournamentHeader extends StatelessWidget {
     );
   }
 }
-
-const String _tournamentNexusHelp =
-    'Anomaly Blitz is open for testing with weekend-length survival sessions. Hex and Arena Flow run on the weekly rotation. Arena Flow uses each player\'s highest-layer Home Tower with server-seeded rivals, and rewards are awarded from the closed server leaderboard after reset.';
 
 class _HeaderChip extends StatelessWidget {
   const _HeaderChip({required this.label, required this.value});
@@ -336,24 +242,17 @@ class _TournamentTutorialPanel extends StatelessWidget {
 class _TournamentModeHubCard extends StatelessWidget {
   const _TournamentModeHubCard({
     required this.modeState,
-    required this.busy,
     required this.highlighted,
     required this.onOpen,
-    required this.onPlay,
-    required this.onClaim,
   });
 
   final LightcoreTournamentModeState modeState;
-  final bool busy;
   final bool highlighted;
   final VoidCallback onOpen;
-  final VoidCallback onPlay;
-  final VoidCallback onClaim;
 
   @override
   Widget build(BuildContext context) {
     final tint = _modeTint(modeState.mode);
-    final helpMessage = _modeHelpMessage(modeState);
     return GuidedFocusFrame(
       active: highlighted,
       tint: LightcorePalette.quest,
@@ -362,79 +261,48 @@ class _TournamentModeHubCard extends StatelessWidget {
         tint: tint,
         padding: const EdgeInsets.all(14),
         onTap: onOpen,
-        child: Stack(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Padding(
-              padding: const EdgeInsets.only(right: 42),
-              child: Row(
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: tint.withValues(alpha: 0.16),
+                border: Border.all(color: tint.withValues(alpha: 0.46)),
+              ),
+              child: Icon(_modeIcon(modeState.mode), color: tint),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Container(
-                    width: 48,
-                    height: 48,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: tint.withValues(alpha: 0.16),
-                      border: Border.all(color: tint.withValues(alpha: 0.46)),
-                    ),
-                    child: Icon(_modeIcon(modeState.mode), color: tint),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          modeState.mode.label,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context).textTheme.titleMedium
-                              ?.copyWith(fontWeight: FontWeight.w900),
-                        ),
-                        const SizedBox(height: 3),
-                        Text(
-                          modeState.mode.eventCadenceLabel,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context).textTheme.labelMedium
-                              ?.copyWith(
-                                color: tint,
-                                fontWeight: FontWeight.w800,
-                              ),
-                        ),
-                      ],
+                  Text(
+                    modeState.mode.label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w900,
                     ),
                   ),
-                  Tooltip(
-                    message: modeState.rewardReady && !modeState.rewardClaimed
-                        ? 'Claim reward'
-                        : 'Start run',
-                    child: IconButton.filledTonal(
-                      onPressed:
-                          modeState.rewardReady && !modeState.rewardClaimed
-                          ? (busy ? null : onClaim)
-                          : busy || !modeState.isOpen
-                          ? null
-                          : onPlay,
-                      icon: Icon(
-                        modeState.rewardReady && !modeState.rewardClaimed
-                            ? Icons.workspace_premium_rounded
-                            : Icons.play_arrow_rounded,
-                      ),
+                  const SizedBox(height: 3),
+                  Text(
+                    _modeHubStatusLabel(modeState),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                      color: tint,
+                      fontWeight: FontWeight.w800,
                     ),
                   ),
                 ],
               ),
             ),
-            Positioned(
-              top: 0,
-              right: 0,
-              child: LightcoreInfoButton(
-                title: '${modeState.mode.label} Details',
-                message: helpMessage,
-                tint: tint,
-              ),
-            ),
+            const SizedBox(width: 10),
+            Icon(Icons.chevron_right_rounded, color: tint, size: 24),
           ],
         ),
       ),
@@ -447,6 +315,16 @@ IconData _modeIcon(LightcoreTournamentModeId mode) => switch (mode) {
   LightcoreTournamentModeId.hexGauntlet => Icons.hexagon_rounded,
   LightcoreTournamentModeId.arenaFlow => Icons.blur_on_rounded,
 };
+
+String _modeHubStatusLabel(LightcoreTournamentModeState modeState) {
+  if (modeState.rewardReady && !modeState.rewardClaimed) {
+    return 'Reward ready';
+  }
+  if (!modeState.isOpen) {
+    return 'Opens ${_formatCountdown(modeState.startsAt)}';
+  }
+  return modeState.mode.eventCadenceLabel;
+}
 
 String _modeHelpMessage(LightcoreTournamentModeState modeState) {
   final leaderboard = modeState.leaderboard.isEmpty

@@ -1707,18 +1707,19 @@ extension LightcoreControllerLayerTraits on LightcoreController {
       cardId == BossEnemyLibrary.starterWhiteWarden.id;
 
   bool get canUpgradeCoreRange =>
-      !activeLayerPassiveOnly && _core.rangeUpgradeLevel < maxCoreUpgradeLevel;
+      _activeLayerAllowsProgressionUpgrades &&
+      _core.rangeUpgradeLevel < maxCoreUpgradeLevel;
 
   bool get canUpgradeCoreFireSpeed =>
-      !activeLayerPassiveOnly &&
+      _activeLayerAllowsProgressionUpgrades &&
       _core.fireSpeedUpgradeLevel < maxCoreUpgradeLevel;
 
   bool get canUpgradeCoreQueueLimit =>
-      !activeLayerPassiveOnly &&
+      _activeLayerAllowsProgressionUpgrades &&
       _core.queueLimitUpgradeLevel < maxCoreUpgradeLevel;
 
   bool get canUpgradeCoreMultiShot =>
-      !activeLayerPassiveOnly &&
+      _activeLayerAllowsProgressionUpgrades &&
       _core.multiShotUpgradeLevel < maxCoreMultiShotUpgradeLevel;
 
   int get coreRangeUpgradeCost => canUpgradeCoreRange

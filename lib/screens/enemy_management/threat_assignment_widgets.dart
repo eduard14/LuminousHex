@@ -19,6 +19,7 @@ class _ThreatAssignmentPanelState extends State<_ThreatAssignmentPanel> {
 
   @override
   Widget build(BuildContext context) {
+    final isApex = _tab == _ThreatAssignmentTab.apex;
     final list = _tab == _ThreatAssignmentTab.anomalies
         ? controller.enemyCards
         : controller.bossEnemyCards;
@@ -29,6 +30,7 @@ class _ThreatAssignmentPanelState extends State<_ThreatAssignmentPanel> {
         ? LightcorePalette.scanGlow
         : LightcorePalette.warning;
     final ownedCount = list.where((card) => card.isOwned).length;
+    final expandedCard = _expandedCardFor(list, isApex);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -54,8 +56,7 @@ class _ThreatAssignmentPanelState extends State<_ThreatAssignmentPanel> {
           children: [
             Expanded(
               child: FilledButton.tonalIcon(
-                onPressed: () =>
-                    setState(() => _tab = _ThreatAssignmentTab.anomalies),
+                onPressed: () => _setTab(_ThreatAssignmentTab.anomalies),
                 style: FilledButton.styleFrom(
                   backgroundColor: _tab == _ThreatAssignmentTab.anomalies
                       ? LightcorePalette.scanGlow.withValues(alpha: 0.2)
@@ -71,8 +72,7 @@ class _ThreatAssignmentPanelState extends State<_ThreatAssignmentPanel> {
             const SizedBox(width: 10),
             Expanded(
               child: FilledButton.tonalIcon(
-                onPressed: () =>
-                    setState(() => _tab = _ThreatAssignmentTab.apex),
+                onPressed: () => _setTab(_ThreatAssignmentTab.apex),
                 style: FilledButton.styleFrom(
                   backgroundColor: _tab == _ThreatAssignmentTab.apex
                       ? LightcorePalette.warning.withValues(alpha: 0.2)
@@ -95,24 +95,52 @@ class _ThreatAssignmentPanelState extends State<_ThreatAssignmentPanel> {
           totalCount: list.length,
         ),
         const SizedBox(height: 8),
-        for (final card in list) ...[
-          _ThreatAssignmentRow(
+        _ThreatAssignmentGrid(
+          controller: controller,
+          cards: list,
+          isApex: isApex,
+          expandedId: _expandedId,
+          onTap: (card) => _toggleExpandedCard(card, isApex),
+        ),
+        if (expandedCard != null) ...[
+          const SizedBox(height: 10),
+          _ThreatAssignmentDetailPanel(
             controller: controller,
-            card: card,
-            isApex: _tab == _ThreatAssignmentTab.apex,
-            expanded:
-                _expandedId ==
-                '${_tab == _ThreatAssignmentTab.apex ? 'apex' : 'anomaly'}:${card.config.id}',
-            onTap: () {
-              final id =
-                  '${_tab == _ThreatAssignmentTab.apex ? 'apex' : 'anomaly'}:${card.config.id}';
-              setState(() => _expandedId = _expandedId == id ? null : id);
-            },
+            card: expandedCard,
+            isApex: isApex,
+            onClose: () => setState(() => _expandedId = null),
           ),
-          const SizedBox(height: 8),
         ],
       ],
     );
+  }
+
+  void _setTab(_ThreatAssignmentTab tab) {
+    if (_tab == tab) {
+      return;
+    }
+    setState(() {
+      _tab = tab;
+      _expandedId = null;
+    });
+  }
+
+  void _toggleExpandedCard(EnemyCardState card, bool isApex) {
+    final id = _assignmentExpansionId(card, isApex);
+    setState(() => _expandedId = _expandedId == id ? null : id);
+  }
+
+  EnemyCardState? _expandedCardFor(List<EnemyCardState> cards, bool isApex) {
+    final expandedId = _expandedId;
+    if (expandedId == null) {
+      return null;
+    }
+    for (final card in cards) {
+      if (_assignmentExpansionId(card, isApex) == expandedId) {
+        return card;
+      }
+    }
+    return null;
   }
 
   Future<void> _createPreset() async {
@@ -197,6 +225,10 @@ class _ThreatAssignmentPanelState extends State<_ThreatAssignmentPanel> {
     final normalized = result?.trim();
     return normalized == null || normalized.isEmpty ? null : normalized;
   }
+}
+
+String _assignmentExpansionId(EnemyCardState card, bool isApex) {
+  return '${isApex ? 'apex' : 'anomaly'}:${card.config.id}';
 }
 
 class _ThreatPresetBar extends StatelessWidget {
@@ -584,27 +616,23 @@ class _MiniThreatChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final tint =
         card.config.secondaryAffinity?.color ?? card.config.affinity.color;
-    return Container(
-      constraints: const BoxConstraints(maxWidth: 148),
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-      decoration: BoxDecoration(
-        color: tint.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: tint.withValues(alpha: 0.24)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _AssignmentThreatGlyph(card: card, isApex: isApex, size: 20),
-          const SizedBox(width: 6),
-          Flexible(
-            child: Text(
-              card.config.name,
-              overflow: TextOverflow.ellipsis,
-              style: Theme.of(context).textTheme.labelSmall,
-            ),
-          ),
-        ],
+    return Tooltip(
+      message: '${card.config.name} • active ${isApex ? 'Apex' : 'anomaly'}',
+      child: _ThreatSummonCard(
+        config: card.config,
+        dimension: 48,
+        selected: card.isOwned,
+        locked: !card.isOwned,
+        glowTint: tint,
+        glowStrength: 0.28,
+        semanticLabel:
+            '${card.config.name}, active ${isApex ? 'Apex' : 'anomaly'} tile',
+        topRight: SymbolGridBadge(
+          tint: card.isOwned ? LightcorePalette.layer2 : LightcorePalette.mist,
+          shape: BoxShape.circle,
+          size: 18,
+          child: Icon(card.isOwned ? Icons.check_rounded : Icons.lock_rounded),
+        ),
       ),
     );
   }
@@ -650,12 +678,58 @@ class _AssignmentSectionHeader extends StatelessWidget {
   }
 }
 
-class _ThreatAssignmentRow extends StatelessWidget {
-  const _ThreatAssignmentRow({
+class _ThreatAssignmentGrid extends StatelessWidget {
+  const _ThreatAssignmentGrid({
+    required this.controller,
+    required this.cards,
+    required this.isApex,
+    required this.expandedId,
+    required this.onTap,
+  });
+
+  final LightcoreController controller;
+  final List<EnemyCardState> cards;
+  final bool isApex;
+  final String? expandedId;
+  final ValueChanged<EnemyCardState> onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final dimension = constraints.maxWidth >= 620
+            ? 76.0
+            : constraints.maxWidth >= 420
+            ? 70.0
+            : 64.0;
+
+        return Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            for (final card in cards)
+              _ThreatAssignmentTile(
+                controller: controller,
+                card: card,
+                isApex: isApex,
+                expanded: expandedId == _assignmentExpansionId(card, isApex),
+                dimension: dimension,
+                onTap: () => onTap(card),
+              ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _ThreatAssignmentTile extends StatelessWidget {
+  const _ThreatAssignmentTile({
     required this.controller,
     required this.card,
     required this.isApex,
     required this.expanded,
+    required this.dimension,
     required this.onTap,
   });
 
@@ -663,6 +737,7 @@ class _ThreatAssignmentRow extends StatelessWidget {
   final EnemyCardState card;
   final bool isApex;
   final bool expanded;
+  final double dimension;
   final VoidCallback onTap;
 
   @override
@@ -678,95 +753,151 @@ class _ThreatAssignmentRow extends StatelessWidget {
         : active
         ? (isApex ? 'Armed' : 'In Deck')
         : 'Available';
+    final statusTint = locked
+        ? LightcorePalette.mist
+        : active
+        ? LightcorePalette.layer2
+        : tint;
+    final statusIcon = locked
+        ? Icons.lock_rounded
+        : active
+        ? Icons.check_rounded
+        : expanded
+        ? Icons.expand_less_rounded
+        : isApex
+        ? Icons.shield_moon_rounded
+        : Icons.radar_rounded;
+
+    return Tooltip(
+      message:
+          '${card.config.name} • ${card.config.rarity.label} • $status • tap for details',
+      child: AnimatedScale(
+        duration: const Duration(milliseconds: 160),
+        scale: expanded ? 1.04 : 1,
+        child: _ThreatSummonCard(
+          config: card.config,
+          dimension: dimension,
+          selected: active && card.isOwned,
+          locked: locked,
+          emphasized: expanded,
+          glowTint: tint,
+          glowStrength: expanded
+              ? 0.68
+              : active
+              ? 0.38
+              : 0,
+          semanticLabel:
+              '${card.config.name}, ${card.isOwned ? 'owned' : 'locked'} ${isApex ? 'Apex' : 'anomaly'} tile',
+          onTap: onTap,
+          topRight: SymbolGridBadge(
+            tint: statusTint,
+            shape: BoxShape.circle,
+            size: 22,
+            child: Icon(statusIcon),
+          ),
+          bottom: card.isOwned
+              ? Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.layers_rounded),
+                    const SizedBox(width: 2),
+                    Text('${card.level}'),
+                    const SizedBox(width: 5),
+                    const Icon(Icons.content_copy_rounded),
+                    const SizedBox(width: 2),
+                    Text('${card.copies}'),
+                  ],
+                )
+              : const Icon(Icons.lock_rounded),
+        ),
+      ),
+    );
+  }
+}
+
+class _ThreatAssignmentDetailPanel extends StatelessWidget {
+  const _ThreatAssignmentDetailPanel({
+    required this.controller,
+    required this.card,
+    required this.isApex,
+    required this.onClose,
+  });
+
+  final LightcoreController controller;
+  final EnemyCardState card;
+  final bool isApex;
+  final VoidCallback onClose;
+
+  @override
+  Widget build(BuildContext context) {
+    final tint =
+        card.config.secondaryAffinity?.color ?? card.config.affinity.color;
+    final active = isApex
+        ? controller.isBossEnemyCardActive(card.config.id)
+        : controller.isEnemyCardActive(card.config.id);
+    final status = !card.isOwned
+        ? 'Locked'
+        : active
+        ? (isApex ? 'Armed' : 'In Deck')
+        : 'Available';
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 180),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: LightcorePalette.panelRaised.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: active || expanded
-              ? tint.withValues(alpha: 0.58)
-              : LightcorePalette.stroke.withValues(alpha: 0.36),
-        ),
+        border: Border.all(color: tint.withValues(alpha: 0.42)),
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Material(
-            color: Colors.transparent,
-            child: InkWell(
-              onTap: onTap,
-              borderRadius: BorderRadius.circular(18),
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Row(
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _ThreatSummonCard(
-                      config: card.config,
-                      dimension: 58,
-                      selected: active && card.isOwned,
-                      locked: locked,
-                      emphasized: expanded,
-                      semanticLabel:
-                          '${card.config.name}, ${card.isOwned ? 'owned' : 'locked'} ${isApex ? 'Apex' : 'anomaly'} art',
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            card.config.name,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: Theme.of(context).textTheme.titleSmall
-                                ?.copyWith(fontWeight: FontWeight.w900),
-                          ),
-                          const SizedBox(height: 3),
-                          Text(
-                            '${card.config.rarity.label}${isApex ? ' Apex' : ' Anomaly'} • ${card.config.affinity.label}',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: Theme.of(context).textTheme.bodySmall,
-                          ),
-                        ],
+                    Text(
+                      card.config.name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        color: LightcorePalette.mist,
+                        fontWeight: FontWeight.w900,
                       ),
                     ),
-                    const SizedBox(width: 8),
-                    _AssignmentStatusBadge(
-                      label: status,
-                      tint: locked
-                          ? LightcorePalette.mist
-                          : active
-                          ? LightcorePalette.layer2
-                          : tint,
-                    ),
-                    const SizedBox(width: 4),
-                    Icon(
-                      expanded
-                          ? Icons.expand_less_rounded
-                          : Icons.expand_more_rounded,
-                      color: LightcorePalette.mist,
+                    const SizedBox(height: 3),
+                    Text(
+                      '${card.config.rarity.label}${isApex ? ' Apex' : ' Anomaly'} • ${card.config.affinity.label}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.bodySmall,
                     ),
                   ],
                 ),
               ),
-            ),
-          ),
-          AnimatedCrossFade(
-            duration: const Duration(milliseconds: 180),
-            crossFadeState: expanded
-                ? CrossFadeState.showSecond
-                : CrossFadeState.showFirst,
-            firstChild: const SizedBox.shrink(),
-            secondChild: Padding(
-              padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-              child: _ThreatAssignmentDetails(
-                controller: controller,
-                card: card,
-                isApex: isApex,
+              const SizedBox(width: 8),
+              _AssignmentStatusBadge(
+                label: status,
+                tint: !card.isOwned
+                    ? LightcorePalette.mist
+                    : active
+                    ? LightcorePalette.layer2
+                    : tint,
               ),
-            ),
+              IconButton(
+                tooltip: 'Close details',
+                onPressed: onClose,
+                icon: const Icon(Icons.close_rounded),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          _ThreatAssignmentDetails(
+            controller: controller,
+            card: card,
+            isApex: isApex,
           ),
         ],
       ),
@@ -1043,80 +1174,6 @@ class _ThreatAssignmentStatsArt extends StatelessWidget {
   }
 }
 
-class _AssignmentThreatGlyph extends StatelessWidget {
-  const _AssignmentThreatGlyph({
-    required this.card,
-    required this.isApex,
-    required this.size,
-  });
-
-  final EnemyCardState card;
-  final bool isApex;
-  final double size;
-
-  @override
-  Widget build(BuildContext context) {
-    final primary = card.config.affinity.color;
-    final secondary = card.config.secondaryAffinity?.color ?? primary;
-    return Opacity(
-      opacity: card.isOwned ? 1 : 0.48,
-      child: Container(
-        width: size,
-        height: size,
-        decoration: BoxDecoration(
-          shape: isApex ? BoxShape.circle : BoxShape.rectangle,
-          borderRadius: isApex ? null : BorderRadius.circular(12),
-          gradient: LinearGradient(
-            colors: [
-              primary.withValues(alpha: 0.9),
-              secondary.withValues(alpha: 0.54),
-            ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          border: Border.all(
-            color: _assignmentRarityTint(
-              card.config.rarity,
-            ).withValues(alpha: 0.72),
-            width: 1.4,
-          ),
-        ),
-        child: Stack(
-          alignment: Alignment.center,
-          children: [
-            AffinityGlyph(affinity: card.config.affinity, size: size * 0.48),
-            if (card.config.secondaryAffinity != null)
-              Positioned(
-                right: size * 0.08,
-                bottom: size * 0.08,
-                child: AffinityGlyph(
-                  affinity: card.config.secondaryAffinity!,
-                  size: size * 0.25,
-                ),
-              ),
-            if (!isApex && card.config.splitsOnDeath)
-              Positioned(
-                right: 2,
-                top: 2,
-                child: Icon(
-                  Icons.call_split_rounded,
-                  size: size * 0.24,
-                  color: LightcorePalette.mist,
-                ),
-              ),
-            if (!card.isOwned)
-              Icon(
-                Icons.lock_rounded,
-                size: size * 0.34,
-                color: LightcorePalette.mist,
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 class _AssignmentStatusBadge extends StatelessWidget {
   const _AssignmentStatusBadge({required this.label, required this.tint});
 
@@ -1145,14 +1202,6 @@ class _AssignmentStatusBadge extends StatelessWidget {
     );
   }
 }
-
-Color _assignmentRarityTint(EnemyCardRarity rarity) => switch (rarity) {
-  EnemyCardRarity.basic => LightcorePalette.mist,
-  EnemyCardRarity.uncommon => LightcorePalette.layer2,
-  EnemyCardRarity.rare => LightcorePalette.aether,
-  EnemyCardRarity.epic => LightcorePalette.violet,
-  EnemyCardRarity.legendary => LightcorePalette.solar,
-};
 
 List<String> _assignmentBossMechanicLabels(EnemyCardState card) {
   return <String>[

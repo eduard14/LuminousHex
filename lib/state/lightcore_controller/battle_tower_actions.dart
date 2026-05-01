@@ -571,7 +571,7 @@ extension LightcoreControllerBattleTowerActions on LightcoreController {
   }
 
   bool upgradeActiveChildTowerStat(ChildTowerUpgradeType type) {
-    if (activeLayerPassiveOnly || !activeLayerHasParentSlot) {
+    if (!_activeLayerAllowsProgressionUpgrades || !activeLayerHasParentSlot) {
       return false;
     }
 
@@ -630,7 +630,7 @@ extension LightcoreControllerBattleTowerActions on LightcoreController {
   }
 
   bool upgradeCoreRange() {
-    if (activeLayerPassiveOnly || !canUpgradeCoreRange) {
+    if (!canUpgradeCoreRange) {
       return false;
     }
 
@@ -644,6 +644,7 @@ extension LightcoreControllerBattleTowerActions on LightcoreController {
     _recordLumenSpend(cost);
     _recordUpgradePurchase();
     _core = _core.copyWith(rangeUpgradeLevel: nextLevel);
+    _storeActiveLayer();
     _syncTutorialStep(showBanner: false);
     _showBanner(
       'Core range upgraded to ${coreEffectiveRangeForUpgradeLevel(nextLevel).toStringAsFixed(0)}.',
@@ -653,7 +654,7 @@ extension LightcoreControllerBattleTowerActions on LightcoreController {
   }
 
   bool upgradeCoreFireSpeed() {
-    if (activeLayerPassiveOnly || !canUpgradeCoreFireSpeed) {
+    if (!canUpgradeCoreFireSpeed) {
       return false;
     }
 
@@ -667,6 +668,7 @@ extension LightcoreControllerBattleTowerActions on LightcoreController {
     _recordLumenSpend(cost);
     _recordUpgradePurchase();
     _core = _core.copyWith(fireSpeedUpgradeLevel: nextLevel);
+    _storeActiveLayer();
     _showBanner(
       'Core fire speed upgraded to ${coreShotsPerSecondForUpgradeLevel(nextLevel).toStringAsFixed(2)}/s.',
     );
@@ -675,7 +677,7 @@ extension LightcoreControllerBattleTowerActions on LightcoreController {
   }
 
   bool upgradeCoreQueueLimit() {
-    if (activeLayerPassiveOnly || !canUpgradeCoreQueueLimit) {
+    if (!canUpgradeCoreQueueLimit) {
       return false;
     }
 
@@ -689,6 +691,7 @@ extension LightcoreControllerBattleTowerActions on LightcoreController {
     _recordLumenSpend(cost);
     _recordUpgradePurchase();
     _core = _core.copyWith(queueLimitUpgradeLevel: nextLevel);
+    _storeActiveLayer();
     _showBanner(
       'Core queue expanded to ${coreQueueCapacityForUpgradeLevel(nextLevel)} packets.',
     );
@@ -697,7 +700,7 @@ extension LightcoreControllerBattleTowerActions on LightcoreController {
   }
 
   bool upgradeCoreMultiShot() {
-    if (activeLayerPassiveOnly || !canUpgradeCoreMultiShot) {
+    if (!canUpgradeCoreMultiShot) {
       return false;
     }
 
@@ -711,6 +714,7 @@ extension LightcoreControllerBattleTowerActions on LightcoreController {
     _recordLumenSpend(cost);
     _recordUpgradePurchase();
     _core = _core.copyWith(multiShotUpgradeLevel: nextLevel);
+    _storeActiveLayer();
     _showBanner(
       'Core multi-shot upgraded to ${coreMultiShotCountForUpgradeLevel(nextLevel)}x.',
     );

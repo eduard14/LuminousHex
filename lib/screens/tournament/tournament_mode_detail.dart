@@ -1868,6 +1868,16 @@ class _TournamentModeDetailScreenState
             state.rewardPreview.summaryLabel,
             style: Theme.of(context).textTheme.bodyMedium,
           ),
+          if (state.rewardReady || state.rewardClaimed) ...[
+            const SizedBox(height: 12),
+            FilledButton.tonalIcon(
+              onPressed: widget.busy || state.rewardClaimed
+                  ? null
+                  : widget.onClaim,
+              icon: const Icon(Icons.workspace_premium_rounded),
+              label: Text(state.rewardClaimed ? 'Claimed' : 'Claim Reward'),
+            ),
+          ],
           const SizedBox(height: 10),
           Text(
             state.groupSize == 0

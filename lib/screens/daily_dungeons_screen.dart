@@ -105,6 +105,7 @@ class _DailyDungeonsScreenState extends State<DailyDungeonsScreen> {
   static const int _requiredAnomalyCount = 3;
 
   _DailyDungeonSlot _selected = _DailyDungeonSlot.enemyManager;
+  _DailyDungeonSlot? _detailSlot;
   int _selectedTowerLevel = LightcoreController.dailyDungeonStartingTowerLevel;
   final Set<String> _selectedAnomalyIds = <String>{};
   String? _selectedApexEnemyCardId;
@@ -121,6 +122,32 @@ class _DailyDungeonsScreenState extends State<DailyDungeonsScreen> {
         final controller = widget.controller;
         final dailyKey = _dailyKey(DateTime.now());
         final ownedCards = _ownedEnemyCards(controller);
+        final detailSlot = _detailSlot;
+
+        if (detailSlot != null) {
+          return ListView(
+            key: PageStorageKey<String>(
+              'daily-dungeons-detail-${detailSlot.name}',
+            ),
+            controller: widget.scrollController,
+            padding: const EdgeInsets.fromLTRB(4, 4, 4, 28),
+            children: [
+              Align(
+                alignment: Alignment.centerLeft,
+                child: FilledButton.tonalIcon(
+                  onPressed: _closeDungeonDetail,
+                  icon: const Icon(Icons.arrow_back_rounded),
+                  label: const Text('Back to Dungeons'),
+                ),
+              ),
+              const SizedBox(height: 12),
+              if (detailSlot == _DailyDungeonSlot.enemyManager)
+                _buildEnemyManagerDungeon(context, controller, ownedCards)
+              else if (detailSlot == _DailyDungeonSlot.prismRift)
+                _buildPrismRiftDungeon(context, controller),
+            ],
+          );
+        }
 
         return ListView(
           key: const PageStorageKey<String>('daily-dungeons-scroll'),
@@ -130,10 +157,6 @@ class _DailyDungeonsScreenState extends State<DailyDungeonsScreen> {
             _DungeonHeader(
               dailyKey: dailyKey,
               ownedEnemyCount: ownedCards.length,
-              selectedLoadoutCount: _selectedAnomalyCards(
-                controller,
-                ownedCards,
-              ).length,
             ),
             const SizedBox(height: 14),
             LayoutBuilder(
@@ -149,26 +172,22 @@ class _DailyDungeonsScreenState extends State<DailyDungeonsScreen> {
                       width: cardWidth,
                       child: _DungeonSelectCard(
                         title: 'Threat Director',
-                        subtitle:
-                            'Climb the tower from Lv 1. Clear the visible level to unlock the next one.',
+                        subtitle: 'Tower route',
                         icon: Icons.shield_rounded,
                         tint: LightcorePalette.warning,
-                        selected: _selected == _DailyDungeonSlot.enemyManager,
                         enabled: true,
-                        statusLabel: 'Joined',
+                        statusLabel: 'Open',
                         onTap: () =>
-                            _selectDungeon(_DailyDungeonSlot.enemyManager),
+                            _openDungeonDetail(_DailyDungeonSlot.enemyManager),
                       ),
                     ),
                     SizedBox(
                       width: cardWidth,
                       child: _DungeonSelectCard(
                         title: 'Sealed Vault',
-                        subtitle:
-                            'Vault route is sealed until the daily dungeon rotation opens it.',
+                        subtitle: 'Reserved route',
                         icon: Icons.lock_clock_rounded,
                         tint: LightcorePalette.solar,
-                        selected: _selected == _DailyDungeonSlot.sealedVault,
                         enabled: false,
                         statusLabel: 'Sealed',
                         onTap: null,
@@ -178,26 +197,19 @@ class _DailyDungeonsScreenState extends State<DailyDungeonsScreen> {
                       width: cardWidth,
                       child: _DungeonSelectCard(
                         title: 'Prism Rift',
-                        subtitle:
-                            'Manual aim route. Stabilize rift shards with charged player-fired shots.',
+                        subtitle: 'Battle route',
                         icon: Icons.terrain_rounded,
                         tint: LightcorePalette.violet,
-                        selected: _selected == _DailyDungeonSlot.prismRift,
                         enabled: true,
-                        statusLabel: 'Joined',
+                        statusLabel: 'Open',
                         onTap: () =>
-                            _selectDungeon(_DailyDungeonSlot.prismRift),
+                            _openDungeonDetail(_DailyDungeonSlot.prismRift),
                       ),
                     ),
                   ],
                 );
               },
             ),
-            const SizedBox(height: 16),
-            if (_selected == _DailyDungeonSlot.enemyManager)
-              _buildEnemyManagerDungeon(context, controller, ownedCards)
-            else if (_selected == _DailyDungeonSlot.prismRift)
-              _buildPrismRiftDungeon(context, controller),
           ],
         );
       },
@@ -551,11 +563,18 @@ class _DailyDungeonsScreenState extends State<DailyDungeonsScreen> {
     );
   }
 
-  void _selectDungeon(_DailyDungeonSlot slot) {
-    if (_selected == slot) {
+  void _openDungeonDetail(_DailyDungeonSlot slot) {
+    if (slot == _DailyDungeonSlot.sealedVault) {
       return;
     }
-    setState(() => _selected = slot);
+    setState(() {
+      _selected = slot;
+      _detailSlot = slot;
+    });
+  }
+
+  void _closeDungeonDetail() {
+    setState(() => _detailSlot = null);
   }
 
   void _selectTowerLevel(LightcoreController controller, int level) {
