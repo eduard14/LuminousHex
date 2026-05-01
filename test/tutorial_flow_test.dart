@@ -343,7 +343,7 @@ void main() {
     );
   });
 
-  test('boss tutorial starts with an armed weak White Warden', () {
+  test('boss tutorial waits 100 clears before spawning weak White Warden', () {
     final controller = LightcoreController();
     addTearDown(controller.dispose);
 
@@ -351,12 +351,50 @@ void main() {
       controller.activeBossEnemyCard?.config.id,
       BossEnemyLibrary.starterWhiteWarden.id,
     );
-    expect(controller.activeLayer.bossReady, isTrue);
+    expect(controller.activeLayer.bossReady, isFalse);
+    expect(controller.activeLayer.normalKillsSinceBoss, 0);
 
     controller.selectCenter();
     controller.debugCompleteCoreLearningTutorial();
 
-    controller.tick(0.2);
+    for (
+      var kill = 0;
+      kill < LightcoreController.bossSpawnKillRequirement - 1;
+      kill += 1
+    ) {
+      final enemy = controller.debugSpawnEnemyFromCard(
+        EnemyLibrary.basicWhite.id,
+        angle: 0,
+        radius: controller.spawnRadius,
+      );
+      expect(enemy, isNotNull);
+      expect(controller.debugDefeatEnemy(enemy!.id), isTrue);
+    }
+
+    expect(
+      controller.activeLayer.normalKillsSinceBoss,
+      LightcoreController.bossSpawnKillRequirement - 1,
+    );
+    expect(controller.activeLayer.bossReady, isFalse);
+    expect(controller.bossKillsRemaining, 1);
+
+    final finalEnemy = controller.debugSpawnEnemyFromCard(
+      EnemyLibrary.basicWhite.id,
+      angle: 0,
+      radius: controller.spawnRadius,
+    );
+    expect(finalEnemy, isNotNull);
+    expect(controller.debugDefeatEnemy(finalEnemy!.id), isTrue);
+
+    expect(
+      controller.activeLayer.normalKillsSinceBoss,
+      LightcoreController.bossSpawnKillRequirement,
+    );
+    expect(controller.activeLayer.bossReady, isTrue);
+
+    for (var step = 0; step < 20 && !controller.bossAlive; step += 1) {
+      controller.tick(0.2);
+    }
 
     expect(controller.tutorialStep, LightcoreTutorialStep.defeatFirstBoss);
     expect(controller.bossAlive, isTrue);

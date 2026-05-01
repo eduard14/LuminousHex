@@ -562,11 +562,12 @@ extension LightcoreControllerBattleEnemyActions on LightcoreController {
     _activeBossEnemyCardId = cardId;
     activeLayer.activeBossEnemyCardId = cardId;
     if (_tutorialStep == LightcoreTutorialStep.armFirstBoss) {
-      activeLayer.bossReady = true;
-      activeLayer.normalKillsSinceBoss = bossSpawnKillRequirement;
       _tutorialIntroBossPending = true;
       _tutorialTrackedBossEnemyId = null;
-      _spawnTimer = min(_spawnTimer, 0.01);
+      if (activeLayer.normalKillsSinceBoss >= bossSpawnKillRequirement) {
+        activeLayer.bossReady = true;
+        _spawnTimer = min(_spawnTimer, 0.01);
+      }
       _syncTutorialStep(showBanner: false);
     }
     _showBanner('${card.config.name} armed as the next Apex spawn.');

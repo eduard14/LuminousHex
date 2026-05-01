@@ -378,7 +378,19 @@ extension LightcoreControllerRewardsSocial on LightcoreController {
           _starterManagerTutorialUnlocked);
 
   bool _managerCoreLevelUnlockedForLayer(TowerLayerSnapshot layer) =>
-      layer.core.level >= managerCoreLevelRequirement;
+      layer.core.level >= managerCoreLevelRequirement ||
+      _layer1TowerLevelUnlockedForManagers(layer);
+
+  bool _layer1TowerLevelUnlockedForManagers(TowerLayerSnapshot layer) {
+    if (layer.parentLayerId != null || layer.tier != 1) {
+      return false;
+    }
+    return layer.slots.any(
+      (tower) =>
+          _slotCountsTowardRing(tower) &&
+          tower.level >= managerCoreLevelRequirement,
+    );
+  }
 
   int _managedTowerCountForLayer(TowerLayerSnapshot layer) => layer.slots
       .where((tower) => _slotHasAutomationManager(layer, tower))

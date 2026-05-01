@@ -691,12 +691,15 @@ extension LightcoreControllerLayerTraits on LightcoreController {
     if (_tutorialTrackedBossEnemyId == null && liveStarterBosses.isNotEmpty) {
       _tutorialTrackedBossEnemyId = liveStarterBosses.first.id;
     }
-    if (!bossAlive && !activeLayer.bossReady) {
+    if (!bossAlive &&
+        !activeLayer.bossReady &&
+        activeLayer.normalKillsSinceBoss >= bossSpawnKillRequirement) {
       activeLayer.bossReady = true;
-      activeLayer.normalKillsSinceBoss = bossSpawnKillRequirement;
     }
     _tutorialIntroBossPending = true;
-    _spawnTimer = min(_spawnTimer, 0.05);
+    if (activeLayer.bossReady) {
+      _spawnTimer = min(_spawnTimer, 0.05);
+    }
   }
 
   EnemyConfig? _scriptedEnemyPullForTutorial() {

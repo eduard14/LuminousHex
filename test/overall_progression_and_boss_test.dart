@@ -245,7 +245,7 @@ void main() {
   });
 
   test(
-    'apex scans unlock at layer two after starter White Warden is active',
+    'apex scans unlock at layer two after starter White Warden is selected',
     () {
       final controller = LightcoreController();
       addTearDown(controller.dispose);
@@ -256,7 +256,11 @@ void main() {
         controller.activeBossEnemyCard?.config.id,
         BossEnemyLibrary.starterWhiteWarden.id,
       );
-      expect(controller.activeLayer.bossReady, isTrue);
+      expect(controller.activeLayer.bossReady, isFalse);
+      expect(
+        controller.bossKillsRemaining,
+        LightcoreController.bossSpawnKillRequirement,
+      );
 
       _unlockBossHunts(controller);
 
@@ -589,6 +593,8 @@ void main() {
       controller.activeBossEnemyCard?.config.id,
       BossEnemyLibrary.starterWhiteWarden.id,
     );
+    expect(controller.activeLayer.bossReady, isFalse);
+    final killsBeforeBattle = controller.kills;
 
     for (var step = 0; step < 20000 && !controller.bossAlive; step++) {
       controller.tick(0.2);
@@ -600,6 +606,12 @@ void main() {
       reason:
           'bossAlive=${controller.bossAlive}, bossReady=${controller.activeLayer.bossReady}, normalKills=${controller.activeLayer.normalKillsSinceBoss}, enemies=${controller.enemyCount}, kills=${controller.kills}',
     );
-    expect(controller.enemies.single.config.isBoss, isTrue);
+    expect(
+      controller.kills,
+      greaterThanOrEqualTo(
+        killsBeforeBattle + LightcoreController.bossSpawnKillRequirement,
+      ),
+    );
+    expect(controller.enemies.any((enemy) => enemy.config.isBoss), isTrue);
   });
 }

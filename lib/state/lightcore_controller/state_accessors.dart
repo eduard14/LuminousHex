@@ -27,8 +27,7 @@ extension LightcoreControllerStateAccessors on LightcoreController {
     _totalUpgradesBought += 1;
   }
 
-  bool get _starterManagerTutorialUnlocked =>
-      _tutorialStabilityPanelOpened || _tutorialAutoQueuedPulses > 0;
+  bool get _starterManagerTutorialUnlocked => _tutorialAutoQueuedPulses > 0;
 
   String _tutorialTowerShotGuideLabel(int slotIndex) {
     if (slotIndex < 0 || slotIndex >= _slots.length) {

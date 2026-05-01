@@ -129,6 +129,40 @@ void main() {
     expect(controller.canForgeEnemyManager, isFalse);
   });
 
+  test('layer 1 tower level 3 unlocks manager foundry and assignment', () {
+    final controller = LightcoreController(traitRandom: Random(13));
+    addTearDown(controller.dispose);
+
+    controller.lumens = 1000;
+    controller.kills = LightcoreController.unlockKillsForOuterSlot(0);
+    expect(controller.buildTowerAt(0, TowerLibrary.redPrism), isTrue);
+
+    controller.markTutorialStabilityPanelOpened();
+    controller.flux =
+        LightcoreController.towerManagerFluxCost +
+        LightcoreController.enemyManagerFluxCost;
+
+    expect(controller.slots[0].level, 1);
+    expect(controller.managersUnlocked, isFalse);
+    expect(controller.managerAssignmentUnlocked, isFalse);
+    expect(controller.canForgeTowerManager, isFalse);
+    expect(controller.canForgeEnemyManager, isFalse);
+
+    controller.lumens = controller.upgradeCost(controller.slots[0]);
+    expect(controller.upgradeTower(0), isTrue);
+    expect(controller.slots[0].level, 2);
+    expect(controller.managersUnlocked, isFalse);
+    expect(controller.managerAssignmentUnlocked, isFalse);
+
+    controller.lumens = controller.upgradeCost(controller.slots[0]);
+    expect(controller.upgradeTower(0), isTrue);
+    expect(controller.slots[0].level, 3);
+    expect(controller.managersUnlocked, isTrue);
+    expect(controller.managerAssignmentUnlocked, isTrue);
+    expect(controller.canForgeTowerManager, isTrue);
+    expect(controller.canForgeEnemyManager, isTrue);
+  });
+
   test(
     'first promotion unlocks promoted payloads while layer 1 stays pure',
     () {
