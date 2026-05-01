@@ -205,12 +205,12 @@ extension LightcoreControllerRewardsSocial on LightcoreController {
     if (_directTowerCoreManagerForLayer(layer) != null) {
       return layer.id;
     }
-    final parentLayerId = layer.parentLayerId;
-    if (parentLayerId == null) {
+    final inheritedLayerId = layer.promotedParentLayerId ?? layer.parentLayerId;
+    if (inheritedLayerId == null) {
       return null;
     }
     return _towerCoreManagerOwnerLayerIdForLayerId(
-      parentLayerId,
+      inheritedLayerId,
       visitedLayerIds,
     );
   }
