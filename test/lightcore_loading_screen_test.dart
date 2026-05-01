@@ -16,6 +16,7 @@ void main() {
           subtitle: 'Routing command through the tower lattice.',
           statusLabel: 'Screen Link',
           signalLabels: ['SYNC', 'LINK', 'ARM'],
+          tips: ['Auto entry starts when the first event run begins.'],
         ),
       ),
     );
@@ -29,6 +30,10 @@ void main() {
     expect(find.text('SYNC'), findsOneWidget);
     expect(find.text('LINK'), findsOneWidget);
     expect(find.text('ARM'), findsOneWidget);
+    expect(
+      find.text('Auto entry starts when the first event run begins.'),
+      findsOneWidget,
+    );
     expect(tester.takeException(), isNull);
 
     await tester.pumpWidget(const SizedBox.shrink());

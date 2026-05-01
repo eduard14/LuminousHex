@@ -15,6 +15,7 @@ class LightcoreLoadingScreen extends StatefulWidget {
     this.progress,
     this.compact,
     this.signalLabels = const ['BOOT', 'LINK', 'FLOW'],
+    this.tips = const <String>[],
   });
 
   final String title;
@@ -24,6 +25,7 @@ class LightcoreLoadingScreen extends StatefulWidget {
   final double? progress;
   final bool? compact;
   final List<String> signalLabels;
+  final List<String> tips;
 
   @override
   State<LightcoreLoadingScreen> createState() => _LightcoreLoadingScreenState();
@@ -104,6 +106,7 @@ class _LightcoreLoadingScreenState extends State<LightcoreLoadingScreen>
                               signalLabels: widget.signalLabels.isEmpty
                                   ? const ['BOOT', 'LINK', 'FLOW']
                                   : widget.signalLabels,
+                              tips: widget.tips,
                             ),
                           ),
                         ),
@@ -130,6 +133,7 @@ class _LoadingCard extends StatelessWidget {
     required this.phase,
     required this.compact,
     required this.signalLabels,
+    required this.tips,
   });
 
   final String title;
@@ -140,6 +144,7 @@ class _LoadingCard extends StatelessWidget {
   final double phase;
   final bool compact;
   final List<String> signalLabels;
+  final List<String> tips;
 
   @override
   Widget build(BuildContext context) {
@@ -149,6 +154,15 @@ class _LoadingCard extends StatelessWidget {
         .floor()
         .clamp(0, signalLabels.length - 1)
         .toInt();
+    final normalizedTips = tips
+        .where((tip) => tip.trim().isNotEmpty)
+        .toList(growable: false);
+    final activeTip = normalizedTips.isEmpty
+        ? null
+        : normalizedTips[(phase * normalizedTips.length)
+              .floor()
+              .clamp(0, normalizedTips.length - 1)
+              .toInt()];
 
     return DecoratedBox(
       decoration: BoxDecoration(
@@ -216,7 +230,7 @@ class _LoadingCard extends StatelessWidget {
               style: textTheme.headlineMedium?.copyWith(
                 color: LightcorePalette.layer2,
                 fontWeight: FontWeight.w900,
-                letterSpacing: compact ? -0.4 : -0.7,
+                letterSpacing: 0,
               ),
             ),
             const SizedBox(height: 8),
@@ -254,10 +268,25 @@ class _LoadingCard extends StatelessWidget {
               textAlign: TextAlign.center,
               style: textTheme.labelLarge?.copyWith(
                 color: accent.withValues(alpha: 0.92),
-                letterSpacing: compact ? 1.6 : 2.2,
+                letterSpacing: 0,
                 fontWeight: FontWeight.w900,
               ),
             ),
+            if (activeTip != null) ...[
+              SizedBox(height: compact ? 14 : 16),
+              AnimatedSwitcher(
+                duration: const Duration(milliseconds: 260),
+                child: Text(
+                  activeTip,
+                  key: ValueKey<String>(activeTip),
+                  textAlign: TextAlign.center,
+                  style: textTheme.bodySmall?.copyWith(
+                    color: LightcorePalette.mist.withValues(alpha: 0.78),
+                    height: 1.3,
+                  ),
+                ),
+              ),
+            ],
           ],
         ),
       ),
@@ -363,7 +392,7 @@ class _LoadingSignalPill extends StatelessWidget {
               ? LightcorePalette.layer2
               : LightcorePalette.mist.withValues(alpha: 0.58),
           fontWeight: FontWeight.w800,
-          letterSpacing: compact ? 1 : 1.3,
+          letterSpacing: 0,
         ),
       ),
     );

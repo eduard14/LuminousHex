@@ -1068,7 +1068,7 @@ class _HexArenaNode extends StatelessWidget {
               style: Theme.of(context).textTheme.labelSmall?.copyWith(
                 color: active ? tint : LightcorePalette.stroke,
                 fontWeight: FontWeight.w900,
-                letterSpacing: 1,
+                letterSpacing: 0,
               ),
             ),
             const SizedBox(height: 2),
@@ -1164,8 +1164,20 @@ String _formatCountdown(DateTime endsAt) {
   return '${max(0, remaining.inMinutes)}m';
 }
 
-String _joinButtonLabel(LightcoreTournamentModeId mode) => switch (mode) {
-  LightcoreTournamentModeId.enemyBlitz => 'Join Test Event',
-  LightcoreTournamentModeId.hexGauntlet => 'Join Weekly Event',
-  LightcoreTournamentModeId.arenaFlow => 'Join Weekly Event',
+List<String> _modeLoadingTips(LightcoreTournamentModeId mode) => switch (mode) {
+  LightcoreTournamentModeId.enemyBlitz => const <String>[
+    'Tip: Start with three drafted anomalies; upgrades matter more after the first wave stabilizes.',
+    'Tip: Enemy Blitz keeps running on a weekend-length clock after the session starts.',
+    'Tip: Tap the core often early so your economy reaches the first tower unlock quickly.',
+  ],
+  LightcoreTournamentModeId.hexGauntlet => const <String>[
+    'Tip: Merge matching towers before the lane pressure spikes.',
+    'Tip: Sending waves manually raises income, but a weak board can fold fast.',
+    'Tip: A deeper path clear beats a shallow economy run on the weekly board.',
+  ],
+  LightcoreTournamentModeId.arenaFlow => const <String>[
+    'Tip: Arena Flow uses your highest-layer Home Tower as the player-side shell.',
+    'Tip: Overclock when your enemy wave is already near the rival tower.',
+    'Tip: Net damage matters; blocking rival pressure is as valuable as pushing your own.',
+  ],
 };

@@ -20,7 +20,7 @@ class _TournamentModeDetailScreen extends StatefulWidget {
   final LightcoreTournamentModeState modeState;
   final bool busy;
   final VoidCallback onBack;
-  final Future<void> Function() onJoin;
+  final Future<LightcoreTournamentModeState?> Function() onJoin;
   final Future<void> Function() onRefresh;
   final Future<void> Function() onClaim;
   final Future<void> Function(LightcoreTournamentModeState modeState, int score)
@@ -39,7 +39,7 @@ class _TournamentModeDetailScreenState
   static const Duration _standardRunDuration = Duration(seconds: 20);
   static const Duration _enemyBlitzSessionDuration = Duration(days: 2);
   static const Duration _tickRate = Duration(milliseconds: 100);
-  static const Duration _launchDelay = Duration(milliseconds: 450);
+  static const Duration _launchDelay = Duration(milliseconds: 900);
 
   Timer? _ticker;
 
@@ -52,6 +52,7 @@ class _TournamentModeDetailScreenState
   bool _runActive = false;
   bool _runComplete = false;
   bool _launchingRun = false;
+  bool _joinedForLaunch = false;
   String _hint = 'Build your event loadout and enter the bracket.';
 
   int _blitzResources = 0;
@@ -97,13 +98,8 @@ class _TournamentModeDetailScreenState
     );
     _seedSelections();
     _syncBattleController();
-    if (widget.autoStartRun && widget.modeState.canStartRun) {
-      _launchingRun = true;
-      _hint = 'Loading ${widget.modeState.mode.label}...';
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        widget.onAutoStartConsumed?.call();
-        _startRunAfterLaunchDelay();
-      });
+    if (widget.autoStartRun) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _queueStartRun());
     }
   }
 
@@ -124,6 +120,7 @@ class _TournamentModeDetailScreenState
       _runActive = false;
       _runComplete = false;
       _launchingRun = false;
+      _joinedForLaunch = false;
       _elapsedSeconds = 0;
       _blitzSessionStartedAt = null;
       _blitzSessionEndsAt = null;
@@ -644,11 +641,14 @@ class _TournamentModeDetailScreenState
     );
   }
 
-  void _queueStartRun() {
+  bool get _canLaunchRun =>
+      widget.modeState.isOpen && (widget.modeState.joined || _joinedForLaunch);
+
+  Future<void> _queueStartRun() async {
     if (_launchingRun ||
         _runActive ||
         widget.busy ||
-        !widget.modeState.canStartRun) {
+        !widget.modeState.isOpen) {
       return;
     }
     widget.onAutoStartConsumed?.call();
@@ -662,6 +662,21 @@ class _TournamentModeDetailScreenState
       _score = 0;
       _hint = 'Loading ${widget.modeState.mode.label}...';
     });
+    if (!_canLaunchRun) {
+      final joinedState = await widget.onJoin();
+      if (!mounted) {
+        return;
+      }
+      if (joinedState?.joined != true || joinedState?.isOpen != true) {
+        setState(() {
+          _launchingRun = false;
+          _hint =
+              'Tournament entry failed. Refresh the event and try another run.';
+        });
+        return;
+      }
+      setState(() => _joinedForLaunch = true);
+    }
     _startRunAfterLaunchDelay();
   }
 
@@ -675,7 +690,7 @@ class _TournamentModeDetailScreenState
   }
 
   void _startRun() {
-    if (!widget.modeState.canStartRun) {
+    if (!_canLaunchRun) {
       setState(() => _launchingRun = false);
       return;
     }
@@ -1132,7 +1147,8 @@ class _TournamentModeDetailScreenState
     final state = widget.modeState;
     final tint = _modeTint(state.mode);
     final helpMessage = _modeHelpMessage(state);
-    if (state.joined && (_launchingRun || _runActive || _runComplete)) {
+    if ((state.joined || _joinedForLaunch || _launchingRun) &&
+        (_launchingRun || _runActive || _runComplete)) {
       if (_launchingRun) {
         return _buildRunLoading(context, tint);
       }
@@ -1216,9 +1232,9 @@ class _TournamentModeDetailScreenState
                     ),
                     _HeaderChip(
                       label: 'Best',
-                      value: state.joined
+                      value: state.playerBestScore > 0
                           ? '${state.playerBestScore}'
-                          : 'Join to unlock',
+                          : 'No score',
                     ),
                     _HeaderChip(
                       label: 'Window',
@@ -1238,47 +1254,7 @@ class _TournamentModeDetailScreenState
             ),
           ),
           const SizedBox(height: 12),
-          if (!state.joined)
-            AuroraPanel(
-              tint: tint,
-              padding: const EdgeInsets.all(18),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Join This Event',
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    state.mode.prepLabel,
-                    style: Theme.of(context).textTheme.bodyMedium,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    state.isOpen
-                        ? 'Once joined, this event gets its own dedicated play screen and local loadout. It does not mirror the base battle view.'
-                        : 'This event can be inspected while it is closed, but joining and starting runs stay locked until the next window opens.',
-                    style: Theme.of(context).textTheme.bodyMedium,
-                  ),
-                  const SizedBox(height: 14),
-                  FilledButton.icon(
-                    onPressed: widget.busy || !state.isOpen
-                        ? null
-                        : widget.onJoin,
-                    icon: const Icon(Icons.rocket_launch_rounded),
-                    label: Text(
-                      state.isOpen
-                          ? _joinButtonLabel(state.mode)
-                          : 'Event Closed',
-                    ),
-                  ),
-                ],
-              ),
-            )
-          else ...[
-            _buildPreparationPanel(context, tint),
-          ],
+          _buildPreparationPanel(context, tint),
           const SizedBox(height: 12),
           _buildRewardAndLeaderboard(context, tint),
         ],
@@ -1318,14 +1294,14 @@ class _TournamentModeDetailScreenState
           const SizedBox(height: 14),
           FilledButton.icon(
             onPressed:
-                widget.busy || _launchingRun || _runActive || !state.canStartRun
+                widget.busy || _launchingRun || _runActive || !state.isOpen
                 ? null
                 : _queueStartRun,
             icon: const Icon(Icons.play_circle_fill_rounded),
             label: Text(
               _runActive
                   ? 'Run Live'
-                  : state.canStartRun
+                  : state.isOpen
                   ? 'Start Run'
                   : 'Event Closed',
             ),
@@ -1673,9 +1649,12 @@ class _TournamentModeDetailScreenState
   Widget _buildRunLoading(BuildContext context, Color tint) {
     return LightcoreRunLoading(
       title: 'Loading ${widget.modeState.mode.label}',
-      subtitle: 'Preparing the event rules, visuals, and run state.',
+      subtitle: widget.modeState.joined || _joinedForLaunch
+          ? 'Preparing the event rules, visuals, and run state.'
+          : 'Joining the event and preparing your first run.',
       tint: tint,
       icon: _modeIcon(widget.modeState.mode),
+      tips: _modeLoadingTips(widget.modeState.mode),
     );
   }
 

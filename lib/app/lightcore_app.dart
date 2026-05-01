@@ -375,35 +375,7 @@ class _LightcoreAppState extends State<LightcoreApp>
       _sessionNotice = null;
     });
 
-    await _bootstrapMainMenu(reason: 'enter-game-refresh');
-    if (!mounted) {
-      _logSession('enter-game-abandoned');
-      return;
-    }
-
-    final launchReport = _bootstrapReport;
-    if (launchReport == null || !launchReport.canEnterGame) {
-      _logBootstrapReport(
-        'enter-game-blocked',
-        launchReport,
-        reason: _launchBlocker(launchReport),
-      );
-      setState(() => _isLinkingScreen = false);
-      return;
-    }
-    if (report.serverValidated && !launchReport.serverValidated) {
-      _logBootstrapReport(
-        'enter-game-blocked',
-        launchReport,
-        reason: 'server-validation-lost',
-      );
-      setState(() {
-        _isLinkingScreen = false;
-        _sessionNotice =
-            'Startup sync did not finish. Retry to restore your cloud save and offline progress.';
-      });
-      return;
-    }
+    final launchReport = report;
     if (_serverRestoreIncomplete(launchReport)) {
       _logBootstrapReport(
         'enter-game-blocked',
@@ -1223,6 +1195,11 @@ class _LightcoreAppState extends State<LightcoreApp>
               statusLabel: 'Screen Link',
               accent: LightcorePalette.aether,
               signalLabels: ['SYNC', 'LINK', 'ARM'],
+              tips: [
+                'Tip: Dungeons stay joined once unlocked; start a run whenever your loadout is ready.',
+                'Tip: Tournament entry happens automatically when your first run starts.',
+                'Tip: Offline rewards are reconciled by the server before the shell opens.',
+              ],
             ),
           )
         : hasActiveGame

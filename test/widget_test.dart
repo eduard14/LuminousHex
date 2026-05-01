@@ -416,7 +416,7 @@ void main() {
         }
       }
 
-      expect(backend.bootstrapCalls, 3);
+      expect(backend.bootstrapCalls, 2);
       expect(find.byType(LightcoreShell), findsOneWidget);
       expect(tester.takeException(), isNull);
     },
@@ -521,7 +521,7 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('enter game refreshes bootstrap before restoring shell', (
+  testWidgets('enter game restores shell without a second bootstrap', (
     tester,
   ) async {
     PackageInfo.setMockInitialValues(
@@ -552,7 +552,7 @@ void main() {
     await tester.pump(const Duration(seconds: 1));
     await tester.pump();
 
-    expect(backend.bootstrapCalls, 2);
+    expect(backend.bootstrapCalls, 1);
     final shell = tester.widget<LightcoreShell>(find.byType(LightcoreShell));
     expect(shell.controller.lumens, 802);
     expect(shell.controller.swarmActivated, isTrue);
@@ -712,7 +712,7 @@ void main() {
     expect(find.text('Daily Dungeons'), findsOneWidget);
     expect(find.text('Threat Director'), findsWidgets);
     expect(find.text('Prism Rift'), findsWidgets);
-    expect(find.text('Open'), findsNWidgets(2));
+    expect(find.text('Joined'), findsWidgets);
     expect(find.text('Sealed'), findsOneWidget);
   });
 
@@ -768,7 +768,7 @@ void main() {
     await tester.pump();
     await tester.tap(find.text('Enter Lv 1'));
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 620));
+    await tester.pump(const Duration(milliseconds: 1100));
 
     expect(find.text('Threat Director Lv 1'), findsOneWidget);
     expect(
@@ -819,7 +819,7 @@ void main() {
     await tester.pump();
     await tester.tap(find.text('Enter Rift Lv 1'));
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 620));
+    await tester.pump(const Duration(milliseconds: 1100));
 
     expect(find.text('Prism Rift Lv 1'), findsOneWidget);
     expect(

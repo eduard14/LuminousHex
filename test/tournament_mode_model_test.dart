@@ -64,6 +64,21 @@ void main() {
     expect(state.canStartRun, isFalse);
   });
 
+  test('open events can start through first-run auto entry', () {
+    final state = LightcoreTournamentModeState.fromMap(<String, dynamic>{
+      'mode': 'hexGauntlet',
+      'statusMessage': 'Open for runs.',
+      'mechanicSummary': 'Weekly global climb.',
+      'rewardPreview': const <String, dynamic>{},
+      'startsAt': '2026-04-25T00:00:00.000Z',
+      'endsAt': '2026-04-27T00:00:00.000Z',
+      'joined': false,
+      'isOpen': true,
+    });
+
+    expect(state.canStartRun, isTrue);
+  });
+
   test('tournament snapshots use the highest-layer Home Tower', () {
     final controller = LightcoreController();
     addTearDown(controller.dispose);

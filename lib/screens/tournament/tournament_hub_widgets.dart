@@ -10,7 +10,6 @@ class _TournamentHubScreen extends StatelessWidget {
     required this.onRefresh,
     required this.onOpenMode,
     required this.onPlayMode,
-    required this.onJoinMode,
     required this.onClaimReward,
   });
 
@@ -22,7 +21,6 @@ class _TournamentHubScreen extends StatelessWidget {
   final Future<void> Function() onRefresh;
   final ValueChanged<LightcoreTournamentModeId> onOpenMode;
   final ValueChanged<LightcoreTournamentModeId> onPlayMode;
-  final ValueChanged<LightcoreTournamentModeId> onJoinMode;
   final ValueChanged<LightcoreTournamentModeId> onClaimReward;
 
   @override
@@ -77,7 +75,6 @@ class _TournamentHubScreen extends StatelessWidget {
                               .tutorialHighlightsTournamentModeCard(mode),
                           onOpen: () => onOpenMode(mode),
                           onPlay: () => onPlayMode(mode),
-                          onJoin: () => onJoinMode(mode),
                           onClaim: () => onClaimReward(mode),
                         ),
                       ),
@@ -150,7 +147,9 @@ class _TournamentRankChip extends StatelessWidget {
           ),
           const SizedBox(width: 8),
           Text(
-            modeState.joined ? '${modeState.playerBestScore}' : 'Join',
+            modeState.playerBestScore > 0
+                ? '${modeState.playerBestScore}'
+                : 'Play',
             style: Theme.of(context).textTheme.labelMedium?.copyWith(
               color: tint,
               fontWeight: FontWeight.w800,
@@ -341,7 +340,6 @@ class _TournamentModeHubCard extends StatelessWidget {
     required this.highlighted,
     required this.onOpen,
     required this.onPlay,
-    required this.onJoin,
     required this.onClaim,
   });
 
@@ -350,7 +348,6 @@ class _TournamentModeHubCard extends StatelessWidget {
   final bool highlighted;
   final VoidCallback onOpen;
   final VoidCallback onPlay;
-  final VoidCallback onJoin;
   final VoidCallback onClaim;
 
   @override
@@ -411,24 +408,18 @@ class _TournamentModeHubCard extends StatelessWidget {
                   Tooltip(
                     message: modeState.rewardReady && !modeState.rewardClaimed
                         ? 'Claim reward'
-                        : modeState.joined
-                        ? 'Start run'
-                        : 'Join event',
+                        : 'Start run',
                     child: IconButton.filledTonal(
                       onPressed:
                           modeState.rewardReady && !modeState.rewardClaimed
                           ? (busy ? null : onClaim)
-                          : modeState.joined
-                          ? onPlay
                           : busy || !modeState.isOpen
                           ? null
-                          : onJoin,
+                          : onPlay,
                       icon: Icon(
                         modeState.rewardReady && !modeState.rewardClaimed
                             ? Icons.workspace_premium_rounded
-                            : modeState.joined
-                            ? Icons.play_arrow_rounded
-                            : Icons.add_rounded,
+                            : Icons.play_arrow_rounded,
                       ),
                     ),
                   ),

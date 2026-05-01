@@ -447,13 +447,13 @@ function createTournamentHelpers({ db, HttpsError, FieldValue, Timestamp, consta
     if (!joined) {
       switch (mode) {
         case "enemyBlitz":
-          return "Anomaly Blitz is open for testing. Join to lock your seed and start a weekend-length survival session.";
+          return "Anomaly Blitz is open for testing. Start a run to lock your seed and enter the survival board.";
         case "hexGauntlet":
           return "Hex is live. Run solo and post your best wave to the global weekly leaderboard.";
         case "arenaFlow":
-          return "Arena Flow is live for the week. Join to send your highest-layer Home Tower into the net-damage ladder.";
+          return "Arena Flow is live for the week. Start a run to send your highest-layer Home Tower into the net-damage ladder.";
         default:
-          return `${label} queue is open. Join to lock your current seed.`;
+          return `${label} queue is open. Start a run to lock your current seed.`;
       }
     }
     if (bestScore > 0) {
@@ -470,13 +470,13 @@ function createTournamentHelpers({ db, HttpsError, FieldValue, Timestamp, consta
     }
     switch (mode) {
       case "enemyBlitz":
-        return "Testing queue joined. Start a weekend-length survival session whenever you are ready.";
+        return "Testing queue is ready. Start a weekend-length survival session whenever you are ready.";
       case "hexGauntlet":
-        return "Weekly queue joined. Start a solo hex run whenever you are ready.";
+        return "Weekly queue is ready. Start a solo hex run whenever you are ready.";
       case "arenaFlow":
-        return "Weekly queue joined. Start a Home Tower arena duel whenever you are ready.";
+        return "Weekly queue is ready. Start a Home Tower arena duel whenever you are ready.";
       default:
-        return "Queue joined. Start a tournament run from the mobile client.";
+        return "Queue is ready. Start a tournament run from the mobile client.";
     }
   }
 

@@ -90,14 +90,19 @@ class _TournamentScreenState extends State<TournamentScreen> {
     }
   }
 
-  Future<void> _joinMode(LightcoreTournamentModeId mode) async {
+  Future<LightcoreTournamentModeState?> _joinMode(
+    LightcoreTournamentModeId mode,
+  ) async {
+    LightcoreTournamentModeState? joinedState;
     await _runBusyAction(() async {
       final overview = await widget.backend.joinTournamentQueue(
         mode: mode,
         snapshot: widget.controller.buildTournamentSnapshot(),
       );
+      joinedState = overview.modeFor(mode);
       _applyOverview(overview);
     });
+    return joinedState;
   }
 
   Future<void> _submitRun(
@@ -217,7 +222,6 @@ class _TournamentScreenState extends State<TournamentScreen> {
       onRefresh: _loadOverview,
       onOpenMode: _openMode,
       onPlayMode: (mode) => _openMode(mode, autoStart: true),
-      onJoinMode: _joinMode,
       onClaimReward: _claimReward,
     );
   }

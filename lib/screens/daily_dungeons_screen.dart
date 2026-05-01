@@ -66,7 +66,7 @@ class _DungeonRunLaunchScreen extends StatefulWidget {
 }
 
 class _DungeonRunLaunchScreenState extends State<_DungeonRunLaunchScreen> {
-  static const Duration _launchDelay = Duration(milliseconds: 450);
+  static const Duration _launchDelay = Duration(milliseconds: 900);
 
   bool _ready = false;
 
@@ -91,6 +91,11 @@ class _DungeonRunLaunchScreenState extends State<_DungeonRunLaunchScreen> {
       subtitle: widget.subtitle,
       tint: widget.tint,
       icon: widget.icon,
+      tips: const <String>[
+        'Tip: Daily dungeon progress persists, so cleared tower levels stay unlocked.',
+        'Tip: Quick clears are best saved for levels you have already proven you can beat.',
+        'Tip: Match the run route to your strongest anomaly deck before entering.',
+      ],
     );
   }
 }
@@ -150,7 +155,7 @@ class _DailyDungeonsScreenState extends State<DailyDungeonsScreen> {
                         tint: LightcorePalette.warning,
                         selected: _selected == _DailyDungeonSlot.enemyManager,
                         enabled: true,
-                        statusLabel: 'Open',
+                        statusLabel: 'Joined',
                         onTap: () =>
                             _selectDungeon(_DailyDungeonSlot.enemyManager),
                       ),
@@ -179,7 +184,7 @@ class _DailyDungeonsScreenState extends State<DailyDungeonsScreen> {
                         tint: LightcorePalette.violet,
                         selected: _selected == _DailyDungeonSlot.prismRift,
                         enabled: true,
-                        statusLabel: 'Open',
+                        statusLabel: 'Joined',
                         onTap: () =>
                             _selectDungeon(_DailyDungeonSlot.prismRift),
                       ),
@@ -252,7 +257,7 @@ class _DailyDungeonsScreenState extends State<DailyDungeonsScreen> {
                 ),
               ),
               const SizedBox(width: 12),
-              _StatusCapsule(label: 'Menu', tint: LightcorePalette.solar),
+              _StatusCapsule(label: 'Joined', tint: LightcorePalette.success),
             ],
           ),
           const SizedBox(height: 18),

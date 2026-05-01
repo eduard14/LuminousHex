@@ -1619,13 +1619,6 @@ exports.submitTournamentRun = onCall(
 
     await db.runTransaction(async (transaction) => {
       const existingSnap = await transaction.get(entryRef);
-      if (!existingSnap.exists || existingSnap.data()?.joined !== true) {
-        throw new HttpsError(
-          "failed-precondition",
-          "Join the tournament queue before submitting a run.",
-        );
-      }
-
       const existingData = existingSnap.data() || {};
       const previousBestScore = clampInt(
         existingData.bestScore,
@@ -1668,6 +1661,7 @@ exports.submitTournamentRun = onCall(
           ),
           displayName: resolveDisplayName(context.profileData, context.auth),
           joined: true,
+          joinedAt: existingData.joinedAt || FieldValue.serverTimestamp(),
           updatedAt: FieldValue.serverTimestamp(),
           lastSubmittedAt: FieldValue.serverTimestamp(),
           lastSubmittedScore: submittedScore,

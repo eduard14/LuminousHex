@@ -327,7 +327,7 @@ class LightcoreTournamentModeState {
   final int seedPowerIndex;
   final List<LightcoreTournamentLeaderboardEntry> leaderboard;
 
-  bool get canStartRun => joined && isOpen;
+  bool get canStartRun => isOpen;
 
   factory LightcoreTournamentModeState.fromMap(Map<String, dynamic> data) {
     return LightcoreTournamentModeState(
