@@ -605,16 +605,10 @@ extension LightcoreBattleGameArenaSlotRendering on LightcoreBattleGame {
       final unlocked = controller.isOuterSlotUnlocked(index);
       final center = Offset(_slotPositions[index].x, _slotPositions[index].y);
       final selected = controller.selectedSlotIndex == index;
-      final coreColor = _signatureColor(
-        controller.coreState.affinity,
-        controller.coreState.secondaryAffinity,
-      );
-      final slotColor = slot.isFabricating
-          ? coreColor
+      final slotColor = slot.config != null
+          ? slot.config!.affinity.color
           : activeTower
-          ? slot.config != null
-                ? slot.config!.affinity.color
-                : slot.childAffinity != null
+          ? slot.childAffinity != null
                 ? _signatureColor(
                     slot.childAffinity!,
                     slot.childSecondaryAffinity,

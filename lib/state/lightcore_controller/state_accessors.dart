@@ -1,6 +1,8 @@
 part of '../lightcore_controller.dart';
 
-const bool _openEventLevelWallsForTesting = false;
+// TODO: Restore the Account Radiance level walls after tournament and dungeon
+// testing no longer needs early access.
+const bool _openEventLevelWallsForTesting = true;
 
 extension LightcoreControllerStateAccessors on LightcoreController {
   void _recordLumenSpend(int amount) {

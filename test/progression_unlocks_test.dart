@@ -536,21 +536,15 @@ void main() {
   });
 
   test(
-    'daily dungeons and tournaments respect Account Radiance level walls',
+    'daily dungeons and tournaments are temporarily open before level walls',
     () {
       final controller = LightcoreController(traitRandom: Random(13));
       addTearDown(controller.dispose);
 
-      expect(controller.dailyDungeonsUnlocked, isFalse);
-      expect(
-        controller.dailyDungeonLevelsRemaining,
-        LightcoreController.dailyDungeonUnlockLevel - controller.overallLevel,
-      );
-      expect(controller.tournamentsUnlocked, isFalse);
-      expect(
-        controller.tournamentLevelsRemaining,
-        LightcoreController.tournamentUnlockLevel - controller.overallLevel,
-      );
+      expect(controller.dailyDungeonsUnlocked, isTrue);
+      expect(controller.dailyDungeonLevelsRemaining, 0);
+      expect(controller.tournamentsUnlocked, isTrue);
+      expect(controller.tournamentLevelsRemaining, 0);
 
       controller.experience = LightcoreController.experienceForOverallLevel(
         LightcoreController.dailyDungeonUnlockLevel,
@@ -558,12 +552,6 @@ void main() {
 
       expect(controller.managersUnlocked, isTrue);
       expect(controller.dailyDungeonsUnlocked, isTrue);
-      expect(controller.tournamentsUnlocked, isFalse);
-
-      controller.experience = LightcoreController.experienceForOverallLevel(
-        LightcoreController.tournamentUnlockLevel,
-      );
-
       expect(controller.tournamentsUnlocked, isTrue);
     },
   );
