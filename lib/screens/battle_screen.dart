@@ -880,6 +880,7 @@ class _BattleScreenState extends State<BattleScreen> {
   Widget? _buildQuestPanel(
     LightcoreController controller, {
     required bool compact,
+    required bool initiallyExpanded,
   }) {
     if (!widget.showBattleHud ||
         !widget.showQuestPanel ||
@@ -890,7 +891,7 @@ class _BattleScreenState extends State<BattleScreen> {
     return LightcoreQuestCard(
       controller: controller,
       compact: compact,
-      initiallyExpanded: true,
+      initiallyExpanded: initiallyExpanded,
     );
   }
 
@@ -915,7 +916,11 @@ class _BattleScreenState extends State<BattleScreen> {
       controller: controller,
       selected: selected,
     );
-    final questPanel = _buildQuestPanel(controller, compact: compact);
+    final questPanel = _buildQuestPanel(
+      controller,
+      compact: compact,
+      initiallyExpanded: !compact || selectionOverlay == null,
+    );
 
     return Stack(
       children: [

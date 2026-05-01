@@ -42,6 +42,9 @@ class _LightcoreQuestCardState extends State<LightcoreQuestCard> {
   void didUpdateWidget(covariant LightcoreQuestCard oldWidget) {
     super.didUpdateWidget(oldWidget);
     final nextStep = widget.controller.tutorialStep;
+    if (oldWidget.initiallyExpanded != widget.initiallyExpanded) {
+      _detailsOpen = widget.initiallyExpanded;
+    }
     if (nextStep == _trackedStep) {
       return;
     }
