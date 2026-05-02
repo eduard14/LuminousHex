@@ -154,6 +154,7 @@ class CosmicGuideAvatar extends StatelessWidget {
     this.avatarCosmetics = AvatarCosmeticLoadout.empty,
     this.pose = LightcoreAvatarPose.idle,
     this.usePortraitAsset = true,
+    this.framed = true,
     this.semanticLabel,
   });
 
@@ -165,6 +166,7 @@ class CosmicGuideAvatar extends StatelessWidget {
   final AvatarCosmeticLoadout avatarCosmetics;
   final LightcoreAvatarPose pose;
   final bool usePortraitAsset;
+  final bool framed;
   final String? semanticLabel;
 
   @override
@@ -177,7 +179,7 @@ class CosmicGuideAvatar extends StatelessWidget {
         phase: phase,
         boosting: boosting,
         pose: pose,
-        drawFrame: true,
+        drawFrame: framed,
         drawBody: !usePortraitAsset,
       ),
       child: SizedBox.square(dimension: size),
@@ -252,10 +254,12 @@ class CosmicGuideAvatar extends StatelessWidget {
     return Semantics(
       image: true,
       label: semanticLabel ?? guide.displayName,
-      child: ClipRRect(
-        borderRadius: radius,
-        child: SizedBox.square(dimension: size, child: body),
-      ),
+      child: framed
+          ? ClipRRect(
+              borderRadius: radius,
+              child: SizedBox.square(dimension: size, child: body),
+            )
+          : SizedBox.square(dimension: size, child: body),
     );
   }
 }
