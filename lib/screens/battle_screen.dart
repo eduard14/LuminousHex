@@ -919,7 +919,7 @@ class _BattleScreenState extends State<BattleScreen> {
     final questPanel = _buildQuestPanel(
       controller,
       compact: compact,
-      initiallyExpanded: !compact || selectionOverlay == null,
+      initiallyExpanded: !compact,
     );
 
     return Stack(

@@ -1542,9 +1542,14 @@ void main() {
       findsNothing,
     );
     expect(
-      find.byKey(const ValueKey<String>('battle-quest-detail-card')),
+      find.byKey(const ValueKey<String>('battle-quest-card-collapsed')),
       findsOneWidget,
     );
+
+    await tester.tap(
+      find.byKey(const ValueKey<String>('battle-quest-trigger-button')),
+    );
+    await _pumpTransition(tester);
 
     expect(
       find.byKey(const ValueKey<String>('shell-quest-sheet')),
@@ -1605,7 +1610,9 @@ void main() {
   ) async {
     final controller = LightcoreController();
     addTearDown(controller.dispose);
+    addTearDown(() async => tester.binding.setSurfaceSize(null));
 
+    await tester.binding.setSurfaceSize(const Size(900, 900));
     await _pumpBattleScreen(tester, controller);
 
     expect(
@@ -1660,6 +1667,16 @@ void main() {
 
     await _pumpBattleScreen(tester, controller);
 
+    expect(
+      find.byKey(const ValueKey<String>('battle-quest-card-collapsed')),
+      findsOneWidget,
+    );
+
+    await tester.tap(
+      find.byKey(const ValueKey<String>('battle-quest-trigger-button')),
+    );
+    await _pumpTransition(tester);
+
     expect(find.text('Queue a Pulse'), findsOneWidget);
     expect(
       find.byKey(const ValueKey<String>('battle-quest-detail-card')),
@@ -1678,7 +1695,9 @@ void main() {
   ) async {
     final controller = LightcoreController();
     addTearDown(controller.dispose);
+    addTearDown(() async => tester.binding.setSurfaceSize(null));
 
+    await tester.binding.setSurfaceSize(const Size(900, 900));
     await _pumpBattleScreen(tester, controller);
 
     controller.handleBattleCenterTap();
