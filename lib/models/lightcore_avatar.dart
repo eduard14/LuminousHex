@@ -3,7 +3,7 @@ import 'lightcore_types.dart';
 
 enum AvatarCosmeticType { hair, face }
 
-enum LightcoreAvatarPose { idle, thrust }
+enum LightcoreAvatarPose { idle, move, boost, thrust }
 
 class AvatarCosmeticConfig {
   const AvatarCosmeticConfig({

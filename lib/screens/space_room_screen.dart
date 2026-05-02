@@ -980,8 +980,10 @@ class _SpaceOccupantAvatar extends StatelessWidget {
     final labelTop = (center.dy + avatarSize * 0.36)
         .clamp(4.0, math.max(4.0, roomSize.height - 26))
         .toDouble();
-    final pose = boosting || occupant.velocity.distance > 0.08
-        ? LightcoreAvatarPose.thrust
+    final pose = boosting
+        ? LightcoreAvatarPose.boost
+        : occupant.velocity.distance > 0.08
+        ? LightcoreAvatarPose.move
         : LightcoreAvatarPose.idle;
 
     return Stack(

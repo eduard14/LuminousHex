@@ -153,7 +153,7 @@ class CosmicGuideAvatar extends StatelessWidget {
     this.boosting = false,
     this.avatarCosmetics = AvatarCosmeticLoadout.empty,
     this.pose = LightcoreAvatarPose.idle,
-    this.usePortraitAsset = false,
+    this.usePortraitAsset = true,
     this.framed = true,
     this.semanticLabel,
   });
@@ -198,7 +198,7 @@ class CosmicGuideAvatar extends StatelessWidget {
                 Padding(
                   padding: EdgeInsets.all(size * 0.04),
                   child: Image.asset(
-                    guide.assetPath,
+                    _avatarBaseAssetPath(guide, pose),
                     fit: BoxFit.contain,
                     filterQuality: FilterQuality.medium,
                     errorBuilder: (context, error, stackTrace) {
@@ -220,11 +220,7 @@ class CosmicGuideAvatar extends StatelessWidget {
                   guide: guide,
                   loadout: avatarCosmetics,
                 ),
-                _EquipmentSpriteOverlay(
-                  guide: guide,
-                  loadout: loadout,
-                  phase: phase,
-                ),
+                _EquipmentSpriteOverlay(loadout: loadout),
               ],
             ),
           ),
@@ -253,11 +249,7 @@ class CosmicGuideAvatar extends StatelessWidget {
                   guide: guide,
                   loadout: avatarCosmetics,
                 ),
-                _EquipmentSpriteOverlay(
-                  guide: guide,
-                  loadout: loadout,
-                  phase: phase,
-                ),
+                _EquipmentSpriteOverlay(loadout: loadout),
               ],
             ),
           ),
@@ -276,18 +268,28 @@ class CosmicGuideAvatar extends StatelessWidget {
           : SizedBox.square(dimension: size, child: body),
     );
   }
+
+  static String _avatarBaseAssetPath(
+    LightcoreGuideProfile guide,
+    LightcoreAvatarPose pose,
+  ) {
+    final guideKey = switch (guide.id) {
+      LightcoreGuideId.luma => 'luma',
+      LightcoreGuideId.lumo => 'lumo',
+    };
+    final poseKey = switch (pose) {
+      LightcoreAvatarPose.move => 'move',
+      LightcoreAvatarPose.boost || LightcoreAvatarPose.thrust => 'boost',
+      LightcoreAvatarPose.idle => 'idle',
+    };
+    return 'assets/sprites/avatar/base/${guideKey}_$poseKey.png';
+  }
 }
 
 class _EquipmentSpriteOverlay extends StatelessWidget {
-  const _EquipmentSpriteOverlay({
-    required this.guide,
-    required this.loadout,
-    required this.phase,
-  });
+  const _EquipmentSpriteOverlay({required this.loadout});
 
-  final LightcoreGuideProfile guide;
   final CosmicEquipmentLoadout loadout;
-  final double phase;
 
   @override
   Widget build(BuildContext context) {
@@ -296,15 +298,71 @@ class _EquipmentSpriteOverlay extends StatelessWidget {
     }
 
     return IgnorePointer(
-      child: CustomPaint(
-        painter: CosmicEquipmentOverlayPainter(
-          guide: guide,
-          loadout: loadout,
-          phase: phase,
-        ),
-        child: const SizedBox.expand(),
+      child: Stack(
+        fit: StackFit.expand,
+        clipBehavior: Clip.none,
+        children: [
+          if (loadout.pieceFor(EquipmentInventorySlot.pants) case final piece?)
+            _EquipmentSprite(
+              piece: piece,
+              bounds: _equipmentBoundsFor(EquipmentInventorySlot.pants),
+            ),
+          if (loadout.pieceFor(EquipmentInventorySlot.shoes) case final piece?)
+            _EquipmentSprite(
+              piece: piece,
+              bounds: _equipmentBoundsFor(EquipmentInventorySlot.shoes),
+            ),
+          if (loadout.pieceFor(EquipmentInventorySlot.top) case final piece?)
+            _EquipmentSprite(
+              piece: piece,
+              bounds: _equipmentBoundsFor(EquipmentInventorySlot.top),
+            ),
+          if (loadout.pieceFor(EquipmentInventorySlot.hat) case final piece?)
+            _EquipmentSprite(
+              piece: piece,
+              bounds: _equipmentBoundsFor(EquipmentInventorySlot.hat),
+            ),
+          for (final piece
+              in loadout.piecesFor(EquipmentInventorySlot.accessory).take(2))
+            _EquipmentSprite(
+              piece: piece,
+              bounds: _equipmentBoundsFor(EquipmentInventorySlot.accessory),
+            ),
+        ],
       ),
     );
+  }
+
+  static _EquipmentSpriteBounds _equipmentBoundsFor(
+    EquipmentInventorySlot slot,
+  ) {
+    return switch (slot) {
+      EquipmentInventorySlot.hat => const _EquipmentSpriteBounds(
+        left: 0.22,
+        top: -0.03,
+        size: 0.5,
+      ),
+      EquipmentInventorySlot.top => const _EquipmentSpriteBounds(
+        left: 0.25,
+        top: 0.37,
+        size: 0.48,
+      ),
+      EquipmentInventorySlot.pants => const _EquipmentSpriteBounds(
+        left: 0.3,
+        top: 0.52,
+        size: 0.38,
+      ),
+      EquipmentInventorySlot.shoes => const _EquipmentSpriteBounds(
+        left: 0.28,
+        top: 0.65,
+        size: 0.44,
+      ),
+      EquipmentInventorySlot.accessory => const _EquipmentSpriteBounds(
+        left: 0.62,
+        top: 0.32,
+        size: 0.3,
+      ),
+    };
   }
 }
 
@@ -316,19 +374,7 @@ class _AvatarPoseTransform extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (pose == LightcoreAvatarPose.idle) {
-      return child;
-    }
-    return Transform.rotate(
-      alignment: Alignment.center,
-      angle: -0.055,
-      child: Transform.scale(
-        alignment: Alignment.center,
-        scaleX: 0.98,
-        scaleY: 1.02,
-        child: child,
-      ),
-    );
+    return child;
   }
 }
 
@@ -440,6 +486,54 @@ class _AvatarCosmeticBounds {
   final double size;
 }
 
+class _EquipmentSprite extends StatelessWidget {
+  const _EquipmentSprite({required this.piece, required this.bounds});
+
+  final CosmicEquipmentPiece piece;
+  final _EquipmentSpriteBounds bounds;
+
+  @override
+  Widget build(BuildContext context) {
+    return Positioned.fill(
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final size = constraints.maxWidth * bounds.size;
+          return Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Positioned(
+                left: constraints.maxWidth * bounds.left,
+                top: constraints.maxHeight * bounds.top,
+                width: size,
+                height: size,
+                child: Image.asset(
+                  piece.assetPath,
+                  fit: BoxFit.contain,
+                  filterQuality: FilterQuality.high,
+                  errorBuilder: (context, error, stackTrace) =>
+                      const SizedBox.shrink(),
+                ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _EquipmentSpriteBounds {
+  const _EquipmentSpriteBounds({
+    required this.left,
+    required this.top,
+    required this.size,
+  });
+
+  final double left;
+  final double top;
+  final double size;
+}
+
 class CosmicGuideAvatarPainter extends CustomPainter {
   const CosmicGuideAvatarPainter({
     required this.guide,
@@ -524,7 +618,8 @@ class CosmicGuideAvatarPainter extends CustomPainter {
     final secondary = guide.id == LightcoreGuideId.lumo
         ? LightcorePalette.gilded
         : LightcorePalette.violet;
-    final thrust = pose == LightcoreAvatarPose.thrust;
+    final thrust =
+        pose == LightcoreAvatarPose.boost || pose == LightcoreAvatarPose.thrust;
     final bob = math.sin(phase * 2.1) * (thrust ? 0.6 : 1.1);
     canvas.save();
     canvas.translate(0, bob);
