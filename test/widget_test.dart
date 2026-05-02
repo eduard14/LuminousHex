@@ -1752,6 +1752,55 @@ void main() {
     );
   });
 
+  testWidgets('battlefield tap quests start collapsed on wide layouts', (
+    tester,
+  ) async {
+    addTearDown(() async => tester.binding.setSurfaceSize(null));
+    await tester.binding.setSurfaceSize(const Size(900, 900));
+
+    final controller = LightcoreController();
+    addTearDown(controller.dispose);
+
+    controller.selectCenter();
+    controller.applyOfflineClaim(
+      LightcoreOfflineClaimResult(
+        secondsClaimed: 1,
+        lumensGranted: 1000,
+        fluxGranted: 0,
+        enemyTicketsGranted: 0,
+        killsGranted: LightcoreController.unlockKillsForOuterSlot(0),
+        serverValidated: true,
+      ),
+      showBanner: false,
+    );
+    controller.selectSlot(0);
+    expect(controller.tutorialBuildTowerAt(0, TowerLibrary.redPrism), isTrue);
+    controller.markTutorialFirstTowerStatsOpened();
+    expect(controller.debugSetTowerCharge(0, charge: 1), isTrue);
+    expect(controller.tutorialBattleSlotGuideLabel(0), 'ADD TO QUEUE');
+
+    await _pumpBattleScreen(tester, controller);
+
+    expect(
+      find.byKey(const ValueKey<String>('battle-quest-card-collapsed')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey<String>('battle-quest-detail-card')),
+      findsNothing,
+    );
+
+    await tester.tap(
+      find.byKey(const ValueKey<String>('battle-quest-trigger-button')),
+    );
+    await _pumpTransition(tester);
+
+    expect(
+      find.byKey(const ValueKey<String>('battle-quest-detail-card')),
+      findsOneWidget,
+    );
+  });
+
   testWidgets('tracked quest details reopen when the next step starts', (
     tester,
   ) async {

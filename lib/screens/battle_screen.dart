@@ -895,6 +895,20 @@ class _BattleScreenState extends State<BattleScreen> {
     );
   }
 
+  bool _tutorialQuestDetailsShouldYieldBattlefieldTarget(
+    LightcoreController controller,
+  ) {
+    if (controller.tutorialBattleCoreGuideLabel != null) {
+      return true;
+    }
+    for (var index = 0; index < controller.slots.length; index++) {
+      if (controller.tutorialBattleSlotGuideLabel(index) != null) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   Widget _buildBattleLayout({
     required BuildContext context,
     required LightcoreController controller,
@@ -916,10 +930,12 @@ class _BattleScreenState extends State<BattleScreen> {
       controller: controller,
       selected: selected,
     );
+    final questDetailsShouldYield =
+        _tutorialQuestDetailsShouldYieldBattlefieldTarget(controller);
     final questPanel = _buildQuestPanel(
       controller,
       compact: compact,
-      initiallyExpanded: !compact,
+      initiallyExpanded: !compact && !questDetailsShouldYield,
     );
 
     return Stack(
