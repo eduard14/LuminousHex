@@ -88,8 +88,8 @@ class _DungeonRunLaunchScreenState extends State<_DungeonRunLaunchScreen> {
       tint: widget.tint,
       icon: widget.icon,
       tips: const <String>[
-        'Tip: Daily dungeon progress persists, so cleared tower levels stay unlocked.',
-        'Tip: Quick clears are best saved for levels you have already proven you can beat.',
+        'Tip: Daily dungeon progress persists, so cleared targets stay unlocked.',
+        'Tip: Quick clears are best saved for targets you have already proven you can beat.',
         'Tip: Match the run route to your strongest anomaly deck before entering.',
       ],
     );
@@ -160,7 +160,7 @@ class _DailyDungeonsScreenState extends State<DailyDungeonsScreen> {
               instruction:
                   'Click a route card to open its setup. Threat Director uses your anomaly roster; Prism Rift uses a fixed battle route.',
               detail:
-                  'Daily clears share the tower ladder, first-pass rewards, and daily-clear limit.',
+                  'Daily clears share target progress, first-pass rewards, and the daily-clear limit.',
               icon: Icons.explore_rounded,
               tint: LightcorePalette.aether,
             ),
@@ -178,7 +178,7 @@ class _DailyDungeonsScreenState extends State<DailyDungeonsScreen> {
                       width: cardWidth,
                       child: _DungeonSelectCard(
                         title: 'Threat Director',
-                        subtitle: 'Tower route',
+                        subtitle: 'Target route',
                         icon: Icons.shield_rounded,
                         tint: LightcorePalette.warning,
                         enabled: true,
@@ -235,10 +235,12 @@ class _DailyDungeonsScreenState extends State<DailyDungeonsScreen> {
     final towerMaxHealth = towerProfile.maxHealth;
     final selectedCards = _selectedAnomalyCards(controller, ownedCards);
     final selectedApex = _selectedApexCard(controller);
-    final reward = controller.dailyDungeonRewardForLevel(selectedLevel);
-    final dailyReward = controller.dailyDungeonQuickClearRewardForLevel(
-      selectedLevel,
-    );
+    final reward = controller
+        .dailyDungeonRewardForLevel(selectedLevel)
+        .withoutExperience();
+    final dailyReward = controller
+        .dailyDungeonQuickClearRewardForLevel(selectedLevel)
+        .withoutExperience();
     final requiredCount = math.min(_requiredAnomalyCount, ownedCards.length);
     final readyToEnter =
         selectedCards.length >= requiredCount && selectedCards.isNotEmpty;
@@ -269,7 +271,7 @@ class _DailyDungeonsScreenState extends State<DailyDungeonsScreen> {
                     Text('Threat Director', style: textTheme.titleLarge),
                     const SizedBox(height: 4),
                     Text(
-                      'Choose a tower level and lock a three-anomaly deck. Launch anomalies to break the target tower before the route timer expires.',
+                      'Choose a target and lock a three-anomaly deck. Launch anomalies to break the tower before the route timer expires.',
                       style: textTheme.bodyMedium?.copyWith(
                         color: LightcorePalette.mist.withValues(alpha: 0.78),
                       ),
@@ -287,10 +289,10 @@ class _DailyDungeonsScreenState extends State<DailyDungeonsScreen> {
             instruction: ownedCards.isEmpty
                 ? 'Resolve Threat Scans first. Threat Director needs anomaly cards before a loadout can enter battle.'
                 : selectedCards.length >= requiredCount
-                ? 'Click anomaly cards below to swap the loadout, then enter the level when the deck is ready.'
-                : 'Click anomaly cards below until $requiredCount are selected, then enter the level.',
+                ? 'Click anomaly cards below to swap the loadout, then enter when the deck is ready.'
+                : 'Click anomaly cards below until $requiredCount are selected, then enter the run.',
             detail:
-                'Selected anomalies become launch buttons in the shared battle arena. Stronger anomaly levels deal more tower damage.',
+                'Selected anomalies become launch buttons in the shared battle arena. Upgraded anomalies hit the tower harder.',
             icon: Icons.adjust_rounded,
             tint: LightcorePalette.warning,
           ),
@@ -303,11 +305,13 @@ class _DailyDungeonsScreenState extends State<DailyDungeonsScreen> {
                 controller.dailyDungeonHighestClearedTowerLevel,
             enabled: true,
             onSelected: (level) => _selectTowerLevel(controller, level),
+            levelLabelBuilder: (level) => 'Target $level',
           ),
           const SizedBox(height: 14),
           _TargetTowerPanel(
             towerProfile: towerProfile,
             towerLevel: selectedLevel,
+            title: 'Target Tower',
             towerHealth: towerMaxHealth,
             towerMaxHealth: towerMaxHealth,
             towerIntegrity: 1,
@@ -321,6 +325,7 @@ class _DailyDungeonsScreenState extends State<DailyDungeonsScreen> {
             victory: false,
             expired: false,
             tint: LightcorePalette.warning,
+            showLevelBadge: false,
           ),
           const SizedBox(height: 16),
           Wrap(
@@ -432,7 +437,7 @@ class _DailyDungeonsScreenState extends State<DailyDungeonsScreen> {
                 icon: const Icon(Icons.play_arrow_rounded),
                 label: Text(
                   readyToEnter
-                      ? 'Enter Lv $selectedLevel'
+                      ? 'Enter Target'
                       : 'Select $requiredCount anomalies',
                 ),
               ),
@@ -441,11 +446,19 @@ class _DailyDungeonsScreenState extends State<DailyDungeonsScreen> {
                     controller.canQuickClearDailyDungeonTowerLevel(
                       selectedLevel,
                     )
-                    ? () => _quickClearDungeon(controller, selectedLevel)
+                    ? () => _quickClearDungeon(
+                        controller,
+                        selectedLevel,
+                        grantExperience: false,
+                        notificationSubject: 'Threat Director target',
+                      )
                     : null,
                 icon: const Icon(Icons.fast_forward_rounded),
                 label: Text(
-                  controller.dailyDungeonQuickClearButtonLabel(selectedLevel),
+                  controller.dailyDungeonQuickClearButtonLabel(
+                    selectedLevel,
+                    includeExperience: false,
+                  ),
                 ),
               ),
             ],
@@ -455,10 +468,25 @@ class _DailyDungeonsScreenState extends State<DailyDungeonsScreen> {
     );
   }
 
-  void _quickClearDungeon(LightcoreController controller, int selectedLevel) {
-    final reward = controller.quickClearDailyDungeonTowerLevel(selectedLevel);
+  void _quickClearDungeon(
+    LightcoreController controller,
+    int selectedLevel, {
+    bool grantExperience = true,
+    String notificationSubject = 'Daily Tower',
+  }) {
+    final reward = controller.quickClearDailyDungeonTowerLevel(
+      selectedLevel,
+      showBanner: grantExperience,
+      grantExperience: grantExperience,
+    );
     if (reward == null || !mounted) {
       return;
+    }
+    if (!grantExperience) {
+      controller.pushNotification(
+        '$notificationSubject quick cleared: ${reward.label}. ${controller.dailyDungeonQuickClearsRemaining} daily clears remain today.',
+        duration: 3.2,
+      );
     }
     setState(() {
       _selectedTowerLevel = selectedLevel;

@@ -141,6 +141,7 @@ class _TargetTowerPanel extends StatelessWidget {
   const _TargetTowerPanel({
     required this.towerProfile,
     required this.towerLevel,
+    required this.title,
     required this.towerHealth,
     required this.towerMaxHealth,
     required this.towerIntegrity,
@@ -154,10 +155,12 @@ class _TargetTowerPanel extends StatelessWidget {
     required this.victory,
     required this.expired,
     required this.tint,
+    this.showLevelBadge = true,
   });
 
   final LightcoreDailyDungeonTowerProfile towerProfile;
   final int towerLevel;
+  final String title;
   final double towerHealth;
   final double towerMaxHealth;
   final double towerIntegrity;
@@ -171,6 +174,7 @@ class _TargetTowerPanel extends StatelessWidget {
   final bool victory;
   final bool expired;
   final Color tint;
+  final bool showLevelBadge;
 
   @override
   Widget build(BuildContext context) {
@@ -194,6 +198,7 @@ class _TargetTowerPanel extends StatelessWidget {
               cleared: cleared || victory,
               running: running,
               expired: expired,
+              showLevelBadge: showLevelBadge,
             );
             final details = Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -206,10 +211,7 @@ class _TargetTowerPanel extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            towerProfile.title,
-                            style: textTheme.titleMedium,
-                          ),
+                          Text(title, style: textTheme.titleMedium),
                           const SizedBox(height: 2),
                           Text(
                             cleared
@@ -319,6 +321,7 @@ class _TargetTowerBattlePreview extends StatelessWidget {
     required this.cleared,
     required this.running,
     required this.expired,
+    required this.showLevelBadge,
   });
 
   final LightcoreDailyDungeonTowerProfile towerProfile;
@@ -328,6 +331,7 @@ class _TargetTowerBattlePreview extends StatelessWidget {
   final bool cleared;
   final bool running;
   final bool expired;
+  final bool showLevelBadge;
 
   @override
   Widget build(BuildContext context) {
@@ -352,17 +356,34 @@ class _TargetTowerBattlePreview extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          TowerLevelHexBadge(
-            level: towerProfile.effectiveDisplayLevel,
-            maxLevel: LightcoreController.maxTowerLevel,
-            projectileType: towerProfile.projectileType,
-            payloadType: towerProfile.payloadType,
-            tint: tint,
-            complete: cleared,
-            size: 96,
-            semanticLabel:
-                '${towerProfile.title} level $towerLevel shared battle target',
-          ),
+          if (showLevelBadge)
+            TowerLevelHexBadge(
+              level: towerProfile.effectiveDisplayLevel,
+              maxLevel: LightcoreController.maxTowerLevel,
+              projectileType: towerProfile.projectileType,
+              payloadType: towerProfile.payloadType,
+              tint: tint,
+              complete: cleared,
+              size: 96,
+              semanticLabel:
+                  '${towerProfile.title} level $towerLevel shared battle target',
+            )
+          else
+            Container(
+              width: 96,
+              height: 96,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: tint.withValues(alpha: 0.14),
+                border: Border.all(color: tint.withValues(alpha: 0.58)),
+              ),
+              child: Icon(
+                Icons.account_tree_rounded,
+                color: tint,
+                size: 46,
+                semanticLabel: '${towerProfile.title} shared battle target',
+              ),
+            ),
           const SizedBox(height: 10),
           Text(
             statusLabel,
@@ -388,6 +409,7 @@ class _DungeonTowerLadder extends StatelessWidget {
     required this.highestClearedLevel,
     required this.enabled,
     required this.onSelected,
+    this.levelLabelBuilder,
   });
 
   final int selectedLevel;
@@ -395,6 +417,7 @@ class _DungeonTowerLadder extends StatelessWidget {
   final int highestClearedLevel;
   final bool enabled;
   final ValueChanged<int> onSelected;
+  final String Function(int level)? levelLabelBuilder;
 
   @override
   Widget build(BuildContext context) {
@@ -413,7 +436,7 @@ class _DungeonTowerLadder extends StatelessWidget {
       children: [
         for (final level in levels)
           _TowerLevelButton(
-            level: level,
+            label: levelLabelBuilder?.call(level) ?? 'Lv $level',
             selected: selectedLevel == level,
             cleared: level <= highestClearedLevel,
             locked: false,
@@ -422,7 +445,9 @@ class _DungeonTowerLadder extends StatelessWidget {
           ),
         if (nextLockedLevel != null)
           _TowerLevelButton(
-            level: nextLockedLevel,
+            label:
+                levelLabelBuilder?.call(nextLockedLevel) ??
+                'Lv $nextLockedLevel',
             selected: false,
             cleared: false,
             locked: true,
@@ -436,7 +461,7 @@ class _DungeonTowerLadder extends StatelessWidget {
 
 class _TowerLevelButton extends StatelessWidget {
   const _TowerLevelButton({
-    required this.level,
+    required this.label,
     required this.selected,
     required this.cleared,
     required this.locked,
@@ -444,7 +469,7 @@ class _TowerLevelButton extends StatelessWidget {
     required this.onTap,
   });
 
-  final int level;
+  final String label;
   final bool selected;
   final bool cleared;
   final bool locked;
@@ -486,7 +511,7 @@ class _TowerLevelButton extends StatelessWidget {
               ),
               const SizedBox(width: 6),
               Text(
-                'Lv $level',
+                label,
                 style: Theme.of(context).textTheme.labelLarge?.copyWith(
                   color: locked
                       ? LightcorePalette.mist.withValues(alpha: 0.48)

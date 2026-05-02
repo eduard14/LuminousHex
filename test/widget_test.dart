@@ -864,16 +864,18 @@ void main() {
     expect(find.text('Threat Director Guide'), findsOneWidget);
     expect(find.textContaining('Click anomaly cards'), findsOneWidget);
     await tester.scrollUntilVisible(
-      find.text('Enter Lv 1'),
+      find.text('Enter Target'),
       220,
       scrollable: find.byType(Scrollable).last,
     );
     await tester.pump();
-    await tester.tap(find.text('Enter Lv 1'));
+    expect(find.text('Target 1'), findsOneWidget);
+    expect(find.textContaining('EXP'), findsNothing);
+    await tester.tap(find.text('Enter Target'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 1100));
 
-    expect(find.text('Threat Director Lv 1'), findsOneWidget);
+    expect(find.text('Threat Director'), findsWidgets);
     expect(
       find.byWidgetPredicate(
         (widget) => widget.runtimeType.toString().startsWith('GameWidget<'),
@@ -889,8 +891,9 @@ void main() {
     await tester.tap(find.byTooltip('Launch Dustling'));
     await tester.pump();
     expect(find.text(fullTowerLabel), findsOneWidget);
-    expect(find.textContaining('clears'), findsOneWidget);
+    expect(find.textContaining('launched'), findsOneWidget);
     expect(find.textContaining('% core'), findsOneWidget);
+    expect(find.textContaining('EXP'), findsNothing);
     expect(find.byTooltip('Open Menu'), findsNothing);
   });
 

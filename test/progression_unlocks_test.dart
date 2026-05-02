@@ -673,6 +673,31 @@ void main() {
     );
   });
 
+  test('daily dungeon clears can omit experience rewards', () {
+    final controller = LightcoreController(traitRandom: Random(22));
+    addTearDown(controller.dispose);
+    controller.experience = LightcoreController.experienceForOverallLevel(
+      LightcoreController.dailyDungeonUnlockLevel,
+    );
+    final startingExperience = controller.experience;
+    final expectedReward = controller
+        .dailyDungeonRewardForLevel(1)
+        .withoutExperience();
+
+    final clearReward = controller.clearDailyDungeonTowerLevel(
+      1,
+      showBanner: false,
+      grantExperience: false,
+    );
+
+    expect(clearReward, isNotNull);
+    expect(clearReward!.experience, 0);
+    expect(clearReward.label, expectedReward.label);
+    expect(controller.experience, startingExperience);
+    expect(controller.dailyDungeonHighestClearedTowerLevel, 1);
+    expect(controller.dailyDungeonHighestUnlockedTowerLevel, 2);
+  });
+
   test('daily dungeon quick clears grant shell cores three times per day', () {
     final controller = LightcoreController(traitRandom: Random(20));
     addTearDown(controller.dispose);

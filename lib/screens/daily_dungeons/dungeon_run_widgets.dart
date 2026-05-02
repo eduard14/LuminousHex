@@ -3,7 +3,6 @@ part of '../daily_dungeons_screen.dart';
 class _DungeonResultPanel extends StatelessWidget {
   const _DungeonResultPanel({
     required this.victory,
-    required this.towerLevel,
     required this.onExit,
     this.successTitle,
     this.failureTitle,
@@ -13,7 +12,6 @@ class _DungeonResultPanel extends StatelessWidget {
   });
 
   final bool victory;
-  final int towerLevel;
   final VoidCallback onExit;
   final String? successTitle;
   final String? failureTitle;
@@ -51,9 +49,9 @@ class _DungeonResultPanel extends StatelessWidget {
             Text(
               victory
                   ? successMessage ??
-                        'Threat Director Lv $towerLevel is broken. The next level is ready from the dungeon menu.'
+                        'Threat Director target is broken. The next target is ready from the dungeon menu.'
                   : failureMessage ??
-                        'Threat Director Lv $towerLevel held. Upgrade anomalies or change the loadout before the next run.',
+                        'Threat Director target held. Upgrade anomalies or change the loadout before the next run.',
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: LightcorePalette.mist.withValues(alpha: 0.78),

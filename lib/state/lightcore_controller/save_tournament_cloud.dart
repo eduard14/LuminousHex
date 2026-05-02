@@ -22,6 +22,7 @@ class _EventBattleConfig {
     this.spawnPolicy = LightcoreBattleSpawnPolicy.automatic,
     this.enemySpiralMovementEnabled = true,
     this.enemyMovementSpeedMultiplier = 1.0,
+    this.seedUnlockExperience = true,
   });
 
   final String eventLabel;
@@ -44,6 +45,7 @@ class _EventBattleConfig {
   final LightcoreBattleSpawnPolicy spawnPolicy;
   final bool enemySpiralMovementEnabled;
   final double enemyMovementSpeedMultiplier;
+  final bool seedUnlockExperience;
 }
 
 extension LightcoreControllerSaveTournamentCloud on LightcoreController {
@@ -333,6 +335,7 @@ extension LightcoreControllerSaveTournamentCloud on LightcoreController {
       spawnPolicy: LightcoreBattleSpawnPolicy.manual,
       enemySpiralMovementEnabled: false,
       enemyMovementSpeedMultiplier: 5.0,
+      seedUnlockExperience: false,
     );
   }
 
@@ -446,7 +449,8 @@ extension LightcoreControllerSaveTournamentCloud on LightcoreController {
     final normalizedTowerLevel = config.towerLevel
         .clamp(1, maxTowerLevel)
         .toInt();
-    final unlockExperience = normalizedBuiltSlots <= 0
+    final unlockExperience =
+        !config.seedUnlockExperience || normalizedBuiltSlots <= 0
         ? 0
         : unlockExperienceForOuterSlot(normalizedBuiltSlots - 1);
     kills = unlockExperience;

@@ -192,6 +192,21 @@ class LightcoreDailyDungeonReward {
     ];
     return parts.join(', ');
   }
+
+  LightcoreDailyDungeonReward withoutExperience() {
+    if (experience == 0) {
+      return this;
+    }
+    return LightcoreDailyDungeonReward(
+      towerLevel: towerLevel,
+      lumens: lumens,
+      flux: flux,
+      managerShards: managerShards,
+      shellCores: shellCores,
+      threatScans: threatScans,
+      experience: 0,
+    );
+  }
 }
 
 class LightcoreDailyDungeonTowerProfile {

@@ -44,6 +44,7 @@ class _PrismRiftPreviewPanel extends StatelessWidget {
               cleared: cleared,
               running: false,
               expired: false,
+              showLevelBadge: true,
             );
             final details = Column(
               crossAxisAlignment: CrossAxisAlignment.start,

@@ -242,6 +242,8 @@ void main() {
     expect(controller.swarmActivated, isTrue);
     expect(controller.battleUsesManualEnemySpawns, isTrue);
     expect(controller.builtTowerCount, 0);
+    expect(controller.experience, 0);
+    expect(controller.kills, 0);
     expect(
       controller.coreState.projectileType,
       TowerLibrary.whitePrism.defaultProjectileType,
@@ -270,6 +272,8 @@ void main() {
 
     expect(controller.builtTowerCount, 3);
     expect(controller.slots.take(3).every((slot) => slot.isBuilt), isTrue);
+    expect(controller.experience, 0);
+    expect(controller.kills, 0);
   });
 
   test(

@@ -22,6 +22,7 @@ class _DailyDungeonBattleModeDefinition {
     required this.failVerb,
     this.usesManualAim = false,
     this.usesManualEnemySpawns = false,
+    this.showsLevelInTitle = true,
     this.successTitle,
   });
 
@@ -35,9 +36,11 @@ class _DailyDungeonBattleModeDefinition {
   final String failVerb;
   final bool usesManualAim;
   final bool usesManualEnemySpawns;
+  final bool showsLevelInTitle;
   final String? successTitle;
 
-  String titleForLevel(int towerLevel) => '$label Lv $towerLevel';
+  String titleForLevel(int towerLevel) =>
+      showsLevelInTitle ? '$label Lv $towerLevel' : label;
 
   void configureBattleController({
     required LightcoreController battleController,
@@ -95,6 +98,7 @@ _dailyDungeonBattleModes =
             clearVerb: 'cleared',
             failVerb: 'expired',
             usesManualEnemySpawns: true,
+            showsLevelInTitle: false,
           ),
       _DailyDungeonBattleRoute.prismRift: _DailyDungeonBattleModeDefinition(
         route: _DailyDungeonBattleRoute.prismRift,
@@ -442,16 +446,16 @@ class _DailyDungeonBattleRunScreenState
       reward = widget.controller.clearDailyDungeonTowerLevel(
         widget.towerLevel,
         showBanner: false,
+        grantExperience: !_isThreatDirector,
       );
     }
     _resultReward = reward;
-    final nextLevel = widget.controller.dailyDungeonHighestUnlockedTowerLevel;
     final rewardMessage = reward != null && reward.hasRewards
         ? ': ${reward.label}.'
         : '.';
     final clearMessage = _isThreatDirector
-        ? '$_title tower broken$rewardMessage Lv $nextLevel is ready.'
-        : '$_title ${_mode.clearVerb}$rewardMessage Lv $nextLevel is ready.';
+        ? '$_title target broken$rewardMessage Next target is ready.'
+        : '$_title ${_mode.clearVerb}$rewardMessage Lv ${widget.controller.dailyDungeonHighestUnlockedTowerLevel} is ready.';
     widget.controller.pushNotification(
       cleared ? clearMessage : _failureNotificationMessage,
       duration: 3.2,
@@ -491,7 +495,7 @@ class _DailyDungeonBattleRunScreenState
         ? ' Reward: ${reward.label}.'
         : '';
     if (_isThreatDirector) {
-      return 'Your anomalies broke $_title through the target tower health bar.$rewardText';
+      return 'Your anomalies broke the target tower through the health bar.$rewardText';
     }
     return '$_title cleared through the battle field. The next level is ready from the dungeon menu.$rewardText';
   }
@@ -615,7 +619,7 @@ class _DailyDungeonBattleRunScreenState
                             apexCard: widget.apexCard,
                             targetTowerHealth: _targetTowerHealth,
                             targetTowerMaxHealth: _targetTowerMaxHealth,
-                            runKills: _runKills,
+                            manualLaunchCount: _manualLaunchCount,
                             coreIntegrity: _coreIntegrity,
                             running: _running,
                             damageForAnomaly: (card) =>
@@ -650,7 +654,6 @@ class _DailyDungeonBattleRunScreenState
                           padding: const EdgeInsets.all(18),
                           child: _DungeonResultPanel(
                             victory: _victory,
-                            towerLevel: widget.towerLevel,
                             successTitle: _resultSuccessTitle,
                             failureTitle: _resultFailureTitle,
                             successMessage: _resultSuccessMessage,
@@ -872,7 +875,7 @@ class _ThreatDirectorBattleStatusDock extends StatelessWidget {
     required this.apexCard,
     required this.targetTowerHealth,
     required this.targetTowerMaxHealth,
-    required this.runKills,
+    required this.manualLaunchCount,
     required this.coreIntegrity,
     required this.running,
     required this.damageForAnomaly,
@@ -892,7 +895,7 @@ class _ThreatDirectorBattleStatusDock extends StatelessWidget {
   final EnemyCardState? apexCard;
   final double targetTowerHealth;
   final double targetTowerMaxHealth;
-  final int runKills;
+  final int manualLaunchCount;
   final double coreIntegrity;
   final bool running;
   final double Function(EnemyCardState card) damageForAnomaly;
@@ -941,7 +944,7 @@ class _ThreatDirectorBattleStatusDock extends StatelessWidget {
         ),
         _InfoChip(
           icon: Icons.gps_fixed_rounded,
-          label: '$runKills field clears',
+          label: '$manualLaunchCount launched',
           tint: LightcorePalette.solar,
         ),
       ],

@@ -238,8 +238,13 @@ extension LightcoreControllerEconomyStore on LightcoreController {
         dailyDungeonQuickClearsRemaining > 0;
   }
 
-  String dailyDungeonQuickClearButtonLabel(int towerLevel) {
-    final reward = dailyDungeonQuickClearRewardForLevel(towerLevel);
+  String dailyDungeonQuickClearButtonLabel(
+    int towerLevel, {
+    bool includeExperience = true,
+  }) {
+    final reward = includeExperience
+        ? dailyDungeonQuickClearRewardForLevel(towerLevel)
+        : dailyDungeonQuickClearRewardForLevel(towerLevel).withoutExperience();
     if (!isDailyDungeonTowerLevelCleared(towerLevel)) {
       return 'Clear once to quick clear';
     }
@@ -252,6 +257,7 @@ extension LightcoreControllerEconomyStore on LightcoreController {
   LightcoreDailyDungeonReward? quickClearDailyDungeonTowerLevel(
     int towerLevel, {
     bool showBanner = true,
+    bool grantExperience = true,
   }) {
     _refreshDailyDungeonQuickClearsForToday();
     if (!canQuickClearDailyDungeonTowerLevel(towerLevel)) {
@@ -267,7 +273,9 @@ extension LightcoreControllerEconomyStore on LightcoreController {
     }
 
     final previousExperience = progressionExperience;
-    final reward = dailyDungeonQuickClearRewardForLevel(towerLevel);
+    final reward = grantExperience
+        ? dailyDungeonQuickClearRewardForLevel(towerLevel)
+        : dailyDungeonQuickClearRewardForLevel(towerLevel).withoutExperience();
     lumens += reward.lumens;
     flux += reward.flux;
     managerShards += reward.managerShards;
@@ -296,6 +304,7 @@ extension LightcoreControllerEconomyStore on LightcoreController {
   LightcoreDailyDungeonReward? clearDailyDungeonTowerLevel(
     int towerLevel, {
     bool showBanner = true,
+    bool grantExperience = true,
   }) {
     if (!isDailyDungeonTowerLevelUnlocked(towerLevel)) {
       if (showBanner) {
@@ -307,7 +316,7 @@ extension LightcoreControllerEconomyStore on LightcoreController {
 
     if (isDailyDungeonTowerLevelCleared(towerLevel)) {
       _refreshDailyDungeonQuickClearsForToday();
-      final replayReward = dailyDungeonQuickClearsRemaining > 0
+      final baseReplayReward = dailyDungeonQuickClearsRemaining > 0
           ? dailyDungeonQuickClearRewardForLevel(towerLevel)
           : LightcoreDailyDungeonReward(
               towerLevel: towerLevel,
@@ -318,6 +327,9 @@ extension LightcoreControllerEconomyStore on LightcoreController {
               threatScans: 0,
               experience: 0,
             );
+      final replayReward = grantExperience
+          ? baseReplayReward
+          : baseReplayReward.withoutExperience();
       String? levelUpBanner;
       if (replayReward.hasRewards) {
         final previousExperience = progressionExperience;
@@ -351,7 +363,9 @@ extension LightcoreControllerEconomyStore on LightcoreController {
     }
 
     final previousExperience = progressionExperience;
-    final reward = dailyDungeonRewardForLevel(towerLevel);
+    final reward = grantExperience
+        ? dailyDungeonRewardForLevel(towerLevel)
+        : dailyDungeonRewardForLevel(towerLevel).withoutExperience();
     lumens += reward.lumens;
     flux += reward.flux;
     managerShards += reward.managerShards;
