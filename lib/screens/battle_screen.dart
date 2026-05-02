@@ -31,6 +31,7 @@ class BattleScreen extends StatefulWidget {
     this.bottomOverlayInset = 0,
     this.showQuestPanel = true,
     this.showBattleHud = true,
+    this.enableBattlefieldTaps = true,
     this.promotionPresentation,
     this.onPromotionPresentationComplete,
   });
@@ -41,6 +42,7 @@ class BattleScreen extends StatefulWidget {
   final double bottomOverlayInset;
   final bool showQuestPanel;
   final bool showBattleHud;
+  final bool enableBattlefieldTaps;
   final ShellPromotionPresentation? promotionPresentation;
   final VoidCallback? onPromotionPresentationComplete;
 
@@ -303,7 +305,9 @@ class _BattleScreenState extends State<BattleScreen> {
   }
 
   KeyEventResult _handleShortcutKey(FocusNode node, KeyEvent event) {
-    if (!widget.isActive || event is! KeyDownEvent) {
+    if (!widget.isActive ||
+        !widget.enableBattlefieldTaps ||
+        event is! KeyDownEvent) {
       return KeyEventResult.ignored;
     }
     if (_activePromotionSequence != null) {
@@ -381,6 +385,9 @@ class _BattleScreenState extends State<BattleScreen> {
   }
 
   void _handleCanvasPointerDown(PointerDownEvent event) {
+    if (!widget.enableBattlefieldTaps) {
+      return;
+    }
     if (event.buttons != kPrimaryButton || _canvasTapPointer != null) {
       _canvasTapCanceled = true;
       _logBattle('pointer-down-canceled', <String, Object?>{
@@ -400,6 +407,9 @@ class _BattleScreenState extends State<BattleScreen> {
   }
 
   void _handleCanvasPointerMove(PointerMoveEvent event) {
+    if (!widget.enableBattlefieldTaps) {
+      return;
+    }
     final start = _canvasTapStart;
     if (event.pointer != _canvasTapPointer || start == null) {
       return;
@@ -413,6 +423,9 @@ class _BattleScreenState extends State<BattleScreen> {
   }
 
   void _handleCanvasPointerUp(PointerUpEvent event) {
+    if (!widget.enableBattlefieldTaps) {
+      return;
+    }
     _logBattle('pointer-up', <String, Object?>{
       'pointer': event.pointer,
       'matches': event.pointer == _canvasTapPointer,
@@ -426,6 +439,9 @@ class _BattleScreenState extends State<BattleScreen> {
   }
 
   void _handleCanvasPointerCancel(PointerCancelEvent event) {
+    if (!widget.enableBattlefieldTaps) {
+      return;
+    }
     if (event.pointer == _canvasTapPointer) {
       _resetCanvasTap();
     }
@@ -447,6 +463,9 @@ class _BattleScreenState extends State<BattleScreen> {
   }
 
   void _handleCenterTap() {
+    if (!widget.enableBattlefieldTaps) {
+      return;
+    }
     if (_activePromotionSequence != null) {
       _logBattle('center-tap-ignored', <String, Object?>{
         'reason': 'promotion-active',
@@ -466,6 +485,9 @@ class _BattleScreenState extends State<BattleScreen> {
   }
 
   void _handleSlotTap(int slotIndex) {
+    if (!widget.enableBattlefieldTaps) {
+      return;
+    }
     if (_activePromotionSequence != null) {
       _logBattle('slot-tap-ignored', <String, Object?>{
         'reason': 'promotion-active',
@@ -524,6 +546,9 @@ class _BattleScreenState extends State<BattleScreen> {
   }
 
   void _handleBackgroundTap() {
+    if (!widget.enableBattlefieldTaps) {
+      return;
+    }
     if (_activePromotionSequence != null) {
       _logBattle('background-tap-ignored', <String, Object?>{
         'reason': 'promotion-active',

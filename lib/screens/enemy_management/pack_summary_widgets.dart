@@ -268,6 +268,19 @@ class _PackPullSummaryCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final rarityTint = _rarityTint(summary.config.rarity);
     final emphasisTint = _itemTierAccentColor(itemTier, fallback: rarityTint);
+    final identityHoldMilliseconds = timing.identityHoldMillisecondsFor(
+      itemTier,
+    );
+    final identityRevealProgress = identityHoldMilliseconds <= 0
+        ? 1.0
+        : ((revealAgeMilliseconds - identityHoldMilliseconds) / 220)
+              .clamp(0.0, 1.0)
+              .toDouble();
+    final frameProgress = identityHoldMilliseconds <= 0
+        ? 1.0
+        : (revealAgeMilliseconds / identityHoldMilliseconds)
+              .clamp(0.0, 1.0)
+              .toDouble();
     final dropProgress =
         (revealAgeMilliseconds / timing.dropMillisecondsFor(itemTier))
             .clamp(0.0, 1.0)
@@ -280,32 +293,155 @@ class _PackPullSummaryCard extends StatelessWidget {
     );
     final dimOpacity = dimmed ? 0.84 : 1.0;
     const tileSize = 104.0;
+    final summonCard = _ThreatSummonCard(
+      config: summary.config,
+      dimension: tileSize,
+      artSize: 58,
+      bottomLabel: 'x${summary.count}',
+      emphasized: emphasized,
+      glowTint: emphasisTint,
+      topRight: summary.config.isBoss
+          ? Icon(
+              Icons.shield_rounded,
+              size: 14,
+              color: LightcorePalette.warning.withValues(alpha: 0.9),
+            )
+          : null,
+      semanticLabel:
+          '${summary.config.name}, ${summary.config.rarity.label}, ${summary.count}',
+      selected: false,
+      locked: false,
+      glowStrength: animateNewReveal && summary.isNew
+          ? math.max(glowStrength, 0.36)
+          : glowStrength,
+    );
 
     return Opacity(
       opacity: dimOpacity * Curves.easeOutCubic.transform(dropProgress),
       child: Transform.scale(
         scale: scale,
-        child: _ThreatSummonCard(
-          config: summary.config,
-          dimension: tileSize,
-          artSize: 58,
-          bottomLabel: 'x${summary.count}',
-          emphasized: emphasized,
-          glowTint: emphasisTint,
-          topRight: summary.config.isBoss
-              ? Icon(
-                  Icons.shield_rounded,
-                  size: 14,
-                  color: LightcorePalette.warning.withValues(alpha: 0.9),
-                )
-              : null,
-          semanticLabel:
-              '${summary.config.name}, ${summary.config.rarity.label}, ${summary.count}',
-          selected: false,
-          locked: false,
-          glowStrength: animateNewReveal && summary.isNew
-              ? math.max(glowStrength, 0.36)
-              : glowStrength,
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            if (identityRevealProgress < 1)
+              Opacity(
+                opacity: 1 - identityRevealProgress,
+                child: _HiddenRarityDropCard(
+                  key: ValueKey<String>('rarity-hidden-${itemTier.name}'),
+                  rarity: summary.config.rarity,
+                  itemTier: itemTier,
+                  dimension: tileSize,
+                  frameProgress: frameProgress,
+                  glowStrength: glowStrength,
+                ),
+              ),
+            if (identityRevealProgress > 0)
+              Opacity(opacity: identityRevealProgress, child: summonCard),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _HiddenRarityDropCard extends StatelessWidget {
+  const _HiddenRarityDropCard({
+    super.key,
+    required this.rarity,
+    required this.itemTier,
+    required this.dimension,
+    required this.frameProgress,
+    required this.glowStrength,
+  });
+
+  final EnemyCardRarity rarity;
+  final _EnemyRevealItemTier itemTier;
+  final double dimension;
+  final double frameProgress;
+  final double glowStrength;
+
+  @override
+  Widget build(BuildContext context) {
+    final fallbackTint = _rarityTint(rarity);
+    final accent = _itemTierAccentColor(itemTier, fallback: fallbackTint);
+    final radius = BorderRadius.circular(8);
+    final pulse = math
+        .sin(frameProgress.clamp(0.0, 1.0) * math.pi)
+        .clamp(0.0, 1.0)
+        .toDouble();
+    final effectiveGlow = math.max(glowStrength, 0.28 + (0.42 * pulse));
+
+    return Container(
+      width: dimension,
+      height: dimension,
+      decoration: BoxDecoration(
+        borderRadius: radius,
+        border: Border.all(
+          color: accent.withValues(alpha: 0.72 + (0.26 * pulse)),
+          width: itemTier == _EnemyRevealItemTier.jackpot ? 2.8 : 2.4,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: LightcorePalette.layer2.withValues(alpha: 0.2 * pulse),
+            blurRadius: 24 + (22 * pulse),
+            spreadRadius: -4 + (4 * pulse),
+          ),
+          BoxShadow(
+            color: accent.withValues(alpha: 0.22 + (0.18 * effectiveGlow)),
+            blurRadius: 20 + (22 * effectiveGlow),
+            spreadRadius: -5 + (2 * effectiveGlow),
+          ),
+        ],
+        gradient: RadialGradient(
+          colors: [
+            LightcorePalette.layer2.withValues(alpha: 0.94),
+            LightcorePalette.layer2.withValues(alpha: 0.58 + (0.22 * pulse)),
+            accent.withValues(alpha: 0.2 + (0.2 * pulse)),
+            LightcorePalette.night.withValues(alpha: 0.36),
+          ],
+          stops: const [0.0, 0.38, 0.72, 1.0],
+        ),
+      ),
+      child: ClipRRect(
+        borderRadius: radius,
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            Positioned.fill(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      LightcorePalette.layer2.withValues(alpha: 0.42 * pulse),
+                      Colors.transparent,
+                      accent.withValues(alpha: 0.16 + (0.14 * pulse)),
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                ),
+              ),
+            ),
+            Container(
+              width: dimension * (0.28 + (0.1 * pulse)),
+              height: dimension * (0.28 + (0.1 * pulse)),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: LightcorePalette.layer2.withValues(
+                  alpha: 0.72 + (0.18 * pulse),
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: LightcorePalette.layer2.withValues(
+                      alpha: 0.5 + (0.24 * pulse),
+                    ),
+                    blurRadius: 18 + (16 * pulse),
+                    spreadRadius: 2 + (4 * pulse),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -495,6 +631,7 @@ int _resolveItemRevealMilliseconds({
     finalBeatMilliseconds = math.max(
       finalBeatMilliseconds,
       scheduled.revealStartMilliseconds +
+          timing.identityHoldMillisecondsFor(scheduled.itemTier) +
           timing.lingerMillisecondsFor(scheduled.itemTier),
     );
   }
@@ -507,7 +644,7 @@ Color _itemTierAccentColor(
 }) {
   return switch (tier) {
     _EnemyRevealItemTier.basic => fallback,
-    _EnemyRevealItemTier.rare => LightcorePalette.flare,
+    _EnemyRevealItemTier.rare => LightcorePalette.scanGlow,
     _EnemyRevealItemTier.jackpot => LightcorePalette.aether,
   };
 }
@@ -533,6 +670,10 @@ double _itemGlowStrength({
   required _EnemyPackRevealTiming timing,
 }) {
   final age = math.max(0.0, revealAgeMilliseconds);
+  final identityAge = math.max(
+    0.0,
+    age - timing.identityHoldMillisecondsFor(itemTier),
+  );
   switch (itemTier) {
     case _EnemyRevealItemTier.basic:
       final fade = (1 - (age / timing.basicItemLingerMilliseconds)).clamp(
@@ -541,21 +682,15 @@ double _itemGlowStrength({
       );
       return 0.08 * fade;
     case _EnemyRevealItemTier.rare:
-      final fade = (1 - (age / timing.rareItemLingerMilliseconds)).clamp(
-        0.0,
-        1.0,
-      );
-      final breath = 0.55 + (0.45 * math.sin(age / 180).abs());
+      final fade = (1 - (identityAge / timing.rareItemLingerMilliseconds))
+          .clamp(0.0, 1.0);
+      final breath = 0.55 + (0.45 * math.sin(identityAge / 180).abs());
       return 0.3 * fade * breath;
     case _EnemyRevealItemTier.jackpot:
-      final burst = (1 - (age / timing.jackpotItemDropMilliseconds)).clamp(
-        0.0,
-        1.0,
-      );
-      final linger = (1 - (age / timing.jackpotItemLingerMilliseconds)).clamp(
-        0.0,
-        1.0,
-      );
+      final burst = (1 - (identityAge / timing.jackpotItemDropMilliseconds))
+          .clamp(0.0, 1.0);
+      final linger = (1 - (identityAge / timing.jackpotItemLingerMilliseconds))
+          .clamp(0.0, 1.0);
       return math.max(0.48 * burst, 0.34 * linger);
   }
 }

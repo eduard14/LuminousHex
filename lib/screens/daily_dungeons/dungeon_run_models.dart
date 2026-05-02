@@ -896,6 +896,7 @@ class _DailyDungeonBattleRunScreenState
                       isActive: _running,
                       showQuestPanel: false,
                       showBattleHud: false,
+                      enableBattlefieldTaps: !_isThreatDirector,
                     ),
                   ),
                   if (_isPrismRift)

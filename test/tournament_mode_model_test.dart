@@ -249,7 +249,7 @@ void main() {
       TowerLibrary.whitePrism.defaultProjectileType,
     );
     expect(controller.activeEnemyCardIds, contains(EnemyLibrary.basicRed.id));
-    expect(controller.towerCoreManager, isNotNull);
+    expect(controller.towerCoreManager, isNull);
     controller.tick(2);
     expect(controller.enemies, isEmpty);
     expect(
@@ -270,8 +270,8 @@ void main() {
       ],
     );
 
-    expect(controller.builtTowerCount, 3);
-    expect(controller.slots.take(3).every((slot) => slot.isBuilt), isTrue);
+    expect(controller.builtTowerCount, 0);
+    expect(controller.slots.every((slot) => !slot.isBuilt), isTrue);
     expect(controller.experience, 0);
     expect(controller.kills, 0);
   });

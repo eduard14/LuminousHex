@@ -49,10 +49,12 @@ class _EnemyPackRevealTiming {
     required this.rareWaveDelayMilliseconds,
     required this.rareItemStaggerMilliseconds,
     required this.rareItemDropMilliseconds,
+    required this.rareIdentityHoldMilliseconds,
     required this.rareItemLingerMilliseconds,
     required this.jackpotWaveDelayMilliseconds,
     required this.jackpotItemStaggerMilliseconds,
     required this.jackpotItemDropMilliseconds,
+    required this.jackpotIdentityHoldMilliseconds,
     required this.jackpotItemLingerMilliseconds,
     required this.jackpotDimMilliseconds,
   });
@@ -90,10 +92,12 @@ class _EnemyPackRevealTiming {
           rareWaveDelayMilliseconds: 160,
           rareItemStaggerMilliseconds: 115,
           rareItemDropMilliseconds: 300,
+          rareIdentityHoldMilliseconds: 0,
           rareItemLingerMilliseconds: 920,
           jackpotWaveDelayMilliseconds: 300,
           jackpotItemStaggerMilliseconds: 130,
           jackpotItemDropMilliseconds: 320,
+          jackpotIdentityHoldMilliseconds: 0,
           jackpotItemLingerMilliseconds: 2100,
           jackpotDimMilliseconds: 360,
         );
@@ -119,12 +123,14 @@ class _EnemyPackRevealTiming {
           basicItemDropMilliseconds: 300,
           basicItemLingerMilliseconds: 300,
           rareWaveDelayMilliseconds: 170,
-          rareItemStaggerMilliseconds: 120,
-          rareItemDropMilliseconds: 320,
-          rareItemLingerMilliseconds: 1060,
+          rareItemStaggerMilliseconds: 240,
+          rareItemDropMilliseconds: 840,
+          rareIdentityHoldMilliseconds: 1000,
+          rareItemLingerMilliseconds: 1300,
           jackpotWaveDelayMilliseconds: 300,
           jackpotItemStaggerMilliseconds: 130,
           jackpotItemDropMilliseconds: 360,
+          jackpotIdentityHoldMilliseconds: 0,
           jackpotItemLingerMilliseconds: 2100,
           jackpotDimMilliseconds: 360,
         );
@@ -151,14 +157,16 @@ class _EnemyPackRevealTiming {
           basicItemStaggerMilliseconds: 54,
           basicItemDropMilliseconds: 280,
           basicItemLingerMilliseconds: 280,
-          rareWaveDelayMilliseconds: 180,
-          rareItemStaggerMilliseconds: 110,
-          rareItemDropMilliseconds: 320,
-          rareItemLingerMilliseconds: 1040,
-          jackpotWaveDelayMilliseconds: 420,
-          jackpotItemStaggerMilliseconds: 140,
-          jackpotItemDropMilliseconds: 420,
-          jackpotItemLingerMilliseconds: 2200,
+          rareWaveDelayMilliseconds: 210,
+          rareItemStaggerMilliseconds: 240,
+          rareItemDropMilliseconds: 780,
+          rareIdentityHoldMilliseconds: 1000,
+          rareItemLingerMilliseconds: 1200,
+          jackpotWaveDelayMilliseconds: 390,
+          jackpotItemStaggerMilliseconds: 260,
+          jackpotItemDropMilliseconds: 980,
+          jackpotIdentityHoldMilliseconds: 1000,
+          jackpotItemLingerMilliseconds: 1900,
           jackpotDimMilliseconds: 520,
         );
     }
@@ -192,10 +200,12 @@ class _EnemyPackRevealTiming {
   final int rareWaveDelayMilliseconds;
   final int rareItemStaggerMilliseconds;
   final int rareItemDropMilliseconds;
+  final int rareIdentityHoldMilliseconds;
   final int rareItemLingerMilliseconds;
   final int jackpotWaveDelayMilliseconds;
   final int jackpotItemStaggerMilliseconds;
   final int jackpotItemDropMilliseconds;
+  final int jackpotIdentityHoldMilliseconds;
   final int jackpotItemLingerMilliseconds;
   final int jackpotDimMilliseconds;
 
@@ -220,6 +230,14 @@ class _EnemyPackRevealTiming {
       _EnemyRevealItemTier.basic => basicItemLingerMilliseconds,
       _EnemyRevealItemTier.rare => rareItemLingerMilliseconds,
       _EnemyRevealItemTier.jackpot => jackpotItemLingerMilliseconds,
+    };
+  }
+
+  int identityHoldMillisecondsFor(_EnemyRevealItemTier tier) {
+    return switch (tier) {
+      _EnemyRevealItemTier.basic => 0,
+      _EnemyRevealItemTier.rare => rareIdentityHoldMilliseconds,
+      _EnemyRevealItemTier.jackpot => jackpotIdentityHoldMilliseconds,
     };
   }
 }
@@ -554,6 +572,8 @@ class _EnemyPackRevealDialogState extends State<_EnemyPackRevealDialog>
                 0.28 + (heartbeat * (0.18 + (0.38 * tensionProgress)));
             final visibleSummaries = _visibleSummaries.toList(growable: false);
             _ScheduledPackPullSummary? landingJackpot;
+            ({Color tint, double progress, _EnemyRevealItemTier tier})?
+            activeRarityWash;
             for (final scheduled in visibleSummaries) {
               final revealAge =
                   _itemPageElapsedMilliseconds -
@@ -564,6 +584,30 @@ class _EnemyPackRevealDialogState extends State<_EnemyPackRevealDialog>
                 landingJackpot = scheduled;
                 break;
               }
+            }
+            for (final scheduled in visibleSummaries) {
+              final holdMilliseconds = _timing.identityHoldMillisecondsFor(
+                scheduled.itemTier,
+              );
+              if (holdMilliseconds <= 0) {
+                continue;
+              }
+              final revealAge =
+                  _itemPageElapsedMilliseconds -
+                  scheduled.revealStartMilliseconds;
+              if (revealAge < 0 || revealAge >= holdMilliseconds) {
+                continue;
+              }
+              activeRarityWash = (
+                tint: _itemTierAccentColor(
+                  scheduled.itemTier,
+                  fallback: _rarityTint(scheduled.summary.config.rarity),
+                ),
+                progress: (revealAge / holdMilliseconds)
+                    .clamp(0.0, 1.0)
+                    .toDouble(),
+                tier: scheduled.itemTier,
+              );
             }
             return AuroraPanel(
               tint: _accentColor,
@@ -700,6 +744,18 @@ class _EnemyPackRevealDialogState extends State<_EnemyPackRevealDialog>
                                 ),
                               ),
                             ),
+                            if (activeRarityWash != null)
+                              Positioned.fill(
+                                child: IgnorePointer(
+                                  child: _RarityRevealWash(
+                                    key: ValueKey<String>(
+                                      'rarity-wash-${activeRarityWash.tier.name}',
+                                    ),
+                                    tint: activeRarityWash.tint,
+                                    progress: activeRarityWash.progress,
+                                  ),
+                                ),
+                              ),
                           ],
                         ),
                       ),
@@ -729,6 +785,70 @@ class _EnemyPackRevealDialogState extends State<_EnemyPackRevealDialog>
         ),
       ),
     );
+  }
+}
+
+class _RarityRevealWash extends StatelessWidget {
+  const _RarityRevealWash({
+    super.key,
+    required this.tint,
+    required this.progress,
+  });
+
+  final Color tint;
+  final double progress;
+
+  @override
+  Widget build(BuildContext context) {
+    return CustomPaint(
+      painter: _RarityRevealWashPainter(
+        tint: tint,
+        progress: progress.clamp(0.0, 1.0).toDouble(),
+      ),
+    );
+  }
+}
+
+class _RarityRevealWashPainter extends CustomPainter {
+  const _RarityRevealWashPainter({required this.tint, required this.progress});
+
+  final Color tint;
+  final double progress;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (progress <= 0 || size.isEmpty) {
+      return;
+    }
+    final center = Offset(size.width / 2, size.height / 2);
+    final maxRadius = math.sqrt(
+      (size.width * size.width) + (size.height * size.height),
+    );
+    final expansion = Curves.easeOutCubic.transform(progress);
+    final visibility = math.sin(progress * math.pi).clamp(0.0, 1.0);
+    final radius = maxRadius * (0.08 + (0.92 * expansion));
+    final washPaint = Paint()
+      ..shader = RadialGradient(
+        colors: [
+          LightcorePalette.layer2.withValues(alpha: 0.52 * visibility),
+          LightcorePalette.layer2.withValues(alpha: 0.28 * visibility),
+          tint.withValues(alpha: 0.2 * visibility),
+          Colors.transparent,
+        ],
+        stops: const [0.0, 0.22, 0.56, 1.0],
+      ).createShader(Rect.fromCircle(center: center, radius: radius));
+    canvas.drawCircle(center, radius, washPaint);
+
+    final ringPaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.2 + (4.4 * (1 - progress))
+      ..color = LightcorePalette.layer2.withValues(alpha: 0.62 * visibility);
+    canvas.drawCircle(center, radius * 0.68, ringPaint);
+  }
+
+  @override
+  bool shouldRepaint(covariant _RarityRevealWashPainter oldDelegate) {
+    return tint != oldDelegate.tint || progress != oldDelegate.progress;
   }
 }
 

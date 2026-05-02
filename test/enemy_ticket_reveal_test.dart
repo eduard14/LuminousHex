@@ -356,6 +356,19 @@ void main() {
     expect(find.textContaining('Azure pulse stacking'), findsOneWidget);
     expect(find.text('x3'), findsNothing);
 
+    await tester.pump(const Duration(milliseconds: 1800));
+    await tester.pump();
+
+    expect(
+      find.byKey(const ValueKey<String>('rarity-hidden-rare')),
+      findsWidgets,
+    );
+    expect(
+      find.byKey(const ValueKey<String>('rarity-wash-rare')),
+      findsOneWidget,
+    );
+    expect(find.text('x2'), findsNothing);
+
     await tester.pump(const Duration(milliseconds: 5200));
     await tester.pump();
 

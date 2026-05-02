@@ -312,7 +312,6 @@ extension LightcoreControllerSaveTournamentCloud on LightcoreController {
     required EnemyCardState? bossDraft,
   }) {
     final profile = dailyDungeonTowerProfileForLevel(towerLevel);
-    final builtSlots = (profile.towerLevel - 1).clamp(0, slotCount).toInt();
     final pressure =
         (initialEnemyTarget +
                 min(18, profile.towerLevel ~/ 2) +
@@ -327,13 +326,14 @@ extension LightcoreControllerSaveTournamentCloud on LightcoreController {
       coreProjectile: profile.projectileType,
       corePayload: profile.payloadType,
       coreLevel: 1 + ((profile.towerLevel - 1) ~/ 8),
-      towerLoadout: _dailyDungeonTowerLoadout(profile.towerLevel),
+      towerLoadout: const <TowerConfig>[],
       towerLevel: profile.effectiveDisplayLevel,
-      builtSlotCount: builtSlots,
+      builtSlotCount: 0,
       enemyDraft: enemyDraft,
       bossDraft: bossDraft,
       enemyPressure: pressure,
       spawnBossImmediately: false,
+      installCoreManager: false,
       spawnPolicy: LightcoreBattleSpawnPolicy.manual,
       enemySpiralMovementEnabled: false,
       enemyMovementSpeedMultiplier: 5.0,
