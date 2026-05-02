@@ -43,10 +43,8 @@ class _TournamentHubScreen extends StatelessWidget {
               ),
             ),
           ],
-          if (controller.tutorialTournamentModeTarget != null) ...[
-            const SizedBox(height: 12),
-            _TournamentTutorialPanel(controller: controller),
-          ],
+          const SizedBox(height: 12),
+          _TournamentTutorialPanel(controller: controller),
           const SizedBox(height: 14),
           if (overview != null) ...[
             LayoutBuilder(
@@ -201,43 +199,136 @@ class _TournamentTutorialPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final targetMode = controller.tutorialTournamentModeTarget;
-    if (targetMode == null) {
-      return const SizedBox.shrink();
-    }
+    final tint = targetMode == null
+        ? LightcorePalette.warning
+        : _modeTint(targetMode);
+    final title = targetMode == null
+        ? 'Tournament Guide'
+        : '${targetMode.label} Guide';
+    final instruction = targetMode == null
+        ? 'Click a tournament card to open setup, then join or start from the event detail screen.'
+        : _modeGuideInstruction(targetMode);
+    final detail = targetMode == null
+        ? 'Each event has its own setup rules, scoring target, and run screen; opening a card does not spend an entry.'
+        : _modeGuideDetail(targetMode);
 
-    final tint = _modeTint(targetMode);
     return AuroraPanel(
       tint: tint,
       padding: const EdgeInsets.all(16),
-      child: Column(
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            controller.tutorialHeadline ?? targetMode.label,
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              color: tint,
-              fontWeight: FontWeight.w800,
+          _TournamentGuideIcon(icon: Icons.flag_rounded, tint: tint),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    color: tint,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  instruction,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: LightcorePalette.mist,
+                    fontWeight: FontWeight.w800,
+                    height: 1.28,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  detail,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: LightcorePalette.mist.withValues(alpha: 0.78),
+                    height: 1.25,
+                  ),
+                ),
+              ],
             ),
           ),
-          const SizedBox(height: 6),
-          Text(
-            controller.tutorialPrompt ?? '',
-            style: Theme.of(context).textTheme.bodyMedium,
-          ),
-          if (controller.tutorialMechanicHint != null) ...[
-            const SizedBox(height: 8),
-            Text(
-              controller.tutorialMechanicHint!,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: LightcorePalette.mist.withValues(alpha: 0.82),
-              ),
-            ),
+          if (targetMode != null) ...[
+            const SizedBox(width: 10),
+            _TournamentGuideBadge(label: 'NEXT', tint: tint),
           ],
         ],
       ),
     );
   }
 }
+
+class _TournamentGuideIcon extends StatelessWidget {
+  const _TournamentGuideIcon({required this.icon, required this.tint});
+
+  final IconData icon;
+  final Color tint;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: tint.withValues(alpha: 0.14),
+        border: Border.all(color: tint.withValues(alpha: 0.32)),
+      ),
+      child: SizedBox(
+        width: 42,
+        height: 42,
+        child: Icon(icon, color: tint, size: 22),
+      ),
+    );
+  }
+}
+
+class _TournamentGuideBadge extends StatelessWidget {
+  const _TournamentGuideBadge({required this.label, required this.tint});
+
+  final String label;
+  final Color tint;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: tint.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: tint.withValues(alpha: 0.32)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        child: Text(
+          label,
+          style: Theme.of(context).textTheme.labelMedium?.copyWith(
+            color: tint,
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+String _modeGuideInstruction(LightcoreTournamentModeId mode) => switch (mode) {
+  LightcoreTournamentModeId.enemyBlitz =>
+    'Click Anomaly Blitz to open setup, draft anomalies from the event pool, then start the survival run.',
+  LightcoreTournamentModeId.hexGauntlet =>
+    'Click Hex to open setup, review the mirrored shell layout, then start the weekly climb.',
+  LightcoreTournamentModeId.arenaFlow =>
+    'Click Arena Flow to open setup, bring your Home Tower into the duel, then start the timed run.',
+};
+
+String _modeGuideDetail(LightcoreTournamentModeId mode) => switch (mode) {
+  LightcoreTournamentModeId.enemyBlitz =>
+    'Anomaly Blitz is about draft pressure and reinvestment timing, not the base battle tutorial.',
+  LightcoreTournamentModeId.hexGauntlet =>
+    'Hex Gauntlet checks how far a fixed event shell can climb through lane pressure.',
+  LightcoreTournamentModeId.arenaFlow =>
+    'Arena Flow scores net damage: pushing the rival tower and protecting your Home Tower both matter.',
+};
 
 class _TournamentModeHubCard extends StatelessWidget {
   const _TournamentModeHubCard({

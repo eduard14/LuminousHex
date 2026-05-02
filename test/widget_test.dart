@@ -726,6 +726,8 @@ void main() {
     await tester.pump();
 
     expect(find.text('Tournament Nexus'), findsOneWidget);
+    expect(find.text('Tournament Guide'), findsOneWidget);
+    expect(find.textContaining('Click a tournament card'), findsOneWidget);
     expect(find.text('Anomaly Blitz'), findsOneWidget);
     expect(find.text('Start Run'), findsNothing);
     expect(find.byTooltip('Start run'), findsNothing);
@@ -795,6 +797,7 @@ void main() {
     await _openHeaderMenuDestination(tester, 'Daily Dungeons');
 
     expect(find.text('Daily Dungeons'), findsOneWidget);
+    expect(find.text('Dungeon Guide'), findsOneWidget);
     expect(find.text('Threat Director'), findsWidgets);
     expect(find.text('Prism Rift'), findsWidgets);
     expect(find.text('Open'), findsWidgets);
@@ -855,6 +858,8 @@ void main() {
           .first,
     );
     await tester.pump();
+    expect(find.text('Threat Director Guide'), findsOneWidget);
+    expect(find.textContaining('Click anomaly cards'), findsOneWidget);
     await tester.scrollUntilVisible(
       find.text('Enter Lv 1'),
       220,

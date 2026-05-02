@@ -8,6 +8,7 @@ import '../models/lightcore_types.dart';
 import '../state/lightcore_controller.dart';
 import '../theme/lightcore_palette.dart';
 import '../widgets/aurora_panel.dart';
+import '../widgets/guided_focus_frame.dart';
 import '../widgets/lightcore_run_loading.dart';
 import '../widgets/meter_bar.dart';
 import '../widgets/tower_level_hex_badge.dart';
@@ -152,6 +153,16 @@ class _DailyDungeonsScreenState extends State<DailyDungeonsScreen> {
               dailyKey: dailyKey,
               ownedEnemyCount: ownedCards.length,
             ),
+            const SizedBox(height: 12),
+            const _DungeonGuidePanel(
+              title: 'Dungeon Guide',
+              instruction:
+                  'Click a route card to open its setup. Threat Director uses your anomaly roster; Prism Rift uses a fixed battle route.',
+              detail:
+                  'Daily clears share the tower ladder, first-clear rewards, and quick-clear limit.',
+              icon: Icons.explore_rounded,
+              tint: LightcorePalette.aether,
+            ),
             const SizedBox(height: 14),
             LayoutBuilder(
               builder: (context, constraints) {
@@ -267,6 +278,19 @@ class _DailyDungeonsScreenState extends State<DailyDungeonsScreen> {
             ],
           ),
           const SizedBox(height: 18),
+          _DungeonGuidePanel(
+            title: 'Threat Director Guide',
+            instruction: ownedCards.isEmpty
+                ? 'Resolve Threat Scans first. Threat Director needs anomaly cards before a loadout can enter battle.'
+                : selectedCards.length >= requiredCount
+                ? 'Click anomaly cards below to swap the loadout, then enter the level when the deck is ready.'
+                : 'Click anomaly cards below until $requiredCount are selected, then enter the level.',
+            detail:
+                'Selected anomalies become manual spawn buttons in the shared battle arena. Stronger anomaly levels make clears faster.',
+            icon: Icons.adjust_rounded,
+            tint: LightcorePalette.warning,
+          ),
+          const SizedBox(height: 18),
           _DungeonTowerLadder(
             selectedLevel: selectedLevel,
             highestUnlockedLevel:
@@ -347,22 +371,31 @@ class _DailyDungeonsScreenState extends State<DailyDungeonsScreen> {
                   spacing: 12,
                   runSpacing: 12,
                   children: [
-                    for (final card in ownedCards)
+                    for (final entry in ownedCards.indexed)
                       SizedBox(
                         width: tileWidth,
-                        child: _DungeonLoadoutTile(
-                          card: card,
-                          selected: selectedCards.any(
-                            (selected) => selected.config.id == card.config.id,
-                          ),
-                          totalDamage: _dungeonRaidTotalDamage(
-                            controller,
-                            card,
-                          ),
-                          onTap: () => _toggleDungeonAnomaly(
-                            controller,
-                            ownedCards,
-                            card,
+                        child: GuidedFocusFrame(
+                          active: entry.$1 == 0 && _selectedAnomalyIds.isEmpty,
+                          tint: LightcorePalette.quest,
+                          radius: 18,
+                          label: 'ANOMALIES',
+                          showLabel: true,
+                          tapCueLabel: 'CLICK',
+                          child: _DungeonLoadoutTile(
+                            card: entry.$2,
+                            selected: selectedCards.any(
+                              (selected) =>
+                                  selected.config.id == entry.$2.config.id,
+                            ),
+                            totalDamage: _dungeonRaidTotalDamage(
+                              controller,
+                              entry.$2,
+                            ),
+                            onTap: () => _toggleDungeonAnomaly(
+                              controller,
+                              ownedCards,
+                              entry.$2,
+                            ),
                           ),
                         ),
                       ),
@@ -471,6 +504,16 @@ class _DailyDungeonsScreenState extends State<DailyDungeonsScreen> {
               const SizedBox(width: 12),
               _StatusCapsule(label: 'Battle', tint: LightcorePalette.violet),
             ],
+          ),
+          const SizedBox(height: 18),
+          const _DungeonGuidePanel(
+            title: 'Prism Rift Guide',
+            instruction:
+                'Pick the highest open tower level you can stabilize, then enter the rift to clear it through the shared battle field.',
+            detail:
+                'Prism Rift supplies the battle loadout for you. Aim the rift shot during the run to finish waves before stability collapses.',
+            icon: Icons.track_changes_rounded,
+            tint: LightcorePalette.violet,
           ),
           const SizedBox(height: 18),
           _DungeonTowerLadder(

@@ -1,5 +1,69 @@
 part of '../daily_dungeons_screen.dart';
 
+class _DungeonGuidePanel extends StatelessWidget {
+  const _DungeonGuidePanel({
+    required this.title,
+    required this.instruction,
+    required this.detail,
+    required this.icon,
+    required this.tint,
+  });
+
+  final String title;
+  final String instruction;
+  final String detail;
+  final IconData icon;
+  final Color tint;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    return AuroraPanel(
+      tint: tint,
+      radius: 18,
+      padding: const EdgeInsets.all(14),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _IconBadge(icon: icon, tint: tint),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: textTheme.titleMedium?.copyWith(
+                    color: tint,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  instruction,
+                  style: textTheme.bodyMedium?.copyWith(
+                    color: LightcorePalette.mist,
+                    fontWeight: FontWeight.w800,
+                    height: 1.28,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  detail,
+                  style: textTheme.bodySmall?.copyWith(
+                    color: LightcorePalette.mist.withValues(alpha: 0.76),
+                    height: 1.25,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _DungeonSelectCard extends StatelessWidget {
   const _DungeonSelectCard({
     required this.title,
