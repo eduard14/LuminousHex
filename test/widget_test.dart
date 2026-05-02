@@ -10,6 +10,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:lightcore/app/lightcore_bootstrap.dart';
 import 'package:lightcore/app/lightcore_app.dart';
 import 'package:lightcore/battle/lightcore_battle_game.dart';
+import 'package:lightcore/data/avatar_cosmetic_configs.dart';
 import 'package:lightcore/data/enemy_configs.dart';
 import 'package:lightcore/data/tower_configs.dart';
 import 'package:lightcore/models/lightcore_cloud_save.dart';
@@ -26,6 +27,7 @@ import 'package:lightcore/services/lightcore_firebase_runtime_config.dart';
 import 'package:lightcore/state/lightcore_controller.dart';
 import 'package:lightcore/theme/lightcore_icons.dart';
 import 'package:lightcore/theme/lightcore_theme.dart';
+import 'package:lightcore/widgets/cosmic_guide_avatar.dart';
 import 'package:lightcore/widgets/meta_progression_sheet.dart';
 
 Future<void> _pumpShell(
@@ -1926,6 +1928,28 @@ void main() {
     expect(controller.hasPermanentOverdrive, isTrue);
     expect(controller.prismShards, 260);
     expect(find.text('Owned'), findsNWidgets(2));
+  });
+
+  testWidgets('store cosmetics render avatar previews', (tester) async {
+    final controller = LightcoreController();
+    addTearDown(controller.dispose);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        debugShowCheckedModeBanner: false,
+        theme: buildLightcoreTheme(),
+        home: Scaffold(body: LightcoreStoreSheet(controller: controller)),
+      ),
+    );
+    await tester.pump();
+
+    await tester.tap(find.text('Cosmetics').first);
+    await tester.pump();
+
+    expect(
+      find.byType(CosmicGuideAvatar),
+      findsNWidgets(AvatarCosmeticCatalog.all.length),
+    );
   });
 
   testWidgets('battle panel shows active tower pattern bonuses', (

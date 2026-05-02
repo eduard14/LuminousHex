@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../data/avatar_cosmetic_configs.dart';
 import '../models/lightcore_avatar.dart';
 import '../models/lightcore_currency_labels.dart';
+import '../models/lightcore_guide.dart';
 import '../models/lightcore_progression.dart';
 import '../models/lightcore_types.dart';
 import '../services/lightcore_firebase_backend.dart';
@@ -12,6 +13,7 @@ import '../state/lightcore_controller.dart';
 import '../theme/lightcore_icons.dart';
 import '../theme/lightcore_palette.dart';
 import 'aurora_panel.dart';
+import 'cosmic_guide_avatar.dart';
 import 'status_pill.dart';
 
 part 'meta_progression/store_sheet.dart';

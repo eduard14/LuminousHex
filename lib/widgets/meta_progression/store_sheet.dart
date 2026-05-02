@@ -320,6 +320,17 @@ class _LightcoreStoreSheetState extends State<LightcoreStoreSheet> {
   _StoreOffer _avatarCosmeticOffer(AvatarCosmeticConfig config) {
     final owned = widget.controller.isAvatarCosmeticUnlocked(config.id);
     final equipped = widget.controller.isAvatarCosmeticEquipped(config.id);
+    final currentLoadout = widget.controller.avatarCosmeticLoadout;
+    final previewLoadout = switch (config.type) {
+      AvatarCosmeticType.hair => AvatarCosmeticLoadout(
+        hairId: config.id,
+        faceId: currentLoadout.faceId,
+      ),
+      AvatarCosmeticType.face => AvatarCosmeticLoadout(
+        hairId: currentLoadout.hairId,
+        faceId: config.id,
+      ),
+    };
     return _StoreOffer(
       title: config.name,
       subtitle: config.summary,
@@ -348,6 +359,11 @@ class _LightcoreStoreSheetState extends State<LightcoreStoreSheet> {
           widget.controller.purchaseAvatarCosmetic(config.id);
         }
       },
+      cosmeticPreview: _StoreCosmeticPreviewData(
+        guide: widget.controller.guideProfile,
+        loadout: previewLoadout,
+        config: config,
+      ),
     );
   }
 
@@ -632,6 +648,7 @@ class _StoreOffer {
     required this.tint,
     required this.enabled,
     required this.onPressed,
+    this.cosmeticPreview,
   });
 
   final String title;
@@ -647,6 +664,19 @@ class _StoreOffer {
   final Color tint;
   final bool enabled;
   final VoidCallback onPressed;
+  final _StoreCosmeticPreviewData? cosmeticPreview;
+}
+
+class _StoreCosmeticPreviewData {
+  const _StoreCosmeticPreviewData({
+    required this.guide,
+    required this.loadout,
+    required this.config,
+  });
+
+  final LightcoreGuideProfile guide;
+  final AvatarCosmeticLoadout loadout;
+  final AvatarCosmeticConfig config;
 }
 
 class _StoreBalanceBar extends StatelessWidget {
@@ -997,6 +1027,10 @@ class _StoreOfferCard extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
               style: Theme.of(context).textTheme.bodySmall,
             ),
+            if (offer.cosmeticPreview case final preview?) ...[
+              const SizedBox(height: 12),
+              _StoreCosmeticPreview(preview: preview, tint: offer.tint),
+            ],
             const SizedBox(height: 12),
             Wrap(
               spacing: 8,
@@ -1054,6 +1088,56 @@ class _StoreOfferCard extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _StoreCosmeticPreview extends StatelessWidget {
+  const _StoreCosmeticPreview({required this.preview, required this.tint});
+
+  final _StoreCosmeticPreviewData preview;
+  final Color tint;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 76,
+      child: Row(
+        children: [
+          Container(
+            width: 46,
+            height: 46,
+            padding: const EdgeInsets.all(7),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: tint.withValues(alpha: 0.14),
+            ),
+            child: Image.asset(
+              preview.config.assetPath,
+              fit: BoxFit.contain,
+              filterQuality: FilterQuality.high,
+              errorBuilder: (context, error, stackTrace) => Icon(
+                _cosmeticStoreIcon(preview.config.type),
+                color: tint,
+                size: 20,
+              ),
+            ),
+          ),
+          Expanded(
+            child: Icon(
+              Icons.arrow_forward_rounded,
+              size: 18,
+              color: tint.withValues(alpha: 0.74),
+            ),
+          ),
+          CosmicGuideAvatar(
+            guide: preview.guide,
+            size: 72,
+            avatarCosmetics: preview.loadout,
+            semanticLabel: '${preview.config.name} cosmetic preview',
+          ),
+        ],
       ),
     );
   }

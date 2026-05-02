@@ -216,7 +216,10 @@ class CosmicGuideAvatar extends StatelessWidget {
                     },
                   ),
                 ),
-                _AvatarCosmeticSpriteOverlay(loadout: avatarCosmetics),
+                _AvatarCosmeticSpriteOverlay(
+                  guide: guide,
+                  loadout: avatarCosmetics,
+                ),
                 _EquipmentSpriteOverlay(loadout: loadout),
               ],
             ),
@@ -242,7 +245,10 @@ class CosmicGuideAvatar extends StatelessWidget {
                     drawFrame: true,
                   ),
                 ),
-                _AvatarCosmeticSpriteOverlay(loadout: avatarCosmetics),
+                _AvatarCosmeticSpriteOverlay(
+                  guide: guide,
+                  loadout: avatarCosmetics,
+                ),
                 _EquipmentSpriteOverlay(loadout: loadout),
               ],
             ),
@@ -360,8 +366,12 @@ class _AvatarPoseTransform extends StatelessWidget {
 }
 
 class _AvatarCosmeticSpriteOverlay extends StatelessWidget {
-  const _AvatarCosmeticSpriteOverlay({required this.loadout});
+  const _AvatarCosmeticSpriteOverlay({
+    required this.guide,
+    required this.loadout,
+  });
 
+  final LightcoreGuideProfile guide;
   final AvatarCosmeticLoadout loadout;
 
   @override
@@ -381,29 +391,86 @@ class _AvatarCosmeticSpriteOverlay extends StatelessWidget {
     return IgnorePointer(
       child: Stack(
         fit: StackFit.expand,
+        clipBehavior: Clip.none,
         children: [
-          if (face != null) _AvatarCosmeticSprite(config: face),
-          if (hair != null) _AvatarCosmeticSprite(config: hair),
+          if (face != null)
+            _AvatarCosmeticSprite(
+              config: face,
+              bounds: _cosmeticBoundsFor(guide, AvatarCosmeticType.face),
+            ),
+          if (hair != null)
+            _AvatarCosmeticSprite(
+              config: hair,
+              bounds: _cosmeticBoundsFor(guide, AvatarCosmeticType.hair),
+            ),
         ],
+      ),
+    );
+  }
+
+  static _AvatarCosmeticBounds _cosmeticBoundsFor(
+    LightcoreGuideProfile guide,
+    AvatarCosmeticType type,
+  ) {
+    return switch ((guide.id, type)) {
+      (LightcoreGuideId.luma, AvatarCosmeticType.face) =>
+        const _AvatarCosmeticBounds(left: 0.31, top: 0.32, size: 0.34),
+      (LightcoreGuideId.luma, AvatarCosmeticType.hair) =>
+        const _AvatarCosmeticBounds(left: 0.21, top: 0.02, size: 0.42),
+      (LightcoreGuideId.lumo, AvatarCosmeticType.face) =>
+        const _AvatarCosmeticBounds(left: 0.32, top: 0.32, size: 0.34),
+      (LightcoreGuideId.lumo, AvatarCosmeticType.hair) =>
+        const _AvatarCosmeticBounds(left: 0.29, top: 0.06, size: 0.36),
+    };
+  }
+}
+
+class _AvatarCosmeticSprite extends StatelessWidget {
+  const _AvatarCosmeticSprite({required this.config, required this.bounds});
+
+  final AvatarCosmeticConfig config;
+  final _AvatarCosmeticBounds bounds;
+
+  @override
+  Widget build(BuildContext context) {
+    return Positioned.fill(
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final size = constraints.maxWidth * bounds.size;
+          return Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Positioned(
+                left: constraints.maxWidth * bounds.left,
+                top: constraints.maxHeight * bounds.top,
+                width: size,
+                height: size,
+                child: Image.asset(
+                  config.assetPath,
+                  fit: BoxFit.contain,
+                  filterQuality: FilterQuality.high,
+                  errorBuilder: (context, error, stackTrace) =>
+                      const SizedBox.shrink(),
+                ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
 }
 
-class _AvatarCosmeticSprite extends StatelessWidget {
-  const _AvatarCosmeticSprite({required this.config});
+class _AvatarCosmeticBounds {
+  const _AvatarCosmeticBounds({
+    required this.left,
+    required this.top,
+    required this.size,
+  });
 
-  final AvatarCosmeticConfig config;
-
-  @override
-  Widget build(BuildContext context) {
-    return Image.asset(
-      config.assetPath,
-      fit: BoxFit.contain,
-      filterQuality: FilterQuality.high,
-      errorBuilder: (context, error, stackTrace) => const SizedBox.shrink(),
-    );
-  }
+  final double left;
+  final double top;
+  final double size;
 }
 
 class _EquipmentSprite extends StatelessWidget {
