@@ -445,6 +445,17 @@ class _EnemyPackRevealDialogState extends State<_EnemyPackRevealDialog>
   bool get _isComplete =>
       _animationController.status == AnimationStatus.completed;
 
+  int get _closeRemainingSeconds {
+    if (_isComplete) {
+      return 0;
+    }
+    final remainingMilliseconds = math.max(
+      0.0,
+      _totalMilliseconds - _elapsedMilliseconds,
+    );
+    return (remainingMilliseconds / 1000).ceil();
+  }
+
   bool get _hexVisible => _hexFadeProgress < 1;
 
   double get _hexOpacity =>
@@ -692,18 +703,23 @@ class _EnemyPackRevealDialogState extends State<_EnemyPackRevealDialog>
                           ],
                         ),
                       ),
-                      if (_isComplete) ...[
-                        const SizedBox(height: 16),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.end,
-                          children: [
-                            FilledButton.tonal(
-                              onPressed: _close,
-                              child: const Text('Close'),
+                      const SizedBox(height: 16),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          SizedBox(
+                            width: 132,
+                            child: FilledButton.tonal(
+                              onPressed: _isComplete ? _close : null,
+                              child: Text(
+                                _isComplete
+                                    ? 'Close'
+                                    : 'Close in ${_closeRemainingSeconds}s',
+                              ),
                             ),
-                          ],
-                        ),
-                      ],
+                          ),
+                        ],
+                      ),
                     ],
                   ),
                 ),

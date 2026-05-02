@@ -309,6 +309,16 @@ void main() {
     expect(find.textContaining('Silver sweep - no indication'), findsOneWidget);
     expect(find.textContaining('Orange'), findsNothing);
     expect(find.textContaining('Azure'), findsNothing);
+    expect(find.textContaining('Close in'), findsOneWidget);
+    final initialCloseButton = tester.widget<FilledButton>(
+      find
+          .ancestor(
+            of: find.textContaining('Close in'),
+            matching: find.byType(FilledButton),
+          )
+          .first,
+    );
+    expect(initialCloseButton.onPressed, isNull);
 
     await tester.pump(const Duration(milliseconds: 1300));
     await tester.pump();
@@ -319,6 +329,7 @@ void main() {
     expect(find.text('x3'), findsNothing);
     expect(find.text('Skip'), findsNothing);
     expect(find.text('Close'), findsNothing);
+    expect(find.textContaining('Close in'), findsOneWidget);
 
     await tester.pump(const Duration(milliseconds: 2100));
     await tester.pump();
