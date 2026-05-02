@@ -485,6 +485,25 @@ class _TrackRewardCardState extends State<_TrackRewardCard> {
         : widget.locked
         ? LightcorePalette.warning
         : LightcorePalette.mist.withValues(alpha: 0.74);
+    final actionLabel = widget.claimable
+        ? 'Claim'
+        : widget.claimed
+        ? 'Claimed'
+        : widget.locked
+        ? 'Locked'
+        : widget.status;
+    final claimAction = Tooltip(
+      message: widget.status,
+      child: FilledButton.tonal(
+        onPressed: widget.claimable ? widget.onClaim : null,
+        style: actionStyle,
+        child: FittedBox(fit: BoxFit.scaleDown, child: Text(actionLabel)),
+      ),
+    );
+    final statusIcon = widget.claimed
+        ? Icons.check_circle_rounded
+        : Icons.bolt_rounded;
+    final showStatusIcon = widget.claimed || widget.claimable;
     final rewardIcon = Tooltip(
       message: widget.reward.label,
       child: SizedBox(
@@ -580,14 +599,7 @@ class _TrackRewardCardState extends State<_TrackRewardCard> {
           ),
         ],
         const SizedBox(height: 8),
-        if (widget.claimable)
-          FilledButton.tonal(
-            onPressed: widget.onClaim,
-            style: actionStyle,
-            child: const Text('Claim'),
-          )
-        else
-          statusPill,
+        SizedBox(height: 34, child: claimAction),
         const SizedBox(height: 6),
         Icon(
           _expanded ? Icons.expand_less_rounded : Icons.expand_more_rounded,
@@ -630,25 +642,25 @@ class _TrackRewardCardState extends State<_TrackRewardCard> {
               ),
             ),
             const SizedBox(width: 8),
-            if (widget.claimable) ...[
-              FilledButton.tonal(
-                onPressed: widget.onClaim,
-                style: actionStyle,
-                child: const Text('Claim'),
-              ),
-              const SizedBox(width: 8),
-            ],
+            SizedBox(width: 94, child: claimAction),
+            const SizedBox(width: 8),
             Column(
               children: [
-                if (widget.claimed) ...[
-                  Icon(
-                    Icons.check_circle_rounded,
-                    size: 18,
-                    color: LightcorePalette.success,
+                SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: AnimatedOpacity(
+                    opacity: showStatusIcon ? 1 : 0,
+                    duration: const Duration(milliseconds: 120),
+                    child: Icon(
+                      statusIcon,
+                      size: 18,
+                      color: widget.claimed
+                          ? LightcorePalette.success
+                          : widget.tint,
+                    ),
                   ),
-                ] else if (widget.claimable) ...[
-                  Icon(Icons.bolt_rounded, size: 18, color: widget.tint),
-                ],
+                ),
                 const SizedBox(height: 6),
                 Icon(
                   _expanded
@@ -661,10 +673,7 @@ class _TrackRewardCardState extends State<_TrackRewardCard> {
             ),
           ],
         ),
-        if (_expanded) ...[
-          const SizedBox(height: 10),
-          if (!widget.claimable) statusPill,
-        ],
+        if (_expanded) ...[const SizedBox(height: 10), statusPill],
       ],
     );
 

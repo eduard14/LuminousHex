@@ -520,11 +520,11 @@ class _EnemyPullSheetState extends State<EnemyPullSheet> {
                                   label:
                                       '${LightcoreCurrencyLabels.scansShort} ${controller.enemyTickets}',
                                 ),
-                                if (!controller.isSummoningLevelMaxed)
-                                  _InfoChip(
-                                    label:
-                                        '+${controller.nextSummoningLevelTicketReward} at Lv ${controller.nextSummoningLevel}',
-                                  ),
+                                _InfoChip(
+                                  label: controller.isSummoningLevelMaxed
+                                      ? 'All tiers unlocked'
+                                      : '+${controller.nextSummoningLevelTicketReward} at Lv ${controller.nextSummoningLevel}',
+                                ),
                               ],
                             ),
                             const SizedBox(height: 12),

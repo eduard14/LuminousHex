@@ -214,35 +214,42 @@ class _LightcoreBattlePassSheetState extends State<LightcoreBattlePassSheet> {
                               ),
                             ),
                           ),
-                          if (!pass.premiumUnlocked) ...[
-                            const SizedBox(height: 12),
-                            Text(
-                              'Unlock premium rewards on this pass with Prism Shards.',
-                              style: Theme.of(context).textTheme.bodySmall,
-                            ),
-                            const SizedBox(height: 12),
-                            SizedBox(
-                              width: double.infinity,
-                              child: FilledButton.tonalIcon(
-                                onPressed:
-                                    widget.controller.prismShards >=
-                                        _premiumPrismShardCost(_selectedType)
-                                    ? () => widget.controller
-                                          .unlockPremiumBattlePassForPass(
-                                            pass,
-                                            prismShardCost:
-                                                _premiumPrismShardCost(
-                                                  _selectedType,
-                                                ),
-                                          )
-                                    : null,
-                                icon: const Icon(Icons.lock_open_rounded),
-                                label: Text(
-                                  'Unlock Premium • ${_premiumPrismShardCost(_selectedType)} Shards',
-                                ),
+                          const SizedBox(height: 12),
+                          Text(
+                            pass.premiumUnlocked
+                                ? 'Premium rewards are active on this pass.'
+                                : 'Unlock premium rewards on this pass with Prism Shards.',
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                          const SizedBox(height: 12),
+                          SizedBox(
+                            width: double.infinity,
+                            child: FilledButton.tonalIcon(
+                              onPressed:
+                                  !pass.premiumUnlocked &&
+                                      widget.controller.prismShards >=
+                                          _premiumPrismShardCost(_selectedType)
+                                  ? () => widget.controller
+                                        .unlockPremiumBattlePassForPass(
+                                          pass,
+                                          prismShardCost:
+                                              _premiumPrismShardCost(
+                                                _selectedType,
+                                              ),
+                                        )
+                                  : null,
+                              icon: Icon(
+                                pass.premiumUnlocked
+                                    ? Icons.lock_open_rounded
+                                    : Icons.lock_rounded,
+                              ),
+                              label: Text(
+                                pass.premiumUnlocked
+                                    ? 'Premium Active'
+                                    : 'Unlock Premium • ${_premiumPrismShardCost(_selectedType)} Shards',
                               ),
                             ),
-                          ],
+                          ),
                         ],
                       );
 

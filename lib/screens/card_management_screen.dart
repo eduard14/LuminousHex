@@ -2518,11 +2518,7 @@ class _TowerManagerDetailSheet extends StatelessWidget {
                 ),
               ),
             ),
-            if (onUnequip != null)
-              OutlinedButton(
-                onPressed: onUnequip,
-                child: const Text('Unequip'),
-              ),
+            OutlinedButton(onPressed: onUnequip, child: const Text('Unequip')),
             OutlinedButton(
               onPressed: onDismantle,
               child: Text(
@@ -2638,8 +2634,7 @@ class _EnemyManagerDetailSheet extends StatelessWidget {
                 ),
               ),
             ),
-            if (onRemove != null)
-              OutlinedButton(onPressed: onRemove, child: const Text('Remove')),
+            OutlinedButton(onPressed: onRemove, child: const Text('Remove')),
             OutlinedButton(
               onPressed: onDismantle,
               child: Text(
