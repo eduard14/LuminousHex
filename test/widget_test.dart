@@ -890,6 +890,7 @@ void main() {
     expect(find.text(fullTowerLabel), findsOneWidget);
     await tester.tap(find.byTooltip('Launch Dustling'));
     await tester.pump();
+    expect(find.textContaining('Hit'), findsOneWidget);
     expect(find.text(fullTowerLabel), findsOneWidget);
     expect(find.textContaining('launched'), findsOneWidget);
     expect(find.textContaining('% core'), findsOneWidget);

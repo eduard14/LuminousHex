@@ -40,6 +40,26 @@ class _ThreatDirectorPendingImpact {
   final bool perfectRelease;
 }
 
+class _ThreatDirectorLaunchFeedback {
+  const _ThreatDirectorLaunchFeedback({
+    required this.label,
+    required this.perfect,
+    required this.remainingSeconds,
+  });
+
+  final String label;
+  final bool perfect;
+  final double remainingSeconds;
+
+  _ThreatDirectorLaunchFeedback tick(double seconds) {
+    return _ThreatDirectorLaunchFeedback(
+      label: label,
+      perfect: perfect,
+      remainingSeconds: math.max(0.0, remainingSeconds - seconds),
+    );
+  }
+}
+
 class _DailyDungeonBattleModeDefinition {
   const _DailyDungeonBattleModeDefinition({
     required this.route,
@@ -183,6 +203,7 @@ class _DailyDungeonBattleRunScreenState
   static const double _breachDurationSeconds = 2.8;
   static const double _counterCycleSeconds = 5.5;
   static const double _counterInterruptWindowSeconds = 1.0;
+  static const double _launchFeedbackSeconds = 0.9;
 
   late final LightcoreDailyDungeonTowerProfile _towerProfile;
   late final LightcoreController _battleController;
@@ -190,6 +211,8 @@ class _DailyDungeonBattleRunScreenState
   late final int _targetKills;
   Timer? _timer;
   final Map<String, double> _manualSpawnCooldowns = <String, double>{};
+  final Map<String, _ThreatDirectorLaunchFeedback> _manualLaunchFeedbacks =
+      <String, _ThreatDirectorLaunchFeedback>{};
   final Map<String, _ThreatDirectorPendingImpact>
   _pendingTargetTowerImpactByEnemyId = <String, _ThreatDirectorPendingImpact>{};
   late double _targetTowerMaxHealth;
@@ -517,6 +540,11 @@ class _DailyDungeonBattleRunScreenState
   double _manualSpawnCooldownFor(EnemyCardState card, {required bool boss}) =>
       _manualSpawnCooldowns[_manualSpawnCooldownKey(card, boss: boss)] ?? 0;
 
+  _ThreatDirectorLaunchFeedback? _manualLaunchFeedbackFor(
+    EnemyCardState card, {
+    required bool boss,
+  }) => _manualLaunchFeedbacks[_manualSpawnCooldownKey(card, boss: boss)];
+
   bool _canSpawnManualAnomaly(EnemyCardState card) {
     return _running &&
         _manualSpawnCooldownFor(card, boss: false) <= 0 &&
@@ -562,6 +590,14 @@ class _DailyDungeonBattleRunScreenState
         _manualLaunchCount += 1;
         _manualSpawnCooldowns[_manualSpawnCooldownKey(card, boss: false)] =
             _anomalySpawnCooldownSeconds;
+        _manualLaunchFeedbacks[_manualSpawnCooldownKey(
+          card,
+          boss: false,
+        )] = _ThreatDirectorLaunchFeedback(
+          label: outcome.label,
+          perfect: outcome.perfect,
+          remainingSeconds: _launchFeedbackSeconds,
+        );
       });
     }
   }
@@ -597,6 +633,14 @@ class _DailyDungeonBattleRunScreenState
         _manualLaunchCount += 1;
         _manualSpawnCooldowns[_manualSpawnCooldownKey(card, boss: true)] =
             _apexSpawnCooldownSeconds;
+        _manualLaunchFeedbacks[_manualSpawnCooldownKey(
+          card,
+          boss: true,
+        )] = _ThreatDirectorLaunchFeedback(
+          label: outcome.label,
+          perfect: outcome.perfect,
+          remainingSeconds: _launchFeedbackSeconds,
+        );
       });
     }
   }
@@ -645,6 +689,14 @@ class _DailyDungeonBattleRunScreenState
       if (_manualSpawnCooldowns.isNotEmpty) {
         _manualSpawnCooldowns.updateAll(
           (_, remaining) => math.max(0.0, remaining - tickSeconds),
+        );
+      }
+      if (_manualLaunchFeedbacks.isNotEmpty) {
+        _manualLaunchFeedbacks.updateAll(
+          (_, feedback) => feedback.tick(tickSeconds),
+        );
+        _manualLaunchFeedbacks.removeWhere(
+          (_, feedback) => feedback.remainingSeconds <= 0,
         );
       }
       if (_isThreatDirector) {
@@ -923,6 +975,10 @@ class _DailyDungeonBattleRunScreenState
                                 _manualSpawnCooldownFor(card, boss: false),
                             cooldownForApex: (card) =>
                                 _manualSpawnCooldownFor(card, boss: true),
+                            launchFeedbackForAnomaly: (card) =>
+                                _manualLaunchFeedbackFor(card, boss: false),
+                            launchFeedbackForApex: (card) =>
+                                _manualLaunchFeedbackFor(card, boss: true),
                             canSpawnAnomaly: _canSpawnManualAnomaly,
                             canSpawnApex: _canSpawnManualApex,
                             onSpawnAnomaly: _handleManualAnomalySpawn,
@@ -1185,6 +1241,8 @@ class _ThreatDirectorBattleStatusDock extends StatelessWidget {
     required this.launchOutcomeForApex,
     required this.cooldownForAnomaly,
     required this.cooldownForApex,
+    required this.launchFeedbackForAnomaly,
+    required this.launchFeedbackForApex,
     required this.canSpawnAnomaly,
     required this.canSpawnApex,
     required this.onSpawnAnomaly,
@@ -1217,6 +1275,10 @@ class _ThreatDirectorBattleStatusDock extends StatelessWidget {
   launchOutcomeForApex;
   final double Function(EnemyCardState card) cooldownForAnomaly;
   final double Function(EnemyCardState card) cooldownForApex;
+  final _ThreatDirectorLaunchFeedback? Function(EnemyCardState card)
+  launchFeedbackForAnomaly;
+  final _ThreatDirectorLaunchFeedback? Function(EnemyCardState card)
+  launchFeedbackForApex;
   final bool Function(EnemyCardState card) canSpawnAnomaly;
   final bool Function(EnemyCardState card) canSpawnApex;
   final ValueChanged<EnemyCardState> onSpawnAnomaly;
@@ -1349,6 +1411,7 @@ class _ThreatDirectorBattleStatusDock extends StatelessWidget {
             damage: damageForAnomaly(card),
             outcome: launchOutcomeForAnomaly(card),
             cooldown: cooldownForAnomaly(card),
+            feedback: launchFeedbackForAnomaly(card),
             enabled: canSpawnAnomaly(card),
             onPressed: onSpawnAnomaly,
           ),
@@ -1361,6 +1424,7 @@ class _ThreatDirectorBattleStatusDock extends StatelessWidget {
             damage: damageForApex(apexCard!),
             outcome: launchOutcomeForApex(apexCard!),
             cooldown: cooldownForApex(apexCard!),
+            feedback: launchFeedbackForApex(apexCard!),
             enabled: canSpawnApex(apexCard!),
             onPressed: onSpawnApex,
           ),
@@ -1413,6 +1477,7 @@ class _ManualSpawnButton extends StatelessWidget {
     required this.damage,
     required this.outcome,
     required this.cooldown,
+    required this.feedback,
     required this.enabled,
     required this.onPressed,
   });
@@ -1424,6 +1489,7 @@ class _ManualSpawnButton extends StatelessWidget {
   final double damage;
   final _ThreatDirectorLaunchOutcome outcome;
   final double cooldown;
+  final _ThreatDirectorLaunchFeedback? feedback;
   final bool enabled;
   final ValueChanged<EnemyCardState> onPressed;
 
@@ -1434,87 +1500,162 @@ class _ManualSpawnButton extends StatelessWidget {
     final damageLabel = damage >= 1000
         ? '${(damage / 1000).toStringAsFixed(damage >= 10000 ? 0 : 1)}K'
         : damage.round().toString();
+    final timingColor = outcome.perfect
+        ? LightcorePalette.solar
+        : outcome.label == 'Good'
+        ? LightcorePalette.success
+        : LightcorePalette.warning;
+    final launchFeedback = feedback;
+    final feedbackActive = launchFeedback != null;
+    final foregroundColor = effectiveEnabled
+        ? LightcorePalette.night
+        : LightcorePalette.mist.withValues(alpha: 0.58);
+    final feedbackProgress = launchFeedback == null
+        ? 0.0
+        : (launchFeedback.remainingSeconds /
+                  _DailyDungeonBattleRunScreenState._launchFeedbackSeconds)
+              .clamp(0.0, 1.0)
+              .toDouble();
     return Tooltip(
       message: 'Launch ${card.config.name}',
       child: SizedBox(
         width: 132,
         height: 76,
-        child: FilledButton(
-          style: FilledButton.styleFrom(
-            backgroundColor: effectiveEnabled
-                ? tint.withValues(alpha: 0.92)
-                : LightcorePalette.stroke.withValues(alpha: 0.24),
-            foregroundColor: effectiveEnabled
-                ? LightcorePalette.night
-                : LightcorePalette.mist.withValues(alpha: 0.56),
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 7),
-            shape: RoundedRectangleBorder(
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(16),
+            onTap: effectiveEnabled ? () => onPressed(card) : null,
+            child: ClipRRect(
               borderRadius: BorderRadius.circular(16),
-            ),
-          ),
-          onPressed: effectiveEnabled ? () => onPressed(card) : null,
-          child: Row(
-            children: [
-              _DungeonEnemyPortrait(
-                card: card,
-                size: 44,
-                selected: effectiveEnabled,
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(icon, size: 14),
-                        const SizedBox(width: 3),
-                        Flexible(
-                          child: Text(
-                            cooldownActive ? '${cooldown.ceil()}s' : label,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: Theme.of(context).textTheme.labelLarge
-                                ?.copyWith(
-                                  color: effectiveEnabled
-                                      ? LightcorePalette.night
-                                      : LightcorePalette.mist.withValues(
-                                          alpha: 0.56,
-                                        ),
-                                  fontWeight: FontWeight.w900,
+              child: Stack(
+                children: [
+                  Positioned.fill(
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: effectiveEnabled
+                            ? tint.withValues(alpha: 0.86)
+                            : LightcorePalette.stroke.withValues(alpha: 0.2),
+                        border: Border.all(
+                          color: feedbackActive
+                              ? timingColor.withValues(alpha: 0.95)
+                              : timingColor.withValues(
+                                  alpha: effectiveEnabled ? 0.76 : 0.28,
                                 ),
+                          width: feedbackActive ? 2 : 1,
+                        ),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                  ),
+                  Positioned.fill(
+                    child: FractionallySizedBox(
+                      alignment: Alignment.centerLeft,
+                      widthFactor: outcome.phase.clamp(0.0, 1.0),
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          color: timingColor.withValues(
+                            alpha: effectiveEnabled ? 0.32 : 0.14,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    child: LinearProgressIndicator(
+                      value: feedbackActive ? feedbackProgress : outcome.phase,
+                      minHeight: feedbackActive ? 4 : 3,
+                      backgroundColor: LightcorePalette.night.withValues(
+                        alpha: 0.14,
+                      ),
+                      valueColor: AlwaysStoppedAnimation<Color>(timingColor),
+                    ),
+                  ),
+                  if (feedbackActive)
+                    Positioned.fill(
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          color: timingColor.withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ),
+                    ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 7,
+                    ),
+                    child: Row(
+                      children: [
+                        _DungeonEnemyPortrait(
+                          card: card,
+                          size: 44,
+                          selected: effectiveEnabled || feedbackActive,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(icon, size: 14, color: foregroundColor),
+                                  const SizedBox(width: 3),
+                                  Flexible(
+                                    child: Text(
+                                      feedbackActive
+                                          ? 'Hit ${launchFeedback.label}'
+                                          : cooldownActive
+                                          ? '${cooldown.ceil()}s'
+                                          : label,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .labelLarge
+                                          ?.copyWith(
+                                            color: foregroundColor,
+                                            fontWeight: FontWeight.w900,
+                                          ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 3),
+                              Text(
+                                feedbackActive
+                                    ? launchFeedback.perfect
+                                          ? 'Speed burst'
+                                          : '${launchFeedback.label} release'
+                                    : '${outcome.label} • $damageLabel',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: Theme.of(context).textTheme.labelSmall
+                                    ?.copyWith(
+                                      color: effectiveEnabled || feedbackActive
+                                          ? LightcorePalette.night.withValues(
+                                              alpha: 0.78,
+                                            )
+                                          : LightcorePalette.mist.withValues(
+                                              alpha: 0.42,
+                                            ),
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                              ),
+                            ],
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 2),
-                    MeterBar(
-                      value: outcome.phase,
-                      color: outcome.perfect
-                          ? LightcorePalette.solar
-                          : outcome.label == 'Good'
-                          ? LightcorePalette.success
-                          : LightcorePalette.warning,
-                      height: 5,
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      '${outcome.label} • $damageLabel',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        color: effectiveEnabled
-                            ? LightcorePalette.night.withValues(alpha: 0.78)
-                            : LightcorePalette.mist.withValues(alpha: 0.42),
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
       ),
