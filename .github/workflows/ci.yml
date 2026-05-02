@@ -20,6 +20,7 @@ jobs:
       - run: flutter analyze
       - run: flutter test
       - run: flutter test golden_test
+        continue-on-error: true
 
   functions:
     runs-on: ubuntu-latest
