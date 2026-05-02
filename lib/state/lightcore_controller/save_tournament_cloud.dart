@@ -21,6 +21,7 @@ class _EventBattleConfig {
     this.installCoreManager = true,
     this.spawnPolicy = LightcoreBattleSpawnPolicy.automatic,
     this.enemySpiralMovementEnabled = true,
+    this.enemyMovementSpeedMultiplier = 1.0,
   });
 
   final String eventLabel;
@@ -42,6 +43,7 @@ class _EventBattleConfig {
   final bool installCoreManager;
   final LightcoreBattleSpawnPolicy spawnPolicy;
   final bool enemySpiralMovementEnabled;
+  final double enemyMovementSpeedMultiplier;
 }
 
 extension LightcoreControllerSaveTournamentCloud on LightcoreController {
@@ -330,6 +332,7 @@ extension LightcoreControllerSaveTournamentCloud on LightcoreController {
       spawnBossImmediately: false,
       spawnPolicy: LightcoreBattleSpawnPolicy.manual,
       enemySpiralMovementEnabled: false,
+      enemyMovementSpeedMultiplier: 5.0,
     );
   }
 
@@ -452,6 +455,10 @@ extension LightcoreControllerSaveTournamentCloud on LightcoreController {
     _swarmActivated = true;
     _battleSpawnPolicy = config.spawnPolicy;
     _enemySpiralMovementEnabled = config.enemySpiralMovementEnabled;
+    _enemyMovementSpeedMultiplier = max(
+      0.1,
+      config.enemyMovementSpeedMultiplier,
+    );
     _tutorialStep = LightcoreTutorialStep.none;
     _tutorialPromptsEnabled = false;
     bannerMessage = '';

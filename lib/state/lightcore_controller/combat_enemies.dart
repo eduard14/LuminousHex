@@ -681,7 +681,8 @@ extension LightcoreControllerCombatEnemies on LightcoreController {
         levelSpeedScale *
         (splitDepth > 0 ? 1.18 : 1.0) *
         (config.isBoss ? _bossSpeedScale : 1.0) *
-        _managerValue(1, manager?.speedMultiplier ?? 1, managerEffect);
+        _managerValue(1, manager?.speedMultiplier ?? 1, managerEffect) *
+        _enemyMovementSpeedMultiplier;
     final reward = max(
       1,
       (_balancedEnemyStat(config, 'reward', config.reward.toDouble()) *

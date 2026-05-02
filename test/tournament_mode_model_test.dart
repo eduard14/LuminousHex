@@ -310,44 +310,55 @@ void main() {
     },
   );
 
-  test('threat director manual enemies move straight inward', () {
-    final controller = LightcoreController();
-    addTearDown(controller.dispose);
+  test(
+    'threat director manual enemies move straight inward at boosted speed',
+    () {
+      final baseline = LightcoreController();
+      final controller = LightcoreController();
+      addTearDown(baseline.dispose);
+      addTearDown(controller.dispose);
 
-    controller.configureThreatDirectorDungeonBattle(
-      towerLevel: 1,
-      enemyDraft: [
-        EnemyCardState(
-          config: EnemyLibrary.basicWhite,
-          unlocked: true,
-          copies: 1,
-          level: 1,
-        ),
-      ],
-      bossDraft: EnemyCardState(
-        config: BossEnemyLibrary.starterWhiteWarden,
-        unlocked: true,
-        copies: 1,
-        level: 20,
-      ),
-    );
+      baseline.configurePrismRiftDungeonBattle(
+        towerLevel: 1,
+        enemyDraft: [
+          EnemyCardState(
+            config: EnemyLibrary.basicWhite,
+            unlocked: true,
+            copies: 1,
+            level: 1,
+          ),
+        ],
+      );
+      baseline.tick(0.2);
+      final baselineSpeed = baseline.enemies.single.speed;
 
-    expect(
-      controller.spawnManualBattleEnemy(
-        cardId: BossEnemyLibrary.starterWhiteWarden.id,
-        boss: true,
-      ),
-      isTrue,
-    );
-    final spawned = controller.enemies.single;
-    expect(spawned.angularVelocity, 0);
+      controller.configureThreatDirectorDungeonBattle(
+        towerLevel: 1,
+        enemyDraft: [
+          EnemyCardState(
+            config: EnemyLibrary.basicWhite,
+            unlocked: true,
+            copies: 1,
+            level: 1,
+          ),
+        ],
+      );
 
-    controller.tick(0.5);
+      expect(
+        controller.spawnManualBattleEnemy(cardId: EnemyLibrary.basicWhite.id),
+        isTrue,
+      );
+      final spawned = controller.enemies.single;
+      expect(spawned.angularVelocity, 0);
+      expect(spawned.speed, closeTo(baselineSpeed * 5, 0.000001));
 
-    final advanced = controller.enemies.single;
-    expect(advanced.angle, closeTo(spawned.angle, 0.000001));
-    expect(advanced.radius, lessThan(spawned.radius));
-  });
+      controller.tick(0.5);
+
+      final advanced = controller.enemies.single;
+      expect(advanced.angle, closeTo(spawned.angle, 0.000001));
+      expect(advanced.radius, lessThan(spawned.radius));
+    },
+  );
 
   test('prism rift dungeon keeps spiral enemy movement', () {
     final controller = LightcoreController();
