@@ -16,6 +16,9 @@ class _ThreatDirectorLaunchOutcome {
     required this.damageMultiplier,
     required this.speedMultiplier,
     required this.phase,
+    required this.targetPhase,
+    required this.perfectWindow,
+    required this.goodWindow,
     required this.perfect,
   });
 
@@ -23,6 +26,9 @@ class _ThreatDirectorLaunchOutcome {
   final double damageMultiplier;
   final double speedMultiplier;
   final double phase;
+  final double targetPhase;
+  final double perfectWindow;
+  final double goodWindow;
   final bool perfect;
 }
 
@@ -194,7 +200,7 @@ class _DailyDungeonBattleRunScreenState
   static const Duration _tickRate = Duration(milliseconds: 100);
   static const double _anomalySpawnCooldownSeconds = 1.0;
   static const double _apexSpawnCooldownSeconds = 6.0;
-  static const double _releaseCycleSeconds = 1.8;
+  static const double _releaseCycleSeconds = 2.75;
   static const double _releasePerfectPhase = 0.72;
   static const double _releasePerfectWindow = 0.08;
   static const double _releaseGoodWindow = 0.22;
@@ -390,6 +396,9 @@ class _DailyDungeonBattleRunScreenState
         damageMultiplier: 1.2,
         speedMultiplier: 1.55,
         phase: phase,
+        targetPhase: _releasePerfectPhase,
+        perfectWindow: perfectWindow,
+        goodWindow: goodWindow,
         perfect: true,
       );
     }
@@ -399,6 +408,9 @@ class _DailyDungeonBattleRunScreenState
         damageMultiplier: 1.0,
         speedMultiplier: 1.12,
         phase: phase,
+        targetPhase: _releasePerfectPhase,
+        perfectWindow: perfectWindow,
+        goodWindow: goodWindow,
         perfect: false,
       );
     }
@@ -407,6 +419,9 @@ class _DailyDungeonBattleRunScreenState
       damageMultiplier: 0.68,
       speedMultiplier: 0.78,
       phase: phase,
+      targetPhase: _releasePerfectPhase,
+      perfectWindow: perfectWindow,
+      goodWindow: goodWindow,
       perfect: false,
     );
   }
@@ -1383,18 +1398,6 @@ class _ThreatDirectorBattleStatusDock extends StatelessWidget {
             height: 7,
           ),
         ],
-        if (impactFeedbackLabel != null) ...[
-          const SizedBox(height: 8),
-          Text(
-            impactFeedbackLabel!,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: Theme.of(context).textTheme.labelMedium?.copyWith(
-              color: LightcorePalette.solar,
-              fontWeight: FontWeight.w900,
-            ),
-          ),
-        ],
       ],
     );
     final controls = Wrap(
@@ -1430,6 +1433,16 @@ class _ThreatDirectorBattleStatusDock extends StatelessWidget {
           ),
       ],
     );
+    final feedbackLane = _ThreatDirectorFeedbackLane(
+      label: impactFeedbackLabel,
+      tint: counterWindow ? LightcorePalette.warning : LightcorePalette.solar,
+      compact: compact,
+    );
+    final controlColumn = Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [feedbackLane, const SizedBox(height: 6), controls],
+    );
 
     return AuroraPanel(
       tint: tint,
@@ -1447,7 +1460,7 @@ class _ThreatDirectorBattleStatusDock extends StatelessWidget {
               children: [
                 towerMeter,
                 const SizedBox(height: 10),
-                controls,
+                controlColumn,
                 const SizedBox(height: 10),
                 chips,
               ],
@@ -1459,10 +1472,66 @@ class _ThreatDirectorBattleStatusDock extends StatelessWidget {
               const SizedBox(width: 14),
               Expanded(child: chips),
               const SizedBox(width: 14),
-              Flexible(child: controls),
+              Flexible(child: controlColumn),
             ],
           );
         },
+      ),
+    );
+  }
+}
+
+class _ThreatDirectorFeedbackLane extends StatelessWidget {
+  const _ThreatDirectorFeedbackLane({
+    required this.label,
+    required this.tint,
+    required this.compact,
+  });
+
+  final String? label;
+  final Color tint;
+  final bool compact;
+
+  @override
+  Widget build(BuildContext context) {
+    final active = label != null;
+    return SizedBox(
+      height: compact ? 30 : 28,
+      child: AnimatedOpacity(
+        opacity: active ? 1 : 0,
+        duration: const Duration(milliseconds: 120),
+        child: Align(
+          alignment: Alignment.centerLeft,
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              color: tint.withValues(alpha: 0.16),
+              borderRadius: BorderRadius.circular(999),
+              border: Border.all(color: tint.withValues(alpha: 0.42)),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.priority_high_rounded, size: 14, color: tint),
+                  const SizedBox(width: 6),
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 360),
+                    child: Text(
+                      label ?? '',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                        color: LightcorePalette.mist,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -1549,16 +1618,11 @@ class _ManualSpawnButton extends StatelessWidget {
                     ),
                   ),
                   Positioned.fill(
-                    child: FractionallySizedBox(
-                      alignment: Alignment.centerLeft,
-                      widthFactor: outcome.phase.clamp(0.0, 1.0),
-                      child: DecoratedBox(
-                        decoration: BoxDecoration(
-                          color: timingColor.withValues(
-                            alpha: effectiveEnabled ? 0.32 : 0.14,
-                          ),
-                        ),
-                      ),
+                    child: _ThreatDirectorTimingGuide(
+                      outcome: outcome,
+                      color: timingColor,
+                      enabled: effectiveEnabled,
+                      feedbackActive: feedbackActive,
                     ),
                   ),
                   Positioned(
@@ -1658,6 +1722,168 @@ class _ManualSpawnButton extends StatelessWidget {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _ThreatDirectorTimingGuide extends StatelessWidget {
+  const _ThreatDirectorTimingGuide({
+    required this.outcome,
+    required this.color,
+    required this.enabled,
+    required this.feedbackActive,
+  });
+
+  final _ThreatDirectorLaunchOutcome outcome;
+  final Color color;
+  final bool enabled;
+  final bool feedbackActive;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final width = constraints.maxWidth;
+        final expansion = outcome.phase.clamp(0.0, 1.0).toDouble();
+        final target = outcome.targetPhase.clamp(0.0, 1.0).toDouble();
+        final goodMin = (target - outcome.goodWindow).clamp(0.0, 1.0);
+        final goodMax = (target + outcome.goodWindow).clamp(0.0, 1.0);
+        final perfectMin = (target - outcome.perfectWindow).clamp(0.0, 1.0);
+        final perfectMax = (target + outcome.perfectWindow).clamp(0.0, 1.0);
+        double leftEdgeFor(double value) => ((1 - value) / 2) * width;
+        double rightEdgeFor(double value) => ((1 + value) / 2) * width;
+
+        return Stack(
+          children: [
+            Positioned.fill(
+              child: FractionallySizedBox(
+                alignment: Alignment.center,
+                widthFactor: expansion,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: color.withValues(
+                      alpha: feedbackActive
+                          ? 0.18
+                          : enabled
+                          ? 0.34
+                          : 0.14,
+                    ),
+                    border: Border.symmetric(
+                      vertical: BorderSide(
+                        color: color.withValues(alpha: enabled ? 0.7 : 0.3),
+                        width: 1.4,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            _TimingGuideBand(
+              left: leftEdgeFor(goodMax),
+              right: leftEdgeFor(goodMin),
+              color: LightcorePalette.success.withValues(alpha: 0.12),
+            ),
+            _TimingGuideBand(
+              left: rightEdgeFor(goodMin),
+              right: rightEdgeFor(goodMax),
+              color: LightcorePalette.success.withValues(alpha: 0.12),
+            ),
+            _TimingGuideBand(
+              left: leftEdgeFor(perfectMax),
+              right: leftEdgeFor(perfectMin),
+              color: LightcorePalette.solar.withValues(alpha: 0.2),
+            ),
+            _TimingGuideBand(
+              left: rightEdgeFor(perfectMin),
+              right: rightEdgeFor(perfectMax),
+              color: LightcorePalette.solar.withValues(alpha: 0.2),
+            ),
+            _TimingGuideLine(
+              x: width / 2,
+              color: LightcorePalette.mist.withValues(alpha: 0.28),
+              width: 1,
+            ),
+            _TimingGuideLine(
+              x: leftEdgeFor(target),
+              color: LightcorePalette.solar.withValues(alpha: 0.95),
+              width: 2,
+            ),
+            _TimingGuideLine(
+              x: rightEdgeFor(target),
+              color: LightcorePalette.solar.withValues(alpha: 0.95),
+              width: 2,
+            ),
+            _TimingGuideLine(
+              x: leftEdgeFor(goodMin),
+              color: LightcorePalette.success.withValues(alpha: 0.72),
+              width: 1,
+            ),
+            _TimingGuideLine(
+              x: leftEdgeFor(goodMax),
+              color: LightcorePalette.success.withValues(alpha: 0.72),
+              width: 1,
+            ),
+            _TimingGuideLine(
+              x: rightEdgeFor(goodMin),
+              color: LightcorePalette.success.withValues(alpha: 0.72),
+              width: 1,
+            ),
+            _TimingGuideLine(
+              x: rightEdgeFor(goodMax),
+              color: LightcorePalette.success.withValues(alpha: 0.72),
+              width: 1,
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _TimingGuideBand extends StatelessWidget {
+  const _TimingGuideBand({
+    required this.left,
+    required this.right,
+    required this.color,
+  });
+
+  final double left;
+  final double right;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Positioned(
+      left: math.min(left, right),
+      width: math.max(0.0, (right - left).abs()),
+      top: 0,
+      bottom: 0,
+      child: ColoredBox(color: color),
+    );
+  }
+}
+
+class _TimingGuideLine extends StatelessWidget {
+  const _TimingGuideLine({
+    required this.x,
+    required this.color,
+    required this.width,
+  });
+
+  final double x;
+  final Color color;
+  final double width;
+
+  @override
+  Widget build(BuildContext context) {
+    return Positioned(
+      left: x - (width / 2),
+      top: 0,
+      bottom: 0,
+      child: SizedBox(
+        width: width,
+        child: ColoredBox(color: color),
       ),
     );
   }
