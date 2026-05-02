@@ -700,18 +700,19 @@ extension LightcoreControllerCombatEnemies on LightcoreController {
     final jamStrength =
         _balancedEnemyStat(config, 'jamStrength', config.jamStrength) *
         (1 + ((source.level - 1) * 0.08));
-    final angularVelocity =
-        max(
-          0.12,
-          _balancedEnemyStat(
-                config,
-                'baseSpiralDrift',
-                config.baseSpiralDrift,
-              ) +
-              angularJitter,
-        ) *
-        (splitDepth > 0 ? 1.18 : 1) *
-        (config.isBoss ? 0.82 : 1.0);
+    final angularVelocity = _enemySpiralMovementEnabled
+        ? max(
+                0.12,
+                _balancedEnemyStat(
+                      config,
+                      'baseSpiralDrift',
+                      config.baseSpiralDrift,
+                    ) +
+                    angularJitter,
+              ) *
+              (splitDepth > 0 ? 1.18 : 1) *
+              (config.isBoss ? 0.82 : 1.0)
+        : 0.0;
 
     return EnemyState(
       id: 'enemy_${_enemyCounter++}',

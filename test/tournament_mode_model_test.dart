@@ -310,6 +310,67 @@ void main() {
     },
   );
 
+  test('threat director manual enemies move straight inward', () {
+    final controller = LightcoreController();
+    addTearDown(controller.dispose);
+
+    controller.configureThreatDirectorDungeonBattle(
+      towerLevel: 1,
+      enemyDraft: [
+        EnemyCardState(
+          config: EnemyLibrary.basicWhite,
+          unlocked: true,
+          copies: 1,
+          level: 1,
+        ),
+      ],
+      bossDraft: EnemyCardState(
+        config: BossEnemyLibrary.starterWhiteWarden,
+        unlocked: true,
+        copies: 1,
+        level: 20,
+      ),
+    );
+
+    expect(
+      controller.spawnManualBattleEnemy(
+        cardId: BossEnemyLibrary.starterWhiteWarden.id,
+        boss: true,
+      ),
+      isTrue,
+    );
+    final spawned = controller.enemies.single;
+    expect(spawned.angularVelocity, 0);
+
+    controller.tick(0.5);
+
+    final advanced = controller.enemies.single;
+    expect(advanced.angle, closeTo(spawned.angle, 0.000001));
+    expect(advanced.radius, lessThan(spawned.radius));
+  });
+
+  test('prism rift dungeon keeps spiral enemy movement', () {
+    final controller = LightcoreController();
+    addTearDown(controller.dispose);
+
+    controller.configurePrismRiftDungeonBattle(
+      towerLevel: 1,
+      enemyDraft: [
+        EnemyCardState(
+          config: EnemyLibrary.basicWhite,
+          unlocked: true,
+          copies: 1,
+          level: 1,
+        ),
+      ],
+    );
+
+    controller.tick(0.2);
+
+    expect(controller.enemies, isNotEmpty);
+    expect(controller.enemies.first.angularVelocity, greaterThan(0));
+  });
+
   test('manual battle relay listener fires only on impact', () {
     final relayHits = <String>[];
     final controller = LightcoreController(

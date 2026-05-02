@@ -171,6 +171,7 @@ extension LightcoreControllerBattleResetActions on LightcoreController {
     _outerRingRevealed = false;
     _swarmActivated = false;
     _battleSpawnPolicy = LightcoreBattleSpawnPolicy.automatic;
+    _enemySpiralMovementEnabled = true;
     _lastEnemyPackPulls = <PackPullResult>[];
     _lastBossPackPulls = <PackPullResult>[];
     _battlePasses = _createBattlePassMap();
