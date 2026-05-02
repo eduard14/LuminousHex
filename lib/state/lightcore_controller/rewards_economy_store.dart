@@ -244,7 +244,7 @@ extension LightcoreControllerEconomyStore on LightcoreController {
       return 'Clear once to quick clear';
     }
     if (dailyDungeonQuickClearsRemaining <= 0) {
-      return 'Quick clears used';
+      return 'Daily clears used';
     }
     return 'Quick Clear • ${reward.label}';
   }
@@ -258,7 +258,7 @@ extension LightcoreControllerEconomyStore on LightcoreController {
       if (showBanner) {
         _showBanner(
           isDailyDungeonTowerLevelCleared(towerLevel)
-              ? 'Daily quick clears are used for today.'
+              ? 'Daily clears are used for today.'
               : 'Clear Daily Tower Lv $towerLevel once before quick clearing it.',
         );
         _notifyNow();
@@ -283,7 +283,7 @@ extension LightcoreControllerEconomyStore on LightcoreController {
       _showBanner(
         [
           'Daily Tower Lv $towerLevel quick cleared: ${reward.label}.',
-          '$dailyDungeonQuickClearsRemaining quick clears remain today.',
+          '$dailyDungeonQuickClearsRemaining daily clears remain today.',
           ...<String?>[levelUpBanner].whereType<String>(),
         ].join(' '),
       );
@@ -306,21 +306,47 @@ extension LightcoreControllerEconomyStore on LightcoreController {
     }
 
     if (isDailyDungeonTowerLevelCleared(towerLevel)) {
-      final replayReward = LightcoreDailyDungeonReward(
-        towerLevel: towerLevel,
-        lumens: 0,
-        flux: 0,
-        shellCores: 0,
-        managerShards: 0,
-        threatScans: 0,
-        experience: 0,
-      );
+      _refreshDailyDungeonQuickClearsForToday();
+      final replayReward = dailyDungeonQuickClearsRemaining > 0
+          ? dailyDungeonQuickClearRewardForLevel(towerLevel)
+          : LightcoreDailyDungeonReward(
+              towerLevel: towerLevel,
+              lumens: 0,
+              flux: 0,
+              shellCores: 0,
+              managerShards: 0,
+              threatScans: 0,
+              experience: 0,
+            );
+      String? levelUpBanner;
+      if (replayReward.hasRewards) {
+        final previousExperience = progressionExperience;
+        lumens += replayReward.lumens;
+        flux += replayReward.flux;
+        managerShards += replayReward.managerShards;
+        shellCores += replayReward.shellCores;
+        enemyTickets += replayReward.threatScans;
+        experience += _boostedExperienceReward(replayReward.experience);
+        _dailyDungeonQuickClearsUsed += 1;
+        levelUpBanner = _handleOverallLevelIncrease(
+          previousExperience: previousExperience,
+          currentExperience: progressionExperience,
+        );
+      }
       if (showBanner) {
         _showBanner(
-          'Daily Tower Lv $towerLevel already cleared. Push Lv $_dailyDungeonHighestUnlockedTowerLevel for the next first-clear reward.',
+          [
+            replayReward.hasRewards
+                ? 'Daily Tower Lv $towerLevel daily cleared: ${replayReward.label}.'
+                : 'Daily Tower Lv $towerLevel already cleared. Push Lv $_dailyDungeonHighestUnlockedTowerLevel for the next first-pass reward.',
+            if (replayReward.hasRewards)
+              '$dailyDungeonQuickClearsRemaining daily clears remain today.',
+            ...<String?>[levelUpBanner].whereType<String>(),
+          ].join(' '),
         );
-        _notifyNow();
       }
+      _syncTutorialStep(showBanner: false);
+      _notifyNow();
       return replayReward;
     }
 

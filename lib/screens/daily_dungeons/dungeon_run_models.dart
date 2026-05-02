@@ -8,6 +8,8 @@ class _DungeonRunResult {
 
 enum _DailyDungeonBattleRoute { threatDirector, prismRift }
 
+enum _DungeonRunFailureReason { expired, coreCollapsed }
+
 class _DailyDungeonBattleModeDefinition {
   const _DailyDungeonBattleModeDefinition({
     required this.route,
@@ -143,6 +145,11 @@ class _DailyDungeonBattleRunScreenState
   late final int _targetKills;
   Timer? _timer;
   final Map<String, double> _manualSpawnCooldowns = <String, double>{};
+  late double _targetTowerMaxHealth;
+  late double _targetTowerHealth;
+  LightcoreDailyDungeonReward? _resultReward;
+  _DungeonRunFailureReason? _failureReason;
+  int _manualLaunchCount = 0;
   double _remainingSeconds = _timeLimit.inSeconds.toDouble();
   Offset _riftAimDirection = const Offset(0, -1);
   bool _running = true;
@@ -166,6 +173,8 @@ class _DailyDungeonBattleRunScreenState
     );
     _startingKills = _battleController.kills;
     _targetKills = _battleKillTarget();
+    _targetTowerMaxHealth = _towerProfile.maxHealth;
+    _targetTowerHealth = _targetTowerMaxHealth;
     _timer = Timer.periodic(_tickRate, (_) => _advanceRun());
   }
 
@@ -214,11 +223,30 @@ class _DailyDungeonBattleRunScreenState
 
   bool get _usesManualEnemySpawns => _mode.usesManualEnemySpawns;
 
+  bool get _isThreatDirector =>
+      widget.route == _DailyDungeonBattleRoute.threatDirector;
+
   double get _timeProgress =>
       (_remainingSeconds / _timeLimit.inSeconds).clamp(0.0, 1.0).toDouble();
 
   double get _coreIntegrity =>
       (_battleController.coreState.coreStability / 100).clamp(0.0, 1.0);
+
+  double get _targetTowerIntegrity =>
+      (_targetTowerHealth / math.max(1.0, _targetTowerMaxHealth))
+          .clamp(0.0, 1.0)
+          .toDouble();
+
+  double _raidDamageFor(EnemyCardState card, {required bool boss}) {
+    return widget.controller.dailyDungeonRaidTotalDamage(card, apex: boss);
+  }
+
+  void _damageTargetTower(double damage) {
+    if (!_isThreatDirector || !_running || damage <= 0) {
+      return;
+    }
+    _targetTowerHealth = math.max(0.0, _targetTowerHealth - damage);
+  }
 
   void _handlePrismRiftAimChanged(Offset direction) {
     if (!_running || direction.distance <= 0.001) {
@@ -270,6 +298,8 @@ class _DailyDungeonBattleRunScreenState
     );
     if (spawned && mounted) {
       setState(() {
+        _manualLaunchCount += 1;
+        _damageTargetTower(_raidDamageFor(card, boss: false));
         _manualSpawnCooldowns[_manualSpawnCooldownKey(card, boss: false)] =
             _anomalySpawnCooldownSeconds;
       });
@@ -286,6 +316,8 @@ class _DailyDungeonBattleRunScreenState
     );
     if (spawned && mounted) {
       setState(() {
+        _manualLaunchCount += 1;
+        _damageTargetTower(_raidDamageFor(card, boss: true));
         _manualSpawnCooldowns[_manualSpawnCooldownKey(card, boss: true)] =
             _apexSpawnCooldownSeconds;
       });
@@ -298,7 +330,9 @@ class _DailyDungeonBattleRunScreenState
     }
     final tickSeconds = _tickRate.inMilliseconds / 1000;
     final nextRemaining = math.max(0.0, _remainingSeconds - tickSeconds);
-    final cleared = _runKills >= _targetKills;
+    final cleared = _isThreatDirector
+        ? _targetTowerHealth <= 0
+        : _runKills >= _targetKills;
     final collapsed = _battleController.coreState.coreStability <= 0.5;
     final expired = !cleared && nextRemaining <= 0;
     setState(() {
@@ -310,11 +344,21 @@ class _DailyDungeonBattleRunScreenState
       }
     });
     if (cleared || collapsed || expired) {
-      _finishRun(cleared: cleared);
+      _finishRun(
+        cleared: cleared,
+        failureReason: cleared
+            ? null
+            : collapsed
+            ? _DungeonRunFailureReason.coreCollapsed
+            : _DungeonRunFailureReason.expired,
+      );
     }
   }
 
-  void _finishRun({required bool cleared}) {
+  void _finishRun({
+    required bool cleared,
+    _DungeonRunFailureReason? failureReason,
+  }) {
     if (!_running || !mounted) {
       return;
     }
@@ -323,6 +367,7 @@ class _DailyDungeonBattleRunScreenState
       _running = false;
       _victory = cleared;
       _expired = !cleared;
+      _failureReason = failureReason;
     });
     _handleRunEnded(cleared: cleared);
   }
@@ -344,16 +389,84 @@ class _DailyDungeonBattleRunScreenState
         showBanner: false,
       );
     }
+    _resultReward = reward;
     final nextLevel = widget.controller.dailyDungeonHighestUnlockedTowerLevel;
-    final clearMessage = reward != null && reward.hasRewards
-        ? '$_title ${_mode.clearVerb}: ${reward.label}. Lv $nextLevel unlocked.'
-        : '$_title ${_mode.clearVerb}. Lv $nextLevel is ready.';
+    final rewardMessage = reward != null && reward.hasRewards
+        ? ': ${reward.label}.'
+        : '.';
+    final clearMessage = _isThreatDirector
+        ? '$_title tower broken$rewardMessage Lv $nextLevel is ready.'
+        : '$_title ${_mode.clearVerb}$rewardMessage Lv $nextLevel is ready.';
     widget.controller.pushNotification(
-      cleared
-          ? clearMessage
-          : '$_title ${_mode.failVerb}. Upgrade the tower ladder or change the anomaly draft.',
+      cleared ? clearMessage : _failureNotificationMessage,
       duration: 3.2,
     );
+  }
+
+  String get _failureNotificationMessage {
+    if (_failureReason == _DungeonRunFailureReason.coreCollapsed) {
+      return '$_title failed: core stability collapsed before the target tower broke.';
+    }
+    if (_isThreatDirector && _manualLaunchCount < 3) {
+      return '$_title held. Launch anomalies more aggressively before the timer expires.';
+    }
+    return '$_title ${_mode.failVerb}. Upgrade anomalies or change the battle loadout.';
+  }
+
+  String? get _resultSuccessTitle {
+    if (_isThreatDirector) {
+      return 'Tower Broken';
+    }
+    return _mode.successTitle;
+  }
+
+  String? get _resultFailureTitle {
+    if (_failureReason == _DungeonRunFailureReason.coreCollapsed) {
+      return 'Core Collapsed';
+    }
+    if (_isThreatDirector) {
+      return 'Tower Held';
+    }
+    return _expired ? 'Run Expired' : null;
+  }
+
+  String get _resultSuccessMessage {
+    final reward = _resultReward;
+    final rewardText = reward != null && reward.hasRewards
+        ? ' Reward: ${reward.label}.'
+        : '';
+    if (_isThreatDirector) {
+      return 'Your anomalies broke $_title through the target tower health bar.$rewardText';
+    }
+    return '$_title cleared through the battle field. The next level is ready from the dungeon menu.$rewardText';
+  }
+
+  String get _resultFailureMessage {
+    if (_failureReason == _DungeonRunFailureReason.coreCollapsed) {
+      return 'Core Stability collapsed before the target broke. Use lower-pressure anomalies or keep launches spaced out.';
+    }
+    if (_isThreatDirector && _manualLaunchCount < 3) {
+      return 'The target tower held because too few anomalies were launched. Keep the anomaly buttons on cooldown and use stronger cards.';
+    }
+    if (_isThreatDirector) {
+      return 'The target tower held with ${(_targetTowerIntegrity * 100).ceil()}% integrity. Upgrade anomalies, add an Apex, or launch faster.';
+    }
+    return '$_title held. Upgrade anomalies or change the battle loadout before the next run.';
+  }
+
+  List<String> get _resultDetails {
+    if (_isThreatDirector) {
+      return <String>[
+        'Tower ${(_targetTowerIntegrity * 100).round()}%',
+        'Launched $_manualLaunchCount',
+        '${_remainingSeconds.ceil()}s left',
+      ];
+    }
+    return <String>[
+      'Clears $_runKills/$_targetKills',
+      'Core ${(_coreIntegrity * 100).round()}%',
+      '${_remainingSeconds.ceil()}s left',
+    ];
   }
 
   @override
@@ -409,6 +522,9 @@ class _DailyDungeonBattleRunScreenState
                       remainingSeconds: _remainingSeconds,
                       timeProgress: _timeProgress,
                       coreIntegrity: _coreIntegrity,
+                      targetIntegrity: _isThreatDirector
+                          ? _targetTowerIntegrity
+                          : null,
                       onExit: _exitRun,
                     ),
                   ),
@@ -442,10 +558,15 @@ class _DailyDungeonBattleRunScreenState
                             towerProfile: _towerProfile,
                             anomalyCards: widget.anomalyCards,
                             apexCard: widget.apexCard,
+                            targetTowerHealth: _targetTowerHealth,
+                            targetTowerMaxHealth: _targetTowerMaxHealth,
                             runKills: _runKills,
-                            targetKills: _targetKills,
                             coreIntegrity: _coreIntegrity,
                             running: _running,
+                            damageForAnomaly: (card) =>
+                                _raidDamageFor(card, boss: false),
+                            damageForApex: (card) =>
+                                _raidDamageFor(card, boss: true),
                             cooldownForAnomaly: (card) =>
                                 _manualSpawnCooldownFor(card, boss: false),
                             cooldownForApex: (card) =>
@@ -475,12 +596,11 @@ class _DailyDungeonBattleRunScreenState
                           child: _DungeonResultPanel(
                             victory: _victory,
                             towerLevel: widget.towerLevel,
-                            successTitle: _mode.successTitle,
-                            failureTitle: _expired ? 'Run Expired' : null,
-                            successMessage:
-                                '$_title cleared through the battle field. The next level is ready from the dungeon menu.',
-                            failureMessage:
-                                '$_title held. Upgrade anomalies or change the battle loadout before the next run.',
+                            successTitle: _resultSuccessTitle,
+                            failureTitle: _resultFailureTitle,
+                            successMessage: _resultSuccessMessage,
+                            failureMessage: _resultFailureMessage,
+                            details: _resultDetails,
                             onExit: _exitRun,
                           ),
                         ),
@@ -505,6 +625,7 @@ class _DailyDungeonBattleTopBar extends StatelessWidget {
     required this.timeProgress,
     required this.coreIntegrity,
     required this.onExit,
+    this.targetIntegrity,
   });
 
   final String title;
@@ -514,6 +635,7 @@ class _DailyDungeonBattleTopBar extends StatelessWidget {
   final double timeProgress;
   final double coreIntegrity;
   final VoidCallback onExit;
+  final double? targetIntegrity;
 
   @override
   Widget build(BuildContext context) {
@@ -562,6 +684,16 @@ class _DailyDungeonBattleTopBar extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(width: 8),
+                    if (targetIntegrity != null) ...[
+                      Expanded(
+                        child: MeterBar(
+                          value: targetIntegrity!,
+                          color: LightcorePalette.warning,
+                          height: 8,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                    ],
                     Expanded(
                       child: MeterBar(
                         value: coreIntegrity,
@@ -683,10 +815,13 @@ class _ThreatDirectorBattleStatusDock extends StatelessWidget {
     required this.towerProfile,
     required this.anomalyCards,
     required this.apexCard,
+    required this.targetTowerHealth,
+    required this.targetTowerMaxHealth,
     required this.runKills,
-    required this.targetKills,
     required this.coreIntegrity,
     required this.running,
+    required this.damageForAnomaly,
+    required this.damageForApex,
     required this.cooldownForAnomaly,
     required this.cooldownForApex,
     required this.canSpawnAnomaly,
@@ -700,10 +835,13 @@ class _ThreatDirectorBattleStatusDock extends StatelessWidget {
   final LightcoreDailyDungeonTowerProfile towerProfile;
   final List<EnemyCardState> anomalyCards;
   final EnemyCardState? apexCard;
+  final double targetTowerHealth;
+  final double targetTowerMaxHealth;
   final int runKills;
-  final int targetKills;
   final double coreIntegrity;
   final bool running;
+  final double Function(EnemyCardState card) damageForAnomaly;
+  final double Function(EnemyCardState card) damageForApex;
   final double Function(EnemyCardState card) cooldownForAnomaly;
   final double Function(EnemyCardState card) cooldownForApex;
   final bool Function(EnemyCardState card) canSpawnAnomaly;
@@ -714,6 +852,10 @@ class _ThreatDirectorBattleStatusDock extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cards = anomalyCards.take(3).toList(growable: false);
+    final targetIntegrity =
+        (targetTowerHealth / math.max(1.0, targetTowerMaxHealth))
+            .clamp(0.0, 1.0)
+            .toDouble();
     final chips = Wrap(
       spacing: 8,
       runSpacing: 8,
@@ -732,14 +874,37 @@ class _ThreatDirectorBattleStatusDock extends StatelessWidget {
           tint: towerProfile.affinity.color,
         ),
         _InfoChip(
-          icon: Icons.gps_fixed_rounded,
-          label: '$runKills/$targetKills clears',
+          icon: Icons.account_tree_rounded,
+          label:
+              '${targetTowerHealth.ceil().clamp(0, targetTowerMaxHealth.ceil())}/${targetTowerMaxHealth.round()} tower',
           tint: LightcorePalette.aether,
         ),
         _InfoChip(
           icon: Icons.health_and_safety_rounded,
           label: '${(coreIntegrity * 100).round()}% core',
           tint: tint,
+        ),
+        _InfoChip(
+          icon: Icons.gps_fixed_rounded,
+          label: '$runKills field clears',
+          tint: LightcorePalette.solar,
+        ),
+      ],
+    );
+    final towerMeter = Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _MeterLabelRow(
+          label: 'Target Tower',
+          value:
+              '${targetTowerHealth.ceil().clamp(0, targetTowerMaxHealth.ceil())}/${targetTowerMaxHealth.round()}',
+        ),
+        const SizedBox(height: 5),
+        MeterBar(
+          value: targetIntegrity,
+          color: LightcorePalette.warning,
+          height: 9,
         ),
       ],
     );
@@ -754,6 +919,7 @@ class _ThreatDirectorBattleStatusDock extends StatelessWidget {
             label: card.config.affinity.shortLabel,
             icon: Icons.play_arrow_rounded,
             tint: card.config.affinity.color,
+            damage: damageForAnomaly(card),
             cooldown: cooldownForAnomaly(card),
             enabled: canSpawnAnomaly(card),
             onPressed: onSpawnAnomaly,
@@ -764,6 +930,7 @@ class _ThreatDirectorBattleStatusDock extends StatelessWidget {
             label: 'APEX',
             icon: Icons.shield_moon_rounded,
             tint: LightcorePalette.solar,
+            damage: damageForApex(apexCard!),
             cooldown: cooldownForApex(apexCard!),
             enabled: canSpawnApex(apexCard!),
             onPressed: onSpawnApex,
@@ -784,14 +951,22 @@ class _ThreatDirectorBattleStatusDock extends StatelessWidget {
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
-              children: [controls, const SizedBox(height: 10), chips],
+              children: [
+                towerMeter,
+                const SizedBox(height: 10),
+                controls,
+                const SizedBox(height: 10),
+                chips,
+              ],
             );
           }
           return Row(
             children: [
+              SizedBox(width: 210, child: towerMeter),
+              const SizedBox(width: 14),
               Expanded(child: chips),
               const SizedBox(width: 14),
-              controls,
+              Flexible(child: controls),
             ],
           );
         },
@@ -806,6 +981,7 @@ class _ManualSpawnButton extends StatelessWidget {
     required this.label,
     required this.icon,
     required this.tint,
+    required this.damage,
     required this.cooldown,
     required this.enabled,
     required this.onPressed,
@@ -815,6 +991,7 @@ class _ManualSpawnButton extends StatelessWidget {
   final String label;
   final IconData icon;
   final Color tint;
+  final double damage;
   final double cooldown;
   final bool enabled;
   final ValueChanged<EnemyCardState> onPressed;
@@ -823,27 +1000,80 @@ class _ManualSpawnButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final cooldownActive = cooldown > 0;
     final effectiveEnabled = enabled && !cooldownActive;
+    final damageLabel = damage >= 1000
+        ? '${(damage / 1000).toStringAsFixed(damage >= 10000 ? 0 : 1)}K'
+        : damage.round().toString();
     return Tooltip(
       message: 'Launch ${card.config.name}',
       child: SizedBox(
-        height: 40,
-        child: FilledButton.icon(
+        width: 132,
+        height: 64,
+        child: FilledButton(
           style: FilledButton.styleFrom(
             backgroundColor: effectiveEnabled
-                ? tint
+                ? tint.withValues(alpha: 0.92)
                 : LightcorePalette.stroke.withValues(alpha: 0.24),
             foregroundColor: effectiveEnabled
                 ? LightcorePalette.night
                 : LightcorePalette.mist.withValues(alpha: 0.56),
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            visualDensity: VisualDensity.compact,
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 7),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
           ),
           onPressed: effectiveEnabled ? () => onPressed(card) : null,
-          icon: Icon(icon, size: 18),
-          label: Text(
-            cooldownActive ? '${cooldown.ceil()}s' : label,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
+          child: Row(
+            children: [
+              _DungeonEnemyPortrait(
+                card: card,
+                size: 44,
+                selected: effectiveEnabled,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(icon, size: 14),
+                        const SizedBox(width: 3),
+                        Flexible(
+                          child: Text(
+                            cooldownActive ? '${cooldown.ceil()}s' : label,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: Theme.of(context).textTheme.labelLarge
+                                ?.copyWith(
+                                  color: effectiveEnabled
+                                      ? LightcorePalette.night
+                                      : LightcorePalette.mist.withValues(
+                                          alpha: 0.56,
+                                        ),
+                                  fontWeight: FontWeight.w900,
+                                ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      '$damageLabel dmg',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        color: effectiveEnabled
+                            ? LightcorePalette.night.withValues(alpha: 0.78)
+                            : LightcorePalette.mist.withValues(alpha: 0.42),
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
         ),
       ),

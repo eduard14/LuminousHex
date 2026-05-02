@@ -3,6 +3,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import '../models/enemy_art_assets.dart';
 import '../models/lightcore_state.dart';
 import '../models/lightcore_types.dart';
 import '../state/lightcore_controller.dart';
@@ -159,7 +160,7 @@ class _DailyDungeonsScreenState extends State<DailyDungeonsScreen> {
               instruction:
                   'Click a route card to open its setup. Threat Director uses your anomaly roster; Prism Rift uses a fixed battle route.',
               detail:
-                  'Daily clears share the tower ladder, first-clear rewards, and quick-clear limit.',
+                  'Daily clears share the tower ladder, first-pass rewards, and daily-clear limit.',
               icon: Icons.explore_rounded,
               tint: LightcorePalette.aether,
             ),
@@ -235,6 +236,9 @@ class _DailyDungeonsScreenState extends State<DailyDungeonsScreen> {
     final selectedCards = _selectedAnomalyCards(controller, ownedCards);
     final selectedApex = _selectedApexCard(controller);
     final reward = controller.dailyDungeonRewardForLevel(selectedLevel);
+    final dailyReward = controller.dailyDungeonQuickClearRewardForLevel(
+      selectedLevel,
+    );
     final requiredCount = math.min(_requiredAnomalyCount, ownedCards.length);
     final readyToEnter =
         selectedCards.length >= requiredCount && selectedCards.isNotEmpty;
@@ -265,7 +269,7 @@ class _DailyDungeonsScreenState extends State<DailyDungeonsScreen> {
                     Text('Threat Director', style: textTheme.titleLarge),
                     const SizedBox(height: 4),
                     Text(
-                      'Choose a tower level and lock a three-anomaly deck. Clear the shared battle arena before the route timer expires.',
+                      'Choose a tower level and lock a three-anomaly deck. Launch anomalies to break the target tower before the route timer expires.',
                       style: textTheme.bodyMedium?.copyWith(
                         color: LightcorePalette.mist.withValues(alpha: 0.78),
                       ),
@@ -286,7 +290,7 @@ class _DailyDungeonsScreenState extends State<DailyDungeonsScreen> {
                 ? 'Click anomaly cards below to swap the loadout, then enter the level when the deck is ready.'
                 : 'Click anomaly cards below until $requiredCount are selected, then enter the level.',
             detail:
-                'Selected anomalies become manual spawn buttons in the shared battle arena. Stronger anomaly levels make clears faster.',
+                'Selected anomalies become launch buttons in the shared battle arena. Stronger anomaly levels deal more tower damage.',
             icon: Icons.adjust_rounded,
             tint: LightcorePalette.warning,
           ),
@@ -311,6 +315,7 @@ class _DailyDungeonsScreenState extends State<DailyDungeonsScreen> {
             timeProgress: 1,
             strongestRaidDamage: strongestDamage,
             reward: reward,
+            dailyReward: dailyReward,
             cleared: controller.isDailyDungeonTowerLevelCleared(selectedLevel),
             running: false,
             victory: false,
@@ -470,6 +475,9 @@ class _DailyDungeonsScreenState extends State<DailyDungeonsScreen> {
       selectedLevel,
     );
     final reward = controller.dailyDungeonRewardForLevel(selectedLevel);
+    final dailyReward = controller.dailyDungeonQuickClearRewardForLevel(
+      selectedLevel,
+    );
     final riftStability = _prismRiftMaxStabilityFor(towerProfile);
 
     return AuroraPanel(
@@ -493,7 +501,7 @@ class _DailyDungeonsScreenState extends State<DailyDungeonsScreen> {
                     Text('Prism Rift', style: textTheme.titleLarge),
                     const SizedBox(height: 4),
                     Text(
-                      'Rift clears now run through the shared battle field with a prism-biased tower loadout and the same first-clear reward track.',
+                      'Rift clears now run through the shared battle field with a prism-biased tower loadout and the same first-pass reward track.',
                       style: textTheme.bodyMedium?.copyWith(
                         color: LightcorePalette.mist.withValues(alpha: 0.78),
                       ),
@@ -530,6 +538,7 @@ class _DailyDungeonsScreenState extends State<DailyDungeonsScreen> {
             towerProfile: towerProfile,
             towerLevel: selectedLevel,
             reward: reward,
+            dailyReward: dailyReward,
             riftStability: riftStability,
             cleared: controller.isDailyDungeonTowerLevelCleared(selectedLevel),
           ),

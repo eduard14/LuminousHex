@@ -28,7 +28,7 @@ class _DungeonLoadoutTile extends StatelessWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _IconBadge(icon: Icons.adjust_rounded, tint: tint),
+              _DungeonEnemyPortrait(card: card, size: 54, selected: selected),
               const SizedBox(width: 10),
               Expanded(
                 child: Column(
@@ -66,7 +66,7 @@ class _DungeonLoadoutTile extends StatelessWidget {
             children: [
               _InfoChip(
                 icon: Icons.whatshot_rounded,
-                label: '${totalDamage.round()} threat',
+                label: '${totalDamage.round()} tower damage',
                 tint: tint,
               ),
               _InfoChip(
@@ -200,6 +200,57 @@ class _ApexLoadoutChip extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _DungeonEnemyPortrait extends StatelessWidget {
+  const _DungeonEnemyPortrait({
+    required this.card,
+    this.size = 48,
+    this.selected = false,
+  });
+
+  final EnemyCardState card;
+  final double size;
+  final bool selected;
+
+  @override
+  Widget build(BuildContext context) {
+    final tint =
+        card.config.secondaryAffinity?.color ?? card.config.affinity.color;
+    final assetPath = enemyImageAssetForConfig(card.config);
+    return Container(
+      width: size,
+      height: size,
+      padding: EdgeInsets.all(size * 0.06),
+      decoration: BoxDecoration(
+        color: LightcorePalette.night.withValues(alpha: 0.58),
+        borderRadius: BorderRadius.circular(size * 0.22),
+        border: Border.all(
+          color: tint.withValues(alpha: selected ? 0.84 : 0.46),
+          width: selected ? 2 : 1,
+        ),
+        boxShadow: [
+          if (selected)
+            BoxShadow(
+              color: tint.withValues(alpha: 0.24),
+              blurRadius: 14,
+              spreadRadius: -4,
+            ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(size * 0.17),
+        child: assetPath == null
+            ? Icon(Icons.adjust_rounded, color: tint, size: size * 0.48)
+            : Image.asset(
+                assetPath,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) =>
+                    Icon(Icons.adjust_rounded, color: tint, size: size * 0.48),
+              ),
       ),
     );
   }

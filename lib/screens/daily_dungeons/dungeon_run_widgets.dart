@@ -9,6 +9,7 @@ class _DungeonResultPanel extends StatelessWidget {
     this.failureTitle,
     this.successMessage,
     this.failureMessage,
+    this.details = const <String>[],
   });
 
   final bool victory;
@@ -18,6 +19,7 @@ class _DungeonResultPanel extends StatelessWidget {
   final String? failureTitle;
   final String? successMessage;
   final String? failureMessage;
+  final List<String> details;
 
   @override
   Widget build(BuildContext context) {
@@ -57,6 +59,18 @@ class _DungeonResultPanel extends StatelessWidget {
                 color: LightcorePalette.mist.withValues(alpha: 0.78),
               ),
             ),
+            if (details.isNotEmpty) ...[
+              const SizedBox(height: 14),
+              Wrap(
+                alignment: WrapAlignment.center,
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  for (final detail in details)
+                    _StatusCapsule(label: detail, tint: tint),
+                ],
+              ),
+            ],
             const SizedBox(height: 16),
             FilledButton.icon(
               onPressed: onExit,

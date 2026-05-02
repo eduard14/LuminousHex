@@ -148,6 +148,7 @@ class _TargetTowerPanel extends StatelessWidget {
     required this.timeProgress,
     required this.strongestRaidDamage,
     required this.reward,
+    required this.dailyReward,
     required this.cleared,
     required this.running,
     required this.victory,
@@ -164,6 +165,7 @@ class _TargetTowerPanel extends StatelessWidget {
   final double timeProgress;
   final double strongestRaidDamage;
   final LightcoreDailyDungeonReward reward;
+  final LightcoreDailyDungeonReward dailyReward;
   final bool cleared;
   final bool running;
   final bool victory;
@@ -211,14 +213,25 @@ class _TargetTowerPanel extends StatelessWidget {
                           const SizedBox(height: 2),
                           Text(
                             cleared
-                                ? 'First clear secured'
-                                : 'First-clear reward ${reward.label}',
+                                ? 'Daily clear reward ${dailyReward.label}'
+                                : 'First pass reward ${reward.label}',
                             style: textTheme.bodySmall?.copyWith(
                               color: LightcorePalette.mist.withValues(
                                 alpha: 0.68,
                               ),
                             ),
                           ),
+                          if (!cleared) ...[
+                            const SizedBox(height: 2),
+                            Text(
+                              'Daily clear after first pass ${dailyReward.label}',
+                              style: textTheme.bodySmall?.copyWith(
+                                color: LightcorePalette.mist.withValues(
+                                  alpha: 0.52,
+                                ),
+                              ),
+                            ),
+                          ],
                         ],
                       ),
                     ),
@@ -267,7 +280,7 @@ class _TargetTowerPanel extends StatelessWidget {
                     ),
                     _InfoChip(
                       icon: Icons.whatshot_rounded,
-                      label: '${strongestRaidDamage.round()} top threat',
+                      label: '${strongestRaidDamage.round()} top damage',
                       tint: tint,
                     ),
                   ],

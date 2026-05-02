@@ -666,7 +666,11 @@ void main() {
       showBanner: false,
     );
     expect(replayReward, isNotNull);
-    expect(replayReward!.hasRewards, isFalse);
+    expect(replayReward!.hasRewards, isTrue);
+    expect(
+      replayReward.lumens,
+      controller.dailyDungeonQuickClearRewardForLevel(1).lumens,
+    );
   });
 
   test('daily dungeon quick clears grant shell cores three times per day', () {

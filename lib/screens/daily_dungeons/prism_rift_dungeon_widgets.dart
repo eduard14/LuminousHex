@@ -5,6 +5,7 @@ class _PrismRiftPreviewPanel extends StatelessWidget {
     required this.towerProfile,
     required this.towerLevel,
     required this.reward,
+    required this.dailyReward,
     required this.riftStability,
     required this.cleared,
   });
@@ -12,6 +13,7 @@ class _PrismRiftPreviewPanel extends StatelessWidget {
   final LightcoreDailyDungeonTowerProfile towerProfile;
   final int towerLevel;
   final LightcoreDailyDungeonReward reward;
+  final LightcoreDailyDungeonReward dailyReward;
   final double riftStability;
   final bool cleared;
 
@@ -58,14 +60,25 @@ class _PrismRiftPreviewPanel extends StatelessWidget {
                           const SizedBox(height: 2),
                           Text(
                             cleared
-                                ? 'First clear secured'
-                                : 'First-clear reward ${reward.label}',
+                                ? 'Daily clear reward ${dailyReward.label}'
+                                : 'First pass reward ${reward.label}',
                             style: textTheme.bodySmall?.copyWith(
                               color: LightcorePalette.mist.withValues(
                                 alpha: 0.68,
                               ),
                             ),
                           ),
+                          if (!cleared) ...[
+                            const SizedBox(height: 2),
+                            Text(
+                              'Daily clear after first pass ${dailyReward.label}',
+                              style: textTheme.bodySmall?.copyWith(
+                                color: LightcorePalette.mist.withValues(
+                                  alpha: 0.52,
+                                ),
+                              ),
+                            ),
+                          ],
                         ],
                       ),
                     ),

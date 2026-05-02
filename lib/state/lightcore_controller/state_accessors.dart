@@ -499,7 +499,7 @@ extension LightcoreControllerStateAccessors on LightcoreController {
   }
 
   String get dailyDungeonQuickClearLabel =>
-      '$dailyDungeonQuickClearsRemaining/$dailyDungeonQuickClearsPerDay quick clears today';
+      '$dailyDungeonQuickClearsRemaining/$dailyDungeonQuickClearsPerDay daily clears today';
 
   String get shellCoreLabel =>
       LightcoreCurrencyLabels.shellCoreCount(shellCores);
