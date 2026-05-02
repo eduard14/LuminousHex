@@ -1309,6 +1309,7 @@ class _ThreatDirectorBattleStatusDock extends StatelessWidget {
         (targetTowerHealth / math.max(1.0, targetTowerMaxHealth))
             .clamp(0.0, 1.0)
             .toDouble();
+    const towerMeterWidth = 210.0;
     final chips = Wrap(
       spacing: 8,
       runSpacing: 8,
@@ -1357,54 +1358,61 @@ class _ThreatDirectorBattleStatusDock extends StatelessWidget {
         ),
       ],
     );
-    final towerMeter = Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _MeterLabelRow(
-          label: 'Target Tower',
-          value:
-              '${targetTowerHealth.ceil().clamp(0, targetTowerMaxHealth.ceil())}/${targetTowerMaxHealth.round()}',
-        ),
-        const SizedBox(height: 5),
-        MeterBar(
-          value: targetIntegrity,
-          color: LightcorePalette.warning,
-          height: 9,
-        ),
-        const SizedBox(height: 7),
-        _MeterLabelRow(label: 'Shield Phase', value: shieldAffinity.shortLabel),
-        const SizedBox(height: 5),
-        MeterBar(value: shieldProgress, color: shieldAffinity.color, height: 7),
-        const SizedBox(height: 7),
-        _MeterLabelRow(
-          label: counterWindow ? 'Counter Window' : 'Counter Pulse',
-          value: counterWindow
-              ? 'Interrupt'
-              : '${(counterProgress * 100).round()}%',
-        ),
-        const SizedBox(height: 5),
-        MeterBar(
-          value: counterProgress,
-          color: counterWindow
-              ? LightcorePalette.warning
-              : LightcorePalette.aether,
-          height: 7,
-        ),
-        const SizedBox(height: 7),
-        _MeterLabelRow(
-          label: 'Breach',
-          value: breachProgress > 0 ? 'Apex boosted' : 'Stable',
-        ),
-        const SizedBox(height: 5),
-        MeterBar(
-          value: breachProgress,
-          color: breachProgress > 0
-              ? LightcorePalette.solar
-              : LightcorePalette.stroke,
-          height: 7,
-        ),
-      ],
+    final towerMeter = SizedBox(
+      width: towerMeterWidth,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _MeterLabelRow(
+            label: 'Target Tower',
+            value:
+                '${targetTowerHealth.ceil().clamp(0, targetTowerMaxHealth.ceil())}/${targetTowerMaxHealth.round()}',
+          ),
+          const SizedBox(height: 5),
+          MeterBar(
+            value: targetIntegrity,
+            color: LightcorePalette.warning,
+            height: 9,
+          ),
+          const SizedBox(height: 7),
+          _MeterLabelRow(
+            label: 'Shield Phase',
+            value: shieldAffinity.shortLabel,
+          ),
+          const SizedBox(height: 5),
+          MeterBar(
+            value: shieldProgress,
+            color: shieldAffinity.color,
+            height: 7,
+          ),
+          const SizedBox(height: 7),
+          _MeterLabelRow(
+            label: counterWindow ? 'Counter Window' : 'Counter Pulse',
+            value: counterWindow
+                ? 'Interrupt'
+                : '${(counterProgress * 100).round()}%',
+          ),
+          const SizedBox(height: 5),
+          MeterBar(
+            value: counterProgress,
+            color: counterWindow
+                ? LightcorePalette.warning
+                : LightcorePalette.aether,
+            height: 7,
+          ),
+          const SizedBox(height: 7),
+          _MeterLabelRow(label: 'Breach', value: 'Apex boost'),
+          const SizedBox(height: 5),
+          MeterBar(
+            value: breachProgress,
+            color: breachProgress > 0
+                ? LightcorePalette.solar
+                : LightcorePalette.stroke,
+            height: 7,
+          ),
+        ],
+      ),
     );
     final controls = Wrap(
       spacing: 8,
@@ -1474,7 +1482,7 @@ class _ThreatDirectorBattleStatusDock extends StatelessWidget {
           }
           return Row(
             children: [
-              SizedBox(width: 210, child: towerMeter),
+              towerMeter,
               const SizedBox(width: 14),
               Expanded(child: chips),
               const SizedBox(width: 14),
