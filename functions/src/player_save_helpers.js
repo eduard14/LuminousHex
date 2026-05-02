@@ -1153,6 +1153,8 @@ function createPlayerSaveHelpers({ db, logger, HttpsError, constants, helpers })
       hasPermanentOverdrive: data.hasPermanentOverdrive === true,
       hasPremiumMembership: data.hasPremiumMembership === true,
       bossUnlockGrantClaimed: data.bossUnlockGrantClaimed === true,
+      avatarCosmetics: sanitizeSavedAvatarCosmetics(data.avatarCosmetics),
+      publicAvatar: sanitizeSavedPublicAvatar(data.publicAvatar),
       equippedProfileMedalId: sanitizeSavedNullableString(
         data.equippedProfileMedalId,
         64,
@@ -1173,6 +1175,36 @@ function createPlayerSaveHelpers({ db, logger, HttpsError, constants, helpers })
         96,
         true,
       ),
+    };
+  }
+
+  function sanitizeSavedAvatarCosmetics(value) {
+    const data = normalizeObject(value);
+    return {
+      unlockedIds: sanitizeSavedStringList(data.unlockedIds, 32, 80),
+      equippedHairId: sanitizeSavedNullableString(data.equippedHairId, 80),
+      equippedFaceId: sanitizeSavedNullableString(data.equippedFaceId, 80),
+    };
+  }
+
+  function sanitizeSavedPublicAvatar(value) {
+    const data = normalizeObject(value);
+    return {
+      guideId: sanitizeSavedString(data.guideId, "lumo", 32),
+      hairCosmeticId: sanitizeSavedNullableString(data.hairCosmeticId, 80),
+      faceCosmeticId: sanitizeSavedNullableString(data.faceCosmeticId, 80),
+      equipmentPieces: normalizeArray(data.equipmentPieces)
+        .slice(0, 6)
+        .map((item) => {
+          const piece = normalizeObject(item);
+          return {
+            slotType: sanitizeSavedString(piece.slotType, "", 32),
+            setId: sanitizeSavedString(piece.setId, "", 80),
+            affinity: sanitizeSavedString(piece.affinity, "", 32),
+            rarity: sanitizeSavedString(piece.rarity, "", 32),
+          };
+        })
+        .filter((piece) => piece.slotType && piece.setId),
     };
   }
 

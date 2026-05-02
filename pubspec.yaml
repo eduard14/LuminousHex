@@ -100,6 +100,8 @@ flutter:
     - assets/sprites/equipment/thornpath/
     - assets/sprites/equipment/tideglass/
     - assets/sprites/equipment/voidloom/
+    - assets/sprites/avatar/face/
+    - assets/sprites/avatar/hair/
     - assets/sprites/managers/core/
     - assets/sprites/managers/threat/
 

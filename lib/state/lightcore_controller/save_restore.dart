@@ -42,6 +42,7 @@ extension LightcoreControllerSaveRestore on LightcoreController {
       'towerStrength': globalRankingTowerStrength,
       'radianceStats': _serializeRadianceStats(),
       'unspentRadianceStatPoints': unspentRadianceStatPoints,
+      'avatar': publicAvatarProfile.toMap(),
       'sharedRelayFilledPieceCount': sharedRelayFilledPieceCount,
       'sharedRelayAveragePower': sharedRelayTower.averagePowerScore,
       'bossesDefeated': _totalBossesDefeated,

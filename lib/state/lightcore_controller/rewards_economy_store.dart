@@ -452,6 +452,81 @@ extension LightcoreControllerEconomyStore on LightcoreController {
     return true;
   }
 
+  bool purchaseAvatarCosmetic(String cosmeticId) {
+    final config = AvatarCosmeticCatalog.byId[cosmeticId];
+    if (config == null) {
+      return false;
+    }
+    if (_unlockedAvatarCosmeticIds.contains(cosmeticId)) {
+      return equipAvatarCosmetic(cosmeticId);
+    }
+    if (prismShards < config.pricePrismShards) {
+      _showBanner(
+        '${config.name} needs ${LightcoreCurrencyLabels.prismShardCount(config.pricePrismShards)}.',
+      );
+      _notifyNow();
+      return false;
+    }
+    if (!spendPrismShards(
+      amount: config.pricePrismShards,
+      reasonLabel: config.name,
+      showBanner: false,
+    )) {
+      return false;
+    }
+    _unlockedAvatarCosmeticIds.add(cosmeticId);
+    _equipAvatarCosmeticConfig(config);
+    _showBanner(
+      '${config.name} added to your profile for ${LightcoreCurrencyLabels.prismShardCount(config.pricePrismShards)}.',
+    );
+    _notifyNow();
+    return true;
+  }
+
+  bool equipAvatarCosmetic(String cosmeticId) {
+    final config = AvatarCosmeticCatalog.byId[cosmeticId];
+    if (config == null) {
+      return false;
+    }
+    if (!_unlockedAvatarCosmeticIds.contains(cosmeticId)) {
+      _showBanner('${config.name} is still locked.');
+      _notifyNow();
+      return false;
+    }
+    if (isAvatarCosmeticEquipped(cosmeticId)) {
+      return true;
+    }
+    _equipAvatarCosmeticConfig(config);
+    _showBanner('${config.name} equipped to your profile.');
+    _notifyNow();
+    return true;
+  }
+
+  bool unequipAvatarCosmeticType(AvatarCosmeticType type) {
+    final current = equippedAvatarCosmeticForType(type);
+    if (current == null) {
+      return false;
+    }
+    switch (type) {
+      case AvatarCosmeticType.hair:
+        _equippedHairCosmeticId = null;
+      case AvatarCosmeticType.face:
+        _equippedFaceCosmeticId = null;
+    }
+    _showBanner('${current.name} removed from your profile.');
+    _notifyNow();
+    return true;
+  }
+
+  void _equipAvatarCosmeticConfig(AvatarCosmeticConfig config) {
+    switch (config.type) {
+      case AvatarCosmeticType.hair:
+        _equippedHairCosmeticId = config.id;
+      case AvatarCosmeticType.face:
+        _equippedFaceCosmeticId = config.id;
+    }
+  }
+
   int storeOfferPurchasesRemaining(String offerId, {required int weeklyLimit}) {
     _refreshStoreOfferPurchaseWeek();
     if (weeklyLimit <= 0) {

@@ -2,6 +2,8 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import '../data/avatar_cosmetic_configs.dart';
+import '../models/lightcore_avatar.dart';
 import '../models/lightcore_currency_labels.dart';
 import '../models/lightcore_progression.dart';
 import '../models/lightcore_types.dart';

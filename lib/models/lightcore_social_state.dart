@@ -1,5 +1,7 @@
 import 'dart:math';
 
+import 'lightcore_avatar.dart';
+
 class LightcoreSocialLimits {
   const LightcoreSocialLimits._();
 
@@ -25,6 +27,7 @@ class LightcoreSocialPlayer {
     this.towerStrengthRankedPlayers = 0,
     this.sharedRelayFilledPieceCount = 0,
     this.sharedRelayAveragePower = 0,
+    this.avatar = LightcoreAvatarProfile.empty,
     this.lastActiveAt,
   });
 
@@ -42,6 +45,7 @@ class LightcoreSocialPlayer {
   final int towerStrengthRankedPlayers;
   final int sharedRelayFilledPieceCount;
   final double sharedRelayAveragePower;
+  final LightcoreAvatarProfile avatar;
   final DateTime? lastActiveAt;
 
   String get levelLabel => 'AR $level';
@@ -77,6 +81,7 @@ class LightcoreSocialPlayer {
         data['sharedRelayFilledPieceCount'],
       ).clamp(0, 7),
       sharedRelayAveragePower: _doubleValue(data['sharedRelayAveragePower']),
+      avatar: LightcoreAvatarProfile.fromMap(_mapValue(data['avatar'])),
       lastActiveAt: _dateFromValue(data['lastActiveAt']),
     );
   }

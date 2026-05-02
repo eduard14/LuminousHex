@@ -3,7 +3,9 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 
+import '../data/avatar_cosmetic_configs.dart';
 import '../data/equipment_configs.dart';
+import '../models/lightcore_avatar.dart';
 import '../models/lightcore_guide.dart';
 import '../models/lightcore_state.dart';
 import '../models/lightcore_types.dart';
@@ -178,6 +180,7 @@ class _SpaceRoomScreenState extends State<SpaceRoomScreen>
           seed: config.seed + index,
           manager: manager,
         ),
+        avatarCosmetics: _previewAvatarCosmetics(config.seed + index),
         tint: _tintForIndex(index, manager: manager),
         position: Offset(
           0.16 + random.nextDouble() * 0.68,
@@ -197,6 +200,7 @@ class _SpaceRoomScreenState extends State<SpaceRoomScreen>
       role: _SpaceOccupantRole.localPlayer,
       guide: widget.controller.guideProfile,
       equipmentLoadout: _currentEquipmentLoadout(),
+      avatarCosmetics: widget.controller.avatarCosmeticLoadout,
       tint: LightcorePalette.aether,
       position: const Offset(0.5, 0.58),
       velocity: Offset.zero,
@@ -224,6 +228,15 @@ class _SpaceRoomScreenState extends State<SpaceRoomScreen>
     return index.isEven
         ? LightcoreGuideProfile.lumo
         : LightcoreGuideProfile.luma;
+  }
+
+  static AvatarCosmeticLoadout _previewAvatarCosmetics(int seed) {
+    final hair = AvatarCosmeticCatalog.byType(AvatarCosmeticType.hair);
+    final face = AvatarCosmeticCatalog.byType(AvatarCosmeticType.face);
+    return AvatarCosmeticLoadout(
+      hairId: hair.isEmpty ? null : hair[seed % hair.length].id,
+      faceId: face.isEmpty ? null : face[(seed ~/ 2) % face.length].id,
+    );
   }
 
   static Offset _randomVelocity(math.Random random, double speed) {
@@ -403,6 +416,7 @@ class _SpaceRoomScreenState extends State<SpaceRoomScreen>
       ..label = widget.controller.playerDisplayName
       ..guide = widget.controller.guideProfile
       ..equipmentLoadout = _currentEquipmentLoadout()
+      ..avatarCosmetics = widget.controller.avatarCosmeticLoadout
       ..position = Offset(0.34 + _random.nextDouble() * 0.32, 0.44)
       ..velocity = Offset.zero;
     target.occupants.insert(0, local);
@@ -495,7 +509,8 @@ class _SpaceRoomScreenState extends State<SpaceRoomScreen>
       local
         ..label = widget.controller.playerDisplayName
         ..guide = widget.controller.guideProfile
-        ..equipmentLoadout = _currentEquipmentLoadout();
+        ..equipmentLoadout = _currentEquipmentLoadout()
+        ..avatarCosmetics = widget.controller.avatarCosmeticLoadout;
     }
 
     return LayoutBuilder(
@@ -663,6 +678,7 @@ class _SpaceOccupant {
     required this.role,
     required this.guide,
     required this.equipmentLoadout,
+    required this.avatarCosmetics,
     required this.tint,
     required this.position,
     required this.velocity,
@@ -675,6 +691,7 @@ class _SpaceOccupant {
   final _SpaceOccupantRole role;
   LightcoreGuideProfile guide;
   CosmicEquipmentLoadout equipmentLoadout;
+  AvatarCosmeticLoadout avatarCosmetics;
   final Color tint;
   Offset position;
   Offset velocity;
@@ -963,6 +980,9 @@ class _SpaceOccupantAvatar extends StatelessWidget {
     final labelTop = (center.dy + avatarSize * 0.36)
         .clamp(4.0, math.max(4.0, roomSize.height - 26))
         .toDouble();
+    final pose = boosting || occupant.velocity.distance > 0.08
+        ? LightcoreAvatarPose.thrust
+        : LightcoreAvatarPose.idle;
 
     return Stack(
       clipBehavior: Clip.none,
@@ -977,6 +997,8 @@ class _SpaceOccupantAvatar extends StatelessWidget {
             child: CosmicGuideAvatar(
               guide: occupant.guide,
               loadout: occupant.equipmentLoadout,
+              avatarCosmetics: occupant.avatarCosmetics,
+              pose: pose,
               phase: phase + (occupant.id.hashCode * 0.001),
               boosting: boosting,
               size: avatarSize,
@@ -1370,6 +1392,7 @@ class _OccupantBadge extends StatelessWidget {
             CosmicGuideAvatar(
               guide: occupant.guide,
               loadout: occupant.equipmentLoadout,
+              avatarCosmetics: occupant.avatarCosmetics,
               size: 22,
               semanticLabel: label,
             ),
@@ -1613,6 +1636,7 @@ class _ChatMessageBubble extends StatelessWidget {
                     CosmicGuideAvatar(
                       guide: author!.guide,
                       loadout: author!.equipmentLoadout,
+                      avatarCosmetics: author!.avatarCosmetics,
                       size: 18,
                       semanticLabel: author!.label,
                     ),

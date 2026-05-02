@@ -955,6 +955,49 @@ extension LightcoreControllerStateAccessors on LightcoreController {
   EquipmentBonusProfile get profileLoadoutBonuses =>
       equipmentBonuses + profileMedalBonuses;
 
+  AvatarCosmeticLoadout get avatarCosmeticLoadout => AvatarCosmeticLoadout(
+    hairId: _equippedHairCosmeticId,
+    faceId: _equippedFaceCosmeticId,
+  );
+
+  UnmodifiableSetView<String> get unlockedAvatarCosmeticIds =>
+      UnmodifiableSetView(_unlockedAvatarCosmeticIds);
+
+  bool isAvatarCosmeticUnlocked(String cosmeticId) =>
+      _unlockedAvatarCosmeticIds.contains(cosmeticId);
+
+  bool isAvatarCosmeticEquipped(String cosmeticId) =>
+      _equippedHairCosmeticId == cosmeticId ||
+      _equippedFaceCosmeticId == cosmeticId;
+
+  AvatarCosmeticConfig? equippedAvatarCosmeticForType(AvatarCosmeticType type) {
+    final cosmeticId = avatarCosmeticLoadout.idForType(type);
+    return cosmeticId == null ? null : AvatarCosmeticCatalog.byId[cosmeticId];
+  }
+
+  bool canPurchaseAvatarCosmetic(String cosmeticId) {
+    final config = AvatarCosmeticCatalog.byId[cosmeticId];
+    return config != null &&
+        !isAvatarCosmeticUnlocked(cosmeticId) &&
+        prismShards >= config.pricePrismShards;
+  }
+
+  LightcoreAvatarProfile get publicAvatarProfile => LightcoreAvatarProfile(
+    guideId: _guideProfile.storageId,
+    hairCosmeticId: _equippedHairCosmeticId,
+    faceCosmeticId: _equippedFaceCosmeticId,
+    equipmentPieces: <LightcoreAvatarEquipmentPiece>[
+      for (final slot in EquipmentLoadoutSlot.values)
+        if (equippedPlayerItemForSlot(slot) case final item?)
+          LightcoreAvatarEquipmentPiece(
+            slotType: item.slotType,
+            setId: item.setId,
+            affinity: item.affinity,
+            rarity: item.rarity,
+          ),
+    ],
+  );
+
   int get totalRadianceStatPointsEarned => max(0, overallLevel - 1);
 
   int get totalRadianceStatPointsSpent => LightcoreRadianceStat.values.fold(

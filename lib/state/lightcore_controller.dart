@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/scheduler.dart';
 
 import '../app/lightcore_bootstrap.dart';
+import '../data/avatar_cosmetic_configs.dart';
 import '../data/card_configs.dart';
 import '../data/equipment_configs.dart';
 import '../data/enemy_configs.dart';
@@ -13,6 +14,7 @@ import '../data/lumicore_trait_catalog.dart';
 import '../data/medal_configs.dart';
 import '../data/tower_configs.dart';
 import '../models/lightcore_config.dart';
+import '../models/lightcore_avatar.dart';
 import '../models/lightcore_cloud_save.dart';
 import '../models/lightcore_currency_labels.dart';
 import '../models/lightcore_friend_state.dart';
@@ -1129,6 +1131,9 @@ class LightcoreController extends ChangeNotifier {
     _equippedPlayerItems = <EquipmentLoadoutSlot, String?>{
       for (final slot in EquipmentLoadoutSlot.values) slot: null,
     };
+    _unlockedAvatarCosmeticIds.clear();
+    _equippedHairCosmeticId = null;
+    _equippedFaceCosmeticId = null;
     _equippedProfileMedalId = null;
     _unlockedProfileMedalIds.clear();
     _enemyCards = _createEnemyCardInventory();
@@ -1457,6 +1462,7 @@ class LightcoreController extends ChangeNotifier {
   final int _guildCreationUnlockLevel;
   LightcoreBalanceTuning _balanceTuning;
   final Set<String> _newEquipmentItemIds = <String>{};
+  final Set<String> _unlockedAvatarCosmeticIds = <String>{};
 
   late CoreState _core;
   late Layer2TowerState _layer2;
@@ -1520,6 +1526,8 @@ class LightcoreController extends ChangeNotifier {
   String _dailyDungeonQuickClearDayKey = '';
   int _dailyDungeonQuickClearsUsed = 0;
   String? _equippedProfileMedalId;
+  String? _equippedHairCosmeticId;
+  String? _equippedFaceCosmeticId;
   final Set<String> _unlockedProfileMedalIds = <String>{};
 
   double _spawnTimer = 1.35;

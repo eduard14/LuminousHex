@@ -212,7 +212,7 @@ class _GlobalLeaderboardRow extends StatelessWidget {
     final name = player.displayName.trim().isEmpty
         ? player.playerId
         : player.displayName.trim();
-    final initial = name.isEmpty ? '?' : name.substring(0, 1).toUpperCase();
+    final avatar = player.avatar;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -235,15 +235,15 @@ class _GlobalLeaderboardRow extends StatelessWidget {
               ),
             ),
           ),
-          CircleAvatar(
-            radius: 17,
-            backgroundColor: tint.withValues(alpha: 0.16),
-            child: Text(
-              initial,
-              style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                color: tint,
-                fontWeight: FontWeight.w900,
+          SizedBox.square(
+            dimension: 38,
+            child: LightcoreGuideBadge(
+              guide: avatar.guideProfile,
+              size: 38,
+              equipmentLoadout: CosmicEquipmentLoadout.fromAvatarPieces(
+                avatar.equipmentPieces,
               ),
+              avatarCosmetics: avatar.cosmeticLoadout,
             ),
           ),
           const SizedBox(width: 12),

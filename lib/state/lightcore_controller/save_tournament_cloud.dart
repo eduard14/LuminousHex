@@ -559,6 +559,12 @@ extension LightcoreControllerSaveTournamentCloud on LightcoreController {
         'hasPermanentOverdrive': _hasPermanentOverdrive,
         'hasPremiumMembership': _hasPremiumMembership,
         'bossUnlockGrantClaimed': _bossUnlockGrantClaimed,
+        'avatarCosmetics': <String, dynamic>{
+          'unlockedIds': _unlockedAvatarCosmeticIds.toList(growable: false),
+          'equippedHairId': _equippedHairCosmeticId,
+          'equippedFaceId': _equippedFaceCosmeticId,
+        },
+        'publicAvatar': publicAvatarProfile.toMap(),
         'equippedProfileMedalId': _equippedProfileMedalId,
         'unlockedProfileMedalIds': _unlockedProfileMedalIds.toList(
           growable: false,

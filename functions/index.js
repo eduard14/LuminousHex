@@ -2103,6 +2103,7 @@ function buildSocialPlayerResponse(uid, data, options = {}) {
       PLAYER_SAVE_LIMITS.maxTowerStrength,
       0,
     ),
+    avatar: sanitizePublicAvatar(data?.avatar),
     towerStrengthRank: clampInt(
       options.towerStrengthRank,
       1,
@@ -2353,6 +2354,9 @@ function buildSocialPublicProfileUpdate({ auth, rawPayload, payload, profileData
   });
   const screenName = normalizeStoredScreenName(profileData.screenName);
   const playerId = sanitizePlayerId(payload.player.playerId || profileData.playerId);
+  const avatar = sanitizePublicAvatar(
+    snapshot.avatar || normalizeObject(payload.player).publicAvatar,
+  );
   return {
     playerId,
     authUid: auth.uid,
@@ -2364,6 +2368,7 @@ function buildSocialPublicProfileUpdate({ auth, rawPayload, payload, profileData
     progressToNextLevel: clampNumber(snapshot.progressToNextLevel, 0, 1, 0),
     performanceScore,
     towerStrength,
+    avatar,
     sharedRelayFilledPieceCount,
     sharedRelayAveragePower: clampNumber(snapshot.sharedRelayAveragePower, 0, 1000000, 0),
     bossesDefeated,
@@ -2745,6 +2750,51 @@ function normalizeObject(value) {
 
 function normalizeArray(value) {
   return Array.isArray(value) ? value : [];
+}
+
+function sanitizePublicAvatar(value) {
+  const data = normalizeObject(value);
+  const guideId = sanitizeString(data.guideId, "lumo");
+  const safeGuideId = ["lumo", "luma"].includes(guideId) ? guideId : "lumo";
+  const equipmentPieces = normalizeArray(data.equipmentPieces)
+    .slice(0, 6)
+    .map((item) => {
+      const piece = normalizeObject(item);
+      const slotType = sanitizeString(piece.slotType, "");
+      const affinity = sanitizeString(piece.affinity, "");
+      const rarity = sanitizeString(piece.rarity, "");
+      const setId = sanitizeAssetToken(piece.setId);
+      if (
+        !["hat", "top", "pants", "shoes", "accessory"].includes(slotType) ||
+        ![
+          "neutral",
+          "ember",
+          "flare",
+          "solar",
+          "verdant",
+          "aether",
+          "violet",
+          "black",
+        ].includes(affinity) ||
+        !["common", "uncommon", "rare", "epic", "legendary"].includes(rarity) ||
+        !setId
+      ) {
+        return null;
+      }
+      return { slotType, setId, affinity, rarity };
+    })
+    .filter(Boolean);
+  return {
+    guideId: safeGuideId,
+    hairCosmeticId: sanitizeAssetToken(data.hairCosmeticId) || null,
+    faceCosmeticId: sanitizeAssetToken(data.faceCosmeticId) || null,
+    equipmentPieces,
+  };
+}
+
+function sanitizeAssetToken(value) {
+  const text = sanitizeString(value, "").toLowerCase();
+  return /^[a-z0-9_/-]{1,80}$/.test(text) ? text : "";
 }
 
 function requireAuth(request) {

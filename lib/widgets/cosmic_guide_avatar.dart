@@ -2,6 +2,8 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import '../data/avatar_cosmetic_configs.dart';
+import '../models/lightcore_avatar.dart';
 import '../models/lightcore_guide.dart';
 import '../models/lightcore_state.dart';
 import '../models/lightcore_types.dart';
@@ -22,6 +24,17 @@ class CosmicEquipmentPiece {
       setId: item.setId,
       affinity: item.affinity,
       rarity: item.rarity,
+    );
+  }
+
+  factory CosmicEquipmentPiece.fromAvatarPiece(
+    LightcoreAvatarEquipmentPiece piece,
+  ) {
+    return CosmicEquipmentPiece(
+      slotType: piece.slotType,
+      setId: piece.setId,
+      affinity: piece.affinity,
+      rarity: piece.rarity,
     );
   }
 
@@ -58,6 +71,14 @@ class CosmicEquipmentLoadout {
     return CosmicEquipmentLoadout(<CosmicEquipmentPiece>[
       for (final item in items)
         if (item != null) CosmicEquipmentPiece.fromItem(item),
+    ]);
+  }
+
+  factory CosmicEquipmentLoadout.fromAvatarPieces(
+    Iterable<LightcoreAvatarEquipmentPiece> pieces,
+  ) {
+    return CosmicEquipmentLoadout(<CosmicEquipmentPiece>[
+      for (final piece in pieces) CosmicEquipmentPiece.fromAvatarPiece(piece),
     ]);
   }
 
@@ -130,6 +151,8 @@ class CosmicGuideAvatar extends StatelessWidget {
     this.loadout = CosmicEquipmentLoadout.empty,
     this.phase = 0,
     this.boosting = false,
+    this.avatarCosmetics = AvatarCosmeticLoadout.empty,
+    this.pose = LightcoreAvatarPose.idle,
     this.usePortraitAsset = true,
     this.semanticLabel,
   });
@@ -139,6 +162,8 @@ class CosmicGuideAvatar extends StatelessWidget {
   final CosmicEquipmentLoadout loadout;
   final double phase;
   final bool boosting;
+  final AvatarCosmeticLoadout avatarCosmetics;
+  final LightcoreAvatarPose pose;
   final bool usePortraitAsset;
   final String? semanticLabel;
 
@@ -151,6 +176,7 @@ class CosmicGuideAvatar extends StatelessWidget {
         loadout: loadout,
         phase: phase,
         boosting: boosting,
+        pose: pose,
         drawFrame: true,
         drawBody: !usePortraitAsset,
       ),
@@ -162,43 +188,63 @@ class CosmicGuideAvatar extends StatelessWidget {
         fit: StackFit.expand,
         children: [
           body,
-          Padding(
-            padding: EdgeInsets.all(size * 0.04),
-            child: Image.asset(
-              guide.assetPath,
-              fit: BoxFit.contain,
-              filterQuality: FilterQuality.medium,
-              errorBuilder: (context, error, stackTrace) {
-                return CustomPaint(
-                  painter: CosmicGuideAvatarPainter(
-                    guide: guide,
-                    loadout: loadout,
-                    phase: phase,
-                    boosting: boosting,
-                    drawFrame: false,
-                    drawBody: true,
+          _AvatarPoseTransform(
+            pose: pose,
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                Padding(
+                  padding: EdgeInsets.all(size * 0.04),
+                  child: Image.asset(
+                    guide.assetPath,
+                    fit: BoxFit.contain,
+                    filterQuality: FilterQuality.medium,
+                    errorBuilder: (context, error, stackTrace) {
+                      return CustomPaint(
+                        painter: CosmicGuideAvatarPainter(
+                          guide: guide,
+                          loadout: loadout,
+                          phase: phase,
+                          boosting: boosting,
+                          pose: pose,
+                          drawFrame: false,
+                          drawBody: true,
+                        ),
+                      );
+                    },
                   ),
-                );
-              },
+                ),
+                _AvatarCosmeticSpriteOverlay(loadout: avatarCosmetics),
+                _EquipmentSpriteOverlay(loadout: loadout),
+              ],
             ),
           ),
-          _EquipmentSpriteOverlay(loadout: loadout),
         ],
       );
     } else {
       body = Stack(
         fit: StackFit.expand,
         children: [
-          CustomPaint(
-            painter: CosmicGuideAvatarPainter(
-              guide: guide,
-              loadout: loadout,
-              phase: phase,
-              boosting: boosting,
-              drawFrame: true,
+          _AvatarPoseTransform(
+            pose: pose,
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                CustomPaint(
+                  painter: CosmicGuideAvatarPainter(
+                    guide: guide,
+                    loadout: loadout,
+                    phase: phase,
+                    boosting: boosting,
+                    pose: pose,
+                    drawFrame: true,
+                  ),
+                ),
+                _AvatarCosmeticSpriteOverlay(loadout: avatarCosmetics),
+                _EquipmentSpriteOverlay(loadout: loadout),
+              ],
             ),
           ),
-          _EquipmentSpriteOverlay(loadout: loadout),
         ],
       );
     }
@@ -285,6 +331,77 @@ class _EquipmentSpriteOverlay extends StatelessWidget {
   }
 }
 
+class _AvatarPoseTransform extends StatelessWidget {
+  const _AvatarPoseTransform({required this.pose, required this.child});
+
+  final LightcoreAvatarPose pose;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    if (pose == LightcoreAvatarPose.idle) {
+      return child;
+    }
+    return Transform.rotate(
+      alignment: Alignment.center,
+      angle: -0.055,
+      child: Transform.scale(
+        alignment: Alignment.center,
+        scaleX: 0.98,
+        scaleY: 1.02,
+        child: child,
+      ),
+    );
+  }
+}
+
+class _AvatarCosmeticSpriteOverlay extends StatelessWidget {
+  const _AvatarCosmeticSpriteOverlay({required this.loadout});
+
+  final AvatarCosmeticLoadout loadout;
+
+  @override
+  Widget build(BuildContext context) {
+    if (loadout.isEmpty) {
+      return const SizedBox.expand();
+    }
+    final face = loadout.faceId == null
+        ? null
+        : AvatarCosmeticCatalog.byId[loadout.faceId];
+    final hair = loadout.hairId == null
+        ? null
+        : AvatarCosmeticCatalog.byId[loadout.hairId];
+    if (face == null && hair == null) {
+      return const SizedBox.expand();
+    }
+    return IgnorePointer(
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          if (face != null) _AvatarCosmeticSprite(config: face),
+          if (hair != null) _AvatarCosmeticSprite(config: hair),
+        ],
+      ),
+    );
+  }
+}
+
+class _AvatarCosmeticSprite extends StatelessWidget {
+  const _AvatarCosmeticSprite({required this.config});
+
+  final AvatarCosmeticConfig config;
+
+  @override
+  Widget build(BuildContext context) {
+    return Image.asset(
+      config.assetPath,
+      fit: BoxFit.contain,
+      filterQuality: FilterQuality.high,
+      errorBuilder: (context, error, stackTrace) => const SizedBox.shrink(),
+    );
+  }
+}
+
 class _EquipmentSprite extends StatelessWidget {
   const _EquipmentSprite({
     required this.piece,
@@ -331,6 +448,7 @@ class CosmicGuideAvatarPainter extends CustomPainter {
     this.loadout = CosmicEquipmentLoadout.empty,
     this.phase = 0,
     this.boosting = false,
+    this.pose = LightcoreAvatarPose.idle,
     this.drawFrame = false,
     this.drawBody = true,
   });
@@ -339,6 +457,7 @@ class CosmicGuideAvatarPainter extends CustomPainter {
   final CosmicEquipmentLoadout loadout;
   final double phase;
   final bool boosting;
+  final LightcoreAvatarPose pose;
   final bool drawFrame;
   final bool drawBody;
 
@@ -407,9 +526,14 @@ class CosmicGuideAvatarPainter extends CustomPainter {
     final secondary = guide.id == LightcoreGuideId.lumo
         ? LightcorePalette.gilded
         : LightcorePalette.violet;
-    final bob = math.sin(phase * 2.1) * 1.1;
+    final thrust = pose == LightcoreAvatarPose.thrust;
+    final bob = math.sin(phase * 2.1) * (thrust ? 0.6 : 1.1);
     canvas.save();
     canvas.translate(0, bob);
+    if (thrust) {
+      canvas.translate(0, -1.4);
+      canvas.rotate(-0.035);
+    }
 
     final glow = Paint()
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8)
@@ -576,6 +700,7 @@ class CosmicGuideAvatarPainter extends CustomPainter {
         oldDelegate.loadout != loadout ||
         oldDelegate.phase != phase ||
         oldDelegate.boosting != boosting ||
+        oldDelegate.pose != pose ||
         oldDelegate.drawFrame != drawFrame ||
         oldDelegate.drawBody != drawBody;
   }
