@@ -580,7 +580,7 @@ class _PrismRiftBattleStatusDock extends StatelessWidget {
       ),
       child: LayoutBuilder(
         builder: (context, constraints) {
-          final controls = _PrismRiftAimControls(
+          final controls = _PrismRiftBattleAimControls(
             enabled: running,
             canFire: canFire,
             tint: tint,
@@ -589,7 +589,7 @@ class _PrismRiftBattleStatusDock extends StatelessWidget {
             onFire: onFire,
           );
           final meters = SizedBox(
-            width: compact ? double.infinity : 220,
+            width: compact ? constraints.maxWidth : 220,
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -644,7 +644,7 @@ class _PrismRiftBattleStatusDock extends StatelessWidget {
             ],
           );
 
-          if (constraints.maxWidth < 680) {
+          if (constraints.maxWidth < 900) {
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
@@ -672,8 +672,8 @@ class _PrismRiftBattleStatusDock extends StatelessWidget {
   }
 }
 
-class _PrismRiftAimControls extends StatelessWidget {
-  const _PrismRiftAimControls({
+class _PrismRiftBattleAimControls extends StatelessWidget {
+  const _PrismRiftBattleAimControls({
     required this.enabled,
     required this.canFire,
     required this.tint,
@@ -696,7 +696,7 @@ class _PrismRiftAimControls extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        _PrismRiftAimPad(
+        _PrismRiftBattleAimPad(
           enabled: enabled,
           size: padSize,
           tint: tint,
@@ -717,10 +717,7 @@ class _PrismRiftAimControls extends StatelessWidget {
                 foregroundColor: LightcorePalette.night,
               ),
               onPressed: canFire ? onFire : null,
-              child: Icon(
-                Icons.local_fire_department_rounded,
-                size: compact ? 28 : 32,
-              ),
+              child: Icon(Icons.gps_fixed_rounded, size: compact ? 28 : 32),
             ),
           ),
         ),
@@ -729,8 +726,8 @@ class _PrismRiftAimControls extends StatelessWidget {
   }
 }
 
-class _PrismRiftAimPad extends StatefulWidget {
-  const _PrismRiftAimPad({
+class _PrismRiftBattleAimPad extends StatefulWidget {
+  const _PrismRiftBattleAimPad({
     required this.enabled,
     required this.size,
     required this.tint,
@@ -743,10 +740,10 @@ class _PrismRiftAimPad extends StatefulWidget {
   final ValueChanged<Offset> onAimChanged;
 
   @override
-  State<_PrismRiftAimPad> createState() => _PrismRiftAimPadState();
+  State<_PrismRiftBattleAimPad> createState() => _PrismRiftBattleAimPadState();
 }
 
-class _PrismRiftAimPadState extends State<_PrismRiftAimPad> {
+class _PrismRiftBattleAimPadState extends State<_PrismRiftBattleAimPad> {
   Offset _direction = const Offset(0, -1);
 
   void _updateAim(Offset localPosition) {

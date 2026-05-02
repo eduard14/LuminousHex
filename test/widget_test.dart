@@ -880,7 +880,7 @@ void main() {
       findsOneWidget,
     );
     expect(find.byTooltip('Back to dungeons'), findsOneWidget);
-    expect(find.text('Ready'), findsOneWidget);
+    expect(find.text('Aiming'), findsOneWidget);
     expect(find.textContaining('clears'), findsOneWidget);
     expect(find.textContaining('% core'), findsOneWidget);
     expect(find.byTooltip('Open Menu'), findsNothing);

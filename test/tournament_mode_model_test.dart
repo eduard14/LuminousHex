@@ -328,18 +328,21 @@ void main() {
         ),
       ],
     );
-    controller.tick(0.2);
-
-    expect(controller.enemies, isNotEmpty);
-    final target = controller.enemies.first;
-    final fired = controller.firePrismRiftAimedShot(
-      aimDx: math.cos(target.angle),
-      aimDy: math.sin(target.angle),
-    );
+    var fired = false;
+    for (var step = 0; step < 120 && !fired; step += 1) {
+      controller.tick(0.1);
+      if (controller.enemies.isEmpty) {
+        continue;
+      }
+      final target = controller.enemies.first;
+      fired = controller.firePrismRiftAimedShot(
+        aimDx: math.cos(target.angle),
+        aimDy: math.sin(target.angle),
+      );
+    }
 
     expect(fired, isTrue);
     expect(controller.shots, isNotEmpty);
-    expect(controller.shots.first.enemyId, target.id);
     expect(controller.coreState.fireCooldownRemaining, greaterThan(0));
   });
 

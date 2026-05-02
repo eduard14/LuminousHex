@@ -46,13 +46,10 @@ extension LightcoreControllerCombatFiring on LightcoreController {
       final target =
           _targetForPrismRiftAim(
             aimAngle,
-            maxRadius: shotMaxRange,
+            preferredMaxRadius: shotMaxRange,
             excludedEnemyIds: volleyTargetIds,
           ) ??
-          _nearestEnemy(
-            maxRadius: shotMaxRange,
-            excludedEnemyIds: volleyTargetIds,
-          );
+          _nearestEnemy(excludedEnemyIds: volleyTargetIds);
       if (target == null) {
         break;
       }
@@ -131,13 +128,13 @@ extension LightcoreControllerCombatFiring on LightcoreController {
 
   EnemyState? _targetForPrismRiftAim(
     double aimAngle, {
-    required double maxRadius,
+    required double preferredMaxRadius,
     Set<String> excludedEnemyIds = const <String>{},
   }) {
     EnemyState? bestTarget;
     var bestScore = double.infinity;
     for (final enemy in _enemies) {
-      if (excludedEnemyIds.contains(enemy.id) || enemy.radius > maxRadius) {
+      if (excludedEnemyIds.contains(enemy.id)) {
         continue;
       }
       final distance = _angleDistance(enemy.angle, aimAngle);
@@ -145,9 +142,11 @@ extension LightcoreControllerCombatFiring on LightcoreController {
         continue;
       }
       final lateralOffset = sin(distance).abs() * enemy.radius;
+      final rangePenalty = max(0.0, enemy.radius - preferredMaxRadius) * 0.12;
       final score =
           lateralOffset +
           (distance * 10) +
+          rangePenalty +
           (enemy.radius * 0.01) -
           (enemy.config.isBoss ? 8 : 0);
       if (score < bestScore) {
