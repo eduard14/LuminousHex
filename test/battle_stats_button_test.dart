@@ -275,7 +275,7 @@ void main() {
     expect(controller.selectedSlotIndex, 0);
     expect(controller.pulses, isEmpty);
     expect(find.text('Fabrication'), findsOneWidget);
-    expect(find.textContaining('Fabricating Red Source Tower'), findsOneWidget);
+    expect(find.textContaining('Fabricating Comet Mortar'), findsOneWidget);
     expect(find.text('Tower Stats'), findsNothing);
     expect(find.widgetWithText(OutlinedButton, 'Stats'), findsNothing);
   });

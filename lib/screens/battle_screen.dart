@@ -1170,7 +1170,7 @@ class _CoreStatsPanel extends StatelessWidget {
         if (controller.canTrainCoreStats) ...[
           const SizedBox(height: 6),
           Text(
-            'Root shell training: ${controller.coreTrainingLabel}',
+            'Root Shell Core Training: ${controller.coreTrainingLabel}',
             style: textTheme.bodyMedium?.copyWith(
               color: LightcorePalette.solar,
               fontWeight: FontWeight.w600,
@@ -1268,7 +1268,7 @@ class _CoreStatsPanel extends StatelessWidget {
             controller.coreUpgradeOptions.isNotEmpty) ...[
           const SizedBox(height: 16),
           Text(
-            'Root Shell Stat Upgrades',
+            'Root Shell Core Stat Upgrades',
             style: textTheme.titleSmall?.copyWith(
               color: LightcorePalette.mist.withValues(alpha: 0.8),
             ),

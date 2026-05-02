@@ -122,6 +122,21 @@ const List<_HelpSectionData> _baseHelpSections = <_HelpSectionData>[
         'Extra copies strengthen a signature. Once a card hits its rarity cap, extra copies can eventually merge upward into a random card of the next rarity.',
   ),
   _HelpSectionData(
+    id: 'tower-shell-terms',
+    title: 'Tower and Shell Terms',
+    summary: 'Canonical names for shell levels, child towers, and edge slots.',
+    body:
+        'Root Shell: the first shell class. It contains the center Lightcore plus six perimeter slots.\n\n'
+        'Root Shell Core: the center Lightcore while you are in the Root Shell. Its Shell Level and Core Stat Upgrades are separate from the six perimeter towers.\n\n'
+        'Shell Level: the level of the active shell core. Root Shell level uses Lumens. Child shell level grows when its child-tower tuning board is completed.\n\n'
+        'Shell Class: the tier name of a shell. The current class order is Root Shell, Prism Shell, Nexus Shell, then Ascendant Shell.\n\n'
+        'Perimeter Tower: any tower occupying one of the six edge slots around the core. Source Towers and Child Towers are both perimeter towers.\n\n'
+        'Source Tower: a buildable Root Shell perimeter tower. Each Source Tower has one Spectrum Band, one projectile family, no payload, a tower level, and a stat board.\n\n'
+        'Child Shell: a lower shell built inside a parent perimeter slot. It has its own core, perimeter slots, enemies, and tuning progress.\n\n'
+        'Child Tower: the promoted result of a completed Child Shell. It occupies the parent perimeter slot, inherits projectile and payload traits from its Child Shell, and upgrades like a perimeter tower.\n\n'
+        'Archived Shell: a completed lower shell that remains inspectable after promotion and can contribute passive support.',
+  ),
+  _HelpSectionData(
     id: 'projectile-families',
     title: 'Projectile Families',
     summary: 'How Source Towers become aligned projectile and payload traits.',
