@@ -162,7 +162,7 @@ void main() {
     expect(controller.activeChildTowerLevelProgress, 0);
   });
 
-  test('promoted layer 2 child towers keep tuning and levels', () {
+  test('promoted layer 2 towers get a fresh tower level and upgrade board', () {
     final controller = LightcoreController(traitRandom: Random(17));
     addTearDown(controller.dispose);
 
@@ -171,43 +171,55 @@ void main() {
     final childLayerId = controller.activeLayer.id;
     _promoteChildShellIntoParent(controller, 0);
 
-    controller.enterChildLayer(0);
-    expect(controller.activeLayer.id, childLayerId);
-    expect(controller.activeLayerPassiveOnly, isTrue);
-    expect(controller.activeLayerHasParentSlot, isTrue);
+    final promotedTower = controller.slots[0];
+    expect(promotedTower.isPromotedChildTower, isTrue);
+    expect(promotedTower.level, 1);
+    expect(promotedTower.childCoreLevel, 1);
+    expect(promotedTower.towerUpgradeOptions, isNotEmpty);
+    expect(promotedTower.towerUpgradeOptions.map((upgrade) => upgrade.rank), [
+      for (
+        var index = 0;
+        index < promotedTower.towerUpgradeOptions.length;
+        index++
+      )
+        0,
+    ]);
 
-    controller.shellCores = 100000;
-    final initialProjectedLevel =
-        controller.activeChildTowerProjection!.childCoreLevel;
-    final firstUpgrade = controller.activeChildTowerUpgrades.first;
-
-    expect(controller.upgradeActiveChildTowerStat(firstUpgrade.type), isTrue);
+    final powerBeforeLevel = controller.towerPower(promotedTower);
+    controller.lumens = controller.upgradeCost(promotedTower);
+    expect(controller.upgradeTower(0), isTrue);
+    expect(controller.slots[0].level, 2);
     expect(
-      controller.activeChildTowerUpgrades
-          .firstWhere((upgrade) => upgrade.type == firstUpgrade.type)
+      controller.towerPower(controller.slots[0]),
+      greaterThan(powerBeforeLevel),
+    );
+
+    final upgrade = controller.slots[0].towerUpgradeOptions.first;
+    final statCost = controller.towerStatUpgradeCost(
+      controller.slots[0],
+      upgrade,
+    );
+    controller.lumens = statCost;
+    expect(controller.upgradeTowerStat(0, upgrade.type), isTrue);
+    expect(
+      controller.slots[0].towerUpgradeOptions
+          .firstWhere((candidate) => candidate.type == upgrade.type)
           .rank,
       1,
     );
 
-    final board = controller.activeChildTowerUpgrades.toList();
-    for (final upgrade in board) {
-      final currentRank = controller.activeChildTowerUpgrades
-          .firstWhere((current) => current.type == upgrade.type)
-          .rank;
-      for (
-        var rank = currentRank;
-        rank < LightcoreController.childTowerUpgradeMaxRank;
-        rank++
-      ) {
-        expect(controller.upgradeActiveChildTowerStat(upgrade.type), isTrue);
-      }
-    }
-
-    expect(controller.coreState.level, 2);
+    controller.enterChildLayer(0);
+    expect(controller.activeLayer.id, childLayerId);
+    expect(controller.activeLayerPassiveOnly, isTrue);
+    expect(controller.activeLayerHasParentSlot, isTrue);
+    controller.shellCores = 100000;
     expect(
-      controller.activeChildTowerProjection!.childCoreLevel,
-      (initialProjectedLevel ?? 1) + 1,
+      controller.upgradeActiveChildTowerStat(
+        controller.activeChildTowerUpgrades.first.type,
+      ),
+      isFalse,
     );
+    expect(controller.activeChildTowerProjection!.childCoreLevel, 1);
   });
 
   test('promoted layer 1 child cores keep core upgrades', () {

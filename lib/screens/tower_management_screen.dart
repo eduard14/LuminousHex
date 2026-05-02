@@ -657,6 +657,7 @@ class _ChildTowerGrowthPanel extends StatelessWidget {
 
     final textTheme = Theme.of(context).textTheme;
     final tint = projection.childAffinity?.color ?? LightcorePalette.solar;
+    final promoted = projection.isPromotedChildTower;
 
     return AuroraPanel(
       tint: tint,
@@ -666,12 +667,14 @@ class _ChildTowerGrowthPanel extends StatelessWidget {
           Text('Child Tower Growth', style: textTheme.titleLarge),
           const SizedBox(height: 6),
           Text(
-            '${controller.activeChildTowerAnchorLabel}  •  ${projection.isPromotedChildTower ? 'active in parent shell' : 'previewing until alignment'}',
+            '${controller.activeChildTowerAnchorLabel}  •  ${promoted ? 'active in parent shell' : 'previewing until alignment'}',
             style: textTheme.bodyLarge,
           ),
           const SizedBox(height: 8),
           Text(
-            'Each child-tower level now takes four rolled tuning stats from the full offensive pool. Max a stat to 10/10, complete the whole board, and the shell levels up with a fresh reroll while the level boost stays.',
+            promoted
+                ? 'The aligned Layer 2 tower now levels from the parent slot with its own rolled stat board. This source shell keeps its core upgrades here.'
+                : 'Each child-tower level takes four rolled tuning stats from the full offensive pool. Max a stat to 10/10, complete the whole board, and the shell levels up with a fresh reroll while the level boost stays.',
             style: textTheme.bodyMedium,
           ),
           const SizedBox(height: 14),
@@ -717,40 +720,42 @@ class _ChildTowerGrowthPanel extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 14),
-          MeterBar(
-            value: controller.activeChildTowerLevelProgress,
-            color: tint,
-          ),
-          const SizedBox(height: 8),
-          Text(
-            controller.activeChildTowerLevelProgressLabel,
-            style: textTheme.bodyMedium?.copyWith(
+          if (!promoted) ...[
+            const SizedBox(height: 14),
+            MeterBar(
+              value: controller.activeChildTowerLevelProgress,
               color: tint,
-              fontWeight: FontWeight.w700,
             ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            'Available tuning currency: ${controller.shellCoreLabel}',
-            style: textTheme.bodyMedium?.copyWith(
-              color: LightcorePalette.solar,
-              fontWeight: FontWeight.w700,
+            const SizedBox(height: 8),
+            Text(
+              controller.activeChildTowerLevelProgressLabel,
+              style: textTheme.bodyMedium?.copyWith(
+                color: tint,
+                fontWeight: FontWeight.w700,
+              ),
             ),
-          ),
-          const SizedBox(height: 14),
-          Wrap(
-            spacing: 10,
-            runSpacing: 10,
-            children: [
-              for (final upgrade in controller.activeChildTowerUpgrades)
-                _ChildTowerUpgradeCard(
-                  controller: controller,
-                  upgrade: upgrade,
-                  tint: tint,
-                ),
-            ],
-          ),
+            const SizedBox(height: 6),
+            Text(
+              'Available tuning currency: ${controller.shellCoreLabel}',
+              style: textTheme.bodyMedium?.copyWith(
+                color: LightcorePalette.solar,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 14),
+            Wrap(
+              spacing: 10,
+              runSpacing: 10,
+              children: [
+                for (final upgrade in controller.activeChildTowerUpgrades)
+                  _ChildTowerUpgradeCard(
+                    controller: controller,
+                    upgrade: upgrade,
+                    tint: tint,
+                  ),
+              ],
+            ),
+          ],
         ],
       ),
     );
@@ -775,7 +780,8 @@ class _BuiltSlotCard extends StatelessWidget {
     final isProject = controller.isSlotLayerProject(slot);
     final isPromoted = slot.isPromotedChildTower;
     final isFabricating = slot.isFabricating;
-    final showTowerLevelBadge = slot.config != null && !isFabricating;
+    final hasTowerProgression = slot.hasTowerProgression;
+    final showTowerLevelBadge = hasTowerProgression && !isFabricating;
     final progressValue = isFabricating
         ? slot.fabricationProgress
         : isProject
@@ -787,8 +793,8 @@ class _BuiltSlotCard extends StatelessWidget {
         ? 0
         : isProject
         ? slot.childBuiltCount
-        : slot.isChildLayerNode
-        ? (slot.childCoreLevel ?? 1)
+        : hasTowerProgression
+        ? slot.level
         : slot.level;
     final pipMax = isProject
         ? LightcoreController.slotCount
@@ -821,7 +827,7 @@ class _BuiltSlotCard extends StatelessWidget {
                     Text(
                       slot.isChildLayerNode
                           ? isPromoted
-                                ? 'Aligned lower shell. Tap this child tower to generate its packet; the source shell is archived as passive support.'
+                                ? 'Layer 2 tower online. It has its own level and stat board; the source shell remains linked for core upgrades and inspection.'
                                 : 'Lower-shell project. Tap to enter this shell, rebuild from Root, and align it into an active child tower.'
                           : isFabricating
                           ? 'Fabricating Source Tower. Its rolled projectile, payload, and trainable stats are locked, but combat systems come online when the timer completes.'
@@ -832,7 +838,7 @@ class _BuiltSlotCard extends StatelessWidget {
                     Text(
                       slot.isChildLayerNode
                           ? isPromoted
-                                ? 'Aligned ${controller.towerAffinitySignatureLabel(slot)}  •  ${controller.towerProjectileLabel(slot)} / ${controller.towerPayloadLabel(slot)}  •  Target ${controller.towerTargetLabel(slot)}  •  ${controller.childTowerGrowthLabel(slot)}'
+                                ? 'Aligned ${controller.towerAffinitySignatureLabel(slot)}  •  ${controller.towerProjectileLabel(slot)} / ${controller.towerPayloadLabel(slot)}  •  Target ${controller.towerTargetLabel(slot)}  •  ${controller.towerCompletionLabel(slot)}'
                                 : 'Child shell progress ${controller.childShellProgressLabel(slot)}  •  ${controller.childTowerGrowthLabel(slot)}'
                           : isFabricating
                           ? '${controller.towerFabricationProgressLabel(slot)}  •  ${controller.towerProjectileLabel(slot)} / ${controller.towerPayloadLabel(slot)}'
@@ -842,7 +848,7 @@ class _BuiltSlotCard extends StatelessWidget {
                         fontWeight: FontWeight.w700,
                       ),
                     ),
-                    if (!slot.isChildLayerNode && !isFabricating) ...[
+                    if (hasTowerProgression && !isFabricating) ...[
                       const SizedBox(height: 4),
                       Text(
                         controller.towerUpgradeBoardSummary(slot),
@@ -1034,7 +1040,7 @@ class _BuiltSlotCard extends StatelessWidget {
                   child: FilledButton(
                     onPressed: isFabricating
                         ? null
-                        : slot.isChildLayerNode
+                        : isProject
                         ? () => controller.enterChildLayer(slot.slotIndex)
                         : slot.level < LightcoreController.maxTowerLevel
                         ? () => controller.tutorialUpgradeTower(slot.slotIndex)
@@ -1042,7 +1048,7 @@ class _BuiltSlotCard extends StatelessWidget {
                     child: Text(
                       isFabricating
                           ? 'Fabricating ${controller.towerFabricationRemainingLabel(slot)}'
-                          : slot.isChildLayerNode
+                          : isProject
                           ? isPromoted
                                 ? 'Enter Layer'
                                 : controller.isSlotPromotionReady(slot)

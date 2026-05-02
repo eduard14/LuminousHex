@@ -290,7 +290,7 @@ extension LightcoreControllerTowerMath on LightcoreController {
     if (!tower.isBuilt || tower.isFabricating) {
       return 0;
     }
-    if (tower.isChildLayerNode) {
+    if (!tower.hasTowerProgression) {
       return 0;
     }
     if (tower.level >= maxTowerLevel) {
@@ -298,15 +298,25 @@ extension LightcoreControllerTowerMath on LightcoreController {
     }
     final shellCurve = pow(1.35, max(0, builtRelayCount - 1)).toDouble();
     final levelCurve = pow(1.75, tower.level - 1).toDouble();
-    final baseBuildCost = _balancedTowerStat(
-      tower.config!,
-      'buildCost',
-      tower.config!.buildCost.toDouble(),
-    );
+    final baseBuildCost = _towerProgressionBaseBuildCost(tower);
     final baseCost = (baseBuildCost * 2.2) + (tower.level * 10) + 8;
     final price =
         baseCost * activeLayerPriceMultiplier * shellCurve * levelCurve;
     return max(1, price.round());
+  }
+
+  double _towerProgressionBaseBuildCost(OuterTowerState tower) {
+    final config = tower.config;
+    if (config != null) {
+      return _balancedTowerStat(
+        config,
+        'buildCost',
+        config.buildCost.toDouble(),
+      );
+    }
+    final tier = max(1, tower.childLayerTier ?? activeLayer.tier);
+    final coreLevel = max(1, tower.childCoreLevel ?? tier);
+    return 34 + (tier * 18) + (coreLevel * 5);
   }
 
   int towerStatUpgradeCost(
@@ -315,7 +325,7 @@ extension LightcoreControllerTowerMath on LightcoreController {
   ) {
     if (!tower.isBuilt ||
         tower.isFabricating ||
-        tower.isChildLayerNode ||
+        !tower.hasTowerProgression ||
         upgrade.rank >= maxTowerUpgradeRank) {
       return 0;
     }
@@ -325,11 +335,7 @@ extension LightcoreControllerTowerMath on LightcoreController {
     final rankCurve = pow(1.42, upgrade.rank).toDouble();
     final rarityCurve =
         (upgrade.isRadiant ? 1.16 : 1.0) * (upgrade.isOvercharge ? 1.24 : 1.0);
-    final baseBuildCost = _balancedTowerStat(
-      tower.config!,
-      'buildCost',
-      tower.config!.buildCost.toDouble(),
-    );
+    final baseBuildCost = _towerProgressionBaseBuildCost(tower);
     final baseCost = (baseBuildCost * 1.1) + ((upgrade.rank + 1) * 9) + 6;
     final price =
         baseCost *
@@ -359,6 +365,10 @@ extension LightcoreControllerTowerMath on LightcoreController {
           _towerDamageOutputMultiplier *
           _promotedChildTowerPowerBoost(tower) *
           _childTowerPowerMultiplier(tower.childPowerUpgradeBonus) *
+          _towerPowerUpgradeMultiplier(
+            _towerUpgradeBonusFor(tower, TowerUpgradeStatType.power),
+          ) *
+          _towerLevelOutputMultiplier(tower) *
           (tower.powerFactor.clamp(0.84, 1.22)) *
           cardMultiplier *
           affinityBonus *
@@ -409,6 +419,10 @@ extension LightcoreControllerTowerMath on LightcoreController {
       return (0.38 + (childLevel * 0.04) + ((childTier - 1) * 0.06)) *
           tower.chargeFactor *
           _childTowerChargeMultiplier(tower.childChargeUpgradeBonus) *
+          _towerChargeUpgradeMultiplier(
+            _towerUpgradeBonusFor(tower, TowerUpgradeStatType.chargeRate),
+          ) *
+          _towerLevelOutputMultiplier(tower) *
           cardMultiplier *
           traitBonus *
           _gearChargeMultiplier *
@@ -466,6 +480,10 @@ extension LightcoreControllerTowerMath on LightcoreController {
             tower.cooldownFactor *
             levelMultiplier *
             _childTowerCooldownMultiplier(tower.childCooldownUpgradeBonus) *
+            _towerCooldownUpgradeMultiplier(
+              _towerUpgradeBonusFor(tower, TowerUpgradeStatType.cooldown),
+            ) *
+            _towerLevelCooldownMultiplier(tower) *
             cardMultiplier *
             patternCooldownMultiplier,
       );
@@ -750,7 +768,11 @@ extension LightcoreControllerTowerMath on LightcoreController {
       return (((tower.childRange ?? (292 + ((tier - 1) * 44))) *
                   _promotedChildTowerRangeMultiplier) +
               ((childLevel - 1) * 8) +
-              _childTowerRangeBonus(tower.childRangeUpgradeBonus)) *
+              _childTowerRangeBonus(tower.childRangeUpgradeBonus) +
+              _towerRangeUpgradeBonus(
+                _towerUpgradeBonusFor(tower, TowerUpgradeStatType.range),
+              ) +
+              _towerLevelRangeBonus(tower)) *
           tower.rangeFactor;
     }
     return (coreBaseRange +
@@ -827,7 +849,14 @@ extension LightcoreControllerTowerMath on LightcoreController {
       final childLevel = tower.childCoreLevel ?? 1;
       return ((tower.childGenerationSpeed ?? (0.72 + ((tier - 1) * 0.05))) +
               ((childLevel - 1) * 0.02) +
-              _childTowerGenerationBonus(tower.childGenerationUpgradeBonus)) *
+              _childTowerGenerationBonus(tower.childGenerationUpgradeBonus) +
+              _towerGenerationUpgradeBonus(
+                _towerUpgradeBonusFor(
+                  tower,
+                  TowerUpgradeStatType.generationSpeed,
+                ),
+              )) *
+          _towerLevelOutputMultiplier(tower) *
           tower.generationFactor *
           (1 + combatBonus.generationSpeed);
     }
@@ -858,6 +887,10 @@ extension LightcoreControllerTowerMath on LightcoreController {
                   (0.08 + (((tower.childLayerTier ?? 1) - 1) * 0.02))) +
               ((childLevel - 1) * 0.006) +
               _childTowerCritChanceBonus(tower.childCritChanceUpgradeBonus) +
+              _towerCritChanceUpgradeBonus(
+                _towerUpgradeBonusFor(tower, TowerUpgradeStatType.critChance),
+              ) +
+              _towerLevelCritChanceBonus(tower) +
               _gearCritChanceBonus +
               combatBonus.critChance)
           .clamp(0.02, 0.55);
@@ -884,13 +917,17 @@ extension LightcoreControllerTowerMath on LightcoreController {
     final combatBonus = towerPatternBonusesFor(tower) + towerInventoryBonuses;
     if (tower.isChildLayerNode) {
       final childLevel = tower.childCoreLevel ?? 1;
-      return (tower.childCritMultiplier ??
-              (1.62 + (((tower.childLayerTier ?? 1) - 1) * 0.08)) +
-                  ((childLevel - 1) * 0.04) +
-                  _childTowerCritDamageBonus(
-                    tower.childCritDamageUpgradeBonus,
-                  )) *
+      final base =
+          tower.childCritMultiplier ??
+          (1.62 + (((tower.childLayerTier ?? 1) - 1) * 0.08));
+      return (base +
+              ((childLevel - 1) * 0.04) +
+              _childTowerCritDamageBonus(tower.childCritDamageUpgradeBonus) +
+              _towerCritDamageUpgradeBonus(
+                _towerUpgradeBonusFor(tower, TowerUpgradeStatType.critDamage),
+              )) *
           tower.critDamageFactor *
+          _towerLevelCritDamageMultiplier(tower) *
           _gearCritDamageMultiplier *
           (1 + combatBonus.critDamage);
     }
@@ -919,6 +956,10 @@ extension LightcoreControllerTowerMath on LightcoreController {
                   (1.06 + (((tower.childLayerTier ?? 1) - 1) * 0.03))) +
               ((childLevel - 1) * 0.01) +
               _childTowerFinalDamageBonus(tower.childFinalDamageUpgradeBonus) +
+              _towerFinalDamageUpgradeBonus(
+                _towerUpgradeBonusFor(tower, TowerUpgradeStatType.finalDamage),
+              ) +
+              _towerLevelDamageBonus(tower) +
               combatBonus.finalDamage)
           .clamp(1.0, 2.8);
     }
@@ -944,6 +985,13 @@ extension LightcoreControllerTowerMath on LightcoreController {
                   _childTowerBossDamageBonus(
                     tower.childBossDamageUpgradeBonus,
                   ) +
+                  _towerBossDamageUpgradeBonus(
+                    _towerUpgradeBonusFor(
+                      tower,
+                      TowerUpgradeStatType.bossDamage,
+                    ),
+                  ) +
+                  _towerLevelDamageBonus(tower) +
                   combatBonus.bossDamage)
               .clamp(1.0, 3.2) *
           _gearBossDamageMultiplier;
@@ -971,6 +1019,10 @@ extension LightcoreControllerTowerMath on LightcoreController {
               _childTowerNormalDamageBonus(
                 tower.childNormalDamageUpgradeBonus,
               ) +
+              _towerNormalDamageUpgradeBonus(
+                _towerUpgradeBonusFor(tower, TowerUpgradeStatType.normalDamage),
+              ) +
+              _towerLevelDamageBonus(tower) +
               combatBonus.normalDamage)
           .clamp(1.0, 2.8);
     }
@@ -996,6 +1048,13 @@ extension LightcoreControllerTowerMath on LightcoreController {
               _childTowerDefensePenetrationBonus(
                 tower.childDefensePenetrationUpgradeBonus,
               ) +
+              _towerDefensePenetrationUpgradeBonus(
+                _towerUpgradeBonusFor(
+                  tower,
+                  TowerUpgradeStatType.defensePenetration,
+                ),
+              ) +
+              _towerLevelDefensePenetrationBonus(tower) +
               combatBonus.defensePenetration)
           .clamp(0.0, 0.85);
     }
@@ -1020,7 +1079,11 @@ extension LightcoreControllerTowerMath on LightcoreController {
       return ((tower.childMinDamageMultiplier ??
                   (1.02 + (((tower.childLayerTier ?? 1) - 1) * 0.015))) +
               ((childLevel - 1) * 0.004) +
-              _childTowerMinDamageBonus(tower.childMinDamageUpgradeBonus))
+              _childTowerMinDamageBonus(tower.childMinDamageUpgradeBonus) +
+              _towerMinDamageUpgradeBonus(
+                _towerUpgradeBonusFor(tower, TowerUpgradeStatType.minDamage),
+              ) +
+              _towerLevelDamageBonus(tower))
           .clamp(1.0, 2.4);
     }
     return (tower.minDamageFactor +
@@ -1041,7 +1104,14 @@ extension LightcoreControllerTowerMath on LightcoreController {
           ((tower.childMaxDamageMultiplier ??
                       (1.1 + (((tower.childLayerTier ?? 1) - 1) * 0.02))) +
                   ((childLevel - 1) * 0.006) +
-                  _childTowerMaxDamageBonus(tower.childMaxDamageUpgradeBonus))
+                  _childTowerMaxDamageBonus(tower.childMaxDamageUpgradeBonus) +
+                  _towerMaxDamageUpgradeBonus(
+                    _towerUpgradeBonusFor(
+                      tower,
+                      TowerUpgradeStatType.maxDamage,
+                    ),
+                  ) +
+                  _towerLevelDamageBonus(tower))
               .clamp(1.0, 2.8);
       return max(value, towerMinDamageMultiplier(tower));
     }
@@ -1057,8 +1127,16 @@ extension LightcoreControllerTowerMath on LightcoreController {
   }
 
   double towerDotDamageMultiplier(OuterTowerState tower) {
-    if (!tower.isBuilt || tower.isChildLayerNode) {
+    if (!tower.isBuilt) {
       return 1;
+    }
+    if (tower.isChildLayerNode) {
+      return (1 +
+              _towerDotDamageUpgradeBonus(
+                _towerUpgradeBonusFor(tower, TowerUpgradeStatType.dotDamage),
+              ) +
+              _towerLevelDamageBonus(tower))
+          .clamp(1.0, 2.8);
     }
     return (tower.dotDamageFactor +
             _towerDotDamageUpgradeBonus(

@@ -496,7 +496,7 @@ extension LightcoreControllerBattleTowerActions on LightcoreController {
     final tower = _slots[slotIndex];
     if (!tower.isBuilt ||
         tower.isFabricating ||
-        tower.isChildLayerNode ||
+        !tower.hasTowerProgression ||
         tower.level >= maxTowerLevel) {
       return false;
     }
@@ -529,7 +529,7 @@ extension LightcoreControllerBattleTowerActions on LightcoreController {
     }
 
     final tower = _slots[slotIndex];
-    if (!tower.isBuilt || tower.isFabricating || tower.isChildLayerNode) {
+    if (!tower.isBuilt || tower.isFabricating || !tower.hasTowerProgression) {
       return false;
     }
 
@@ -571,7 +571,9 @@ extension LightcoreControllerBattleTowerActions on LightcoreController {
   }
 
   bool upgradeActiveChildTowerStat(ChildTowerUpgradeType type) {
-    if (!_activeLayerAllowsProgressionUpgrades || !activeLayerHasParentSlot) {
+    if (activeLayer.promotedIntoParentSlot ||
+        activeLayerPassiveOnly ||
+        !activeLayerHasParentSlot) {
       return false;
     }
 

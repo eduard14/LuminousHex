@@ -1338,15 +1338,18 @@ class _TowerStatsPanel extends StatelessWidget {
     final textTheme = Theme.of(context).textTheme;
     final manager = controller.cardForSlot(tower);
     final levelCost = controller.upgradeCost(tower);
+    final hasTowerProgression = tower.hasTowerProgression;
     final towerStats = [
       [
         _InlineStatEntry(
           label: 'Level',
-          value: tower.isChildLayerNode
+          value: hasTowerProgression
+              ? '${tower.level}/${LightcoreController.maxTowerLevel}'
+              : tower.isChildLayerNode
               ? '${tower.childCoreLevel ?? 1}'
-              : '${tower.level}/${LightcoreController.maxTowerLevel}',
+              : '1/${LightcoreController.maxTowerLevel}',
         ),
-        if (!tower.isChildLayerNode)
+        if (hasTowerProgression)
           _InlineStatEntry(
             label: 'Stats',
             value:
@@ -1433,7 +1436,7 @@ class _TowerStatsPanel extends StatelessWidget {
           label: 'Pattern',
           value: controller.towerPatternAchievementLabel(tower),
         ),
-        if (!tower.isChildLayerNode && controller.managerAssignmentUnlocked)
+        if (hasTowerProgression && controller.managerAssignmentUnlocked)
           _InlineStatEntry(
             label: 'Core Manager',
             value: manager?.name ?? 'Open',
@@ -1447,19 +1450,21 @@ class _TowerStatsPanel extends StatelessWidget {
         Text(controller.towerDisplayName(tower), style: textTheme.titleLarge),
         const SizedBox(height: 4),
         Text(
-          tower.isChildLayerNode ? 'Shell Actions' : 'Tower Upgrades',
+          tower.isLayerProject ? 'Shell Actions' : 'Tower Upgrades',
           style: textTheme.titleMedium?.copyWith(color: LightcorePalette.solar),
         ),
         const SizedBox(height: 6),
         Text(
-          tower.isChildLayerNode
+          tower.isLayerProject
               ? '${controller.childTowerGrowthLabel(tower)}  •  ${controller.childShellProgressLabel(tower)}'
+              : tower.isPromotedChildTower
+              ? '${controller.towerCompletionLabel(tower)}  •  Source ${controller.childShellProgressLabel(tower)}'
               : tower.isFabricating
               ? controller.towerFabricationProgressLabel(tower)
               : tower.config!.passiveLabel,
           style: textTheme.bodyMedium,
         ),
-        if (!tower.isChildLayerNode && !tower.isFabricating) ...[
+        if (hasTowerProgression && !tower.isFabricating) ...[
           const SizedBox(height: 6),
           Text(
             'Level ${levelCost}L  •  Stat ranks ${controller.towerUpgradePointsSpent(tower)}/${controller.towerUpgradePointsCap(tower)}',
@@ -1482,20 +1487,18 @@ class _TowerStatsPanel extends StatelessWidget {
               child: FilledButton(
                 onPressed: tower.isFabricating
                     ? null
-                    : tower.isChildLayerNode
+                    : tower.isLayerProject
                     ? () => controller.enterChildLayer(tower.slotIndex)
                     : controller.activeLayerPassiveOnly
                     ? null
                     : tower.level < LightcoreController.maxTowerLevel
-                    ? controller.tutorialUpgradeSelectedTower
+                    ? () => controller.tutorialUpgradeTower(tower.slotIndex)
                     : null,
                 child: Text(
                   tower.isFabricating
                       ? 'Fabricating ${controller.towerFabricationRemainingLabel(tower)}'
-                      : tower.isChildLayerNode
-                      ? tower.isPromotedChildTower
-                            ? 'Open Archive'
-                            : controller.isSlotPromotionReady(tower)
+                      : tower.isLayerProject
+                      ? controller.isSlotPromotionReady(tower)
                             ? 'Inner Shell Ready'
                             : 'Open Shell'
                       : tower.level < LightcoreController.maxTowerLevel
@@ -1526,6 +1529,11 @@ class _TowerStatsPanel extends StatelessWidget {
                       ? 'Generate Ready Packet'
                       : 'Fire Ready Packet',
                 ),
+              ),
+            if (tower.isPromotedChildTower)
+              OutlinedButton(
+                onPressed: () => controller.enterChildLayer(tower.slotIndex),
+                child: const Text('Source Layer'),
               ),
             if (!tower.isChildLayerNode && onInspect != null)
               OutlinedButton(onPressed: onInspect, child: const Text('Stats')),
@@ -1567,7 +1575,7 @@ class _TowerStatsPanel extends StatelessWidget {
         ],
         const SizedBox(height: 16),
         Text(
-          tower.isChildLayerNode ? 'Shell Stats' : 'Tower Stats',
+          tower.isLayerProject ? 'Shell Stats' : 'Tower Stats',
           style: textTheme.titleSmall?.copyWith(
             color: LightcorePalette.mist.withValues(alpha: 0.8),
           ),

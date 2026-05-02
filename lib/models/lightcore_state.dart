@@ -252,6 +252,7 @@ class OuterTowerState {
   bool get isChildLayerNode => childLayerId != null;
   bool get isPromotedChildTower => isChildLayerNode && childPromoted;
   bool get isLayerProject => isChildLayerNode && !childPromoted;
+  bool get hasTowerProgression => config != null || isPromotedChildTower;
   bool get isFabricating => config != null && fabricationRemainingSeconds > 0;
   double get fabricationProgress => fabricationTotalSeconds <= 0
       ? 1

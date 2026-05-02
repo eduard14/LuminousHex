@@ -441,9 +441,8 @@ extension LightcoreControllerRewardsSocial on LightcoreController {
     return canClaimBattlePassRewardForPass(pass, tierIndex, track);
   }
 
-  bool _slotReadyForPromotion(OuterTowerState tower) => tower.config != null
-      ? tower.level >= maxTowerLevel
-      : tower.isPromotedChildTower;
+  bool _slotReadyForPromotion(OuterTowerState tower) =>
+      tower.hasTowerProgression && tower.level >= maxTowerLevel;
 
   UnmodifiableListView<FriendRelayPiece> get availableSharedRelayCorePieces =>
       UnmodifiableListView(_ownedSharedRelayCorePieces());

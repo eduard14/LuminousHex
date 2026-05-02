@@ -1093,7 +1093,17 @@ extension LightcoreControllerLayerTraits on LightcoreController {
       layer,
       ChildTowerUpgradeType.maxDamage,
     );
+    final towerUpgradeOptions = layer.promotedIntoParentSlot
+        ? (slot.towerUpgradeOptions.isNotEmpty
+              ? slot.towerUpgradeOptions
+              : _rollTowerUpgradeBoardForLoadout(
+                  forgedProjectile,
+                  forgedPayload,
+                ))
+        : const <TowerUpgradeOptionState>[];
     parent.slots[parentSlotIndex] = slot.copyWith(
+      level: layer.promotedIntoParentSlot ? max(1, slot.level) : slot.level,
+      towerUpgradeOptions: towerUpgradeOptions,
       childLayerId: layer.id,
       childLayerTier: parent.tier,
       childLayerName: layerDisplayLabel(layer),
@@ -1103,9 +1113,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
       childPayloadLoadout: payloadLoadout,
       childProjectileType: forgedProjectile,
       childPayloadType: forgedPayload,
-      childCoreLevel: layer.promotedIntoParentSlot
-          ? max(layer.core.level + 1, parent.tier)
-          : layer.core.level,
+      childCoreLevel: layer.core.level,
       childRange: averagedRange,
       childGenerationSpeed: averagedGeneration,
       childCritChance: averagedCritChance,

@@ -47,8 +47,9 @@ extension LightcoreControllerProgressionLayers on LightcoreController {
     return pow(2.4, max(0, targetTier - 1)).toDouble();
   }
 
-  int _effectiveTowerLevel(OuterTowerState tower) =>
-      tower.config != null ? tower.level : max(1, tower.childCoreLevel ?? 1);
+  int _effectiveTowerLevel(OuterTowerState tower) => tower.hasTowerProgression
+      ? tower.level
+      : max(1, tower.childCoreLevel ?? 1);
 
   double get _overallStatRollBias =>
       ((overallLevel - 1) / 18).clamp(0.0, 0.72).toDouble();
@@ -92,15 +93,25 @@ extension LightcoreControllerProgressionLayers on LightcoreController {
         projectileType.behaviorProfile == ProjectileBehaviorProfile.nova;
   }
 
-  bool _towerConfigSupportsDotDamage(TowerConfig config) =>
-      config.defaultProjectileType == ProjectileType.shieldHalo ||
-      _projectileHasLingeringField(config.defaultProjectileType) ||
-      config.defaultPayloadType.effectProfile == PayloadEffectProfile.burn;
+  bool _towerLoadoutSupportsDotDamage(
+    ProjectileType projectileType,
+    PayloadType payloadType,
+  ) =>
+      projectileType == ProjectileType.shieldHalo ||
+      _projectileHasLingeringField(projectileType) ||
+      payloadType.effectProfile == PayloadEffectProfile.burn;
 
-  List<TowerUpgradeStatType> _eligibleTowerUpgradeTypesForConfig(
-    TowerConfig config,
+  bool _towerConfigSupportsDotDamage(TowerConfig config) =>
+      _towerLoadoutSupportsDotDamage(
+        config.defaultProjectileType,
+        config.defaultPayloadType,
+      );
+
+  List<TowerUpgradeStatType> _eligibleTowerUpgradeTypesForLoadout(
+    ProjectileType projectileType,
+    PayloadType payloadType,
   ) {
-    if (config.defaultProjectileType == ProjectileType.shieldHalo) {
+    if (projectileType == ProjectileType.shieldHalo) {
       return <TowerUpgradeStatType>[
         TowerUpgradeStatType.power,
         TowerUpgradeStatType.range,
@@ -127,26 +138,43 @@ extension LightcoreControllerProgressionLayers on LightcoreController {
       TowerUpgradeStatType.defensePenetration,
       TowerUpgradeStatType.minDamage,
       TowerUpgradeStatType.maxDamage,
-      if (_towerConfigSupportsDotDamage(config)) TowerUpgradeStatType.dotDamage,
+      if (_towerLoadoutSupportsDotDamage(projectileType, payloadType))
+        TowerUpgradeStatType.dotDamage,
     ];
   }
+
+  List<TowerUpgradeStatType> _eligibleTowerUpgradeTypesForConfig(
+    TowerConfig config,
+  ) => _eligibleTowerUpgradeTypesForLoadout(
+    config.defaultProjectileType,
+    config.defaultPayloadType,
+  );
 
   List<TowerUpgradeStatType> _eligibleTowerUpgradeTypesForTower(
     OuterTowerState tower,
   ) {
     final config = tower.config;
     if (config == null) {
-      return const <TowerUpgradeStatType>[];
+      if (!tower.isPromotedChildTower) {
+        return const <TowerUpgradeStatType>[];
+      }
+      return _eligibleTowerUpgradeTypesForLoadout(
+        _slotProjectileType(tower),
+        _slotPayloadType(tower),
+      );
     }
     return _eligibleTowerUpgradeTypesForConfig(config);
   }
 
-  List<TowerUpgradeOptionState> _rollTowerUpgradeBoard(TowerConfig config) {
-    final pool = _eligibleTowerUpgradeTypesForConfig(
-      config,
+  List<TowerUpgradeOptionState> _rollTowerUpgradeBoardForLoadout(
+    ProjectileType projectileType,
+    PayloadType payloadType,
+  ) {
+    final pool = _eligibleTowerUpgradeTypesForLoadout(
+      projectileType,
+      payloadType,
     ).toList(growable: true)..shuffle(_traitRandom);
-    final guaranteedType =
-        config.defaultProjectileType == ProjectileType.shieldHalo
+    final guaranteedType = projectileType == ProjectileType.shieldHalo
         ? TowerUpgradeStatType.power
         : TowerUpgradeStatType.chargeRate;
     final chosen = <TowerUpgradeStatType>[guaranteedType];
@@ -183,6 +211,12 @@ extension LightcoreControllerProgressionLayers on LightcoreController {
         ),
     ];
   }
+
+  List<TowerUpgradeOptionState> _rollTowerUpgradeBoard(TowerConfig config) =>
+      _rollTowerUpgradeBoardForLoadout(
+        config.defaultProjectileType,
+        config.defaultPayloadType,
+      );
 
   double _towerUpgradeBonusValue(int rank) =>
       rank.clamp(0, maxTowerUpgradeRank) / maxTowerUpgradeRank;
@@ -485,6 +519,9 @@ extension LightcoreControllerProgressionLayers on LightcoreController {
   }
 
   String childTowerGrowthLabel(OuterTowerState tower) {
+    if (tower.isPromotedChildTower) {
+      return towerCompletionLabel(tower);
+    }
     final childLayerId = tower.childLayerId;
     if (childLayerId == null) {
       return 'Level ${tower.childCoreLevel ?? 1}';
@@ -516,7 +553,7 @@ extension LightcoreControllerProgressionLayers on LightcoreController {
   }
 
   bool isTowerComplete(OuterTowerState tower) =>
-      tower.config != null &&
+      tower.hasTowerProgression &&
       tower.level >= maxTowerLevel &&
       towerStatUpgradesComplete(tower);
 
@@ -617,8 +654,8 @@ extension LightcoreControllerProgressionLayers on LightcoreController {
   };
 
   String towerUpgradeBoardSummary(OuterTowerState tower) {
-    if (tower.isChildLayerNode || !tower.isBuilt) {
-      return 'No layer 1 substats';
+    if (!tower.hasTowerProgression || !tower.isBuilt) {
+      return 'No tower substats';
     }
     final rolled = tower.towerUpgradeOptions;
     final locked = towerLockedUpgradeTypesFor(tower).length;
@@ -1364,10 +1401,14 @@ extension LightcoreControllerProgressionLayers on LightcoreController {
       final current = _slots[index];
       if (current.isPromotedChildTower) {
         _slots[index] = current.copyWith(
+          level: maxTowerLevel,
           charge: 0,
           cooldownRemaining: 0,
           automationCooldownRemaining: 0,
           disruption: 0,
+          towerUpgradeOptions: current.towerUpgradeOptions
+              .map((upgrade) => upgrade.copyWith(rank: maxTowerUpgradeRank))
+              .toList(growable: false),
         );
         continue;
       }

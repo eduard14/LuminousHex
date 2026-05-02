@@ -61,6 +61,14 @@ void _promoteTier1ChildIntoCurrentCompositeSlot(
   expect(controller.slots[slotIndex].isPromotedChildTower, isTrue);
 }
 
+void _maxOutPromotedTower(LightcoreController controller, int slotIndex) {
+  controller.lumens = 100000000;
+  while (controller.slots[slotIndex].level <
+      LightcoreController.maxTowerLevel) {
+    expect(controller.upgradeTower(slotIndex), isTrue);
+  }
+}
+
 void _fillCurrentCompositeLayerWithPromotedTier1Children(
   LightcoreController controller,
 ) {
@@ -71,6 +79,7 @@ void _fillCurrentCompositeLayerWithPromotedTier1Children(
       index,
       affinities[index % affinities.length],
     );
+    _maxOutPromotedTower(controller, index);
   }
 }
 

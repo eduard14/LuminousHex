@@ -78,6 +78,11 @@ void _forgeChildShell(
   _maxOutCurrentShell(controller, configs);
   controller.unlockLayer2Tower();
   expect(controller.activeLayerHasParentSlot, isFalse);
+  controller.lumens = 100000000;
+  while (controller.slots[slotIndex].level <
+      LightcoreController.maxTowerLevel) {
+    expect(controller.upgradeTower(slotIndex), isTrue);
+  }
 }
 
 void _clearLayer3Trial(LightcoreController controller) {
