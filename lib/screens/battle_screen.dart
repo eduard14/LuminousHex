@@ -32,6 +32,8 @@ class BattleScreen extends StatefulWidget {
     this.showQuestPanel = true,
     this.showBattleHud = true,
     this.enableBattlefieldTaps = true,
+    this.showBattleGuides = true,
+    this.showArenaSlots = true,
     this.promotionPresentation,
     this.onPromotionPresentationComplete,
   });
@@ -43,6 +45,8 @@ class BattleScreen extends StatefulWidget {
   final bool showQuestPanel;
   final bool showBattleHud;
   final bool enableBattlefieldTaps;
+  final bool showBattleGuides;
+  final bool showArenaSlots;
   final ShellPromotionPresentation? promotionPresentation;
   final VoidCallback? onPromotionPresentationComplete;
 
@@ -180,6 +184,15 @@ class _BattleScreenState extends State<BattleScreen> {
       _logBattle('controller-changed');
       _syncEngineState();
     }
+    if (identical(oldWidget.controller, widget.controller) &&
+        (oldWidget.enableBattlefieldTaps != widget.enableBattlefieldTaps ||
+            oldWidget.showBattleGuides != widget.showBattleGuides ||
+            oldWidget.showArenaSlots != widget.showArenaSlots)) {
+      _resetCanvasTap();
+      _game.pauseEngine();
+      _game = _createGame();
+      _syncEngineState();
+    }
     if (oldWidget.isActive && !widget.isActive) {
       widget.controller.stopManualOverdrive();
       _panelFocus = _BattlePanelFocus.none;
@@ -213,6 +226,9 @@ class _BattleScreenState extends State<BattleScreen> {
       onCenterTap: _handleCenterTap,
       onSlotTap: _handleSlotTap,
       onBackgroundTap: _handleBackgroundTap,
+      enableBattlefieldTaps: widget.enableBattlefieldTaps,
+      showTutorialGuides: widget.showBattleGuides,
+      showArenaSlots: widget.showArenaSlots,
     );
   }
 
@@ -371,7 +387,13 @@ class _BattleScreenState extends State<BattleScreen> {
       child: Stack(
         fit: StackFit.expand,
         children: [
-          GameWidget(key: ValueKey<LightcoreBattleGame>(_game), game: _game),
+          IgnorePointer(
+            ignoring: !widget.enableBattlefieldTaps,
+            child: GameWidget(
+              key: ValueKey<LightcoreBattleGame>(_game),
+              game: _game,
+            ),
+          ),
           Listener(
             behavior: HitTestBehavior.translucent,
             onPointerDown: _handleCanvasPointerDown,
@@ -909,6 +931,7 @@ class _BattleScreenState extends State<BattleScreen> {
   }) {
     if (!widget.showBattleHud ||
         !widget.showQuestPanel ||
+        !widget.showBattleGuides ||
         !controller.hasActiveTutorial) {
       return null;
     }

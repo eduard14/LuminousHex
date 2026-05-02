@@ -897,6 +897,8 @@ class _DailyDungeonBattleRunScreenState
                       showQuestPanel: false,
                       showBattleHud: false,
                       enableBattlefieldTaps: !_isThreatDirector,
+                      showBattleGuides: !_isThreatDirector,
+                      showArenaSlots: !_isThreatDirector,
                     ),
                   ),
                   if (_isPrismRift)
@@ -1389,16 +1391,19 @@ class _ThreatDirectorBattleStatusDock extends StatelessWidget {
               : LightcorePalette.aether,
           height: 7,
         ),
-        if (breachProgress > 0) ...[
-          const SizedBox(height: 7),
-          _MeterLabelRow(label: 'Breach', value: 'Apex boosted'),
-          const SizedBox(height: 5),
-          MeterBar(
-            value: breachProgress,
-            color: LightcorePalette.solar,
-            height: 7,
-          ),
-        ],
+        const SizedBox(height: 7),
+        _MeterLabelRow(
+          label: 'Breach',
+          value: breachProgress > 0 ? 'Apex boosted' : 'Stable',
+        ),
+        const SizedBox(height: 5),
+        MeterBar(
+          value: breachProgress,
+          color: breachProgress > 0
+              ? LightcorePalette.solar
+              : LightcorePalette.stroke,
+          height: 7,
+        ),
       ],
     );
     final controls = Wrap(
@@ -1586,26 +1591,31 @@ class _ManualSpawnButton extends StatelessWidget {
                   _DailyDungeonBattleRunScreenState._launchFeedbackSeconds)
               .clamp(0.0, 1.0)
               .toDouble();
+    final buttonRadius = BorderRadius.circular(12);
     return Tooltip(
       message: 'Launch ${card.config.name}',
       child: SizedBox(
-        width: 132,
-        height: 76,
+        width: 150,
+        height: 82,
         child: Material(
           color: Colors.transparent,
           child: InkWell(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: buttonRadius,
             onTap: effectiveEnabled ? () => onPressed(card) : null,
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: buttonRadius,
               child: Stack(
                 children: [
                   Positioned.fill(
                     child: DecoratedBox(
                       decoration: BoxDecoration(
                         color: effectiveEnabled
-                            ? tint.withValues(alpha: 0.86)
-                            : LightcorePalette.stroke.withValues(alpha: 0.2),
+                            ? Color.lerp(
+                                tint,
+                                LightcorePalette.mist,
+                                0.18,
+                              )!.withValues(alpha: 0.92)
+                            : LightcorePalette.stroke.withValues(alpha: 0.18),
                         border: Border.all(
                           color: feedbackActive
                               ? timingColor.withValues(alpha: 0.95)
@@ -1614,7 +1624,7 @@ class _ManualSpawnButton extends StatelessWidget {
                                 ),
                           width: feedbackActive ? 2 : 1,
                         ),
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: buttonRadius,
                       ),
                     ),
                   ),
@@ -1627,16 +1637,29 @@ class _ManualSpawnButton extends StatelessWidget {
                     ),
                   ),
                   Positioned(
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    child: LinearProgressIndicator(
-                      value: feedbackActive ? feedbackProgress : outcome.phase,
-                      minHeight: feedbackActive ? 4 : 3,
-                      backgroundColor: LightcorePalette.night.withValues(
-                        alpha: 0.14,
+                    left: 10,
+                    right: 10,
+                    bottom: 6,
+                    child: SizedBox(
+                      height: feedbackActive ? 4 : 3,
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          color: LightcorePalette.night.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(99),
+                        ),
+                        child: FractionallySizedBox(
+                          alignment: Alignment.center,
+                          widthFactor: feedbackActive
+                              ? feedbackProgress
+                              : outcome.phase,
+                          child: DecoratedBox(
+                            decoration: BoxDecoration(
+                              color: timingColor.withValues(alpha: 0.9),
+                              borderRadius: BorderRadius.circular(99),
+                            ),
+                          ),
+                        ),
                       ),
-                      valueColor: AlwaysStoppedAnimation<Color>(timingColor),
                     ),
                   ),
                   if (feedbackActive)
@@ -1644,23 +1667,23 @@ class _ManualSpawnButton extends StatelessWidget {
                       child: DecoratedBox(
                         decoration: BoxDecoration(
                           color: timingColor.withValues(alpha: 0.2),
-                          borderRadius: BorderRadius.circular(16),
+                          borderRadius: buttonRadius,
                         ),
                       ),
                     ),
                   Padding(
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 7,
+                      horizontal: 9,
+                      vertical: 8,
                     ),
                     child: Row(
                       children: [
                         _DungeonEnemyPortrait(
                           card: card,
-                          size: 44,
+                          size: 46,
                           selected: effectiveEnabled || feedbackActive,
                         ),
-                        const SizedBox(width: 8),
+                        const SizedBox(width: 9),
                         Expanded(
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
@@ -1712,6 +1735,7 @@ class _ManualSpawnButton extends StatelessWidget {
                                       fontWeight: FontWeight.w800,
                                     ),
                               ),
+                              const SizedBox(height: 3),
                             ],
                           ),
                         ),
@@ -1748,12 +1772,15 @@ class _ThreatDirectorTimingGuide extends StatelessWidget {
         final width = constraints.maxWidth;
         final expansion = outcome.phase.clamp(0.0, 1.0).toDouble();
         final target = outcome.targetPhase.clamp(0.0, 1.0).toDouble();
-        final goodMin = (target - outcome.goodWindow).clamp(0.0, 1.0);
-        final goodMax = (target + outcome.goodWindow).clamp(0.0, 1.0);
         final perfectMin = (target - outcome.perfectWindow).clamp(0.0, 1.0);
         final perfectMax = (target + outcome.perfectWindow).clamp(0.0, 1.0);
         double leftEdgeFor(double value) => ((1 - value) / 2) * width;
         double rightEdgeFor(double value) => ((1 + value) / 2) * width;
+        final guideAlpha = feedbackActive
+            ? 0.12
+            : enabled
+            ? 0.2
+            : 0.08;
 
         return Stack(
           children: [
@@ -1763,77 +1790,41 @@ class _ThreatDirectorTimingGuide extends StatelessWidget {
                 widthFactor: expansion,
                 child: DecoratedBox(
                   decoration: BoxDecoration(
-                    color: color.withValues(
-                      alpha: feedbackActive
-                          ? 0.18
-                          : enabled
-                          ? 0.34
-                          : 0.14,
-                    ),
+                    color: color.withValues(alpha: guideAlpha),
                     border: Border.symmetric(
                       vertical: BorderSide(
-                        color: color.withValues(alpha: enabled ? 0.7 : 0.3),
-                        width: 1.4,
+                        color: color.withValues(alpha: enabled ? 0.58 : 0.22),
+                        width: 1.2,
                       ),
                     ),
                   ),
                 ),
               ),
             ),
-            _TimingGuideBand(
-              left: leftEdgeFor(goodMax),
-              right: leftEdgeFor(goodMin),
-              color: LightcorePalette.success.withValues(alpha: 0.12),
-            ),
-            _TimingGuideBand(
-              left: rightEdgeFor(goodMin),
-              right: rightEdgeFor(goodMax),
-              color: LightcorePalette.success.withValues(alpha: 0.12),
-            ),
-            _TimingGuideBand(
+            _TimingGuideWindow(
               left: leftEdgeFor(perfectMax),
               right: leftEdgeFor(perfectMin),
-              color: LightcorePalette.solar.withValues(alpha: 0.2),
+              color: LightcorePalette.solar.withValues(alpha: 0.14),
             ),
-            _TimingGuideBand(
+            _TimingGuideWindow(
               left: rightEdgeFor(perfectMin),
               right: rightEdgeFor(perfectMax),
-              color: LightcorePalette.solar.withValues(alpha: 0.2),
+              color: LightcorePalette.solar.withValues(alpha: 0.14),
             ),
             _TimingGuideLine(
               x: width / 2,
-              color: LightcorePalette.mist.withValues(alpha: 0.28),
+              color: LightcorePalette.night.withValues(alpha: 0.2),
               width: 1,
             ),
             _TimingGuideLine(
               x: leftEdgeFor(target),
-              color: LightcorePalette.solar.withValues(alpha: 0.95),
+              color: LightcorePalette.solar.withValues(alpha: 0.92),
               width: 2,
             ),
             _TimingGuideLine(
               x: rightEdgeFor(target),
-              color: LightcorePalette.solar.withValues(alpha: 0.95),
+              color: LightcorePalette.solar.withValues(alpha: 0.92),
               width: 2,
-            ),
-            _TimingGuideLine(
-              x: leftEdgeFor(goodMin),
-              color: LightcorePalette.success.withValues(alpha: 0.72),
-              width: 1,
-            ),
-            _TimingGuideLine(
-              x: leftEdgeFor(goodMax),
-              color: LightcorePalette.success.withValues(alpha: 0.72),
-              width: 1,
-            ),
-            _TimingGuideLine(
-              x: rightEdgeFor(goodMin),
-              color: LightcorePalette.success.withValues(alpha: 0.72),
-              width: 1,
-            ),
-            _TimingGuideLine(
-              x: rightEdgeFor(goodMax),
-              color: LightcorePalette.success.withValues(alpha: 0.72),
-              width: 1,
             ),
           ],
         );
@@ -1842,8 +1833,8 @@ class _ThreatDirectorTimingGuide extends StatelessWidget {
   }
 }
 
-class _TimingGuideBand extends StatelessWidget {
-  const _TimingGuideBand({
+class _TimingGuideWindow extends StatelessWidget {
+  const _TimingGuideWindow({
     required this.left,
     required this.right,
     required this.color,
@@ -1858,9 +1849,14 @@ class _TimingGuideBand extends StatelessWidget {
     return Positioned(
       left: math.min(left, right),
       width: math.max(0.0, (right - left).abs()),
-      top: 0,
-      bottom: 0,
-      child: ColoredBox(color: color),
+      top: 9,
+      bottom: 9,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: color,
+          borderRadius: BorderRadius.circular(6),
+        ),
+      ),
     );
   }
 }
@@ -1880,8 +1876,8 @@ class _TimingGuideLine extends StatelessWidget {
   Widget build(BuildContext context) {
     return Positioned(
       left: x - (width / 2),
-      top: 0,
-      bottom: 0,
+      top: 8,
+      bottom: 8,
       child: SizedBox(
         width: width,
         child: ColoredBox(color: color),

@@ -524,9 +524,9 @@ extension LightcoreBattleGameCoreRendering on LightcoreBattleGame {
 
   void _renderCore(Canvas canvas) {
     final center = Offset(_center.x, _center.y);
-    if (!controller.outerRingRevealed) {
+    if (!controller.outerRingRevealed || !showArenaSlots) {
       _renderFoldedShell(canvas, center);
-      if (controller.tutorialHighlightsBattleCore) {
+      if (showTutorialGuides && controller.tutorialHighlightsBattleCore) {
         _renderGuidePulse(
           canvas,
           center,
@@ -605,7 +605,7 @@ extension LightcoreBattleGameCoreRendering on LightcoreBattleGame {
       );
     }
 
-    if (controller.tutorialHighlightsBattleCore) {
+    if (showTutorialGuides && controller.tutorialHighlightsBattleCore) {
       _renderGuidePulse(
         canvas,
         center,

@@ -42,6 +42,30 @@ void main() {
     recorder.endRecording().dispose();
   });
 
+  test('disabled battlefield taps are ignored by the game layer', () {
+    final controller = LightcoreController();
+    addTearDown(controller.dispose);
+    var centerTaps = 0;
+    var slotTaps = 0;
+    var backgroundTaps = 0;
+    final game = LightcoreBattleGame(
+      controller: controller,
+      onCenterTap: () => centerTaps += 1,
+      onSlotTap: (_) => slotTaps += 1,
+      onBackgroundTap: () => backgroundTaps += 1,
+      enableBattlefieldTaps: false,
+    );
+    game.onGameResize(Vector2(900, 1100));
+
+    game.handleCanvasTap(const Offset(450, 506));
+    game.handleCanvasTap(const Offset(600, 506));
+    game.handleCanvasTap(const Offset(40, 40));
+
+    expect(centerTaps, 0);
+    expect(slotTaps, 0);
+    expect(backgroundTaps, 0);
+  });
+
   test('core queue orbit waits until inbound pulse lands', () {
     final controller = LightcoreController();
     addTearDown(controller.dispose);

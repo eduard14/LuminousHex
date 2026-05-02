@@ -29,12 +29,18 @@ class LightcoreBattleGame extends FlameGame with ScaleDetector {
     required this.onCenterTap,
     required this.onSlotTap,
     required this.onBackgroundTap,
+    this.enableBattlefieldTaps = true,
+    this.showTutorialGuides = true,
+    this.showArenaSlots = true,
   });
 
   final LightcoreController controller;
   final VoidCallback onCenterTap;
   final ValueChanged<int> onSlotTap;
   final VoidCallback onBackgroundTap;
+  final bool enableBattlefieldTaps;
+  final bool showTutorialGuides;
+  final bool showArenaSlots;
 
   static const double _fixedStep = 1 / 60;
   static const double _hexChargePopDuration = 0.26;
@@ -230,31 +236,39 @@ class LightcoreBattleGame extends FlameGame with ScaleDetector {
     canvas.translate(_screenShakeOffset.x, _screenShakeOffset.y);
     _renderArena(canvas);
     if (controller.outerRingRevealed) {
-      _renderCoreRange(canvas);
-      _renderSelectedTowerRange(canvas);
-      _renderPersistentShieldRings(canvas);
-      _renderLinks(canvas);
+      if (showArenaSlots) {
+        _renderCoreRange(canvas);
+        _renderSelectedTowerRange(canvas);
+        _renderPersistentShieldRings(canvas);
+        _renderLinks(canvas);
+      }
       _renderPulses(canvas);
     }
     _renderShotFireBursts(canvas);
     _renderShots(canvas);
     _renderImpacts(canvas);
-    _renderLevelUpRadiance(canvas);
+    if (showArenaSlots) {
+      _renderLevelUpRadiance(canvas);
+    }
     _renderEnemies(canvas);
-    if (controller.outerRingRevealed) {
+    if (controller.outerRingRevealed && showArenaSlots) {
       _renderSlots(canvas);
     }
-    _renderRelayImpactRing(canvas);
-    if (controller.outerRingRevealed) {
-      _renderTutorialSlotGuides(canvas);
+    if (showArenaSlots) {
+      _renderRelayImpactRing(canvas);
     }
-    _renderTutorialEnemyGuide(canvas);
+    if (showTutorialGuides) {
+      if (controller.outerRingRevealed && showArenaSlots) {
+        _renderTutorialSlotGuides(canvas);
+      }
+      _renderTutorialEnemyGuide(canvas);
+    }
     _renderCore(canvas);
     canvas.restore();
   }
 
   void _handleTap(Vector2 pointer) {
-    if (!_layoutReady) {
+    if (!_layoutReady || !enableBattlefieldTaps) {
       return;
     }
     if (_shellPromotion != null) {
@@ -281,6 +295,12 @@ class LightcoreBattleGame extends FlameGame with ScaleDetector {
   @override
   void onScaleStart(ScaleStartInfo info) {
     super.onScaleStart(info);
+    if (!enableBattlefieldTaps) {
+      _gesturePointerCount = 0;
+      _lastGestureFocalPoint = null;
+      _lastGestureScaleSignal = 1.0;
+      return;
+    }
     _gesturePointerCount = info.pointerCount;
     _lastGestureFocalPoint = info.eventPosition.widget.clone();
     _lastGestureScaleSignal = 1.0;
@@ -289,6 +309,9 @@ class LightcoreBattleGame extends FlameGame with ScaleDetector {
   @override
   void onScaleUpdate(ScaleUpdateInfo info) {
     super.onScaleUpdate(info);
+    if (!enableBattlefieldTaps) {
+      return;
+    }
     if (size.x == 0 || size.y == 0) {
       return;
     }
@@ -335,6 +358,12 @@ class LightcoreBattleGame extends FlameGame with ScaleDetector {
   @override
   void onScaleEnd(ScaleEndInfo info) {
     super.onScaleEnd(info);
+    if (!enableBattlefieldTaps) {
+      _gesturePointerCount = 0;
+      _lastGestureFocalPoint = null;
+      _lastGestureScaleSignal = 1.0;
+      return;
+    }
     _gesturePointerCount = 0;
     _lastGestureFocalPoint = null;
     _lastGestureScaleSignal = 1.0;
@@ -445,7 +474,7 @@ class LightcoreBattleGame extends FlameGame with ScaleDetector {
       ..strokeWidth = 1.4
       ..color = LightcorePalette.stroke.withValues(alpha: 0.26);
 
-    if (controller.outerRingRevealed) {
+    if (controller.outerRingRevealed && showArenaSlots) {
       for (var index = 0; index < _slotPositions.length; index++) {
         final current = Offset(
           _slotPositions[index].x,
