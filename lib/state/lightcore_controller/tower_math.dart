@@ -611,18 +611,14 @@ extension LightcoreControllerTowerMath on LightcoreController {
   }
 
   double _coreBasicDpsEstimate() {
-    final critChance = (_coreBaseCritChance + _gearCritChanceBonus).clamp(
-      0.02,
-      0.55,
-    );
-    return _coreBasicShotPower() *
+    return coreBasicShotPower *
         friendAllianceCombatMultiplier *
         _gearPowerMultiplier *
         _projectileDamageMultiplier(_coreProjectileType) *
-        _averageCriticalMultiplier(
-          critChance,
-          _coreBaseCritMultiplier * _gearCritDamageMultiplier,
-        ) *
+        coreFinalDamageMultiplier *
+        coreNormalDamageMultiplier *
+        ((coreMinDamageMultiplier + coreMaxDamageMultiplier) / 2) *
+        _averageCriticalMultiplier(coreCritChance, coreCritMultiplier) *
         coreEffectiveShotsPerSecond;
   }
 

@@ -83,7 +83,6 @@ class _TargetTowerPanel extends StatelessWidget {
     required this.remainingSeconds,
     required this.timeProgress,
     required this.strongestRaidDamage,
-    required this.activeRaids,
     required this.reward,
     required this.cleared,
     required this.running,
@@ -100,7 +99,6 @@ class _TargetTowerPanel extends StatelessWidget {
   final double remainingSeconds;
   final double timeProgress;
   final double strongestRaidDamage;
-  final List<_DungeonRaid> activeRaids;
   final LightcoreDailyDungeonReward reward;
   final bool cleared;
   final bool running;
@@ -126,7 +124,6 @@ class _TargetTowerPanel extends StatelessWidget {
               towerProfile: towerProfile,
               towerLevel: towerLevel,
               integrity: towerIntegrity,
-              activeRaids: activeRaids,
               tint: towerProfile.affinity.color,
               cleared: cleared || victory,
               running: running,
@@ -200,13 +197,13 @@ class _TargetTowerPanel extends StatelessWidget {
                       tint: towerProfile.affinity.color,
                     ),
                     _InfoChip(
-                      icon: Icons.bolt_rounded,
-                      label: '${activeRaids.length} active',
+                      icon: Icons.hub_rounded,
+                      label: 'Shared battle',
                       tint: LightcorePalette.solar,
                     ),
                     _InfoChip(
                       icon: Icons.whatshot_rounded,
-                      label: '${strongestRaidDamage.round()} top raid',
+                      label: '${strongestRaidDamage.round()} top threat',
                       tint: tint,
                     ),
                   ],

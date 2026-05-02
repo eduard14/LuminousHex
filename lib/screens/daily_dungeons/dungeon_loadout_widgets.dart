@@ -5,14 +5,12 @@ class _DungeonLoadoutTile extends StatelessWidget {
     required this.card,
     required this.selected,
     required this.totalDamage,
-    required this.cooldownSeconds,
     required this.onTap,
   });
 
   final EnemyCardState card;
   final bool selected;
   final double totalDamage;
-  final double cooldownSeconds;
   final VoidCallback onTap;
 
   @override
@@ -68,12 +66,12 @@ class _DungeonLoadoutTile extends StatelessWidget {
             children: [
               _InfoChip(
                 icon: Icons.whatshot_rounded,
-                label: '${totalDamage.round()} dmg',
+                label: '${totalDamage.round()} threat',
                 tint: tint,
               ),
               _InfoChip(
-                icon: Icons.speed_rounded,
-                label: '${cooldownSeconds.toStringAsFixed(1)}s cd',
+                icon: Icons.hub_rounded,
+                label: 'Battle spawn',
                 tint: LightcorePalette.aether,
               ),
             ],
@@ -128,7 +126,7 @@ class _ApexLoadoutSelector extends StatelessWidget {
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    'Resolve an Apex Scan to add an apex launch icon to dungeon runs.',
+                    'Resolve an Apex Scan to add a boss draft to dungeon runs.',
                     style: textTheme.bodyMedium?.copyWith(
                       color: LightcorePalette.mist.withValues(alpha: 0.68),
                     ),

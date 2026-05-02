@@ -153,7 +153,7 @@ class CosmicGuideAvatar extends StatelessWidget {
     this.boosting = false,
     this.avatarCosmetics = AvatarCosmeticLoadout.empty,
     this.pose = LightcoreAvatarPose.idle,
-    this.usePortraitAsset = true,
+    this.usePortraitAsset = false,
     this.framed = true,
     this.semanticLabel,
   });
@@ -220,7 +220,11 @@ class CosmicGuideAvatar extends StatelessWidget {
                   guide: guide,
                   loadout: avatarCosmetics,
                 ),
-                _EquipmentSpriteOverlay(loadout: loadout),
+                _EquipmentSpriteOverlay(
+                  guide: guide,
+                  loadout: loadout,
+                  phase: phase,
+                ),
               ],
             ),
           ),
@@ -242,14 +246,18 @@ class CosmicGuideAvatar extends StatelessWidget {
                     phase: phase,
                     boosting: boosting,
                     pose: pose,
-                    drawFrame: true,
+                    drawFrame: framed,
                   ),
                 ),
                 _AvatarCosmeticSpriteOverlay(
                   guide: guide,
                   loadout: avatarCosmetics,
                 ),
-                _EquipmentSpriteOverlay(loadout: loadout),
+                _EquipmentSpriteOverlay(
+                  guide: guide,
+                  loadout: loadout,
+                  phase: phase,
+                ),
               ],
             ),
           ),
@@ -271,9 +279,15 @@ class CosmicGuideAvatar extends StatelessWidget {
 }
 
 class _EquipmentSpriteOverlay extends StatelessWidget {
-  const _EquipmentSpriteOverlay({required this.loadout});
+  const _EquipmentSpriteOverlay({
+    required this.guide,
+    required this.loadout,
+    required this.phase,
+  });
 
+  final LightcoreGuideProfile guide;
   final CosmicEquipmentLoadout loadout;
+  final double phase;
 
   @override
   Widget build(BuildContext context) {
@@ -281,61 +295,14 @@ class _EquipmentSpriteOverlay extends StatelessWidget {
       return const SizedBox.expand();
     }
 
-    final accessories = loadout.piecesFor(EquipmentInventorySlot.accessory);
     return IgnorePointer(
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          return Stack(
-            fit: StackFit.expand,
-            clipBehavior: Clip.none,
-            children: [
-              if (loadout.pieceFor(EquipmentInventorySlot.pants)
-                  case final piece?)
-                _EquipmentSprite(
-                  piece: piece,
-                  left: constraints.maxWidth * 0.32,
-                  top: constraints.maxHeight * 0.58,
-                  size: constraints.maxWidth * 0.38,
-                ),
-              if (loadout.pieceFor(EquipmentInventorySlot.shoes)
-                  case final piece?)
-                _EquipmentSprite(
-                  piece: piece,
-                  left: constraints.maxWidth * 0.32,
-                  top: constraints.maxHeight * 0.73,
-                  size: constraints.maxWidth * 0.38,
-                ),
-              if (loadout.pieceFor(EquipmentInventorySlot.top)
-                  case final piece?)
-                _EquipmentSprite(
-                  piece: piece,
-                  left: constraints.maxWidth * 0.24,
-                  top: constraints.maxHeight * 0.47,
-                  size: constraints.maxWidth * 0.52,
-                ),
-              if (loadout.pieceFor(EquipmentInventorySlot.hat)
-                  case final piece?)
-                _EquipmentSprite(
-                  piece: piece,
-                  left: constraints.maxWidth * 0.29,
-                  top: constraints.maxHeight * 0.02,
-                  size: constraints.maxWidth * 0.42,
-                ),
-              for (
-                var index = 0;
-                index < accessories.length && index < 2;
-                index++
-              )
-                _EquipmentSprite(
-                  piece: accessories[index],
-                  left: constraints.maxWidth * (index == 0 ? 0.02 : 0.69),
-                  top: constraints.maxHeight * 0.37,
-                  size: constraints.maxWidth * 0.3,
-                  angle: index == 0 ? -0.16 : 0.16,
-                ),
-            ],
-          );
-        },
+      child: CustomPaint(
+        painter: CosmicEquipmentOverlayPainter(
+          guide: guide,
+          loadout: loadout,
+          phase: phase,
+        ),
+        child: const SizedBox.expand(),
       ),
     );
   }
@@ -414,13 +381,13 @@ class _AvatarCosmeticSpriteOverlay extends StatelessWidget {
   ) {
     return switch ((guide.id, type)) {
       (LightcoreGuideId.luma, AvatarCosmeticType.face) =>
-        const _AvatarCosmeticBounds(left: 0.31, top: 0.32, size: 0.34),
+        const _AvatarCosmeticBounds(left: 0.31, top: 0.2, size: 0.36),
       (LightcoreGuideId.luma, AvatarCosmeticType.hair) =>
-        const _AvatarCosmeticBounds(left: 0.21, top: 0.02, size: 0.42),
+        const _AvatarCosmeticBounds(left: 0.25, top: 0.01, size: 0.42),
       (LightcoreGuideId.lumo, AvatarCosmeticType.face) =>
-        const _AvatarCosmeticBounds(left: 0.32, top: 0.32, size: 0.34),
+        const _AvatarCosmeticBounds(left: 0.31, top: 0.2, size: 0.36),
       (LightcoreGuideId.lumo, AvatarCosmeticType.hair) =>
-        const _AvatarCosmeticBounds(left: 0.29, top: 0.06, size: 0.36),
+        const _AvatarCosmeticBounds(left: 0.28, top: 0.02, size: 0.4),
     };
   }
 }
@@ -471,46 +438,6 @@ class _AvatarCosmeticBounds {
   final double left;
   final double top;
   final double size;
-}
-
-class _EquipmentSprite extends StatelessWidget {
-  const _EquipmentSprite({
-    required this.piece,
-    required this.left,
-    required this.top,
-    required this.size,
-    this.angle = 0,
-  });
-
-  final CosmicEquipmentPiece piece;
-  final double left;
-  final double top;
-  final double size;
-  final double angle;
-
-  @override
-  Widget build(BuildContext context) {
-    return Positioned(
-      left: left,
-      top: top,
-      width: size,
-      height: size,
-      child: FractionallySizedBox(
-        widthFactor: 1,
-        heightFactor: 1,
-        child: Transform.rotate(
-          angle: angle,
-          child: Image.asset(
-            piece.assetPath,
-            fit: BoxFit.contain,
-            filterQuality: FilterQuality.high,
-            errorBuilder: (context, error, stackTrace) =>
-                const SizedBox.shrink(),
-          ),
-        ),
-      ),
-    );
-  }
 }
 
 class CosmicGuideAvatarPainter extends CustomPainter {
@@ -607,8 +534,8 @@ class CosmicGuideAvatarPainter extends CustomPainter {
     }
 
     final glow = Paint()
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8)
-      ..color = tint.withValues(alpha: boosting ? 0.36 : 0.22);
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6)
+      ..color = tint.withValues(alpha: boosting ? 0.28 : 0.12);
     canvas.drawOval(const Rect.fromLTWH(23, 17, 54, 66), glow);
     if (boosting) {
       canvas.drawOval(
@@ -632,7 +559,7 @@ class CosmicGuideAvatarPainter extends CustomPainter {
           end: Alignment.bottomCenter,
           colors: [
             LightcorePalette.layer2.withValues(alpha: 0.95),
-            tint.withValues(alpha: 0.84),
+            tint.withValues(alpha: 0.68),
             LightcorePalette.abyss.withValues(alpha: 0.96),
           ],
         ).createShader(bodyRect.outerRect),
@@ -641,7 +568,7 @@ class CosmicGuideAvatarPainter extends CustomPainter {
     final armPaint = Paint()
       ..strokeCap = StrokeCap.round
       ..strokeWidth = 8
-      ..color = LightcorePalette.layer2.withValues(alpha: 0.86);
+      ..color = LightcorePalette.layer2.withValues(alpha: 0.72);
     canvas.drawLine(const Offset(36, 63), const Offset(24, 69), armPaint);
     canvas.drawLine(const Offset(64, 63), const Offset(76, 69), armPaint);
     canvas.drawCircle(const Offset(21, 70), 5.2, Paint()..color = tint);
@@ -656,8 +583,8 @@ class CosmicGuideAvatarPainter extends CustomPainter {
           center: const Alignment(-0.35, -0.5),
           radius: 0.95,
           colors: [
-            LightcorePalette.layer2.withValues(alpha: 0.95),
-            tint.withValues(alpha: 0.88),
+            LightcorePalette.layer2.withValues(alpha: 0.82),
+            tint.withValues(alpha: 0.54),
             LightcorePalette.abyss.withValues(alpha: 0.98),
           ],
         ).createShader(headRect),
@@ -669,20 +596,11 @@ class CosmicGuideAvatarPainter extends CustomPainter {
         ..shader = RadialGradient(
           center: const Alignment(-0.25, -0.32),
           colors: [
-            LightcorePalette.panel.withValues(alpha: 0.78),
+            LightcorePalette.panel.withValues(alpha: 0.58),
             Colors.black.withValues(alpha: 0.96),
           ],
         ).createShader(headRect),
     );
-
-    final starPaint = Paint()
-      ..style = PaintingStyle.fill
-      ..color = LightcorePalette.layer2.withValues(alpha: 0.86);
-    for (var index = 0; index < 10; index++) {
-      final x = 34 + ((index * 9) % 31).toDouble();
-      final y = 24 + ((index * 13) % 27).toDouble();
-      canvas.drawCircle(Offset(x, y), 0.45 + (index % 2) * 0.18, starPaint);
-    }
 
     final eyePaint = Paint()
       ..style = PaintingStyle.fill
@@ -724,9 +642,9 @@ class CosmicGuideAvatarPainter extends CustomPainter {
 
     final ringPaint = Paint()
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 2
+      ..strokeWidth = 1.35
       ..strokeCap = StrokeCap.round
-      ..color = tint.withValues(alpha: 0.72);
+      ..color = tint.withValues(alpha: 0.24);
     canvas.drawArc(
       const Rect.fromLTWH(19, 29, 62, 24),
       0.16,
@@ -739,7 +657,7 @@ class CosmicGuideAvatarPainter extends CustomPainter {
       -0.08,
       math.pi * 1.72,
       false,
-      ringPaint..color = secondary.withValues(alpha: 0.54),
+      ringPaint..color = secondary.withValues(alpha: 0.2),
     );
     canvas.restore();
   }
@@ -798,13 +716,12 @@ class CosmicEquipmentOverlayPainter extends CustomPainter {
     canvas.save();
     canvas.translate(offset.dx, offset.dy);
     canvas.scale(scale);
-    paintEquipment(canvas, guide: guide, loadout: loadout, phase: phase);
+    paintEquipment(canvas, loadout: loadout, phase: phase);
     canvas.restore();
   }
 
   static void paintEquipment(
     Canvas canvas, {
-    required LightcoreGuideProfile guide,
     required CosmicEquipmentLoadout loadout,
     required double phase,
   }) {
@@ -825,31 +742,27 @@ class CosmicEquipmentOverlayPainter extends CustomPainter {
       _drawPants(canvas, pants);
     }
     if (shoes != null) {
-      _drawShoes(canvas, shoes, phase);
+      _drawShoes(canvas, shoes);
     }
     if (hat != null) {
-      _drawHat(canvas, hat, guide);
+      _drawHat(canvas, hat);
     }
     for (var index = 0; index < accessories.length && index < 2; index++) {
       _drawAccessory(canvas, accessories[index], index, phase);
     }
   }
 
-  static void _drawHat(
-    Canvas canvas,
-    CosmicEquipmentPiece piece,
-    LightcoreGuideProfile guide,
-  ) {
+  static void _drawHat(Canvas canvas, CosmicEquipmentPiece piece) {
     final tint = piece.tint;
     final accent = piece.accent;
     final stroke = Paint()
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round
-      ..strokeWidth = 2.1 * piece.rarityBoost
+      ..strokeWidth = 2.3 * piece.rarityBoost
       ..color = accent.withValues(alpha: 0.92);
     final fill = Paint()
       ..style = PaintingStyle.fill
-      ..color = tint.withValues(alpha: 0.78);
+      ..color = tint.withValues(alpha: 0.9);
 
     switch (piece.setId) {
       case 'ashspike':
@@ -897,7 +810,7 @@ class CosmicEquipmentOverlayPainter extends CustomPainter {
           ..quadraticBezierTo(61, 20, 50, 20)
           ..quadraticBezierTo(39, 20, 27, 29)
           ..close();
-        canvas.drawPath(hood, fill..color = tint.withValues(alpha: 0.7));
+        canvas.drawPath(hood, fill..color = tint.withValues(alpha: 0.82));
         canvas.drawPath(hood, stroke);
         break;
       case 'thornpath':
@@ -926,18 +839,6 @@ class CosmicEquipmentOverlayPainter extends CustomPainter {
           fill,
         );
     }
-
-    if (guide.id == LightcoreGuideId.lumo) {
-      _drawSpark(canvas, const Offset(50, 16), accent, 4.6);
-    } else {
-      canvas.drawArc(
-        const Rect.fromLTWH(43, 9, 15, 15),
-        math.pi * 0.25,
-        math.pi * 1.35,
-        false,
-        stroke..strokeWidth = 1.8 * piece.rarityBoost,
-      );
-    }
   }
 
   static void _drawTop(Canvas canvas, CosmicEquipmentPiece piece) {
@@ -956,7 +857,7 @@ class CosmicEquipmentOverlayPainter extends CustomPainter {
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: [
-            tint.withValues(alpha: 0.78),
+            tint.withValues(alpha: 0.88),
             LightcorePalette.abyss.withValues(alpha: 0.9),
           ],
         ).createShader(const Rect.fromLTWH(30, 52, 40, 30)),
@@ -965,7 +866,7 @@ class CosmicEquipmentOverlayPainter extends CustomPainter {
       torso,
       Paint()
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 1.7 * piece.rarityBoost
+        ..strokeWidth = 2 * piece.rarityBoost
         ..color = accent.withValues(alpha: 0.88),
     );
 
@@ -1023,26 +924,22 @@ class CosmicEquipmentOverlayPainter extends CustomPainter {
     }
   }
 
-  static void _drawShoes(
-    Canvas canvas,
-    CosmicEquipmentPiece piece,
-    double phase,
-  ) {
-    final flame = 2 + math.sin(phase * 5.2) * 1.1;
+  static void _drawShoes(Canvas canvas, CosmicEquipmentPiece piece) {
     for (final center in const [Offset(43, 90), Offset(57, 90)]) {
       canvas.drawOval(
         Rect.fromCenter(center: center, width: 13, height: 7),
-        Paint()..color = piece.tint.withValues(alpha: 0.82),
+        Paint()..color = piece.tint.withValues(alpha: 0.9),
       );
       canvas.drawOval(
         Rect.fromCenter(
-          center: center.translate(0, 5),
-          width: 5,
-          height: 8 + flame,
+          center: center.translate(0, 2.3),
+          width: 8,
+          height: 2.8,
         ),
         Paint()
-          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2)
-          ..color = piece.accent.withValues(alpha: 0.72),
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.25 * piece.rarityBoost
+          ..color = piece.accent.withValues(alpha: 0.86),
       );
     }
   }

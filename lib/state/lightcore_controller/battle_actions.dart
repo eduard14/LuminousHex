@@ -37,7 +37,7 @@ extension LightcoreControllerBattleActions on LightcoreController {
         affinity: _coreAffinityForProjectile(projectileType),
         secondaryAffinity: _coreSecondaryAffinityForPayload(payloadType),
         power:
-            _coreBasicShotPower() *
+            coreBasicShotPower *
             friendAllianceCombatMultiplier *
             _gearPowerMultiplier,
         advantageMultiplier: 1,
@@ -52,17 +52,14 @@ extension LightcoreControllerBattleActions on LightcoreController {
           _core.fireSpeedUpgradeLevel,
           projectileType: projectileType,
         ),
-        critChance: (_coreBaseCritChance + _gearCritChanceBonus).clamp(
-          0.02,
-          0.55,
-        ),
-        critMultiplier: _coreBaseCritMultiplier * _gearCritDamageMultiplier,
-        finalDamageMultiplier: 1,
-        bossDamageMultiplier: _gearBossDamageMultiplier,
-        normalDamageMultiplier: 1,
-        defensePenetration: 0,
-        minDamageMultiplier: 1,
-        maxDamageMultiplier: 1,
+        critChance: coreCritChance,
+        critMultiplier: coreCritMultiplier,
+        finalDamageMultiplier: coreFinalDamageMultiplier,
+        bossDamageMultiplier: coreBossDamageMultiplier,
+        normalDamageMultiplier: coreNormalDamageMultiplier,
+        defensePenetration: coreDefensePenetration,
+        minDamageMultiplier: coreMinDamageMultiplier,
+        maxDamageMultiplier: coreMaxDamageMultiplier,
         progress: 0,
       ),
     );

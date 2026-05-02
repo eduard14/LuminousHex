@@ -1066,7 +1066,14 @@ class _CoreStatsPanel extends StatelessWidget {
       [
         _InlineStatEntry(
           label: 'Level',
-          value: '${controller.coreState.level}',
+          value: controller.canTrainCoreStats
+              ? '${controller.coreState.level}/${LightcoreController.maxCoreLevel}'
+              : '${controller.coreState.level}',
+        ),
+        _InlineStatEntry(
+          label: 'Stats',
+          value:
+              '${controller.coreUpgradePointsSpent}/${controller.coreUpgradePointsCap}',
         ),
         _InlineStatEntry(
           label: 'Output',
@@ -1089,6 +1096,7 @@ class _CoreStatsPanel extends StatelessWidget {
         ),
       ],
       [
+        _InlineStatEntry(label: 'Power', value: controller.corePowerLabel),
         _InlineStatEntry(label: 'Range', value: controller.coreRangeLabel),
         _InlineStatEntry(label: 'Fire', value: controller.coreFireSpeedLabel),
         _InlineStatEntry(
@@ -1096,6 +1104,22 @@ class _CoreStatsPanel extends StatelessWidget {
           value: controller.coreCooldownLabel,
         ),
         _InlineStatEntry(label: 'Multi', value: controller.coreMultiShotLabel),
+      ],
+      [
+        _InlineStatEntry(label: 'Crit', value: controller.coreCritLabel),
+        _InlineStatEntry(
+          label: 'Final',
+          value: controller.coreFinalDamageLabel,
+        ),
+        _InlineStatEntry(label: 'Apex', value: controller.coreBossDamageLabel),
+        _InlineStatEntry(
+          label: 'Normal',
+          value: controller.coreNormalDamageLabel,
+        ),
+        _InlineStatEntry(
+          label: 'Pen',
+          value: controller.coreDefensePenetrationLabel,
+        ),
       ],
       [
         _InlineStatEntry(
@@ -1143,6 +1167,16 @@ class _CoreStatsPanel extends StatelessWidget {
             ),
           ],
         ),
+        if (controller.canTrainCoreStats) ...[
+          const SizedBox(height: 6),
+          Text(
+            'Root shell training: ${controller.coreTrainingLabel}',
+            style: textTheme.bodyMedium?.copyWith(
+              color: LightcorePalette.solar,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
         const SizedBox(height: 10),
         Text(
           'Core upgrades: Range $rangePreview  •  Fire Speed $fireSpeedPreview  •  Queue $queuePreview  •  Multi-Shot $multiShotPreview  •  Cooldown ${controller.coreCooldownLabel}',
@@ -1156,6 +1190,20 @@ class _CoreStatsPanel extends StatelessWidget {
           spacing: 12,
           runSpacing: 10,
           children: [
+            if (controller.canTrainCoreStats)
+              FilledButton.icon(
+                onPressed:
+                    controller.canUpgradeCoreLevel &&
+                        controller.lumens >= controller.coreLevelUpgradeCost
+                    ? controller.upgradeCoreLevel
+                    : null,
+                icon: const Icon(Icons.keyboard_double_arrow_up_rounded),
+                label: Text(
+                  controller.canUpgradeCoreLevel
+                      ? 'Shell Level • ${controller.coreLevelUpgradeCost}L'
+                      : 'Shell Level Maxed',
+                ),
+              ),
             FilledButton.icon(
               onPressed:
                   controller.canUpgradeCoreRange &&
@@ -1216,6 +1264,29 @@ class _CoreStatsPanel extends StatelessWidget {
               ),
           ],
         ),
+        if (controller.canTrainCoreStats &&
+            controller.coreUpgradeOptions.isNotEmpty) ...[
+          const SizedBox(height: 16),
+          Text(
+            'Root Shell Stat Upgrades',
+            style: textTheme.titleSmall?.copyWith(
+              color: LightcorePalette.mist.withValues(alpha: 0.8),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 10,
+            runSpacing: 10,
+            children: [
+              for (final upgrade in controller.coreUpgradeOptions)
+                _CoreUpgradeStatCard(
+                  controller: controller,
+                  upgrade: upgrade,
+                  tint: LightcorePalette.solar,
+                ),
+            ],
+          ),
+        ],
         const SizedBox(height: 16),
         Text(
           'Core Stats',
@@ -1243,6 +1314,83 @@ class _CoreStatsPanel extends StatelessWidget {
           style: textTheme.bodyMedium,
         ),
       ],
+    );
+  }
+}
+
+class _CoreUpgradeStatCard extends StatelessWidget {
+  const _CoreUpgradeStatCard({
+    required this.controller,
+    required this.upgrade,
+    required this.tint,
+  });
+
+  final LightcoreController controller;
+  final TowerUpgradeOptionState upgrade;
+  final Color tint;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    final statMaxed = upgrade.rank >= LightcoreController.maxTowerUpgradeRank;
+    final cost = controller.coreStatUpgradeCost(upgrade);
+    final canUpgrade = !statMaxed && controller.lumens >= cost;
+
+    return Container(
+      width: 218,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: LightcorePalette.panelRaised.withValues(alpha: 0.82),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: tint.withValues(alpha: 0.28)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(upgrade.type.label, style: textTheme.titleSmall),
+              ),
+              Text(
+                '${upgrade.rank}/${LightcoreController.maxTowerUpgradeRank}',
+                style: textTheme.labelMedium?.copyWith(
+                  color: tint,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            controller.coreUpgradeEffectLabel(upgrade),
+            style: textTheme.bodyMedium?.copyWith(color: tint),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Current ${controller.coreSubstatValueLabel(upgrade.type)}',
+            style: textTheme.bodySmall,
+          ),
+          const SizedBox(height: 10),
+          MeterBar(
+            value: (upgrade.rank / LightcoreController.maxTowerUpgradeRank)
+                .clamp(0.0, 1.0),
+            color: tint,
+            height: 8,
+          ),
+          const SizedBox(height: 10),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton(
+              onPressed: canUpgrade
+                  ? () => controller.upgradeCoreStat(upgrade.type)
+                  : null,
+              child: Text(statMaxed ? 'Stat Max' : 'Tune • ${cost}L'),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

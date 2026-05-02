@@ -218,16 +218,73 @@ extension LightcoreControllerProgressionLayers on LightcoreController {
         config.defaultPayloadType,
       );
 
+  List<TowerUpgradeStatType> _eligibleCoreUpgradeTypesForLoadout(
+    ProjectileType projectileType,
+    PayloadType payloadType,
+  ) => <TowerUpgradeStatType>[
+    TowerUpgradeStatType.power,
+    TowerUpgradeStatType.cooldown,
+    TowerUpgradeStatType.range,
+    TowerUpgradeStatType.critChance,
+    TowerUpgradeStatType.critDamage,
+    TowerUpgradeStatType.finalDamage,
+    TowerUpgradeStatType.bossDamage,
+    TowerUpgradeStatType.normalDamage,
+    TowerUpgradeStatType.defensePenetration,
+    TowerUpgradeStatType.minDamage,
+    TowerUpgradeStatType.maxDamage,
+  ];
+
+  List<TowerUpgradeOptionState> _rollCoreUpgradeBoardForLoadout(
+    ProjectileType projectileType,
+    PayloadType payloadType,
+  ) {
+    final pool = _eligibleCoreUpgradeTypesForLoadout(
+      projectileType,
+      payloadType,
+    ).toList(growable: true)..shuffle(_traitRandom);
+    const guaranteedType = TowerUpgradeStatType.power;
+    final selected = <TowerUpgradeStatType>[guaranteedType];
+    pool.remove(guaranteedType);
+    final maxOptions = min(maxTowerUpgradeOptions, pool.length + 1);
+    final minOptions = min(minTowerUpgradeOptions, maxOptions);
+    final optionCount = minOptions >= maxOptions
+        ? maxOptions
+        : minOptions + _traitRandom.nextInt((maxOptions - minOptions) + 1);
+    selected.addAll(pool.take(max(0, optionCount - selected.length)));
+
+    final remaining = pool
+        .where((type) => !selected.contains(type))
+        .toList(growable: true);
+    final hasOvercharge =
+        remaining.isNotEmpty && _traitRandom.nextDouble() < 0.08;
+    final overchargeType = hasOvercharge
+        ? remaining[_traitRandom.nextInt(remaining.length)]
+        : null;
+    if (overchargeType != null) {
+      selected.add(overchargeType);
+    }
+    final radiantIndex = selected.isNotEmpty && _traitRandom.nextDouble() < 0.07
+        ? _traitRandom.nextInt(selected.length)
+        : -1;
+    return <TowerUpgradeOptionState>[
+      for (var index = 0; index < selected.length; index += 1)
+        TowerUpgradeOptionState(
+          type: selected[index],
+          isOvercharge: selected[index] == overchargeType,
+          isRadiant: index == radiantIndex,
+        ),
+    ];
+  }
+
   double _towerUpgradeBonusValue(int rank) =>
       rank.clamp(0, maxTowerUpgradeRank) / maxTowerUpgradeRank;
 
-  double _towerUpgradeBonusFor(
-    OuterTowerState tower,
+  double _upgradeBonusForOptions(
+    Iterable<TowerUpgradeOptionState> options,
     TowerUpgradeStatType type,
   ) {
-    final match = tower.towerUpgradeOptions.where(
-      (upgrade) => upgrade.type == type,
-    );
+    final match = options.where((upgrade) => upgrade.type == type);
     if (match.isEmpty) {
       return 0;
     }
@@ -235,6 +292,17 @@ extension LightcoreControllerProgressionLayers on LightcoreController {
     final radiantMultiplier = upgrade.isRadiant ? 1.30 : 1.0;
     return _towerUpgradeBonusValue(upgrade.rank) * radiantMultiplier;
   }
+
+  double _towerUpgradeBonusFor(
+    OuterTowerState tower,
+    TowerUpgradeStatType type,
+  ) => _upgradeBonusForOptions(tower.towerUpgradeOptions, type);
+
+  double _coreUpgradeBonusForState(CoreState core, TowerUpgradeStatType type) =>
+      _upgradeBonusForOptions(core.coreUpgradeOptions, type);
+
+  double _coreUpgradeBonusFor(TowerUpgradeStatType type) =>
+      _coreUpgradeBonusForState(_core, type);
 
   List<ChildTowerUpgradeState> _rollChildTowerUpgradeBoard() {
     final pool = ChildTowerUpgradeType.values.toList(growable: false)
@@ -547,6 +615,30 @@ extension LightcoreControllerProgressionLayers on LightcoreController {
   int towerUpgradePointsRemaining(OuterTowerState tower) =>
       max(0, towerUpgradePointsCap(tower) - towerUpgradePointsSpent(tower));
 
+  UnmodifiableListView<TowerUpgradeOptionState> get coreUpgradeOptions =>
+      UnmodifiableListView(_core.coreUpgradeOptions);
+
+  int get coreUpgradePointsSpent =>
+      _core.coreUpgradeOptions.fold(0, (sum, upgrade) => sum + upgrade.rank);
+
+  int get coreUpgradePointsCap =>
+      _core.coreUpgradeOptions.length * maxTowerUpgradeRank;
+
+  int get coreUpgradePointsRemaining =>
+      max(0, coreUpgradePointsCap - coreUpgradePointsSpent);
+
+  bool get coreStatUpgradesComplete =>
+      coreUpgradePointsCap > 0 &&
+      coreUpgradePointsSpent >= coreUpgradePointsCap;
+
+  String get coreTrainingLabel {
+    final cap = coreUpgradePointsCap;
+    final statsLabel = cap <= 0
+        ? 'No stat board'
+        : 'Stat ranks $coreUpgradePointsSpent/$cap';
+    return 'Level ${_core.level}/$maxCoreLevel • $statsLabel';
+  }
+
   bool towerStatUpgradesComplete(OuterTowerState tower) {
     final cap = towerUpgradePointsCap(tower);
     return cap > 0 && towerUpgradePointsSpent(tower) >= cap;
@@ -625,6 +717,28 @@ extension LightcoreControllerProgressionLayers on LightcoreController {
     ];
     return tags.isEmpty ? label : '$label • ${tags.join(' • ')}';
   }
+
+  String coreUpgradeEffectLabel(TowerUpgradeOptionState upgrade) =>
+      towerUpgradeEffectLabel(upgrade);
+
+  String coreSubstatValueLabel(TowerUpgradeStatType type) => switch (type) {
+    TowerUpgradeStatType.power => coreBasicShotPower.toStringAsFixed(1),
+    TowerUpgradeStatType.cooldown => coreCooldownLabel,
+    TowerUpgradeStatType.range => coreRangeLabel,
+    TowerUpgradeStatType.critChance =>
+      '${(coreCritChance * 100).toStringAsFixed(0)}%',
+    TowerUpgradeStatType.critDamage =>
+      'x${coreCritMultiplier.toStringAsFixed(2)}',
+    TowerUpgradeStatType.finalDamage => coreFinalDamageLabel,
+    TowerUpgradeStatType.bossDamage => coreBossDamageLabel,
+    TowerUpgradeStatType.normalDamage => coreNormalDamageLabel,
+    TowerUpgradeStatType.defensePenetration => coreDefensePenetrationLabel,
+    TowerUpgradeStatType.minDamage => coreMinDamageLabel,
+    TowerUpgradeStatType.maxDamage => coreMaxDamageLabel,
+    TowerUpgradeStatType.chargeRate => 'N/A',
+    TowerUpgradeStatType.generationSpeed => 'N/A',
+    TowerUpgradeStatType.dotDamage => 'N/A',
+  };
 
   String towerSubstatValueLabel(
     OuterTowerState tower,

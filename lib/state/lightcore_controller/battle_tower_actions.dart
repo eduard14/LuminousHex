@@ -631,6 +631,66 @@ extension LightcoreControllerBattleTowerActions on LightcoreController {
     return true;
   }
 
+  bool upgradeCoreLevel() {
+    if (!canUpgradeCoreLevel) {
+      return false;
+    }
+
+    final cost = coreLevelUpgradeCost;
+    if (lumens < cost) {
+      return false;
+    }
+
+    final nextLevel = _core.level + 1;
+    lumens -= cost;
+    _recordLumenSpend(cost);
+    _recordUpgradePurchase();
+    _core = _core.copyWith(level: nextLevel);
+    _storeActiveLayer();
+    _updateFlowEfficiency();
+    _showBanner('$activeLayerLabel core advanced to level $nextLevel.');
+    _notifyNow();
+    return true;
+  }
+
+  bool upgradeCoreStat(TowerUpgradeStatType type) {
+    if (!canTrainCoreStats) {
+      return false;
+    }
+
+    final upgradeIndex = _core.coreUpgradeOptions.indexWhere(
+      (upgrade) => upgrade.type == type,
+    );
+    if (upgradeIndex == -1) {
+      return false;
+    }
+
+    final currentUpgrade = _core.coreUpgradeOptions[upgradeIndex];
+    if (currentUpgrade.rank >= maxTowerUpgradeRank) {
+      return false;
+    }
+
+    final cost = coreStatUpgradeCost(currentUpgrade);
+    if (lumens < cost) {
+      return false;
+    }
+
+    final nextOptions = _core.coreUpgradeOptions.toList(growable: false);
+    final nextRank = currentUpgrade.rank + 1;
+    nextOptions[upgradeIndex] = currentUpgrade.copyWith(rank: nextRank);
+    lumens -= cost;
+    _recordLumenSpend(cost);
+    _recordUpgradePurchase();
+    _core = _core.copyWith(coreUpgradeOptions: nextOptions);
+    _storeActiveLayer();
+    _updateFlowEfficiency();
+    _showBanner(
+      '$activeLayerLabel core tuned ${currentUpgrade.type.label.toLowerCase()} to $nextRank/$maxTowerUpgradeRank.',
+    );
+    _notifyNow();
+    return true;
+  }
+
   bool upgradeCoreRange() {
     if (!canUpgradeCoreRange) {
       return false;

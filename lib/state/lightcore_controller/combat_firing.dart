@@ -3,6 +3,166 @@ part of '../lightcore_controller.dart';
 const int _coreBlueFocusTargetKey = -1;
 
 extension LightcoreControllerCombatFiring on LightcoreController {
+  bool get canFirePrismRiftAimedShot =>
+      !activeLayerPassiveOnly &&
+      _core.fireCooldownRemaining <= 0 &&
+      _enemies.isNotEmpty;
+
+  double get prismRiftAimedShotCharge {
+    final projectileType = _coreProjectileType;
+    final cooldown = coreShotCooldownForUpgradeLevel(
+      _core.fireSpeedUpgradeLevel,
+      projectileType: projectileType,
+    );
+    if (cooldown <= 0) {
+      return 1;
+    }
+    return (1 - (_core.fireCooldownRemaining / cooldown))
+        .clamp(0.0, 1.0)
+        .toDouble();
+  }
+
+  bool firePrismRiftAimedShot({required double aimDx, required double aimDy}) {
+    if (!canFirePrismRiftAimedShot) {
+      return false;
+    }
+
+    final aimAngle = _prismRiftAimAngle(aimDx: aimDx, aimDy: aimDy);
+    final volleyCount = coreMultiShotCountForUpgradeLevel(
+      _core.multiShotUpgradeLevel,
+    );
+    var nextFireSequence = _core.fireSequence;
+    var cooldownAfterVolley = 0.0;
+    var firedShots = 0;
+    final volleyTargetIds = <String>{};
+
+    for (var shotIndex = 0; shotIndex < volleyCount; shotIndex += 1) {
+      final projectileType = _coreProjectileTypeForSequence(nextFireSequence);
+      final payloadType = _corePayloadTypeForSequence(nextFireSequence);
+      final shotMaxRange = coreEffectiveRangeForUpgradeLevel(
+        _core.rangeUpgradeLevel,
+        projectileType: projectileType,
+      );
+      final target =
+          _targetForPrismRiftAim(
+            aimAngle,
+            maxRadius: shotMaxRange,
+            excludedEnemyIds: volleyTargetIds,
+          ) ??
+          _nearestEnemy(
+            maxRadius: shotMaxRange,
+            excludedEnemyIds: volleyTargetIds,
+          );
+      if (target == null) {
+        break;
+      }
+
+      final affinity = _coreAffinityForProjectile(projectileType);
+      final secondaryAffinity = _coreSecondaryAffinityForPayload(payloadType);
+      final basicImpact = _shotUsesCoreBasicImpact(
+        layer2: false,
+        projectileType: projectileType,
+        sourceSlotIndex: null,
+      );
+      _shots.add(
+        CoreShotState(
+          id: 'shot_${_shotCounter++}',
+          enemyId: target.id,
+          affinity: affinity,
+          secondaryAffinity: secondaryAffinity,
+          power:
+              _coreBasicShotPower() *
+              friendAllianceCombatMultiplier *
+              _projectileDamageMultiplier(projectileType) *
+              _gearPowerMultiplier,
+          projectileType: projectileType,
+          payloadType: payloadType,
+          progress: 0,
+          layer2: false,
+          critChance: (_coreBaseCritChance + _gearCritChanceBonus).clamp(
+            0.02,
+            0.55,
+          ),
+          critMultiplier: _coreBaseCritMultiplier * _gearCritDamageMultiplier,
+          critical: false,
+          aimAngle: aimAngle,
+          travelRadius: _shotTravelRadiusForProjectile(
+            projectileType,
+            targetRadius: target.radius,
+            maxRange: shotMaxRange,
+            basicImpact: basicImpact,
+          ),
+          bossDamageMultiplier: _gearBossDamageMultiplier,
+        ),
+      );
+
+      cooldownAfterVolley = max(
+        cooldownAfterVolley,
+        coreShotCooldownForUpgradeLevel(
+          _core.fireSpeedUpgradeLevel,
+          projectileType: projectileType,
+        ),
+      );
+      nextFireSequence += 1;
+      volleyTargetIds.add(target.id);
+      firedShots += 1;
+    }
+
+    if (firedShots == 0) {
+      return false;
+    }
+
+    _core = _core.copyWith(
+      fireCooldownRemaining: cooldownAfterVolley,
+      fireSequence: nextFireSequence,
+    );
+    _needsNotify = true;
+    _notifyNow();
+    return true;
+  }
+
+  double _prismRiftAimAngle({required double aimDx, required double aimDy}) {
+    final magnitude = sqrt((aimDx * aimDx) + (aimDy * aimDy));
+    if (magnitude <= 0.001) {
+      return _normalizeAngle(-pi / 2);
+    }
+    return _normalizeAngle(atan2(aimDy / magnitude, aimDx / magnitude));
+  }
+
+  EnemyState? _targetForPrismRiftAim(
+    double aimAngle, {
+    required double maxRadius,
+    Set<String> excludedEnemyIds = const <String>{},
+  }) {
+    EnemyState? bestTarget;
+    var bestScore = double.infinity;
+    for (final enemy in _enemies) {
+      if (excludedEnemyIds.contains(enemy.id) || enemy.radius > maxRadius) {
+        continue;
+      }
+      final distance = _angleDistance(enemy.angle, aimAngle);
+      if (distance > pi * 0.55) {
+        continue;
+      }
+      final lateralOffset = sin(distance).abs() * enemy.radius;
+      final score =
+          lateralOffset +
+          (distance * 10) +
+          (enemy.radius * 0.01) -
+          (enemy.config.isBoss ? 8 : 0);
+      if (score < bestScore) {
+        bestScore = score;
+        bestTarget = enemy;
+      }
+    }
+    return bestTarget;
+  }
+
+  double _angleDistance(double first, double second) {
+    final delta = (_normalizeAngle(first - second) + pi) % (pi * 2) - pi;
+    return delta.abs();
+  }
+
   bool _fireCoreIfPossible({bool allowDefaultShot = true}) {
     if (_core.fireCooldownRemaining > 0 || _enemies.isEmpty) {
       return false;
@@ -118,15 +278,19 @@ extension LightcoreControllerCombatFiring on LightcoreController {
         affinity = _coreAffinityForProjectile(projectileType);
         secondaryAffinity = _coreSecondaryAffinityForPayload(payloadType);
         sourceSlotIndex = null;
-        bossDamageMultiplier = _gearBossDamageMultiplier;
-        critChance = (_coreBaseCritChance + _gearCritChanceBonus).clamp(
-          0.02,
-          0.55,
-        );
-        critMultiplier = _coreBaseCritMultiplier * _gearCritDamageMultiplier;
+        bossDamageMultiplier = coreBossDamageMultiplier;
+        normalDamageMultiplier = coreNormalDamageMultiplier;
+        defensePenetration = coreDefensePenetration;
+        critChance = coreCritChance;
+        critMultiplier = coreCritMultiplier;
         shotPower =
-            _coreBasicShotPower() *
+            coreBasicShotPower *
             friendAllianceCombatMultiplier *
+            coreFinalDamageMultiplier *
+            _sampleDamageRangeMultiplier(
+              coreMinDamageMultiplier,
+              coreMaxDamageMultiplier,
+            ) *
             _projectileDamageMultiplier(projectileType) *
             _gearPowerMultiplier;
         advancesCoreSequence = true;

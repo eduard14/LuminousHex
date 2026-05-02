@@ -1339,6 +1339,7 @@ class CoreState {
     this.fireSpeedUpgradeLevel = 0,
     this.multiShotUpgradeLevel = 0,
     this.queueLimitUpgradeLevel = 0,
+    this.coreUpgradeOptions = const <TowerUpgradeOptionState>[],
   });
 
   final double coreStability;
@@ -1358,6 +1359,7 @@ class CoreState {
   final int fireSpeedUpgradeLevel;
   final int multiShotUpgradeLevel;
   final int queueLimitUpgradeLevel;
+  final List<TowerUpgradeOptionState> coreUpgradeOptions;
 
   CoreState copyWith({
     double? coreStability,
@@ -1377,6 +1379,7 @@ class CoreState {
     int? fireSpeedUpgradeLevel,
     int? multiShotUpgradeLevel,
     int? queueLimitUpgradeLevel,
+    List<TowerUpgradeOptionState>? coreUpgradeOptions,
   }) {
     return CoreState(
       coreStability: coreStability ?? this.coreStability,
@@ -1402,6 +1405,7 @@ class CoreState {
           multiShotUpgradeLevel ?? this.multiShotUpgradeLevel,
       queueLimitUpgradeLevel:
           queueLimitUpgradeLevel ?? this.queueLimitUpgradeLevel,
+      coreUpgradeOptions: coreUpgradeOptions ?? this.coreUpgradeOptions,
     );
   }
 }

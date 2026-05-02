@@ -7,9 +7,9 @@ import '../models/lightcore_types.dart';
 class TowerLibrary {
   static const whitePrism = TowerConfig(
     id: 'white_source_tower',
-    name: 'Starbolt Turret',
+    name: 'White Source Tower',
     summary:
-        'White Source Tower. Fires clean kinetic starbolts with reliable priority.',
+        'Starbolt Turret. Fires clean kinetic starbolts with reliable priority.',
     passiveLabel: 'Precision seed',
     affinity: PrototypeAffinity.neutral,
     buildCost: 7,
@@ -38,9 +38,9 @@ class TowerLibrary {
 
   static const redPrism = TowerConfig(
     id: 'red_prism',
-    name: 'Comet Mortar',
+    name: 'Red Source Tower',
     summary:
-        'Red Source Tower. Launches readable comet bombs for AoE and husk cleanup pressure.',
+        'Comet Mortar. Launches readable comet bombs for AoE and husk cleanup pressure.',
     passiveLabel: 'Bomb seed',
     affinity: PrototypeAffinity.ember,
     buildCost: 9,
@@ -67,9 +67,9 @@ class TowerLibrary {
 
   static const orangePrism = TowerConfig(
     id: 'orange_prism',
-    name: 'Meteor Driver',
+    name: 'Orange Source Tower',
     summary:
-        'Orange Source Tower. Fires slow, heavy meteor slugs that check fast anomaly pressure.',
+        'Meteor Driver. Fires slow, heavy meteor slugs that check fast anomaly pressure.',
     passiveLabel: 'Meteor seed',
     affinity: PrototypeAffinity.flare,
     buildCost: 9,
@@ -96,9 +96,9 @@ class TowerLibrary {
 
   static const yellowPrism = TowerConfig(
     id: 'yellow_prism',
-    name: 'Stormhook Coil',
+    name: 'Yellow Source Tower',
     summary:
-        'Yellow Source Tower. Throws chain arcs for phase pressure and clustered routing.',
+        'Stormhook Coil. Throws chain arcs for phase pressure and clustered routing.',
     passiveLabel: 'Storm seed',
     affinity: PrototypeAffinity.solar,
     buildCost: 10,
@@ -125,9 +125,9 @@ class TowerLibrary {
 
   static const greenPrism = TowerConfig(
     id: 'green_prism',
-    name: 'Thorn Aegis',
+    name: 'Green Source Tower',
     summary:
-        'Green Source Tower. Maintains a persistent damaging shield halo instead of generating packets.',
+        'Thorn Aegis. Maintains a persistent damaging shield halo instead of generating packets.',
     passiveLabel: 'Shield seed',
     affinity: PrototypeAffinity.verdant,
     buildCost: 8,
@@ -154,9 +154,9 @@ class TowerLibrary {
 
   static const cyanPrism = TowerConfig(
     id: 'cyan_prism',
-    name: 'Rayline Spire',
+    name: 'Blue Source Tower',
     summary:
-        'Blue Source Tower. Cuts targets with a clean rayline for slow and disable prevention paths.',
+        'Rayline Spire. Cuts targets with a clean rayline for slow and disable prevention paths.',
     passiveLabel: 'Rayline seed',
     affinity: PrototypeAffinity.aether,
     buildCost: 8,
@@ -185,9 +185,9 @@ class TowerLibrary {
 
   static const purplePrism = TowerConfig(
     id: 'purple_prism',
-    name: 'Quasar Ring',
+    name: 'Purple Source Tower',
     summary:
-        'Purple Source Tower. Emits ring pulses for lane coverage and split-fragment control.',
+        'Quasar Ring. Emits ring pulses for lane coverage and split-fragment control.',
     passiveLabel: 'Quasar seed',
     affinity: PrototypeAffinity.violet,
     buildCost: 10,

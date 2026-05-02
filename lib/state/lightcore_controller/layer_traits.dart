@@ -92,7 +92,11 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         ? 1.0
         : _promotedCoreShotPowerMultiplier +
               (tierBonus * _promotedCoreShotPowerTierStep);
-    return (6.5 + ((layer.core.level - 1) * 1.7)) * promotedMultiplier;
+    return (6.5 + ((layer.core.level - 1) * 1.7)) *
+        promotedMultiplier *
+        _towerPowerUpgradeMultiplier(
+          _coreUpgradeBonusForState(layer.core, TowerUpgradeStatType.power),
+        );
   }
 
   double _coreBasicShotPower() => _coreBasicShotPowerForLayer(activeLayer);
@@ -773,13 +777,17 @@ extension LightcoreControllerLayerTraits on LightcoreController {
   }) {
     final core =
         inheritedCore ??
-        const CoreState(
+        CoreState(
           flowEfficiency: _maxFlowEfficiency,
           fireCooldownRemaining: 0,
           level: 1,
           projectileType: ProjectileType.starBolt,
           payloadType: PayloadType.none,
           affinity: PrototypeAffinity.neutral,
+          coreUpgradeOptions: _rollCoreUpgradeBoardForLoadout(
+            ProjectileType.starBolt,
+            PayloadType.none,
+          ),
         );
     return TowerLayerSnapshot(
       id: 'layer_${_layers.length}_${DateTime.now().microsecondsSinceEpoch}',
@@ -856,6 +864,10 @@ extension LightcoreControllerLayerTraits on LightcoreController {
       secondaryAffinity: childTier < payloadUnlockLayer ? null : affinity,
       projectileLoadout: projectileLoadout,
       payloadLoadout: payloadLoadout,
+      coreUpgradeOptions: _rollCoreUpgradeBoardForLoadout(
+        projectileLoadout.first,
+        payloadLoadout.first,
+      ),
     );
   }
 
@@ -864,6 +876,19 @@ extension LightcoreControllerLayerTraits on LightcoreController {
     _slots = List<OuterTowerState>.from(layer.slots);
     layer.slots = _slots;
     _core = layer.core;
+    if (_core.coreUpgradeOptions.isEmpty) {
+      _core = _core.copyWith(
+        coreUpgradeOptions: _rollCoreUpgradeBoardForLoadout(
+          _core.projectileLoadout.isEmpty
+              ? _core.projectileType
+              : _core.projectileLoadout.first,
+          _core.payloadLoadout.isEmpty
+              ? _core.payloadType
+              : _core.payloadLoadout.first,
+        ),
+      );
+      layer.core = _core;
+    }
     _layer2 = layer.layer2;
     _enemies = List<EnemyState>.from(layer.enemies);
     layer.enemies = _enemies;
@@ -1714,6 +1739,14 @@ extension LightcoreControllerLayerTraits on LightcoreController {
       _tutorialStep == LightcoreTutorialStep.armFirstBoss &&
       cardId == BossEnemyLibrary.starterWhiteWarden.id;
 
+  bool get _activeLayerAllowsCoreTraining =>
+      _activeLayerAllowsProgressionUpgrades && !activeLayerHasParentSlot;
+
+  bool get canTrainCoreStats => _activeLayerAllowsCoreTraining;
+
+  bool get canUpgradeCoreLevel =>
+      _activeLayerAllowsCoreTraining && _core.level < maxCoreLevel;
+
   bool get canUpgradeCoreRange =>
       _activeLayerAllowsProgressionUpgrades &&
       _core.rangeUpgradeLevel < maxCoreUpgradeLevel;
@@ -1755,6 +1788,30 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         )
       : 0;
 
+  int get coreLevelUpgradeCost => canUpgradeCoreLevel
+      ? _coreUpgradeCost(baseCost: 26, upgradeLevel: max(0, _core.level - 1))
+      : 0;
+
+  int coreStatUpgradeCost(TowerUpgradeOptionState upgrade) {
+    if (!canTrainCoreStats || upgrade.rank >= maxTowerUpgradeRank) {
+      return 0;
+    }
+    final shellCurve = 1 + (builtTowerCount * 0.07);
+    final levelCurve = 1 + (max(0, _core.level - 1) * 0.15);
+    final rankCurve = pow(1.42, upgrade.rank).toDouble();
+    final rarityCurve =
+        (upgrade.isRadiant ? 1.16 : 1.0) * (upgrade.isOvercharge ? 1.24 : 1.0);
+    final baseCost = 18 + ((upgrade.rank + 1) * 8);
+    final price =
+        baseCost *
+        activeLayerPriceMultiplier *
+        shellCurve *
+        levelCurve *
+        rankCurve *
+        rarityCurve;
+    return max(1, price.round());
+  }
+
   double get coreBaseRange =>
       coreBaseRangeForUpgradeLevel(_core.rangeUpgradeLevel);
 
@@ -1782,6 +1839,61 @@ extension LightcoreControllerLayerTraits on LightcoreController {
   double get coreEffectiveShotsPerSecond =>
       coreShotsPerSecond * coreMultiShotCount;
 
+  double get coreBasicShotPower => _coreBasicShotPower();
+
+  double get coreCritChance =>
+      (_coreBaseCritChance +
+              _gearCritChanceBonus +
+              _towerCritChanceUpgradeBonus(
+                _coreUpgradeBonusFor(TowerUpgradeStatType.critChance),
+              ))
+          .clamp(0.02, 0.65)
+          .toDouble();
+
+  double get coreCritMultiplier =>
+      (_coreBaseCritMultiplier +
+          _towerCritDamageUpgradeBonus(
+            _coreUpgradeBonusFor(TowerUpgradeStatType.critDamage),
+          )) *
+      _gearCritDamageMultiplier;
+
+  double get coreFinalDamageMultiplier =>
+      1 +
+      _towerFinalDamageUpgradeBonus(
+        _coreUpgradeBonusFor(TowerUpgradeStatType.finalDamage),
+      );
+
+  double get coreBossDamageMultiplier =>
+      _gearBossDamageMultiplier *
+      (1 +
+          _towerBossDamageUpgradeBonus(
+            _coreUpgradeBonusFor(TowerUpgradeStatType.bossDamage),
+          ));
+
+  double get coreNormalDamageMultiplier =>
+      1 +
+      _towerNormalDamageUpgradeBonus(
+        _coreUpgradeBonusFor(TowerUpgradeStatType.normalDamage),
+      );
+
+  double get coreDefensePenetration => _towerDefensePenetrationUpgradeBonus(
+    _coreUpgradeBonusFor(TowerUpgradeStatType.defensePenetration),
+  ).clamp(0.0, 0.65).toDouble();
+
+  double get coreMinDamageMultiplier =>
+      1 +
+      _towerMinDamageUpgradeBonus(
+        _coreUpgradeBonusFor(TowerUpgradeStatType.minDamage),
+      );
+
+  double get coreMaxDamageMultiplier => max(
+    coreMinDamageMultiplier,
+    1 +
+        _towerMaxDamageUpgradeBonus(
+          _coreUpgradeBonusFor(TowerUpgradeStatType.maxDamage),
+        ),
+  );
+
   String get coreRangeLabel => coreEffectiveRange.toStringAsFixed(0);
 
   String get coreFireSpeedLabel => '${coreShotsPerSecond.toStringAsFixed(2)}/s';
@@ -1793,6 +1905,29 @@ extension LightcoreControllerLayerTraits on LightcoreController {
   String get coreQueueLoadLabel => '$coreQueueOccupancy/$coreQueueCapacity';
 
   String get coreMultiShotLabel => '${coreMultiShotCount}x';
+
+  String get corePowerLabel => coreBasicShotPower.toStringAsFixed(1);
+
+  String get coreCritLabel =>
+      '${(coreCritChance * 100).toStringAsFixed(0)}% / x${coreCritMultiplier.toStringAsFixed(2)}';
+
+  String get coreFinalDamageLabel =>
+      'x${coreFinalDamageMultiplier.toStringAsFixed(2)}';
+
+  String get coreBossDamageLabel =>
+      'x${coreBossDamageMultiplier.toStringAsFixed(2)}';
+
+  String get coreNormalDamageLabel =>
+      'x${coreNormalDamageMultiplier.toStringAsFixed(2)}';
+
+  String get coreDefensePenetrationLabel =>
+      '${(coreDefensePenetration * 100).toStringAsFixed(0)}%';
+
+  String get coreMinDamageLabel =>
+      'x${coreMinDamageMultiplier.toStringAsFixed(2)}';
+
+  String get coreMaxDamageLabel =>
+      'x${coreMaxDamageMultiplier.toStringAsFixed(2)}';
 
   String get nextCoreRangeLabel => coreEffectiveRangeForUpgradeLevel(
     _core.rangeUpgradeLevel + 1,
@@ -1831,7 +1966,10 @@ extension LightcoreControllerLayerTraits on LightcoreController {
     int upgradeLevel, {
     ProjectileType? projectileType,
   }) {
-    return coreBaseRangeForUpgradeLevel(upgradeLevel) *
+    return (coreBaseRangeForUpgradeLevel(upgradeLevel) +
+            _towerRangeUpgradeBonus(
+              _coreUpgradeBonusFor(TowerUpgradeStatType.range),
+            )) *
         _projectileRangeMultiplier(projectileType ?? _core.projectileType) *
         _gearRangeMultiplier;
   }
@@ -1849,6 +1987,9 @@ extension LightcoreControllerLayerTraits on LightcoreController {
           _radianceCoreCooldownMultiplier *
           _projectileCooldownMultiplier(
             projectileType ?? _core.projectileType,
+          ) *
+          _towerCooldownUpgradeMultiplier(
+            _coreUpgradeBonusFor(TowerUpgradeStatType.cooldown),
           ) *
           _layer1OpeningCadenceMultiplier,
     );

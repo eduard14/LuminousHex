@@ -86,9 +86,12 @@ start from a targeted `rg` search.
 ### Source Towers And Stats
 
 - Base tower definitions live in `TowerLibrary`.
-- Source Tower names match V8 player-facing names:
-  `Starbolt Turret`, `Comet Mortar`, `Meteor Driver`, `Stormhook Coil`,
-  `Thorn Aegis`, `Rayline Spire`, and `Quasar Ring`.
+- Source Tower names now use color-first player-facing types:
+  `White Source Tower`, `Red Source Tower`, `Orange Source Tower`,
+  `Yellow Source Tower`, `Green Source Tower`, `Blue Source Tower`, and
+  `Purple Source Tower`. Their former role names now lead each description:
+  Starbolt Turret, Comet Mortar, Meteor Driver, Stormhook Coil, Thorn Aegis,
+  Rayline Spire, and Quasar Ring.
 - Core Manager display names, bios, board bonuses, signature rules, and portrait
   asset ids follow `04 Tower Managers`, starting with
   `mgr_001_whitney_stardust` through `mgr_040_the_singularity_stylist`; each
@@ -98,6 +101,8 @@ start from a targeted `rg` search.
   legacy ids still use `cyan_prism`, but `PrototypeAffinityX.label` returns
   `Blue`.
 - Trainable tower stats are stored in `OuterTowerState.towerUpgradeOptions`.
+- Root shell core stats are stored in `CoreState.coreUpgradeOptions`, with a
+  separate `CoreState.level` upgrade path capped like Source Tower levels.
 - `TowerUpgradeOptionState.isRadiant` and `isOvercharge` carry V8 special-roll
   concepts.
 - Upgrade labels and effects apply Radiant as a 1.30 multiplier.

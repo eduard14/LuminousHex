@@ -782,7 +782,7 @@ void main() {
     expect(find.text('Add Mentor Manually'), findsOneWidget);
   });
 
-  testWidgets('threat director dungeon opens dedicated run screen', (
+  testWidgets('threat director dungeon opens shared battle run screen', (
     tester,
   ) async {
     final controller = LightcoreController();
@@ -832,9 +832,9 @@ void main() {
     expect(find.text('WHT'), findsWidgets);
     expect(find.text('RED'), findsWidgets);
     expect(find.text('Ready'), findsWidgets);
-    expect(find.byTooltip('Launch Dustling'), findsOneWidget);
-    expect(find.textContaining('clears'), findsNothing);
-    expect(find.textContaining('% core'), findsNothing);
+    expect(find.byTooltip('Launch Dustling'), findsNothing);
+    expect(find.textContaining('clears'), findsOneWidget);
+    expect(find.textContaining('% core'), findsOneWidget);
     expect(find.byTooltip('Open Menu'), findsNothing);
   });
 

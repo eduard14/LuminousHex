@@ -218,14 +218,7 @@ extension LightcoreControllerSaveLayerSerialization on LightcoreController {
       'maxDamageFactor': tower.maxDamageFactor,
       'dotDamageFactor': tower.dotDamageFactor,
       'towerUpgradeOptions': tower.towerUpgradeOptions
-          .map(
-            (option) => <String, dynamic>{
-              'type': option.type.name,
-              'rank': option.rank,
-              'isOvercharge': option.isOvercharge,
-              'isRadiant': option.isRadiant,
-            },
-          )
+          .map(_serializeTowerUpgradeState)
           .toList(growable: false),
       'childLayerId': tower.childLayerId,
       'childLayerTier': tower.childLayerTier,
@@ -525,6 +518,20 @@ extension LightcoreControllerSaveLayerSerialization on LightcoreController {
       'fireSpeedUpgradeLevel': core.fireSpeedUpgradeLevel,
       'multiShotUpgradeLevel': core.multiShotUpgradeLevel,
       'queueLimitUpgradeLevel': core.queueLimitUpgradeLevel,
+      'coreUpgradeOptions': core.coreUpgradeOptions
+          .map(_serializeTowerUpgradeState)
+          .toList(growable: false),
+    };
+  }
+
+  Map<String, dynamic> _serializeTowerUpgradeState(
+    TowerUpgradeOptionState option,
+  ) {
+    return <String, dynamic>{
+      'type': option.type.name,
+      'rank': option.rank,
+      'isOvercharge': option.isOvercharge,
+      'isRadiant': option.isRadiant,
     };
   }
 
@@ -537,6 +544,19 @@ extension LightcoreControllerSaveLayerSerialization on LightcoreController {
       data['coreStability'],
       fallback: _stabilityForLegacyOutputEfficiency(legacyFlowEfficiency),
     ).clamp(0.0, _maxCoreStability);
+    final projectileType =
+        _enumByName(
+          ProjectileType.values,
+          _stringOrNull(data['projectileType']),
+        ) ??
+        ProjectileType.starBolt;
+    final payloadType =
+        _enumByName(PayloadType.values, _stringOrNull(data['payloadType'])) ??
+        PayloadType.none;
+    final coreUpgradeOptions = _coerceList(data['coreUpgradeOptions'])
+        .map((item) => _deserializeTowerUpgrade(_coerceMap(item)))
+        .whereType<TowerUpgradeOptionState>()
+        .toList(growable: false);
     return CoreState(
       coreStability: coreStability,
       flowEfficiency: _outputEfficiencyPercentForStability(coreStability),
@@ -546,15 +566,8 @@ extension LightcoreControllerSaveLayerSerialization on LightcoreController {
         data['automationCooldownRemaining'],
       ),
       level: _intValue(data['level'], fallback: 1),
-      projectileType:
-          _enumByName(
-            ProjectileType.values,
-            _stringOrNull(data['projectileType']),
-          ) ??
-          ProjectileType.starBolt,
-      payloadType:
-          _enumByName(PayloadType.values, _stringOrNull(data['payloadType'])) ??
-          PayloadType.none,
+      projectileType: projectileType,
+      payloadType: payloadType,
       affinity:
           _enumByName(
             PrototypeAffinity.values,
@@ -582,6 +595,9 @@ extension LightcoreControllerSaveLayerSerialization on LightcoreController {
       fireSpeedUpgradeLevel: _intValue(data['fireSpeedUpgradeLevel']),
       multiShotUpgradeLevel: _intValue(data['multiShotUpgradeLevel']),
       queueLimitUpgradeLevel: _intValue(data['queueLimitUpgradeLevel']),
+      coreUpgradeOptions: coreUpgradeOptions.isNotEmpty
+          ? coreUpgradeOptions
+          : _rollCoreUpgradeBoardForLoadout(projectileType, payloadType),
     );
   }
 

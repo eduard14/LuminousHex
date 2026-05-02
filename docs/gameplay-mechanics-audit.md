@@ -94,7 +94,7 @@ deck for a layer, and Threat Directors tune those anomaly cards further.
   tower fires its current generated packet instead of opening stats.
 - Higher shell classes inherit projectile and payload arsenals from the child shells
   beneath them instead of collapsing to one dominant shot type.
-- Tower max level is 5.
+- Source Tower and root shell core max level is 5.
 - Sell value is 70 percent of invested Lumens.
 
 ### Projectile families
@@ -103,7 +103,7 @@ deck for a layer, and Threat Directors tune those anomaly cards further.
 - Payload is the hit effect.
 - Projectile and payload are modular once promotions begin.
 - Default family tracks are:
-  - White / Starbolt: Starbolt Turret fundamentals and precision bolts.
+  - White Source Tower / Starbolt Turret: precision bolts.
   - Blue / Rayline: Thread Beam; Pulse Beam, Split Beam; Sweep Beam, Lance Beam,
     Prism Beam, Sentinel Beam. Payloads: Chill, Fracture; Deep Chill, Brittle
     Fracture.

@@ -836,6 +836,7 @@ const int slotCount = LightcoreController.slotCount;
 const int maxShellTier = LightcoreController.maxShellTier;
 const int maxTowerLevel = LightcoreController.maxTowerLevel;
 const int maxTowerUpgradeRank = LightcoreController.maxTowerUpgradeRank;
+const int maxCoreLevel = LightcoreController.maxCoreLevel;
 const int minTowerUpgradeOptions = LightcoreController.minTowerUpgradeOptions;
 const int maxTowerUpgradeOptions = LightcoreController.maxTowerUpgradeOptions;
 const int enemyDeckLimit = LightcoreController.enemyDeckLimit;
@@ -1295,6 +1296,7 @@ class LightcoreController extends ChangeNotifier {
   static const double _coreBaseCooldown = 0.62;
   static const double _coreBaseCritChance = 0.05;
   static const double _coreBaseCritMultiplier = 1.55;
+  static const int maxCoreLevel = maxTowerLevel;
   static const int maxCoreUpgradeLevel = 5;
   static const int maxCoreMultiShotUpgradeLevel = 3;
   static const int baseCoreQueueCapacity = 8;

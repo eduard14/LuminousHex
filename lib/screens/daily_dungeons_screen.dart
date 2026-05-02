@@ -1,17 +1,13 @@
 import 'dart:async';
 import 'dart:math' as math;
 
-import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 
-import '../data/enemy_configs.dart';
-import '../models/lightcore_config.dart';
 import '../models/lightcore_state.dart';
 import '../models/lightcore_types.dart';
 import '../state/lightcore_controller.dart';
 import '../theme/lightcore_palette.dart';
 import '../widgets/aurora_panel.dart';
-import '../widgets/lightcore_projectile_fx.dart';
 import '../widgets/lightcore_run_loading.dart';
 import '../widgets/meter_bar.dart';
 import '../widgets/tower_level_hex_badge.dart';
@@ -19,12 +15,11 @@ import 'battle_screen.dart';
 
 part 'daily_dungeons/dungeon_math.dart';
 part 'daily_dungeons/dungeon_run_models.dart';
-part 'daily_dungeons/dungeon_game.dart';
 part 'daily_dungeons/dungeon_run_widgets.dart';
 part 'daily_dungeons/dungeon_selection_widgets.dart';
 part 'daily_dungeons/dungeon_battle_painter.dart';
 part 'daily_dungeons/dungeon_loadout_widgets.dart';
-part 'daily_dungeons/prism_rift_dungeon_game.dart';
+part 'daily_dungeons/prism_rift_dungeon_math.dart';
 part 'daily_dungeons/prism_rift_dungeon_widgets.dart';
 
 class DailyDungeonsScreen extends StatefulWidget {
@@ -260,7 +255,7 @@ class _DailyDungeonsScreenState extends State<DailyDungeonsScreen> {
                     Text('Threat Director', style: textTheme.titleLarge),
                     const SizedBox(height: 4),
                     Text(
-                      'Choose a tower level and lock a three-anomaly deck. Launch anomalies manually in the tower arena before their cooldowns cycle.',
+                      'Choose a tower level and lock a three-anomaly deck. Clear the shared battle arena before the route timer expires.',
                       style: textTheme.bodyMedium?.copyWith(
                         color: LightcorePalette.mist.withValues(alpha: 0.78),
                       ),
@@ -292,7 +287,6 @@ class _DailyDungeonsScreenState extends State<DailyDungeonsScreen> {
             remainingSeconds: _timeLimit.inSeconds.toDouble(),
             timeProgress: 1,
             strongestRaidDamage: strongestDamage,
-            activeRaids: const <_DungeonRaid>[],
             reward: reward,
             cleared: controller.isDailyDungeonTowerLevelCleared(selectedLevel),
             running: false,
@@ -363,10 +357,6 @@ class _DailyDungeonsScreenState extends State<DailyDungeonsScreen> {
                             (selected) => selected.config.id == card.config.id,
                           ),
                           totalDamage: _dungeonRaidTotalDamage(
-                            controller,
-                            card,
-                          ),
-                          cooldownSeconds: _dungeonDeployCooldown(
                             controller,
                             card,
                           ),
@@ -626,14 +616,17 @@ class _DailyDungeonsScreenState extends State<DailyDungeonsScreen> {
         fullscreenDialog: true,
         builder: (_) => _DungeonRunLaunchScreen(
           title: 'Loading Threat Director',
-          subtitle: 'Locking anomaly loadout and opening the tower arena.',
+          subtitle:
+              'Locking anomaly loadout and opening the shared battle arena.',
           tint: LightcorePalette.warning,
           icon: Icons.shield_rounded,
-          builder: (_) => _ThreatDirectorDungeonRunScreen(
+          builder: (_) => _DailyDungeonBattleRunScreen(
+            route: _DailyDungeonBattleRoute.threatDirector,
             controller: controller,
             towerLevel: towerLevel,
             anomalyCards: List<EnemyCardState>.unmodifiable(anomalyCards),
             apexCard: apexCard,
+            runSeed: _dailyDungeonRunSeed(towerLevel),
           ),
         ),
       ),
@@ -659,7 +652,7 @@ class _DailyDungeonsScreenState extends State<DailyDungeonsScreen> {
         builder: (_) => _DungeonRunLaunchScreen(
           title: 'Loading Prism Rift',
           subtitle:
-              'Charging manual controls and syncing today\'s rift pattern.',
+              'Syncing today\'s rift pattern and opening the shared battle arena.',
           tint: LightcorePalette.violet,
           icon: Icons.terrain_rounded,
           builder: (_) => _DailyDungeonBattleRunScreen(

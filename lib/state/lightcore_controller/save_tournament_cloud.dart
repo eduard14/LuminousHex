@@ -293,7 +293,65 @@ extension LightcoreControllerSaveTournamentCloud on LightcoreController {
           initialEnemyTarget + min(20, 3 + (profile.towerLevel ~/ 2)),
       layer2Unlocked: profile.towerLevel >= 7,
       layer2Count: profile.towerLevel >= 14 ? 2 : 1,
+      installCoreManager: false,
     );
+  }
+
+  void configurePrismRiftDungeonBattleFromHomeTower({
+    required LightcoreController source,
+    required int towerLevel,
+    Iterable<EnemyCardState> enemyDraft = const <EnemyCardState>[],
+  }) {
+    configurePrismRiftDungeonBattle(
+      towerLevel: towerLevel,
+      enemyDraft: enemyDraft,
+    );
+
+    final homeLayer = source.homeTowerLayer;
+    final eventLayer = activeLayer;
+    eventLayer.tier = homeLayer.tier;
+    eventLayer.label = homeLayer.label;
+    eventLayer.promotionTraitRoll = homeLayer.promotionTraitRoll;
+
+    _core = homeLayer.core.copyWith(
+      coreStability: 100,
+      flowEfficiency: _maxFlowEfficiency,
+      fireCooldownRemaining: 0,
+      packetCooldownRemaining: 0,
+      automationCooldownRemaining: 0,
+    );
+    _layer2 = homeLayer.layer2.copyWith(fireCooldownRemaining: 0);
+    for (var slotIndex = 0; slotIndex < slotCount; slotIndex += 1) {
+      if (slotIndex >= homeLayer.slots.length ||
+          !source._slotCountsTowardRing(homeLayer.slots[slotIndex])) {
+        _slots[slotIndex] = OuterTowerState(slotIndex: slotIndex);
+        continue;
+      }
+      final sourceSlot = homeLayer.slots[slotIndex];
+      _slots[slotIndex] = sourceSlot
+          .copyForSlot(slotIndex)
+          .copyWith(
+            charge: max(0.45, min(1.0, sourceSlot.charge)),
+            cooldownRemaining: 0,
+            automationCooldownRemaining: 0,
+            disruption: 0,
+            fabricationTotalSeconds: 0,
+            fabricationRemainingSeconds: 0,
+          );
+    }
+
+    final builtSlots = _slots.where(_slotCountsTowardRing).length;
+    final unlockExperience = builtSlots <= 0
+        ? 0
+        : unlockExperienceForOuterSlot(builtSlots - 1);
+    kills = unlockExperience;
+    experience = unlockExperience;
+    _towerRangePreviewSlotIndex = _slots.indexWhere(_slotCountsTowardRing);
+    if (_towerRangePreviewSlotIndex == -1) {
+      _towerRangePreviewSlotIndex = null;
+    }
+    _storeActiveLayer();
+    _notifyNow();
   }
 
   void _configureEventBattle({

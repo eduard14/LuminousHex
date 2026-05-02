@@ -5,7 +5,6 @@ class _TowerBattleCanvas extends StatelessWidget {
     required this.towerProfile,
     required this.towerLevel,
     required this.integrity,
-    required this.activeRaids,
     required this.tint,
     required this.cleared,
     required this.running,
@@ -15,7 +14,6 @@ class _TowerBattleCanvas extends StatelessWidget {
   final LightcoreDailyDungeonTowerProfile towerProfile;
   final int towerLevel;
   final double integrity;
-  final List<_DungeonRaid> activeRaids;
   final Color tint;
   final bool cleared;
   final bool running;
@@ -23,7 +21,6 @@ class _TowerBattleCanvas extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final raids = activeRaids.toList(growable: false);
     return AspectRatio(
       aspectRatio: 1.35,
       child: CustomPaint(
@@ -31,7 +28,6 @@ class _TowerBattleCanvas extends StatelessWidget {
           towerProfile: towerProfile,
           towerLevel: towerLevel,
           integrity: integrity,
-          activeRaids: raids,
           tint: tint,
           cleared: cleared,
           running: running,
@@ -48,7 +44,6 @@ class _TowerBattlePainter extends CustomPainter {
     required this.towerProfile,
     required this.towerLevel,
     required this.integrity,
-    required this.activeRaids,
     required this.tint,
     required this.cleared,
     required this.running,
@@ -58,7 +53,6 @@ class _TowerBattlePainter extends CustomPainter {
   final LightcoreDailyDungeonTowerProfile towerProfile;
   final int towerLevel;
   final double integrity;
-  final List<_DungeonRaid> activeRaids;
   final Color tint;
   final bool cleared;
   final bool running;
@@ -175,45 +169,6 @@ class _TowerBattlePainter extends CustomPainter {
       size: nodeRadius * 0.82,
       color: resolvedTint,
     );
-
-    final raidCount = math.min(activeRaids.length, 12);
-    for (var index = 0; index < raidCount; index += 1) {
-      final raid = activeRaids[index];
-      final angle =
-          (-math.pi / 2) +
-          ((math.pi * 2) *
-              ((index / math.max(1, raidCount)) + (raid.progress * 0.16)));
-      final distance = outerRadius * (1.34 - (raid.progress * 0.5));
-      final origin = Offset(
-        center.dx + math.cos(angle) * distance,
-        center.dy + math.sin(angle) * distance,
-      );
-      final color = raid.affinity.color;
-      canvas.drawLine(
-        origin,
-        Offset.lerp(origin, center, 0.34 + (raid.progress * 0.38))!,
-        Paint()
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = raid.apex ? 3.2 : 2
-          ..strokeCap = StrokeCap.round
-          ..color = color.withValues(alpha: raid.apex ? 0.72 : 0.5),
-      );
-      canvas.drawCircle(
-        origin,
-        shortest * (raid.apex ? 0.044 : 0.028),
-        Paint()..color = color.withValues(alpha: 0.9),
-      );
-      if (raid.apex) {
-        canvas.drawCircle(
-          origin,
-          shortest * 0.064,
-          Paint()
-            ..style = PaintingStyle.stroke
-            ..strokeWidth = 2
-            ..color = LightcorePalette.solar.withValues(alpha: 0.68),
-        );
-      }
-    }
 
     if (!running && !cleared && !expired) {
       canvas.drawCircle(
@@ -380,7 +335,6 @@ class _TowerBattlePainter extends CustomPainter {
   bool shouldRepaint(covariant _TowerBattlePainter oldDelegate) {
     return oldDelegate.towerLevel != towerLevel ||
         oldDelegate.integrity != integrity ||
-        oldDelegate.activeRaids != activeRaids ||
         oldDelegate.tint != tint ||
         oldDelegate.towerProfile != towerProfile ||
         oldDelegate.cleared != cleared ||

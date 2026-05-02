@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lightcore/data/enemy_configs.dart';
 import 'package:lightcore/data/tower_configs.dart';
@@ -260,6 +262,85 @@ void main() {
 
     expect(controller.builtTowerCount, 3);
     expect(controller.slots.take(3).every((slot) => slot.isBuilt), isTrue);
+  });
+
+  test('prism rift battle uses highest-layer home tower shell', () {
+    final source = LightcoreController();
+    final controller = LightcoreController();
+    addTearDown(source.dispose);
+    addTearDown(controller.dispose);
+
+    source.kills = LightcoreController.killsForOverallLevel(80);
+    source.lumens = 100000;
+    expect(source.debugSeedProgressionLayer(3), isTrue);
+
+    controller.configurePrismRiftDungeonBattleFromHomeTower(
+      source: source,
+      towerLevel: 5,
+      enemyDraft: [
+        EnemyCardState(
+          config: EnemyLibrary.basicRed,
+          unlocked: true,
+          copies: 1,
+          level: 2,
+        ),
+      ],
+    );
+
+    expect(controller.activeLayer.tier, source.homeTowerLayer.tier);
+    expect(controller.activeLayerLabel, source.homeTowerLayerLabel);
+    expect(
+      controller.coreState.projectileType,
+      source.homeTowerLayer.core.projectileType,
+    );
+    expect(
+      controller.builtTowerCount,
+      source.homeTowerLayer.slots
+          .where(
+            (slot) =>
+                (slot.config != null && !slot.isFabricating) ||
+                slot.isPromotedChildTower,
+          )
+          .length,
+    );
+    expect(controller.towerCoreManager, isNull);
+    expect(controller.activeEnemyCardIds, contains(EnemyLibrary.basicRed.id));
+  });
+
+  test('prism rift aimed fire creates battle-screen core shots', () {
+    final source = LightcoreController();
+    final controller = LightcoreController();
+    addTearDown(source.dispose);
+    addTearDown(controller.dispose);
+
+    source.kills = LightcoreController.killsForOverallLevel(80);
+    source.lumens = 100000;
+    expect(source.debugSeedProgressionLayer(2), isTrue);
+    controller.configurePrismRiftDungeonBattleFromHomeTower(
+      source: source,
+      towerLevel: 1,
+      enemyDraft: [
+        EnemyCardState(
+          config: EnemyLibrary.basicRed,
+          unlocked: true,
+          copies: 1,
+          level: 1,
+        ),
+      ],
+    );
+    controller.tick(0.2);
+
+    expect(controller.enemies, isNotEmpty);
+    final target = controller.enemies.first;
+    final fired = controller.firePrismRiftAimedShot(
+      aimDx: math.cos(target.angle),
+      aimDy: math.sin(target.angle),
+    );
+
+    expect(fired, isTrue);
+    expect(controller.shots, isNotEmpty);
+    expect(controller.shots.first.enemyId, target.id);
+    expect(controller.coreState.fireCooldownRemaining, greaterThan(0));
   });
 
   test('event offline progress counts as claimed offline time', () {
