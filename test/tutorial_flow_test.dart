@@ -50,10 +50,19 @@ void _promoteChildShellIntoParent(
   expect(controller.activeLayer.tier, 2);
 }
 
+void _maxOutPromotedTower(LightcoreController controller, int parentSlotIndex) {
+  controller.lumens = 100000000;
+  while (controller.slots[parentSlotIndex].level <
+      LightcoreController.maxTowerLevel) {
+    expect(controller.upgradeTower(parentSlotIndex), isTrue);
+  }
+}
+
 void _promoteToLayer3(LightcoreController controller) {
   _promoteRootShell(controller);
   for (var index = 0; index < LightcoreController.slotCount; index++) {
     _promoteChildShellIntoParent(controller, index);
+    _maxOutPromotedTower(controller, index);
   }
   expect(controller.isPromotionReady, isTrue);
   controller.unlockLayer2Tower();
