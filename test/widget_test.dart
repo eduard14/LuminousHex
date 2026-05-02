@@ -740,6 +740,50 @@ void main() {
     expect(find.text('Start Run'), findsOneWidget);
   });
 
+  testWidgets('arena flow tournament run uses shared battle screen', (
+    tester,
+  ) async {
+    addTearDown(() async => tester.binding.setSurfaceSize(null));
+    await tester.binding.setSurfaceSize(const Size(1200, 1000));
+
+    final controller = LightcoreController(screenName: 'Pilot Hex');
+    addTearDown(controller.dispose);
+    final backend = _TournamentOverviewBackend(
+      joinedModes: {LightcoreTournamentModeId.arenaFlow},
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        debugShowCheckedModeBanner: false,
+        theme: buildLightcoreTheme(),
+        home: Scaffold(
+          body: TournamentScreen(controller: controller, backend: backend),
+        ),
+      ),
+    );
+    await tester.pump();
+    await tester.pump();
+
+    await tester.tap(
+      find
+          .ancestor(of: find.text('Arena Flow'), matching: find.byType(InkWell))
+          .first,
+    );
+    await tester.pump();
+
+    await tester.tap(find.text('Start Run'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 1100));
+
+    expect(find.text('Net Damage Duel'), findsOneWidget);
+    expect(
+      find.byWidgetPredicate(
+        (widget) => widget.runtimeType.toString().startsWith('GameWidget<'),
+      ),
+      findsOneWidget,
+    );
+  });
+
   testWidgets('daily dungeon overlay opens before level 15 for testing', (
     tester,
   ) async {
@@ -2176,11 +2220,13 @@ void main() {
 }
 
 class _TournamentOverviewBackend extends FirebaseLightcoreBackend {
-  _TournamentOverviewBackend()
-    : super(runtimeConfig: lightcoreFirebaseRuntimeConfig);
+  _TournamentOverviewBackend({
+    this.joinedModes = const <LightcoreTournamentModeId>{},
+  }) : super(runtimeConfig: lightcoreFirebaseRuntimeConfig);
 
   static final DateTime _startsAt = DateTime(2026);
   static final DateTime _endsAt = DateTime(2026, 1, 8);
+  final Set<LightcoreTournamentModeId> joinedModes;
 
   LightcoreTournamentOverview get _overview => LightcoreTournamentOverview(
     seasonKey: 'test-week',
@@ -2206,6 +2252,7 @@ class _TournamentOverviewBackend extends FirebaseLightcoreBackend {
           startsAt: _startsAt,
           endsAt: _endsAt,
           isOpen: true,
+          joined: joinedModes.contains(mode),
           seedPowerIndex: 1400,
         ),
     ],

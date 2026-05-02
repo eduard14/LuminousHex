@@ -120,7 +120,7 @@ class _TargetTowerPanel extends StatelessWidget {
         child: LayoutBuilder(
           builder: (context, constraints) {
             final compact = constraints.maxWidth < 680;
-            final towerStage = _TowerBattleCanvas(
+            final towerStage = _TargetTowerBattlePreview(
               towerProfile: towerProfile,
               towerLevel: towerLevel,
               integrity: towerIntegrity,
@@ -228,6 +228,77 @@ class _TargetTowerPanel extends StatelessWidget {
             );
           },
         ),
+      ),
+    );
+  }
+}
+
+class _TargetTowerBattlePreview extends StatelessWidget {
+  const _TargetTowerBattlePreview({
+    required this.towerProfile,
+    required this.towerLevel,
+    required this.integrity,
+    required this.tint,
+    required this.cleared,
+    required this.running,
+    required this.expired,
+  });
+
+  final LightcoreDailyDungeonTowerProfile towerProfile;
+  final int towerLevel;
+  final double integrity;
+  final Color tint;
+  final bool cleared;
+  final bool running;
+  final bool expired;
+
+  @override
+  Widget build(BuildContext context) {
+    final statusTint = cleared
+        ? LightcorePalette.success
+        : expired
+        ? LightcorePalette.warning
+        : running
+        ? LightcorePalette.aether
+        : tint;
+    final statusLabel = cleared
+        ? 'Cleared'
+        : expired
+        ? 'Expired'
+        : running
+        ? 'Battle Live'
+        : 'Shared Battle';
+    return AuroraPanel(
+      tint: statusTint,
+      radius: 18,
+      padding: const EdgeInsets.all(14),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          TowerLevelHexBadge(
+            level: towerProfile.effectiveDisplayLevel,
+            maxLevel: LightcoreController.maxTowerLevel,
+            projectileType: towerProfile.projectileType,
+            payloadType: towerProfile.payloadType,
+            tint: tint,
+            complete: cleared,
+            size: 96,
+            semanticLabel:
+                '${towerProfile.title} level $towerLevel shared battle target',
+          ),
+          const SizedBox(height: 10),
+          Text(
+            statusLabel,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(context).textTheme.labelLarge?.copyWith(
+              color: statusTint,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          const SizedBox(height: 8),
+          MeterBar(value: integrity, color: statusTint, height: 8),
+        ],
       ),
     );
   }

@@ -17,7 +17,6 @@ part 'daily_dungeons/dungeon_math.dart';
 part 'daily_dungeons/dungeon_run_models.dart';
 part 'daily_dungeons/dungeon_run_widgets.dart';
 part 'daily_dungeons/dungeon_selection_widgets.dart';
-part 'daily_dungeons/dungeon_battle_painter.dart';
 part 'daily_dungeons/dungeon_loadout_widgets.dart';
 part 'daily_dungeons/prism_rift_dungeon_math.dart';
 part 'daily_dungeons/prism_rift_dungeon_widgets.dart';

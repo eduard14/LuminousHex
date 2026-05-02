@@ -32,9 +32,16 @@ class _PrismRiftPreviewPanel extends StatelessWidget {
         child: LayoutBuilder(
           builder: (context, constraints) {
             final compact = constraints.maxWidth < 680;
-            final stage = _PrismRiftPreviewStage(
+            final stage = _TargetTowerBattlePreview(
               towerProfile: towerProfile,
               towerLevel: towerLevel,
+              integrity: (riftStability / math.max(1.0, towerProfile.maxHealth))
+                  .clamp(0.0, 1.0)
+                  .toDouble(),
+              tint: LightcorePalette.violet,
+              cleared: cleared,
+              running: false,
+              expired: false,
             );
             final details = Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -116,185 +123,5 @@ class _PrismRiftPreviewPanel extends StatelessWidget {
         ),
       ),
     );
-  }
-}
-
-class _PrismRiftPreviewStage extends StatelessWidget {
-  const _PrismRiftPreviewStage({
-    required this.towerProfile,
-    required this.towerLevel,
-  });
-
-  final LightcoreDailyDungeonTowerProfile towerProfile;
-  final int towerLevel;
-
-  @override
-  Widget build(BuildContext context) {
-    return AspectRatio(
-      aspectRatio: 1.35,
-      child: CustomPaint(
-        painter: _PrismRiftPreviewPainter(
-          towerProfile: towerProfile,
-          towerLevel: towerLevel,
-        ),
-      ),
-    );
-  }
-}
-
-class _PrismRiftPreviewPainter extends CustomPainter {
-  const _PrismRiftPreviewPainter({
-    required this.towerProfile,
-    required this.towerLevel,
-  });
-
-  final LightcoreDailyDungeonTowerProfile towerProfile;
-  final int towerLevel;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final rect = Offset.zero & size;
-    final center = Offset(size.width / 2, size.height / 2);
-    final shortest = math.min(size.width, size.height);
-    final tint = towerProfile.affinity.color;
-    canvas.drawRect(
-      rect,
-      Paint()
-        ..shader =
-            RadialGradient(
-              colors: [
-                LightcorePalette.violet.withValues(alpha: 0.16),
-                LightcorePalette.night.withValues(alpha: 0.0),
-              ],
-            ).createShader(
-              Rect.fromCircle(center: center, radius: shortest * 0.62),
-            ),
-    );
-    for (var index = 0; index < 3; index += 1) {
-      canvas.drawCircle(
-        center,
-        shortest * (0.22 + (index * 0.13)),
-        Paint()
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 1.4
-          ..color = LightcorePalette.violet.withValues(alpha: 0.22),
-      );
-    }
-    final shardPaint = Paint()..color = LightcorePalette.violet;
-    for (var index = 0; index < 6; index += 1) {
-      final angle = (-math.pi / 2) + (index * math.pi / 3);
-      final position =
-          center + Offset(math.cos(angle), math.sin(angle)) * shortest * 0.36;
-      canvas.drawPath(_hexPath(position, shortest * 0.04), shardPaint);
-      canvas.drawCircle(
-        position +
-            Offset(math.cos(angle + 1.2), math.sin(angle + 1.2)) *
-                shortest *
-                0.033,
-        shortest * 0.012,
-        Paint()..color = LightcorePalette.solar,
-      );
-    }
-    _drawGlowLine(
-      canvas,
-      center,
-      center.translate(shortest * 0.22, -shortest * 0.2),
-      tint,
-      width: 3.2,
-    );
-    canvas.drawPath(
-      _hexPath(center, shortest * 0.11),
-      Paint()..color = tint.withValues(alpha: 0.18),
-    );
-    canvas.drawPath(
-      _hexPath(center, shortest * 0.11),
-      Paint()
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 2.4
-        ..color = tint,
-    );
-    _paintIconGlyph(
-      canvas,
-      center,
-      towerProjectileIcon(towerProfile.projectileType),
-      size: shortest * 0.08,
-      color: tint,
-    );
-  }
-
-  void _drawGlowLine(
-    Canvas canvas,
-    Offset start,
-    Offset end,
-    Color color, {
-    required double width,
-  }) {
-    canvas.drawLine(
-      start,
-      end,
-      Paint()
-        ..strokeWidth = width + 5
-        ..strokeCap = StrokeCap.round
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8)
-        ..color = color.withValues(alpha: 0.18),
-    );
-    canvas.drawLine(
-      start,
-      end,
-      Paint()
-        ..strokeWidth = width
-        ..strokeCap = StrokeCap.round
-        ..color = color.withValues(alpha: 0.82),
-    );
-  }
-
-  void _paintIconGlyph(
-    Canvas canvas,
-    Offset center,
-    IconData icon, {
-    required double size,
-    required Color color,
-  }) {
-    final painter = TextPainter(
-      text: TextSpan(
-        text: String.fromCharCode(icon.codePoint),
-        style: TextStyle(
-          color: color,
-          fontSize: size,
-          fontFamily: icon.fontFamily,
-          package: icon.fontPackage,
-        ),
-      ),
-      textAlign: TextAlign.center,
-      textDirection: TextDirection.ltr,
-    )..layout();
-    painter.paint(
-      canvas,
-      center.translate(-painter.width / 2, -painter.height / 2),
-    );
-  }
-
-  Path _hexPath(Offset center, double radius) {
-    final path = Path();
-    for (var index = 0; index < 6; index += 1) {
-      final angle = (math.pi / 6) + (index * math.pi / 3);
-      final point = Offset(
-        center.dx + math.cos(angle) * radius,
-        center.dy + math.sin(angle) * radius,
-      );
-      if (index == 0) {
-        path.moveTo(point.dx, point.dy);
-      } else {
-        path.lineTo(point.dx, point.dy);
-      }
-    }
-    path.close();
-    return path;
-  }
-
-  @override
-  bool shouldRepaint(covariant _PrismRiftPreviewPainter oldDelegate) {
-    return oldDelegate.towerProfile != towerProfile ||
-        oldDelegate.towerLevel != towerLevel;
   }
 }

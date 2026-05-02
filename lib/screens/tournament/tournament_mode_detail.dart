@@ -502,74 +502,12 @@ class _TournamentModeDetailScreenState
     }, growable: false);
   }
 
-  PrototypeAffinity get _arenaPlayerTowerAffinity =>
-      widget.controller.homeTowerAffinity ??
-      widget.controller.homeTowerLayer.core.affinity;
-
-  PrototypeAffinity get _arenaRivalTowerAffinity =>
-      _arenaRivalSnapshot?.towerAffinity ??
-      PrototypeAffinity.values[_arenaRivalRating.round().abs() %
-          PrototypeAffinity.values.length];
-
-  PrototypeAffinity get _arenaPlayerEnemyAffinity =>
-      _dominantArenaEnemyAffinity(_arenaPlayerEnemyStack) ??
-      PrototypeAffinity.neutral;
-
-  PrototypeAffinity get _arenaRivalEnemyAffinity =>
-      _arenaRivalSnapshot?.enemyAffinity ??
-      _dominantArenaEnemyAffinity(_arenaRivalEnemyStack) ??
-      PrototypeAffinity.neutral;
-
-  PrototypeAffinity? _dominantArenaEnemyAffinity(List<EnemyCardState> deck) {
-    if (deck.isEmpty) {
-      return null;
-    }
-    final scores = <PrototypeAffinity, int>{};
-    for (final card in deck) {
-      for (final affinity in card.config.affinities) {
-        scores.update(affinity, (score) => score + 1, ifAbsent: () => 1);
-      }
-    }
-    PrototypeAffinity? dominant;
-    var dominantScore = 0;
-    for (final entry in scores.entries) {
-      if (dominant == null || entry.value > dominantScore) {
-        dominant = entry.key;
-        dominantScore = entry.value;
-      }
-    }
-    return dominant;
-  }
-
   double _averageEnemyLevelForCards(List<EnemyCardState> cards) {
     if (cards.isEmpty) {
       return 1;
     }
     return cards.fold<double>(0, (sum, card) => sum + card.level) /
         cards.length;
-  }
-
-  double get _arenaPlayerTowerIntegrity =>
-      (1 -
-              (_arenaPlayerDamageTaken /
-                  max(180.0, sqrt(widget.controller.homeTowerPowerIndex) * 8)))
-          .clamp(0.0, 1.0)
-          .toDouble();
-
-  double get _arenaRivalTowerIntegrity =>
-      (1 - (_arenaRivalDamageTaken / max(180.0, sqrt(_arenaRivalPower) * 8)))
-          .clamp(0.0, 1.0)
-          .toDouble();
-
-  String get _arenaPlayerTowerLabel =>
-      '${widget.controller.homeTowerLabel} • ${widget.controller.homeTowerLayerLabel}';
-
-  String get _arenaRivalTowerLabel {
-    final snapshot = _arenaRivalSnapshot;
-    if (snapshot == null) {
-      return '${_arenaRivalTowerAffinity.label} Rival Tower';
-    }
-    return '${snapshot.towerAffinity.label} L${snapshot.activeLayerTier} Tower';
   }
 
   int get _arenaBattleEnemyPressure {
@@ -1479,28 +1417,10 @@ class _TournamentModeDetailScreenState
           child: Stack(
             children: [
               Positioned.fill(
-                child: _mode == LightcoreTournamentModeId.arenaFlow
-                    ? _ArenaFlowDuelStage(
-                        playerLabel: widget.controller.playerDisplayName,
-                        rivalLabel: _arenaRivalEntry?.displayName ?? 'Rival',
-                        playerTowerLabel: _arenaPlayerTowerLabel,
-                        rivalTowerLabel: _arenaRivalTowerLabel,
-                        playerTowerAffinity: _arenaPlayerTowerAffinity,
-                        rivalTowerAffinity: _arenaRivalTowerAffinity,
-                        playerEnemyAffinity: _arenaPlayerEnemyAffinity,
-                        rivalEnemyAffinity: _arenaRivalEnemyAffinity,
-                        playerEnemyProgress: _arenaPlayerEnemyProgress,
-                        rivalEnemyProgress: _arenaRivalEnemyProgress,
-                        playerTowerIntegrity: _arenaPlayerTowerIntegrity,
-                        rivalTowerIntegrity: _arenaRivalTowerIntegrity,
-                        playerNetDamage: _arenaPlayerNetDamage,
-                        rivalNetDamage: _arenaRivalNetDamage,
-                        active: _runActive,
-                      )
-                    : _TournamentBattleStage(
-                        controller: _battleController,
-                        active: _runActive,
-                      ),
+                child: _TournamentBattleStage(
+                  controller: _battleController,
+                  active: _runActive,
+                ),
               ),
               Positioned(
                 top: inset,

@@ -42,34 +42,3 @@ class _ShotFireBurst {
     );
   }
 }
-
-enum _ShotFireBurstStyle {
-  spark,
-  needle,
-  heavy,
-  pulse,
-  cluster,
-  arc,
-  split,
-  lance,
-  blast,
-  wave,
-  nova,
-  node,
-}
-
-class _ShotFireBurstSpec {
-  const _ShotFireBurstSpec({
-    required this.style,
-    this.scale = 1,
-    this.sparkCount = 3,
-    this.ringCount = 1,
-    this.spread = 0.36,
-  });
-
-  final _ShotFireBurstStyle style;
-  final double scale;
-  final int sparkCount;
-  final int ringCount;
-  final double spread;
-}
