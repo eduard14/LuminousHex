@@ -205,6 +205,148 @@ class _ApexLoadoutChip extends StatelessWidget {
   }
 }
 
+class _EnemyManagerLoadoutSelector extends StatelessWidget {
+  const _EnemyManagerLoadoutSelector({
+    required this.managers,
+    required this.selectedManager,
+    required this.onSelected,
+  });
+
+  final List<EnemyManagerState> managers;
+  final EnemyManagerState? selectedManager;
+  final ValueChanged<EnemyManagerState> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Enemy Manager', style: textTheme.titleMedium),
+        const SizedBox(height: 10),
+        if (managers.isEmpty)
+          AuroraPanel(
+            tint: LightcorePalette.stroke,
+            radius: 18,
+            padding: const EdgeInsets.all(14),
+            child: Row(
+              children: [
+                _IconBadge(
+                  icon: Icons.supervisor_account_rounded,
+                  tint: LightcorePalette.stroke,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Forge a Threat Director manager to tune launch timing and impact pressure.',
+                    style: textTheme.bodyMedium?.copyWith(
+                      color: LightcorePalette.mist.withValues(alpha: 0.68),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          )
+        else
+          Wrap(
+            spacing: 10,
+            runSpacing: 10,
+            children: [
+              for (final manager in managers.take(6))
+                _EnemyManagerLoadoutChip(
+                  manager: manager,
+                  selected: selectedManager?.instanceId == manager.instanceId,
+                  onTap: () => onSelected(manager),
+                ),
+            ],
+          ),
+      ],
+    );
+  }
+}
+
+class _EnemyManagerLoadoutChip extends StatelessWidget {
+  const _EnemyManagerLoadoutChip({
+    required this.manager,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final EnemyManagerState manager;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final focus = manager.targetAffinity;
+    final tint = focus?.color ?? LightcorePalette.verdant;
+    return InkWell(
+      borderRadius: BorderRadius.circular(16),
+      onTap: onTap,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: tint.withValues(alpha: selected ? 0.2 : 0.1),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: tint.withValues(alpha: selected ? 0.72 : 0.32),
+            width: selected ? 2 : 1,
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.supervisor_account_rounded, color: tint, size: 18),
+              const SizedBox(width: 8),
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 190),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      manager.name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                        color: LightcorePalette.mist,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      '${focus?.shortLabel ?? 'ANY'} • Dmg ${_managerLoadoutPercent(manager.stabilityDamageMultiplier)} • Spd ${_managerLoadoutPercent(manager.speedMultiplier)}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        color: LightcorePalette.mist.withValues(alpha: 0.62),
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (selected) ...[
+                const SizedBox(width: 8),
+                Icon(Icons.check_circle_rounded, color: tint, size: 18),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+String _managerLoadoutPercent(double multiplier) {
+  final value = ((multiplier - 1) * 100).round();
+  if (value == 0) {
+    return '0%';
+  }
+  return value > 0 ? '+$value%' : '$value%';
+}
+
 class _DungeonEnemyPortrait extends StatelessWidget {
   const _DungeonEnemyPortrait({
     required this.card,

@@ -105,6 +105,7 @@ class _DailyDungeonsScreenState extends State<DailyDungeonsScreen> {
   int _selectedTowerLevel = LightcoreController.dailyDungeonStartingTowerLevel;
   final Set<String> _selectedAnomalyIds = <String>{};
   String? _selectedApexEnemyCardId;
+  String? _selectedDungeonEnemyManagerId;
 
   @override
   Widget build(BuildContext context) {
@@ -235,6 +236,7 @@ class _DailyDungeonsScreenState extends State<DailyDungeonsScreen> {
     final towerMaxHealth = towerProfile.maxHealth;
     final selectedCards = _selectedAnomalyCards(controller, ownedCards);
     final selectedApex = _selectedApexCard(controller);
+    final selectedManager = _selectedDungeonEnemyManager(controller);
     final reward = controller
         .dailyDungeonRewardForLevel(selectedLevel)
         .withoutExperience();
@@ -357,6 +359,15 @@ class _DailyDungeonsScreenState extends State<DailyDungeonsScreen> {
                 label: selectedApex == null ? 'No apex armed' : 'Apex ready',
                 tint: LightcorePalette.solar,
               ),
+              _InfoChip(
+                icon: Icons.supervisor_account_rounded,
+                label: selectedManager == null
+                    ? 'No manager slotted'
+                    : 'Manager slotted',
+                tint: selectedManager == null
+                    ? LightcorePalette.stroke
+                    : LightcorePalette.verdant,
+              ),
             ],
           ),
           const SizedBox(height: 18),
@@ -420,6 +431,12 @@ class _DailyDungeonsScreenState extends State<DailyDungeonsScreen> {
             onSelected: _selectApexCard,
           ),
           const SizedBox(height: 18),
+          _EnemyManagerLoadoutSelector(
+            managers: controller.enemyManagers,
+            selectedManager: selectedManager,
+            onSelected: _selectDungeonEnemyManager,
+          ),
+          const SizedBox(height: 18),
           Wrap(
             spacing: 10,
             runSpacing: 10,
@@ -432,6 +449,7 @@ class _DailyDungeonsScreenState extends State<DailyDungeonsScreen> {
                         selectedLevel,
                         selectedCards,
                         selectedApex,
+                        selectedManager,
                       )
                     : null,
                 icon: const Icon(Icons.play_arrow_rounded),
@@ -683,12 +701,17 @@ class _DailyDungeonsScreenState extends State<DailyDungeonsScreen> {
     setState(() => _selectedApexEnemyCardId = card.config.id);
   }
 
+  void _selectDungeonEnemyManager(EnemyManagerState manager) {
+    setState(() => _selectedDungeonEnemyManagerId = manager.instanceId);
+  }
+
   Future<void> _openDungeonRun(
     BuildContext context,
     LightcoreController controller,
     int towerLevel,
     List<EnemyCardState> anomalyCards,
     EnemyCardState? apexCard,
+    EnemyManagerState? enemyManager,
   ) async {
     final result = await Navigator.of(context).push<_DungeonRunResult>(
       MaterialPageRoute<_DungeonRunResult>(
@@ -705,6 +728,7 @@ class _DailyDungeonsScreenState extends State<DailyDungeonsScreen> {
             towerLevel: towerLevel,
             anomalyCards: List<EnemyCardState>.unmodifiable(anomalyCards),
             apexCard: apexCard,
+            enemyManager: enemyManager,
             runSeed: _dailyDungeonRunSeed(towerLevel),
           ),
         ),
@@ -742,6 +766,7 @@ class _DailyDungeonsScreenState extends State<DailyDungeonsScreen> {
               anomalyCards.isEmpty ? controller.activeEnemyDeck : anomalyCards,
             ),
             apexCard: null,
+            enemyManager: null,
             runSeed: _dailyDungeonRunSeed(towerLevel),
           ),
         ),
@@ -874,6 +899,29 @@ class _DailyDungeonsScreenState extends State<DailyDungeonsScreen> {
       return active;
     }
     return ownedApexCards.first;
+  }
+
+  EnemyManagerState? _selectedDungeonEnemyManager(
+    LightcoreController controller,
+  ) {
+    final managers = controller.enemyManagers;
+    if (managers.isEmpty) {
+      return null;
+    }
+    final selectedId = _selectedDungeonEnemyManagerId;
+    if (selectedId != null) {
+      final selected = managers.where(
+        (manager) => manager.instanceId == selectedId,
+      );
+      if (selected.isNotEmpty) {
+        return selected.first;
+      }
+    }
+    final assigned = controller.enemyCoreManager;
+    if (assigned != null) {
+      return assigned;
+    }
+    return managers.first;
   }
 
   String _dailyKey(DateTime now) {

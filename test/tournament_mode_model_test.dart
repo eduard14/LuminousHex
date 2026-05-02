@@ -319,8 +319,10 @@ void main() {
     () {
       final baseline = LightcoreController();
       final controller = LightcoreController();
+      final boosted = LightcoreController();
       addTearDown(baseline.dispose);
       addTearDown(controller.dispose);
+      addTearDown(boosted.dispose);
 
       baseline.configurePrismRiftDungeonBattle(
         towerLevel: 1,
@@ -361,6 +363,30 @@ void main() {
       final advanced = controller.enemies.single;
       expect(advanced.angle, closeTo(spawned.angle, 0.000001));
       expect(advanced.radius, lessThan(spawned.radius));
+
+      boosted.configureThreatDirectorDungeonBattle(
+        towerLevel: 1,
+        enemyDraft: [
+          EnemyCardState(
+            config: EnemyLibrary.basicWhite,
+            unlocked: true,
+            copies: 1,
+            level: 1,
+          ),
+        ],
+      );
+
+      expect(
+        boosted.spawnManualBattleEnemy(
+          cardId: EnemyLibrary.basicWhite.id,
+          speedMultiplier: 1.55,
+        ),
+        isTrue,
+      );
+      expect(
+        boosted.enemies.single.speed,
+        closeTo(baselineSpeed * 5 * 1.55, 0.000001),
+      );
     },
   );
 

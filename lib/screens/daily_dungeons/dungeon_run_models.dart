@@ -10,6 +10,36 @@ enum _DailyDungeonBattleRoute { threatDirector, prismRift }
 
 enum _DungeonRunFailureReason { expired, coreCollapsed }
 
+class _ThreatDirectorLaunchOutcome {
+  const _ThreatDirectorLaunchOutcome({
+    required this.label,
+    required this.damageMultiplier,
+    required this.speedMultiplier,
+    required this.phase,
+    required this.perfect,
+  });
+
+  final String label;
+  final double damageMultiplier;
+  final double speedMultiplier;
+  final double phase;
+  final bool perfect;
+}
+
+class _ThreatDirectorPendingImpact {
+  const _ThreatDirectorPendingImpact({
+    required this.damage,
+    required this.boss,
+    required this.releaseLabel,
+    required this.perfectRelease,
+  });
+
+  final double damage;
+  final bool boss;
+  final String releaseLabel;
+  final bool perfectRelease;
+}
+
 class _DailyDungeonBattleModeDefinition {
   const _DailyDungeonBattleModeDefinition({
     required this.route,
@@ -121,6 +151,7 @@ class _DailyDungeonBattleRunScreen extends StatefulWidget {
     required this.towerLevel,
     required this.anomalyCards,
     required this.apexCard,
+    required this.enemyManager,
     required this.runSeed,
   });
 
@@ -129,6 +160,7 @@ class _DailyDungeonBattleRunScreen extends StatefulWidget {
   final int towerLevel;
   final List<EnemyCardState> anomalyCards;
   final EnemyCardState? apexCard;
+  final EnemyManagerState? enemyManager;
   final int runSeed;
 
   @override
@@ -142,6 +174,15 @@ class _DailyDungeonBattleRunScreenState
   static const Duration _tickRate = Duration(milliseconds: 100);
   static const double _anomalySpawnCooldownSeconds = 1.0;
   static const double _apexSpawnCooldownSeconds = 6.0;
+  static const double _releaseCycleSeconds = 1.8;
+  static const double _releasePerfectPhase = 0.72;
+  static const double _releasePerfectWindow = 0.08;
+  static const double _releaseGoodWindow = 0.22;
+  static const double _shieldPhaseSeconds = 3.2;
+  static const double _impactComboWindowSeconds = 1.25;
+  static const double _breachDurationSeconds = 2.8;
+  static const double _counterCycleSeconds = 5.5;
+  static const double _counterInterruptWindowSeconds = 1.0;
 
   late final LightcoreDailyDungeonTowerProfile _towerProfile;
   late final LightcoreController _battleController;
@@ -149,13 +190,19 @@ class _DailyDungeonBattleRunScreenState
   late final int _targetKills;
   Timer? _timer;
   final Map<String, double> _manualSpawnCooldowns = <String, double>{};
-  final Map<String, double> _pendingTargetTowerDamageByEnemyId =
-      <String, double>{};
+  final Map<String, _ThreatDirectorPendingImpact>
+  _pendingTargetTowerImpactByEnemyId = <String, _ThreatDirectorPendingImpact>{};
   late double _targetTowerMaxHealth;
   late double _targetTowerHealth;
   LightcoreDailyDungeonReward? _resultReward;
   _DungeonRunFailureReason? _failureReason;
   int _manualLaunchCount = 0;
+  int _impactCombo = 0;
+  double _lastImpactElapsedSeconds = -999;
+  double _breachRemainingSeconds = 0;
+  double _counterChargeSeconds = 0;
+  double _impactFeedbackSeconds = 0;
+  String? _impactFeedbackLabel;
   double _remainingSeconds = _timeLimit.inSeconds.toDouble();
   Offset _riftAimDirection = const Offset(0, -1);
   bool _running = true;
@@ -244,8 +291,152 @@ class _DailyDungeonBattleRunScreenState
           .clamp(0.0, 1.0)
           .toDouble();
 
+  double get _elapsedSeconds => _timeLimit.inSeconds - _remainingSeconds;
+
+  bool get _counterInterruptWindow =>
+      _counterChargeSeconds >=
+      _counterCycleSeconds - _counterInterruptWindowSeconds;
+
+  double get _counterProgress =>
+      (_counterChargeSeconds / _counterCycleSeconds).clamp(0.0, 1.0);
+
+  double get _breachProgress =>
+      (_breachRemainingSeconds / _breachDurationSeconds).clamp(0.0, 1.0);
+
+  List<PrototypeAffinity> get _shieldAffinities {
+    final affinities = <PrototypeAffinity>[];
+    void addAffinity(PrototypeAffinity affinity) {
+      if (!affinities.contains(affinity)) {
+        affinities.add(affinity);
+      }
+    }
+
+    addAffinity(_towerProfile.affinity);
+    for (final card in widget.anomalyCards) {
+      addAffinity(card.config.affinity);
+    }
+    final apex = widget.apexCard;
+    if (apex != null) {
+      addAffinity(apex.config.affinity);
+    }
+    return affinities;
+  }
+
+  PrototypeAffinity get _shieldAffinity {
+    final affinities = _shieldAffinities;
+    final index =
+        ((_elapsedSeconds / _shieldPhaseSeconds).floor()) % affinities.length;
+    return affinities[index];
+  }
+
+  double get _shieldProgress {
+    final phase = (_elapsedSeconds % _shieldPhaseSeconds) / _shieldPhaseSeconds;
+    return phase.clamp(0.0, 1.0).toDouble();
+  }
+
   double _raidDamageFor(EnemyCardState card, {required bool boss}) {
     return widget.controller.dailyDungeonRaidTotalDamage(card, apex: boss);
+  }
+
+  double _releasePhaseFor(EnemyCardState card, {required bool boss}) {
+    final seedOffset =
+        (card.config.id.codeUnits.fold<int>(0, (sum, unit) => sum + unit) %
+            100) /
+        100;
+    final bossOffset = boss ? 0.19 : 0.0;
+    final raw =
+        (_elapsedSeconds / _releaseCycleSeconds) + seedOffset + bossOffset;
+    return raw - raw.floorToDouble();
+  }
+
+  _ThreatDirectorLaunchOutcome _launchOutcomeFor(
+    EnemyCardState card, {
+    required bool boss,
+  }) {
+    final phase = _releasePhaseFor(card, boss: boss);
+    final distance = math.min(
+      (phase - _releasePerfectPhase).abs(),
+      1 - (phase - _releasePerfectPhase).abs(),
+    );
+    final managerTimingScale = _managerTimingWindowScale(card);
+    final perfectWindow = _releasePerfectWindow * managerTimingScale;
+    final goodWindow = _releaseGoodWindow * managerTimingScale;
+    if (distance <= perfectWindow) {
+      return _ThreatDirectorLaunchOutcome(
+        label: 'Perfect',
+        damageMultiplier: 1.2,
+        speedMultiplier: 1.55,
+        phase: phase,
+        perfect: true,
+      );
+    }
+    if (distance <= goodWindow) {
+      return _ThreatDirectorLaunchOutcome(
+        label: 'Good',
+        damageMultiplier: 1.0,
+        speedMultiplier: 1.12,
+        phase: phase,
+        perfect: false,
+      );
+    }
+    return _ThreatDirectorLaunchOutcome(
+      label: 'Weak',
+      damageMultiplier: 0.68,
+      speedMultiplier: 0.78,
+      phase: phase,
+      perfect: false,
+    );
+  }
+
+  double _managerEffectFor(EnemyCardState card) {
+    final manager = widget.enemyManager;
+    if (manager == null) {
+      return 0;
+    }
+    final affinityEffect =
+        manager.targetAffinity == null ||
+            manager.targetAffinity == card.config.affinity
+        ? 1.0
+        : 0.45;
+    return affinityEffect * widget.controller.managerPowerEffectMultiplier;
+  }
+
+  double _managerStatMultiplier(
+    EnemyCardState card,
+    double target, {
+    double base = 1,
+  }) {
+    return base + ((target - base) * _managerEffectFor(card));
+  }
+
+  double _managerDamageMultiplier(EnemyCardState card, {required bool boss}) {
+    final manager = widget.enemyManager;
+    if (manager == null) {
+      return 1;
+    }
+    return _managerStatMultiplier(
+      card,
+      boss
+          ? manager.apexStabilityMultiplier
+          : manager.stabilityDamageMultiplier,
+    );
+  }
+
+  double _managerSpeedMultiplier(EnemyCardState card) {
+    final manager = widget.enemyManager;
+    if (manager == null) {
+      return 1;
+    }
+    return _managerStatMultiplier(card, manager.speedMultiplier);
+  }
+
+  double _managerTimingWindowScale(EnemyCardState card) {
+    final manager = widget.enemyManager;
+    if (manager == null) {
+      return 1;
+    }
+    final spawnRate = _managerStatMultiplier(card, manager.spawnRateMultiplier);
+    return (1 + ((spawnRate - 1) * 0.45)).clamp(0.82, 1.32).toDouble();
   }
 
   void _damageTargetTower(double damage) {
@@ -259,11 +450,45 @@ class _DailyDungeonBattleRunScreenState
     if (!_isThreatDirector || !_running || !mounted) {
       return;
     }
-    final damage = _pendingTargetTowerDamageByEnemyId.remove(enemy.id);
-    if (damage == null || damage <= 0) {
+    final pending = _pendingTargetTowerImpactByEnemyId.remove(enemy.id);
+    if (pending == null || pending.damage <= 0) {
       return;
     }
-    setState(() => _damageTargetTower(damage));
+    final impactElapsed = _elapsedSeconds;
+    final shieldMatched = enemy.config.affinity == _shieldAffinity;
+    final shieldMultiplier = shieldMatched ? 1.28 : 0.78;
+    final counterBreak = _counterInterruptWindow;
+    final nextCombo =
+        impactElapsed - _lastImpactElapsedSeconds <= _impactComboWindowSeconds
+        ? math.min(4, _impactCombo + 1)
+        : 1;
+    final comboMultiplier = 1 + ((nextCombo - 1) * 0.18);
+    final apexMultiplier = pending.boss
+        ? (_breachRemainingSeconds > 0 || counterBreak ? 1.9 : 0.72)
+        : 1.0;
+    final damage =
+        pending.damage * shieldMultiplier * comboMultiplier * apexMultiplier;
+    final feedbackParts = <String>[
+      pending.releaseLabel,
+      if (shieldMatched) 'match' else 'resist',
+      if (counterBreak) 'counter break',
+      if (pending.boss && apexMultiplier > 1) 'apex breach',
+      'x$nextCombo',
+      '-${damage.round()}',
+    ];
+    setState(() {
+      _impactCombo = nextCombo;
+      _lastImpactElapsedSeconds = impactElapsed;
+      if (pending.perfectRelease || shieldMatched || counterBreak) {
+        _breachRemainingSeconds = _breachDurationSeconds;
+      }
+      if (counterBreak) {
+        _counterChargeSeconds = 0;
+      }
+      _impactFeedbackLabel = feedbackParts.join(' • ');
+      _impactFeedbackSeconds = 1.4;
+      _damageTargetTower(damage);
+    });
   }
 
   void _handlePrismRiftAimChanged(Offset direction) {
@@ -311,16 +536,27 @@ class _DailyDungeonBattleRunScreenState
     if (!_canSpawnManualAnomaly(card)) {
       return;
     }
+    final outcome = _launchOutcomeFor(card, boss: false);
+    final managerSpeed = _managerSpeedMultiplier(card);
     final existingEnemyIds = _battleController.enemies
         .map((enemy) => enemy.id)
         .toSet();
     final spawned = _battleController.spawnManualBattleEnemy(
       cardId: card.config.id,
+      speedMultiplier: outcome.speedMultiplier * managerSpeed,
     );
     if (spawned && mounted) {
       _trackTargetTowerDamageForSpawnedEnemy(
         existingEnemyIds,
-        _raidDamageFor(card, boss: false),
+        _ThreatDirectorPendingImpact(
+          damage:
+              _raidDamageFor(card, boss: false) *
+              outcome.damageMultiplier *
+              _managerDamageMultiplier(card, boss: false),
+          boss: false,
+          releaseLabel: outcome.label,
+          perfectRelease: outcome.perfect,
+        ),
       );
       setState(() {
         _manualLaunchCount += 1;
@@ -334,17 +570,28 @@ class _DailyDungeonBattleRunScreenState
     if (!_canSpawnManualApex(card)) {
       return;
     }
+    final outcome = _launchOutcomeFor(card, boss: true);
+    final managerSpeed = _managerSpeedMultiplier(card);
     final existingEnemyIds = _battleController.enemies
         .map((enemy) => enemy.id)
         .toSet();
     final spawned = _battleController.spawnManualBattleEnemy(
       cardId: card.config.id,
       boss: true,
+      speedMultiplier: outcome.speedMultiplier * managerSpeed,
     );
     if (spawned && mounted) {
       _trackTargetTowerDamageForSpawnedEnemy(
         existingEnemyIds,
-        _raidDamageFor(card, boss: true),
+        _ThreatDirectorPendingImpact(
+          damage:
+              _raidDamageFor(card, boss: true) *
+              outcome.damageMultiplier *
+              _managerDamageMultiplier(card, boss: true),
+          boss: true,
+          releaseLabel: outcome.label,
+          perfectRelease: outcome.perfect,
+        ),
       );
       setState(() {
         _manualLaunchCount += 1;
@@ -356,9 +603,9 @@ class _DailyDungeonBattleRunScreenState
 
   void _trackTargetTowerDamageForSpawnedEnemy(
     Set<String> existingEnemyIds,
-    double damage,
+    _ThreatDirectorPendingImpact impact,
   ) {
-    if (!_isThreatDirector || damage <= 0) {
+    if (!_isThreatDirector || impact.damage <= 0) {
       return;
     }
     final spawnedEnemies = _battleController.enemies
@@ -367,17 +614,17 @@ class _DailyDungeonBattleRunScreenState
     if (spawnedEnemies.isEmpty) {
       return;
     }
-    _pendingTargetTowerDamageByEnemyId[spawnedEnemies.last.id] = damage;
+    _pendingTargetTowerImpactByEnemyId[spawnedEnemies.last.id] = impact;
   }
 
   void _prunePendingTargetTowerDamage() {
-    if (_pendingTargetTowerDamageByEnemyId.isEmpty) {
+    if (_pendingTargetTowerImpactByEnemyId.isEmpty) {
       return;
     }
     final liveEnemyIds = _battleController.enemies
         .map((enemy) => enemy.id)
         .toSet();
-    _pendingTargetTowerDamageByEnemyId.removeWhere(
+    _pendingTargetTowerImpactByEnemyId.removeWhere(
       (enemyId, _) => !liveEnemyIds.contains(enemyId),
     );
   }
@@ -399,6 +646,30 @@ class _DailyDungeonBattleRunScreenState
         _manualSpawnCooldowns.updateAll(
           (_, remaining) => math.max(0.0, remaining - tickSeconds),
         );
+      }
+      if (_isThreatDirector) {
+        _breachRemainingSeconds = math.max(
+          0.0,
+          _breachRemainingSeconds - tickSeconds,
+        );
+        _impactFeedbackSeconds = math.max(
+          0.0,
+          _impactFeedbackSeconds - tickSeconds,
+        );
+        if (_impactFeedbackSeconds <= 0) {
+          _impactFeedbackLabel = null;
+        }
+        _counterChargeSeconds += tickSeconds;
+        if (_counterChargeSeconds >= _counterCycleSeconds) {
+          _counterChargeSeconds = 0;
+          _impactCombo = 0;
+          _impactFeedbackLabel = 'Counter pulse • launch timing jammed';
+          _impactFeedbackSeconds = 1.2;
+          for (final key in _manualSpawnCooldowns.keys.toList()) {
+            _manualSpawnCooldowns[key] =
+                (_manualSpawnCooldowns[key] ?? 0) + 0.65;
+          }
+        }
       }
       _prunePendingTargetTowerDamage();
     });
@@ -617,15 +888,37 @@ class _DailyDungeonBattleRunScreenState
                             towerProfile: _towerProfile,
                             anomalyCards: widget.anomalyCards,
                             apexCard: widget.apexCard,
+                            enemyManager: widget.enemyManager,
                             targetTowerHealth: _targetTowerHealth,
                             targetTowerMaxHealth: _targetTowerMaxHealth,
                             manualLaunchCount: _manualLaunchCount,
                             coreIntegrity: _coreIntegrity,
+                            shieldAffinity: _shieldAffinity,
+                            shieldProgress: _shieldProgress,
+                            counterProgress: _counterProgress,
+                            counterWindow: _counterInterruptWindow,
+                            breachProgress: _breachProgress,
+                            impactCombo: _impactCombo,
+                            impactFeedbackLabel: _impactFeedbackLabel,
                             running: _running,
                             damageForAnomaly: (card) =>
-                                _raidDamageFor(card, boss: false),
+                                _raidDamageFor(card, boss: false) *
+                                _launchOutcomeFor(
+                                  card,
+                                  boss: false,
+                                ).damageMultiplier *
+                                _managerDamageMultiplier(card, boss: false),
                             damageForApex: (card) =>
-                                _raidDamageFor(card, boss: true),
+                                _raidDamageFor(card, boss: true) *
+                                _launchOutcomeFor(
+                                  card,
+                                  boss: true,
+                                ).damageMultiplier *
+                                _managerDamageMultiplier(card, boss: true),
+                            launchOutcomeForAnomaly: (card) =>
+                                _launchOutcomeFor(card, boss: false),
+                            launchOutcomeForApex: (card) =>
+                                _launchOutcomeFor(card, boss: true),
                             cooldownForAnomaly: (card) =>
                                 _manualSpawnCooldownFor(card, boss: false),
                             cooldownForApex: (card) =>
@@ -873,13 +1166,23 @@ class _ThreatDirectorBattleStatusDock extends StatelessWidget {
     required this.towerProfile,
     required this.anomalyCards,
     required this.apexCard,
+    required this.enemyManager,
     required this.targetTowerHealth,
     required this.targetTowerMaxHealth,
     required this.manualLaunchCount,
     required this.coreIntegrity,
+    required this.shieldAffinity,
+    required this.shieldProgress,
+    required this.counterProgress,
+    required this.counterWindow,
+    required this.breachProgress,
+    required this.impactCombo,
+    required this.impactFeedbackLabel,
     required this.running,
     required this.damageForAnomaly,
     required this.damageForApex,
+    required this.launchOutcomeForAnomaly,
+    required this.launchOutcomeForApex,
     required this.cooldownForAnomaly,
     required this.cooldownForApex,
     required this.canSpawnAnomaly,
@@ -893,13 +1196,25 @@ class _ThreatDirectorBattleStatusDock extends StatelessWidget {
   final LightcoreDailyDungeonTowerProfile towerProfile;
   final List<EnemyCardState> anomalyCards;
   final EnemyCardState? apexCard;
+  final EnemyManagerState? enemyManager;
   final double targetTowerHealth;
   final double targetTowerMaxHealth;
   final int manualLaunchCount;
   final double coreIntegrity;
+  final PrototypeAffinity shieldAffinity;
+  final double shieldProgress;
+  final double counterProgress;
+  final bool counterWindow;
+  final double breachProgress;
+  final int impactCombo;
+  final String? impactFeedbackLabel;
   final bool running;
   final double Function(EnemyCardState card) damageForAnomaly;
   final double Function(EnemyCardState card) damageForApex;
+  final _ThreatDirectorLaunchOutcome Function(EnemyCardState card)
+  launchOutcomeForAnomaly;
+  final _ThreatDirectorLaunchOutcome Function(EnemyCardState card)
+  launchOutcomeForApex;
   final double Function(EnemyCardState card) cooldownForAnomaly;
   final double Function(EnemyCardState card) cooldownForApex;
   final bool Function(EnemyCardState card) canSpawnAnomaly;
@@ -927,9 +1242,8 @@ class _ThreatDirectorBattleStatusDock extends StatelessWidget {
         ),
         _InfoChip(
           icon: towerProjectileIcon(towerProfile.projectileType),
-          label:
-              '${towerProfile.affinity.shortLabel} ${towerProfile.projectileType.label}',
-          tint: towerProfile.affinity.color,
+          label: '${shieldAffinity.shortLabel} shield',
+          tint: shieldAffinity.color,
         ),
         _InfoChip(
           icon: Icons.account_tree_rounded,
@@ -946,6 +1260,20 @@ class _ThreatDirectorBattleStatusDock extends StatelessWidget {
           icon: Icons.gps_fixed_rounded,
           label: '$manualLaunchCount launched',
           tint: LightcorePalette.solar,
+        ),
+        _InfoChip(
+          icon: Icons.bolt_rounded,
+          label: impactCombo > 1 ? 'Combo x$impactCombo' : 'Combo ready',
+          tint: impactCombo > 1
+              ? LightcorePalette.solar
+              : LightcorePalette.stroke,
+        ),
+        _InfoChip(
+          icon: Icons.supervisor_account_rounded,
+          label: enemyManager == null ? 'No manager' : enemyManager!.name,
+          tint: enemyManager == null
+              ? LightcorePalette.stroke
+              : LightcorePalette.verdant,
         ),
       ],
     );
@@ -964,6 +1292,47 @@ class _ThreatDirectorBattleStatusDock extends StatelessWidget {
           color: LightcorePalette.warning,
           height: 9,
         ),
+        const SizedBox(height: 7),
+        _MeterLabelRow(label: 'Shield Phase', value: shieldAffinity.shortLabel),
+        const SizedBox(height: 5),
+        MeterBar(value: shieldProgress, color: shieldAffinity.color, height: 7),
+        const SizedBox(height: 7),
+        _MeterLabelRow(
+          label: counterWindow ? 'Counter Window' : 'Counter Pulse',
+          value: counterWindow
+              ? 'Interrupt'
+              : '${(counterProgress * 100).round()}%',
+        ),
+        const SizedBox(height: 5),
+        MeterBar(
+          value: counterProgress,
+          color: counterWindow
+              ? LightcorePalette.warning
+              : LightcorePalette.aether,
+          height: 7,
+        ),
+        if (breachProgress > 0) ...[
+          const SizedBox(height: 7),
+          _MeterLabelRow(label: 'Breach', value: 'Apex boosted'),
+          const SizedBox(height: 5),
+          MeterBar(
+            value: breachProgress,
+            color: LightcorePalette.solar,
+            height: 7,
+          ),
+        ],
+        if (impactFeedbackLabel != null) ...[
+          const SizedBox(height: 8),
+          Text(
+            impactFeedbackLabel!,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(context).textTheme.labelMedium?.copyWith(
+              color: LightcorePalette.solar,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+        ],
       ],
     );
     final controls = Wrap(
@@ -978,6 +1347,7 @@ class _ThreatDirectorBattleStatusDock extends StatelessWidget {
             icon: Icons.play_arrow_rounded,
             tint: card.config.affinity.color,
             damage: damageForAnomaly(card),
+            outcome: launchOutcomeForAnomaly(card),
             cooldown: cooldownForAnomaly(card),
             enabled: canSpawnAnomaly(card),
             onPressed: onSpawnAnomaly,
@@ -989,6 +1359,7 @@ class _ThreatDirectorBattleStatusDock extends StatelessWidget {
             icon: Icons.shield_moon_rounded,
             tint: LightcorePalette.solar,
             damage: damageForApex(apexCard!),
+            outcome: launchOutcomeForApex(apexCard!),
             cooldown: cooldownForApex(apexCard!),
             enabled: canSpawnApex(apexCard!),
             onPressed: onSpawnApex,
@@ -1040,6 +1411,7 @@ class _ManualSpawnButton extends StatelessWidget {
     required this.icon,
     required this.tint,
     required this.damage,
+    required this.outcome,
     required this.cooldown,
     required this.enabled,
     required this.onPressed,
@@ -1050,6 +1422,7 @@ class _ManualSpawnButton extends StatelessWidget {
   final IconData icon;
   final Color tint;
   final double damage;
+  final _ThreatDirectorLaunchOutcome outcome;
   final double cooldown;
   final bool enabled;
   final ValueChanged<EnemyCardState> onPressed;
@@ -1065,7 +1438,7 @@ class _ManualSpawnButton extends StatelessWidget {
       message: 'Launch ${card.config.name}',
       child: SizedBox(
         width: 132,
-        height: 64,
+        height: 76,
         child: FilledButton(
           style: FilledButton.styleFrom(
             backgroundColor: effectiveEnabled
@@ -1117,8 +1490,18 @@ class _ManualSpawnButton extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: 2),
+                    MeterBar(
+                      value: outcome.phase,
+                      color: outcome.perfect
+                          ? LightcorePalette.solar
+                          : outcome.label == 'Good'
+                          ? LightcorePalette.success
+                          : LightcorePalette.warning,
+                      height: 5,
+                    ),
+                    const SizedBox(height: 2),
                     Text(
-                      '$damageLabel hit',
+                      '${outcome.label} • $damageLabel',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: Theme.of(context).textTheme.labelSmall?.copyWith(

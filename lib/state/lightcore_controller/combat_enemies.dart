@@ -29,7 +29,11 @@ extension LightcoreControllerCombatEnemies on LightcoreController {
     return true;
   }
 
-  bool spawnManualBattleEnemy({required String cardId, bool boss = false}) {
+  bool spawnManualBattleEnemy({
+    required String cardId,
+    bool boss = false,
+    double speedMultiplier = 1.0,
+  }) {
     if (!canManuallySpawnBattleEnemy(cardId: cardId, boss: boss)) {
       return false;
     }
@@ -46,7 +50,9 @@ extension LightcoreControllerCombatEnemies on LightcoreController {
       angle: spawnPoint.angle,
       radius: spawnPoint.radius,
     );
-    _enemies.add(enemy);
+    _enemies.add(
+      enemy.copyWith(speed: enemy.speed * speedMultiplier.clamp(0.25, 3.0)),
+    );
     _spawnSequence += 1;
     _swarmActivated = true;
     if (boss) {
