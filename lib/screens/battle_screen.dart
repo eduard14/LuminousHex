@@ -895,7 +895,7 @@ class _BattleScreenState extends State<BattleScreen> {
     );
   }
 
-  bool _tutorialQuestDetailsShouldYieldBattlefieldTarget(
+  bool _tutorialQuestDetailsShouldYieldVisibleTarget(
     LightcoreController controller,
   ) {
     if (controller.tutorialBattleCoreGuideLabel != null) {
@@ -905,6 +905,25 @@ class _BattleScreenState extends State<BattleScreen> {
       if (controller.tutorialBattleSlotGuideLabel(index) != null) {
         return true;
       }
+    }
+    final selectedSlotIndex = controller.selectedSlotIndex;
+    if (selectedSlotIndex != null &&
+        (controller.tutorialHighlightsTowerStatsButton(selectedSlotIndex) ||
+            controller.tutorialHighlightsUpgradeButton(selectedSlotIndex))) {
+      return true;
+    }
+    if (selectedSlotIndex != null &&
+        controller.tutorialTowerChoices.any(
+          controller.tutorialHighlightsBuildButton,
+        )) {
+      return true;
+    }
+    if (_panelFocus == _BattlePanelFocus.core &&
+        controller.tutorialHighlightsCoreStats) {
+      return true;
+    }
+    if (controller.tutorialHighlightsOverdriveButton) {
+      return true;
     }
     return false;
   }
@@ -931,7 +950,7 @@ class _BattleScreenState extends State<BattleScreen> {
       selected: selected,
     );
     final questDetailsShouldYield =
-        _tutorialQuestDetailsShouldYieldBattlefieldTarget(controller);
+        _tutorialQuestDetailsShouldYieldVisibleTarget(controller);
     final questPanel = _buildQuestPanel(
       controller,
       compact: compact,

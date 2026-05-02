@@ -1801,6 +1801,62 @@ void main() {
     );
   });
 
+  testWidgets('tower upgrade quests start collapsed over stats controls', (
+    tester,
+  ) async {
+    addTearDown(() async => tester.binding.setSurfaceSize(null));
+    await tester.binding.setSurfaceSize(const Size(900, 900));
+
+    final controller = LightcoreController();
+    addTearDown(controller.dispose);
+
+    controller.selectCenter();
+    controller.applyOfflineClaim(
+      LightcoreOfflineClaimResult(
+        secondsClaimed: 1,
+        lumensGranted: 1000,
+        fluxGranted: 0,
+        enemyTicketsGranted: 0,
+        killsGranted: LightcoreController.unlockKillsForOuterSlot(0),
+        serverValidated: true,
+      ),
+      showBanner: false,
+    );
+    controller.selectSlot(0);
+    expect(controller.tutorialBuildTowerAt(0, TowerLibrary.redPrism), isTrue);
+    controller.markTutorialFirstTowerStatsOpened();
+    for (var tap = 0; tap < 3; tap++) {
+      expect(controller.debugSetTowerCharge(0, charge: 1), isTrue);
+      expect(controller.activateTowerSlot(0, showBanner: false), isTrue);
+    }
+    expect(controller.tutorialStep, LightcoreTutorialStep.pullFirstWhiteEnemy);
+
+    expect(controller.openEnemyTickets(1), hasLength(1));
+    expect(controller.tutorialStep, LightcoreTutorialStep.readEffectiveGain);
+
+    controller.lumens = controller.upgradeCost(controller.slots[0]);
+    controller.markTutorialStabilityPanelOpened();
+    controller.selectSlot(0);
+    expect(
+      controller.tutorialStep,
+      LightcoreTutorialStep.upgradeFirstTowerToLevel3,
+    );
+    expect(controller.tutorialHighlightsUpgradeButton(0), isTrue);
+
+    await _pumpBattleScreen(tester, controller);
+
+    expect(find.text('Tower Upgrades'), findsOneWidget);
+    expect(find.textContaining('Upgrade Level'), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey<String>('battle-quest-card-collapsed')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey<String>('battle-quest-detail-card')),
+      findsNothing,
+    );
+  });
+
   testWidgets('tracked quest details reopen when the next step starts', (
     tester,
   ) async {
