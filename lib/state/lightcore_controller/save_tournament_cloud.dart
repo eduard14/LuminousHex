@@ -22,6 +22,7 @@ class _EventBattleConfig {
     this.spawnPolicy = LightcoreBattleSpawnPolicy.automatic,
     this.enemySpiralMovementEnabled = true,
     this.enemyMovementSpeedMultiplier = 1.0,
+    this.killRewardsEnabled = true,
     this.seedUnlockExperience = true,
   });
 
@@ -45,6 +46,7 @@ class _EventBattleConfig {
   final LightcoreBattleSpawnPolicy spawnPolicy;
   final bool enemySpiralMovementEnabled;
   final double enemyMovementSpeedMultiplier;
+  final bool killRewardsEnabled;
   final bool seedUnlockExperience;
 }
 
@@ -335,6 +337,7 @@ extension LightcoreControllerSaveTournamentCloud on LightcoreController {
       spawnPolicy: LightcoreBattleSpawnPolicy.manual,
       enemySpiralMovementEnabled: false,
       enemyMovementSpeedMultiplier: 5.0,
+      killRewardsEnabled: false,
       seedUnlockExperience: false,
     );
   }
@@ -463,6 +466,7 @@ extension LightcoreControllerSaveTournamentCloud on LightcoreController {
       0.1,
       config.enemyMovementSpeedMultiplier,
     );
+    _battleKillRewardsEnabled = config.killRewardsEnabled;
     _tutorialStep = LightcoreTutorialStep.none;
     _tutorialPromptsEnabled = false;
     bannerMessage = '';

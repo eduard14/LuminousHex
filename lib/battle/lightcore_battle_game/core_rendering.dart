@@ -1,6 +1,19 @@
 part of '../lightcore_battle_game.dart';
 
 extension LightcoreBattleGameCoreRendering on LightcoreBattleGame {
+  List<ProjectileType> get debugCoreQueueOrbitProjectileTypes =>
+      _coreQueueOrbitPackets()
+          .map((packet) => packet.projectileType)
+          .toList(growable: false);
+
+  List<({ProjectileType projectileType, double alpha})>
+  _coreQueueOrbitPackets() {
+    return <({ProjectileType projectileType, double alpha})>[
+      for (final packet in controller.queuedAmmoPackets)
+        (projectileType: packet.projectileType, alpha: 0.92),
+    ];
+  }
+
   void _renderHexChargeIndicator(
     Canvas canvas,
     Offset center, {
@@ -602,15 +615,7 @@ extension LightcoreBattleGameCoreRendering on LightcoreBattleGame {
       );
     }
 
-    final queuePackets = <({ProjectileType projectileType, double alpha})>[
-      for (final packet in controller.queuedAmmoPackets)
-        (projectileType: packet.projectileType, alpha: 0.92),
-      for (final pulse in controller.pulses)
-        (
-          projectileType: pulse.projectileType,
-          alpha: (0.5 + (pulse.progress * 0.32)).clamp(0.0, 0.86),
-        ),
-    ];
+    final queuePackets = _coreQueueOrbitPackets();
     final packetCount = queuePackets.length.clamp(
       0,
       controller.coreQueueCapacity,

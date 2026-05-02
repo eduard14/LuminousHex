@@ -1500,6 +1500,7 @@ class LightcoreController extends ChangeNotifier {
       LightcoreBattleSpawnPolicy.automatic;
   bool _enemySpiralMovementEnabled = true;
   double _enemyMovementSpeedMultiplier = 1.0;
+  bool _battleKillRewardsEnabled = true;
 
   // TODO(authority): Move persistent player state behind a repository backed by
   // local cache plus backend sync. Client-owned mutable state keeps local play

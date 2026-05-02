@@ -512,6 +512,54 @@ extension LightcoreControllerCombatDamage on LightcoreController {
     _blueFocusTargetEnemyIdBySlot.removeWhere(
       (_, lockedEnemyId) => lockedEnemyId == enemy.id,
     );
+
+    void addDefeatImpact() {
+      _impacts.add(
+        ImpactState(
+          id: 'impact_${_impactCounter++}',
+          affinity: affinity,
+          secondaryAffinity: secondaryAffinity,
+          projectileType: projectileType,
+          payloadType: payloadType,
+          angle: impactAngle ?? enemy.angle,
+          radius: impactRadius ?? enemy.radius,
+          progress: 0,
+          lethal: true,
+          towerHit: false,
+          critical: critical,
+          progressRate: _impactProgressRateForProjectile(
+            projectileType,
+            lethal: true,
+          ),
+          fieldRadius: _impactFieldRadiusForProjectile(
+            projectileType,
+            lethal: true,
+          ),
+          fieldDamagePerSecond:
+              impactPower *
+              _sourceTowerDotDamageMultiplier(sourceSlotIndex) *
+              _impactFieldDamageMultiplierForProjectile(
+                projectileType,
+                lethal: true,
+              ),
+          sourceSlotIndex: sourceSlotIndex,
+          chainSourceAngle: chainSourceAngle,
+          chainSourceRadius: chainSourceRadius,
+          defeatedEnemyAffinity: enemy.config.affinity,
+          defeatedEnemySizeScale: enemy.sizeScale,
+        ),
+      );
+    }
+
+    if (!_battleKillRewardsEnabled) {
+      addDefeatImpact();
+      if (enemy.config.splitsOnDeath && enemy.splitDepth == 0) {
+        _spawnSplitChildren(enemy);
+      }
+      _syncTutorialStep(showBanner: false);
+      return;
+    }
+
     final previousExperience = progressionExperience;
     final killCredit = _killCreditForEnemy(enemy);
     final scaledExperienceReward =
@@ -566,41 +614,7 @@ extension LightcoreControllerCombatDamage on LightcoreController {
         );
       }
     }
-    _impacts.add(
-      ImpactState(
-        id: 'impact_${_impactCounter++}',
-        affinity: affinity,
-        secondaryAffinity: secondaryAffinity,
-        projectileType: projectileType,
-        payloadType: payloadType,
-        angle: impactAngle ?? enemy.angle,
-        radius: impactRadius ?? enemy.radius,
-        progress: 0,
-        lethal: true,
-        towerHit: false,
-        critical: critical,
-        progressRate: _impactProgressRateForProjectile(
-          projectileType,
-          lethal: true,
-        ),
-        fieldRadius: _impactFieldRadiusForProjectile(
-          projectileType,
-          lethal: true,
-        ),
-        fieldDamagePerSecond:
-            impactPower *
-            _sourceTowerDotDamageMultiplier(sourceSlotIndex) *
-            _impactFieldDamageMultiplierForProjectile(
-              projectileType,
-              lethal: true,
-            ),
-        sourceSlotIndex: sourceSlotIndex,
-        chainSourceAngle: chainSourceAngle,
-        chainSourceRadius: chainSourceRadius,
-        defeatedEnemyAffinity: enemy.config.affinity,
-        defeatedEnemySizeScale: enemy.sizeScale,
-      ),
-    );
+    addDefeatImpact();
     if (enemy.config.splitsOnDeath && enemy.splitDepth == 0) {
       _spawnSplitChildren(enemy);
       return;

@@ -390,6 +390,48 @@ void main() {
     },
   );
 
+  test('threat director enemy defeats do not trigger radiance nova', () {
+    final controller = LightcoreController();
+    addTearDown(controller.dispose);
+
+    controller.configureThreatDirectorDungeonBattle(
+      towerLevel: 4,
+      enemyDraft: [
+        EnemyCardState(
+          config: EnemyLibrary.basicWhite,
+          unlocked: true,
+          copies: 1,
+          level: 1,
+        ),
+      ],
+    );
+    controller.experience =
+        LightcoreController.experienceForOverallLevel(2) - 1;
+    final defeated = controller.debugSpawnEnemyFromCard(
+      EnemyLibrary.basicWhite.id,
+      angle: 0,
+      radius: controller.spawnRadius,
+    );
+    final survivor = controller.debugSpawnEnemyFromCard(
+      EnemyLibrary.basicWhite.id,
+      angle: 0.8,
+      radius: controller.spawnRadius,
+    );
+
+    expect(defeated, isNotNull);
+    expect(survivor, isNotNull);
+    expect(controller.debugDefeatEnemy(defeated!.id), isTrue);
+
+    expect(
+      controller.experience,
+      LightcoreController.experienceForOverallLevel(2) - 1,
+    );
+    expect(controller.kills, 0);
+    expect(controller.enemyCount, 1);
+    expect(controller.levelUpRadianceActive, isFalse);
+    expect(controller.lastLevelUpRadianceDestroyedEnemies, 0);
+  });
+
   test('prism rift dungeon keeps spiral enemy movement', () {
     final controller = LightcoreController();
     addTearDown(controller.dispose);

@@ -42,6 +42,35 @@ void main() {
     recorder.endRecording().dispose();
   });
 
+  test('core queue orbit waits until inbound pulse lands', () {
+    final controller = LightcoreController();
+    addTearDown(controller.dispose);
+    final game = buildGame(controller);
+
+    controller.selectCenter();
+    controller.handleBattleCenterTap();
+
+    expect(controller.pulses, hasLength(1));
+    expect(controller.queuedAmmoPackets, isEmpty);
+    expect(controller.coreQueueOccupancy, 1);
+    expect(game.debugCoreQueueOrbitProjectileTypes, isEmpty);
+
+    for (
+      var step = 0;
+      step < 80 && controller.queuedAmmoPackets.isEmpty;
+      step += 1
+    ) {
+      controller.tick(0.05);
+    }
+
+    expect(controller.pulses, isEmpty);
+    expect(controller.queuedAmmoPackets, hasLength(1));
+    expect(
+      game.debugCoreQueueOrbitProjectileTypes,
+      equals(<ProjectileType>[ProjectileType.starBolt]),
+    );
+  });
+
   test('single-finger gesture pans the battle view', () {
     final controller = LightcoreController();
     addTearDown(controller.dispose);
