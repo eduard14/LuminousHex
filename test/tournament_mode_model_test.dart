@@ -310,6 +310,51 @@ void main() {
     },
   );
 
+  test('manual battle relay listener fires only on impact', () {
+    final relayHits = <String>[];
+    final controller = LightcoreController(
+      relayHitListener: (enemy) => relayHits.add(enemy.id),
+    );
+    addTearDown(controller.dispose);
+
+    controller.configureThreatDirectorDungeonBattle(
+      towerLevel: 1,
+      enemyDraft: [
+        EnemyCardState(
+          config: EnemyLibrary.basicRed,
+          unlocked: true,
+          copies: 1,
+          level: 1,
+        ),
+      ],
+      bossDraft: EnemyCardState(
+        config: BossEnemyLibrary.starterWhiteWarden,
+        unlocked: true,
+        copies: 1,
+        level: 20,
+      ),
+    );
+
+    expect(
+      controller.spawnManualBattleEnemy(
+        cardId: BossEnemyLibrary.starterWhiteWarden.id,
+        boss: true,
+      ),
+      isTrue,
+    );
+    final spawnedEnemyId = controller.enemies.single.id;
+    expect(relayHits, isEmpty);
+
+    controller.tick(0.1);
+    expect(relayHits, isEmpty);
+
+    for (var i = 0; i < 400 && controller.enemies.isNotEmpty; i++) {
+      controller.tick(0.5);
+    }
+    expect(relayHits, contains(spawnedEnemyId));
+    expect(controller.enemies, isEmpty);
+  });
+
   test('prism rift battle uses highest-layer home tower shell', () {
     final source = LightcoreController();
     final controller = LightcoreController();

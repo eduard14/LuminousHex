@@ -1109,6 +1109,7 @@ class LightcoreController extends ChangeNotifier {
     Random? traitRandom,
     Random? managerRandom,
     Random? spawnRandom,
+    this.relayHitListener,
     LightcoreGuideProfile? guideProfile,
     String playerId = 'LUMI-LOCAL',
     String? screenName,
@@ -1462,6 +1463,7 @@ class LightcoreController extends ChangeNotifier {
   final Random _traitRandom;
   final Random _managerRandom;
   final Random _spawnRandom;
+  final void Function(EnemyState enemy)? relayHitListener;
   final bool _guildsEnabled;
   final int _guildCreationUnlockLevel;
   LightcoreBalanceTuning _balanceTuning;

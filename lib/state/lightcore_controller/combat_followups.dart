@@ -149,6 +149,7 @@ extension LightcoreControllerCombatFollowups on LightcoreController {
 
   void _registerRelayHit(EnemyState enemy) {
     _failLayer3Trial();
+    relayHitListener?.call(enemy);
     final slotIndex = _slotIndexForAngle(enemy.angle);
     final tower = _slots[slotIndex];
     final slotAngle = _slotAngle(slotIndex);

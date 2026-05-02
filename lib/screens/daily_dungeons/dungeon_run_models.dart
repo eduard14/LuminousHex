@@ -145,6 +145,8 @@ class _DailyDungeonBattleRunScreenState
   late final int _targetKills;
   Timer? _timer;
   final Map<String, double> _manualSpawnCooldowns = <String, double>{};
+  final Map<String, double> _pendingTargetTowerDamageByEnemyId =
+      <String, double>{};
   late double _targetTowerMaxHealth;
   late double _targetTowerHealth;
   LightcoreDailyDungeonReward? _resultReward;
@@ -200,6 +202,7 @@ class _DailyDungeonBattleRunScreenState
           '${widget.controller.playerId}-DUNGEON-${widget.route.name.toUpperCase()}',
       screenName: widget.controller.screenName,
       graphicsQuality: widget.controller.graphicsQuality,
+      relayHitListener: _handleBattleRelayHit,
     );
   }
 
@@ -248,6 +251,17 @@ class _DailyDungeonBattleRunScreenState
     _targetTowerHealth = math.max(0.0, _targetTowerHealth - damage);
   }
 
+  void _handleBattleRelayHit(EnemyState enemy) {
+    if (!_isThreatDirector || !_running || !mounted) {
+      return;
+    }
+    final damage = _pendingTargetTowerDamageByEnemyId.remove(enemy.id);
+    if (damage == null || damage <= 0) {
+      return;
+    }
+    setState(() => _damageTargetTower(damage));
+  }
+
   void _handlePrismRiftAimChanged(Offset direction) {
     if (!_running || direction.distance <= 0.001) {
       return;
@@ -293,13 +307,19 @@ class _DailyDungeonBattleRunScreenState
     if (!_canSpawnManualAnomaly(card)) {
       return;
     }
+    final existingEnemyIds = _battleController.enemies
+        .map((enemy) => enemy.id)
+        .toSet();
     final spawned = _battleController.spawnManualBattleEnemy(
       cardId: card.config.id,
     );
     if (spawned && mounted) {
+      _trackTargetTowerDamageForSpawnedEnemy(
+        existingEnemyIds,
+        _raidDamageFor(card, boss: false),
+      );
       setState(() {
         _manualLaunchCount += 1;
-        _damageTargetTower(_raidDamageFor(card, boss: false));
         _manualSpawnCooldowns[_manualSpawnCooldownKey(card, boss: false)] =
             _anomalySpawnCooldownSeconds;
       });
@@ -310,18 +330,52 @@ class _DailyDungeonBattleRunScreenState
     if (!_canSpawnManualApex(card)) {
       return;
     }
+    final existingEnemyIds = _battleController.enemies
+        .map((enemy) => enemy.id)
+        .toSet();
     final spawned = _battleController.spawnManualBattleEnemy(
       cardId: card.config.id,
       boss: true,
     );
     if (spawned && mounted) {
+      _trackTargetTowerDamageForSpawnedEnemy(
+        existingEnemyIds,
+        _raidDamageFor(card, boss: true),
+      );
       setState(() {
         _manualLaunchCount += 1;
-        _damageTargetTower(_raidDamageFor(card, boss: true));
         _manualSpawnCooldowns[_manualSpawnCooldownKey(card, boss: true)] =
             _apexSpawnCooldownSeconds;
       });
     }
+  }
+
+  void _trackTargetTowerDamageForSpawnedEnemy(
+    Set<String> existingEnemyIds,
+    double damage,
+  ) {
+    if (!_isThreatDirector || damage <= 0) {
+      return;
+    }
+    final spawnedEnemies = _battleController.enemies
+        .where((enemy) => !existingEnemyIds.contains(enemy.id))
+        .toList(growable: false);
+    if (spawnedEnemies.isEmpty) {
+      return;
+    }
+    _pendingTargetTowerDamageByEnemyId[spawnedEnemies.last.id] = damage;
+  }
+
+  void _prunePendingTargetTowerDamage() {
+    if (_pendingTargetTowerDamageByEnemyId.isEmpty) {
+      return;
+    }
+    final liveEnemyIds = _battleController.enemies
+        .map((enemy) => enemy.id)
+        .toSet();
+    _pendingTargetTowerDamageByEnemyId.removeWhere(
+      (enemyId, _) => !liveEnemyIds.contains(enemyId),
+    );
   }
 
   void _advanceRun() {
@@ -342,6 +396,7 @@ class _DailyDungeonBattleRunScreenState
           (_, remaining) => math.max(0.0, remaining - tickSeconds),
         );
       }
+      _prunePendingTargetTowerDamage();
     });
     if (cleared || collapsed || expired) {
       _finishRun(
@@ -1060,7 +1115,7 @@ class _ManualSpawnButton extends StatelessWidget {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      '$damageLabel dmg',
+                      '$damageLabel hit',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: Theme.of(context).textTheme.labelSmall?.copyWith(

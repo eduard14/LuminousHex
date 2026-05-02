@@ -845,6 +845,9 @@ void main() {
           config.affinity == PrototypeAffinity.flare,
     );
     controller.debugSetEnemyCardLevel(orangeBasic.id, level: 1);
+    final towerProfile = controller.dailyDungeonTowerProfileForLevel(1);
+    final fullTowerLabel =
+        '${towerProfile.maxHealth.ceil()}/${towerProfile.maxHealth.round()} tower';
 
     await _pumpShell(tester, controller);
     await _openHeaderMenuDestination(tester, 'Daily Dungeons');
@@ -882,6 +885,10 @@ void main() {
     expect(find.text('RED'), findsWidgets);
     expect(find.text('Ready'), findsWidgets);
     expect(find.byTooltip('Launch Dustling'), findsOneWidget);
+    expect(find.text(fullTowerLabel), findsOneWidget);
+    await tester.tap(find.byTooltip('Launch Dustling'));
+    await tester.pump();
+    expect(find.text(fullTowerLabel), findsOneWidget);
     expect(find.textContaining('clears'), findsOneWidget);
     expect(find.textContaining('% core'), findsOneWidget);
     expect(find.byTooltip('Open Menu'), findsNothing);
