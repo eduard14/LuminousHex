@@ -150,6 +150,8 @@ enum LightcoreGraphicsQuality {
 
 enum LightcoreNotificationCategory { action, battle }
 
+enum LightcoreBattleSpawnPolicy { automatic, manual }
+
 class LightcoreDailyDungeonReward {
   const LightcoreDailyDungeonReward({
     required this.towerLevel,
@@ -1477,6 +1479,8 @@ class LightcoreController extends ChangeNotifier {
   late Map<EquipmentLoadoutSlot, String?> _equippedPlayerItems;
   bool _outerRingRevealed = false;
   bool _swarmActivated = false;
+  LightcoreBattleSpawnPolicy _battleSpawnPolicy =
+      LightcoreBattleSpawnPolicy.automatic;
 
   // TODO(authority): Move persistent player state behind a repository backed by
   // local cache plus backend sync. Client-owned mutable state keeps local play

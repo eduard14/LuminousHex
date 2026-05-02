@@ -8,6 +8,106 @@ class _DungeonRunResult {
 
 enum _DailyDungeonBattleRoute { threatDirector, prismRift }
 
+class _DailyDungeonBattleModeDefinition {
+  const _DailyDungeonBattleModeDefinition({
+    required this.route,
+    required this.label,
+    required this.tint,
+    required this.icon,
+    required this.seedOffset,
+    required this.killTargetPressure,
+    required this.clearVerb,
+    required this.failVerb,
+    this.usesManualAim = false,
+    this.usesManualEnemySpawns = false,
+    this.successTitle,
+  });
+
+  final _DailyDungeonBattleRoute route;
+  final String label;
+  final Color tint;
+  final IconData icon;
+  final int seedOffset;
+  final int killTargetPressure;
+  final String clearVerb;
+  final String failVerb;
+  final bool usesManualAim;
+  final bool usesManualEnemySpawns;
+  final String? successTitle;
+
+  String titleForLevel(int towerLevel) => '$label Lv $towerLevel';
+
+  void configureBattleController({
+    required LightcoreController battleController,
+    required LightcoreController sourceController,
+    required int towerLevel,
+    required List<EnemyCardState> anomalyCards,
+    required EnemyCardState? apexCard,
+  }) {
+    switch (route) {
+      case _DailyDungeonBattleRoute.threatDirector:
+        battleController.configureThreatDirectorDungeonBattle(
+          towerLevel: towerLevel,
+          enemyDraft: anomalyCards,
+          bossDraft: apexCard,
+        );
+        break;
+      case _DailyDungeonBattleRoute.prismRift:
+        battleController.configurePrismRiftDungeonBattleFromHomeTower(
+          source: sourceController,
+          towerLevel: towerLevel,
+          enemyDraft: anomalyCards,
+        );
+        break;
+    }
+  }
+
+  int killTarget({
+    required int towerLevel,
+    required int anomalyCount,
+    required bool hasApex,
+  }) {
+    final anomalyPressure = math.max(1, anomalyCount) * 2;
+    final apexPressure = hasApex ? 4 : 0;
+    return (7 +
+            towerLevel +
+            anomalyPressure +
+            apexPressure +
+            killTargetPressure)
+        .clamp(8, 42)
+        .toInt();
+  }
+}
+
+const Map<_DailyDungeonBattleRoute, _DailyDungeonBattleModeDefinition>
+_dailyDungeonBattleModes =
+    <_DailyDungeonBattleRoute, _DailyDungeonBattleModeDefinition>{
+      _DailyDungeonBattleRoute.threatDirector:
+          _DailyDungeonBattleModeDefinition(
+            route: _DailyDungeonBattleRoute.threatDirector,
+            label: 'Threat Director',
+            tint: LightcorePalette.warning,
+            icon: Icons.account_tree_rounded,
+            seedOffset: 0,
+            killTargetPressure: 0,
+            clearVerb: 'cleared',
+            failVerb: 'expired',
+            usesManualEnemySpawns: true,
+          ),
+      _DailyDungeonBattleRoute.prismRift: _DailyDungeonBattleModeDefinition(
+        route: _DailyDungeonBattleRoute.prismRift,
+        label: 'Prism Rift',
+        tint: LightcorePalette.violet,
+        icon: Icons.terrain_rounded,
+        seedOffset: 1009,
+        killTargetPressure: 3,
+        clearVerb: 'stabilized',
+        failVerb: 'collapsed',
+        usesManualAim: true,
+        successTitle: 'Rift Stabilized',
+      ),
+    };
+
 class _DailyDungeonBattleRunScreen extends StatefulWidget {
   const _DailyDungeonBattleRunScreen({
     required this.route,
@@ -34,12 +134,15 @@ class _DailyDungeonBattleRunScreenState
     extends State<_DailyDungeonBattleRunScreen> {
   static const Duration _timeLimit = Duration(seconds: 45);
   static const Duration _tickRate = Duration(milliseconds: 100);
+  static const double _anomalySpawnCooldownSeconds = 1.0;
+  static const double _apexSpawnCooldownSeconds = 6.0;
 
   late final LightcoreDailyDungeonTowerProfile _towerProfile;
   late final LightcoreController _battleController;
   late final int _startingKills;
   late final int _targetKills;
   Timer? _timer;
+  final Map<String, double> _manualSpawnCooldowns = <String, double>{};
   double _remainingSeconds = _timeLimit.inSeconds.toDouble();
   Offset _riftAimDirection = const Offset(0, -1);
   bool _running = true;
@@ -54,22 +157,13 @@ class _DailyDungeonBattleRunScreenState
       widget.towerLevel,
     );
     _battleController = _createBattleController();
-    switch (widget.route) {
-      case _DailyDungeonBattleRoute.threatDirector:
-        _battleController.configureThreatDirectorDungeonBattle(
-          towerLevel: widget.towerLevel,
-          enemyDraft: widget.anomalyCards,
-          bossDraft: widget.apexCard,
-        );
-        break;
-      case _DailyDungeonBattleRoute.prismRift:
-        _battleController.configurePrismRiftDungeonBattleFromHomeTower(
-          source: widget.controller,
-          towerLevel: widget.towerLevel,
-          enemyDraft: widget.anomalyCards,
-        );
-        break;
-    }
+    _mode.configureBattleController(
+      battleController: _battleController,
+      sourceController: widget.controller,
+      towerLevel: widget.towerLevel,
+      anomalyCards: widget.anomalyCards,
+      apexCard: widget.apexCard,
+    );
     _startingKills = _battleController.kills;
     _targetKills = _battleKillTarget();
     _timer = Timer.periodic(_tickRate, (_) => _advanceRun());
@@ -82,8 +176,11 @@ class _DailyDungeonBattleRunScreenState
     super.dispose();
   }
 
+  _DailyDungeonBattleModeDefinition get _mode =>
+      _dailyDungeonBattleModes[widget.route]!;
+
   LightcoreController _createBattleController() {
-    final seed = widget.runSeed + (widget.route.index * 1009);
+    final seed = widget.runSeed + _mode.seedOffset;
     return LightcoreController(
       packRandom: math.Random(seed + 1),
       traitRandom: math.Random(seed + 2),
@@ -98,39 +195,24 @@ class _DailyDungeonBattleRunScreenState
   }
 
   int _battleKillTarget() {
-    final anomalyPressure = math.max(1, widget.anomalyCards.length) * 2;
-    final apexPressure = widget.apexCard == null ? 0 : 4;
-    final routePressure = widget.route == _DailyDungeonBattleRoute.prismRift
-        ? 3
-        : 0;
-    return (7 +
-            widget.towerLevel +
-            anomalyPressure +
-            apexPressure +
-            routePressure)
-        .clamp(8, 42)
-        .toInt();
+    return _mode.killTarget(
+      towerLevel: widget.towerLevel,
+      anomalyCount: widget.anomalyCards.length,
+      hasApex: widget.apexCard != null,
+    );
   }
 
-  String get _title => switch (widget.route) {
-    _DailyDungeonBattleRoute.threatDirector =>
-      'Threat Director Lv ${widget.towerLevel}',
-    _DailyDungeonBattleRoute.prismRift => 'Prism Rift Lv ${widget.towerLevel}',
-  };
+  String get _title => _mode.titleForLevel(widget.towerLevel);
 
-  Color get _tint => switch (widget.route) {
-    _DailyDungeonBattleRoute.threatDirector => LightcorePalette.warning,
-    _DailyDungeonBattleRoute.prismRift => LightcorePalette.violet,
-  };
+  Color get _tint => _mode.tint;
 
-  IconData get _icon => switch (widget.route) {
-    _DailyDungeonBattleRoute.threatDirector => Icons.account_tree_rounded,
-    _DailyDungeonBattleRoute.prismRift => Icons.terrain_rounded,
-  };
+  IconData get _icon => _mode.icon;
 
   int get _runKills => math.max(0, _battleController.kills - _startingKills);
 
-  bool get _isPrismRift => widget.route == _DailyDungeonBattleRoute.prismRift;
+  bool get _isPrismRift => _mode.usesManualAim;
+
+  bool get _usesManualEnemySpawns => _mode.usesManualEnemySpawns;
 
   double get _timeProgress =>
       (_remainingSeconds / _timeLimit.inSeconds).clamp(0.0, 1.0).toDouble();
@@ -158,19 +240,74 @@ class _DailyDungeonBattleRunScreenState
     }
   }
 
+  String _manualSpawnCooldownKey(EnemyCardState card, {required bool boss}) =>
+      '${boss ? 'boss' : 'enemy'}:${card.config.id}';
+
+  double _manualSpawnCooldownFor(EnemyCardState card, {required bool boss}) =>
+      _manualSpawnCooldowns[_manualSpawnCooldownKey(card, boss: boss)] ?? 0;
+
+  bool _canSpawnManualAnomaly(EnemyCardState card) {
+    return _running &&
+        _manualSpawnCooldownFor(card, boss: false) <= 0 &&
+        _battleController.canManuallySpawnBattleEnemy(cardId: card.config.id);
+  }
+
+  bool _canSpawnManualApex(EnemyCardState card) {
+    return _running &&
+        _manualSpawnCooldownFor(card, boss: true) <= 0 &&
+        _battleController.canManuallySpawnBattleEnemy(
+          cardId: card.config.id,
+          boss: true,
+        );
+  }
+
+  void _handleManualAnomalySpawn(EnemyCardState card) {
+    if (!_canSpawnManualAnomaly(card)) {
+      return;
+    }
+    final spawned = _battleController.spawnManualBattleEnemy(
+      cardId: card.config.id,
+    );
+    if (spawned && mounted) {
+      setState(() {
+        _manualSpawnCooldowns[_manualSpawnCooldownKey(card, boss: false)] =
+            _anomalySpawnCooldownSeconds;
+      });
+    }
+  }
+
+  void _handleManualApexSpawn(EnemyCardState card) {
+    if (!_canSpawnManualApex(card)) {
+      return;
+    }
+    final spawned = _battleController.spawnManualBattleEnemy(
+      cardId: card.config.id,
+      boss: true,
+    );
+    if (spawned && mounted) {
+      setState(() {
+        _manualSpawnCooldowns[_manualSpawnCooldownKey(card, boss: true)] =
+            _apexSpawnCooldownSeconds;
+      });
+    }
+  }
+
   void _advanceRun() {
     if (!_running || !mounted) {
       return;
     }
-    final nextRemaining = math.max(
-      0.0,
-      _remainingSeconds - (_tickRate.inMilliseconds / 1000),
-    );
+    final tickSeconds = _tickRate.inMilliseconds / 1000;
+    final nextRemaining = math.max(0.0, _remainingSeconds - tickSeconds);
     final cleared = _runKills >= _targetKills;
     final collapsed = _battleController.coreState.coreStability <= 0.5;
     final expired = !cleared && nextRemaining <= 0;
     setState(() {
       _remainingSeconds = nextRemaining;
+      if (_manualSpawnCooldowns.isNotEmpty) {
+        _manualSpawnCooldowns.updateAll(
+          (_, remaining) => math.max(0.0, remaining - tickSeconds),
+        );
+      }
     });
     if (cleared || collapsed || expired) {
       _finishRun(cleared: cleared);
@@ -208,19 +345,13 @@ class _DailyDungeonBattleRunScreenState
       );
     }
     final nextLevel = widget.controller.dailyDungeonHighestUnlockedTowerLevel;
-    final clearVerb = widget.route == _DailyDungeonBattleRoute.prismRift
-        ? 'stabilized'
-        : 'cleared';
-    final failVerb = widget.route == _DailyDungeonBattleRoute.prismRift
-        ? 'collapsed'
-        : 'expired';
     final clearMessage = reward != null && reward.hasRewards
-        ? '$_title $clearVerb: ${reward.label}. Lv $nextLevel unlocked.'
-        : '$_title $clearVerb. Lv $nextLevel is ready.';
+        ? '$_title ${_mode.clearVerb}: ${reward.label}. Lv $nextLevel unlocked.'
+        : '$_title ${_mode.clearVerb}. Lv $nextLevel is ready.';
     widget.controller.pushNotification(
       cleared
           ? clearMessage
-          : '$_title $failVerb. Upgrade the tower ladder or change the anomaly draft.',
+          : '$_title ${_mode.failVerb}. Upgrade the tower ladder or change the anomaly draft.',
       duration: 3.2,
     );
   }
@@ -304,6 +435,26 @@ class _DailyDungeonBattleRunScreenState
                             onAimChanged: _handlePrismRiftAimChanged,
                             onFire: _handlePrismRiftFire,
                           )
+                        : _usesManualEnemySpawns
+                        ? _ThreatDirectorBattleStatusDock(
+                            tint: _tint,
+                            compact: compact,
+                            towerProfile: _towerProfile,
+                            anomalyCards: widget.anomalyCards,
+                            apexCard: widget.apexCard,
+                            runKills: _runKills,
+                            targetKills: _targetKills,
+                            coreIntegrity: _coreIntegrity,
+                            running: _running,
+                            cooldownForAnomaly: (card) =>
+                                _manualSpawnCooldownFor(card, boss: false),
+                            cooldownForApex: (card) =>
+                                _manualSpawnCooldownFor(card, boss: true),
+                            canSpawnAnomaly: _canSpawnManualAnomaly,
+                            canSpawnApex: _canSpawnManualApex,
+                            onSpawnAnomaly: _handleManualAnomalySpawn,
+                            onSpawnApex: _handleManualApexSpawn,
+                          )
                         : _DailyDungeonBattleStatusDock(
                             tint: _tint,
                             compact: compact,
@@ -324,11 +475,7 @@ class _DailyDungeonBattleRunScreenState
                           child: _DungeonResultPanel(
                             victory: _victory,
                             towerLevel: widget.towerLevel,
-                            successTitle:
-                                widget.route ==
-                                    _DailyDungeonBattleRoute.prismRift
-                                ? 'Rift Stabilized'
-                                : null,
+                            successTitle: _mode.successTitle,
                             failureTitle: _expired ? 'Run Expired' : null,
                             successMessage:
                                 '$_title cleared through the battle field. The next level is ready from the dungeon menu.',
@@ -523,6 +670,181 @@ class _DailyDungeonBattleStatusDock extends StatelessWidget {
                   : LightcorePalette.solar,
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ThreatDirectorBattleStatusDock extends StatelessWidget {
+  const _ThreatDirectorBattleStatusDock({
+    required this.tint,
+    required this.compact,
+    required this.towerProfile,
+    required this.anomalyCards,
+    required this.apexCard,
+    required this.runKills,
+    required this.targetKills,
+    required this.coreIntegrity,
+    required this.running,
+    required this.cooldownForAnomaly,
+    required this.cooldownForApex,
+    required this.canSpawnAnomaly,
+    required this.canSpawnApex,
+    required this.onSpawnAnomaly,
+    required this.onSpawnApex,
+  });
+
+  final Color tint;
+  final bool compact;
+  final LightcoreDailyDungeonTowerProfile towerProfile;
+  final List<EnemyCardState> anomalyCards;
+  final EnemyCardState? apexCard;
+  final int runKills;
+  final int targetKills;
+  final double coreIntegrity;
+  final bool running;
+  final double Function(EnemyCardState card) cooldownForAnomaly;
+  final double Function(EnemyCardState card) cooldownForApex;
+  final bool Function(EnemyCardState card) canSpawnAnomaly;
+  final bool Function(EnemyCardState card) canSpawnApex;
+  final ValueChanged<EnemyCardState> onSpawnAnomaly;
+  final ValueChanged<EnemyCardState> onSpawnApex;
+
+  @override
+  Widget build(BuildContext context) {
+    final cards = anomalyCards.take(3).toList(growable: false);
+    final chips = Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: [
+        _InfoChip(
+          icon: running
+              ? Icons.radio_button_checked_rounded
+              : Icons.radio_button_unchecked_rounded,
+          label: running ? 'Ready' : 'Done',
+          tint: running ? LightcorePalette.success : LightcorePalette.stroke,
+        ),
+        _InfoChip(
+          icon: towerProjectileIcon(towerProfile.projectileType),
+          label:
+              '${towerProfile.affinity.shortLabel} ${towerProfile.projectileType.label}',
+          tint: towerProfile.affinity.color,
+        ),
+        _InfoChip(
+          icon: Icons.gps_fixed_rounded,
+          label: '$runKills/$targetKills clears',
+          tint: LightcorePalette.aether,
+        ),
+        _InfoChip(
+          icon: Icons.health_and_safety_rounded,
+          label: '${(coreIntegrity * 100).round()}% core',
+          tint: tint,
+        ),
+      ],
+    );
+    final controls = Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: [
+        for (final card in cards)
+          _ManualSpawnButton(
+            card: card,
+            label: card.config.affinity.shortLabel,
+            icon: Icons.play_arrow_rounded,
+            tint: card.config.affinity.color,
+            cooldown: cooldownForAnomaly(card),
+            enabled: canSpawnAnomaly(card),
+            onPressed: onSpawnAnomaly,
+          ),
+        if (apexCard != null)
+          _ManualSpawnButton(
+            card: apexCard!,
+            label: 'APEX',
+            icon: Icons.shield_moon_rounded,
+            tint: LightcorePalette.solar,
+            cooldown: cooldownForApex(apexCard!),
+            enabled: canSpawnApex(apexCard!),
+            onPressed: onSpawnApex,
+          ),
+      ],
+    );
+
+    return AuroraPanel(
+      tint: tint,
+      radius: 20,
+      padding: EdgeInsets.symmetric(
+        horizontal: compact ? 10 : 14,
+        vertical: compact ? 8 : 10,
+      ),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          if (constraints.maxWidth < 820) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [controls, const SizedBox(height: 10), chips],
+            );
+          }
+          return Row(
+            children: [
+              Expanded(child: chips),
+              const SizedBox(width: 14),
+              controls,
+            ],
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _ManualSpawnButton extends StatelessWidget {
+  const _ManualSpawnButton({
+    required this.card,
+    required this.label,
+    required this.icon,
+    required this.tint,
+    required this.cooldown,
+    required this.enabled,
+    required this.onPressed,
+  });
+
+  final EnemyCardState card;
+  final String label;
+  final IconData icon;
+  final Color tint;
+  final double cooldown;
+  final bool enabled;
+  final ValueChanged<EnemyCardState> onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final cooldownActive = cooldown > 0;
+    final effectiveEnabled = enabled && !cooldownActive;
+    return Tooltip(
+      message: 'Launch ${card.config.name}',
+      child: SizedBox(
+        height: 40,
+        child: FilledButton.icon(
+          style: FilledButton.styleFrom(
+            backgroundColor: effectiveEnabled
+                ? tint
+                : LightcorePalette.stroke.withValues(alpha: 0.24),
+            foregroundColor: effectiveEnabled
+                ? LightcorePalette.night
+                : LightcorePalette.mist.withValues(alpha: 0.56),
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            visualDensity: VisualDensity.compact,
+          ),
+          onPressed: effectiveEnabled ? () => onPressed(card) : null,
+          icon: Icon(icon, size: 18),
+          label: Text(
+            cooldownActive ? '${cooldown.ceil()}s' : label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
         ),
       ),
     );

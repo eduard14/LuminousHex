@@ -240,6 +240,7 @@ void main() {
 
     expect(controller.outerRingRevealed, isTrue);
     expect(controller.swarmActivated, isTrue);
+    expect(controller.battleUsesManualEnemySpawns, isTrue);
     expect(controller.builtTowerCount, 0);
     expect(
       controller.coreState.projectileType,
@@ -247,6 +248,13 @@ void main() {
     );
     expect(controller.activeEnemyCardIds, contains(EnemyLibrary.basicRed.id));
     expect(controller.towerCoreManager, isNotNull);
+    controller.tick(2);
+    expect(controller.enemies, isEmpty);
+    expect(
+      controller.spawnManualBattleEnemy(cardId: EnemyLibrary.basicRed.id),
+      isTrue,
+    );
+    expect(controller.enemies.single.config.id, EnemyLibrary.basicRed.id);
 
     controller.configureThreatDirectorDungeonBattle(
       towerLevel: 4,
@@ -263,6 +271,44 @@ void main() {
     expect(controller.builtTowerCount, 3);
     expect(controller.slots.take(3).every((slot) => slot.isBuilt), isTrue);
   });
+
+  test(
+    'threat director apex spawns manually through shared battle runtime',
+    () {
+      final controller = LightcoreController();
+      addTearDown(controller.dispose);
+
+      controller.configureThreatDirectorDungeonBattle(
+        towerLevel: 8,
+        enemyDraft: [
+          EnemyCardState(
+            config: EnemyLibrary.basicWhite,
+            unlocked: true,
+            copies: 1,
+            level: 1,
+          ),
+        ],
+        bossDraft: EnemyCardState(
+          config: BossEnemyLibrary.starterWhiteWarden,
+          unlocked: true,
+          copies: 1,
+          level: 1,
+        ),
+      );
+
+      controller.tick(2);
+      expect(controller.enemies, isEmpty);
+      expect(controller.activeBossEnemyCard?.config.id, isNotNull);
+      expect(
+        controller.spawnManualBattleEnemy(
+          cardId: BossEnemyLibrary.starterWhiteWarden.id,
+          boss: true,
+        ),
+        isTrue,
+      );
+      expect(controller.enemies.single.config.isBoss, isTrue);
+    },
+  );
 
   test('prism rift battle uses highest-layer home tower shell', () {
     final source = LightcoreController();

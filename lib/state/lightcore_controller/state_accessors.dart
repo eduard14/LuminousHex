@@ -388,6 +388,11 @@ extension LightcoreControllerStateAccessors on LightcoreController {
 
   bool get swarmActivated => _swarmActivated;
 
+  LightcoreBattleSpawnPolicy get battleSpawnPolicy => _battleSpawnPolicy;
+
+  bool get battleUsesManualEnemySpawns =>
+      _battleSpawnPolicy == LightcoreBattleSpawnPolicy.manual;
+
   int get builtTowerCount => _slots.where(_slotCountsTowardRing).length;
 
   int get enemyCount => _enemies.length;

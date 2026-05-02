@@ -9,6 +9,59 @@ typedef _Layer3TrialSpawn = ({
 });
 
 extension LightcoreControllerCombatEnemies on LightcoreController {
+  bool canManuallySpawnBattleEnemy({
+    required String cardId,
+    bool boss = false,
+  }) {
+    if (_battleSpawnPolicy != LightcoreBattleSpawnPolicy.manual ||
+        !_swarmActivated ||
+        activeLayerPassiveOnly ||
+        _enemies.length >= enemyTargetCount) {
+      return false;
+    }
+    final card = boss ? bossEnemyCardById(cardId) : enemyCardById(cardId);
+    if (card == null || !card.isOwned) {
+      return false;
+    }
+    if (boss && _enemies.any((enemy) => enemy.config.isBoss)) {
+      return false;
+    }
+    return true;
+  }
+
+  bool spawnManualBattleEnemy({required String cardId, bool boss = false}) {
+    if (!canManuallySpawnBattleEnemy(cardId: cardId, boss: boss)) {
+      return false;
+    }
+    final source = boss ? bossEnemyCardById(cardId) : enemyCardById(cardId);
+    if (source == null) {
+      return false;
+    }
+
+    final spawnPoint = boss
+        ? (angle: _randomSpawnAngle(), radius: _randomSpawnRadius())
+        : _nextClusteredSpawnPoint();
+    final enemy = _buildEnemyFromCard(
+      source,
+      angle: spawnPoint.angle,
+      radius: spawnPoint.radius,
+    );
+    _enemies.add(enemy);
+    _spawnSequence += 1;
+    _swarmActivated = true;
+    if (boss) {
+      activeLayer.bossReady = false;
+      activeLayer.normalKillsSinceBoss = 0;
+      _showBanner(
+        '${source.config.name} manually released into the battle lane.',
+        category: LightcoreNotificationCategory.battle,
+      );
+    }
+    _needsNotify = true;
+    _notifyNow();
+    return true;
+  }
+
   void _advanceImpacts(double dt) {
     final activeImpacts = List<ImpactState>.from(_impacts);
     _impacts.clear();
@@ -245,22 +298,31 @@ extension LightcoreControllerCombatEnemies on LightcoreController {
             (card) => card.config.id == EnemyLibrary.basicWhite.id,
           )
         : _pickEnemyCardForSpawn(deck);
+    final spawnPoint = _nextClusteredSpawnPoint();
+    _enemies.add(
+      _buildEnemyFromCard(
+        source,
+        angle: spawnPoint.angle,
+        radius: spawnPoint.radius,
+      ),
+    );
+    _spawnSequence += 1;
+  }
+
+  ({double angle, double radius}) _nextClusteredSpawnPoint() {
     final clusterIndex = _spawnSequence ~/ _spawnClusterSize;
     final clusterOffsetIndex =
         (_spawnSequence % _spawnClusterSize) - ((_spawnClusterSize - 1) / 2);
     _prepareRandomSpawnCluster(clusterIndex);
-    final baseAngle =
+    final angle =
         _activeSpawnClusterAngle +
         (clusterOffsetIndex * _spawnClusterAngleStep) +
         _randomCentered(_spawnClusterAngleJitter);
-    final spawnRadius = _spawnRadiusWithJitter(
+    final radius = _spawnRadiusWithJitter(
       _activeSpawnClusterRadius + (clusterOffsetIndex * 4),
       _spawnClusterRadiusJitter,
     );
-    _enemies.add(
-      _buildEnemyFromCard(source, angle: baseAngle, radius: spawnRadius),
-    );
-    _spawnSequence += 1;
+    return (angle: angle, radius: radius);
   }
 
   void _advanceLayer3Trial(double dt) {

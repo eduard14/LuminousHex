@@ -263,7 +263,8 @@ extension LightcoreControllerSaveTournamentCloud on LightcoreController {
       enemyDraft: enemyDraft,
       bossDraft: bossDraft,
       enemyPressure: pressure,
-      spawnBossImmediately: bossDraft != null,
+      spawnBossImmediately: false,
+      spawnPolicy: LightcoreBattleSpawnPolicy.manual,
     );
   }
 
@@ -372,6 +373,8 @@ extension LightcoreControllerSaveTournamentCloud on LightcoreController {
     int coreMultiShotUpgradeLevel = 0,
     bool spawnBossImmediately = false,
     bool installCoreManager = true,
+    LightcoreBattleSpawnPolicy spawnPolicy =
+        LightcoreBattleSpawnPolicy.automatic,
   }) {
     final normalizedSeed = max(evenEntryTournamentPowerIndex, seedPowerIndex);
     final normalizedBuiltSlots = builtSlotCount.clamp(0, slotCount).toInt();
@@ -383,6 +386,7 @@ extension LightcoreControllerSaveTournamentCloud on LightcoreController {
     experience = unlockExperience;
     _outerRingRevealed = true;
     _swarmActivated = true;
+    _battleSpawnPolicy = spawnPolicy;
     _tutorialStep = LightcoreTutorialStep.none;
     _tutorialPromptsEnabled = false;
     bannerMessage = '';

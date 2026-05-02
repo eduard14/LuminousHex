@@ -52,7 +52,8 @@ extension LightcoreControllerCombatLoop on LightcoreController {
 
       if (activeLayer.layer3TrialActive) {
         _advanceLayer3Trial(battleDt);
-      } else if (_swarmActivated) {
+      } else if (_swarmActivated &&
+          _battleSpawnPolicy == LightcoreBattleSpawnPolicy.automatic) {
         _spawnTimer -= battleDt;
         while (_spawnTimer <= 0) {
           if (_enemies.length >= enemyTargetCount) {

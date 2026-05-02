@@ -832,7 +832,7 @@ void main() {
     expect(find.text('WHT'), findsWidgets);
     expect(find.text('RED'), findsWidgets);
     expect(find.text('Ready'), findsWidgets);
-    expect(find.byTooltip('Launch Dustling'), findsNothing);
+    expect(find.byTooltip('Launch Dustling'), findsOneWidget);
     expect(find.textContaining('clears'), findsOneWidget);
     expect(find.textContaining('% core'), findsOneWidget);
     expect(find.byTooltip('Open Menu'), findsNothing);
