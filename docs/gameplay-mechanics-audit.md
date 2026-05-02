@@ -94,16 +94,32 @@ deck for a layer, and Threat Directors tune those anomaly cards further.
   tower fires its current generated packet instead of opening stats.
 - Higher shell classes inherit projectile and payload arsenals from the child shells
   beneath them instead of collapsing to one dominant shot type.
-- Source Tower and root shell core max level is 5.
+- Source Tower and Root Shell Core max level is 5.
 - Sell value is 70 percent of invested Lumens.
+
+### Naming conventions
+
+- Root Shell: tier-1 shell class with one center core and six perimeter slots.
+- Root Shell Core: the center Lightcore in the Root Shell.
+- Shell Level: the level on the active shell core. Root Shell level uses Lumens;
+  Child Shell level comes from completing the child-tower tuning board.
+- Shell Class: Root Shell, Prism Shell, Nexus Shell, or Ascendant Shell.
+- Perimeter Tower: any tower in one of the six edge slots.
+- Source Tower: a buildable Root Shell perimeter tower with one color,
+  one projectile family, no payload, its own level, and its own stat board.
+- Child Shell: a lower shell built inside a parent perimeter slot.
+- Child Tower: the promoted perimeter tower created from a completed Child
+  Shell. It inherits projectile and payload traits from that Child Shell.
+- Archived Shell: a completed lower shell kept for inspection and passive
+  support after promotion.
 
 ### Projectile families
 
 - Projectile is the delivery method.
 - Payload is the hit effect.
 - Projectile and payload are modular once promotions begin.
-- Default family tracks are:
-  - White Source Tower / Starbolt Turret: precision bolts.
+- Source Tower family tracks are:
+  - White / Starbolt Turret: precision bolts.
   - Blue / Rayline: Thread Beam; Pulse Beam, Split Beam; Sweep Beam, Lance Beam,
     Prism Beam, Sentinel Beam. Payloads: Chill, Fracture; Deep Chill, Brittle
     Fracture.

@@ -86,12 +86,9 @@ start from a targeted `rg` search.
 ### Source Towers And Stats
 
 - Base tower definitions live in `TowerLibrary`.
-- Source Tower names now use color-first player-facing types:
-  `White Source Tower`, `Red Source Tower`, `Orange Source Tower`,
-  `Yellow Source Tower`, `Green Source Tower`, `Blue Source Tower`, and
-  `Purple Source Tower`. Their former role names now lead each description:
-  Starbolt Turret, Comet Mortar, Meteor Driver, Stormhook Coil, Thorn Aegis,
-  Rayline Spire, and Quasar Ring.
+- Source Tower display names stay weapon-first:
+  `Starbolt Turret`, `Comet Mortar`, `Meteor Driver`, `Stormhook Coil`,
+  `Thorn Aegis`, `Rayline Spire`, and `Quasar Ring`.
 - Core Manager display names, bios, board bonuses, signature rules, and portrait
   asset ids follow `04 Tower Managers`, starting with
   `mgr_001_whitney_stardust` through `mgr_040_the_singularity_stylist`; each
@@ -113,6 +110,28 @@ start from a targeted `rg` search.
 - Combat activation, promotion readiness, pattern bonuses, and tower upgrades
   use `_slotCountsTowardRing`, which excludes `OuterTowerState.isFabricating`
   until `_advanceTowerFabrication` completes the timer.
+
+### Canonical Shell And Tower Terms
+
+- `Root Shell`: tier-1 shell class. It contains the Root Shell Core and six
+  perimeter slots.
+- `Root Shell Core`: the center Lightcore in the Root Shell. It owns Shell Level
+  and Root Shell Core Stat Upgrades.
+- `Shell Level`: the level on `CoreState.level` for the active shell core. Root
+  Shell level is purchased with Lumens; child shell level advances through the
+  child-tower tuning board.
+- `Shell Class`: the shell tier label: Root, Prism, Nexus, Ascendant.
+- `Perimeter Tower`: broad player-facing term for any tower in one of the six
+  edge slots. A perimeter tower can be a Source Tower or a Child Tower.
+- `Source Tower`: a buildable Root Shell perimeter tower with one Spectrum Band,
+  one projectile family, no payload, a level, and trainable stat board.
+- `Child Shell`: a lower shell built inside a parent perimeter slot. It has its
+  own core, perimeter slots, enemies, and tuning board.
+- `Child Tower`: the promoted result of a completed Child Shell. It occupies the
+  parent perimeter slot, inherits projectile/payload traits from the Child Shell,
+  and upgrades like a perimeter tower.
+- `Archived Shell`: a completed lower shell retained for inspection and passive
+  support after promotion.
 
 ### Promotion And Inheritance
 
