@@ -66,6 +66,21 @@ class _ThreatDirectorLaunchFeedback {
   }
 }
 
+class _ThreatDirectorLaunchTarget {
+  const _ThreatDirectorLaunchTarget({required this.card, required this.boss});
+
+  final EnemyCardState card;
+  final bool boss;
+
+  String get roleLabel => boss ? 'Apex' : 'Anomaly';
+
+  IconData get icon =>
+      boss ? Icons.shield_moon_rounded : Icons.play_arrow_rounded;
+
+  Color get tint =>
+      card.config.secondaryAffinity?.color ?? card.config.affinity.color;
+}
+
 class _DailyDungeonBattleModeDefinition {
   const _DailyDungeonBattleModeDefinition({
     required this.route,
@@ -234,6 +249,7 @@ class _DailyDungeonBattleRunScreenState
   String? _impactFeedbackLabel;
   double _remainingSeconds = _timeLimit.inSeconds.toDouble();
   Offset _riftAimDirection = const Offset(0, -1);
+  int _threatLaunchTargetIndex = 0;
   bool _running = true;
   bool _victory = false;
   bool _expired = false;
@@ -560,6 +576,18 @@ class _DailyDungeonBattleRunScreenState
     required bool boss,
   }) => _manualLaunchFeedbacks[_manualSpawnCooldownKey(card, boss: boss)];
 
+  int get _threatLaunchTargetCount =>
+      math.min(3, widget.anomalyCards.length) +
+      (widget.apexCard == null ? 0 : 1);
+
+  void _advanceThreatLaunchTarget() {
+    final targetCount = _threatLaunchTargetCount;
+    if (targetCount <= 1) {
+      return;
+    }
+    _threatLaunchTargetIndex = (_threatLaunchTargetIndex + 1) % targetCount;
+  }
+
   bool _canSpawnManualAnomaly(EnemyCardState card) {
     return _running &&
         _manualSpawnCooldownFor(card, boss: false) <= 0 &&
@@ -603,6 +631,7 @@ class _DailyDungeonBattleRunScreenState
       );
       setState(() {
         _manualLaunchCount += 1;
+        _advanceThreatLaunchTarget();
         _manualSpawnCooldowns[_manualSpawnCooldownKey(card, boss: false)] =
             _anomalySpawnCooldownSeconds;
         _manualLaunchFeedbacks[_manualSpawnCooldownKey(
@@ -646,6 +675,7 @@ class _DailyDungeonBattleRunScreenState
       );
       setState(() {
         _manualLaunchCount += 1;
+        _advanceThreatLaunchTarget();
         _manualSpawnCooldowns[_manualSpawnCooldownKey(card, boss: true)] =
             _apexSpawnCooldownSeconds;
         _manualLaunchFeedbacks[_manualSpawnCooldownKey(
@@ -971,6 +1001,7 @@ class _DailyDungeonBattleRunScreenState
                             impactCombo: _impactCombo,
                             impactFeedbackLabel: _impactFeedbackLabel,
                             running: _running,
+                            activeLaunchIndex: _threatLaunchTargetIndex,
                             damageForAnomaly: (card) =>
                                 _raidDamageFor(card, boss: false) *
                                 _launchOutcomeFor(
@@ -1253,6 +1284,7 @@ class _ThreatDirectorBattleStatusDock extends StatelessWidget {
     required this.impactCombo,
     required this.impactFeedbackLabel,
     required this.running,
+    required this.activeLaunchIndex,
     required this.damageForAnomaly,
     required this.damageForApex,
     required this.launchOutcomeForAnomaly,
@@ -1285,6 +1317,7 @@ class _ThreatDirectorBattleStatusDock extends StatelessWidget {
   final int impactCombo;
   final String? impactFeedbackLabel;
   final bool running;
+  final int activeLaunchIndex;
   final double Function(EnemyCardState card) damageForAnomaly;
   final double Function(EnemyCardState card) damageForApex;
   final _ThreatDirectorLaunchOutcome Function(EnemyCardState card)
@@ -1302,9 +1335,83 @@ class _ThreatDirectorBattleStatusDock extends StatelessWidget {
   final ValueChanged<EnemyCardState> onSpawnAnomaly;
   final ValueChanged<EnemyCardState> onSpawnApex;
 
+  List<_ThreatDirectorLaunchTarget> get _launchTargets {
+    return <_ThreatDirectorLaunchTarget>[
+      for (final card in anomalyCards.take(3))
+        _ThreatDirectorLaunchTarget(card: card, boss: false),
+      if (apexCard != null)
+        _ThreatDirectorLaunchTarget(card: apexCard!, boss: true),
+    ];
+  }
+
+  double _cooldownFor(_ThreatDirectorLaunchTarget target) {
+    return target.boss
+        ? cooldownForApex(target.card)
+        : cooldownForAnomaly(target.card);
+  }
+
+  bool _canSpawn(_ThreatDirectorLaunchTarget target) {
+    return target.boss
+        ? canSpawnApex(target.card)
+        : canSpawnAnomaly(target.card);
+  }
+
+  double _damageFor(_ThreatDirectorLaunchTarget target) {
+    return target.boss
+        ? damageForApex(target.card)
+        : damageForAnomaly(target.card);
+  }
+
+  _ThreatDirectorLaunchOutcome _outcomeFor(_ThreatDirectorLaunchTarget target) {
+    return target.boss
+        ? launchOutcomeForApex(target.card)
+        : launchOutcomeForAnomaly(target.card);
+  }
+
+  _ThreatDirectorLaunchFeedback? _feedbackFor(
+    _ThreatDirectorLaunchTarget target,
+  ) {
+    return target.boss
+        ? launchFeedbackForApex(target.card)
+        : launchFeedbackForAnomaly(target.card);
+  }
+
+  void _spawn(_ThreatDirectorLaunchTarget target) {
+    if (target.boss) {
+      onSpawnApex(target.card);
+    } else {
+      onSpawnAnomaly(target.card);
+    }
+  }
+
+  _ThreatDirectorLaunchTarget? _activeTarget(
+    List<_ThreatDirectorLaunchTarget> targets,
+  ) {
+    if (targets.isEmpty) {
+      return null;
+    }
+    for (final target in targets) {
+      if (_feedbackFor(target) != null) {
+        return target;
+      }
+    }
+    final start = activeLaunchIndex % targets.length;
+    for (var offset = 0; offset < targets.length; offset += 1) {
+      final target = targets[(start + offset) % targets.length];
+      if (_cooldownFor(target) <= 0 && _canSpawn(target)) {
+        return target;
+      }
+    }
+    return targets[start];
+  }
+
   @override
   Widget build(BuildContext context) {
-    final cards = anomalyCards.take(3).toList(growable: false);
+    final targets = _launchTargets;
+    final activeTarget = _activeTarget(targets);
+    final activeTargetIndex = activeTarget == null
+        ? -1
+        : targets.indexOf(activeTarget);
     final targetIntegrity =
         (targetTowerHealth / math.max(1.0, targetTowerMaxHealth))
             .clamp(0.0, 1.0)
@@ -1356,6 +1463,20 @@ class _ThreatDirectorBattleStatusDock extends StatelessWidget {
               ? LightcorePalette.stroke
               : LightcorePalette.verdant,
         ),
+        if (activeTarget != null)
+          _InfoChip(
+            icon: activeTarget.icon,
+            label: activeTarget.card.config.name,
+            tint: activeTarget.tint,
+          ),
+        for (final target in targets)
+          _InfoChip(
+            icon: target.boss
+                ? Icons.shield_moon_rounded
+                : Icons.blur_on_rounded,
+            label: target.card.config.affinity.shortLabel,
+            tint: target.tint,
+          ),
       ],
     );
     final towerMeter = SizedBox(
@@ -1414,39 +1535,21 @@ class _ThreatDirectorBattleStatusDock extends StatelessWidget {
         ],
       ),
     );
-    final controls = Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      crossAxisAlignment: WrapCrossAlignment.center,
-      children: [
-        for (final card in cards)
-          _ManualSpawnButton(
-            card: card,
-            label: card.config.affinity.shortLabel,
-            icon: Icons.play_arrow_rounded,
-            tint: card.config.affinity.color,
-            damage: damageForAnomaly(card),
-            outcome: launchOutcomeForAnomaly(card),
-            cooldown: cooldownForAnomaly(card),
-            feedback: launchFeedbackForAnomaly(card),
-            enabled: canSpawnAnomaly(card),
-            onPressed: onSpawnAnomaly,
-          ),
-        if (apexCard != null)
-          _ManualSpawnButton(
-            card: apexCard!,
-            label: 'APEX',
-            icon: Icons.shield_moon_rounded,
-            tint: LightcorePalette.solar,
-            damage: damageForApex(apexCard!),
-            outcome: launchOutcomeForApex(apexCard!),
-            cooldown: cooldownForApex(apexCard!),
-            feedback: launchFeedbackForApex(apexCard!),
-            enabled: canSpawnApex(apexCard!),
-            onPressed: onSpawnApex,
-          ),
-      ],
-    );
+    final controls = activeTarget == null
+        ? const SizedBox.shrink()
+        : _ThreatDirectorTimingButton(
+            target: activeTarget,
+            sequenceLabel: targets.length <= 1
+                ? activeTarget.roleLabel
+                : '${activeTarget.roleLabel} ${activeTargetIndex + 1}/${targets.length}',
+            compact: compact,
+            damage: _damageFor(activeTarget),
+            outcome: _outcomeFor(activeTarget),
+            cooldown: _cooldownFor(activeTarget),
+            feedback: _feedbackFor(activeTarget),
+            enabled: _canSpawn(activeTarget),
+            onPressed: _spawn,
+          );
     final feedbackLane = _ThreatDirectorFeedbackLane(
       label: impactFeedbackLabel,
       tint: counterWindow ? LightcorePalette.warning : LightcorePalette.solar,
@@ -1551,12 +1654,11 @@ class _ThreatDirectorFeedbackLane extends StatelessWidget {
   }
 }
 
-class _ManualSpawnButton extends StatelessWidget {
-  const _ManualSpawnButton({
-    required this.card,
-    required this.label,
-    required this.icon,
-    required this.tint,
+class _ThreatDirectorTimingButton extends StatelessWidget {
+  const _ThreatDirectorTimingButton({
+    required this.target,
+    required this.sequenceLabel,
+    required this.compact,
     required this.damage,
     required this.outcome,
     required this.cooldown,
@@ -1565,21 +1667,24 @@ class _ManualSpawnButton extends StatelessWidget {
     required this.onPressed,
   });
 
-  final EnemyCardState card;
-  final String label;
-  final IconData icon;
-  final Color tint;
+  final _ThreatDirectorLaunchTarget target;
+  final String sequenceLabel;
+  final bool compact;
   final double damage;
   final _ThreatDirectorLaunchOutcome outcome;
   final double cooldown;
   final _ThreatDirectorLaunchFeedback? feedback;
   final bool enabled;
-  final ValueChanged<EnemyCardState> onPressed;
+  final ValueChanged<_ThreatDirectorLaunchTarget> onPressed;
 
   @override
   Widget build(BuildContext context) {
+    final card = target.card;
+    final tint = target.tint;
     final cooldownActive = cooldown > 0;
-    final effectiveEnabled = enabled && !cooldownActive;
+    final launchFeedback = feedback;
+    final feedbackActive = launchFeedback != null;
+    final effectiveEnabled = enabled && !cooldownActive && !feedbackActive;
     final damageLabel = damage >= 1000
         ? '${(damage / 1000).toStringAsFixed(damage >= 10000 ? 0 : 1)}K'
         : damage.round().toString();
@@ -1588,28 +1693,44 @@ class _ManualSpawnButton extends StatelessWidget {
         : outcome.label == 'Good'
         ? LightcorePalette.success
         : LightcorePalette.warning;
-    final launchFeedback = feedback;
-    final feedbackActive = launchFeedback != null;
     final foregroundColor = effectiveEnabled
         ? LightcorePalette.night
-        : LightcorePalette.mist.withValues(alpha: 0.58);
+        : LightcorePalette.mist.withValues(alpha: 0.68);
+    final mutedTextColor = effectiveEnabled || feedbackActive
+        ? LightcorePalette.night.withValues(alpha: 0.78)
+        : LightcorePalette.mist.withValues(alpha: 0.48);
     final feedbackProgress = launchFeedback == null
         ? 0.0
         : (launchFeedback.remainingSeconds /
                   _DailyDungeonBattleRunScreenState._launchFeedbackSeconds)
               .clamp(0.0, 1.0)
               .toDouble();
-    final buttonRadius = BorderRadius.circular(12);
+    final title = card.config.name;
+    final statusLabel = feedbackActive
+        ? 'Hit ${launchFeedback.label}'
+        : cooldownActive
+        ? '${cooldown.ceil()}s'
+        : outcome.label;
+    final detailLabel = feedbackActive
+        ? launchFeedback.perfect
+              ? 'Perfect release'
+              : '${launchFeedback.label} release'
+        : cooldownActive
+        ? 'Recharging $title'
+        : effectiveEnabled
+        ? '$damageLabel tower'
+        : 'Lane full';
+    final buttonRadius = BorderRadius.circular(16);
     return Tooltip(
       message: 'Launch ${card.config.name}',
       child: SizedBox(
-        width: 150,
-        height: 82,
+        width: compact ? double.infinity : 320,
+        height: compact ? 104 : 112,
         child: Material(
           color: Colors.transparent,
           child: InkWell(
             borderRadius: buttonRadius,
-            onTap: effectiveEnabled ? () => onPressed(card) : null,
+            onTap: effectiveEnabled ? () => onPressed(target) : null,
             child: ClipRRect(
               borderRadius: buttonRadius,
               child: Stack(
@@ -1621,7 +1742,7 @@ class _ManualSpawnButton extends StatelessWidget {
                             ? Color.lerp(
                                 tint,
                                 LightcorePalette.mist,
-                                0.18,
+                                0.14,
                               )!.withValues(alpha: 0.92)
                             : LightcorePalette.stroke.withValues(alpha: 0.18),
                         border: Border.all(
@@ -1645,9 +1766,9 @@ class _ManualSpawnButton extends StatelessWidget {
                     ),
                   ),
                   Positioned(
-                    left: 10,
-                    right: 10,
-                    bottom: 6,
+                    left: 14,
+                    right: 14,
+                    bottom: 8,
                     child: SizedBox(
                       height: feedbackActive ? 4 : 3,
                       child: DecoratedBox(
@@ -1681,34 +1802,76 @@ class _ManualSpawnButton extends StatelessWidget {
                     ),
                   Padding(
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 9,
-                      vertical: 8,
+                      horizontal: 12,
+                      vertical: 10,
                     ),
                     child: Row(
                       children: [
                         _DungeonEnemyPortrait(
                           card: card,
-                          size: 46,
+                          size: compact ? 54 : 60,
                           selected: effectiveEnabled || feedbackActive,
                         ),
-                        const SizedBox(width: 9),
+                        const SizedBox(width: 11),
                         Expanded(
                           child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Row(
-                                mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Icon(icon, size: 14, color: foregroundColor),
-                                  const SizedBox(width: 3),
+                                  Icon(
+                                    target.icon,
+                                    size: 15,
+                                    color: foregroundColor,
+                                  ),
+                                  const SizedBox(width: 5),
+                                  Expanded(
+                                    child: Text(
+                                      sequenceLabel,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .labelSmall
+                                          ?.copyWith(
+                                            color: foregroundColor.withValues(
+                                              alpha: 0.88,
+                                            ),
+                                            fontWeight: FontWeight.w900,
+                                          ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    card.config.affinity.shortLabel,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .labelSmall
+                                        ?.copyWith(
+                                          color: foregroundColor,
+                                          fontWeight: FontWeight.w900,
+                                        ),
+                                  ),
+                                ],
+                              ),
+                              Text(
+                                title,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: Theme.of(context).textTheme.titleSmall
+                                    ?.copyWith(
+                                      color: foregroundColor,
+                                      fontWeight: FontWeight.w900,
+                                    ),
+                              ),
+                              Row(
+                                children: [
                                   Flexible(
                                     child: Text(
-                                      feedbackActive
-                                          ? 'Hit ${launchFeedback.label}'
-                                          : cooldownActive
-                                          ? '${cooldown.ceil()}s'
-                                          : label,
+                                      statusLabel,
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
                                       style: Theme.of(context)
@@ -1720,30 +1883,23 @@ class _ManualSpawnButton extends StatelessWidget {
                                           ),
                                     ),
                                   ),
+                                  const SizedBox(width: 7),
+                                  Flexible(
+                                    child: Text(
+                                      detailLabel,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .labelSmall
+                                          ?.copyWith(
+                                            color: mutedTextColor,
+                                            fontWeight: FontWeight.w800,
+                                          ),
+                                    ),
+                                  ),
                                 ],
                               ),
-                              const SizedBox(height: 3),
-                              Text(
-                                feedbackActive
-                                    ? launchFeedback.perfect
-                                          ? 'Speed burst'
-                                          : '${launchFeedback.label} release'
-                                    : '${outcome.label} • $damageLabel',
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: Theme.of(context).textTheme.labelSmall
-                                    ?.copyWith(
-                                      color: effectiveEnabled || feedbackActive
-                                          ? LightcorePalette.night.withValues(
-                                              alpha: 0.78,
-                                            )
-                                          : LightcorePalette.mist.withValues(
-                                              alpha: 0.42,
-                                            ),
-                                      fontWeight: FontWeight.w800,
-                                    ),
-                              ),
-                              const SizedBox(height: 3),
                             ],
                           ),
                         ),
