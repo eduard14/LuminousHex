@@ -38,12 +38,33 @@ class LightcoreCloudSaveConflictException
   const LightcoreCloudSaveConflictException(super.message, [super.cause]);
 }
 
+enum LightcoreGoogleAccountCollisionResolution {
+  switchToExistingSave,
+  replaceExistingSave,
+}
+
+class LightcoreGoogleAccountCollisionException implements Exception {
+  const LightcoreGoogleAccountCollisionException({
+    required this.message,
+    this.email,
+    this.cause,
+  });
+
+  final String message;
+  final String? email;
+  final Object? cause;
+
+  @override
+  String toString() => message;
+}
+
 class FirebaseLightcoreBackend {
   FirebaseLightcoreBackend({required this.runtimeConfig});
 
   final LightcoreFirebaseRuntimeConfig runtimeConfig;
   LightcoreCloudSaveEnvelope? _cachedCloudSave;
   String? _activeSessionId;
+  _PendingGoogleAccountCollision? _pendingGoogleAccountCollision;
 
   LightcoreCloudSaveEnvelope? get cachedCloudSave => _cachedCloudSave;
 
@@ -300,7 +321,6 @@ class FirebaseLightcoreBackend {
 
   Future<void> signInWithGoogle({bool requireAnonymousLink = false}) async {
     await _ensureFirebaseInitialized();
-    _cachedCloudSave = null;
     final auth = FirebaseAuth.instance;
     final currentUser =
         auth.currentUser ?? (await auth.signInAnonymously()).user;
@@ -316,11 +336,10 @@ class FirebaseLightcoreBackend {
           if (!_isGoogleCredentialCollision(error)) {
             rethrow;
           }
-          if (requireAnonymousLink) {
-            throw StateError(_googleAccountAlreadyLinkedMessage);
-          }
+          _throwGoogleAccountCollision(error: error, webProvider: provider);
         }
       }
+      _clearAuthScopedCache();
       await auth.signInWithPopup(provider);
       await _refreshCurrentAuthToken();
       return;
@@ -350,19 +369,66 @@ class FirebaseLightcoreBackend {
         if (!_isGoogleCredentialCollision(error)) {
           rethrow;
         }
-        if (requireAnonymousLink) {
-          throw StateError(_googleAccountAlreadyLinkedMessage);
-        }
+        _throwGoogleAccountCollision(
+          error: error,
+          credential: credential,
+          email: googleUser.email,
+        );
       }
     }
 
+    _clearAuthScopedCache();
     await auth.signInWithCredential(credential);
     await _refreshCurrentAuthToken();
+  }
+
+  Future<void> resolvePendingGoogleAccountCollision(
+    LightcoreGoogleAccountCollisionResolution resolution,
+  ) async {
+    await _ensureFirebaseInitialized();
+    final pending = _pendingGoogleAccountCollision;
+    if (pending == null) {
+      throw StateError(
+        'No Google account collision is waiting for a decision.',
+      );
+    }
+
+    switch (resolution) {
+      case LightcoreGoogleAccountCollisionResolution.switchToExistingSave:
+        await _signInWithPendingGoogleCollision(pending);
+        break;
+      case LightcoreGoogleAccountCollisionResolution.replaceExistingSave:
+        final replacementCredential = await _signInWithPendingGoogleCollision(
+          pending,
+        );
+        await _deleteSignedInPlayerAccount();
+        await FirebaseAuth.instance.signOut();
+        _clearAuthScopedCache();
+        await _linkPendingGoogleToFreshAnonymousUser(
+          pending,
+          credential: replacementCredential,
+        );
+        break;
+    }
+
+    _pendingGoogleAccountCollision = null;
+  }
+
+  void cancelPendingGoogleAccountCollision() {
+    _pendingGoogleAccountCollision = null;
+  }
+
+  Future<void> deleteCurrentPlayerAccount() async {
+    await _ensureFirebaseInitialized();
+    await _deleteSignedInPlayerAccount();
+    await FirebaseAuth.instance.signOut();
+    _clearAuthScopedCache();
   }
 
   Future<void> signOutToGuest() async {
     _cachedCloudSave = null;
     _activeSessionId = null;
+    _pendingGoogleAccountCollision = null;
     try {
       if (!kIsWeb) {
         await GoogleSignIn.instance.signOut();
@@ -1116,12 +1182,105 @@ class FirebaseLightcoreBackend {
         error.code == 'provider-already-linked';
   }
 
-  static const String _googleAccountAlreadyLinkedMessage =
-      'That Google account is already linked to another LumiHex save. Choose a different Google account, or sign out before switching saves.';
+  Never _throwGoogleAccountCollision({
+    required FirebaseAuthException error,
+    AuthCredential? credential,
+    GoogleAuthProvider? webProvider,
+    String? email,
+  }) {
+    final normalizedEmail = _emptyToNull(email ?? error.email ?? '');
+    _pendingGoogleAccountCollision = _PendingGoogleAccountCollision(
+      credential: error.credential ?? credential,
+      webProvider: webProvider,
+      email: normalizedEmail,
+    );
+    throw LightcoreGoogleAccountCollisionException(
+      message: normalizedEmail == null
+          ? 'That Google account is already linked to another LumiHex save.'
+          : 'That Google account ($normalizedEmail) is already linked to another LumiHex save.',
+      email: normalizedEmail,
+      cause: error,
+    );
+  }
+
+  Future<AuthCredential?> _signInWithPendingGoogleCollision(
+    _PendingGoogleAccountCollision pending,
+  ) async {
+    final auth = FirebaseAuth.instance;
+    final UserCredential userCredential;
+    if (kIsWeb) {
+      userCredential = await auth.signInWithPopup(
+        pending.webProvider ?? _googleAuthProvider(),
+      );
+    } else {
+      final credential = pending.credential;
+      if (credential == null) {
+        throw StateError('Google Sign-In must be restarted to continue.');
+      }
+      userCredential = await auth.signInWithCredential(credential);
+    }
+    _clearAuthScopedCache();
+    await _refreshCurrentAuthToken();
+    return userCredential.credential ?? pending.credential;
+  }
+
+  Future<void> _linkPendingGoogleToFreshAnonymousUser(
+    _PendingGoogleAccountCollision pending, {
+    AuthCredential? credential,
+  }) async {
+    final auth = FirebaseAuth.instance;
+    final user = (await auth.signInAnonymously()).user;
+    if (user == null) {
+      throw StateError('Could not create a replacement guest account.');
+    }
+
+    final resolvedCredential = credential ?? pending.credential;
+    if (resolvedCredential != null) {
+      await user.linkWithCredential(resolvedCredential);
+    } else if (kIsWeb) {
+      await user.linkWithPopup(pending.webProvider ?? _googleAuthProvider());
+    } else {
+      throw StateError('Google Sign-In must be restarted to continue.');
+    }
+    await _refreshCurrentAuthToken();
+  }
+
+  Future<void> _deleteSignedInPlayerAccount() async {
+    if (FirebaseAuth.instance.currentUser == null) {
+      throw StateError('No signed-in LumiHex account is available to delete.');
+    }
+
+    final callable = FirebaseFunctions.instanceFor(
+      region: runtimeConfig.functionsRegion,
+    ).httpsCallable('deleteCurrentPlayerAccount');
+    await callable.call<Map<String, dynamic>>(<String, dynamic>{});
+    _clearAuthScopedCache();
+  }
+
+  GoogleAuthProvider _googleAuthProvider() {
+    return GoogleAuthProvider()..addScope('email');
+  }
+
+  void _clearAuthScopedCache() {
+    _cachedCloudSave = null;
+    _activeSessionId = null;
+  }
 
   Future<void> _refreshCurrentAuthToken() async {
     await FirebaseAuth.instance.currentUser?.getIdToken(true);
   }
+}
+
+class _PendingGoogleAccountCollision {
+  const _PendingGoogleAccountCollision({
+    required this.credential,
+    required this.webProvider,
+    required this.email,
+  });
+
+  final AuthCredential? credential;
+  final GoogleAuthProvider? webProvider;
+  final String? email;
 }
 
 class _BootstrapCallableResult {

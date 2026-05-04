@@ -151,6 +151,90 @@ Future<void> _waitForMainMenu(WidgetTester tester) async {
   }
 }
 
+Future<void> _waitForShell(WidgetTester tester) async {
+  for (var attempt = 0; attempt < 40; attempt++) {
+    await tester.pump(const Duration(milliseconds: 100));
+    if (find.byType(LightcoreShell).evaluate().isNotEmpty) {
+      break;
+    }
+  }
+}
+
+Future<void> _pumpCollisionApp(
+  WidgetTester tester,
+  _GoogleAccountCollisionBackend backend,
+) async {
+  addTearDown(() async {
+    await tester.binding.setSurfaceSize(null);
+  });
+  await tester.binding.setSurfaceSize(const Size(430, 780));
+  PackageInfo.setMockInitialValues(
+    appName: 'LumiHex',
+    packageName: 'com.lightcore.test',
+    version: '1.0.6',
+    buildNumber: '7',
+    buildSignature: '',
+  );
+  SharedPreferences.setMockInitialValues(<String, Object>{
+    'lightcore.guide_id': LightcoreGuideProfile.lumo.storageId,
+  });
+
+  await tester.pumpWidget(LightcoreApp(backend: backend));
+  await tester.pump();
+  await _waitForMainMenu(tester);
+}
+
+Future<void> _openMainMenuCollisionDialog(WidgetTester tester) async {
+  for (var attempt = 0; attempt < 30; attempt += 1) {
+    if (find.text('PLAY', skipOffstage: false).evaluate().isNotEmpty) {
+      break;
+    }
+    await tester.pump(const Duration(milliseconds: 100));
+  }
+  await tester.tap(find.text('PLAY', skipOffstage: false));
+  await tester.pump();
+  await tester.pump(const Duration(milliseconds: 250));
+  await tester.tap(
+    find.byKey(const ValueKey<String>('guest-sign-in-google-button')),
+  );
+  await tester.pump();
+  await tester.pump(const Duration(milliseconds: 250));
+}
+
+Future<void> _enterCollisionAppAsGuest(
+  WidgetTester tester,
+  _GoogleAccountCollisionBackend backend,
+) async {
+  await _pumpCollisionApp(tester, backend);
+  for (var attempt = 0; attempt < 30; attempt += 1) {
+    if (find.text('PLAY', skipOffstage: false).evaluate().isNotEmpty) {
+      break;
+    }
+    await tester.pump(const Duration(milliseconds: 100));
+  }
+  await tester.tap(find.text('PLAY', skipOffstage: false));
+  await tester.pump();
+  await tester.pump(const Duration(milliseconds: 250));
+  await tester.tap(
+    find.byKey(const ValueKey<String>('guest-sign-in-continue-button')),
+  );
+  await _waitForShell(tester);
+  backend.savedPayloads.clear();
+}
+
+Future<void> _openSettingsCollisionDialog(WidgetTester tester) async {
+  await _openSettingsFromHeaderMenu(tester);
+  await _scrollSettingsUntilVisible(
+    tester,
+    find.byKey(const ValueKey<String>('settings-google-sign-in-button')),
+  );
+  await tester.tap(
+    find.byKey(const ValueKey<String>('settings-google-sign-in-button')),
+  );
+  await tester.pump();
+  await tester.pump(const Duration(milliseconds: 250));
+}
+
 void main() {
   testWidgets('renders the Lightcore main menu', (tester) async {
     await tester.pumpWidget(const LightcoreApp());
@@ -426,6 +510,141 @@ void main() {
       expect(tester.takeException(), isNull);
     },
   );
+
+  testWidgets('Google collision prompt can cancel from main menu', (
+    tester,
+  ) async {
+    final backend = _GoogleAccountCollisionBackend();
+
+    await _pumpCollisionApp(tester, backend);
+    await _openMainMenuCollisionDialog(tester);
+
+    expect(
+      find.byKey(const ValueKey<String>('google-account-collision-dialog')),
+      findsOneWidget,
+    );
+
+    await tester.tap(
+      find.byKey(const ValueKey<String>('google-collision-cancel-button')),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 250));
+
+    expect(backend.cancelCalls, 1);
+    expect(backend.switchResolutions, 0);
+    expect(backend.replaceResolutions, 0);
+    expect(find.byType(LightcoreShell), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('Google collision can switch to existing save from main menu', (
+    tester,
+  ) async {
+    final backend = _GoogleAccountCollisionBackend();
+
+    await _pumpCollisionApp(tester, backend);
+    await _openMainMenuCollisionDialog(tester);
+    await tester.tap(
+      find.byKey(const ValueKey<String>('google-collision-switch-button')),
+    );
+    await _waitForShell(tester);
+
+    expect(backend.switchResolutions, 1);
+    expect(backend.replaceResolutions, 0);
+    expect(find.byType(LightcoreShell), findsOneWidget);
+    expect(backend.currentMode, _CollisionBackendMode.google);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('Google collision can replace old save from main menu', (
+    tester,
+  ) async {
+    final backend = _GoogleAccountCollisionBackend();
+
+    await _pumpCollisionApp(tester, backend);
+    await _openMainMenuCollisionDialog(tester);
+    await tester.tap(
+      find.byKey(const ValueKey<String>('google-collision-replace-button')),
+    );
+    await tester.pump();
+    expect(
+      find.byKey(const ValueKey<String>('google-replace-confirm-dialog')),
+      findsOneWidget,
+    );
+
+    await tester.tap(
+      find.byKey(const ValueKey<String>('google-replace-confirm-button')),
+    );
+    await _waitForShell(tester);
+
+    expect(backend.replaceResolutions, 1);
+    expect(backend.switchResolutions, 0);
+    expect(backend.currentMode, _CollisionBackendMode.replacement);
+    expect(
+      backend.savedPayloads.any(
+        (save) =>
+            save.mode == _CollisionBackendMode.replacement &&
+            _payloadPlayerId(save.payload) == 'GUEST-SAVE',
+      ),
+      isTrue,
+    );
+    expect(find.byType(LightcoreShell), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('in-game Google switch does not save guest payload to Google', (
+    tester,
+  ) async {
+    final backend = _GoogleAccountCollisionBackend();
+
+    await _enterCollisionAppAsGuest(tester, backend);
+    await _openSettingsCollisionDialog(tester);
+    await tester.tap(
+      find.byKey(const ValueKey<String>('google-collision-switch-button')),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+
+    expect(backend.switchResolutions, 1);
+    expect(
+      backend.savedPayloads.any(
+        (save) =>
+            save.mode == _CollisionBackendMode.google &&
+            _payloadPlayerId(save.payload) == 'GUEST-SAVE',
+      ),
+      isFalse,
+    );
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('in-game Google replace writes current payload to new account', (
+    tester,
+  ) async {
+    final backend = _GoogleAccountCollisionBackend();
+
+    await _enterCollisionAppAsGuest(tester, backend);
+    await _openSettingsCollisionDialog(tester);
+    await tester.tap(
+      find.byKey(const ValueKey<String>('google-collision-replace-button')),
+    );
+    await tester.pump();
+    await tester.tap(
+      find.byKey(const ValueKey<String>('google-replace-confirm-button')),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+
+    expect(backend.replaceResolutions, 1);
+    expect(
+      backend.savedPayloads.any(
+        (save) =>
+            save.mode == _CollisionBackendMode.replacement &&
+            _payloadPlayerId(save.payload) == 'GUEST-SAVE',
+      ),
+      isTrue,
+    );
+    expect(tester.takeException(), isNull);
+  });
 
   testWidgets('foreground resume remounts the battle renderer surface', (
     tester,
@@ -2613,6 +2832,183 @@ class _GoogleSignInFailureBackend extends FirebaseLightcoreBackend {
   }
 }
 
+enum _CollisionBackendMode { guest, google, replacement }
+
+class _SavedCollisionPayload {
+  const _SavedCollisionPayload({required this.mode, required this.payload});
+
+  final _CollisionBackendMode mode;
+  final Map<String, dynamic> payload;
+}
+
+class _GoogleAccountCollisionBackend extends FirebaseLightcoreBackend {
+  _GoogleAccountCollisionBackend()
+    : guestPayload = _buildCollisionPayload('GUEST-SAVE', lumens: 111),
+      googlePayload = _buildCollisionPayload('GOOGLE-SAVE', lumens: 999),
+      super(runtimeConfig: lightcoreFirebaseRuntimeConfig);
+
+  final Map<String, dynamic> guestPayload;
+  final Map<String, dynamic> googlePayload;
+  final List<_SavedCollisionPayload> savedPayloads = [];
+  _CollisionBackendMode currentMode = _CollisionBackendMode.guest;
+  Map<String, dynamic>? replacementPayload;
+  int signInCalls = 0;
+  int switchResolutions = 0;
+  int replaceResolutions = 0;
+  int cancelCalls = 0;
+  int bootstrapCalls = 0;
+
+  @override
+  bool get canUseCloudSave => true;
+
+  @override
+  bool get hasRecoverableAccount => currentMode != _CollisionBackendMode.guest;
+
+  @override
+  Future<LightcoreBootstrapReport> bootstrap({
+    required LightcoreGuestSession guestSession,
+    required String clientVersion,
+    String? clientBuildNumber,
+  }) async {
+    bootstrapCalls += 1;
+    final payload = switch (currentMode) {
+      _CollisionBackendMode.guest => guestPayload,
+      _CollisionBackendMode.google => googlePayload,
+      _CollisionBackendMode.replacement => replacementPayload ?? guestPayload,
+    };
+    final playerId = switch (currentMode) {
+      _CollisionBackendMode.guest => guestSession.playerId,
+      _CollisionBackendMode.google => 'GOOGLE-SAVE',
+      _CollisionBackendMode.replacement => 'GUEST-SAVE',
+    };
+    final authUid = switch (currentMode) {
+      _CollisionBackendMode.guest => 'anonymous-auth',
+      _CollisionBackendMode.google => 'google-auth',
+      _CollisionBackendMode.replacement => 'replacement-auth',
+    };
+    return LightcoreBootstrapReport(
+      guestSession: guestSession,
+      clientVersion: clientVersion,
+      clientBuildNumber: clientBuildNumber,
+      manifest: _testManifest(clientVersion, clientBuildNumber),
+      profile: LightcorePlayerProfileSummary(
+        playerId: playerId,
+        authUid: authUid,
+        isAnonymous: currentMode == _CollisionBackendMode.guest,
+      ),
+      offlineClaim: LightcoreOfflineClaimResult.empty(
+        statusMessage: 'No offline rewards available yet.',
+      ),
+      integrityLevel: LightcoreIntegrityLevel.secure,
+      firebaseReady: true,
+      serverValidated: true,
+      appCheckActive: true,
+      sessionId: '${currentMode.name}-session',
+      serverTime: DateTime(2026),
+      cloudSave: LightcoreCloudSaveEnvelope(
+        schemaVersion: lightcoreCloudSaveSchemaVersion,
+        revision: bootstrapCalls,
+        payload: payload,
+      ),
+    );
+  }
+
+  @override
+  Future<void> signInWithGoogle({bool requireAnonymousLink = false}) async {
+    signInCalls += 1;
+    throw const LightcoreGoogleAccountCollisionException(
+      message: 'That Google account is already linked to another LumiHex save.',
+      email: 'pilot@example.com',
+    );
+  }
+
+  @override
+  Future<void> resolvePendingGoogleAccountCollision(
+    LightcoreGoogleAccountCollisionResolution resolution,
+  ) async {
+    switch (resolution) {
+      case LightcoreGoogleAccountCollisionResolution.switchToExistingSave:
+        switchResolutions += 1;
+        currentMode = _CollisionBackendMode.google;
+        break;
+      case LightcoreGoogleAccountCollisionResolution.replaceExistingSave:
+        replaceResolutions += 1;
+        currentMode = _CollisionBackendMode.replacement;
+        replacementPayload = null;
+        break;
+    }
+  }
+
+  @override
+  void cancelPendingGoogleAccountCollision() {
+    cancelCalls += 1;
+  }
+
+  @override
+  Future<LightcoreServerSyncResult> syncOfflineSnapshot(
+    LightcoreOfflineProgressSnapshot snapshot, {
+    String? clientVersion,
+    String? clientBuildNumber,
+  }) async {
+    final playerId = currentMode == _CollisionBackendMode.google
+        ? 'GOOGLE-SAVE'
+        : 'GUEST-SAVE';
+    return LightcoreServerSyncResult(
+      manifest: _testManifest(clientVersion ?? '1.0.6', clientBuildNumber),
+      profile: LightcorePlayerProfileSummary(
+        playerId: playerId,
+        authUid: '${currentMode.name}-auth',
+        isAnonymous: currentMode == _CollisionBackendMode.guest,
+      ),
+      serverTime: DateTime(2026),
+      accepted: true,
+      sessionId: '${currentMode.name}-session',
+    );
+  }
+
+  @override
+  Future<LightcoreOfflineClaimResult> claimOfflineProgress() async {
+    return LightcoreOfflineClaimResult.empty();
+  }
+
+  @override
+  Future<LightcoreCloudSaveEnvelope> savePlayerSave(
+    Map<String, dynamic> payload, {
+    String? clientVersion,
+    String? clientBuildNumber,
+  }) async {
+    final savedPayload = Map<String, dynamic>.from(payload);
+    savedPayloads.add(
+      _SavedCollisionPayload(mode: currentMode, payload: savedPayload),
+    );
+    if (currentMode == _CollisionBackendMode.replacement) {
+      replacementPayload = savedPayload;
+    }
+    return LightcoreCloudSaveEnvelope(
+      schemaVersion: lightcoreCloudSaveSchemaVersion,
+      revision: savedPayloads.length,
+      payload: savedPayload,
+    );
+  }
+
+  @override
+  Future<LightcoreSocialOverview> fetchSocialOverview() async {
+    final playerId = currentMode == _CollisionBackendMode.google
+        ? 'GOOGLE-SAVE'
+        : 'GUEST-SAVE';
+    return LightcoreSocialOverview(
+      self: LightcoreSocialPlayer(
+        uid: '${currentMode.name}-auth',
+        playerId: playerId,
+        displayName: playerId,
+        level: 1,
+        progressToNextLevel: 0,
+        performanceScore: 0,
+      ),
+    );
+  }
+}
+
 class _PendingGoogleSignInBackend extends FirebaseLightcoreBackend {
   _PendingGoogleSignInBackend()
     : super(runtimeConfig: lightcoreFirebaseRuntimeConfig);
@@ -2830,4 +3226,27 @@ Map<String, dynamic> _buildLaunchRestorePayload() {
   final payload = controller.buildCloudSavePayload();
   controller.dispose();
   return payload;
+}
+
+Map<String, dynamic> _buildCollisionPayload(String playerId, {int lumens = 0}) {
+  final controller = LightcoreController(
+    guideProfile: LightcoreGuideProfile.lumo,
+    playerId: playerId,
+  );
+  controller.debugDisableTutorial();
+  controller.lumens = lumens;
+  final payload = controller.buildCloudSavePayload();
+  controller.dispose();
+  return payload;
+}
+
+String? _payloadPlayerId(Map<String, dynamic> payload) {
+  final player = payload['player'];
+  if (player is Map<String, dynamic>) {
+    return player['playerId'] as String?;
+  }
+  if (player is Map) {
+    return player['playerId'] as String?;
+  }
+  return null;
 }

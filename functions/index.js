@@ -1,7 +1,8 @@
 const { onCall, HttpsError } = require("firebase-functions/v2/https");
 const { setGlobalOptions, logger } = require("firebase-functions/v2");
 const { initializeApp } = require("firebase-admin/app");
-const { getFirestore, FieldValue, Timestamp } = require("firebase-admin/firestore");
+const { getAuth } = require("firebase-admin/auth");
+const { getFirestore, FieldPath, FieldValue, Timestamp } = require("firebase-admin/firestore");
 const { createHash, randomUUID } = require("crypto");
 const { createRuntimeContent } = require("./src/runtime_content");
 const { createPlayerSaveHelpers } = require("./src/player_save_helpers");
@@ -1494,6 +1495,31 @@ exports.resetPlayerSave = onCall(
   },
 );
 
+exports.deleteCurrentPlayerAccount = onCall(
+  { enforceAppCheck: false },
+  async (request) => {
+    const auth = requireAuth(request);
+    const manifest = await loadManifest();
+    requireAppCheckIfNeeded(request, manifest);
+
+    const uid = auth.uid;
+    const deleteSummary = await deletePlayerAccountData(uid);
+    try {
+      await getAuth().deleteUser(uid);
+    } catch (error) {
+      if (error?.code !== "auth/user-not-found") {
+        throw error;
+      }
+    }
+
+    logger.info("Deleted player account for Google relink", {
+      uid,
+      deleteSummary,
+    });
+    return { deleted: true, deleteSummary };
+  },
+);
+
 exports.getTournamentOverview = onCall(
   { enforceAppCheck: false },
   async (request) => {
@@ -1849,6 +1875,88 @@ async function loadFriendUids(uid) {
         .filter((friendUid) => friendUid && friendUid !== uid),
     ),
   ).slice(0, SOCIAL_LIMITS.maxFriends);
+}
+
+async function deletePlayerAccountData(uid) {
+  const summary = {};
+  const profileRef = db.collection(PROFILE_COLLECTION).doc(uid);
+  await db.recursiveDelete(profileRef);
+  summary.playerProfileTrees = 1;
+
+  await db.collection(PUBLIC_PROFILE_COLLECTION).doc(uid).delete();
+  summary.publicProfiles = 1;
+
+  summary.screenNameClaims = await deleteQueryDocuments(
+    db.collection(SCREEN_NAME_CLAIM_COLLECTION).where("uid", "==", uid),
+  );
+  summary.mentorLinks = await deleteDocumentsAndQueries([
+    db.collection(MENTOR_LINK_COLLECTION).doc(uid),
+    db.collection(MENTOR_LINK_COLLECTION).where("mentorUid", "==", uid),
+    db.collection(MENTOR_LINK_COLLECTION).where("menteeUid", "==", uid),
+  ]);
+  summary.mentorInvites = await deleteDocumentsAndQueries([
+    db.collection(MENTOR_INVITE_COLLECTION).where("mentorUid", "==", uid),
+    db.collection(MENTOR_INVITE_COLLECTION).where("menteeUid", "==", uid),
+  ]);
+  summary.friendRequests = await deleteDocumentsAndQueries([
+    db.collection(FRIEND_REQUEST_COLLECTION).where("fromUid", "==", uid),
+    db.collection(FRIEND_REQUEST_COLLECTION).where("targetUid", "==", uid),
+  ]);
+  summary.friendLinks = await deleteQueryDocuments(
+    db.collection(FRIEND_LINK_COLLECTION).where("uids", "array-contains", uid),
+  );
+  summary.dailyBossGifts = await deleteDocumentsAndQueries([
+    db.collection(DAILY_BOSS_GIFT_COLLECTION).where("fromUid", "==", uid),
+    db.collection(DAILY_BOSS_GIFT_COLLECTION).where("toUid", "==", uid),
+  ]);
+  summary.tournamentEntries = await deleteQueryDocuments(
+    db.collectionGroup("entries").where(FieldPath.documentId(), "==", uid),
+  );
+  return summary;
+}
+
+async function deleteDocumentsAndQueries(targets) {
+  const deletedRefs = new Set();
+  let deletedCount = 0;
+  for (const target of targets) {
+    if (typeof target.get === "function" && target.path) {
+      if (!deletedRefs.has(target.path)) {
+        await target.delete();
+        deletedRefs.add(target.path);
+        deletedCount += 1;
+      }
+      continue;
+    }
+    deletedCount += await deleteQueryDocuments(target, deletedRefs);
+  }
+  return deletedCount;
+}
+
+async function deleteQueryDocuments(query, deletedRefs = new Set()) {
+  let deletedCount = 0;
+  for (;;) {
+    const snap = await query.limit(450).get();
+    if (snap.empty) {
+      return deletedCount;
+    }
+    const batch = db.batch();
+    let batchCount = 0;
+    snap.docs.forEach((doc) => {
+      if (deletedRefs.has(doc.ref.path)) {
+        return;
+      }
+      batch.delete(doc.ref);
+      deletedRefs.add(doc.ref.path);
+      batchCount += 1;
+    });
+    if (batchCount > 0) {
+      await batch.commit();
+      deletedCount += batchCount;
+    }
+    if (snap.size < 450) {
+      return deletedCount;
+    }
+  }
 }
 
 async function buildSocialOverview(context) {

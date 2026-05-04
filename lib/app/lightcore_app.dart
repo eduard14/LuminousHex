@@ -22,6 +22,12 @@ import 'lightcore_build_info.dart';
 import 'lightcore_bootstrap.dart';
 import 'lightcore_dev_flags.dart';
 
+enum _GoogleCollisionAction {
+  switchToExistingSave,
+  replaceExistingSave,
+  cancel,
+}
+
 class LightcoreApp extends StatefulWidget {
   const LightcoreApp({super.key, this.backend});
 
@@ -42,6 +48,7 @@ class _LightcoreAppState extends State<LightcoreApp>
   late final LightcoreSessionStore _sessionStore;
   late final FirebaseLightcoreBackend _backend;
   late final LightcoreSocialInviteLink? _startupSocialInvite;
+  final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
   final GlobalKey<ScaffoldMessengerState> _scaffoldMessengerKey =
       GlobalKey<ScaffoldMessengerState>();
   late LightcoreGuestSession _guestSession;
@@ -915,6 +922,7 @@ class _LightcoreAppState extends State<LightcoreApp>
     }
     final controller = _controller;
     final linkCurrentGame = _enteredGame && controller != null;
+    final replacementPayload = _googleReplacementPayload(controller);
     _logSession('google-sign-in-start', <String, Object?>{
       'linkCurrentGame': linkCurrentGame,
     });
@@ -954,6 +962,20 @@ class _LightcoreAppState extends State<LightcoreApp>
         'linkCurrentGame': linkCurrentGame,
       });
       return true;
+    } on LightcoreGoogleAccountCollisionException catch (collision) {
+      _logSession('google-sign-in-collision', <String, Object?>{
+        'email': collision.email == null ? null : _redact(collision.email),
+        'linkCurrentGame': linkCurrentGame,
+      });
+      if (!mounted) {
+        return false;
+      }
+      return await _resolveGoogleAccountCollision(
+        collision: collision,
+        replacementPayload: replacementPayload,
+        activeController: controller,
+        linkCurrentGame: linkCurrentGame,
+      );
     } catch (error) {
       _logSession('google-sign-in-error', <String, Object?>{'error': error});
       if (!mounted) {
@@ -973,6 +995,281 @@ class _LightcoreAppState extends State<LightcoreApp>
       if (mounted) {
         setState(() => _authBusy = false);
       }
+    }
+  }
+
+  Map<String, dynamic>? _googleReplacementPayload(
+    LightcoreController? controller,
+  ) {
+    if (_enteredGame && controller != null) {
+      return controller.buildCloudSavePayload();
+    }
+    final payload = _bootstrapReport?.cloudSave?.payload;
+    if (payload == null || payload.isEmpty) {
+      return null;
+    }
+    return Map<String, dynamic>.from(payload);
+  }
+
+  Future<bool> _resolveGoogleAccountCollision({
+    required LightcoreGoogleAccountCollisionException collision,
+    required Map<String, dynamic>? replacementPayload,
+    required LightcoreController? activeController,
+    required bool linkCurrentGame,
+  }) async {
+    final action = await _showGoogleAccountCollisionDialog(collision);
+    if (!mounted || action == null || action == _GoogleCollisionAction.cancel) {
+      _backend.cancelPendingGoogleAccountCollision();
+      return false;
+    }
+
+    if (action == _GoogleCollisionAction.replaceExistingSave) {
+      final confirmed = await _confirmReplaceGoogleAccount(collision);
+      if (!mounted || !confirmed) {
+        _backend.cancelPendingGoogleAccountCollision();
+        return false;
+      }
+    }
+
+    try {
+      switch (action) {
+        case _GoogleCollisionAction.switchToExistingSave:
+          await _backend.resolvePendingGoogleAccountCollision(
+            LightcoreGoogleAccountCollisionResolution.switchToExistingSave,
+          );
+          await _bootstrapMainMenu(reason: 'after-google-account-switch');
+          if (linkCurrentGame) {
+            await _replaceActiveGameFromCurrentBootstrapReport(
+              reason: 'after-google-account-switch',
+            );
+          }
+          _notifyGoogleCollisionResolved(
+            'Switched to the Google-linked LumiHex save.',
+          );
+          break;
+        case _GoogleCollisionAction.replaceExistingSave:
+          await _backend.resolvePendingGoogleAccountCollision(
+            LightcoreGoogleAccountCollisionResolution.replaceExistingSave,
+          );
+          await _bootstrapMainMenu(reason: 'after-google-account-replace');
+          if (replacementPayload != null) {
+            await _backend.savePlayerSave(
+              replacementPayload,
+              clientVersion: _clientVersion.versionName,
+              clientBuildNumber: _clientVersion.buildNumber,
+            );
+            if (!linkCurrentGame) {
+              await _bootstrapMainMenu(
+                reason: 'after-google-account-replace-save',
+              );
+            }
+          }
+          if (linkCurrentGame && activeController != null) {
+            final profile = _bootstrapReport?.profile;
+            if (profile != null) {
+              activeController.syncPlayerProfile(profile, showBanner: false);
+            }
+            unawaited(_syncSocialOverview(activeController));
+          }
+          _notifyGoogleCollisionResolved(
+            'Old Google-linked LumiHex save deleted. This save is now linked to Google.',
+          );
+          break;
+        case _GoogleCollisionAction.cancel:
+          return false;
+      }
+      _logSession('google-sign-in-collision-resolved', <String, Object?>{
+        'action': action.name,
+        'linkCurrentGame': linkCurrentGame,
+      });
+      return true;
+    } catch (error) {
+      _logSession('google-sign-in-collision-error', <String, Object?>{
+        'action': action.name,
+        'error': error,
+      });
+      if (!mounted) {
+        return false;
+      }
+      final controller = _controller;
+      if (_enteredGame && controller != null) {
+        controller.pushNotification(
+          'Google account update failed: $error',
+          duration: 4.8,
+        );
+      } else {
+        _showSnackBar('Google account update failed: $error');
+      }
+      return false;
+    }
+  }
+
+  Future<_GoogleCollisionAction?> _showGoogleAccountCollisionDialog(
+    LightcoreGoogleAccountCollisionException collision,
+  ) {
+    final email = collision.email;
+    return showDialog<_GoogleCollisionAction>(
+      context: _navigatorKey.currentContext ?? context,
+      barrierDismissible: true,
+      builder: (context) {
+        return AlertDialog(
+          key: const ValueKey<String>('google-account-collision-dialog'),
+          backgroundColor: LightcorePalette.panel,
+          surfaceTintColor: Colors.transparent,
+          title: const Text('Google Account Already Linked'),
+          content: Text(
+            email == null
+                ? 'That Google account is already linked to another LumiHex save. Switch to that save, delete it and link this save, or cancel.'
+                : 'The Google account $email is already linked to another LumiHex save. Switch to that save, delete it and link this save, or cancel.',
+          ),
+          actions: [
+            TextButton(
+              key: const ValueKey<String>('google-collision-cancel-button'),
+              onPressed: () {
+                Navigator.of(context).pop(_GoogleCollisionAction.cancel);
+              },
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              key: const ValueKey<String>('google-collision-switch-button'),
+              onPressed: () {
+                Navigator.of(
+                  context,
+                ).pop(_GoogleCollisionAction.switchToExistingSave);
+              },
+              child: const Text('Switch to Google Save'),
+            ),
+            FilledButton(
+              key: const ValueKey<String>('google-collision-replace-button'),
+              onPressed: () {
+                Navigator.of(
+                  context,
+                ).pop(_GoogleCollisionAction.replaceExistingSave);
+              },
+              child: const Text('Delete Old Save & Link This Save'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<bool> _confirmReplaceGoogleAccount(
+    LightcoreGoogleAccountCollisionException collision,
+  ) async {
+    final email = collision.email;
+    final confirmed = await showDialog<bool>(
+      context: _navigatorKey.currentContext ?? context,
+      barrierDismissible: true,
+      builder: (context) {
+        return AlertDialog(
+          key: const ValueKey<String>('google-replace-confirm-dialog'),
+          backgroundColor: LightcorePalette.panel,
+          surfaceTintColor: Colors.transparent,
+          title: const Text('Delete Old Google Save?'),
+          content: Text(
+            email == null
+                ? 'This permanently deletes the old LumiHex account and cloud save linked to that Google account. Your Google account itself will not be deleted.'
+                : 'This permanently deletes the old LumiHex account and cloud save linked to $email. Your Google account itself will not be deleted.',
+          ),
+          actions: [
+            TextButton(
+              key: const ValueKey<String>('google-replace-cancel-button'),
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              key: const ValueKey<String>('google-replace-confirm-button'),
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Delete and Link'),
+            ),
+          ],
+        );
+      },
+    );
+    return confirmed == true;
+  }
+
+  Future<void> _replaceActiveGameFromCurrentBootstrapReport({
+    required String reason,
+  }) async {
+    final report = _bootstrapReport;
+    if (report == null || !report.canEnterGame) {
+      _expireActiveSession('Google account switched. Reconnect to load it.');
+      return;
+    }
+    if (_serverRestoreIncomplete(report)) {
+      _expireActiveSession(
+        'Google account switched, but cloud restore did not finish. Reconnect and retry.',
+      );
+      return;
+    }
+
+    _logBootstrapReport('active-game-reload-start', report, reason: reason);
+    _stopServerSyncTimer();
+    _cloudSaveTimer?.cancel();
+    _cloudSaveTimer = null;
+    _cloudSavePending = false;
+    _serverSyncPending = false;
+    _serverSyncPendingForceSave = false;
+    _socialOverviewTimer?.cancel();
+    _socialOverviewTimer = null;
+    _lastSocialOverviewSyncAt = null;
+
+    final previousController = _controller;
+    final controller = _createControllerFromReport(report);
+    controller.syncServerDateKeys(
+      dayKey: report.serverDayKey,
+      weekKey: report.serverWeekKey,
+    );
+    controller.syncBalanceTuning(report.manifest.balanceTuning);
+    controller.setGraphicsQuality(_graphicsQuality);
+    controller.setLocalhostAutoTapperEnabled(_localhostAutoTapperEnabled);
+    final startupOfflineClaim = report.offlineClaim.hasProgress
+        ? report.offlineClaim
+        : null;
+    if (startupOfflineClaim != null) {
+      controller.applyOfflineClaim(startupOfflineClaim, showBanner: false);
+    }
+    controller.syncPlayerProfile(report.profile, showBanner: false);
+    _observeController(controller);
+    _missedServerSyncs = 0;
+
+    if (!mounted) {
+      _controller = controller;
+      _startupOfflineClaim = startupOfflineClaim;
+      _enteredGame = true;
+      _isLinkingScreen = false;
+      previousController?.dispose();
+      return;
+    }
+
+    setState(() {
+      _controller = controller;
+      _startupOfflineClaim = startupOfflineClaim;
+      _enteredGame = true;
+      _isLinkingScreen = false;
+      _sessionNotice = null;
+    });
+    _refreshBattleSurface();
+    if (previousController != null &&
+        !identical(previousController, controller)) {
+      previousController.dispose();
+    }
+    unawaited(_syncSocialOverview(controller));
+    _startServerSyncTimer();
+    _syncMusicForCurrentScreen();
+  }
+
+  void _notifyGoogleCollisionResolved(String message) {
+    if (!mounted) {
+      return;
+    }
+    final controller = _controller;
+    if (_enteredGame && controller != null) {
+      controller.pushNotification(message, duration: 4.2);
+    } else {
+      _showSnackBar(message);
     }
   }
 
@@ -1270,6 +1567,7 @@ class _LightcoreAppState extends State<LightcoreApp>
 
     return MaterialApp(
       debugShowCheckedModeBanner: false,
+      navigatorKey: _navigatorKey,
       title: 'Lightcore',
       theme: buildLightcoreTheme(),
       scaffoldMessengerKey: _scaffoldMessengerKey,
