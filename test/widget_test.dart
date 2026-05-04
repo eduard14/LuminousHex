@@ -1103,6 +1103,11 @@ void main() {
       findsOneWidget,
     );
     expect(find.byTooltip('Back to dungeons'), findsOneWidget);
+    final battleScreen = tester.widget<BattleScreen>(find.byType(BattleScreen));
+    expect(battleScreen.controller.outerRingRevealed, isFalse);
+    expect(battleScreen.showBattleGuides, isFalse);
+    expect(battleScreen.showArenaSlots, isFalse);
+    expect(battleScreen.showFoldedShellSlots, isFalse);
     expect(find.text('WHT'), findsWidgets);
     expect(find.text('RED'), findsWidgets);
     expect(find.text('Ready'), findsWidgets);

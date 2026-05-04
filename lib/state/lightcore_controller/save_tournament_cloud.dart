@@ -24,6 +24,7 @@ class _EventBattleConfig {
     this.enemyMovementSpeedMultiplier = 1.0,
     this.killRewardsEnabled = true,
     this.seedUnlockExperience = true,
+    this.outerRingRevealed = true,
   });
 
   final String eventLabel;
@@ -48,6 +49,7 @@ class _EventBattleConfig {
   final double enemyMovementSpeedMultiplier;
   final bool killRewardsEnabled;
   final bool seedUnlockExperience;
+  final bool outerRingRevealed;
 }
 
 extension LightcoreControllerSaveTournamentCloud on LightcoreController {
@@ -339,6 +341,7 @@ extension LightcoreControllerSaveTournamentCloud on LightcoreController {
       enemyMovementSpeedMultiplier: 5.0,
       killRewardsEnabled: false,
       seedUnlockExperience: false,
+      outerRingRevealed: false,
     );
   }
 
@@ -458,7 +461,7 @@ extension LightcoreControllerSaveTournamentCloud on LightcoreController {
         : unlockExperienceForOuterSlot(normalizedBuiltSlots - 1);
     kills = unlockExperience;
     experience = unlockExperience;
-    _outerRingRevealed = true;
+    _outerRingRevealed = config.outerRingRevealed;
     _swarmActivated = true;
     _battleSpawnPolicy = config.spawnPolicy;
     _enemySpiralMovementEnabled = config.enemySpiralMovementEnabled;

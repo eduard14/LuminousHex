@@ -34,6 +34,7 @@ class BattleScreen extends StatefulWidget {
     this.enableBattlefieldTaps = true,
     this.showBattleGuides = true,
     this.showArenaSlots = true,
+    this.showFoldedShellSlots = true,
     this.promotionPresentation,
     this.onPromotionPresentationComplete,
   });
@@ -47,6 +48,7 @@ class BattleScreen extends StatefulWidget {
   final bool enableBattlefieldTaps;
   final bool showBattleGuides;
   final bool showArenaSlots;
+  final bool showFoldedShellSlots;
   final ShellPromotionPresentation? promotionPresentation;
   final VoidCallback? onPromotionPresentationComplete;
 
@@ -187,7 +189,8 @@ class _BattleScreenState extends State<BattleScreen> {
     if (identical(oldWidget.controller, widget.controller) &&
         (oldWidget.enableBattlefieldTaps != widget.enableBattlefieldTaps ||
             oldWidget.showBattleGuides != widget.showBattleGuides ||
-            oldWidget.showArenaSlots != widget.showArenaSlots)) {
+            oldWidget.showArenaSlots != widget.showArenaSlots ||
+            oldWidget.showFoldedShellSlots != widget.showFoldedShellSlots)) {
       _resetCanvasTap();
       _game.pauseEngine();
       _game = _createGame();
@@ -229,6 +232,7 @@ class _BattleScreenState extends State<BattleScreen> {
       enableBattlefieldTaps: widget.enableBattlefieldTaps,
       showTutorialGuides: widget.showBattleGuides,
       showArenaSlots: widget.showArenaSlots,
+      showFoldedShellSlots: widget.showFoldedShellSlots,
     );
   }
 

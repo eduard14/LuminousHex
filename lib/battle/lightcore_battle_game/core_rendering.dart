@@ -377,7 +377,11 @@ extension LightcoreBattleGameCoreRendering on LightcoreBattleGame {
     };
   }
 
-  void _renderFoldedShell(Canvas canvas, Offset center) {
+  void _renderFoldedShell(
+    Canvas canvas,
+    Offset center, {
+    required bool showSlots,
+  }) {
     final shellHex = _hexPath(center, _coreRadius);
     // A face-sharing honeycomb fills the folded shell better than a loose orbit.
     final centerHexRadius = _coreRadius / 3;
@@ -416,84 +420,88 @@ extension LightcoreBattleGameCoreRendering on LightcoreBattleGame {
         ..color = shellGlowColor.withValues(alpha: 0.08),
     );
 
-    for (var index = 0; index < controller.slots.length; index++) {
-      final slot = controller.slots[index];
-      final coord = foldedCoords[index % foldedCoords.length];
-      final childCenter = _axialToOffset(
-        center,
-        coord.$1,
-        coord.$2,
-        foldedGridRadius,
-      );
-      final activeTower = controller.isSlotActiveTower(slot);
-      final projectShell = controller.isSlotLayerProject(slot);
-      final unlocked = controller.isOuterSlotUnlocked(index);
-      final childColor = activeTower
-          ? slot.config != null
-                ? slot.config!.affinity.color
-                : slot.childAffinity != null
-                ? _signatureColor(
-                    slot.childAffinity!,
-                    slot.childSecondaryAffinity,
-                  )
-                : LightcorePalette.layer2
-          : projectShell
-          ? _signatureColor(
-              slot.childAffinity ?? PrototypeAffinity.solar,
-              slot.childSecondaryAffinity,
-            )
-          : LightcorePalette.stroke.withValues(alpha: unlocked ? 0.62 : 0.32);
+    if (showSlots) {
+      for (var index = 0; index < controller.slots.length; index++) {
+        final slot = controller.slots[index];
+        final coord = foldedCoords[index % foldedCoords.length];
+        final childCenter = _axialToOffset(
+          center,
+          coord.$1,
+          coord.$2,
+          foldedGridRadius,
+        );
+        final activeTower = controller.isSlotActiveTower(slot);
+        final projectShell = controller.isSlotLayerProject(slot);
+        final unlocked = controller.isOuterSlotUnlocked(index);
+        final childColor = activeTower
+            ? slot.config != null
+                  ? slot.config!.affinity.color
+                  : slot.childAffinity != null
+                  ? _signatureColor(
+                      slot.childAffinity!,
+                      slot.childSecondaryAffinity,
+                    )
+                  : LightcorePalette.layer2
+            : projectShell
+            ? _signatureColor(
+                slot.childAffinity ?? PrototypeAffinity.solar,
+                slot.childSecondaryAffinity,
+              )
+            : LightcorePalette.stroke.withValues(alpha: unlocked ? 0.62 : 0.32);
 
-      canvas.drawPath(
-        _hexPath(childCenter, childHexRadius),
-        Paint()
-          ..style = PaintingStyle.fill
-          ..color = slot.isBuilt
-              ? childColor.withValues(alpha: 0.22)
-              : LightcorePalette.panel.withValues(alpha: unlocked ? 0.9 : 0.44),
-      );
-      canvas.drawPath(
-        _hexPath(childCenter, childHexRadius),
-        Paint()
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 2.2
-          ..color = childColor.withValues(alpha: unlocked ? 1 : 0.58),
-      );
+        canvas.drawPath(
+          _hexPath(childCenter, childHexRadius),
+          Paint()
+            ..style = PaintingStyle.fill
+            ..color = slot.isBuilt
+                ? childColor.withValues(alpha: 0.22)
+                : LightcorePalette.panel.withValues(
+                    alpha: unlocked ? 0.9 : 0.44,
+                  ),
+        );
+        canvas.drawPath(
+          _hexPath(childCenter, childHexRadius),
+          Paint()
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 2.2
+            ..color = childColor.withValues(alpha: unlocked ? 1 : 0.58),
+        );
 
-      if (slot.isBuilt) {
-        if (activeTower) {
-          _renderHexChargeIndicator(
-            canvas,
-            childCenter,
-            color: childColor,
-            radius: childHexRadius,
-            chargeProgress: slot.charge.clamp(0, 1).toDouble(),
-            popProgress:
-                _slotHexChargePopRemaining[index] /
-                LightcoreBattleGame._hexChargePopDuration,
-          );
-        }
-        if (!projectShell) {
-          _paintTowerTraitBadge(
-            canvas,
-            childCenter,
-            slot,
-            tint: childColor,
-            size: childHexRadius * 1.32,
-            showLevelEdges: false,
-            coreFacingAngle: math.atan2(
-              center.dy - childCenter.dy,
-              center.dx - childCenter.dx,
-            ),
-          );
-        } else {
-          _paintBadge(
-            canvas,
-            childCenter,
-            '${slot.childBuiltCount}',
-            color: LightcorePalette.mist,
-            size: childHexRadius * 0.7,
-          );
+        if (slot.isBuilt) {
+          if (activeTower) {
+            _renderHexChargeIndicator(
+              canvas,
+              childCenter,
+              color: childColor,
+              radius: childHexRadius,
+              chargeProgress: slot.charge.clamp(0, 1).toDouble(),
+              popProgress:
+                  _slotHexChargePopRemaining[index] /
+                  LightcoreBattleGame._hexChargePopDuration,
+            );
+          }
+          if (!projectShell) {
+            _paintTowerTraitBadge(
+              canvas,
+              childCenter,
+              slot,
+              tint: childColor,
+              size: childHexRadius * 1.32,
+              showLevelEdges: false,
+              coreFacingAngle: math.atan2(
+                center.dy - childCenter.dy,
+                center.dx - childCenter.dx,
+              ),
+            );
+          } else {
+            _paintBadge(
+              canvas,
+              childCenter,
+              '${slot.childBuiltCount}',
+              color: LightcorePalette.mist,
+              size: childHexRadius * 0.7,
+            );
+          }
         }
       }
     }
@@ -525,7 +533,7 @@ extension LightcoreBattleGameCoreRendering on LightcoreBattleGame {
   void _renderCore(Canvas canvas) {
     final center = Offset(_center.x, _center.y);
     if (!controller.outerRingRevealed || !showArenaSlots) {
-      _renderFoldedShell(canvas, center);
+      _renderFoldedShell(canvas, center, showSlots: showFoldedShellSlots);
       if (showTutorialGuides && controller.tutorialHighlightsBattleCore) {
         _renderGuidePulse(
           canvas,

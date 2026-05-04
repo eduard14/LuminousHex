@@ -32,6 +32,7 @@ class LightcoreBattleGame extends FlameGame with ScaleDetector {
     this.enableBattlefieldTaps = true,
     this.showTutorialGuides = true,
     this.showArenaSlots = true,
+    this.showFoldedShellSlots = true,
   });
 
   final LightcoreController controller;
@@ -41,6 +42,7 @@ class LightcoreBattleGame extends FlameGame with ScaleDetector {
   final bool enableBattlefieldTaps;
   final bool showTutorialGuides;
   final bool showArenaSlots;
+  final bool showFoldedShellSlots;
 
   static const double _fixedStep = 1 / 60;
   static const double _hexChargePopDuration = 0.26;

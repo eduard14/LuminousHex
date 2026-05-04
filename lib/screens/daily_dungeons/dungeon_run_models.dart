@@ -929,6 +929,7 @@ class _DailyDungeonBattleRunScreenState
                       enableBattlefieldTaps: !_isThreatDirector,
                       showBattleGuides: !_isThreatDirector,
                       showArenaSlots: !_isThreatDirector,
+                      showFoldedShellSlots: !_isThreatDirector,
                     ),
                   ),
                   if (_isPrismRift)
