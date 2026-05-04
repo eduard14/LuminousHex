@@ -196,7 +196,7 @@ void main() {
       final bundle = controller.activeThreatScanBundle;
 
       expect(bundle.primaryAffinity, PrototypeAffinity.ember);
-      expect(bundle.name, 'Red Threat Scan Bundle');
+      expect(bundle.name, 'Red Active Threat Bundle');
       expect(bundle.cardNames, contains(EnemyLibrary.basicRed.name));
       expect(
         bundle.threatRewardMultiplier,

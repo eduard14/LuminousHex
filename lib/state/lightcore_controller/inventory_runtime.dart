@@ -431,29 +431,30 @@ extension LightcoreControllerInventoryRuntime on LightcoreController {
     PrototypeAffinity? primaryAffinity,
   ) {
     if (deck.isEmpty || primaryAffinity == null) {
-      return 'Dormant Threat Scan Bundle';
+      return 'Dormant Active Threat Bundle';
     }
     final primaryAffinities = deck.map((card) => card.config.affinity).toSet();
     if (primaryAffinities.length == 1) {
-      return '${primaryAffinity.label} Threat Scan Bundle';
+      return '${primaryAffinity.label} Active Threat Bundle';
     }
-    return '${primaryAffinity.label}-Led Threat Scan Bundle';
+    return '${primaryAffinity.label}-Led Active Threat Bundle';
   }
 
   String _threatScanBundleSummary(
     List<EnemyCardState> deck, {
     required PrototypeAffinity? primaryAffinity,
     required List<String> directorNames,
+    required int targetCount,
   }) {
     if (deck.isEmpty) {
-      return 'No anomaly cards are armed, so this core is running baseline scan pressure.';
+      return 'No anomaly cards are armed, so this core is running baseline scan pressure at $targetCount swarm target${targetCount == 1 ? '' : 's'}.';
     }
     final affinityLabel = primaryAffinity?.label ?? 'Mixed';
     final directorLabel = directorNames.isEmpty
         ? 'no Threat Directors'
         : '${directorNames.length} Threat Director${directorNames.length == 1 ? '' : 's'}';
     final cardLabel = deck.map((card) => card.config.name).join(', ');
-    return '$affinityLabel pressure from $cardLabel with $directorLabel.';
+    return 'Active anomaly deck: $affinityLabel pressure from $cardLabel with $directorLabel at $targetCount swarm target${targetCount == 1 ? '' : 's'}.';
   }
 
   PrototypeAffinity? _dominantThreatAffinity(List<EnemyCardState> deck) {

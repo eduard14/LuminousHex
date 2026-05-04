@@ -72,12 +72,6 @@ void main() {
       findsNothing,
     );
     expect(
-      find.text(
-        'Hold Overdrive until the battle speeds up. Use it when you are actively pushing lanes.',
-      ),
-      findsOneWidget,
-    );
-    expect(
       find.byKey(const ValueKey<String>('battle-overdrive-frame')),
       findsOneWidget,
     );

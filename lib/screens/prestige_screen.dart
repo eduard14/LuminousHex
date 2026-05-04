@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import '../models/lightcore_state.dart';
 import '../models/lightcore_types.dart';
 import '../state/lightcore_controller.dart';
 import '../theme/lightcore_palette.dart';
@@ -127,7 +128,11 @@ class PrestigeScreen extends StatelessWidget {
                     runSpacing: 10,
                     children: [
                       const _BenefitChip(label: 'Seven-shell clusters'),
-                      const _BenefitChip(label: 'Viewed shell runs live'),
+                      _BenefitChip(
+                        label: controller.activeLayerPassiveOnly
+                            ? 'Viewed shell is passive'
+                            : 'Viewed shell runs live',
+                      ),
                       _BenefitChip(
                         label: controller.activeLayerHasParentSlot
                             ? 'Target output: ${controller.activeLayerTargetShellLabel}'
@@ -151,6 +156,8 @@ class PrestigeScreen extends StatelessWidget {
                       ),
                     ],
                   ),
+                  const SizedBox(height: 14),
+                  _PromotionPreviewPanel(preview: controller.promotionPreview),
                   const SizedBox(height: 18),
                   if (canUnlock)
                     _PromotionActionButton(
@@ -212,6 +219,73 @@ const String _advancementPathHelp =
 
 const String _promotionRulesHelp =
     'Promotion requires all six edge towers at max level. If this shell is targeting a parent slot, promotion forges one adjacent tower in the parent shell. Projectile and payload traits roll independently from this shell. Promoted lower shells remain visible as passive support and keep their assigned anomaly decks.';
+
+class _PromotionPreviewPanel extends StatelessWidget {
+  const _PromotionPreviewPanel({required this.preview});
+
+  final PromotionPreviewSnapshot preview;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    final tint = preview.canPromote
+        ? LightcorePalette.solar
+        : LightcorePalette.layer2;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: tint.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: tint.withValues(alpha: 0.24)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.manage_search_rounded, color: tint, size: 18),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Promotion Preview',
+                  style: textTheme.titleMedium?.copyWith(
+                    color: LightcorePalette.mist,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Read-only snapshot before you spend the full ring.',
+            style: textTheme.bodySmall?.copyWith(
+              color: LightcorePalette.mist.withValues(alpha: 0.74),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 10,
+            runSpacing: 10,
+            children: [
+              _BenefitChip(label: 'Action: ${preview.actionLabel}'),
+              _BenefitChip(label: 'Result: ${preview.resultLabel}'),
+              _BenefitChip(label: 'Current core: ${preview.currentCoreLabel}'),
+              _BenefitChip(
+                label: 'Projectile mix: ${preview.projectileMixLabel}',
+              ),
+              _BenefitChip(label: 'Payload mix: ${preview.payloadMixLabel}'),
+              _BenefitChip(label: 'Anomalies: ${preview.anomalyBehaviorLabel}'),
+              _BenefitChip(label: 'Managers: ${preview.managerBehaviorLabel}'),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
 
 class _PromotionActionButton extends StatefulWidget {
   const _PromotionActionButton({
@@ -578,13 +652,20 @@ class _BenefitChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final maxWidth = math.max(
+      180.0,
+      math.min(MediaQuery.sizeOf(context).width - 72, 520.0),
+    );
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
         color: LightcorePalette.panelRaised.withValues(alpha: 0.78),
       ),
-      child: Text(label),
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxWidth: maxWidth),
+        child: Text(label),
+      ),
     );
   }
 }

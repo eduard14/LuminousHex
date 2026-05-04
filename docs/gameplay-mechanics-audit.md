@@ -28,8 +28,8 @@ charge, package shot data, and feed ammo packets into the core queue.
 The player builds a six-slot shell, upgrades each outer tower to level 5, then
 promotes the shell into a higher layer. Root-shell promotion creates a new
 higher-tier shell. Child-shell promotion forges one tower into a parent slot.
-Lower shells stay around and can be re-entered, but only the shell currently
-being viewed runs the real-time battle.
+Promoted lower shells stay inspectable as passive archives; the shell map marks
+whether the viewed shell is the live battle focus or a passive support archive.
 
 Anomaly pulls are also non-standard: you summon anomaly cards to define the
 anomalies you fight, not the units you own. Cards create the active anomaly
@@ -45,7 +45,8 @@ deck for a layer, and Threat Directors tune those anomaly cards further.
 5. Tune the encounter by changing the active anomaly deck and target count.
 6. Promote the finished shell.
 7. Re-enter child shells and repeat until higher-tier parent slots are forged.
-8. Spend Flux on managers once Overall Lv 10 unlocks the foundry.
+8. Spend Flux on managers once Core Lv 3 or Account Radiance Lv 10 unlocks the
+   foundry.
 
 ## Rules That Matter
 
@@ -89,7 +90,8 @@ deck for a layer, and Threat Directors tune those anomaly cards further.
 - Payloads unlock after the first promotion.
 - Prism Shell is where blended color signatures first appear on promoted towers
   and cores.
-- Core Managers unlock at Overall Lv 10.
+- Core Managers and Threat Directors unlock at Core Lv 3 or Account Radiance
+  Lv 10.
 - Towers hold charge until manually tapped or manager-automated. Tapping a built
   tower fires its current generated packet instead of opening stats.
 - Higher shell classes inherit projectile and payload arsenals from the child shells
@@ -219,14 +221,15 @@ exposes these inherited values before promotion.
 
 ## Mechanics That Need Improvement
 
-### 1. The `Layer2TowerState` system is exposed but effectively inert
+### 1. The `Layer2TowerState` system is legacy internals
 
 Why it does not make sense:
 
 - The controller contains a full second-weapon system:
   `_fireLayer2IfPossible`, layer2 cooldown, layer2 range checks, and flow
   relief.
-- The prestige UI used to display a separate second-weapon counter.
+- The prestige UI used to display a separate second-weapon counter, but current
+  UI treats promotion as shell creation/forging instead.
 - Promotion uses `unlockLayer2Tower()` as the main entry point.
 - But no gameplay path appears to set `layer2.unlocked = true`, raise its
   `count`, or configure its traits.
@@ -239,8 +242,8 @@ Why this matters:
 
 Recommended direction:
 
-- Either wire this system into promotion for real, or remove it from the UI and
-  rename the code path so the mental model matches the actual game.
+- Keep it out of player-facing copy unless a future design deliberately revives
+  it as a separate weapon.
 
 ### 2. Apex Scans need clearer framing
 
@@ -260,25 +263,28 @@ Recommended direction:
 
 - Keep the scan naming consistent anywhere Apex Scan pulls are surfaced.
 
-### 3. Only the viewed shell matters for most progression systems
+### 3. Live and passive shell state must be explicit
 
 Why it does not make sense:
 
-- The shell-class fantasy implies many active shells.
-- In practice, non-viewed shells only add passive Lumens through managed towers.
-- Anomaly decks, Threat Directors, Apex progress, target count, and combat state on
-  non-viewed shells do nothing while you are away from them.
+- The shell-class fantasy can imply many equal battlefronts.
+- Current play is easier to understand as one live battle focus plus passive
+  archives after promotion.
+- A passive archive can still be opened for inspection, which makes any generic
+  "viewed shell runs live" copy misleading.
 
 Why this matters:
 
-- It makes deep layer management feel more cosmetic than strategic.
-- It weakens the payoff of building anomaly decks and Threat Directors per layer.
+- Players need to know when they are looking at an archive versus the live
+  runtime shell.
+- Promotion should feel like archiving a completed shell into support, not
+  spawning a hidden second battlefield.
 
 Recommended direction:
 
-- Either simulate simplified combat for non-viewed shells or explicitly narrow
-  the design so layers are primarily economic branches, not separate battle
-  fronts.
+- Keep persistent LIVE/PASSIVE labels on battle, shell map, and advancement
+  surfaces.
+- Never show "viewed shell runs live" while `activeLayerPassiveOnly` is true.
 
 ### 4. Enemy cards are conceptually backwards for first-time players
 
@@ -323,7 +329,8 @@ Recommended direction:
 Why it does not make sense:
 
 - Flux drops from combat immediately.
-- The actual manager systems that consume Flux are locked until Overall Lv 10.
+- The actual manager systems that consume Flux are locked until Core Lv 3 or
+  Account Radiance Lv 10.
 - Before then, Flux only interacts with mock store conversions.
 
 Why this matters:
@@ -441,10 +448,10 @@ anchors, use `docs/code-design-alignment-map.md`.
 
 ## Recommended Next Steps
 
-1. Decide whether `Layer2TowerState` is a real feature or leftover design.
+1. Keep old `Layer2TowerState` internals out of player-facing copy unless
+   revived by a future weapon design.
 2. Keep Apex Scans framed as the Apex Anomaly pull currency.
-3. Decide whether non-viewed shells should simulate more than managed passive
-   Lumens.
-4. Add a promotion-result preview so parent-slot output is readable.
+3. Keep live/passive archive labels visible anywhere shell state can be changed.
+4. Keep promotion-result previews visible before promotion actions.
 5. Tighten terminology around anomaly cards so the encounter-building fantasy is
    obvious without reading code.

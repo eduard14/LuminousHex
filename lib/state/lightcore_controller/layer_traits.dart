@@ -1261,7 +1261,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
 
   String get managerAssignmentUnlockLabel => managerAssignmentUnlocked
       ? 'Manager assignment online'
-      : 'Manager assignment unlocks at Core Lv $managerCoreLevelRequirement';
+      : 'Manager assignment unlocks at Core Lv $managerCoreLevelRequirement or Account Radiance Lv $managerUnlockLevel';
 
   int promotedChildTowerRerollsUsed(OuterTowerState tower) {
     final childLayerId = tower.childLayerId;
@@ -1552,7 +1552,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         LightcoreTutorialStep.readEffectiveGain =>
           'Output Efficiency turns threat pressure into a visible gain multiplier, so the best scan is the one your core can keep stable.',
         LightcoreTutorialStep.autoQueueCheck =>
-          'Automation proves the manager is helping the core by taking over ready taps while assigned.',
+          'Automation proves the guide-loaned starter manager is helping the core by taking over ready taps before permanent foundry managers unlock.',
         LightcoreTutorialStep.upgradeFirstTowerToLevel4 =>
           'A level 4 anchor keeps the lane efficient before Lumens get split across multiple towers.',
         LightcoreTutorialStep.pullFirstRedEnemy =>
@@ -1631,7 +1631,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
           LightcoreTutorialStep.readEffectiveGain =>
             'The crew pins the real-gain formula beside the output dial before opening harder scans.',
           LightcoreTutorialStep.autoQueueCheck =>
-            'The starter manager takes the relay chair and begins feeding the core without a manual command.',
+            'The guide-loaned starter manager takes the relay chair and begins feeding the core without a manual command.',
           LightcoreTutorialStep.upgradeFirstTowerToLevel4 =>
             'The shell is absorbing denser traffic now, so the first lane needs one more tune pass before expansion.',
           LightcoreTutorialStep.pullFirstRedEnemy =>

@@ -1000,6 +1000,10 @@ class _LightcoreShellState extends State<LightcoreShell> {
                                           LightcoreController.shellBadgeForTier(
                                             controller.activeLayer.tier,
                                           ),
+                                      statusLabel:
+                                          controller.activeLayerPassiveOnly
+                                          ? 'PASSIVE'
+                                          : 'LIVE',
                                       tint: controller
                                           .activeLayer
                                           .core
@@ -1999,12 +2003,16 @@ class _LightcoreShellState extends State<LightcoreShell> {
                           runSpacing: 10,
                           children: [
                             StatusPill(
-                              label: 'Live',
+                              label: controller.activeLayerPassiveOnly
+                                  ? 'Passive'
+                                  : 'Live',
                               value: LightcoreController.shellBadgeForTier(
                                 controller.activeLayer.tier,
                               ),
                               tint: controller.activeLayer.core.affinity.color,
-                              icon: Icons.visibility_rounded,
+                              icon: controller.activeLayerPassiveOnly
+                                  ? Icons.archive_rounded
+                                  : Icons.visibility_rounded,
                             ),
                             StatusPill(
                               label: 'Built',

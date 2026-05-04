@@ -880,7 +880,7 @@ void main() {
       find.text('Tower Archive Locked', skipOffstage: false),
       findsNothing,
     );
-    expect(find.byTooltip('Return to Base Game'), findsNothing);
+    expect(find.byTooltip('Return to Battle'), findsNothing);
 
     _promoteRootShell(controller);
     await tester.pump();
@@ -889,9 +889,9 @@ void main() {
     await _pumpTransition(tester);
 
     expect(find.text('Completed Layer 1 Sets'), findsOneWidget);
-    expect(find.byTooltip('Return to Base Game'), findsOneWidget);
+    expect(find.byTooltip('Return to Battle'), findsOneWidget);
 
-    await tester.tap(find.byTooltip('Return to Base Game'));
+    await tester.tap(find.byTooltip('Return to Battle'));
     await _pumpTransition(tester);
 
     expect(
@@ -920,7 +920,7 @@ void main() {
 
     await _openHeaderMenuDestination(tester, 'Tournaments');
 
-    expect(find.byTooltip('Return to Base Game'), findsOneWidget);
+    expect(find.byTooltip('Return to Battle'), findsOneWidget);
   });
 
   testWidgets('tournament hub opens mode details before run controls', (
@@ -1045,7 +1045,7 @@ void main() {
 
     await _openHeaderMenuDestination(tester, 'Mentorship');
 
-    expect(find.byTooltip('Return to Base Game'), findsOneWidget);
+    expect(find.byTooltip('Return to Battle'), findsOneWidget);
     expect(find.text('Add Mentor Manually'), findsOneWidget);
   });
 
@@ -1179,12 +1179,12 @@ void main() {
 
     await _pumpShell(tester, controller);
 
-    expect(find.byTooltip('Open shells'), findsNothing);
+    expect(find.byTooltip('Open shells - LIVE'), findsNothing);
 
     _promoteRootShell(controller);
     await tester.pump();
 
-    expect(find.byTooltip('Open shells'), findsOneWidget);
+    expect(find.byTooltip('Open shells - LIVE'), findsOneWidget);
 
     await tester.tap(find.byTooltip('Towers').first);
     await _pumpTransition(tester);
@@ -1302,7 +1302,7 @@ void main() {
       expect(
         controller.bannerMessage,
         contains(
-          'Manager assignment unlocks when the active core reaches Lv ${LightcoreController.managerCoreLevelRequirement}',
+          'Manager assignment unlocks at Core Lv ${LightcoreController.managerCoreLevelRequirement}',
         ),
       );
       expect(find.text('Main Manager', skipOffstage: false), findsNothing);
@@ -1311,7 +1311,7 @@ void main() {
 
       expect(find.text('Daily Dungeons'), findsOneWidget);
 
-      await tester.tap(find.byTooltip('Return to Base Game'));
+      await tester.tap(find.byTooltip('Return to Battle'));
       await _pumpTransition(tester);
 
       await tester.tap(find.byTooltip('Advance').first);
@@ -1369,7 +1369,7 @@ void main() {
       await tester.tap(find.text('Friends'));
       await _pumpTransition(tester);
 
-      expect(find.byTooltip('Return to Base Game'), findsOneWidget);
+      expect(find.byTooltip('Return to Battle'), findsOneWidget);
     },
   );
 
@@ -1911,9 +1911,9 @@ void main() {
       find.byKey(const ValueKey<String>('battle-quest-card')),
       findsNothing,
     );
-    expect(find.byTooltip('Return to Base Game'), findsOneWidget);
+    expect(find.byTooltip('Return to Battle'), findsOneWidget);
 
-    await tester.tap(find.byTooltip('Return to Base Game'));
+    await tester.tap(find.byTooltip('Return to Battle'));
     await _pumpTransition(tester);
 
     expect(
@@ -2414,11 +2414,10 @@ void main() {
       await _pumpTransition(tester);
 
       expect(find.text('Threat Library'), findsOneWidget);
-      expect(find.text('Threat Scan Pressure'), findsOneWidget);
-      expect(
-        find.text('Anomaly Assignment', skipOffstage: false),
-        findsOneWidget,
-      );
+      expect(find.text('Anomaly Deck Pressure'), findsOneWidget);
+      await tester.scrollUntilVisible(find.text('Anomaly Assignment'), 320);
+      expect(find.text('Anomaly Assignment'), findsOneWidget);
+      await tester.scrollUntilVisible(find.text('Main Apex'), 320);
       expect(find.text('Main Apex', skipOffstage: false), findsOneWidget);
       expect(find.text('Main Anomaly', skipOffstage: false), findsNothing);
       expect(find.text('Open 1', skipOffstage: false), findsNothing);
@@ -2448,7 +2447,7 @@ void main() {
 
     expect(_scrollOffsetForKey(tester, enemyScrollKey), greaterThan(0));
 
-    await tester.tap(find.byTooltip('Return to Base Game'));
+    await tester.tap(find.byTooltip('Return to Battle'));
     await _pumpTransition(tester);
     await tester.tap(find.byTooltip('Anomalies').first);
     await _pumpTransition(tester);

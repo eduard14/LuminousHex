@@ -196,95 +196,6 @@ class CardManagementScreen extends StatelessWidget {
             ),
             const SizedBox(height: 18),
             _ManagerSectionHeader(
-              title: 'Manager Power',
-              tint: LightcorePalette.aether,
-              subtitle:
-                  'Daily Dungeons now award Manager Shards. Spend them here for a permanent lift to every manager roll.',
-            ),
-            const SizedBox(height: 10),
-            _ManagerPowerPanel(controller: controller),
-            const SizedBox(height: 18),
-            _ManagerSectionHeader(
-              title: 'Tower Upgraders',
-              tint: LightcorePalette.violet,
-              subtitle: !controller.managerAssignmentUnlocked
-                  ? 'Reach Core Lv ${LightcoreController.managerCoreLevelRequirement} or Account Radiance Lv ${LightcoreController.managerUnlockLevel} before Core Managers can be assigned.'
-                  : controller.cards.isEmpty
-                  ? 'No Core Managers in inventory yet. Locked roster tiles preview future foundry rolls.'
-                  : 'Owned rolls appear first. Locked roster tiles preview managers still missing from inventory.',
-            ),
-            const SizedBox(height: 10),
-            if (controller.cards.isEmpty) ...[
-              _InlineSectionNotice(
-                message: controller.managersUnlocked
-                    ? 'Forge a Core Manager when you have enough Flux.'
-                    : 'No Core Managers in inventory. The foundry unlocks at Core Lv ${LightcoreController.managerCoreLevelRequirement} or Account Radiance Lv ${LightcoreController.managerUnlockLevel}.',
-                tint: LightcorePalette.violet,
-              ),
-              const SizedBox(height: 10),
-            ],
-            Wrap(
-              spacing: 10,
-              runSpacing: 10,
-              alignment: WrapAlignment.center,
-              children: [
-                for (final manager in controller.cards)
-                  _TowerManagerGlyphTile(
-                    controller: controller,
-                    manager: manager,
-                    onTap: () =>
-                        _showTowerManagerDetails(context, manager.instanceId),
-                  ),
-                for (final config in lockedTowerManagers)
-                  _LockedTowerManagerGlyphTile(
-                    config: config,
-                    onTap: () =>
-                        _showLockedTowerManagerDetails(context, config),
-                  ),
-              ],
-            ),
-            const SizedBox(height: 18),
-            _ManagerSectionHeader(
-              title: 'Threat Directors',
-              tint: LightcorePalette.warning,
-              subtitle: !controller.managerAssignmentUnlocked
-                  ? 'Reach Core Lv ${LightcoreController.managerCoreLevelRequirement} or Account Radiance Lv ${LightcoreController.managerUnlockLevel} before Threat Directors can be assigned.'
-                  : controller.enemyManagers.isEmpty
-                  ? 'No Threat Directors in inventory yet. Locked roster tiles preview future foundry rolls.'
-                  : 'Owned rolls appear first. Locked roster tiles preview directors still missing from inventory.',
-            ),
-            const SizedBox(height: 10),
-            if (controller.enemyManagers.isEmpty) ...[
-              _InlineSectionNotice(
-                message: controller.managersUnlocked
-                    ? 'Forge a Threat Director when you have enough Flux.'
-                    : 'No Threat Directors in inventory. The foundry unlocks at Core Lv ${LightcoreController.managerCoreLevelRequirement} or Account Radiance Lv ${LightcoreController.managerUnlockLevel}.',
-                tint: LightcorePalette.warning,
-              ),
-              const SizedBox(height: 10),
-            ],
-            Wrap(
-              spacing: 10,
-              runSpacing: 10,
-              alignment: WrapAlignment.center,
-              children: [
-                for (final manager in controller.enemyManagers)
-                  _EnemyManagerGlyphTile(
-                    controller: controller,
-                    manager: manager,
-                    onTap: () =>
-                        _showEnemyManagerDetails(context, manager.instanceId),
-                  ),
-                for (final config in lockedEnemyManagers)
-                  _LockedEnemyManagerGlyphTile(
-                    config: config,
-                    onTap: () =>
-                        _showLockedEnemyManagerDetails(context, config),
-                  ),
-              ],
-            ),
-            const SizedBox(height: 18),
-            _ManagerSectionHeader(
               title: 'Foundry',
               tint: LightcorePalette.solar,
               subtitle: controller.managersUnlocked
@@ -320,6 +231,118 @@ class CardManagementScreen extends StatelessWidget {
                   : 'Rewarded foundry top-offs are staged for Android and iOS builds only.',
               style: textTheme.bodySmall,
             ),
+            const SizedBox(height: 18),
+            _ManagerSectionHeader(
+              title: 'Manager Power',
+              tint: LightcorePalette.aether,
+              subtitle:
+                  'Daily Dungeons now award Manager Shards. Spend them here for a permanent lift to every manager roll.',
+            ),
+            const SizedBox(height: 10),
+            _ManagerPowerPanel(controller: controller),
+            const SizedBox(height: 18),
+            _ManagerSectionHeader(
+              title: 'Tower Upgraders',
+              tint: LightcorePalette.violet,
+              subtitle: !controller.managerAssignmentUnlocked
+                  ? 'Reach Core Lv ${LightcoreController.managerCoreLevelRequirement} or Account Radiance Lv ${LightcoreController.managerUnlockLevel} before Core Managers can be assigned.'
+                  : controller.cards.isEmpty
+                  ? 'No Core Managers in inventory yet. Locked roster previews are collapsed below.'
+                  : 'Owned rolls appear first. Locked roster previews stay collapsed until requested.',
+            ),
+            const SizedBox(height: 10),
+            if (controller.cards.isEmpty) ...[
+              _InlineSectionNotice(
+                message: controller.managersUnlocked
+                    ? 'Forge a Core Manager when you have enough Flux.'
+                    : 'No Core Managers in inventory. The foundry unlocks at Core Lv ${LightcoreController.managerCoreLevelRequirement} or Account Radiance Lv ${LightcoreController.managerUnlockLevel}.',
+                tint: LightcorePalette.violet,
+              ),
+              const SizedBox(height: 10),
+            ],
+            if (controller.cards.isNotEmpty)
+              Wrap(
+                spacing: 10,
+                runSpacing: 10,
+                alignment: WrapAlignment.center,
+                children: [
+                  for (final manager in controller.cards)
+                    _TowerManagerGlyphTile(
+                      controller: controller,
+                      manager: manager,
+                      onTap: () =>
+                          _showTowerManagerDetails(context, manager.instanceId),
+                    ),
+                ],
+              ),
+            if (lockedTowerManagers.isNotEmpty) ...[
+              if (controller.cards.isNotEmpty) const SizedBox(height: 10),
+              _LockedManagerRosterExpansion(
+                title: 'Locked Core Manager Roster',
+                count: lockedTowerManagers.length,
+                tint: LightcorePalette.violet,
+                children: [
+                  for (final config in lockedTowerManagers)
+                    _LockedTowerManagerGlyphTile(
+                      config: config,
+                      onTap: () =>
+                          _showLockedTowerManagerDetails(context, config),
+                    ),
+                ],
+              ),
+            ],
+            const SizedBox(height: 18),
+            _ManagerSectionHeader(
+              title: 'Threat Directors',
+              tint: LightcorePalette.warning,
+              subtitle: !controller.managerAssignmentUnlocked
+                  ? 'Reach Core Lv ${LightcoreController.managerCoreLevelRequirement} or Account Radiance Lv ${LightcoreController.managerUnlockLevel} before Threat Directors can be assigned.'
+                  : controller.enemyManagers.isEmpty
+                  ? 'No Threat Directors in inventory yet. Locked roster previews are collapsed below.'
+                  : 'Owned rolls appear first. Locked roster previews stay collapsed until requested.',
+            ),
+            const SizedBox(height: 10),
+            if (controller.enemyManagers.isEmpty) ...[
+              _InlineSectionNotice(
+                message: controller.managersUnlocked
+                    ? 'Forge a Threat Director when you have enough Flux.'
+                    : 'No Threat Directors in inventory. The foundry unlocks at Core Lv ${LightcoreController.managerCoreLevelRequirement} or Account Radiance Lv ${LightcoreController.managerUnlockLevel}.',
+                tint: LightcorePalette.warning,
+              ),
+              const SizedBox(height: 10),
+            ],
+            if (controller.enemyManagers.isNotEmpty)
+              Wrap(
+                spacing: 10,
+                runSpacing: 10,
+                alignment: WrapAlignment.center,
+                children: [
+                  for (final manager in controller.enemyManagers)
+                    _EnemyManagerGlyphTile(
+                      controller: controller,
+                      manager: manager,
+                      onTap: () =>
+                          _showEnemyManagerDetails(context, manager.instanceId),
+                    ),
+                ],
+              ),
+            if (lockedEnemyManagers.isNotEmpty) ...[
+              if (controller.enemyManagers.isNotEmpty)
+                const SizedBox(height: 10),
+              _LockedManagerRosterExpansion(
+                title: 'Locked Threat Director Roster',
+                count: lockedEnemyManagers.length,
+                tint: LightcorePalette.warning,
+                children: [
+                  for (final config in lockedEnemyManagers)
+                    _LockedEnemyManagerGlyphTile(
+                      config: config,
+                      onTap: () =>
+                          _showLockedEnemyManagerDetails(context, config),
+                    ),
+                ],
+              ),
+            ],
           ],
         );
       },
@@ -577,6 +600,62 @@ class _InlineSectionNotice extends StatelessWidget {
   }
 }
 
+class _LockedManagerRosterExpansion extends StatelessWidget {
+  const _LockedManagerRosterExpansion({
+    required this.title,
+    required this.count,
+    required this.tint,
+    required this.children,
+  });
+
+  final String title;
+  final int count;
+  final Color tint;
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        color: LightcorePalette.panelRaised.withValues(alpha: 0.6),
+        border: Border.all(color: tint.withValues(alpha: 0.22)),
+      ),
+      child: ExpansionTile(
+        key: PageStorageKey<String>('locked-manager-roster-$title'),
+        initiallyExpanded: false,
+        tilePadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+        childrenPadding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+        iconColor: tint,
+        collapsedIconColor: tint,
+        leading: Icon(Icons.lock_rounded, color: tint, size: 19),
+        title: Text(
+          title,
+          style: Theme.of(context).textTheme.titleSmall?.copyWith(
+            color: LightcorePalette.mist,
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+        subtitle: Text(
+          '$count locked • View roster',
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+            color: LightcorePalette.mist.withValues(alpha: 0.74),
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        children: [
+          Wrap(
+            spacing: 10,
+            runSpacing: 10,
+            alignment: WrapAlignment.center,
+            children: children,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _ResourceChip extends StatelessWidget {
   const _ResourceChip({
     required this.icon,
@@ -818,6 +897,13 @@ class _ManagerForgeGroup extends StatelessWidget {
                 ),
               ),
             ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Single, value, and bulk packs show cost up front; larger packs add shard bonuses and rarity floors.',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: LightcorePalette.mist.withValues(alpha: 0.74),
+            ),
           ),
           const SizedBox(height: 10),
           Wrap(
@@ -2511,7 +2597,7 @@ class _TowerManagerDetailSheet extends StatelessWidget {
                     : onAssign,
                 child: Text(
                   !controller.managerAssignmentUnlocked
-                      ? 'Locked until Core Lv ${LightcoreController.managerCoreLevelRequirement}'
+                      ? 'Locked until Core Lv ${LightcoreController.managerCoreLevelRequirement} or AR Lv ${LightcoreController.managerUnlockLevel}'
                       : assignedHere
                       ? 'Equipped to Core'
                       : 'Assign to Tower Core',
@@ -2627,7 +2713,7 @@ class _EnemyManagerDetailSheet extends StatelessWidget {
                     : onAssign,
                 child: Text(
                   !controller.managerAssignmentUnlocked
-                      ? 'Locked until Core Lv ${LightcoreController.managerCoreLevelRequirement}'
+                      ? 'Locked until Core Lv ${LightcoreController.managerCoreLevelRequirement} or AR Lv ${LightcoreController.managerUnlockLevel}'
                       : assignedHere
                       ? 'Assigned to Core'
                       : 'Assign to Tower Core',

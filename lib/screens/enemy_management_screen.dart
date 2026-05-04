@@ -289,6 +289,13 @@ class _EnemyPullSheetState extends State<EnemyPullSheet> {
                         setState(() => _tab = tab);
                       },
                     ),
+                    const SizedBox(height: 10),
+                    _ScanSpendExplanation(
+                      selected: _tab,
+                      tint: _tab == _ThreatPullTab.bosses
+                          ? bossTint
+                          : enemyTint,
+                    ),
                     const SizedBox(height: 16),
                     if (_tab == _ThreatPullTab.bosses) ...[
                       _ThreatScanSection(

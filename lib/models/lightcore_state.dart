@@ -1,13 +1,12 @@
 import 'lightcore_config.dart';
 import 'lightcore_types.dart';
 
-/// Read-only projection for the V8 "Threat Scan bundle" loop.
+/// Read-only projection for the active anomaly deck pressure loop.
 ///
 /// The active anomaly deck, attached Threat Directors, core stability, and
 /// target pressure already lived in separate controller fields. This snapshot
-/// gives UI and tests one documented surface to inspect so future bible audits
-/// can compare the game against the formal bundle concept without rebuilding
-/// the same calculations in multiple places.
+/// gives UI and tests one documented surface to inspect without rebuilding the
+/// same calculations in multiple places.
 class ThreatScanBundleSnapshot {
   const ThreatScanBundleSnapshot({
     required this.id,
@@ -110,6 +109,30 @@ class ThreatAssignmentGroupStatsSnapshot {
 
   bool get isDpsLimited =>
       hasAnomalies && clearsPerMinute < spawnsPerMinute * 0.98;
+}
+
+class PromotionPreviewSnapshot {
+  const PromotionPreviewSnapshot({
+    required this.canPromote,
+    required this.passiveArchive,
+    required this.actionLabel,
+    required this.resultLabel,
+    required this.currentCoreLabel,
+    required this.projectileMixLabel,
+    required this.payloadMixLabel,
+    required this.anomalyBehaviorLabel,
+    required this.managerBehaviorLabel,
+  });
+
+  final bool canPromote;
+  final bool passiveArchive;
+  final String actionLabel;
+  final String resultLabel;
+  final String currentCoreLabel;
+  final String projectileMixLabel;
+  final String payloadMixLabel;
+  final String anomalyBehaviorLabel;
+  final String managerBehaviorLabel;
 }
 
 class OuterTowerState {

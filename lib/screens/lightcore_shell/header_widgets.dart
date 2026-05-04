@@ -533,6 +533,20 @@ extension on _ShellOverlayDestination {
     _ShellOverlayDestination.prestige => 'Advance',
   };
 
+  String get shortLabel => switch (this) {
+    _ShellOverlayDestination.battle => 'Battle',
+    _ShellOverlayDestination.towers => 'Towers',
+    _ShellOverlayDestination.managers => 'Managers',
+    _ShellOverlayDestination.spaceRoom => 'Space',
+    _ShellOverlayDestination.friends => 'Friends',
+    _ShellOverlayDestination.mentees => 'Mentees',
+    _ShellOverlayDestination.mentors => 'Mentors',
+    _ShellOverlayDestination.enemies => 'Anomaly',
+    _ShellOverlayDestination.dungeons => 'Dungeons',
+    _ShellOverlayDestination.tournaments => 'Arena',
+    _ShellOverlayDestination.prestige => 'Advance',
+  };
+
   Color get tint => switch (this) {
     _ShellOverlayDestination.battle => LightcorePalette.aether,
     _ShellOverlayDestination.towers => LightcorePalette.solar,
@@ -588,7 +602,7 @@ String? _managerLockMessage(LightcoreController controller) {
   if (controller.managerAssignmentUnlocked) {
     return null;
   }
-  return 'Manager assignment unlocks when the active core reaches Lv ${LightcoreController.managerCoreLevelRequirement}.';
+  return 'Manager assignment unlocks at Core Lv ${LightcoreController.managerCoreLevelRequirement} or Account Radiance Lv ${LightcoreController.managerUnlockLevel}.';
 }
 
 String? _mentorshipLockMessage(LightcoreController controller) {

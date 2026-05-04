@@ -48,10 +48,21 @@ void main() {
 
     expect(find.text('Main Manager'), findsOneWidget);
     expect(find.text('Pilot Identity'), findsNothing);
+    final sheetScrollable = find.byType(Scrollable).first;
+    await tester.scrollUntilVisible(
+      find.text('Equipment'),
+      220,
+      scrollable: sheetScrollable,
+    );
     expect(find.text('Equipment'), findsOneWidget);
     expect(
       find.byKey(const ValueKey<String>('player-screen-name-field')),
       findsNothing,
+    );
+    await tester.scrollUntilVisible(
+      find.textContaining('Tap a slot to filter'),
+      220,
+      scrollable: sheetScrollable,
     );
     expect(find.textContaining('Tap a slot to filter'), findsOneWidget);
     expect(find.textContaining('Lumens'), findsNothing);
@@ -278,13 +289,34 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 500));
 
+    final sheetScrollable = find.byType(Scrollable).first;
+    await tester.scrollUntilVisible(
+      find.text(hat.name),
+      220,
+      scrollable: sheetScrollable,
+    );
     expect(find.text(hat.name), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.text(shoes.name),
+      220,
+      scrollable: sheetScrollable,
+    );
     expect(find.text(shoes.name), findsOneWidget);
 
+    await tester.scrollUntilVisible(
+      find.byTooltip('Hat: empty. Tap to filter inventory.'),
+      220,
+      scrollable: sheetScrollable,
+    );
     await tester.tap(find.byTooltip('Hat: empty. Tap to filter inventory.'));
     await tester.pump();
 
     expect(find.text('Hat Inventory'), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.text(hat.name),
+      220,
+      scrollable: sheetScrollable,
+    );
     expect(find.text(hat.name), findsOneWidget);
     expect(find.text(shoes.name), findsNothing);
 

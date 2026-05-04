@@ -29,6 +29,13 @@ void main() {
     );
     await tester.pump();
 
+    await tester.scrollUntilVisible(
+      find.text('Locked Core Manager Roster'),
+      300,
+    );
+    await tester.tap(find.text('Locked Core Manager Roster'));
+    await tester.pumpAndSettle();
+
     await tester.scrollUntilVisible(find.text('Whitney Stardust'), 300);
     await tester.ensureVisible(find.text('Whitney Stardust'));
     await tester.pump();
@@ -41,6 +48,15 @@ void main() {
     expect(find.text('Foundry roll'), findsOneWidget);
 
     Navigator.of(tester.element(find.byType(CardManagementScreen))).pop();
+    await tester.pumpAndSettle();
+
+    await tester.scrollUntilVisible(
+      find.text('Locked Threat Director Roster'),
+      300,
+    );
+    await tester.ensureVisible(find.text('Locked Threat Director Roster'));
+    await tester.pump();
+    await tester.tap(find.text('Locked Threat Director Roster'));
     await tester.pumpAndSettle();
 
     await tester.scrollUntilVisible(find.text('Plain Jane Quasar'), 300);

@@ -3,18 +3,20 @@ part of '../lightcore_shell.dart';
 class _LayerDockButton extends StatelessWidget {
   const _LayerDockButton({
     required this.label,
+    required this.statusLabel,
     required this.tint,
     required this.onTap,
   });
 
   final String label;
+  final String statusLabel;
   final Color tint;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     return Tooltip(
-      message: 'Open shells',
+      message: 'Open shells - $statusLabel',
       child: AuroraPanel(
         tint: tint,
         radius: 20,
@@ -30,6 +32,24 @@ class _LayerDockButton extends StatelessWidget {
               style: Theme.of(context).textTheme.labelLarge?.copyWith(
                 color: tint,
                 fontWeight: FontWeight.w800,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(999),
+                color: tint.withValues(alpha: 0.12),
+                border: Border.all(color: tint.withValues(alpha: 0.26)),
+              ),
+              child: Text(
+                statusLabel,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  color: tint,
+                  fontWeight: FontWeight.w900,
+                ),
               ),
             ),
           ],
@@ -294,7 +314,7 @@ class _ShellOverlayFrame extends StatelessWidget {
                                 tint: LightcorePalette.quest,
                                 radius: 20,
                                 child: IconButton(
-                                  tooltip: 'Return to Base Game',
+                                  tooltip: 'Return to Battle',
                                   onPressed: onClose,
                                   icon: const Icon(Icons.arrow_back_rounded),
                                 ),
@@ -410,14 +430,34 @@ class _ShellNavigationItem extends StatelessWidget {
                       : const [],
                 ),
                 child: Center(
-                  child: IconTheme(
-                    data: IconThemeData(
-                      size: compact ? 20 : 22,
-                      color: iconColor,
-                    ),
-                    child: locked
-                        ? const Icon(Icons.lock_rounded)
-                        : destination.navigationIcon,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconTheme(
+                        data: IconThemeData(
+                          size: compact ? 19 : 22,
+                          color: iconColor,
+                        ),
+                        child: locked
+                            ? const Icon(Icons.lock_rounded)
+                            : destination.navigationIcon,
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        destination.shortLabel,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          color: selected
+                              ? iconColor
+                              : LightcorePalette.mist.withValues(
+                                  alpha: locked ? 0.54 : 0.78,
+                                ),
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),

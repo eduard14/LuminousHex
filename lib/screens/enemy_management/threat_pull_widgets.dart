@@ -128,6 +128,72 @@ class _ThreatPullTabs extends StatelessWidget {
   }
 }
 
+class _ScanSpendExplanation extends StatelessWidget {
+  const _ScanSpendExplanation({required this.selected, required this.tint});
+
+  final _ThreatPullTab selected;
+  final Color tint;
+
+  @override
+  Widget build(BuildContext context) {
+    final title = selected == _ThreatPullTab.bosses
+        ? 'Apex Scans are boss signatures'
+        : 'Threat Scans are anomaly signatures';
+    final body = selected == _ThreatPullTab.bosses
+        ? 'Apex Scans unlock or upgrade boss-class Apex cards. Arm one in Anomalies before it becomes the next Apex target.'
+        : 'Threat Scans unlock anomaly signatures. Signatures can enter the active deck; harder bundles raise rewards but pressure Output Efficiency.';
+    final footer = selected == _ThreatPullTab.bosses
+        ? 'These are encounter targets, not Core Managers.'
+        : 'These are enemies and encounter modifiers, not allies.';
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: tint.withValues(alpha: 0.09),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: tint.withValues(alpha: 0.22)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                selected == _ThreatPullTab.bosses
+                    ? Icons.shield_moon_rounded
+                    : LightcoreIcons.threatScan,
+                size: 17,
+                color: tint,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  title,
+                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                    color: LightcorePalette.mist,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(body, style: Theme.of(context).textTheme.bodySmall),
+          const SizedBox(height: 4),
+          Text(
+            footer,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: tint,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _ThreatProgressRail extends StatelessWidget {
   const _ThreatProgressRail({
     required this.tint,

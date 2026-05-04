@@ -341,7 +341,7 @@ extension LightcoreControllerSaveTournamentCloud on LightcoreController {
       enemyMovementSpeedMultiplier: 5.0,
       killRewardsEnabled: false,
       seedUnlockExperience: false,
-      outerRingRevealed: false,
+      outerRingRevealed: true,
     );
   }
 

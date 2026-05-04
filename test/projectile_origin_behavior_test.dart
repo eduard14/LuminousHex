@@ -105,6 +105,10 @@ class _FixedDoubleRandom implements Random {
 
   @override
   bool nextBool() => nextDouble() < 0.5;
+
+  void reset() {
+    _index = 0;
+  }
 }
 
 void _promoteRootShellToLayer2(LightcoreController controller) {
@@ -185,9 +189,8 @@ void main() {
   );
 
   test('pulse ring rolls critical damage per enemy hit', () {
-    final controller = LightcoreController(
-      traitRandom: _FixedDoubleRandom(<double>[0.0, 0.99]),
-    );
+    final traitRandom = _FixedDoubleRandom(<double>[0.0, 0.99]);
+    final controller = LightcoreController(traitRandom: traitRandom);
     addTearDown(controller.dispose);
 
     final firstEnemy = controller.debugSpawnEnemyFromCard(
@@ -207,6 +210,7 @@ void main() {
 
     final initialFirstHealth = _healthForEnemy(controller, firstEnemy!.id);
     final initialSecondHealth = _healthForEnemy(controller, secondEnemy!.id);
+    traitRandom.reset();
 
     controller.debugSetAmmoQueue(const [
       AmmoPacket(

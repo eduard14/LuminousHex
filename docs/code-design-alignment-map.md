@@ -38,7 +38,7 @@ start from a targeted `rg` search.
 | Tower fabrication | Partial | `startTowerFabricationAt`, `_advanceTowerFabrication`, `OuterTowerState.isFabricating`, `tutorialStartTowerFabricationAt`, `buildTowerAt` | The player-facing tower screen now starts a timed fabrication job that reserves the slot, persists remaining time, and only counts the tower as active when complete. `buildTowerAt` remains an instant test/debug compatibility path, and there is no manual completion claim or trusted server timestamp yet. |
 | Random trainable stats, Overcharge, Radiant | Aligned | `TowerUpgradeOptionState`, `_rollTowerUpgradeBoard`, `towerUpgradeEffectLabel` | Towers roll 2-4 trainable stats. Radiant applies the V8 1.30 multiplier in upgrade labeling and effect math. Overcharge is represented as a flagged upgrade option. |
 | Layer 2 Alignment / shell promotion | Partial | `unlockLayer2Tower`, `_resolvePromotedTraitLoadoutForLayer`, `_syncParentSlotFromLayer`, `activeChildTowerProjection` | The game uses shell-class promotion and child-shell forging, not the workbook's simpler "seven Layer 1 towers create one Layer 2 Aligned Tower" wording. Component history is preserved through child-layer links and inherited stats, but there is no separate alignment timer for promotions. |
-| Old `Layer2TowerState` weapon | Legacy drift | `Layer2TowerState`, `_fireLayer2IfPossible`, `_layer2.unlocked` | `Layer2TowerState` still exists as a second-weapon runtime object, but no normal gameplay path sets it unlocked. This is legacy design residue and should either be removed or deliberately redefined. |
+| Old `Layer2TowerState` weapon | Legacy internals | `Layer2TowerState`, `_fireLayer2IfPossible`, `_layer2.unlocked` | `Layer2TowerState` still exists as a second-weapon runtime object, but no normal gameplay path sets it unlocked and current UI does not present it as a weapon. Treat it as legacy unless a future design explicitly revives it. |
 | Component history retention | Partial | `OuterTowerState.childLayerId`, `childProjectileLoadout`, `childPayloadLoadout`, `childBuiltCount`, `_syncParentSlotFromLayer` | Child shells remain playable and parent slots retain projected inherited values. This supports "history remains inspectable", but the UI is currently shell/tree oriented rather than a dedicated component-history view. |
 | Core clusters and firing queue | Partial | `CoreState`, `AmmoPacket`, `_ammoQueue`, `_advancePulses`, `_fireCoreIfPossible`, `coreQueueCapacity` | The center core consumes relay packets as intended. V8's "one Core Manager per core/cluster" is not the current model; managers attach to outer relay towers, while the core itself has upgrade levels. |
 | Multiple active cores | Partial | `_viewLayerId`, `_runtimeLayerId`, `tick`, `_advanceRuntimeLayer`, `_storeActiveLayer` | `tick` now iterates every stored shell and advances combat, fabrication timers, pressure, shots, and automated output. Foreground-only helpers still gate tutorial prompts and localhost auto-tapping. Offline claims remain snapshot-based rather than full replay. |
@@ -65,10 +65,10 @@ start from a targeted `rg` search.
    compatibility path for tests/debug flows. There is no trusted timestamp,
    offline fabrication catch-up, or "claim fabricated tower" step yet.
 
-2. `Layer2TowerState` is stale relative to shell promotion.
+2. `Layer2TowerState` is legacy relative to shell promotion.
    The model and `_fireLayer2IfPossible` still support a separate Layer 2 gun,
-   but normal advancement no longer unlocks it. Treat this as legacy unless a
-   new design explicitly revives it.
+   but normal advancement no longer unlocks it and the UI should not surface it.
+   Treat this as legacy unless a new design explicitly revives it.
 
 3. Threat Scan bundles are derived, not authored content.
    `ThreatScanBundleSnapshot` formalizes the active deck into bundle readouts,

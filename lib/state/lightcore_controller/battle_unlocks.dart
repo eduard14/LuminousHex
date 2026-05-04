@@ -171,7 +171,7 @@ extension LightcoreControllerBattleUnlocks on LightcoreController {
         currentLevel < managerUnlockLevel) {
       return null;
     }
-    return 'Managers unlocked at Account Radiance Lv $managerUnlockLevel. Assign Core Managers to the Tower Core to automate ready-taps.';
+    return 'Managers unlocked. Assign Core Managers to the Tower Core to automate ready-taps, or forge Threat Directors to tune anomaly pressure.';
   }
 
   String? _dailyDungeonUnlockBannerFragment({

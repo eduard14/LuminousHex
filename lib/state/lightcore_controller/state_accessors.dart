@@ -861,6 +861,78 @@ extension LightcoreControllerStateAccessors on LightcoreController {
     );
   }
 
+  PromotionPreviewSnapshot get promotionPreview {
+    final advanced =
+        activeLayer.tier > 1 || activeLayer.promotedParentLayerId != null;
+    final actionLabel = canUnlockLayer2
+        ? promotionActionLabel
+        : activeLayerPassiveOnly
+        ? 'Archive inspection only'
+        : advanced
+        ? 'Already advanced'
+        : 'Promotion locked';
+    final resultLabel = activeLayerHasParentSlot
+        ? 'Parent child tower in $activeLayerTargetShellLabel'
+        : '$nextShellClassLabel core';
+    final anomalyBehaviorLabel = activeLayerHasParentSlot
+        ? 'Anomaly deck stays with the child shell archive.'
+        : 'Active anomaly deck is copied to the new live shell.';
+    return PromotionPreviewSnapshot(
+      canPromote: canUnlockLayer2,
+      passiveArchive: activeLayerPassiveOnly,
+      actionLabel: actionLabel,
+      resultLabel: resultLabel,
+      currentCoreLabel: '$coreProjectileLabel / $corePayloadLabel',
+      projectileMixLabel: _promotionAffinityMixLabel(
+        promotionProjectileAffinityRates,
+      ),
+      payloadMixLabel: _promotionAffinityMixLabel(
+        promotionPayloadAffinityRates,
+      ),
+      anomalyBehaviorLabel: anomalyBehaviorLabel,
+      managerBehaviorLabel: _promotionManagerBehaviorLabel(),
+    );
+  }
+
+  String _promotionAffinityMixLabel(Map<PrototypeAffinity, double> rates) {
+    if (rates.isEmpty) {
+      return 'none at this tier';
+    }
+    final entries = rates.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+    return entries
+        .take(3)
+        .map(
+          (entry) =>
+              '${entry.key.label} ${_formatPromotionPreviewRate(entry.value)}',
+        )
+        .join(', ');
+  }
+
+  String _formatPromotionPreviewRate(double value) {
+    final percent = value * 100;
+    if ((percent - percent.round()).abs() < 0.05) {
+      return '${percent.round()}%';
+    }
+    return '${percent.toStringAsFixed(1)}%';
+  }
+
+  String _promotionManagerBehaviorLabel() {
+    final towerManager = _towerCoreManagerForLayer(activeLayer);
+    final threatDirector = _enemyCoreManagerForLayer(activeLayer);
+    if (towerManager == null && threatDirector == null) {
+      return 'No core sockets assigned';
+    }
+    final labels = <String>[];
+    if (towerManager != null) {
+      labels.add('Core Manager follows the new shell');
+    }
+    if (threatDirector != null) {
+      labels.add('Threat Director stays with this shell until reassigned');
+    }
+    return labels.join('; ');
+  }
+
   bool get isBattleActive => true;
 
   int get queuedCorePackets => _ammoQueue.length;
@@ -1543,6 +1615,7 @@ extension LightcoreControllerStateAccessors on LightcoreController {
         deck,
         primaryAffinity: primaryAffinity,
         directorNames: directorNames,
+        targetCount: enemyTargetCount,
       ),
       primaryAffinity: primaryAffinity,
       cardNames: List<String>.unmodifiable(
