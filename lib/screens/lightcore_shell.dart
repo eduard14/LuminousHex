@@ -57,6 +57,10 @@ class LightcoreShell extends StatefulWidget {
     this.initialOfflineClaim,
     this.initialSocialInvite,
     this.authBusy = false,
+    this.musicEnabled,
+    this.soundEffectsEnabled,
+    this.onMusicEnabledChanged,
+    this.onSoundEffectsEnabledChanged,
     this.onGoogleSignIn,
     this.onSignOut,
   });
@@ -68,6 +72,10 @@ class LightcoreShell extends StatefulWidget {
   final LightcoreOfflineClaimResult? initialOfflineClaim;
   final LightcoreSocialInviteLink? initialSocialInvite;
   final bool authBusy;
+  final bool? musicEnabled;
+  final bool? soundEffectsEnabled;
+  final ValueChanged<bool>? onMusicEnabledChanged;
+  final ValueChanged<bool>? onSoundEffectsEnabledChanged;
   final AsyncCallback? onGoogleSignIn;
   final AsyncCallback? onSignOut;
 
@@ -89,6 +97,8 @@ class _LightcoreShellState extends State<LightcoreShell> {
   bool _shellPromotionHudSuppressed = false;
   bool _eventBattleSurfaceActive = false;
   bool _settingsDialogOpen = false;
+  bool _musicEnabled = true;
+  bool _soundEffectsEnabled = true;
   int _shellPromotionSequence = 0;
   bool _startupOfflineClaimPresented = false;
   bool _initialSocialInviteOpened = false;
@@ -129,6 +139,10 @@ class _LightcoreShellState extends State<LightcoreShell> {
   @override
   void initState() {
     super.initState();
+    _musicEnabled = widget.musicEnabled ?? LightcoreAudio.instance.musicEnabled;
+    _soundEffectsEnabled =
+        widget.soundEffectsEnabled ??
+        LightcoreAudio.instance.soundEffectsEnabled;
     widget.controller.addListener(_handleNotificationOverlay);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _handleNotificationOverlay();
@@ -140,6 +154,14 @@ class _LightcoreShellState extends State<LightcoreShell> {
   @override
   void didUpdateWidget(covariant LightcoreShell oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (widget.musicEnabled != null &&
+        oldWidget.musicEnabled != widget.musicEnabled) {
+      _musicEnabled = widget.musicEnabled!;
+    }
+    if (widget.soundEffectsEnabled != null &&
+        oldWidget.soundEffectsEnabled != widget.soundEffectsEnabled) {
+      _soundEffectsEnabled = widget.soundEffectsEnabled!;
+    }
     if (oldWidget.controller != widget.controller) {
       oldWidget.controller.removeListener(_handleNotificationOverlay);
       widget.controller.addListener(_handleNotificationOverlay);
@@ -1419,6 +1441,72 @@ class _LightcoreShellState extends State<LightcoreShell> {
     );
   }
 
+  Widget _buildAudioSettingsPanel(BuildContext context) {
+    return AuroraPanel(
+      tint: LightcorePalette.solar,
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Audio', style: Theme.of(context).textTheme.titleMedium),
+          const SizedBox(height: 6),
+          Text(
+            'Tune soundtrack and tap feedback for long runs.',
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
+          const SizedBox(height: 12),
+          _SettingsToggleRow(
+            switchKey: const ValueKey<String>('music-enabled-switch'),
+            icon: Icons.music_note_rounded,
+            title: 'Music',
+            subtitle: 'Play the main menu and battle loops.',
+            value: _musicEnabled,
+            tint: LightcorePalette.solar,
+            onChanged: _setMusicEnabledFromSettings,
+          ),
+          const SizedBox(height: 10),
+          _SettingsToggleRow(
+            switchKey: const ValueKey<String>('sound-effects-enabled-switch'),
+            icon: Icons.graphic_eq_rounded,
+            title: 'Sound Effects',
+            subtitle: 'Play UI taps, rewards, hits, warnings, and build cues.',
+            value: _soundEffectsEnabled,
+            tint: LightcorePalette.aether,
+            onChanged: _setSoundEffectsEnabledFromSettings,
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _setMusicEnabledFromSettings(bool enabled) {
+    if (_musicEnabled == enabled) {
+      return;
+    }
+    LightcoreAudio.instance.noteUserGesture();
+    setState(() => _musicEnabled = enabled);
+    final handler = widget.onMusicEnabledChanged;
+    if (handler != null) {
+      handler(enabled);
+    } else {
+      unawaited(LightcoreAudio.instance.setMusicEnabled(enabled));
+    }
+  }
+
+  void _setSoundEffectsEnabledFromSettings(bool enabled) {
+    if (_soundEffectsEnabled == enabled) {
+      return;
+    }
+    LightcoreAudio.instance.noteUserGesture();
+    setState(() => _soundEffectsEnabled = enabled);
+    final handler = widget.onSoundEffectsEnabledChanged;
+    if (handler != null) {
+      handler(enabled);
+    } else {
+      LightcoreAudio.instance.setSoundEffectsEnabled(enabled);
+    }
+  }
+
   Widget _buildGraphicsSettingsPanel(
     BuildContext context,
     LightcoreController controller,
@@ -1503,7 +1591,7 @@ class _LightcoreShellState extends State<LightcoreShell> {
               return _SelectorDialog(
                 title: 'Settings',
                 subtitle:
-                    'Account sync, notifications, stats, help, and reset controls stay here.',
+                    'Account sync, audio, notifications, stats, help, and reset controls stay here.',
                 tint: controller.activeLayer.core.affinity.color,
                 child: Column(
                   children: [
@@ -1527,7 +1615,7 @@ class _LightcoreShellState extends State<LightcoreShell> {
                                   ),
                                   const SizedBox(height: 6),
                                   Text(
-                                    'Use Account Sync to link this save to Google, Notifications to tune in-game banners, Change Name for your tournament callsign, Stats for the save ledger, and Help for Lightcore terms. Full reset restarts Lumens, Flux, Threat Scans, managers, outfit gear, anomaly cards, towers, EXP, and advancement progress.',
+                                    'Use Account Sync to link this save to Google, Audio to tune music and effects, Notifications to tune in-game banners, Change Name for your tournament callsign, Stats for the save ledger, and Help for Lightcore terms. Full reset restarts Lumens, Flux, Threat Scans, managers, outfit gear, anomaly cards, towers, EXP, and advancement progress.',
                                     style: Theme.of(
                                       context,
                                     ).textTheme.bodyMedium,
@@ -1537,6 +1625,8 @@ class _LightcoreShellState extends State<LightcoreShell> {
                             ),
                             const SizedBox(height: 12),
                             _buildAccountSettingsPanel(context),
+                            const SizedBox(height: 12),
+                            _buildAudioSettingsPanel(context),
                             const SizedBox(height: 12),
                             _buildNotificationSettingsPanel(
                               context,

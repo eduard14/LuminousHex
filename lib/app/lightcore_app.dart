@@ -70,6 +70,8 @@ class _LightcoreAppState extends State<LightcoreApp>
   bool _serverSyncPending = false;
   bool _serverSyncPendingForceSave = false;
   bool _skipGuestSignInPrompt = false;
+  bool _musicEnabled = true;
+  bool _soundEffectsEnabled = true;
   LightcoreGraphicsQuality _graphicsQuality = LightcoreGraphicsQuality.high;
   int _missedServerSyncs = 0;
   int _battleSurfaceGeneration = 0;
@@ -315,6 +317,8 @@ class _LightcoreAppState extends State<LightcoreApp>
       _bootstrapReport = report;
       _guideProfile = guideProfile;
       _skipGuestSignInPrompt = skipGuestSignInPrompt;
+      _musicEnabled = musicEnabled;
+      _soundEffectsEnabled = soundEffectsEnabled;
       _graphicsQuality = graphicsQuality;
       if (report.serverValidated) {
         _sessionNotice = null;
@@ -511,6 +515,31 @@ class _LightcoreAppState extends State<LightcoreApp>
     }
     setState(() => _skipGuestSignInPrompt = skipPrompt);
     unawaited(_sessionStore.writeSkipGuestSignInPrompt(skipPrompt));
+  }
+
+  void _setMusicEnabled(bool enabled) {
+    if (_musicEnabled == enabled) {
+      return;
+    }
+    setState(() => _musicEnabled = enabled);
+    unawaited(_sessionStore.writeMusicEnabled(enabled));
+    unawaited(_applyMusicEnabled(enabled));
+  }
+
+  Future<void> _applyMusicEnabled(bool enabled) async {
+    await LightcoreAudio.instance.setMusicEnabled(enabled);
+    if (enabled) {
+      _syncMusicForCurrentScreen();
+    }
+  }
+
+  void _setSoundEffectsEnabled(bool enabled) {
+    if (_soundEffectsEnabled == enabled) {
+      return;
+    }
+    setState(() => _soundEffectsEnabled = enabled);
+    LightcoreAudio.instance.setSoundEffectsEnabled(enabled);
+    unawaited(_sessionStore.writeSoundEffectsEnabled(enabled));
   }
 
   void _syncMusicForCurrentScreen() {
@@ -1213,6 +1242,10 @@ class _LightcoreAppState extends State<LightcoreApp>
               initialOfflineClaim: _startupOfflineClaim,
               initialSocialInvite: _startupSocialInvite,
               authBusy: _authBusy,
+              musicEnabled: _musicEnabled,
+              soundEffectsEnabled: _soundEffectsEnabled,
+              onMusicEnabledChanged: _setMusicEnabled,
+              onSoundEffectsEnabledChanged: _setSoundEffectsEnabled,
               onGoogleSignIn: _signInWithGoogleFromSettings,
               onSignOut: _signOutToGuest,
             ),

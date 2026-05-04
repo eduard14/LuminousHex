@@ -22,6 +22,7 @@ import 'package:lightcore/screens/battle_screen.dart';
 import 'package:lightcore/screens/daily_dungeons_screen.dart';
 import 'package:lightcore/screens/lightcore_shell.dart';
 import 'package:lightcore/screens/tournament_screen.dart';
+import 'package:lightcore/services/lightcore_audio.dart';
 import 'package:lightcore/services/lightcore_firebase_backend.dart';
 import 'package:lightcore/services/lightcore_firebase_runtime_config.dart';
 import 'package:lightcore/state/lightcore_controller.dart';
@@ -1485,6 +1486,12 @@ void main() {
   ) async {
     final controller = LightcoreController();
     addTearDown(controller.dispose);
+    await LightcoreAudio.instance.setMusicEnabled(true);
+    LightcoreAudio.instance.setSoundEffectsEnabled(true);
+    addTearDown(() async {
+      await LightcoreAudio.instance.setMusicEnabled(true);
+      LightcoreAudio.instance.setSoundEffectsEnabled(true);
+    });
     var googleSignInCalls = 0;
 
     await _pumpShell(
@@ -1514,6 +1521,30 @@ void main() {
     );
     await tester.pump();
     expect(googleSignInCalls, 1);
+
+    await _scrollSettingsUntilVisible(
+      tester,
+      find.byKey(const ValueKey<String>('music-enabled-switch')),
+    );
+    expect(find.text('Audio'), findsOneWidget);
+    expect(LightcoreAudio.instance.musicEnabled, isTrue);
+    expect(LightcoreAudio.instance.soundEffectsEnabled, isTrue);
+
+    await tester.tap(
+      find.byKey(const ValueKey<String>('music-enabled-switch')),
+    );
+    await tester.pump();
+    await _scrollSettingsUntilVisible(
+      tester,
+      find.byKey(const ValueKey<String>('sound-effects-enabled-switch')),
+    );
+    await tester.tap(
+      find.byKey(const ValueKey<String>('sound-effects-enabled-switch')),
+    );
+    await tester.pump();
+
+    expect(LightcoreAudio.instance.musicEnabled, isFalse);
+    expect(LightcoreAudio.instance.soundEffectsEnabled, isFalse);
 
     await _scrollSettingsUntilVisible(
       tester,
