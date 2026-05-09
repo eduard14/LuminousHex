@@ -262,10 +262,16 @@ void main() {
         LightcoreController.bossSpawnKillRequirement,
       );
 
+      final startingThreatScans = controller.enemyTickets;
       _unlockBossHunts(controller);
 
       expect(controller.bossHuntsUnlocked, isTrue);
-      expect(controller.bossTickets, LightcoreController.bossUnlockTicketGrant);
+      expect(
+        controller.enemyTickets,
+        greaterThanOrEqualTo(
+          startingThreatScans + LightcoreController.bossUnlockTicketGrant,
+        ),
+      );
       expect(controller.ownedBossEnemyCardCount, 1);
       expect(
         controller.activeBossEnemyCard?.config.id,
@@ -403,6 +409,7 @@ void main() {
 
     final tsBefore = controller.towerStrength;
 
+    controller.debugAddBossTickets(1);
     final pulls = controller.openBossTickets(1);
 
     expect(pulls, hasLength(1));
@@ -449,7 +456,7 @@ void main() {
   });
 
   test(
-    'upgradeAllReadyBossEnemyCards spends Heartcores across ready bosses',
+    'upgradeAllReadyBossEnemyCards spends Threat Shards across ready bosses',
     () {
       final controller = LightcoreController();
       addTearDown(controller.dispose);
@@ -473,7 +480,7 @@ void main() {
       final upgradedCount = controller.upgradeAllReadyBossEnemyCards();
 
       expect(upgradedCount, 4);
-      expect(controller.bossCores, 0);
+      expect(controller.threatShards, 0);
       expect(controller.upgradableBossEnemyCardCount, 0);
       for (final boss in bosses) {
         expect(controller.bossEnemyCardById(boss.config.id)?.level, 3);
@@ -486,7 +493,7 @@ void main() {
     addTearDown(controller.dispose);
 
     _unlockBossHunts(controller);
-    controller.debugAddBossTickets(40);
+    controller.debugAddBossTickets(50);
     final pulls = controller.openBossTickets(50);
     PackPullResult? duplicatePull;
     for (final pull in pulls) {

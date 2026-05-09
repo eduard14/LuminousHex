@@ -1196,7 +1196,7 @@ extension LightcoreControllerProgressionLayers on LightcoreController {
   bool canUpgradeBossEnemyCard(EnemyCardState card) =>
       card.isOwned &&
       card.level < bossLevelCap(card) &&
-      bossCores >= bossUpgradeRequirement(card);
+      threatShards >= bossUpgradeRequirement(card);
 
   bool upgradeBossEnemyCard(String cardId) {
     final cardIndex = _bossEnemyCards.indexWhere(
@@ -1208,11 +1208,13 @@ extension LightcoreControllerProgressionLayers on LightcoreController {
 
     final card = _bossEnemyCards[cardIndex];
     final cost = bossUpgradeRequirement(card);
-    if (!card.isOwned || card.level >= bossLevelCap(card) || bossCores < cost) {
+    if (!card.isOwned ||
+        card.level >= bossLevelCap(card) ||
+        threatShards < cost) {
       return false;
     }
 
-    bossCores -= cost;
+    threatShards -= cost;
     _bossEnemyCards[cardIndex] = card.copyWith(level: card.level + 1);
     _recordUpgradePurchase();
     _showBanner(
@@ -1265,11 +1267,11 @@ extension LightcoreControllerProgressionLayers on LightcoreController {
       final cost = bossUpgradeRequirement(card);
       if (!card.isOwned ||
           card.level >= bossLevelCap(card) ||
-          bossCores < cost) {
+          threatShards < cost) {
         break;
       }
 
-      bossCores -= cost;
+      threatShards -= cost;
       _bossEnemyCards[nextIndex] = card.copyWith(level: card.level + 1);
       _recordUpgradePurchase();
       upgradedCount++;
@@ -1488,7 +1490,7 @@ extension LightcoreControllerProgressionLayers on LightcoreController {
     shellCores = max(shellCores, 50000 * targetTier);
     enemyTickets = max(enemyTickets, 100 * targetTier);
     bossTickets = max(bossTickets, 40 * targetTier);
-    bossCores = max(bossCores, 40 * targetTier);
+    threatShards = max(threatShards, 40 * targetTier);
   }
 
   void _debugPrepareActiveLayerForPromotion() {
@@ -1570,7 +1572,7 @@ extension LightcoreControllerProgressionLayers on LightcoreController {
     if (!kDebugMode || count <= 0) {
       return;
     }
-    bossCores += count;
+    threatShards += count;
     _notifyNow();
   }
 

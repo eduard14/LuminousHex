@@ -70,7 +70,7 @@ extension LightcoreControllerBattleTowerActions on LightcoreController {
     for (var level = previousLevel + 1; level <= currentLevel; level++) {
       rewardTickets += bossSummoningLevelTicketRewardForLevel(level);
     }
-    bossTickets += rewardTickets;
+    enemyTickets += rewardTickets;
     return rewardTickets;
   }
 

@@ -181,6 +181,56 @@ class EnemyManagerConfig {
   String get portraitAssetPath => 'assets/sprites/managers/threat/$id.png';
 }
 
+class BossTraitConfig {
+  const BossTraitConfig({
+    required this.id,
+    required this.name,
+    required this.summary,
+    required this.sourceBossId,
+    required this.affinity,
+    required this.rarity,
+    required this.effectLabel,
+  });
+
+  final String id;
+  final String name;
+  final String summary;
+  final String sourceBossId;
+  final PrototypeAffinity affinity;
+  final EnemyCardRarity rarity;
+  final String effectLabel;
+}
+
+class ThreatRegionConfig {
+  const ThreatRegionConfig({
+    required this.id,
+    required this.name,
+    required this.q,
+    required this.r,
+    required this.ring,
+    required this.stabilizationLayers,
+    required this.rarity,
+    required this.anomalyCardIds,
+    required this.primaryBossId,
+    this.secondaryBossId,
+    this.inventoryEffect = TowerPatternBonusProfile.zero,
+  });
+
+  final String id;
+  final String name;
+  final int q;
+  final int r;
+  final int ring;
+  final int stabilizationLayers;
+  final EnemyCardRarity rarity;
+  final List<String> anomalyCardIds;
+  final String primaryBossId;
+  final String? secondaryBossId;
+  final TowerPatternBonusProfile inventoryEffect;
+
+  bool get hasDoubleBoss => secondaryBossId != null;
+}
+
 class EquipmentBonusProfile {
   const EquipmentBonusProfile({
     this.towerPower = 0,

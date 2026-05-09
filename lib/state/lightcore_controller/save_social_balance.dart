@@ -261,10 +261,14 @@ extension LightcoreControllerSaveSocialBalance on LightcoreController {
       passiveLumensPerHour: passiveLumenPerSecond * 3600,
       fluxPerHour: 0,
       enemyTicketsPerHour: 0,
-      killsPerHour: offlineKillsPerHour,
+      killsPerHour: threatRegionOfflineKillsPerHour,
       activeLayerTier: activeLayer.tier,
       builtTowerCount: builtTowerCount,
       prestigeLevel: prestigeLevel,
+      offlineRegionId: _offlineRegionId,
+      offlineRegionStabilizedLevel: _offlineRegionStabilizedLevel,
+      offlineRegionValidatedThreatDirectorId:
+          _offlineRegionValidatedThreatDirectorId,
     );
   }
 
@@ -290,6 +294,11 @@ extension LightcoreControllerSaveSocialBalance on LightcoreController {
       },
       bossEnemyCardId: bossCard?.config.id,
       bossEnemyLevel: bossCard?.level ?? 1,
+      enemySuiteApexCoreBossId: _activeEnemySuite.apexCoreBossId,
+      enemySuiteBossTraitIds: _activeEnemySuite.bossTraitIds,
+      enemySuiteAnomalyCardIds: _activeEnemySuite.anomalyCardIds,
+      enemySuiteComplete: hasCompleteEnemySuite,
+      fullyStabilizedRegionCount: fullyStabilizedRegionCount,
     );
   }
 }

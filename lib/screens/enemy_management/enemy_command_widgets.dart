@@ -366,10 +366,6 @@ class _SwarmPressurePanel extends StatelessWidget {
     final textTheme = Theme.of(context).textTheme;
     final bundle = controller.activeThreatScanBundle;
     final groupStats = controller.activeThreatAssignmentGroupStats;
-    final canUpgrade =
-        controller.canUpgradeEnemyTargetMax &&
-        controller.lumens >= controller.enemyTargetUpgradeCost;
-
     return AuroraPanel(
       tint: LightcorePalette.layer2,
       child: Column(
@@ -378,7 +374,7 @@ class _SwarmPressurePanel extends StatelessWidget {
           Text('Anomaly Deck Pressure', style: textTheme.titleLarge),
           const SizedBox(height: 6),
           Text(
-            '${bundle.name}: built from the active anomaly deck, Threat Director tuning, and swarm target. Effective Gain is Threat Reward multiplied by Output Efficiency. ${bundle.counterplayLabel}',
+            '${bundle.name}: built from the active region, anomaly deck, and Threat Director tuning. Effective Gain is Threat Reward multiplied by Output Efficiency. ${bundle.counterplayLabel}',
             style: textTheme.bodyMedium,
           ),
           const SizedBox(height: 14),
@@ -393,10 +389,7 @@ class _SwarmPressurePanel extends StatelessWidget {
                 label:
                     'Live ${controller.enemyCount}/${controller.enemyTargetCount}',
               ),
-              _InfoChip(
-                label:
-                    'Target ${controller.enemyTargetCount}/${controller.enemyTargetMax}',
-              ),
+              const _InfoChip(label: 'Target set by region'),
               _InfoChip(label: 'Every ${controller.enemySpawnCadenceLabel}'),
               _InfoChip(label: 'Threat ${bundle.threatRewardLabel}'),
               _InfoChip(label: 'Stability ${bundle.stabilityPressureLabel}'),
@@ -440,42 +433,10 @@ class _SwarmPressurePanel extends StatelessWidget {
           GuidedFocusFrame(
             active: controller.tutorialHighlightsEnemyCountControl,
             tint: LightcorePalette.quest,
-            child: Slider(
-              value: controller.enemyTargetCount.toDouble(),
-              min: controller.enemyTargetFloor.toDouble(),
-              max: controller.enemyTargetMax.toDouble(),
-              divisions:
-                  controller.enemyTargetMax - controller.enemyTargetFloor,
-              label: '${controller.enemyTargetCount}',
-              activeColor: LightcorePalette.layer2,
-              inactiveColor: LightcorePalette.layer2.withValues(alpha: 0.22),
-              onChanged: (value) =>
-                  controller.setEnemyTargetCount(value.round()),
-            ),
-          ),
-          Row(
-            children: [
-              Text(
-                'Low ${controller.enemyTargetFloor}',
-                style: textTheme.bodySmall,
-              ),
-              const Spacer(),
-              Text(
-                'Max ${controller.enemyTargetMax}',
-                style: textTheme.bodySmall,
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          FilledButton(
-            onPressed: canUpgrade ? controller.upgradeEnemyTargetMax : null,
-            child: FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Text(
-                controller.canUpgradeEnemyTargetMax
-                    ? 'Raise Ceiling • ${controller.enemyTargetUpgradeCostLabel}L'
-                    : 'Swarm Maxed',
-              ),
+            child: _InlineEnemyNote(
+              message:
+                  'Enemy quantity is no longer a manual setting. Region content and Threat Director traits define live pressure.',
+              tint: LightcorePalette.layer2,
             ),
           ),
         ],

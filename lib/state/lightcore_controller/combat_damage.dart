@@ -574,6 +574,7 @@ extension LightcoreControllerCombatDamage on LightcoreController {
     kills += killCredit;
     if (enemy.config.isBoss) {
       _totalBossesDefeated += 1;
+      _recordThreatRegionBossDefeat(enemy.config);
     }
     if (enemy.config.id == EnemyLibrary.basicWhite.id &&
         _tutorialSafeScanDefeats < 5) {
@@ -602,13 +603,18 @@ extension LightcoreControllerCombatDamage on LightcoreController {
       previousExperience,
       progressionExperience,
     );
-    if (!enemy.config.isBoss && !bossAlive && !activeLayer.bossReady) {
+    final suppressBossProgress =
+        _threatRegionChallenge != null && !_threatRegionChallenge!.finalLayer;
+    if (!suppressBossProgress &&
+        !enemy.config.isBoss &&
+        !bossAlive &&
+        !activeLayer.bossReady) {
       activeLayer.normalKillsSinceBoss += 1;
       if (activeLayer.normalKillsSinceBoss >= bossSpawnKillRequirement) {
         activeLayer.bossReady = true;
         _showBanner(
           ownedBossEnemyCardCount == 0
-              ? 'Apex lane primed. Resolve an Apex Scan to arm the next spawn.'
+              ? 'Apex lane primed. Clear a regional boss to arm the next spawn.'
               : '${activeBossEnemyCard?.config.name ?? 'Apex Anomaly'} is approaching. The next spawn is an Apex Anomaly.',
           category: LightcoreNotificationCategory.battle,
         );
@@ -678,20 +684,14 @@ extension LightcoreControllerCombatDamage on LightcoreController {
       mentorshipUnlockBanner,
     ].whereType<String>().join(' ');
     if (enemy.config.isBoss) {
-      final gainedBossTickets = max(
+      final gainedThreatScans = max(
         1,
         activeLayer.tier + (enemy.config.rarity.index ~/ 2),
       );
-      final gainedBossCores = max(
-        1,
-        activeLayer.tier + enemy.config.rarity.index,
-      );
-      bossTickets += gainedBossTickets;
-      bossCores += gainedBossCores;
+      enemyTickets += gainedThreatScans;
       final bossRewardParts = <String>[
         LightcoreCurrencyLabels.rewardLumens(lumenDrop + bountyLumenDrop),
-        LightcoreCurrencyLabels.rewardBossScans(gainedBossTickets),
-        '+$gainedBossCores Heartcore${gainedBossCores == 1 ? '' : 's'}',
+        LightcoreCurrencyLabels.rewardThreatScans(gainedThreatScans),
         if (fluxDrop > 0) LightcoreCurrencyLabels.rewardFlux(fluxDrop),
         if (threatScanDrop > 0)
           LightcoreCurrencyLabels.rewardThreatScans(threatScanDrop),

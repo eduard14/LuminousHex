@@ -90,8 +90,14 @@ extension LightcoreControllerSaveRestorePayload on LightcoreController {
       resourceData['enemyTickets'],
       fallback: enemyTickets,
     );
-    bossTickets = _intValue(resourceData['bossTickets'], fallback: bossTickets);
-    bossCores = _intValue(resourceData['bossCores'], fallback: bossCores);
+    final restoredBossTickets = _intValue(resourceData['bossTickets']);
+    enemyTickets += restoredBossTickets;
+    bossTickets = 0;
+    final restoredBossCores = _intValue(resourceData['bossCores']);
+    threatShards =
+        _intValue(resourceData['threatShards'], fallback: threatShards) +
+        restoredBossCores;
+    bossCores = 0;
     enemyPullCount = _intValue(
       resourceData['enemyPullCount'],
       fallback: enemyPullCount,
@@ -236,6 +242,8 @@ extension LightcoreControllerSaveRestorePayload on LightcoreController {
       savedCards: _coerceList(inventoryData['bossEnemyCards']),
       defaults: _createBossEnemyCardInventory(),
     );
+    _restoreBossTraits(_coerceList(inventoryData['bossTraits']));
+    _restoreApexCores(_coerceList(inventoryData['apexCores']));
     _equipmentInventory = _coerceList(inventoryData['equipmentInventory'])
         .map((item) => _deserializePlayerEquipmentItem(_coerceMap(item)))
         .whereType<PlayerEquipmentItem>()
@@ -247,6 +255,7 @@ extension LightcoreControllerSaveRestorePayload on LightcoreController {
     for (final slot in EquipmentLoadoutSlot.values) {
       _equippedPlayerItems[slot] = _stringOrNull(equippedItemData[slot.name]);
     }
+    _restoreThreatMapState(_coerceMap(payload['threatMap']));
 
     _battlePasses = _restoreBattlePassMap(_coerceList(payload['battlePasses']));
 

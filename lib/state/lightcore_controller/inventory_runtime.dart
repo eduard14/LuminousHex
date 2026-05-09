@@ -447,14 +447,14 @@ extension LightcoreControllerInventoryRuntime on LightcoreController {
     required int targetCount,
   }) {
     if (deck.isEmpty) {
-      return 'No anomaly cards are armed, so this core is running baseline scan pressure at $targetCount swarm target${targetCount == 1 ? '' : 's'}.';
+      return 'No anomaly cards are armed, so this core is running baseline region pressure at $targetCount active target${targetCount == 1 ? '' : 's'}.';
     }
     final affinityLabel = primaryAffinity?.label ?? 'Mixed';
     final directorLabel = directorNames.isEmpty
         ? 'no Threat Directors'
         : '${directorNames.length} Threat Director${directorNames.length == 1 ? '' : 's'}';
     final cardLabel = deck.map((card) => card.config.name).join(', ');
-    return 'Active anomaly deck: $affinityLabel pressure from $cardLabel with $directorLabel at $targetCount swarm target${targetCount == 1 ? '' : 's'}.';
+    return 'Active anomaly deck: $affinityLabel pressure from $cardLabel with $directorLabel at $targetCount region-managed target${targetCount == 1 ? '' : 's'}.';
   }
 
   PrototypeAffinity? _dominantThreatAffinity(List<EnemyCardState> deck) {
@@ -486,7 +486,7 @@ extension LightcoreControllerInventoryRuntime on LightcoreController {
     final manager = _enemyCoreManagerForLayer(activeLayer);
     return manager == null
         ? const <String>[]
-        : List<String>.unmodifiable(<String>['Tower Core: ${manager.name}']);
+        : List<String>.unmodifiable(<String>['Region: ${manager.name}']);
   }
 
   String _threatScanRiskLabel({

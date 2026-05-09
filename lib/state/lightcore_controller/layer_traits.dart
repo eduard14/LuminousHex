@@ -628,7 +628,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
     LightcoreTutorialStep.setFirstEnemyTarget =>
       'Red pressure reviewed. Same-color resistance is active in the deck.',
     LightcoreTutorialStep.adjustEnemyCount =>
-      'Swarm Pressure tuned. Higher pressure can pay more, but watch Output Efficiency.',
+      'Region pressure reviewed. Higher pressure can pay more, but watch Output Efficiency.',
     LightcoreTutorialStep.upgradeCoreRange =>
       'Global stat assigned. Account upgrades make every shell easier to grow.',
     _ => null,
@@ -1373,7 +1373,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
   String get bossSpawnStatusLabel {
     final boss = activeBossEnemyCard;
     if (!bossHuntsUnlocked && boss == null) {
-      return 'Apex Scans and boss changes unlock in the Prism Shell.';
+      return 'Regional boss changes unlock in the Prism Shell.';
     }
     if (ownedBossEnemyCardCount == 0) {
       return activeLayer.bossReady
@@ -1410,14 +1410,14 @@ extension LightcoreControllerLayerTraits on LightcoreController {
           'Tune Before Expanding',
         LightcoreTutorialStep.pullFirstRedEnemy => 'Teach Color Counters',
         LightcoreTutorialStep.setFirstEnemyTarget => 'Review Red Pressure',
-        LightcoreTutorialStep.adjustEnemyCount => 'Tune Swarm Pressure',
+        LightcoreTutorialStep.adjustEnemyCount => 'Read Region Echoes',
         LightcoreTutorialStep.openTowerMatrix => 'Inspect Tower Lists',
         LightcoreTutorialStep.upgradeCoreRange => 'Upgrade A Global Stat',
         LightcoreTutorialStep.openStore => 'Inspect The Store',
         LightcoreTutorialStep.claimBattlePassReward => 'Claim A Pass Reward',
-        LightcoreTutorialStep.openBossPulls => 'Apex Scans Unlocked',
-        LightcoreTutorialStep.armFirstBoss => 'Arm The First Apex',
-        LightcoreTutorialStep.defeatFirstBoss => 'Win The First Apex',
+        LightcoreTutorialStep.openBossPulls => 'Stabilize A Region',
+        LightcoreTutorialStep.armFirstBoss => 'Build An Enemy Suite',
+        LightcoreTutorialStep.defeatFirstBoss => 'Clear The Region Boss',
         LightcoreTutorialStep.openEquipment => 'Check The Drop',
         LightcoreTutorialStep.openManagers => 'Inspect The Foundry',
         LightcoreTutorialStep.forgeTowerManager => 'Forge A Core Manager',
@@ -1467,7 +1467,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         LightcoreTutorialStep.setFirstEnemyTarget =>
           'Click Anomalies and review Basic Red in the active deck.',
         LightcoreTutorialStep.adjustEnemyCount =>
-          'Click Anomalies and move the Swarm Pressure slider above the low setting.',
+          'Click Anomalies and inspect the Region Echo and stabilization controls.',
         LightcoreTutorialStep.openTowerMatrix =>
           'Click Towers to inspect completed Layer 1 sets and Layer 2 shell tools.',
         LightcoreTutorialStep.upgradeCoreRange =>
@@ -1477,9 +1477,9 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         LightcoreTutorialStep.claimBattlePassReward =>
           'Click Passes and claim a reward.',
         LightcoreTutorialStep.openBossPulls =>
-          'We need to start scanning for larger enemies, so click Pulls and run 1 apex scan.',
+          'Click Pulls and use Threat Scans to reveal or echo a region.',
         LightcoreTutorialStep.armFirstBoss =>
-          'Click Anomalies, open Apex, and arm White Warden.',
+          'Click Anomalies, open Apex, and review the enemy suite pieces from regional bosses.',
         LightcoreTutorialStep.defeatFirstBoss =>
           'Go back to battle and defeat White Warden.',
         LightcoreTutorialStep.openEquipment =>
@@ -1498,7 +1498,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         LightcoreTutorialStep.setScreenName =>
           'Open Menu, select Settings, then Change Name, and set your screen name.',
         LightcoreTutorialStep.openFriends =>
-          'Open Menu, select Friends, and inspect requests plus Apex Scan gifts.',
+          'Open Menu, select Friends, and inspect requests plus Threat Scan gifts.',
         LightcoreTutorialStep.openMentees =>
           'Open Menu, select Mentorship, and inspect your mentor plus mentee network.',
         LightcoreTutorialStep.openMentors =>
@@ -1544,7 +1544,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         LightcoreTutorialStep.pullFirstRedEnemy =>
           'Same-color attacks are resisted. Red anomalies punish overcommitting to one color and unlock the full counter system.',
         LightcoreTutorialStep.setFirstEnemyTarget =>
-          'Basic Red is already live in the anomaly deck. The next step is tuning how much swarm pressure the shell can handle.',
+          'Basic Red is already live in the anomaly deck. The next step is reading how region pressure changes the shell.',
         LightcoreTutorialStep.adjustEnemyCount =>
           'Anomaly count controls live pressure. More active anomalies can pay faster, but crowded lanes slow Output Efficiency if your towers cannot keep up.',
         LightcoreTutorialStep.openTowerMatrix =>
@@ -1556,15 +1556,15 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         LightcoreTutorialStep.claimBattlePassReward =>
           'Passes convert normal play into side rewards. Claim during quiet moments so active combat tutorials do not pile up.',
         LightcoreTutorialStep.openBossPulls =>
-          'Apex Scans unlock in the Prism Shell. They add boss-class anomaly cards you can arm to change the active Apex fight.',
+          'Regional bosses unlock in the Prism Shell. Final stabilization clears award Apex Cores, boss traits, and anomaly cards for enemy suites.',
         LightcoreTutorialStep.armFirstBoss =>
-          'Pulled Apex Anomalies do not spawn automatically. Arming an Apex Anomaly card sets the next apex target for the active layer.',
+          'Enemy suites are portable loadouts: one Apex Core, two boss traits, and three anomaly cards.',
         LightcoreTutorialStep.defeatFirstBoss =>
           'Apex Anomalies are milestone fights. This first one is weakened so you can learn the scan loop before full-strength encounters.',
         LightcoreTutorialStep.openEquipment =>
           'Event caches award equipment. Main Manager is where you inspect gear and start stacking permanent combat bonuses.',
         LightcoreTutorialStep.openManagers =>
-          'Managers are flux-forged modifiers. Core Managers and Threat Directors socket into the Tower Core from the foundry screen.',
+          'Managers are flux-forged modifiers. Core Managers socket into the Tower Core, while Threat Directors attach to Threat Map regions.',
         LightcoreTutorialStep.forgeTowerManager =>
           'Core Manager pulls cost Flux and advance the Core Manager Pass. Each roll can automate ready-taps across the active shell.',
         LightcoreTutorialStep.assignTowerManager =>
@@ -1572,13 +1572,13 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         LightcoreTutorialStep.forgeEnemyManager =>
           'Threat Director pulls cost Flux and advance the Threat Director Pass. Their bonuses reshape spawn pressure and rewards.',
         LightcoreTutorialStep.assignEnemyManager =>
-          'Threat Directors mount on the Tower Core, so one assigned Director reshapes every enemy spawned by this shell.',
+          'Threat Directors attach to a revealed region. Restabilizing that region validates the Director for offline output.',
         LightcoreTutorialStep.holdOverdrive =>
           'Manual Overdrive only accelerates live battle time. Passive shell income still tracks real time, so use it when you are actively pushing lanes.',
         LightcoreTutorialStep.setScreenName =>
           'Tournament rooms use your screen name on leaderboards and reward feeds, so the account needs a public pilot label before bracket play starts.',
         LightcoreTutorialStep.openFriends =>
-          'Friends are the direct social lane for requests and daily Apex Scan gifts. It is safe to inspect even with no pending invites.',
+          'Friends are the direct social lane for requests and daily Threat Scan gifts. It is safe to inspect even with no pending invites.',
         LightcoreTutorialStep.openMentees =>
           'Mentorship keeps your single mentor and all mentees in one relay board.',
         LightcoreTutorialStep.openMentors =>
@@ -1651,13 +1651,13 @@ extension LightcoreControllerLayerTraits on LightcoreController {
           LightcoreTutorialStep.forgeEnemyManager =>
             'The anomaly foundry answers next, offering a Threat Director who can reshape hostile traffic instead of only fighting it.',
           LightcoreTutorialStep.assignEnemyManager =>
-            'The selected Threat Scan gets a director, changing how that anomaly bundle pressures the shell and pays out.',
+            'The selected region gets a director, changing how that stabilized threat bundle pressures the shell and pays out.',
           LightcoreTutorialStep.holdOverdrive =>
             '"Sometimes in space, things are really far apart," Lumo says. "Hold Overdrive when a child lane feels long and pull the battle clock toward you."',
           LightcoreTutorialStep.setScreenName =>
             'Tournament control will not post an anonymous relay into public brackets. Your crew needs a callsign on the record first.',
           LightcoreTutorialStep.openFriends =>
-            'Relay control opens the public contact lane so requests and Apex Scan gifts are not hidden in a corner menu.',
+            'Relay control opens the public contact lane so requests and Threat Scan gifts are not hidden in a corner menu.',
           LightcoreTutorialStep.openMentees =>
             'The mentorship board shows your one upward connection and every branch growing under your signal.',
           LightcoreTutorialStep.openMentors =>

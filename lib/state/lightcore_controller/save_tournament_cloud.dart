@@ -754,8 +754,9 @@ extension LightcoreControllerSaveTournamentCloud on LightcoreController {
         'managerPowerLevel': managerPowerLevel,
         'shellCores': shellCores,
         'enemyTickets': enemyTickets,
-        'bossTickets': bossTickets,
-        'bossCores': bossCores,
+        'bossTickets': 0,
+        'bossCores': 0,
+        'threatShards': threatShards,
         'enemyPullCount': enemyPullCount,
         'bossPullCount': bossPullCount,
         'towerManagerPullCount': towerManagerPullCount,
@@ -827,6 +828,12 @@ extension LightcoreControllerSaveTournamentCloud on LightcoreController {
         'bossEnemyCards': _bossEnemyCards
             .map(_serializeEnemyCardState)
             .toList(growable: false),
+        'bossTraits': _bossTraits
+            .map(_serializeBossTraitState)
+            .toList(growable: false),
+        'apexCores': _apexCores
+            .map(_serializeApexCoreState)
+            .toList(growable: false),
         'equipmentInventory': _equipmentInventory
             .map(_serializePlayerEquipmentItem)
             .toList(growable: false),
@@ -841,6 +848,7 @@ extension LightcoreControllerSaveTournamentCloud on LightcoreController {
         'runtimeLayerId': _runtimeLayerId,
         'items': _layers.map(_serializeLayerSnapshot).toList(growable: false),
       },
+      'threatMap': _serializeThreatMapState(),
       'completedTowerShells': _completedTowerShells
           .map(_serializeCompletedTowerShellState)
           .toList(growable: false),

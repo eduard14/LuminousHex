@@ -12,6 +12,7 @@ import '../data/enemy_configs.dart';
 import '../data/enemy_manager_configs.dart';
 import '../data/lumicore_trait_catalog.dart';
 import '../data/medal_configs.dart';
+import '../data/threat_region_configs.dart';
 import '../data/tower_configs.dart';
 import '../models/lightcore_config.dart';
 import '../models/lightcore_avatar.dart';
@@ -46,6 +47,7 @@ part 'lightcore_controller/battle_actions.dart';
 part 'lightcore_controller/battle_unlocks.dart';
 part 'lightcore_controller/battle_tower_actions.dart';
 part 'lightcore_controller/battle_enemy_actions.dart';
+part 'lightcore_controller/threat_regions.dart';
 part 'lightcore_controller/battle_reset_actions.dart';
 part 'lightcore_controller/tower_math.dart';
 part 'lightcore_controller/combat_loop.dart';
@@ -446,17 +448,17 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
   ),
   LightcoreTutorialStep.pullFirstWhiteEnemy: LightcoreTutorialQuestDefinition(
     id: 'TUT-010',
-    title: 'Run a Safe Threat Scan',
+    title: 'Scan the First Region',
     teachGoal:
-        'Threat Scans are encounter signatures, not allies. They choose which enemies spawn and how much pressure you accept for better gains.',
+        'Threat Scans radiate across the hex map. A scan can reveal a region or echo one you already know.',
     trigger: 'Queue tutorial done',
-    primaryClickTarget: 'Threat Scan flag > White Drift > Begin',
+    primaryClickTarget: 'Top HUD > Scans > Threat Map',
     coachCopy:
-        'Run one safe Threat Scan. It adds a simple anomaly signature so you can see how risk becomes reward.',
+        'Run one Threat Scan from the starter region. Watch the pulse move across hex edges.',
     completionCondition: 'Resolve 1 Threat Scan',
-    reward: 'Unlock Threat Scan panel',
+    reward: 'Threat Map primer',
     failureHelpState:
-        'Use a safe White Drift scan and review the resolved signature.',
+        'Use the highlighted scan button and review the hit region or Region Echo.',
     analyticsEvent: 'tutorial_safe_threat_scan',
   ),
   LightcoreTutorialStep.readEffectiveGain: LightcoreTutorialQuestDefinition(
@@ -507,13 +509,13 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
   ),
   LightcoreTutorialStep.pullFirstRedEnemy: LightcoreTutorialQuestDefinition(
     id: 'TUT-014',
-    title: 'Learn Color Counters',
+    title: 'Challenge Region Pressure',
     teachGoal:
-        'Color counters explain why the shell cannot stay one-color forever. Red enemies resist red shots.',
+        'Regions define the anomaly combination. Harder rings bring rarer mixes and boss pressure.',
     trigger: 'After safe scan lesson',
-    primaryClickTarget: 'Threat Scan flag > run 1 scan',
+    primaryClickTarget: 'Anomalies > Threat Map > Challenge',
     coachCopy:
-        'Run one more Threat Scan to add Basic Red. It resists Red Prism shots, so mixed tower colors start to matter.',
+        'Challenge the next starter-region stabilization layer. Failing returns you to the previous stabilized level.',
     completionCondition: 'Resolve second Threat Scan',
     reward: 'Threat Scan x1',
     failureHelpState: 'Open Scans and run the highlighted single scan.',
@@ -535,17 +537,16 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
   ),
   LightcoreTutorialStep.adjustEnemyCount: LightcoreTutorialQuestDefinition(
     id: 'TUT-016',
-    title: 'Tune Swarm Pressure',
+    title: 'Read Region Echoes',
     teachGoal:
-        'Swarm Pressure is the risk dial: more active anomalies can pay faster, but too many drag down Output Efficiency.',
+        'Scans can hit revealed regions. Region Echoes merge from stabilized regions to reveal higher-ring hexes.',
     trigger: 'Red signature is available',
-    primaryClickTarget: 'Anomalies > Swarm Pressure control',
+    primaryClickTarget: 'Anomalies > Threat Map',
     coachCopy:
-        'Raise Swarm Pressure above the low setting. More anomalies can pay faster, but unstable lanes reduce flow.',
-    completionCondition: 'Swarm Pressure adjusted',
+        'Review the Threat Map. Echoes are not wasted scans; enough of them become a beacon.',
+    completionCondition: 'Region Echo reviewed',
     reward: 'Small Lumen grant',
-    failureHelpState:
-        'Open Anomalies and use the highlighted pressure control.',
+    failureHelpState: 'Open Anomalies and read the Threat Map panel.',
     analyticsEvent: 'tutorial_adjust_enemy_count',
   ),
   LightcoreTutorialStep.openTowerMatrix: LightcoreTutorialQuestDefinition(
@@ -606,32 +607,32 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
   ),
   LightcoreTutorialStep.openBossPulls: LightcoreTutorialQuestDefinition(
     id: 'TUT-021',
-    title: 'Run an Apex Scan',
+    title: 'Stabilize the First Region',
     teachGoal:
-        'Apex Scans add boss-class anomaly cards after the Prism Shell unlock.',
+        'The full hex map unlocks after the starter region is fully stabilized and its boss is defeated.',
     trigger: 'Prism Shell created',
-    primaryClickTarget: 'Top HUD > Scans > Apex Scan',
+    primaryClickTarget: 'Anomalies > Threat Map > Challenge',
     coachCopy:
-        'Open Scans and run one Apex Scan. New Apex cards can replace White Warden once armed.',
-    completionCondition: 'Resolve one Apex Scan',
-    reward: 'Apex card',
+        'Keep challenging the starter region until the final boss layer is cleared.',
+    completionCondition: 'Starter region fully stabilized',
+    reward: 'Full Threat Map',
     failureHelpState:
-        'Use the highlighted Scans icon and the Apex single-scan button.',
+        'Use the Threat Map panel and start the next stabilization challenge.',
     analyticsEvent: 'tutorial_open_boss_pulls',
   ),
   LightcoreTutorialStep.armFirstBoss: LightcoreTutorialQuestDefinition(
     id: 'TUT-022',
-    title: 'Arm the First Apex',
+    title: 'Build an Apex Suite',
     teachGoal:
-        'Pulled Apex Anomalies do not spawn until one is armed for the shell.',
+        'Portable enemy suites use 1 Apex Core, 2 boss traits, and 3 anomaly cards.',
     trigger: 'First Apex card owned',
-    primaryClickTarget: 'Anomalies > Apex > White Warden > Arm',
+    primaryClickTarget: 'Anomalies > Threat Map > Suite',
     coachCopy:
-        'Open Anomalies, switch to Apex, and arm White Warden so the next Apex spawn has a target.',
-    completionCondition: 'White Warden armed',
-    reward: 'Apex lane primed',
+        'Use boss drops from stabilized regions to assemble your first enemy suite.',
+    completionCondition: 'Enemy suite has an Apex Core',
+    reward: 'Suite primer',
     failureHelpState:
-        'Use the highlighted Apex tab and White Warden arm button.',
+        'Open Anomalies and review boss-core, trait, and anomaly-card slots.',
     analyticsEvent: 'tutorial_arm_first_boss',
   ),
   LightcoreTutorialStep.defeatFirstBoss: LightcoreTutorialQuestDefinition(
@@ -721,15 +722,16 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
     id: 'TUT-029',
     title: 'Assign a Threat Director',
     teachGoal:
-        'An assigned Threat Director reshapes every matching anomaly in this shell.',
+        'An assigned Threat Director reshapes a revealed region after stabilization validates the setup.',
     trigger: 'Threat Director owned',
-    primaryClickTarget: 'Managers > Threat Director > Assign to Tower Core',
+    primaryClickTarget:
+        'Managers > Threat Director > Assign to Selected Region',
     coachCopy:
-        'Assign the Threat Director to the Tower Core. Its modifiers affect the active shell threat loop.',
-    completionCondition: 'Assign director to core',
+        'Assign the Threat Director to the selected Threat Map region, then restabilize that region.',
+    completionCondition: 'Assign director to region',
     reward: 'Threat Scans',
     failureHelpState:
-        'Highlight the director tile and Tower Core assignment control.',
+        'Highlight the director tile and selected-region assignment control.',
     analyticsEvent: 'tutorial_assign_enemy_manager',
   ),
   LightcoreTutorialStep.holdOverdrive: LightcoreTutorialQuestDefinition(
@@ -765,11 +767,11 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
     id: 'TUT-032',
     title: 'Inspect Friends',
     teachGoal:
-        'Friends are where requests and daily Apex Scan gifts are managed.',
+        'Friends are where requests and daily Threat Scan gifts are managed.',
     trigger: 'Screen name set',
     primaryClickTarget: 'Menu > Friends',
     coachCopy:
-        'Open Menu, select Friends, and inspect requests plus daily Apex Scan gifts.',
+        'Open Menu, select Friends, and inspect requests plus daily Threat Scan gifts.',
     completionCondition: 'Friends opened',
     reward: 'Threat Scan',
     failureHelpState: 'Use the highlighted Menu button, then Friends.',
@@ -1157,6 +1159,16 @@ class LightcoreController extends ChangeNotifier {
     _unlockedProfileMedalIds.clear();
     _enemyCards = _createEnemyCardInventory();
     _bossEnemyCards = _createBossEnemyCardInventory();
+    _threatRegions = _createThreatRegionStates();
+    _regionEchoes = <String, int>{};
+    _bossTraits = _createBossTraitInventory();
+    _apexCores = _createApexCoreInventory();
+    _activeEnemySuite = const EnemySuiteState();
+    _selectedThreatRegionId = ThreatRegionLibrary.all.first.id;
+    _offlineRegionId = ThreatRegionLibrary.all.first.id;
+    _offlineRegionStabilizedLevel = 0;
+    _offlineRegionValidatedThreatDirectorId = null;
+    _threatRegionChallenge = null;
     _activeBossEnemyCardId = BossEnemyLibrary.starterWhiteWarden.id;
     _seedStarterEnemyCards();
     _seedStarterManagers();
@@ -1463,6 +1475,17 @@ class LightcoreController extends ChangeNotifier {
   late List<CompletedTowerShellState> _completedTowerShells;
   late List<EnemyCardState> _enemyCards;
   late List<EnemyCardState> _bossEnemyCards;
+  late List<ThreatRegionState> _threatRegions;
+  late Map<String, int> _regionEchoes;
+  late List<BossTraitState> _bossTraits;
+  late List<ApexCoreState> _apexCores;
+  late EnemySuiteState _activeEnemySuite;
+  String? _selectedThreatRegionId;
+  String? _offlineRegionId;
+  int _offlineRegionStabilizedLevel = 0;
+  String? _offlineRegionValidatedThreatDirectorId;
+  ThreatRegionChallengeState? _threatRegionChallenge;
+  final Set<String> _threatRegionDefeatedBossIds = <String>{};
   late List<PlayerEquipmentItem> _equipmentInventory;
   late List<EnemyState> _enemies;
   late List<EnergyPulseState> _pulses;
@@ -1514,6 +1537,7 @@ class LightcoreController extends ChangeNotifier {
   int enemyTickets = 18;
   int bossTickets = 0;
   int bossCores = 0;
+  int threatShards = 0;
   int enemyPullCount = 0;
   int bossPullCount = 0;
   int towerManagerPullCount = 0;

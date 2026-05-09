@@ -969,6 +969,37 @@ void main() {
     await tester.binding.setSurfaceSize(const Size(1200, 1000));
 
     final controller = LightcoreController(screenName: 'Pilot Hex');
+    final starterRegion = controller.threatRegionConfigs.first;
+    final secondRegion = controller.threatRegionConfigs[1];
+    final anomalyCounts = <String, int>{};
+    for (final cardId in starterRegion.anomalyCardIds) {
+      anomalyCounts[cardId] = (anomalyCounts[cardId] ?? 0) + 1;
+    }
+    controller
+      ..experience = LightcoreController.experienceForOverallLevel(
+        LightcoreController.tournamentUnlockLevel,
+      )
+      ..kills = LightcoreController.killsForOverallLevel(
+        LightcoreController.tournamentUnlockLevel,
+      )
+      ..debugRevealThreatRegion(
+        starterRegion.id,
+        stabilizedLevel: starterRegion.stabilizationLayers,
+      )
+      ..debugGrantApexCore(starterRegion.primaryBossId)
+      ..debugGrantBossTraitForBoss(starterRegion.primaryBossId)
+      ..debugGrantBossTraitForBoss(secondRegion.primaryBossId);
+    for (final entry in anomalyCounts.entries) {
+      controller.debugGrantEnemyCardById(entry.key, copies: entry.value);
+    }
+    controller.setActiveEnemySuite(
+      apexCoreBossId: starterRegion.primaryBossId,
+      bossTraitIds: [
+        'trait_${starterRegion.primaryBossId}',
+        'trait_${secondRegion.primaryBossId}',
+      ],
+      anomalyCardIds: starterRegion.anomalyCardIds,
+    );
     addTearDown(controller.dispose);
     final backend = _TournamentOverviewBackend(
       joinedModes: {LightcoreTournamentModeId.arenaFlow},

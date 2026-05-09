@@ -394,6 +394,9 @@ class LightcoreOfflineProgressSnapshot {
     required this.activeLayerTier,
     required this.builtTowerCount,
     required this.prestigeLevel,
+    this.offlineRegionId,
+    this.offlineRegionStabilizedLevel = 0,
+    this.offlineRegionValidatedThreatDirectorId,
   });
 
   final int generatedAtMillis;
@@ -404,6 +407,9 @@ class LightcoreOfflineProgressSnapshot {
   final int activeLayerTier;
   final int builtTowerCount;
   final int prestigeLevel;
+  final String? offlineRegionId;
+  final int offlineRegionStabilizedLevel;
+  final String? offlineRegionValidatedThreatDirectorId;
 
   Map<String, dynamic> toMap() {
     return <String, dynamic>{
@@ -415,6 +421,10 @@ class LightcoreOfflineProgressSnapshot {
       'activeLayerTier': activeLayerTier,
       'builtTowerCount': builtTowerCount,
       'prestigeLevel': prestigeLevel,
+      'offlineRegionId': offlineRegionId,
+      'offlineRegionStabilizedLevel': offlineRegionStabilizedLevel,
+      'offlineRegionValidatedThreatDirectorId':
+          offlineRegionValidatedThreatDirectorId,
     };
   }
 
@@ -430,6 +440,11 @@ class LightcoreOfflineProgressSnapshot {
       activeLayerTier: (data['activeLayerTier'] as num?)?.toInt() ?? 1,
       builtTowerCount: (data['builtTowerCount'] as num?)?.toInt() ?? 0,
       prestigeLevel: (data['prestigeLevel'] as num?)?.toInt() ?? 0,
+      offlineRegionId: data['offlineRegionId'] as String?,
+      offlineRegionStabilizedLevel:
+          (data['offlineRegionStabilizedLevel'] as num?)?.toInt() ?? 0,
+      offlineRegionValidatedThreatDirectorId:
+          data['offlineRegionValidatedThreatDirectorId'] as String?,
     );
   }
 }

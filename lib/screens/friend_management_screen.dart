@@ -349,7 +349,7 @@ class _FriendManagementScreenState extends State<FriendManagementScreen> {
         _InvitePanel(
           title: 'Add Friend Manually',
           description:
-              'Use a player id, screen name, or pasted friend link. Friend requests unlock daily Apex Scan gifts.',
+              'Use a player id, screen name, or pasted friend link. Friend requests unlock daily Threat Scan gifts.',
           targetController: _targetController,
           busy: _busy,
           targetLabel: 'Player id, screen name, or friend link',

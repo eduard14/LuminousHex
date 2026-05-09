@@ -373,12 +373,18 @@ extension LightcoreControllerStateAccessors on LightcoreController {
   EnemyCardState? get selectedEnemyCardOrNull =>
       selectedEnemyCardId == null ? null : enemyCardById(selectedEnemyCardId!);
 
-  EnemyCardState? get activeBossEnemyCard => _activeBossEnemyCardId == null
-      ? null
-      : (() {
-          final card = bossEnemyCardById(_activeBossEnemyCardId!);
-          return card != null && card.isOwned ? card : null;
-        })();
+  EnemyCardState? get activeBossEnemyCard {
+    final regionBosses = activeThreatRegionBossCards;
+    if (regionBosses.isNotEmpty) {
+      return regionBosses.first;
+    }
+    return _activeBossEnemyCardId == null
+        ? null
+        : (() {
+            final card = bossEnemyCardById(_activeBossEnemyCardId!);
+            return card != null && card.isOwned ? card : null;
+          })();
+  }
 
   OuterTowerState get selectedSlot => selectedSlotOrNull ?? _slots.first;
 
@@ -948,7 +954,7 @@ extension LightcoreControllerStateAccessors on LightcoreController {
   bool get canOpenEnemyTickets => enemyTickets >= enemyTicketCost;
 
   bool get canOpenBossTickets =>
-      bossHuntsUnlocked && bossTickets >= bossTicketCost;
+      bossHuntsUnlocked && enemyTickets >= enemyTicketCost;
 
   bool get canForgeTowerManager =>
       managersUnlocked && flux >= towerManagerFluxCost;
@@ -990,14 +996,14 @@ extension LightcoreControllerStateAccessors on LightcoreController {
       '$echoSeeds Echo Seed${echoSeeds == 1 ? '' : 's'}';
 
   String get bossTicketCurrencyName =>
-      LightcoreCurrencyLabels.bossScanName(bossTickets);
+      LightcoreCurrencyLabels.threatScanName(enemyTickets);
 
   String get bossCoreCurrencyName =>
-      bossCores == 1 ? 'Heartcore' : 'Heartcores';
+      threatShards == 1 ? 'Threat Shard' : 'Threat Shards';
 
-  String get bossTicketLabel => '$bossTickets $bossTicketCurrencyName';
+  String get bossTicketLabel => '$enemyTickets $bossTicketCurrencyName';
 
-  String get bossCoreLabel => '$bossCores $bossCoreCurrencyName';
+  String get bossCoreLabel => '$threatShards $bossCoreCurrencyName';
 
   int get equipmentInventoryCapacity => maxEquipmentInventorySize;
 
@@ -1263,14 +1269,27 @@ extension LightcoreControllerStateAccessors on LightcoreController {
         return total + bossInventoryEffectForCard(card);
       });
 
+  TowerPatternBonusProfile get regionInventoryBonuses =>
+      _threatRegions.fold(TowerPatternBonusProfile.zero, (total, state) {
+        final config = ThreatRegionLibrary.byId[state.regionId];
+        if (config == null ||
+            state.stabilizedLevel < config.stabilizationLayers) {
+          return total;
+        }
+        return total + config.inventoryEffect;
+      });
+
   TowerPatternBonusProfile get towerInventoryBonuses =>
-      enemyInventoryBonuses + bossInventoryBonuses;
+      enemyInventoryBonuses + bossInventoryBonuses + regionInventoryBonuses;
 
   List<String> get enemyInventoryBonusHighlights =>
       _towerBonusHighlights(enemyInventoryBonuses, maxItems: 4);
 
   List<String> get bossInventoryBonusHighlights =>
       _towerBonusHighlights(bossInventoryBonuses, maxItems: 4);
+
+  List<String> get regionInventoryBonusHighlights =>
+      _towerBonusHighlights(regionInventoryBonuses, maxItems: 4);
 
   List<String> get towerInventoryBonusHighlights =>
       _towerBonusHighlights(towerInventoryBonuses, maxItems: 5);
@@ -1687,34 +1706,7 @@ extension LightcoreControllerStateAccessors on LightcoreController {
   }
 
   double get offlineKillsPerHour {
-    if (!_swarmActivated) {
-      return 0;
-    }
-    final managedTowerCount = _managedTowerCountForLayer(activeLayer);
-    if (managedTowerCount == 0) {
-      return 0;
-    }
-
-    final targetSpan = max(1, enemyTargetMax - minEnemyTarget);
-    final targetPressure = ((enemyTargetCount - minEnemyTarget) / targetSpan)
-        .clamp(0.0, 1.0);
-    final shellReadiness =
-        (0.018 +
-                (managedTowerCount * 0.032) +
-                ((_core.level - 1) * 0.016) +
-                ((activeLayer.tier - 1) * 0.03))
-            .clamp(0.018, 0.32);
-    final recentEffectiveGain = activeEffectiveGainMultiplier.clamp(0.15, 4.5);
-    final pressureMultiplier =
-        (0.72 + (targetPressure * 0.28)) * recentEffectiveGain;
-    final tierMultiplier = 1 + ((activeLayer.tier - 1) * 0.45);
-    return min(
-          maxOfflineKillsPerHour * tierMultiplier,
-          (3600 / _spawnInterval) *
-              shellReadiness *
-              pressureMultiplier *
-              tierMultiplier,
-        ) *
+    return threatRegionOfflineKillsPerHour *
         _economyBalanceMultiplier('offlineKills');
   }
 }

@@ -76,7 +76,7 @@ extension on FriendManagementSection {
 
   String description(LightcoreSocialOverview? overview) => switch (this) {
     FriendManagementSection.friends =>
-      'Friend requests unlock daily Apex Scan gifts. Apex Scan gifts reset for everyone at midnight Eastern.',
+      'Friend requests unlock daily Threat Scan gifts. Threat Scan gifts reset for everyone at midnight Eastern.',
     FriendManagementSection.mentees || FriendManagementSection.mentors =>
       'You can have one mentor above you and unlimited mentees below you. The best ${overview?.activeMenteeBonusLimit ?? LightcoreSocialLimits.activeMenteeBonusLimit} in-band mentees feed full bonuses.',
   };

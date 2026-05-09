@@ -227,6 +227,10 @@ extension LightcoreControllerRewardsSocial on LightcoreController {
   }
 
   EnemyManagerState? _enemyCoreManagerForLayer(TowerLayerSnapshot layer) {
+    final regionManager = activeRegionThreatDirector;
+    if (regionManager != null) {
+      return regionManager;
+    }
     EnemyManagerState? legacyLayerManager;
     for (final manager in _enemyManagers) {
       if (manager.assignedLayerId != layer.id) {
@@ -450,11 +454,17 @@ extension LightcoreControllerRewardsSocial on LightcoreController {
   UnmodifiableListView<FriendRelayPiece> get availableSharedRelayTowerPieces =>
       UnmodifiableListView(_ownedSharedRelayTowerPieces());
 
-  List<EnemyCardState> get activeEnemyDeck => _activeEnemyCardIds
-      .map(enemyCardById)
-      .whereType<EnemyCardState>()
-      .where((card) => card.isOwned)
-      .toList();
+  List<EnemyCardState> get activeEnemyDeck {
+    final regionDeck = activeThreatRegionEnemyDeck;
+    if (regionDeck.isNotEmpty) {
+      return regionDeck;
+    }
+    return _activeEnemyCardIds
+        .map(enemyCardById)
+        .whereType<EnemyCardState>()
+        .where((card) => card.isOwned)
+        .toList();
+  }
 
   UnmodifiableListView<ThreatAssignmentPresetState>
   get activeThreatAssignmentPresets {

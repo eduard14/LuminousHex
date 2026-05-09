@@ -10,8 +10,8 @@ class LightcoreCurrencyLabels {
   static const String scansShort = 'Scans';
   static const String threatScanSingular = 'Threat Scan';
   static const String threatScanPlural = 'Threat Scans';
-  static const String bossScanSingular = 'Apex Scan';
-  static const String bossScanPlural = 'Apex Scans';
+  static const String bossScanSingular = 'Threat Scan';
+  static const String bossScanPlural = 'Threat Scans';
 
   static String threatScanName(int count) =>
       count == 1 ? threatScanSingular : threatScanPlural;

@@ -77,6 +77,7 @@ extension LightcoreControllerCombatLoop on LightcoreController {
         _queueLocalhostCoreTap(battleDt);
       }
       _advanceEnemies(battleDt);
+      _advanceThreatRegionChallenge(battleDt);
       _fireCoreIfPossible(allowDefaultShot: false);
       _fireLayer2IfPossible();
       _updateFlowEfficiency();
@@ -530,7 +531,7 @@ extension LightcoreControllerCombatLoop on LightcoreController {
     final startingFlux = flux;
     final startingEnemyTickets = enemyTickets;
     final startingBossTickets = bossTickets;
-    final startingBossCores = bossCores;
+    final startingThreatShards = threatShards;
     final startingExperience = experience;
     final startingKills = kills;
     var runtimeIsBusy = false;
@@ -562,7 +563,7 @@ extension LightcoreControllerCombatLoop on LightcoreController {
         flux != startingFlux ||
         enemyTickets != startingEnemyTickets ||
         bossTickets != startingBossTickets ||
-        bossCores != startingBossCores ||
+        threatShards != startingThreatShards ||
         experience != startingExperience ||
         kills != startingKills;
 

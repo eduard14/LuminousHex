@@ -6,10 +6,10 @@ import 'package:lightcore/models/lightcore_types.dart';
 import 'package:lightcore/state/lightcore_controller.dart';
 
 void main() {
-  test('apex scan labels match apex pull currency naming', () {
-    expect(LightcoreCurrencyLabels.bossScanCount(1), '1 Apex Scan');
-    expect(LightcoreCurrencyLabels.bossScanCount(2), '2 Apex Scans');
-    expect(LightcoreCurrencyLabels.rewardBossScans(3), '+3 Apex Scans');
+  test('retired apex scan labels display as threat scans', () {
+    expect(LightcoreCurrencyLabels.bossScanCount(1), '1 Threat Scan');
+    expect(LightcoreCurrencyLabels.bossScanCount(2), '2 Threat Scans');
+    expect(LightcoreCurrencyLabels.rewardBossScans(3), '+3 Threat Scans');
   });
 
   test('manager shard labels match manager power currency naming', () {

@@ -819,6 +819,14 @@ extension LightcoreControllerBattleEnemyActions on LightcoreController {
   }
 
   void assignEnemyManagerToSelected(String managerId) {
+    final regionId = _selectedThreatRegionId;
+    if (regionId != null &&
+        assignThreatDirectorToRegion(
+          regionId: regionId,
+          managerId: managerId,
+        )) {
+      return;
+    }
     assignEnemyManagerToCore(managerId);
   }
 
@@ -853,7 +861,7 @@ extension LightcoreControllerBattleEnemyActions on LightcoreController {
       _syncTutorialStep(showBanner: false);
     }
     _showBanner(
-      '${_enemyManagers[managerIndex].name} assigned to the Tower Core for all enemies.',
+      '${_enemyManagers[managerIndex].name} assigned to the legacy shell threat slot.',
     );
     _notifyNow();
   }

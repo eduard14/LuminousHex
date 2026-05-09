@@ -151,7 +151,7 @@ class LightcoreSocialFriend {
 
   String get giftStatusLabel {
     if (giftAvailable) {
-      return 'Apex Scan waiting';
+      return 'Threat Scan waiting';
     }
     if (giftSentToday && giftClaimedToday) {
       return 'Exchanged today';

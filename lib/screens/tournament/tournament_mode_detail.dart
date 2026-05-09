@@ -417,6 +417,15 @@ class _TournamentModeDetailScreenState
       _arenaRivalEntry?.snapshot;
 
   List<EnemyCardState> get _arenaPlayerEnemyStack {
+    if (widget.controller.hasCompleteEnemySuite) {
+      final suiteCards = widget.controller.activeEnemySuite.anomalyCardIds
+          .map(widget.controller.enemyCardById)
+          .whereType<EnemyCardState>()
+          .toList(growable: false);
+      if (suiteCards.isNotEmpty) {
+        return suiteCards;
+      }
+    }
     final deck = widget.controller.activeEnemyDeck;
     if (deck.isNotEmpty) {
       return deck;
@@ -431,10 +440,35 @@ class _TournamentModeDetailScreenState
     ];
   }
 
-  EnemyCardState? get _arenaPlayerBoss => widget.controller.activeBossEnemyCard;
+  EnemyCardState? get _arenaPlayerBoss {
+    if (widget.controller.hasCompleteEnemySuite) {
+      final bossId = widget.controller.activeEnemySuite.apexCoreBossId;
+      final config = bossId == null
+          ? null
+          : _enemyConfigById(bossId, boss: true);
+      if (config != null) {
+        final owned = widget.controller.bossEnemyCardById(bossId!);
+        return owned?.isOwned == true ? owned : _arenaEnemyState(config, 1);
+      }
+    }
+    return widget.controller.activeBossEnemyCard;
+  }
 
   List<EnemyCardState> get _arenaRivalEnemyStack {
     final snapshot = _arenaRivalSnapshot;
+    if (snapshot?.enemySuiteComplete == true &&
+        snapshot!.enemySuiteAnomalyCardIds.isNotEmpty) {
+      final cards = snapshot.enemySuiteAnomalyCardIds
+          .map((id) {
+            final config = _enemyConfigById(id);
+            return config == null ? null : _arenaEnemyState(config, 1);
+          })
+          .whereType<EnemyCardState>()
+          .toList(growable: false);
+      if (cards.isNotEmpty) {
+        return cards;
+      }
+    }
     if (snapshot != null && snapshot.enemyCardIds.isNotEmpty) {
       final cards = snapshot.enemyCardIds
           .map((id) {
@@ -455,7 +489,9 @@ class _TournamentModeDetailScreenState
 
   EnemyCardState? get _arenaRivalBoss {
     final snapshot = _arenaRivalSnapshot;
-    final bossId = snapshot?.bossEnemyCardId;
+    final bossId = snapshot?.enemySuiteComplete == true
+        ? snapshot?.enemySuiteApexCoreBossId
+        : snapshot?.bossEnemyCardId;
     if (bossId == null) {
       return null;
     }
@@ -582,11 +618,42 @@ class _TournamentModeDetailScreenState
   bool get _canLaunchRun =>
       widget.modeState.isOpen && (widget.modeState.joined || _joinedForLaunch);
 
+  bool get _arenaFlowRequirementsMet =>
+      _mode != LightcoreTournamentModeId.arenaFlow ||
+      (widget.controller.accountRadianceLevel >=
+              LightcoreController.tournamentUnlockLevel &&
+          widget.controller.arenaEnemySuiteReady);
+
+  String get _arenaFlowRequirementLabel {
+    if (_mode != LightcoreTournamentModeId.arenaFlow ||
+        _arenaFlowRequirementsMet) {
+      return '';
+    }
+    final missing = <String>[];
+    if (widget.controller.accountRadianceLevel <
+        LightcoreController.tournamentUnlockLevel) {
+      missing.add(
+        'Account Radiance Lv ${LightcoreController.tournamentUnlockLevel}',
+      );
+    }
+    if (widget.controller.fullyStabilizedRegionCount == 0) {
+      missing.add('one fully stabilized region');
+    }
+    if (!widget.controller.hasCompleteEnemySuite) {
+      missing.add('a complete enemy suite');
+    }
+    return 'Arena Flow requires ${missing.join(', ')}.';
+  }
+
   Future<void> _queueStartRun() async {
     if (_launchingRun ||
         _runActive ||
         widget.busy ||
         !widget.modeState.isOpen) {
+      return;
+    }
+    if (!_arenaFlowRequirementsMet) {
+      setState(() => _hint = _arenaFlowRequirementLabel);
       return;
     }
     widget.onAutoStartConsumed?.call();
@@ -628,7 +695,7 @@ class _TournamentModeDetailScreenState
   }
 
   void _startRun() {
-    if (!_canLaunchRun) {
+    if (!_canLaunchRun || !_arenaFlowRequirementsMet) {
       setState(() => _launchingRun = false);
       return;
     }
@@ -1232,7 +1299,11 @@ class _TournamentModeDetailScreenState
           const SizedBox(height: 14),
           FilledButton.icon(
             onPressed:
-                widget.busy || _launchingRun || _runActive || !state.isOpen
+                widget.busy ||
+                    _launchingRun ||
+                    _runActive ||
+                    !state.isOpen ||
+                    !_arenaFlowRequirementsMet
                 ? null
                 : _queueStartRun,
             icon: const Icon(Icons.play_circle_fill_rounded),
@@ -1322,6 +1393,7 @@ class _TournamentModeDetailScreenState
   Widget _buildArenaFlowPrep(BuildContext context, Color tint) {
     final playerEnemies = _arenaPlayerEnemyStack;
     final playerBoss = _arenaPlayerBoss;
+    final requirementLabel = _arenaFlowRequirementLabel;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1384,6 +1456,10 @@ class _TournamentModeDetailScreenState
               ),
             ],
           ),
+        ],
+        if (requirementLabel.isNotEmpty) ...[
+          const SizedBox(height: 12),
+          _InlineTournamentNote(message: requirementLabel, tint: tint),
         ],
       ],
     );
@@ -1822,6 +1898,43 @@ class _TournamentModeDetailScreenState
             ],
           ],
         ],
+      ),
+    );
+  }
+}
+
+class _InlineTournamentNote extends StatelessWidget {
+  const _InlineTournamentNote({required this.message, required this.tint});
+
+  final String message;
+  final Color tint;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: tint.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: tint.withValues(alpha: 0.28)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(Icons.lock_open_rounded, size: 18, color: tint),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                message,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: tint,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -887,14 +887,14 @@ exports.sendBossPullGift = onCall(
       if (!friendLink.exists) {
         throw new HttpsError(
           "failed-precondition",
-          "Apex Scan gifts can only be sent to friends.",
+          "Threat Scan gifts can only be sent to friends.",
         );
       }
       const giftSnap = await transaction.get(giftRef);
       if (giftSnap.exists) {
         throw new HttpsError(
           "already-exists",
-          "You already sent this friend an Apex Scan gift for today's reset.",
+          "You already sent this friend a Threat Scan gift for today's reset.",
         );
       }
       transaction.set(giftRef, {
@@ -957,8 +957,8 @@ exports.sendAllBossPullGifts = onCall(
       skippedCount: Math.max(0, friendUids.length - sentCount),
       message:
         sentCount > 0
-          ? `Sent ${sentCount} Apex Scan gift${sentCount === 1 ? "" : "s"}.`
-          : "No Apex Scan gifts were ready to send.",
+          ? `Sent ${sentCount} Threat Scan gift${sentCount === 1 ? "" : "s"}.`
+          : "No Threat Scan gifts were ready to send.",
       overview: await buildSocialOverview(context),
     };
   },
@@ -983,19 +983,19 @@ exports.claimBossPullGift = onCall(
     await db.runTransaction(async (transaction) => {
       const giftSnap = await transaction.get(giftRef);
       if (!giftSnap.exists) {
-        throw new HttpsError("not-found", "No Apex Scan gift is waiting.");
+        throw new HttpsError("not-found", "No Threat Scan gift is waiting.");
       }
       const giftData = giftSnap.data() || {};
       if (giftData.toUid !== context.auth.uid) {
         throw new HttpsError(
           "permission-denied",
-          "Only the recipient can claim this Apex Scan gift.",
+          "Only the recipient can claim this Threat Scan gift.",
         );
       }
       if (giftData.claimedAt) {
         throw new HttpsError(
           "failed-precondition",
-          "This Apex Scan gift has already been claimed.",
+          "This Threat Scan gift has already been claimed.",
         );
       }
       granted = clampInt(
@@ -1016,7 +1016,7 @@ exports.claimBossPullGift = onCall(
 
     return {
       bossTicketsGranted: granted,
-      message: `Apex Scan gift claimed: +${granted} Apex Scan${
+      message: `Threat Scan gift claimed: +${granted} Threat Scan${
         granted === 1 ? "" : "s"
       }.`,
       overview: await buildSocialOverview(context),
@@ -1079,10 +1079,10 @@ exports.claimAllBossPullGifts = onCall(
       claimedCount: claim.claimedCount,
       message:
         claim.granted > 0
-          ? `Apex Scan gifts claimed: +${claim.granted} Apex Scan${
+          ? `Threat Scan gifts claimed: +${claim.granted} Threat Scan${
               claim.granted === 1 ? "" : "s"
             }.`
-          : "No Apex Scan gifts were ready to claim.",
+          : "No Threat Scan gifts were ready to claim.",
       overview: await buildSocialOverview(context),
     };
   },

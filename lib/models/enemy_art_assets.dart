@@ -67,6 +67,22 @@ const Map<String, String> bossEnemyImageAssetOverrides = {
   'boss_basic_ember_colossus': 'assets/sprites/bosses/basic/huskstar_rex.jpeg',
   'boss_basic_verdant_devourer':
       'assets/sprites/bosses/basic/mother_moss_nova.jpeg',
+  'boss_uncommon_nullstar_cartographer':
+      'assets/sprites/bosses/uncommon/void_seraph.jpeg',
+  'boss_rare_nullstar_cartographer':
+      'assets/sprites/bosses/rare/void_seraph.jpeg',
+  'boss_epic_nullstar_cartographer':
+      'assets/sprites/bosses/epic/void_seraph.jpeg',
+  'boss_legendary_nullstar_cartographer':
+      'assets/sprites/bosses/legendary/void_seraph.jpeg',
+  'boss_uncommon_chronoglass_bastion':
+      'assets/sprites/bosses/uncommon/overmind_reaver.jpeg',
+  'boss_rare_chronoglass_bastion':
+      'assets/sprites/bosses/rare/overmind_reaver.jpeg',
+  'boss_epic_chronoglass_bastion':
+      'assets/sprites/bosses/epic/overmind_reaver.jpeg',
+  'boss_legendary_chronoglass_bastion':
+      'assets/sprites/bosses/legendary/overmind_reaver.jpeg',
 };
 
 String? enemyImageAssetForConfig(EnemyConfig config) {

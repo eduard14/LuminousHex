@@ -132,6 +132,8 @@ class _EnemyManagementScreenState extends State<EnemyManagementScreen> {
               _ThreatAssignmentPanel(controller: controller),
               const SizedBox(height: 18),
               _MassEnemyFusePanel(controller: controller),
+              const SizedBox(height: 18),
+              _ThreatRegionMapPanel(controller: controller),
             ] else ...[
               Text(
                 '${controller.activeLayerLabel}  •  Owned ${controller.ownedBossEnemyCardCount}/${controller.bossEnemyCards.length}  •  ${controller.bossTicketLabel}  •  ${controller.bossCoreLabel}',
@@ -163,6 +165,263 @@ class _EnemyManagementScreenState extends State<EnemyManagementScreen> {
         );
       },
     );
+  }
+}
+
+class _ThreatRegionMapPanel extends StatelessWidget {
+  const _ThreatRegionMapPanel({required this.controller});
+
+  final LightcoreController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final selected = controller.selectedThreatRegionConfig;
+    final selectedState = controller.selectedThreatRegionState;
+    final textTheme = Theme.of(context).textTheme;
+    final displayedRegions = controller.fullThreatMapUnlocked
+        ? controller.threatRegionConfigs
+        : [controller.threatRegionConfigs.first];
+    ThreatRegionConfig? mergeTarget;
+    if (selected != null &&
+        selectedState != null &&
+        selectedState.stabilizedLevel >= selected.stabilizationLayers) {
+      for (final region in controller.threatRegionConfigs) {
+        if (region.ring <= selected.ring ||
+            (controller.threatRegionStateById(region.id)?.revealed ?? false)) {
+          continue;
+        }
+        final cost = controller.regionEchoMergeCostForRing(region.ring);
+        if (controller.regionEchoCount(selected.id) >= cost) {
+          mergeTarget = region;
+          break;
+        }
+      }
+    }
+    return AuroraPanel(
+      tint: selected == null
+          ? LightcorePalette.solar
+          : _rarityTint(selected.rarity),
+      padding: const EdgeInsets.all(14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(child: Text('Threat Map', style: textTheme.titleMedium)),
+              _InfoChip(label: controller.enemyTicketLabel),
+              const SizedBox(width: 8),
+              _InfoChip(
+                label: '${controller.fullyStabilizedRegionCount} stabilized',
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            height: 260,
+            child: CustomPaint(
+              painter: _ThreatRegionMapPainter(
+                regions: displayedRegions,
+                states: {
+                  for (final state in controller.threatRegions)
+                    state.regionId: state,
+                },
+                selectedRegionId: controller.selectedThreatRegionId,
+              ),
+              child: const SizedBox.expand(),
+            ),
+          ),
+          const SizedBox(height: 12),
+          DropdownButtonFormField<String>(
+            initialValue: selected?.id,
+            decoration: const InputDecoration(labelText: 'Selected region'),
+            items: [
+              for (final region in displayedRegions)
+                if (controller.threatRegionStateById(region.id)?.revealed ??
+                    false)
+                  DropdownMenuItem<String>(
+                    value: region.id,
+                    child: Text('${region.name} • Ring ${region.ring}'),
+                  ),
+            ],
+            onChanged: (value) {
+              if (value != null) {
+                controller.selectThreatRegion(value);
+              }
+            },
+          ),
+          if (selected != null && selectedState != null) ...[
+            const SizedBox(height: 12),
+            Text(
+              '${selected.name}: Lv ${selectedState.stabilizedLevel}/${selected.stabilizationLayers} stabilized • Echoes ${controller.regionEchoCount(selected.id)}',
+              style: textTheme.bodyMedium,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              selected.anomalyCardIds.join(' • '),
+              style: textTheme.bodySmall?.copyWith(
+                color: LightcorePalette.mist.withValues(alpha: 0.72),
+              ),
+            ),
+            const SizedBox(height: 12),
+            if (controller.enemyManagers.isNotEmpty)
+              DropdownButtonFormField<String>(
+                initialValue:
+                    controller.enemyManagers.any(
+                      (manager) =>
+                          manager.instanceId ==
+                          selectedState.assignedThreatDirectorId,
+                    )
+                    ? selectedState.assignedThreatDirectorId
+                    : null,
+                decoration: const InputDecoration(
+                  labelText: 'Region Threat Director',
+                ),
+                items: [
+                  for (final manager in controller.enemyManagers)
+                    DropdownMenuItem<String>(
+                      value: manager.instanceId,
+                      child: Text(manager.name),
+                    ),
+                ],
+                onChanged: (value) {
+                  if (value != null) {
+                    controller.assignThreatDirectorToRegion(
+                      regionId: selected.id,
+                      managerId: value,
+                    );
+                  }
+                },
+              )
+            else
+              _InlineEnemyNote(
+                message:
+                    'Forge a Threat Director to validate this region for offline output.',
+                tint: LightcorePalette.layer2,
+              ),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                FilledButton.icon(
+                  onPressed: controller.activeThreatRegionChallenge == null
+                      ? () => controller.startThreatRegionChallenge(selected.id)
+                      : null,
+                  icon: const Icon(Icons.flag_rounded),
+                  label: const Text('Challenge'),
+                ),
+                OutlinedButton.icon(
+                  onPressed:
+                      controller.fullThreatMapUnlocked &&
+                          controller.enemyTickets > 0
+                      ? () => controller.scanThreatMap()
+                      : null,
+                  icon: const Icon(Icons.radar_rounded),
+                  label: const Text('Scan'),
+                ),
+                OutlinedButton.icon(
+                  onPressed: mergeTarget == null
+                      ? null
+                      : () => controller.mergeRegionEchoesToReveal(
+                          sourceRegionId: selected.id,
+                          targetRegionId: mergeTarget!.id,
+                        ),
+                  icon: const Icon(Icons.hub_rounded),
+                  label: const Text('Merge Echoes'),
+                ),
+              ],
+            ),
+          ],
+          if (!controller.fullThreatMapUnlocked) ...[
+            const SizedBox(height: 10),
+            Text(
+              'Fully stabilize the first region and defeat its boss to unlock the full map.',
+              style: textTheme.bodySmall?.copyWith(
+                color: LightcorePalette.warning,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _ThreatRegionMapPainter extends CustomPainter {
+  const _ThreatRegionMapPainter({
+    required this.regions,
+    required this.states,
+    required this.selectedRegionId,
+  });
+
+  final List<ThreatRegionConfig> regions;
+  final Map<String, ThreatRegionState> states;
+  final String? selectedRegionId;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = math.min(size.width, size.height) / 9.2;
+    final paint = Paint()..style = PaintingStyle.fill;
+    final stroke = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.4
+      ..color = LightcorePalette.mist.withValues(alpha: 0.24);
+    for (final region in regions) {
+      final state = states[region.id];
+      final point = _axialToPixel(region.q, region.r, radius, center);
+      final path = _hexPath(point, radius * 0.92);
+      final revealed = state?.revealed ?? false;
+      final full =
+          state != null && state.stabilizedLevel >= region.stabilizationLayers;
+      paint.color = revealed
+          ? (full
+                ? LightcorePalette.success.withValues(alpha: 0.74)
+                : _rarityTint(region.rarity).withValues(alpha: 0.66))
+          : LightcorePalette.night.withValues(alpha: 0.62);
+      canvas.drawPath(path, paint);
+      canvas.drawPath(path, stroke);
+      if (region.id == selectedRegionId) {
+        final selectedStroke = Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 3
+          ..color = LightcorePalette.solar;
+        canvas.drawPath(path, selectedStroke);
+      }
+      if (region.hasDoubleBoss && revealed) {
+        final dotPaint = Paint()
+          ..style = PaintingStyle.fill
+          ..color = LightcorePalette.warning;
+        canvas.drawCircle(point, radius * 0.16, dotPaint);
+      }
+    }
+  }
+
+  Offset _axialToPixel(int q, int r, double radius, Offset center) {
+    final x = radius * math.sqrt(3) * (q + (r / 2));
+    final y = radius * 1.5 * r;
+    return center + Offset(x, y);
+  }
+
+  Path _hexPath(Offset center, double radius) {
+    final path = Path();
+    for (var index = 0; index < 6; index += 1) {
+      final angle = (math.pi / 180) * (60 * index - 30);
+      final point = center + Offset(math.cos(angle), math.sin(angle)) * radius;
+      if (index == 0) {
+        path.moveTo(point.dx, point.dy);
+      } else {
+        path.lineTo(point.dx, point.dy);
+      }
+    }
+    return path..close();
+  }
+
+  @override
+  bool shouldRepaint(covariant _ThreatRegionMapPainter oldDelegate) {
+    return oldDelegate.regions != regions ||
+        oldDelegate.states != states ||
+        oldDelegate.selectedRegionId != selectedRegionId;
   }
 }
 
@@ -250,10 +509,10 @@ class _EnemyPullSheetState extends State<EnemyPullSheet> {
                   controller.highestAvailableEnemyPullRarity,
                 );
                 final sheetTitle = _tab == _ThreatPullTab.bosses
-                    ? 'Apex Scans'
+                    ? 'Regional Bosses'
                     : 'Threat Scans';
                 final closeTooltip = _tab == _ThreatPullTab.bosses
-                    ? 'Close apex scans'
+                    ? 'Close regional bosses'
                     : 'Close threat scans';
                 return ListView(
                   children: [
@@ -308,11 +567,11 @@ class _EnemyPullSheetState extends State<EnemyPullSheet> {
                             ? 'MAX'
                             : '${controller.pullsToNextBossSummoningLevel}',
                         statusLabel: controller.isBossSummoningLevelMaxed
-                            ? 'Apex Scan level maxed'
-                            : '${controller.pullsToNextBossSummoningLevel} to Apex Scan Lv ${controller.nextBossSummoningLevel}',
+                            ? 'Boss scan tier maxed'
+                            : '${controller.pullsToNextBossSummoningLevel} to boss scan tier ${controller.nextBossSummoningLevel}',
                         trailing: IconButton.filledTonal(
                           onPressed: () => _showBossPullRates(context),
-                          tooltip: 'Show apex scan rates',
+                          tooltip: 'Show boss reveal rates',
                           icon: const Icon(Icons.info_outline_rounded),
                         ),
                         child: Column(
@@ -353,7 +612,7 @@ class _EnemyPullSheetState extends State<EnemyPullSheet> {
                             if (!bossUnlocked) ...[
                               _InlineEnemyNote(
                                 message:
-                                    'White Warden is already the starter Apex. Create the Prism Shell to unlock Apex Scans, claim ${LightcoreCurrencyLabels.bossScanCount(LightcoreController.bossUnlockTicketGrant)}, and start changing Apex Anomaly cards.',
+                                    'White Warden is already the starter Apex. Create the Prism Shell to claim ${LightcoreCurrencyLabels.bossScanCount(LightcoreController.bossUnlockTicketGrant)} and start clearing regional Apex bosses.',
                                 tint: LightcorePalette.warning,
                               ),
                             ] else ...[
@@ -399,7 +658,7 @@ class _EnemyPullSheetState extends State<EnemyPullSheet> {
                                           label: '10+',
                                           enabled:
                                               controller.bossHuntsUnlocked &&
-                                              controller.bossTickets >= 10 &&
+                                              controller.enemyTickets >= 10 &&
                                               !controller
                                                   .tutorialHighlightsBossSinglePullButton &&
                                               !_revealBusy,
@@ -412,7 +671,7 @@ class _EnemyPullSheetState extends State<EnemyPullSheet> {
                                           label: 'MAX',
                                           enabled:
                                               controller.bossHuntsUnlocked &&
-                                              controller.bossTickets > 1 &&
+                                              controller.enemyTickets > 1 &&
                                               !controller
                                                   .tutorialHighlightsBossSinglePullButton &&
                                               !_revealBusy,
@@ -449,21 +708,21 @@ class _EnemyPullSheetState extends State<EnemyPullSheet> {
                               ),
                               const SizedBox(height: 8),
                               Text(
-                                'Basic Apex Anomalies start single-color. Uncommon+ scans introduce hybrid color frames, Rare+ Apex Anomalies can ward an affinity, and Epic+ Apex Anomalies unlock live abilities.',
+                                'Basic Apex Anomalies start single-color. Higher-ring regions introduce hybrid color frames, warded affinities, live abilities, and double-boss pressure.',
                                 style: Theme.of(context).textTheme.bodySmall,
                               ),
                             ],
                             if (bossUnlocked) const SizedBox(height: 12),
                             if (bossUnlocked) ...[
                               Text(
-                                'Unresolved Apex scan pool',
+                                'Regional boss pool',
                                 style: Theme.of(context).textTheme.titleMedium,
                               ),
                               const SizedBox(height: 10),
                               if (bossScanPreviewCards.isEmpty)
                                 _InlineEnemyNote(
                                   message:
-                                      'No unresolved Apex signatures are available in the current scan tier.',
+                                      'No regional boss signatures are available in the current scan tier.',
                                   tint: LightcorePalette.warning,
                                 )
                               else
@@ -490,10 +749,10 @@ class _EnemyPullSheetState extends State<EnemyPullSheet> {
                       if (_localFlutterRunFakeScansEnabled) ...[
                         const SizedBox(height: 18),
                         _LocalRunFakeScanButton(
-                          title: 'Local Fake Apex Scan',
+                          title: 'Local Fake Boss Reveal',
                           description:
                               'Preview-only. Does not spend sigils or write Apex cards to inventory.',
-                          buttonLabel: 'Fake Apex Scan',
+                          buttonLabel: 'Fake Boss Reveal',
                           revealBusy: _revealBusy,
                           onPressed: () => _fakeBossHunt(context),
                         ),
@@ -651,17 +910,14 @@ class _EnemyPullSheetState extends State<EnemyPullSheet> {
     if (_revealBusy) {
       return;
     }
-    final pulls = controller.tutorialOpenEnemyTickets(count);
-    if (pulls.isEmpty) {
+    final result = controller.scanThreatMap(count: count);
+    if (result == null) {
       return;
     }
-    await _showPullReveal(
-      context,
-      pulls: pulls,
-      highestAvailableRarity: controller.highestAvailableEnemyPullRarity,
-      secondHighestAvailableRarity:
-          controller.secondHighestAvailableEnemyPullRarity,
-    );
+    if (!context.mounted) {
+      return;
+    }
+    await _showThreatMapScanResult(context, result);
   }
 
   Future<void> _openBatchTickets(BuildContext context) async {
@@ -691,28 +947,17 @@ class _EnemyPullSheetState extends State<EnemyPullSheet> {
     if (_revealBusy) {
       return;
     }
-    final pulls = controller.tutorialOpenBossTickets(count);
-    if (pulls.isEmpty) {
-      return;
-    }
-    await _showPullReveal(
-      context,
-      pulls: pulls,
-      highestAvailableRarity: controller.highestAvailableBossPullRarity,
-      secondHighestAvailableRarity:
-          controller.secondHighestAvailableBossPullRarity,
-      title: 'Apex Scans',
-    );
+    await _openTickets(context, count);
   }
 
   Future<void> _openBossBatchTickets(BuildContext context) async {
-    if (_revealBusy || controller.bossTickets < 10) {
+    if (_revealBusy || controller.enemyTickets < 10) {
       return;
     }
     final count = await _showBatchOpenSheet(
       context,
       title: 'Open 10+',
-      maxTickets: controller.bossTickets,
+      maxTickets: controller.enemyTickets,
       unitLabel: 'scans',
     );
     if (!mounted || count == null) {
@@ -722,10 +967,10 @@ class _EnemyPullSheetState extends State<EnemyPullSheet> {
   }
 
   Future<void> _openBossMaxTickets(BuildContext context) async {
-    if (_revealBusy || controller.bossTickets <= 0) {
+    if (_revealBusy || controller.enemyTickets <= 0) {
       return;
     }
-    await _openBossTickets(context, controller.bossTickets);
+    await _openBossTickets(context, controller.enemyTickets);
   }
 
   Future<int?> _showBatchOpenSheet(
@@ -888,7 +1133,7 @@ class _EnemyPullSheetState extends State<EnemyPullSheet> {
       }
       controller.grantRewardedResources(
         bossTicketsGranted: _rewardedTicketGrant,
-        sourceLabel: 'Reward ad • Apex Scan resupply',
+        sourceLabel: 'Reward ad • Threat Scan resupply',
       );
     } finally {
       if (mounted) {
@@ -931,7 +1176,7 @@ class _EnemyPullSheetState extends State<EnemyPullSheet> {
       highestAvailableRarity: controller.highestAvailableBossPullRarity,
       secondHighestAvailableRarity:
           controller.secondHighestAvailableBossPullRarity,
-      title: 'Apex Scans',
+      title: 'Regional Bosses',
       previewOnly: true,
     );
   }
@@ -959,6 +1204,65 @@ class _EnemyPullSheetState extends State<EnemyPullSheet> {
             secondHighestAvailableRarity: secondHighestAvailableRarity,
             title: title,
             previewOnly: previewOnly,
+          );
+        },
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _revealBusy = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _showThreatMapScanResult(
+    BuildContext context,
+    ThreatRegionScanResult result,
+  ) async {
+    setState(() {
+      _revealBusy = true;
+    });
+    try {
+      await showDialog<void>(
+        context: context,
+        barrierColor: LightcorePalette.night.withValues(alpha: 0.88),
+        builder: (dialogContext) {
+          final title = result.revealedNewRegion
+              ? 'Region Revealed'
+              : 'Region Echo';
+          final echoText = result.echoGranted > 0
+              ? 'Echo +${result.echoGranted} • Total ${controller.regionEchoCount(result.region.id)}'
+              : 'New region on the threat map';
+          return AlertDialog(
+            backgroundColor: LightcorePalette.abyss,
+            title: Text(title),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(result.region.name),
+                const SizedBox(height: 8),
+                Text(
+                  'Ring ${result.region.ring} • ${result.region.rarity.label} • ${result.region.stabilizationLayers} stabilization layers',
+                ),
+                const SizedBox(height: 8),
+                Text(echoText),
+                const SizedBox(height: 12),
+                Text(
+                  controller.threatScanRateInfo,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: LightcorePalette.mist.withValues(alpha: 0.72),
+                  ),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(),
+                child: const Text('Close'),
+              ),
+            ],
           );
         },
       );
@@ -1025,7 +1329,7 @@ class _EnemyPullSheetState extends State<EnemyPullSheet> {
                 Text(
                   maxed
                       ? 'Scan level maxed. All threat rarity tiers are already unlocked.'
-                      : '${controller.summoningLevelPullsIntoCurrent}/${controller.currentSummoningLevelPullGap} scans in this level. ${controller.pullsToNextSummoningLevel} more scans unlock Scan Lv ${controller.nextSummoningLevel} and +${controller.nextSummoningLevelTicketReward} tickets.',
+                      : '${controller.summoningLevelPullsIntoCurrent}/${controller.currentSummoningLevelPullGap} scans in this level. ${controller.pullsToNextSummoningLevel} more scans unlock Scan Lv ${controller.nextSummoningLevel} and ${LightcoreCurrencyLabels.rewardThreatScans(controller.nextSummoningLevelTicketReward)}.',
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
                 const SizedBox(height: 12),
@@ -1043,6 +1347,13 @@ class _EnemyPullSheetState extends State<EnemyPullSheet> {
                 Text(
                   'Scan milestone gaps increase up to ${LightcoreController.finalSummoningLevelPullGap} resolved scans and cap at level ${LightcoreController.maxSummoningLevel}.',
                   style: Theme.of(context).textTheme.bodySmall,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  controller.threatScanRateInfo,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: LightcorePalette.mist.withValues(alpha: 0.72),
+                  ),
                 ),
               ],
             ),
@@ -1066,15 +1377,15 @@ class _EnemyPullSheetState extends State<EnemyPullSheet> {
       builder: (context) {
         return AlertDialog(
           backgroundColor: LightcorePalette.panel,
-          title: const Text('Apex Scan Rates'),
+          title: const Text('Boss Reveal Rates'),
           content: SizedBox(
             width: 360,
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Apex Scan Lv ${controller.bossSummoningLevel}'),
-                Text('Total Apex Scans ${controller.bossPullCount}'),
+                Text('Boss scan tier ${controller.bossSummoningLevel}'),
+                Text('Total boss reveals ${controller.bossPullCount}'),
                 const SizedBox(height: 12),
                 MeterBar(
                   value: controller.bossSummoningLevelProgress,
@@ -1084,8 +1395,8 @@ class _EnemyPullSheetState extends State<EnemyPullSheet> {
                 const SizedBox(height: 8),
                 Text(
                   maxed
-                      ? 'Apex Scan level maxed. Every Apex Anomaly rarity tier is live.'
-                      : '${controller.bossSummoningLevelPullsIntoCurrent}/${LightcoreController.bossPullsPerSummoningLevel} scans in this level. ${controller.pullsToNextBossSummoningLevel} more scans unlock Apex Scan Lv ${controller.nextBossSummoningLevel} and ${LightcoreCurrencyLabels.rewardBossScans(controller.nextBossSummoningLevelTicketReward)}.',
+                      ? 'Boss scan tier maxed. Every Apex Anomaly rarity tier is live.'
+                      : '${controller.bossSummoningLevelPullsIntoCurrent}/${LightcoreController.bossPullsPerSummoningLevel} scans in this tier. ${controller.pullsToNextBossSummoningLevel} more scans unlock boss scan tier ${controller.nextBossSummoningLevel} and ${LightcoreCurrencyLabels.rewardBossScans(controller.nextBossSummoningLevelTicketReward)}.',
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
                 const SizedBox(height: 12),
@@ -1101,7 +1412,7 @@ class _EnemyPullSheetState extends State<EnemyPullSheet> {
                   ),
                 const SizedBox(height: 8),
                 Text(
-                  'Apex Scan level increases every ${LightcoreController.bossPullsPerSummoningLevel} resolved scans and caps at level ${LightcoreController.maxBossSummoningLevel}.',
+                  'Boss scan tier increases every ${LightcoreController.bossPullsPerSummoningLevel} resolved scans and caps at tier ${LightcoreController.maxBossSummoningLevel}.',
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
               ],

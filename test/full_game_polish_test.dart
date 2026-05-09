@@ -37,8 +37,8 @@ void main() {
     await tester.tap(find.text('Open scans'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Threat Scans are anomaly signatures'), findsOneWidget);
-    expect(find.textContaining('harder bundles raise rewards'), findsOneWidget);
+    expect(find.text('Threat Scans reveal map regions'), findsOneWidget);
+    expect(find.textContaining('fixed hex map'), findsOneWidget);
     expect(
       find.text('These are enemies and encounter modifiers, not allies.'),
       findsOneWidget,
@@ -47,11 +47,8 @@ void main() {
     await tester.tap(find.text('Apex'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Apex Scans are boss signatures'), findsOneWidget);
-    expect(
-      find.textContaining('Arm one in Anomalies before it becomes'),
-      findsOneWidget,
-    );
+    expect(find.text('Threat Scans reveal region bosses'), findsOneWidget);
+    expect(find.textContaining('Final clears drop Apex Cores'), findsOneWidget);
   });
 
   testWidgets(
@@ -222,7 +219,7 @@ void main() {
       expect(bundle.summary, contains('Threat Director'));
       expect(
         bundle.summary,
-        contains('${controller.enemyTargetCount} swarm targets'),
+        contains('${controller.enemyTargetCount} region-managed targets'),
       );
       expect(bundle.activeCardCount, 1);
       expect(bundle.directorCount, 1);

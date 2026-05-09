@@ -124,8 +124,8 @@ extension LightcoreControllerBattleUnlocks on LightcoreController {
     }
 
     _bossUnlockGrantClaimed = true;
-    bossTickets += bossUnlockTicketGrant;
-    return 'Apex Scans unlocked in the Prism Shell. ${LightcoreCurrencyLabels.rewardBossScans(bossUnlockTicketGrant)} issued.';
+    enemyTickets += bossUnlockTicketGrant;
+    return 'Regional boss scans unlocked in the Prism Shell. ${LightcoreCurrencyLabels.rewardThreatScans(bossUnlockTicketGrant)} issued.';
   }
 
   String? _tournamentUnlockBannerFragment({

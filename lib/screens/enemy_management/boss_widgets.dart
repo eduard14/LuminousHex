@@ -68,10 +68,10 @@ class _BossUnlockPanel extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Apex Scans Locked', style: textTheme.titleLarge),
+          Text('Regional Bosses Locked', style: textTheme.titleLarge),
           const SizedBox(height: 6),
           Text(
-            'White Warden is already active as the starter Apex. Apex Scans and boss changes unlock in the Prism Shell.',
+            'White Warden is already active as the starter Apex. Regional boss changes unlock in the Prism Shell.',
             style: textTheme.bodyMedium,
           ),
           const SizedBox(height: 14),
@@ -97,7 +97,7 @@ class _BossUnlockPanel extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            'Create the Prism Shell to collect the unlock scans and start pulling alternate Apex Anomaly cards.',
+            'Create the Prism Shell to collect the unlock scans and start clearing regional Apex bosses.',
             style: textTheme.bodySmall?.copyWith(
               color: LightcorePalette.warning,
               fontWeight: FontWeight.w700,

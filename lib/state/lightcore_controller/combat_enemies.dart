@@ -276,6 +276,28 @@ extension LightcoreControllerCombatEnemies on LightcoreController {
     final shouldSpawnBoss =
         activeLayer.bossReady && !_enemies.any((enemy) => enemy.config.isBoss);
     if (shouldSpawnBoss) {
+      final regionBossCards = activeThreatRegionBossCards;
+      if (regionBossCards.isNotEmpty) {
+        for (var index = 0; index < regionBossCards.length; index += 1) {
+          final bossCard = regionBossCards[index];
+          final spawnedBoss = _buildEnemyFromCard(
+            bossCard,
+            angle: _randomSpawnAngle() + (index * 0.28),
+            radius: _randomSpawnRadius() + (index * 18),
+          );
+          _enemies.add(spawnedBoss);
+          _spawnSequence += 1;
+        }
+        activeLayer.bossReady = false;
+        activeLayer.normalKillsSinceBoss = 0;
+        _showBanner(
+          regionBossCards.length == 1
+              ? '${regionBossCards.first.config.name} breached the shell perimeter.'
+              : '${regionBossCards.length} regional Apex bosses breached the shell perimeter.',
+          category: LightcoreNotificationCategory.battle,
+        );
+        return;
+      }
       final bossCard = activeBossEnemyCard;
       if (bossCard != null) {
         final spawnedBoss = _buildEnemyFromCard(

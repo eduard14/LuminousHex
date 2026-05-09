@@ -46,8 +46,7 @@ extension LightcoreControllerEconomyStore on LightcoreController {
     final previousExperience = progressionExperience;
     lumens += grantedLumens;
     flux += grantedFlux;
-    enemyTickets += grantedTickets;
-    bossTickets += grantedBossTickets;
+    enemyTickets += grantedTickets + grantedBossTickets;
     kills += grantedKills;
     experience += grantedExperience;
     final levelUpBanner = _handleOverallLevelIncrease(
@@ -69,7 +68,7 @@ extension LightcoreControllerEconomyStore on LightcoreController {
     }
     if (grantedBossTickets > 0) {
       rewardParts.add(
-        LightcoreCurrencyLabels.rewardBossScans(grantedBossTickets),
+        LightcoreCurrencyLabels.rewardThreatScans(grantedBossTickets),
       );
     }
     if (grantedExperience > 0) {
@@ -878,13 +877,15 @@ extension LightcoreControllerEconomyStore on LightcoreController {
   void applySocialBossGiftClaim(LightcoreBossGiftClaimResult claim) {
     final granted = max(0, claim.bossTicketsGranted);
     if (granted > 0) {
-      bossTickets += granted;
+      enemyTickets += granted;
     }
     _socialOverview = claim.overview;
     _showBanner(
-      claim.message.isNotEmpty
-          ? claim.message
-          : 'Apex Scan gift claimed: +$granted $bossTicketCurrencyName.',
+      _threatScanGiftMessage(
+        claim.message,
+        fallback:
+            'Threat Scan gift claimed: ${LightcoreCurrencyLabels.rewardThreatScans(granted)}.',
+      ),
       duration: 3.2,
     );
     _notifyNow();
@@ -893,12 +894,21 @@ extension LightcoreControllerEconomyStore on LightcoreController {
   void applySocialBossGiftSend(LightcoreBossGiftSendResult send) {
     _socialOverview = send.overview;
     _showBanner(
-      send.message.isNotEmpty
-          ? send.message
-          : 'Apex Scan gifts sent: ${send.sentCount}.',
+      _threatScanGiftMessage(
+        send.message,
+        fallback: 'Threat Scan gifts sent: ${send.sentCount}.',
+      ),
       duration: 3.0,
     );
     _notifyNow();
+  }
+
+  String _threatScanGiftMessage(String message, {required String fallback}) {
+    final trimmed = message.trim();
+    if (trimmed.isEmpty) {
+      return fallback;
+    }
+    return trimmed.replaceAll('Apex Scan', 'Threat Scan');
   }
 
   void syncTournamentProfile(

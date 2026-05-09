@@ -126,7 +126,7 @@ class _ApexLoadoutSelector extends StatelessWidget {
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    'Resolve an Apex Scan to add a boss draft to dungeon runs.',
+                    'Clear a regional boss to add an Apex Core to dungeon runs.',
                     style: textTheme.bodyMedium?.copyWith(
                       color: LightcorePalette.mist.withValues(alpha: 0.68),
                     ),

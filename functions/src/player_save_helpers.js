@@ -155,6 +155,7 @@ function createPlayerSaveHelpers({ db, logger, HttpsError, constants, helpers })
       "shellCores",
       "enemyTickets",
       "bossTickets",
+      "threatShards",
     ]) {
       rejectInvalidNumericRange(
         resources[field],
@@ -726,25 +727,17 @@ function createPlayerSaveHelpers({ db, logger, HttpsError, constants, helpers })
       SAVE_INTEGRITY_LIMITS.maxLayerTier,
       1,
     );
-    const activeCore = normalizeObject(activeLayer.core);
-    const activeCoreLevel = clampInt(
-      activeCore.level,
-      1,
-      SAVE_INTEGRITY_LIMITS.maxCoreLevel,
-      1,
+    const threatMap = normalizeObject(payload.threatMap);
+    const offlineRegionId = sanitizeOptionalString(threatMap.offlineRegionId);
+    const offlineRegionStabilizedLevel = clampInt(
+      threatMap.offlineRegionStabilizedLevel,
+      0,
+      100,
+      0,
     );
-    const activeBuiltTowerCount = countBuiltTowers(activeLayer);
-    const activeManagedTowerCount = hasTowerManagerForLayer(activeLayer)
-      ? activeBuiltTowerCount
-      : 0;
-    const swarmActivated = activeLayer.swarmActivated === true;
-    const enemyTargetCount = clampInt(activeLayer.enemyTargetCount, 1, 12, 1);
     const killsPerHour = estimateOfflineKillsPerHour({
-      swarmActivated,
-      managedTowerCount: activeManagedTowerCount,
-      coreLevel: activeCoreLevel,
-      activeLayerTier: activeTier,
-      enemyTargetCount,
+      offlineRegionId,
+      offlineRegionStabilizedLevel,
     });
 
     return {
@@ -752,6 +745,11 @@ function createPlayerSaveHelpers({ db, logger, HttpsError, constants, helpers })
       killsPerHour,
       activeLayerTier: activeTier,
       builtTowerCount: totalBuiltTowerCount,
+      offlineRegionId,
+      offlineRegionStabilizedLevel,
+      offlineRegionValidatedThreatDirectorId: sanitizeOptionalString(
+        threatMap.offlineRegionValidatedThreatDirectorId,
+      ),
     };
   }
 
@@ -786,45 +784,38 @@ function createPlayerSaveHelpers({ db, logger, HttpsError, constants, helpers })
         0,
       ),
       prestigeLevel: 0,
+      offlineRegionId: envelope.offlineRegionId || null,
+      offlineRegionStabilizedLevel: clampInt(
+        envelope.offlineRegionStabilizedLevel,
+        0,
+        100,
+        0,
+      ),
+      offlineRegionValidatedThreatDirectorId:
+        envelope.offlineRegionValidatedThreatDirectorId || null,
     };
   }
 
   function estimateOfflineKillsPerHour({
-    swarmActivated,
-    managedTowerCount,
-    coreLevel,
-    activeLayerTier,
-    enemyTargetCount,
+    offlineRegionId,
+    offlineRegionStabilizedLevel,
   }) {
-    if (!swarmActivated || managedTowerCount <= 0) {
+    if (!offlineRegionId || offlineRegionStabilizedLevel <= 0) {
       return 0;
     }
-    const minEnemyTarget = 1;
-    const enemyTargetMax = 12;
-    const targetSpan = Math.max(1, enemyTargetMax - minEnemyTarget);
-    const targetPressure = clampNumber(
-      (enemyTargetCount - minEnemyTarget) / targetSpan,
+    const ringMatch = offlineRegionId.match(/^region_r(\d+)_/);
+    const ring = ringMatch ? clampInt(ringMatch[1], 0, 3, 0) : 0;
+    const layerCap = ring === 0 ? 3 : ring === 1 ? 5 : ring === 2 ? 8 : 13;
+    const layerRatio = clampNumber(
+      offlineRegionStabilizedLevel / layerCap,
       0,
       1,
       0,
     );
-    const shellReadiness = clampNumber(
-      0.018 +
-        (managedTowerCount * 0.032) +
-        ((coreLevel - 1) * 0.016) +
-        ((activeLayerTier - 1) * 0.03),
-      0.018,
-      0.32,
-      0.018,
-    );
-    const pressureMultiplier = 0.72 + (targetPressure * 0.28);
-    const tierMultiplier = 1 + ((activeLayerTier - 1) * 0.45);
+    const base = 18 + (ring * 18);
     return Math.min(
-      SERVER_BALANCE_LIMITS.maxOfflineKillsPerHour * tierMultiplier,
-      (3600 / SERVER_BALANCE_LIMITS.spawnIntervalSeconds) *
-        shellReadiness *
-        pressureMultiplier *
-        tierMultiplier,
+      SERVER_BALANCE_LIMITS.maxOfflineKillsPerHour,
+      base * (0.4 + (layerRatio * 0.6)),
     );
   }
 
@@ -1136,6 +1127,7 @@ function createPlayerSaveHelpers({ db, logger, HttpsError, constants, helpers })
       store: sanitizeSavedStore(value.store),
       inventory: sanitizeSavedInventory(value.inventory),
       layers: sanitizeSavedLayers(value.layers),
+      threatMap: sanitizeSavedThreatMap(value.threatMap),
       completedTowerShells: sanitizeSavedArray(value.completedTowerShells, 96),
       guild: value.guild ? sanitizeSavedGuild(value.guild) : null,
       tutorial: sanitizeSavedTutorial(value.tutorial),
@@ -1248,18 +1240,21 @@ function createPlayerSaveHelpers({ db, logger, HttpsError, constants, helpers })
         0,
       ),
       enemyTickets: clampInt(
-        data.enemyTickets,
+        clampInt(data.enemyTickets, 0, PLAYER_SAVE_LIMITS.maxCurrency, 0) +
+          clampInt(data.bossTickets, 0, PLAYER_SAVE_LIMITS.maxCurrency, 0),
         0,
         PLAYER_SAVE_LIMITS.maxCurrency,
         0,
       ),
-      bossTickets: clampInt(
-        data.bossTickets,
+      bossTickets: 0,
+      threatShards: clampInt(
+        clampInt(data.threatShards, 0, PLAYER_SAVE_LIMITS.maxCurrency, 0) +
+          clampInt(data.bossCores, 0, PLAYER_SAVE_LIMITS.maxCounter, 0),
         0,
         PLAYER_SAVE_LIMITS.maxCurrency,
         0,
       ),
-      bossCores: clampInt(data.bossCores, 0, PLAYER_SAVE_LIMITS.maxCounter, 0),
+      bossCores: 0,
       enemyPullCount: clampInt(
         data.enemyPullCount,
         0,
@@ -1420,11 +1415,40 @@ function createPlayerSaveHelpers({ db, logger, HttpsError, constants, helpers })
         data.bossEnemyCards,
         PLAYER_SAVE_LIMITS.maxEnemyCards,
       ),
+      bossTraits: sanitizeSavedArray(
+        data.bossTraits,
+        PLAYER_SAVE_LIMITS.maxEnemyCards,
+      ),
+      apexCores: sanitizeSavedArray(
+        data.apexCores,
+        PLAYER_SAVE_LIMITS.maxEnemyCards,
+      ),
       equipmentInventory: sanitizeSavedArray(
         data.equipmentInventory,
         PLAYER_SAVE_LIMITS.maxEquipmentItems,
       ),
       equippedPlayerItems: sanitizeSavedObject(data.equippedPlayerItems, 0, 16),
+    };
+  }
+
+  function sanitizeSavedThreatMap(value) {
+    const data = normalizeObject(value);
+    return {
+      selectedRegionId: sanitizeSavedNullableString(data.selectedRegionId, 96),
+      offlineRegionId: sanitizeSavedNullableString(data.offlineRegionId, 96),
+      offlineRegionStabilizedLevel: clampInt(
+        data.offlineRegionStabilizedLevel,
+        0,
+        100,
+        0,
+      ),
+      offlineRegionValidatedThreatDirectorId: sanitizeSavedNullableString(
+        data.offlineRegionValidatedThreatDirectorId,
+        96,
+      ),
+      regions: sanitizeSavedArray(data.regions, 64),
+      regionEchoes: sanitizeSavedObject(data.regionEchoes, 0, 64),
+      activeEnemySuite: sanitizeSavedObject(data.activeEnemySuite, 0, 8),
     };
   }
 

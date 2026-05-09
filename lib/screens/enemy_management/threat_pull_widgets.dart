@@ -137,11 +137,11 @@ class _ScanSpendExplanation extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final title = selected == _ThreatPullTab.bosses
-        ? 'Apex Scans are boss signatures'
-        : 'Threat Scans are anomaly signatures';
+        ? 'Threat Scans reveal region bosses'
+        : 'Threat Scans reveal map regions';
     final body = selected == _ThreatPullTab.bosses
-        ? 'Apex Scans unlock or upgrade boss-class Apex cards. Arm one in Anomalies before it becomes the next Apex target.'
-        : 'Threat Scans unlock anomaly signatures. Signatures can enter the active deck; harder bundles raise rewards but pressure Output Efficiency.';
+        ? 'Bosses now sit inside stabilized regions. Final clears drop Apex Cores, boss traits, and the region anomaly cards for enemy suites.'
+        : 'Threat Scans pulse across the fixed hex map. A hit can reveal a region or echo one you already know.';
     final footer = selected == _ThreatPullTab.bosses
         ? 'These are encounter targets, not Core Managers.'
         : 'These are enemies and encounter modifiers, not allies.';

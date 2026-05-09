@@ -61,16 +61,18 @@ void main() {
     expect(controller.bannerMessage, isNot(contains('Resolved')));
   });
 
-  test('rewarded resources can grant apex scans', () {
+  test('rewarded resources convert apex grants into threat scans', () {
     final controller = LightcoreController();
+    final startingTickets = controller.enemyTickets;
 
     controller.grantRewardedResources(
       bossTicketsGranted: 3,
       sourceLabel: 'Test reward',
     );
 
-    expect(controller.bossTickets, 3);
-    expect(controller.bannerMessage, contains('+3 Apex Scans'));
+    expect(controller.bossTickets, 0);
+    expect(controller.enemyTickets, startingTickets + 3);
+    expect(controller.bannerMessage, contains('+3 Threat Scans'));
   });
 
   test('crossing a summoning level grants ticket milestone rewards', () {
@@ -412,7 +414,7 @@ void main() {
     await tester.tap(find.text('Apex'));
     await tester.pump(const Duration(milliseconds: 300));
 
-    final fakeBossButton = find.text('Fake Apex Scan');
+    final fakeBossButton = find.text('Fake Boss Reveal');
 
     expect(fakeBossButton, findsOneWidget);
 
@@ -422,7 +424,7 @@ void main() {
     expect(
       find.descendant(
         of: find.byType(Dialog),
-        matching: find.text('Apex Scans'),
+        matching: find.text('Regional Bosses'),
       ),
       findsOneWidget,
     );
@@ -488,7 +490,7 @@ void main() {
     await tester.pump();
 
     expect(controller.enemyTickets, 0);
-    expect(controller.lastEnemyPackPulls, hasLength(9));
+    expect(controller.lastEnemyPackPulls, isEmpty);
     expect(controller.enemyPullCount, 9);
 
     await tester.pump(const Duration(seconds: 13));
@@ -502,7 +504,7 @@ void main() {
     _unlockBossHunts(controller);
     controller.debugDisableTutorial();
     controller.bossPullCount = 1;
-    controller.bossTickets = 7;
+    controller.enemyTickets = 7;
     addTearDown(() {
       tester.view.resetPhysicalSize();
       tester.view.resetDevicePixelRatio();
@@ -526,9 +528,9 @@ void main() {
     await tester.tap(find.text('MAX'));
     await tester.pump();
 
-    expect(controller.bossTickets, 0);
-    expect(controller.lastBossPackPulls, hasLength(7));
-    expect(controller.bossPullCount, 8);
+    expect(controller.enemyTickets, 0);
+    expect(controller.lastBossPackPulls, isEmpty);
+    expect(controller.bossPullCount, 1);
 
     await tester.pump(const Duration(seconds: 13));
     await tester.pump();
@@ -562,7 +564,7 @@ void main() {
 
     expect(find.text('Threat Rates'), findsOneWidget);
     expect(
-      find.textContaining('unlock Scan Lv 2 and +100 tickets'),
+      find.textContaining('unlock Scan Lv 2 and +100 Threat Scans'),
       findsOneWidget,
     );
   });
@@ -587,17 +589,17 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Threat Scans'), findsOneWidget);
-    expect(find.text('Apex Scans Locked'), findsNothing);
+    expect(find.text('Regional Bosses Locked'), findsNothing);
     expect(find.byTooltip('Show threat rates'), findsOneWidget);
-    expect(find.byTooltip('Show apex scan rates'), findsNothing);
+    expect(find.byTooltip('Show boss reveal rates'), findsNothing);
 
     await tester.tap(find.text('Apex'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Apex Scans'), findsOneWidget);
+    expect(find.text('Regional Bosses'), findsOneWidget);
     expect(find.textContaining('Create the Prism Shell'), findsOneWidget);
     expect(find.byTooltip('Show threat rates'), findsNothing);
-    expect(find.byTooltip('Show apex scan rates'), findsOneWidget);
+    expect(find.byTooltip('Show boss reveal rates'), findsOneWidget);
   });
 
   testWidgets('pull sheet omits recent scan summaries', (tester) async {
@@ -627,7 +629,7 @@ void main() {
     await tester.tap(find.text('Apex'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Resolved Apex Scans'), findsNothing);
+    expect(find.text('Resolved Regional Bosses'), findsNothing);
   });
 
   testWidgets('apex scan preview hides resolved equipped and future cards', (

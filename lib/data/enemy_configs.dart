@@ -644,6 +644,43 @@ class BossEnemyLibrary {
       jamMultiplier: 1.1,
       driftMultiplier: 1.1,
     ),
+    _BossArchetypeSeed(
+      idStem: 'nullstar_cartographer',
+      name: 'The Nullstar Cartographer',
+      summary:
+          'A black-white map tyrant that marks lanes before the wave arrives.',
+      traitLabel: 'Surveyed eclipse',
+      primaryAffinity: PrototypeAffinity.black,
+      secondaryAffinity: PrototypeAffinity.neutral,
+      immunityAffinity: PrototypeAffinity.flare,
+      spawnIntervalSeconds: 6.6,
+      spawnCount: 2,
+      healthMultiplier: 1.12,
+      defenseMultiplier: 1.16,
+      speedMultiplier: 0.92,
+      rewardMultiplier: 1.14,
+      jamMultiplier: 1.12,
+      driftMultiplier: 0.94,
+    ),
+    _BossArchetypeSeed(
+      idStem: 'chronoglass_bastion',
+      name: 'Chronoglass Bastion',
+      summary:
+          'A black-yellow siege mind that slows the lane, then overpays the clear.',
+      traitLabel: 'Time-shear armor',
+      primaryAffinity: PrototypeAffinity.black,
+      secondaryAffinity: PrototypeAffinity.solar,
+      immunityAffinity: PrototypeAffinity.verdant,
+      regenFractionPerSecond: 0.01,
+      spawnIntervalSeconds: 7.2,
+      spawnCount: 2,
+      healthMultiplier: 1.18,
+      defenseMultiplier: 1.2,
+      speedMultiplier: 0.86,
+      rewardMultiplier: 1.2,
+      jamMultiplier: 1.16,
+      driftMultiplier: 0.88,
+    ),
   ];
 
   static final List<EnemyConfig> all = <EnemyConfig>[

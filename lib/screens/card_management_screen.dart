@@ -42,7 +42,14 @@ class CardManagementScreen extends StatelessWidget {
       animation: controller,
       builder: (context, _) {
         final towerCoreManager = controller.towerCoreManager;
-        final enemyCoreManager = controller.enemyCoreManager;
+        final selectedRegion = controller.selectedThreatRegionConfig;
+        final selectedRegionState = controller.selectedThreatRegionState;
+        final regionThreatDirector =
+            selectedRegionState?.assignedThreatDirectorId == null
+            ? null
+            : controller.enemyManagerById(
+                selectedRegionState!.assignedThreatDirectorId!,
+              );
         final lockedTowerManagers = _lockedTowerManagerConfigs(controller);
         final lockedEnemyManagers = _lockedEnemyManagerConfigs(controller);
 
@@ -59,7 +66,7 @@ class CardManagementScreen extends StatelessWidget {
                 LightcoreInfoButton(
                   title: 'Main Manager Help',
                   message: controller.managerAssignmentUnlocked
-                      ? 'Socket one Core Manager and one Threat Director into the Tower Core. Core Managers boost every tower, and Threat Directors apply to every enemy spawned by this shell.'
+                      ? 'Socket one Core Manager into the Tower Core. Threat Directors attach to revealed regions on the Threat Map and must be validated through stabilization.'
                       : 'Manager assignment unlocks at Core Lv ${LightcoreController.managerCoreLevelRequirement} or Account Radiance Lv ${LightcoreController.managerUnlockLevel}. Flux still banks now so the foundry is ready when it opens.',
                   tint: LightcorePalette.aether,
                 ),
@@ -110,7 +117,7 @@ class CardManagementScreen extends StatelessWidget {
               tint: LightcorePalette.aether,
               subtitle: !controller.managerAssignmentUnlocked
                   ? 'Reach Core Lv ${LightcoreController.managerCoreLevelRequirement} or Account Radiance Lv ${LightcoreController.managerUnlockLevel} before tower sockets can take managers.'
-                  : 'Managers are mounted on the core and broadcast their effects across the whole active shell.',
+                  : 'Core Managers mount on the shell. Threat Directors are assigned per region from the selected Threat Map hex.',
             ),
             const SizedBox(height: 10),
             Wrap(
@@ -153,42 +160,45 @@ class CardManagementScreen extends StatelessWidget {
                 ),
                 _CoreSocketTile(
                   tint: LightcorePalette.flare,
-                  icon: enemyCoreManager == null
+                  icon: regionThreatDirector == null
                       ? Icons.tune_rounded
-                      : _enemyManagerIcon(enemyCoreManager),
-                  background: enemyCoreManager == null
+                      : _enemyManagerIcon(regionThreatDirector),
+                  background: regionThreatDirector == null
                       ? null
                       : _managerTileArtBackground(
-                          seed: enemyCoreManager.config.id,
-                          name: enemyCoreManager.config.name,
+                          seed: regionThreatDirector.config.id,
+                          name: regionThreatDirector.config.name,
                           tint: LightcorePalette.flare,
-                          icon: _enemyManagerIcon(enemyCoreManager),
+                          icon: _enemyManagerIcon(regionThreatDirector),
                           family: ManagerPortraitFamily.threat,
-                          assetPath: enemyCoreManager.config.portraitAssetPath,
+                          assetPath:
+                              regionThreatDirector.config.portraitAssetPath,
                         ),
-                  centerOverride: enemyCoreManager == null
+                  centerOverride: regionThreatDirector == null
                       ? null
                       : _managerAffinityOverlay(
-                          enemyCoreManager.targetAffinity,
+                          regionThreatDirector.targetAffinity,
                         ),
                   badgeIcon: Icons.groups_rounded,
                   semanticLabel:
-                      'Threat Director socket, ${enemyCoreManager?.name ?? 'empty'}',
-                  label: 'Enemies',
-                  value: enemyCoreManager?.name ?? 'Open',
-                  selected: enemyCoreManager != null,
-                  onTap: enemyCoreManager == null
+                      'Threat Director region assignment, ${regionThreatDirector?.name ?? 'empty'}',
+                  label: selectedRegion == null
+                      ? 'Region'
+                      : selectedRegion.name,
+                  value: regionThreatDirector?.name ?? 'Open',
+                  selected: regionThreatDirector != null,
+                  onTap: regionThreatDirector == null
                       ? null
                       : () => _showEnemyManagerDetails(
                           context,
-                          enemyCoreManager.instanceId,
+                          regionThreatDirector.instanceId,
                         ),
                 ),
               ],
             ),
             const SizedBox(height: 10),
             Text(
-              'Core Manager: ${towerCoreManager?.name ?? 'Open'}  •  Threat Director: ${enemyCoreManager?.name ?? 'Open'}',
+              'Core Manager: ${towerCoreManager?.name ?? 'Open'}  •  Region Director: ${regionThreatDirector?.name ?? 'Open'}',
               style: textTheme.bodySmall?.copyWith(
                 color: LightcorePalette.mist.withValues(alpha: 0.74),
                 fontWeight: FontWeight.w700,
@@ -299,7 +309,7 @@ class CardManagementScreen extends StatelessWidget {
                   ? 'Reach Core Lv ${LightcoreController.managerCoreLevelRequirement} or Account Radiance Lv ${LightcoreController.managerUnlockLevel} before Threat Directors can be assigned.'
                   : controller.enemyManagers.isEmpty
                   ? 'No Threat Directors in inventory yet. Locked roster previews are collapsed below.'
-                  : 'Owned rolls appear first. Locked roster previews stay collapsed until requested.',
+                  : 'Assign a Director to the selected Threat Map region, then restabilize that region to validate offline output.',
             ),
             const SizedBox(height: 10),
             if (controller.enemyManagers.isEmpty) ...[
@@ -413,14 +423,20 @@ class CardManagementScreen extends StatelessWidget {
                 manager: manager,
                 onAssign: () {
                   Navigator.of(sheetContext).pop();
-                  controller.assignEnemyManagerToCore(manager.instanceId);
+                  controller.assignEnemyManagerToSelected(manager.instanceId);
                 },
                 onRemove:
-                    controller.enemyCoreManager?.instanceId ==
+                    controller
+                            .selectedThreatRegionState
+                            ?.assignedThreatDirectorId ==
                         manager.instanceId
                     ? () {
+                        final regionId =
+                            controller.selectedThreatRegionState?.regionId;
                         Navigator.of(sheetContext).pop();
-                        controller.clearEnemyCoreManager();
+                        if (regionId != null) {
+                          controller.clearThreatDirectorFromRegion(regionId);
+                        }
                       }
                     : null,
                 onDismantle: () {
@@ -507,16 +523,16 @@ String _enemyManagerStatus(
   LightcoreController controller,
   EnemyManagerState manager,
 ) {
-  if (controller.enemyCoreManager?.instanceId == manager.instanceId) {
-    return 'Tower Core';
+  if (controller.selectedThreatRegionState?.assignedThreatDirectorId ==
+      manager.instanceId) {
+    return 'Selected Region';
   }
-  if (manager.assignedLayerId == null) {
-    return 'Ready';
+  if (controller.threatRegions.any(
+    (region) => region.assignedThreatDirectorId == manager.instanceId,
+  )) {
+    return 'Region Assigned';
   }
-  if (manager.assignedLayerId != controller.activeLayer.id) {
-    return 'Other Layer';
-  }
-  return 'Tower Core';
+  return 'Ready';
 }
 
 String _signedPercent(double delta) {
@@ -2004,7 +2020,8 @@ class _EnemyManagerGlyphTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final assignedHere =
-        controller.enemyCoreManager?.instanceId == manager.instanceId;
+        controller.selectedThreatRegionState?.assignedThreatDirectorId ==
+        manager.instanceId;
     final rarityTint = _managerRarityTint(
       manager.rarity,
       LightcorePalette.flare,
@@ -2636,7 +2653,9 @@ class _EnemyManagerDetailSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final assignedHere =
-        controller.enemyCoreManager?.instanceId == manager.instanceId;
+        controller.selectedThreatRegionState?.assignedThreatDirectorId ==
+        manager.instanceId;
+    final hasSelectedRegion = controller.selectedThreatRegionState != null;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -2662,7 +2681,7 @@ class _EnemyManagerDetailSheet extends StatelessWidget {
           runSpacing: 10,
           children: [
             _InfoChip(label: _enemyManagerStatus(controller, manager)),
-            const _InfoChip(label: 'All enemies'),
+            const _InfoChip(label: 'Region threats'),
           ],
         ),
         const SizedBox(height: 14),
@@ -2708,15 +2727,20 @@ class _EnemyManagerDetailSheet extends StatelessWidget {
               active: controller.tutorialHighlightsEnemyManagerAssign,
               tint: LightcorePalette.quest,
               child: FilledButton(
-                onPressed: !controller.managerAssignmentUnlocked || assignedHere
+                onPressed:
+                    !controller.managerAssignmentUnlocked ||
+                        assignedHere ||
+                        !hasSelectedRegion
                     ? null
                     : onAssign,
                 child: Text(
                   !controller.managerAssignmentUnlocked
                       ? 'Locked until Core Lv ${LightcoreController.managerCoreLevelRequirement} or AR Lv ${LightcoreController.managerUnlockLevel}'
+                      : !hasSelectedRegion
+                      ? 'Select a Threat Map Region'
                       : assignedHere
-                      ? 'Assigned to Core'
-                      : 'Assign to Tower Core',
+                      ? 'Assigned to Region'
+                      : 'Assign to Selected Region',
                 ),
               ),
             ),

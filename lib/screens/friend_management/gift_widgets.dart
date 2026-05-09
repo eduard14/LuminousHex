@@ -133,12 +133,12 @@ class _FriendGiftPanel extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Daily Apex Scans',
+            'Daily Threat Scans',
             style: Theme.of(context).textTheme.titleLarge,
           ),
           const SizedBox(height: 8),
           Text(
-            'Each accepted friend can send you one Apex Scan per Eastern-day reset, and you can send one back.',
+            'Each accepted friend can send you one Threat Scan per Eastern-day reset, and you can send one back.',
             style: Theme.of(context).textTheme.bodyMedium,
           ),
           const SizedBox(height: 12),
@@ -173,7 +173,7 @@ class _FriendGiftPanel extends StatelessWidget {
           ],
           if (friends.isEmpty)
             Text(
-              'No friends yet. Add friends above to start daily Apex Scan exchanges.',
+              'No friends yet. Add friends above to start daily Threat Scan exchanges.',
               style: Theme.of(context).textTheme.bodyMedium,
             )
           else

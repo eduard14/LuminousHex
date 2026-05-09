@@ -869,6 +869,180 @@ class PackPullResult {
   final bool isNew;
 }
 
+class ThreatRegionState {
+  const ThreatRegionState({
+    required this.regionId,
+    this.revealed = false,
+    this.stabilizedLevel = 0,
+    this.assignedThreatDirectorId,
+    this.validatedThreatDirectorId,
+    this.bestStabilityPercent = 0,
+    this.fullyStabilizedAtMillis,
+  });
+
+  final String regionId;
+  final bool revealed;
+  final int stabilizedLevel;
+  final String? assignedThreatDirectorId;
+  final String? validatedThreatDirectorId;
+  final double bestStabilityPercent;
+  final int? fullyStabilizedAtMillis;
+
+  bool get hasValidatedThreatDirector =>
+      assignedThreatDirectorId != null &&
+      assignedThreatDirectorId == validatedThreatDirectorId;
+
+  ThreatRegionState copyWith({
+    bool? revealed,
+    int? stabilizedLevel,
+    String? assignedThreatDirectorId,
+    String? validatedThreatDirectorId,
+    double? bestStabilityPercent,
+    int? fullyStabilizedAtMillis,
+    bool clearAssignedThreatDirector = false,
+    bool clearValidatedThreatDirector = false,
+    bool clearFullyStabilizedAt = false,
+  }) {
+    return ThreatRegionState(
+      regionId: regionId,
+      revealed: revealed ?? this.revealed,
+      stabilizedLevel: stabilizedLevel ?? this.stabilizedLevel,
+      assignedThreatDirectorId: clearAssignedThreatDirector
+          ? null
+          : assignedThreatDirectorId ?? this.assignedThreatDirectorId,
+      validatedThreatDirectorId: clearValidatedThreatDirector
+          ? null
+          : validatedThreatDirectorId ?? this.validatedThreatDirectorId,
+      bestStabilityPercent: bestStabilityPercent ?? this.bestStabilityPercent,
+      fullyStabilizedAtMillis: clearFullyStabilizedAt
+          ? null
+          : fullyStabilizedAtMillis ?? this.fullyStabilizedAtMillis,
+    );
+  }
+}
+
+class RegionEchoState {
+  const RegionEchoState({required this.regionId, required this.count});
+
+  final String regionId;
+  final int count;
+
+  RegionEchoState copyWith({int? count}) {
+    return RegionEchoState(regionId: regionId, count: count ?? this.count);
+  }
+}
+
+class BossTraitState {
+  const BossTraitState({
+    required this.config,
+    this.unlocked = false,
+    this.copies = 0,
+  });
+
+  final BossTraitConfig config;
+  final bool unlocked;
+  final int copies;
+
+  bool get isOwned => unlocked;
+
+  BossTraitState copyWith({bool? unlocked, int? copies}) {
+    return BossTraitState(
+      config: config,
+      unlocked: unlocked ?? this.unlocked,
+      copies: copies ?? this.copies,
+    );
+  }
+}
+
+class ApexCoreState {
+  const ApexCoreState({
+    required this.bossConfig,
+    this.unlocked = false,
+    this.copies = 0,
+  });
+
+  final EnemyConfig bossConfig;
+  final bool unlocked;
+  final int copies;
+
+  bool get isOwned => unlocked;
+
+  ApexCoreState copyWith({bool? unlocked, int? copies}) {
+    return ApexCoreState(
+      bossConfig: bossConfig,
+      unlocked: unlocked ?? this.unlocked,
+      copies: copies ?? this.copies,
+    );
+  }
+}
+
+class EnemySuiteState {
+  const EnemySuiteState({
+    this.apexCoreBossId,
+    this.bossTraitIds = const <String>[],
+    this.anomalyCardIds = const <String>[],
+  });
+
+  final String? apexCoreBossId;
+  final List<String> bossTraitIds;
+  final List<String> anomalyCardIds;
+
+  EnemySuiteState copyWith({
+    String? apexCoreBossId,
+    List<String>? bossTraitIds,
+    List<String>? anomalyCardIds,
+    bool clearApexCore = false,
+  }) {
+    return EnemySuiteState(
+      apexCoreBossId: clearApexCore
+          ? null
+          : apexCoreBossId ?? this.apexCoreBossId,
+      bossTraitIds: bossTraitIds ?? this.bossTraitIds,
+      anomalyCardIds: anomalyCardIds ?? this.anomalyCardIds,
+    );
+  }
+}
+
+class ThreatRegionChallengeState {
+  const ThreatRegionChallengeState({
+    required this.regionId,
+    required this.targetStabilizationLevel,
+    required this.finalLayer,
+    required this.startedAtMillis,
+    this.elapsedSeconds = 0,
+  });
+
+  final String regionId;
+  final int targetStabilizationLevel;
+  final bool finalLayer;
+  final int startedAtMillis;
+  final double elapsedSeconds;
+
+  ThreatRegionChallengeState copyWith({double? elapsedSeconds}) {
+    return ThreatRegionChallengeState(
+      regionId: regionId,
+      targetStabilizationLevel: targetStabilizationLevel,
+      finalLayer: finalLayer,
+      startedAtMillis: startedAtMillis,
+      elapsedSeconds: elapsedSeconds ?? this.elapsedSeconds,
+    );
+  }
+}
+
+class ThreatRegionScanResult {
+  const ThreatRegionScanResult({
+    required this.region,
+    required this.revealedNewRegion,
+    required this.echoGranted,
+    required this.rarityRolled,
+  });
+
+  final ThreatRegionConfig region;
+  final bool revealedNewRegion;
+  final int echoGranted;
+  final EnemyCardRarity rarityRolled;
+}
+
 class EnemyManagerState {
   const EnemyManagerState({
     required this.instanceId,

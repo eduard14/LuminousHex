@@ -127,6 +127,11 @@ class LightcoreTournamentPlayerSnapshot {
     this.enemyCardLevels = const <String, int>{},
     this.bossEnemyCardId,
     this.bossEnemyLevel = 1,
+    this.enemySuiteApexCoreBossId,
+    this.enemySuiteBossTraitIds = const <String>[],
+    this.enemySuiteAnomalyCardIds = const <String>[],
+    this.enemySuiteComplete = false,
+    this.fullyStabilizedRegionCount = 0,
   });
 
   final int overallLevel;
@@ -141,6 +146,11 @@ class LightcoreTournamentPlayerSnapshot {
   final Map<String, int> enemyCardLevels;
   final String? bossEnemyCardId;
   final int bossEnemyLevel;
+  final String? enemySuiteApexCoreBossId;
+  final List<String> enemySuiteBossTraitIds;
+  final List<String> enemySuiteAnomalyCardIds;
+  final bool enemySuiteComplete;
+  final int fullyStabilizedRegionCount;
 
   Map<String, dynamic> toMap() {
     return <String, dynamic>{
@@ -156,6 +166,12 @@ class LightcoreTournamentPlayerSnapshot {
       'enemyCardLevels': Map<String, int>.from(enemyCardLevels),
       if (bossEnemyCardId != null) 'bossEnemyCardId': bossEnemyCardId,
       'bossEnemyLevel': bossEnemyLevel,
+      if (enemySuiteApexCoreBossId != null)
+        'enemySuiteApexCoreBossId': enemySuiteApexCoreBossId,
+      'enemySuiteBossTraitIds': List<String>.from(enemySuiteBossTraitIds),
+      'enemySuiteAnomalyCardIds': List<String>.from(enemySuiteAnomalyCardIds),
+      'enemySuiteComplete': enemySuiteComplete,
+      'fullyStabilizedRegionCount': fullyStabilizedRegionCount,
     };
   }
 
@@ -178,6 +194,14 @@ class LightcoreTournamentPlayerSnapshot {
       enemyCardLevels: enemyCardLevels,
       bossEnemyCardId: data['bossEnemyCardId'] as String?,
       bossEnemyLevel: (data['bossEnemyLevel'] as num?)?.toInt() ?? 1,
+      enemySuiteApexCoreBossId: data['enemySuiteApexCoreBossId'] as String?,
+      enemySuiteBossTraitIds: _coerceStringList(data['enemySuiteBossTraitIds']),
+      enemySuiteAnomalyCardIds: _coerceStringList(
+        data['enemySuiteAnomalyCardIds'],
+      ),
+      enemySuiteComplete: data['enemySuiteComplete'] == true,
+      fullyStabilizedRegionCount:
+          (data['fullyStabilizedRegionCount'] as num?)?.toInt() ?? 0,
     );
   }
 }

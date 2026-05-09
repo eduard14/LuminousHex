@@ -176,11 +176,12 @@ void main() {
     );
 
     expect(controller.socialOverview, sentOverview);
-    expect(controller.bannerMessage, contains('Sent 2 Apex Scan gifts'));
+    expect(controller.bannerMessage, contains('Sent 2 Threat Scan gifts'));
 
     final claimedOverview = LightcoreSocialOverview(
       self: _socialPlayer('self'),
     );
+    final startingTickets = controller.enemyTickets;
     controller.applySocialBossGiftClaim(
       LightcoreBossGiftClaimResult(
         bossTicketsGranted: 2,
@@ -189,9 +190,9 @@ void main() {
       ),
     );
 
-    expect(controller.bossTickets, 2);
+    expect(controller.enemyTickets, startingTickets + 2);
     expect(controller.socialOverview, claimedOverview);
-    expect(controller.bannerMessage, contains('+2 Apex Scans'));
+    expect(controller.bannerMessage, contains('+2 Threat Scans'));
   });
 }
 

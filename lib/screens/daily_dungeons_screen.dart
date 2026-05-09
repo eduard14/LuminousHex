@@ -159,7 +159,7 @@ class _DailyDungeonsScreenState extends State<DailyDungeonsScreen> {
             const _DungeonGuidePanel(
               title: 'Dungeon Guide',
               instruction:
-                  'Click a route card to open its setup. Threat Director uses your anomaly roster; Prism Rift uses a fixed battle route.',
+                  'Click a route card to open its setup. Threat Director uses your enemy suite when one is complete; Prism Rift uses a fixed battle route.',
               detail:
                   'Daily clears share target progress, first-pass rewards, and the daily-clear limit.',
               icon: Icons.explore_rounded,
@@ -289,7 +289,7 @@ class _DailyDungeonsScreenState extends State<DailyDungeonsScreen> {
           _DungeonGuidePanel(
             title: 'Threat Director Guide',
             instruction: ownedCards.isEmpty
-                ? 'Resolve Threat Scans first. Threat Director needs anomaly cards before a loadout can enter battle.'
+                ? 'Complete an enemy suite or own anomaly cards before a Threat Director loadout can enter battle.'
                 : selectedCards.length >= requiredCount
                 ? 'Click anomaly cards below to swap the loadout, then enter when the deck is ready.'
                 : 'Click anomaly cards below until $requiredCount are selected, then enter the run.',
@@ -842,6 +842,15 @@ class _DailyDungeonsScreenState extends State<DailyDungeonsScreen> {
     List<EnemyCardState> ownedCards,
   ) {
     final ownedIds = ownedCards.map((card) => card.config.id).toSet();
+    if (_selectedAnomalyIds.isEmpty && controller.hasCompleteEnemySuite) {
+      final suiteIds = controller.activeEnemySuite.anomalyCardIds
+          .where(ownedIds.contains)
+          .take(_requiredAnomalyCount)
+          .toList(growable: false);
+      if (suiteIds.isNotEmpty) {
+        return suiteIds;
+      }
+    }
     final selected = _selectedAnomalyIds
         .where(ownedIds.contains)
         .take(_requiredAnomalyCount)
@@ -881,6 +890,26 @@ class _DailyDungeonsScreenState extends State<DailyDungeonsScreen> {
   }
 
   EnemyCardState? _selectedApexCard(LightcoreController controller) {
+    if (controller.hasCompleteEnemySuite) {
+      final suiteBossId = controller.activeEnemySuite.apexCoreBossId;
+      if (suiteBossId != null) {
+        final owned = controller.bossEnemyCardById(suiteBossId);
+        if (owned?.isOwned == true) {
+          return owned;
+        }
+        final core = controller.apexCores.where(
+          (core) => core.bossConfig.id == suiteBossId,
+        );
+        if (core.isNotEmpty && core.first.isOwned) {
+          return EnemyCardState(
+            config: core.first.bossConfig,
+            unlocked: true,
+            copies: 1,
+            level: 1,
+          );
+        }
+      }
+    }
     final ownedApexCards = controller.ownedBossEnemyCards;
     if (ownedApexCards.isEmpty) {
       return null;
@@ -917,7 +946,7 @@ class _DailyDungeonsScreenState extends State<DailyDungeonsScreen> {
         return selected.first;
       }
     }
-    final assigned = controller.enemyCoreManager;
+    final assigned = controller.activeRegionThreatDirector;
     if (assigned != null) {
       return assigned;
     }

@@ -12,11 +12,11 @@ String _bossTileProgressLabel(
   if (card.level < cap) {
     final remaining = math.max(
       0,
-      controller.bossUpgradeRequirement(card) - controller.bossCores,
+      controller.bossUpgradeRequirement(card) - controller.threatShards,
     );
     return remaining == 0
         ? 'Ready for Lv ${card.level + 1}'
-        : '$remaining more Heartcores';
+        : '$remaining more Threat Shards';
   }
 
   final copiesToNextCap = controller.bossCopiesToNextCapIncrease(card);
@@ -796,7 +796,7 @@ class _BossInventoryEffectPanel extends StatelessWidget {
           const SizedBox(height: 6),
           Text(
             card.isOwned
-                ? 'This positive tower bonus is active from inventory, even when another Apex is armed. Copies raise the level cap; Heartcores upgrade the bonus.'
+                ? 'This positive tower bonus is active from inventory, even when another Apex is armed. Copies raise the level cap; Threat Shards upgrade the bonus.'
                 : 'Find this Apex to immediately apply its positive inventory bonus.',
             style: textTheme.bodyMedium,
           ),
@@ -850,7 +850,7 @@ class _BossInventoryEffectPanel extends StatelessWidget {
                   ? 'Find Apex To Upgrade'
                   : maxed
                   ? 'Apex Maxed'
-                  : 'Upgrade Apex • $cost Heartcores',
+                  : 'Upgrade Apex • $cost Threat Shards',
             ),
           ),
         ],

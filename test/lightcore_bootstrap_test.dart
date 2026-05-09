@@ -274,6 +274,11 @@ void main() {
     final startingFlux = controller.flux;
     final startingTickets = controller.enemyTickets;
     final startingKills = controller.kills;
+    final starterRegion = controller.threatRegionConfigs.first;
+    controller.debugRevealThreatRegion(
+      starterRegion.id,
+      stabilizedLevel: starterRegion.stabilizationLayers,
+    );
 
     final snapshot = controller.buildOfflineProgressSnapshot();
 
