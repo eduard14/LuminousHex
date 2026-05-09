@@ -258,11 +258,12 @@ void main() {
     expect(childConfigIds, isNot(sourceConfigIds));
     controller.unlockLayer2Tower();
     expect(controller.activeLayer.id, parentLayerId);
+    expect(controller.canCreateLayerOneCore, isTrue);
+    expect(controller.nextLayerOneCoreSlotIndex, 1);
 
     final targetShell = controller.liveCompletedTowerShells.singleWhere(
       (shell) => shell.sourceLayerId == childLayerId,
     );
-
     expect(
       controller.replaceCompletedShell(
         archiveId: archivedShell.id,
@@ -274,6 +275,10 @@ void main() {
       (layer) => layer.id == childLayerId,
     );
     expect(childLayer.slots.map((tower) => tower.config?.id), sourceConfigIds);
+    expect(controller.slots[0].childLayerId, childLayerId);
+    expect(controller.slots[0].isPromotedChildTower, isTrue);
+    expect(controller.slots[0].childProjectileType, isNotNull);
+    expect(controller.slots[0].childPayloadType, isNotNull);
     expect(childLayer.slots.map((tower) => tower.slotIndex), <int>[
       for (var index = 0; index < LightcoreController.slotCount; index++) index,
     ]);

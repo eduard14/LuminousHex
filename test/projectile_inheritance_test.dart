@@ -325,75 +325,33 @@ void main() {
     },
   );
 
-  test(
-    'echo seed rerolls a promoted child while staying inside its source pools',
-    () {
-      final controller = LightcoreController(traitRandom: Random(13));
-      addTearDown(controller.dispose);
+  test('promoted child towers cannot be rerolled', () {
+    final controller = LightcoreController(traitRandom: Random(13));
+    addTearDown(controller.dispose);
 
-      _promoteRootShell(controller, _uniformShell(TowerLibrary.purplePrism));
+    _promoteRootShell(controller, _uniformShell(TowerLibrary.purplePrism));
 
-      _forgeChildShell(controller, 0, <TowerConfig>[
-        TowerLibrary.redPrism,
-        TowerLibrary.redPrism,
-        TowerLibrary.yellowPrism,
-        TowerLibrary.yellowPrism,
-        TowerLibrary.yellowPrism,
-        TowerLibrary.redPrism,
-      ]);
+    _forgeChildShell(controller, 0, <TowerConfig>[
+      TowerLibrary.redPrism,
+      TowerLibrary.redPrism,
+      TowerLibrary.yellowPrism,
+      TowerLibrary.yellowPrism,
+      TowerLibrary.yellowPrism,
+      TowerLibrary.redPrism,
+    ]);
 
-      final before = controller.slots[0];
-      expect(controller.echoSeeds, greaterThan(0));
+    final before = controller.slots[0];
+    controller.echoSeeds = 3;
 
-      controller.echoSeeds = 3;
-      var changed = false;
-      for (var roll = 0; roll < 3 && !changed; roll++) {
-        expect(controller.rerollPromotedChildTower(0), isTrue);
-        final after = controller.slots[0];
-        changed =
-            after.childProjectileType != before.childProjectileType ||
-            after.childPayloadType != before.childPayloadType ||
-            after.childAffinity != before.childAffinity ||
-            after.childSecondaryAffinity != before.childSecondaryAffinity;
-      }
+    expect(controller.canRerollPromotedChildTower(before), isFalse);
+    expect(controller.promotedChildTowerRerollsRemaining(before), 0);
+    expect(controller.rerollPromotedChildTower(0), isFalse);
+    expect(controller.echoSeeds, 3);
 
-      final rerolled = controller.slots[0];
-      expect(changed, isTrue);
-      expect(controller.echoSeeds, lessThan(3));
-      expect(<PrototypeAffinity>[
-        PrototypeAffinity.ember,
-        PrototypeAffinity.solar,
-      ], contains(rerolled.childAffinity));
-      expect(<PrototypeAffinity>[
-        PrototypeAffinity.ember,
-        PrototypeAffinity.solar,
-      ], contains(rerolled.childSecondaryAffinity));
-      expect(
-        forgedProjectilesForAffinity(rerolled.childAffinity!, targetTier: 2),
-        contains(rerolled.childProjectileType),
-      );
-      expect(
-        forgedPayloadsForAffinity(
-          rerolled.childSecondaryAffinity!,
-          targetTier: 2,
-        ),
-        contains(rerolled.childPayloadType),
-      );
-
-      controller.echoSeeds = 10;
-      while (controller.promotedChildTowerRerollsRemaining(
-            controller.slots[0],
-          ) >
-          0) {
-        expect(controller.rerollPromotedChildTower(0), isTrue);
-      }
-      final seedsBeforeBlockedRoll = controller.echoSeeds;
-      expect(
-        controller.promotedChildTowerRerollsRemaining(controller.slots[0]),
-        0,
-      );
-      expect(controller.rerollPromotedChildTower(0), isFalse);
-      expect(controller.echoSeeds, seedsBeforeBlockedRoll);
-    },
-  );
+    final after = controller.slots[0];
+    expect(after.childProjectileType, before.childProjectileType);
+    expect(after.childPayloadType, before.childPayloadType);
+    expect(after.childAffinity, before.childAffinity);
+    expect(after.childSecondaryAffinity, before.childSecondaryAffinity);
+  });
 }

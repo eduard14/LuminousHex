@@ -1744,15 +1744,6 @@ class _TowerStatsPanel extends StatelessWidget {
                 ),
               ),
             ),
-            if (tower.isPromotedChildTower)
-              OutlinedButton(
-                onPressed: controller.canRerollPromotedChildTower(tower)
-                    ? () => controller.rerollPromotedChildTower(tower.slotIndex)
-                    : null,
-                child: Text(
-                  'Reroll • ${controller.promotedChildTowerRerollLabel(tower)}',
-                ),
-              ),
             if ((onInspect != null || tower.isChildLayerNode) &&
                 manager == null)
               OutlinedButton(

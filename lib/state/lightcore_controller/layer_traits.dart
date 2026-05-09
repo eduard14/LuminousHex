@@ -1264,30 +1264,16 @@ extension LightcoreControllerLayerTraits on LightcoreController {
       : 'Manager assignment unlocks at Core Lv $managerCoreLevelRequirement or Account Radiance Lv $managerUnlockLevel';
 
   int promotedChildTowerRerollsUsed(OuterTowerState tower) {
-    final childLayerId = tower.childLayerId;
-    if (!tower.isPromotedChildTower || childLayerId == null) {
-      return 0;
-    }
-    return _layerById(
-      childLayerId,
-    ).promotionTraitRoll.clamp(0, maxPromotedChildTowerRerolls).toInt();
+    return 0;
   }
 
-  int promotedChildTowerRerollsRemaining(OuterTowerState tower) => max(
-    0,
-    maxPromotedChildTowerRerolls - promotedChildTowerRerollsUsed(tower),
-  );
+  int promotedChildTowerRerollsRemaining(OuterTowerState tower) => 0;
 
   String promotedChildTowerRerollLabel(OuterTowerState tower) {
-    final remaining = promotedChildTowerRerollsRemaining(tower);
-    return '$echoSeedLabel • $remaining safe';
+    return 'Disabled';
   }
 
-  bool canRerollPromotedChildTower(OuterTowerState tower) =>
-      tower.isPromotedChildTower &&
-      tower.childLayerId != null &&
-      echoSeeds > 0 &&
-      promotedChildTowerRerollsRemaining(tower) > 0;
+  bool canRerollPromotedChildTower(OuterTowerState tower) => false;
 
   TargetPriority towerTargetPriority(OuterTowerState tower) =>
       towerTargetPriorityForProjectile(tower, towerProjectileType(tower));

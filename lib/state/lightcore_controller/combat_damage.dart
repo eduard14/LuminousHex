@@ -686,10 +686,8 @@ extension LightcoreControllerCombatDamage on LightcoreController {
         1,
         activeLayer.tier + enemy.config.rarity.index,
       );
-      final gainedEchoSeed = activeLayer.tier > 1 ? 1 : 0;
       bossTickets += gainedBossTickets;
       bossCores += gainedBossCores;
-      echoSeeds += gainedEchoSeed;
       final bossRewardParts = <String>[
         LightcoreCurrencyLabels.rewardLumens(lumenDrop + bountyLumenDrop),
         LightcoreCurrencyLabels.rewardBossScans(gainedBossTickets),
@@ -697,7 +695,6 @@ extension LightcoreControllerCombatDamage on LightcoreController {
         if (fluxDrop > 0) LightcoreCurrencyLabels.rewardFlux(fluxDrop),
         if (threatScanDrop > 0)
           LightcoreCurrencyLabels.rewardThreatScans(threatScanDrop),
-        if (gainedEchoSeed > 0) '+$gainedEchoSeed Echo Seed',
       ];
       _showBanner(
         '${enemy.config.name} defeated: ${bossRewardParts.join(', ')}.${progressionBanner.isEmpty ? '' : ' $progressionBanner'}',

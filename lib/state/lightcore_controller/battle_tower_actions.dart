@@ -1020,11 +1020,10 @@ extension LightcoreControllerBattleTowerActions on LightcoreController {
       final forgedSlotLabel = _towerHasRainbowLoadout(forgedSlot)
           ? 'Rainbow tower • ${towerProjectileArsenalLabel(forgedSlot)} • ${towerPayloadArsenalLabel(forgedSlot)}'
           : '${towerProjectileLabel(forgedSlot)} projectile • ${towerPayloadLabel(forgedSlot)} payload';
-      echoSeeds += 1;
       _enterLayer(
         parent.id,
         banner:
-            '$activeLayerLabel aligned into hex ${parentSlotIndex + 1} as a ${shellBadgeForTier(parent.tier)} tower: $forgedSlotLabel. +1 Echo Seed.',
+            '$activeLayerLabel aligned into hex ${parentSlotIndex + 1} as a ${shellBadgeForTier(parent.tier)} tower: $forgedSlotLabel.',
       );
       return;
     }

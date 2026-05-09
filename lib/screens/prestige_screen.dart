@@ -149,7 +149,6 @@ class PrestigeScreen extends StatelessWidget {
                       ),
                       _BenefitChip(label: controller.payloadUnlockLabel),
                       _BenefitChip(label: controller.managerUnlockLabel),
-                      _BenefitChip(label: controller.echoSeedLabel),
                       _BenefitChip(
                         label:
                             'Edge slots: ${controller.unlockedOuterSlotCount}/${LightcoreController.slotCount}',

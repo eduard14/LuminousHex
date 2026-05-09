@@ -1128,34 +1128,7 @@ extension LightcoreControllerBattleEnemyActions on LightcoreController {
     return true;
   }
 
-  bool rerollPromotedChildTower(int slotIndex) {
-    if (slotIndex < 0 || slotIndex >= _slots.length) {
-      return false;
-    }
-    final tower = _slots[slotIndex];
-    final childLayerId = tower.childLayerId;
-    if (!tower.isPromotedChildTower || childLayerId == null || echoSeeds <= 0) {
-      return false;
-    }
-    if (promotedChildTowerRerollsRemaining(tower) <= 0) {
-      _showBanner(
-        '${towerDisplayName(tower)} cannot stabilize another Echo Seed recalibration.',
-      );
-      _notifyNow();
-      return false;
-    }
-
-    final childLayer = _layerById(childLayerId);
-    childLayer.promotionTraitRoll += 1;
-    echoSeeds -= 1;
-    _syncParentSlotFromLayer(childLayer);
-    final rerolledTower = _slots[slotIndex];
-    _showBanner(
-      'Echo Seed spent on ${towerDisplayName(rerolledTower)}. ${towerProjectileLabel(rerolledTower)} projectile • ${towerPayloadLabel(rerolledTower)} payload.',
-    );
-    _notifyNow();
-    return true;
-  }
+  bool rerollPromotedChildTower(int slotIndex) => false;
 
   double enemyCardPreviewHealth(EnemyCardState card) {
     return _balancedEnemyStat(

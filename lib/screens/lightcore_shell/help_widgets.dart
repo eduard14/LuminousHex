@@ -159,7 +159,7 @@ const List<_HelpSectionData> _baseHelpSections = <_HelpSectionData>[
     body:
         'A shell is not ready to align just because all six outer slots are filled. Edge slots unlock from total EXP, beginning at 25, and Root Shell alignment also requires every Source Tower to reach level 5. Alignment is manual from the Advancement screen.\n\n'
         'A higher shell is a seven-shell cluster: the source shell plus six edge anchors. Seven Root Shells make a Prism Shell, seven Prism Shells make a Nexus Shell, and seven Nexus Shells make the final Ascendant Shell.\n\n'
-        'Prism towers gain payload traits. Nexus and Ascendant alignments upgrade those projectile and payload pools again. Echo Seeds let you recalibrate an aligned child tower without rebuilding its underlying shell.\n\n'
+        'Prism towers gain payload traits. Nexus and Ascendant alignments upgrade those projectile and payload pools again.\n\n'
         'Every active shell can run its own battle simulation. The viewed shell gets direct input, while background shells continue resolving their timers, pressure, and automated output.',
   ),
   _HelpSectionData(

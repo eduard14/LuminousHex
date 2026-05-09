@@ -1066,30 +1066,20 @@ class _BuiltSlotCard extends StatelessWidget {
               const SizedBox(width: 12),
               Expanded(
                 child: OutlinedButton(
-                  onPressed: slot.isPromotedChildTower
-                      ? controller.canRerollPromotedChildTower(slot)
-                            ? () => controller.rerollPromotedChildTower(
-                                slot.slotIndex,
-                              )
-                            : null
-                      : () {
-                          if (slot.isChildLayerNode) {
-                            controller.enterChildLayer(slot.slotIndex);
-                            return;
-                          }
-                          controller.selectSlot(slot.slotIndex);
-                          showTowerDetailOverlay(
-                            context: context,
-                            controller: controller,
-                            slotIndex: slot.slotIndex,
-                          );
-                        },
+                  onPressed: () {
+                    if (slot.isChildLayerNode) {
+                      controller.enterChildLayer(slot.slotIndex);
+                      return;
+                    }
+                    controller.selectSlot(slot.slotIndex);
+                    showTowerDetailOverlay(
+                      context: context,
+                      controller: controller,
+                      slotIndex: slot.slotIndex,
+                    );
+                  },
                   child: Text(
-                    slot.isPromotedChildTower
-                        ? 'Reroll Child • ${controller.promotedChildTowerRerollLabel(slot)}'
-                        : slot.isChildLayerNode
-                        ? 'Open Layer'
-                        : 'Open Detail',
+                    slot.isChildLayerNode ? 'Open Layer' : 'Open Detail',
                   ),
                 ),
               ),
