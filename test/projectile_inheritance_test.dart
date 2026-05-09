@@ -211,6 +211,12 @@ void main() {
         forgedPayloadsForAffinity(PrototypeAffinity.ember, targetTier: 2),
         contains(core.payloadType),
       );
+
+      final layer2 = controller.layer2State;
+      expect(layer2.unlocked, isTrue);
+      expect(layer2.projectileType, core.projectileType);
+      expect(layer2.payloadType, core.payloadType);
+      expect(layer2.affinity, core.affinity);
     },
   );
 

@@ -1090,6 +1090,15 @@ extension LightcoreControllerBattleTowerActions on LightcoreController {
       label: nextShellName,
       tier: nextTier,
       inheritedCore: promotedCore,
+      inheritedLayer2: Layer2TowerState(
+        unlocked: true,
+        count: 1,
+        fireCooldownRemaining: 0,
+        projectileType: forgedProjectile,
+        payloadType: forgedPayload,
+        affinity: forgedAffinity,
+        sourceSummary: forgedTraitLabel,
+      ),
       initialEnemyDeck: List<String>.from(activeLayer.activeEnemyCardIds),
       sourceLayerId: activeLayer.id,
     );
