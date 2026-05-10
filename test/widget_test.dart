@@ -2444,13 +2444,10 @@ void main() {
       await tester.tap(find.byTooltip('Anomalies').first);
       await _pumpTransition(tester);
 
-      expect(find.text('Threat Library'), findsOneWidget);
-      expect(find.text('Anomaly Deck Pressure'), findsOneWidget);
-      await tester.scrollUntilVisible(find.text('Anomaly Assignment'), 320);
-      expect(find.text('Anomaly Assignment'), findsOneWidget);
-      await tester.scrollUntilVisible(find.text('Main Apex'), 320);
-      expect(find.text('Main Apex', skipOffstage: false), findsOneWidget);
-      expect(find.text('Main Anomaly', skipOffstage: false), findsNothing);
+      expect(find.text('Boss Build'), findsWidgets);
+      expect(find.text('Boss Build Locked'), findsOneWidget);
+      expect(find.text('Anomaly Deck Pressure'), findsNothing);
+      expect(find.text('Anomaly Assignment'), findsNothing);
       expect(find.text('Open 1', skipOffstage: false), findsNothing);
       expect(find.text('Threat Scans', skipOffstage: false), findsNothing);
     },
@@ -2472,11 +2469,6 @@ void main() {
     await _pumpTransition(tester);
 
     expect(_scrollOffsetForKey(tester, enemyScrollKey), 0);
-
-    await tester.drag(find.byKey(enemyScrollKey), const Offset(0, -520));
-    await tester.pump();
-
-    expect(_scrollOffsetForKey(tester, enemyScrollKey), greaterThan(0));
 
     await tester.tap(find.byTooltip('Return to Battle'));
     await _pumpTransition(tester);

@@ -55,6 +55,7 @@ class _BulkBossLevelButton extends StatelessWidget {
   }
 }
 
+// ignore: unused_element
 class _MassEnemyFusePanel extends StatelessWidget {
   const _MassEnemyFusePanel({required this.controller});
 

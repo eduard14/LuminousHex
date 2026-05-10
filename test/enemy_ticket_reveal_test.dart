@@ -25,6 +25,15 @@ void _unlockBossHunts(LightcoreController controller) {
   }
 }
 
+void _unlockThreatMapScans(LightcoreController controller) {
+  final starter = controller.threatRegionConfigs.first;
+  controller.debugRevealThreatRegion(
+    starter.id,
+    stabilizedLevel: starter.stabilizationLayers,
+  );
+  controller.debugGrantApexCore(starter.primaryBossId);
+}
+
 void main() {
   test('openEnemyTickets consumes the full requested stash', () {
     final controller = LightcoreController();
@@ -443,6 +452,7 @@ void main() {
 
   testWidgets('10+ option opens a batch slider', (tester) async {
     final controller = LightcoreController();
+    _unlockThreatMapScans(controller);
     addTearDown(() {
       tester.view.resetPhysicalSize();
       tester.view.resetDevicePixelRatio();
@@ -470,6 +480,7 @@ void main() {
     tester,
   ) async {
     final controller = LightcoreController();
+    _unlockThreatMapScans(controller);
     controller.enemyTickets = 9;
     addTearDown(() {
       tester.view.resetPhysicalSize();
@@ -502,6 +513,7 @@ void main() {
   testWidgets('max option resolves every available apex scan', (tester) async {
     final controller = LightcoreController();
     _unlockBossHunts(controller);
+    _unlockThreatMapScans(controller);
     controller.debugDisableTutorial();
     controller.bossPullCount = 1;
     controller.enemyTickets = 7;
@@ -673,16 +685,11 @@ void main() {
     );
   });
 
-  testWidgets('enemy management exposes a bottom mass fuse button', (
+  testWidgets('enemy management opens on the locked boss build page', (
     tester,
   ) async {
     final controller = LightcoreController();
     addTearDown(controller.dispose);
-    controller.debugSetEnemyCardLevel(
-      EnemyLibrary.basicWhite.id,
-      level: EnemyCardRarity.basic.levelCap,
-      copies: 20,
-    );
 
     await tester.pumpWidget(
       MaterialApp(
@@ -694,18 +701,9 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    final scrollable = find.byType(Scrollable).first;
-    await tester.scrollUntilVisible(
-      find.text('Mass Fuse Anomalies • 1 Ready'),
-      800,
-      scrollable: scrollable,
-    );
-
-    await tester.tap(find.text('Mass Fuse Anomalies • 1 Ready'));
-    await tester.pumpAndSettle();
-
-    expect(controller.mergeableEnemyCardCount, 0);
-    expect(controller.enemyCardById(EnemyLibrary.basicWhite.id)?.copies, 0);
-    expect(find.text('Mass Fuse Anomalies'), findsOneWidget);
+    expect(find.text('Boss Build'), findsWidgets);
+    expect(find.text('Boss Build Locked'), findsOneWidget);
+    expect(find.text('Anomaly Assignment'), findsNothing);
+    expect(find.text('Mass Fuse Anomalies'), findsNothing);
   });
 }

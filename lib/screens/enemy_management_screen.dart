@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../data/enemy_configs.dart';
+import '../data/threat_region_configs.dart';
 import '../models/enemy_art_assets.dart';
 import '../models/lightcore_config.dart';
 import '../models/lightcore_currency_labels.dart';
@@ -112,7 +113,7 @@ class _EnemyManagementScreenState extends State<EnemyManagementScreen> {
           controller: widget.scrollController,
           padding: const EdgeInsets.fromLTRB(4, 4, 4, 24),
           children: [
-            Text('Threat Library', style: textTheme.titleLarge),
+            Text('Boss Build', style: textTheme.titleLarge),
             const SizedBox(height: 8),
             _ThreatLibraryTabs(
               controller: controller,
@@ -127,13 +128,7 @@ class _EnemyManagementScreenState extends State<EnemyManagementScreen> {
             ),
             const SizedBox(height: 8),
             if (_tab == _ThreatLibraryTab.enemies) ...[
-              _SwarmPressurePanel(controller: controller),
-              const SizedBox(height: 18),
-              _ThreatAssignmentPanel(controller: controller),
-              const SizedBox(height: 18),
-              _MassEnemyFusePanel(controller: controller),
-              const SizedBox(height: 18),
-              _ThreatRegionMapPanel(controller: controller),
+              _EnemySuiteBuildPanel(controller: controller),
             ] else ...[
               Text(
                 '${controller.activeLayerLabel}  •  Owned ${controller.ownedBossEnemyCardCount}/${controller.bossEnemyCards.length}  •  ${controller.bossTicketLabel}  •  ${controller.bossCoreLabel}',
@@ -168,19 +163,321 @@ class _EnemyManagementScreenState extends State<EnemyManagementScreen> {
   }
 }
 
-class _ThreatRegionMapPanel extends StatelessWidget {
-  const _ThreatRegionMapPanel({required this.controller});
+class _EnemySuiteBuildPanel extends StatelessWidget {
+  const _EnemySuiteBuildPanel({required this.controller});
 
   final LightcoreController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    final ownedCores = controller.apexCores
+        .where((core) => core.isOwned)
+        .toList(growable: false);
+    final ownedTraits = controller.bossTraits
+        .where((trait) => trait.isOwned)
+        .toList(growable: false);
+    final ownedAnomalies = controller.enemyCards
+        .where((card) => card.isOwned)
+        .toList(growable: false);
+    final tint = controller.hasCompleteEnemySuite
+        ? LightcorePalette.success
+        : LightcorePalette.warning;
+
+    if (!controller.enemySuiteBuilderUnlocked) {
+      return AuroraPanel(
+        tint: LightcorePalette.warning,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Boss Build Locked', style: textTheme.titleLarge),
+            const SizedBox(height: 6),
+            Text(
+              'Portable enemy suites unlock when the first mode that needs them comes online, or when a regional boss drops suite pieces.',
+              style: textTheme.bodyMedium,
+            ),
+            const SizedBox(height: 14),
+            Wrap(
+              spacing: 10,
+              runSpacing: 10,
+              children: [
+                _InfoChip(
+                  label:
+                      controller.overallLevel >=
+                          LightcoreController.dailyDungeonUnlockLevel
+                      ? 'Dungeons ready'
+                      : 'Dungeons locked',
+                ),
+                _InfoChip(
+                  label:
+                      controller.overallLevel >=
+                          LightcoreController.tournamentUnlockLevel
+                      ? 'Arena ready'
+                      : 'Arena locked',
+                ),
+                _InfoChip(
+                  label: '${controller.fullyStabilizedRegionCount} regions',
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
+    }
+
+    return AuroraPanel(
+      tint: tint,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(child: Text('Enemy Suite', style: textTheme.titleLarge)),
+              _InfoChip(
+                label: controller.hasCompleteEnemySuite
+                    ? 'Complete'
+                    : 'Incomplete',
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'Build the portable enemy suite used by Arena, Threat Director Dungeon, and future challenge modes.',
+            style: textTheme.bodyMedium,
+          ),
+          const SizedBox(height: 14),
+          Wrap(
+            spacing: 10,
+            runSpacing: 10,
+            children: [
+              _InfoChip(label: '${ownedCores.length} Apex Cores'),
+              _InfoChip(label: '${ownedTraits.length} Traits'),
+              _InfoChip(label: '${ownedAnomalies.length} Cards'),
+              _InfoChip(label: '${controller.threatShards} Threat Shards'),
+            ],
+          ),
+          const SizedBox(height: 16),
+          if (ownedCores.isEmpty ||
+              ownedTraits.isEmpty ||
+              ownedAnomalies.isEmpty)
+            _InlineEnemyNote(
+              message:
+                  'Clear regional bosses to earn Apex Cores, boss traits, and the region anomaly cards used here.',
+              tint: LightcorePalette.warning,
+            )
+          else
+            _EnemySuiteSlots(
+              controller: controller,
+              ownedCores: ownedCores,
+              ownedTraits: ownedTraits,
+              ownedAnomalies: ownedAnomalies,
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _EnemySuiteSlots extends StatelessWidget {
+  const _EnemySuiteSlots({
+    required this.controller,
+    required this.ownedCores,
+    required this.ownedTraits,
+    required this.ownedAnomalies,
+  });
+
+  final LightcoreController controller;
+  final List<ApexCoreState> ownedCores;
+  final List<BossTraitState> ownedTraits;
+  final List<EnemyCardState> ownedAnomalies;
+
+  @override
+  Widget build(BuildContext context) {
+    final suite = controller.activeEnemySuite;
+    final selectedTraits = _fixedSelection(suite.bossTraitIds, 2);
+    final selectedAnomalies = _fixedSelection(suite.anomalyCardIds, 3);
+    final apexValue = _validApexValue(suite.apexCoreBossId);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _SuiteDropdown<String>(
+          label: 'Apex Core',
+          value: apexValue,
+          items: [
+            for (final core in ownedCores)
+              DropdownMenuItem<String>(
+                value: core.bossConfig.id,
+                child: Text('${core.bossConfig.name} • x${core.copies}'),
+              ),
+          ],
+          onChanged: (value) {
+            if (value != null) {
+              _setSuite(apexCoreBossId: value);
+            }
+          },
+        ),
+        const SizedBox(height: 12),
+        for (var index = 0; index < 2; index += 1) ...[
+          _SuiteDropdown<String>(
+            label: 'Boss Trait ${index + 1}',
+            value: _validTraitValue(selectedTraits[index]),
+            items: [
+              for (final trait in ownedTraits)
+                DropdownMenuItem<String>(
+                  value: trait.config.id,
+                  child: Text('${trait.config.effectLabel} • x${trait.copies}'),
+                ),
+            ],
+            onChanged: (value) {
+              if (value != null) {
+                final next = List<String?>.from(selectedTraits);
+                next[index] = value;
+                _setSuite(
+                  bossTraitIds: next.whereType<String>().toList(
+                    growable: false,
+                  ),
+                );
+              }
+            },
+          ),
+          const SizedBox(height: 12),
+        ],
+        for (var index = 0; index < 3; index += 1) ...[
+          _SuiteDropdown<String>(
+            label: 'Anomaly Card ${index + 1}',
+            value: _validAnomalyValue(selectedAnomalies[index]),
+            items: [
+              for (final card in ownedAnomalies)
+                DropdownMenuItem<String>(
+                  value: card.config.id,
+                  child: Text('${card.config.name} • x${card.copies}'),
+                ),
+            ],
+            onChanged: (value) {
+              if (value != null) {
+                final next = List<String?>.from(selectedAnomalies);
+                next[index] = value;
+                _setSuite(
+                  anomalyCardIds: next.whereType<String>().toList(
+                    growable: false,
+                  ),
+                );
+              }
+            },
+          ),
+          if (index < 2) const SizedBox(height: 12),
+        ],
+        const SizedBox(height: 14),
+        _InlineEnemyNote(
+          message: controller.hasCompleteEnemySuite
+              ? 'Suite ready. Duplicate trait or anomaly slots consume matching owned copies.'
+              : 'Fill 1 Apex Core, 2 boss traits, and 3 anomaly cards. Duplicate traits or anomaly cards require enough copies.',
+          tint: controller.hasCompleteEnemySuite
+              ? LightcorePalette.success
+              : LightcorePalette.warning,
+        ),
+      ],
+    );
+  }
+
+  List<String?> _fixedSelection(List<String> values, int length) {
+    return List<String?>.generate(
+      length,
+      (index) => index < values.length ? values[index] : null,
+      growable: false,
+    );
+  }
+
+  String? _validApexValue(String? value) {
+    if (value == null) {
+      return null;
+    }
+    return ownedCores.any((core) => core.bossConfig.id == value) ? value : null;
+  }
+
+  String? _validTraitValue(String? value) {
+    if (value == null) {
+      return null;
+    }
+    return ownedTraits.any((trait) => trait.config.id == value) ? value : null;
+  }
+
+  String? _validAnomalyValue(String? value) {
+    if (value == null) {
+      return null;
+    }
+    return ownedAnomalies.any((card) => card.config.id == value) ? value : null;
+  }
+
+  void _setSuite({
+    String? apexCoreBossId,
+    List<String>? bossTraitIds,
+    List<String>? anomalyCardIds,
+  }) {
+    final suite = controller.activeEnemySuite;
+    final fallbackApex = ownedCores.isEmpty
+        ? null
+        : ownedCores.first.bossConfig.id;
+    final nextApex = apexCoreBossId ?? suite.apexCoreBossId ?? fallbackApex;
+    if (nextApex == null) {
+      return;
+    }
+    controller.setActiveEnemySuite(
+      apexCoreBossId: nextApex,
+      bossTraitIds: bossTraitIds ?? suite.bossTraitIds,
+      anomalyCardIds: anomalyCardIds ?? suite.anomalyCardIds,
+    );
+  }
+}
+
+class _SuiteDropdown<T> extends StatelessWidget {
+  const _SuiteDropdown({
+    required this.label,
+    required this.value,
+    required this.items,
+    required this.onChanged,
+  });
+
+  final String label;
+  final T? value;
+  final List<DropdownMenuItem<T>> items;
+  final ValueChanged<T?> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return DropdownButtonFormField<T>(
+      initialValue: value,
+      isExpanded: true,
+      decoration: InputDecoration(labelText: label),
+      items: items,
+      onChanged: items.isEmpty ? null : onChanged,
+    );
+  }
+}
+
+class _ThreatRegionMapPanel extends StatelessWidget {
+  const _ThreatRegionMapPanel({
+    required this.controller,
+    this.compact = false,
+    this.scanOriginRegionId,
+    this.scanHitRegionId,
+    this.scanProgress = 0,
+  });
+
+  final LightcoreController controller;
+  final bool compact;
+  final String? scanOriginRegionId;
+  final String? scanHitRegionId;
+  final double scanProgress;
 
   @override
   Widget build(BuildContext context) {
     final selected = controller.selectedThreatRegionConfig;
     final selectedState = controller.selectedThreatRegionState;
     final textTheme = Theme.of(context).textTheme;
-    final displayedRegions = controller.fullThreatMapUnlocked
-        ? controller.threatRegionConfigs
-        : [controller.threatRegionConfigs.first];
+    final displayedRegions = controller.threatRegionConfigs;
     ThreatRegionConfig? mergeTarget;
     if (selected != null &&
         selectedState != null &&
@@ -205,11 +502,13 @@ class _ThreatRegionMapPanel extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            crossAxisAlignment: WrapCrossAlignment.center,
             children: [
-              Expanded(child: Text('Threat Map', style: textTheme.titleMedium)),
+              Text('Threat Map', style: textTheme.titleMedium),
               _InfoChip(label: controller.enemyTicketLabel),
-              const SizedBox(width: 8),
               _InfoChip(
                 label: '${controller.fullyStabilizedRegionCount} stabilized',
               ),
@@ -217,7 +516,7 @@ class _ThreatRegionMapPanel extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           SizedBox(
-            height: 260,
+            height: compact ? 220 : 260,
             child: CustomPaint(
               painter: _ThreatRegionMapPainter(
                 regions: displayedRegions,
@@ -226,6 +525,9 @@ class _ThreatRegionMapPanel extends StatelessWidget {
                     state.regionId: state,
                 },
                 selectedRegionId: controller.selectedThreatRegionId,
+                scanOriginRegionId: scanOriginRegionId,
+                scanHitRegionId: scanHitRegionId,
+                scanProgress: scanProgress,
               ),
               child: const SizedBox.expand(),
             ),
@@ -233,6 +535,7 @@ class _ThreatRegionMapPanel extends StatelessWidget {
           const SizedBox(height: 12),
           DropdownButtonFormField<String>(
             initialValue: selected?.id,
+            isExpanded: true,
             decoration: const InputDecoration(labelText: 'Selected region'),
             items: [
               for (final region in displayedRegions)
@@ -240,7 +543,10 @@ class _ThreatRegionMapPanel extends StatelessWidget {
                     false)
                   DropdownMenuItem<String>(
                     value: region.id,
-                    child: Text('${region.name} • Ring ${region.ring}'),
+                    child: Text(
+                      '${region.name} • Ring ${region.ring}',
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
             ],
             onChanged: (value) {
@@ -262,80 +568,83 @@ class _ThreatRegionMapPanel extends StatelessWidget {
                 color: LightcorePalette.mist.withValues(alpha: 0.72),
               ),
             ),
-            const SizedBox(height: 12),
-            if (controller.enemyManagers.isNotEmpty)
-              DropdownButtonFormField<String>(
-                initialValue:
-                    controller.enemyManagers.any(
-                      (manager) =>
-                          manager.instanceId ==
-                          selectedState.assignedThreatDirectorId,
-                    )
-                    ? selectedState.assignedThreatDirectorId
-                    : null,
-                decoration: const InputDecoration(
-                  labelText: 'Region Threat Director',
+            if (!compact) ...[
+              const SizedBox(height: 12),
+              if (controller.enemyManagers.isNotEmpty)
+                DropdownButtonFormField<String>(
+                  initialValue:
+                      controller.enemyManagers.any(
+                        (manager) =>
+                            manager.instanceId ==
+                            selectedState.assignedThreatDirectorId,
+                      )
+                      ? selectedState.assignedThreatDirectorId
+                      : null,
+                  decoration: const InputDecoration(
+                    labelText: 'Region Threat Director',
+                  ),
+                  items: [
+                    for (final manager in controller.enemyManagers)
+                      DropdownMenuItem<String>(
+                        value: manager.instanceId,
+                        child: Text(manager.name),
+                      ),
+                  ],
+                  onChanged: (value) {
+                    if (value != null) {
+                      controller.assignThreatDirectorToRegion(
+                        regionId: selected.id,
+                        managerId: value,
+                      );
+                    }
+                  },
+                )
+              else
+                _InlineEnemyNote(
+                  message:
+                      'Forge a Threat Director to validate this region for offline output.',
+                  tint: LightcorePalette.layer2,
                 ),
-                items: [
-                  for (final manager in controller.enemyManagers)
-                    DropdownMenuItem<String>(
-                      value: manager.instanceId,
-                      child: Text(manager.name),
-                    ),
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  FilledButton.icon(
+                    onPressed: controller.activeThreatRegionChallenge == null
+                        ? () =>
+                              controller.startThreatRegionChallenge(selected.id)
+                        : null,
+                    icon: const Icon(Icons.flag_rounded),
+                    label: const Text('Challenge'),
+                  ),
+                  OutlinedButton.icon(
+                    onPressed:
+                        controller.fullThreatMapUnlocked &&
+                            controller.enemyTickets > 0
+                        ? () => controller.scanThreatMap()
+                        : null,
+                    icon: const Icon(Icons.radar_rounded),
+                    label: const Text('Scan'),
+                  ),
+                  OutlinedButton.icon(
+                    onPressed: mergeTarget == null
+                        ? null
+                        : () => controller.mergeRegionEchoesToReveal(
+                            sourceRegionId: selected.id,
+                            targetRegionId: mergeTarget!.id,
+                          ),
+                    icon: const Icon(Icons.hub_rounded),
+                    label: const Text('Merge Echoes'),
+                  ),
                 ],
-                onChanged: (value) {
-                  if (value != null) {
-                    controller.assignThreatDirectorToRegion(
-                      regionId: selected.id,
-                      managerId: value,
-                    );
-                  }
-                },
-              )
-            else
-              _InlineEnemyNote(
-                message:
-                    'Forge a Threat Director to validate this region for offline output.',
-                tint: LightcorePalette.layer2,
               ),
-            const SizedBox(height: 12),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                FilledButton.icon(
-                  onPressed: controller.activeThreatRegionChallenge == null
-                      ? () => controller.startThreatRegionChallenge(selected.id)
-                      : null,
-                  icon: const Icon(Icons.flag_rounded),
-                  label: const Text('Challenge'),
-                ),
-                OutlinedButton.icon(
-                  onPressed:
-                      controller.fullThreatMapUnlocked &&
-                          controller.enemyTickets > 0
-                      ? () => controller.scanThreatMap()
-                      : null,
-                  icon: const Icon(Icons.radar_rounded),
-                  label: const Text('Scan'),
-                ),
-                OutlinedButton.icon(
-                  onPressed: mergeTarget == null
-                      ? null
-                      : () => controller.mergeRegionEchoesToReveal(
-                          sourceRegionId: selected.id,
-                          targetRegionId: mergeTarget!.id,
-                        ),
-                  icon: const Icon(Icons.hub_rounded),
-                  label: const Text('Merge Echoes'),
-                ),
-              ],
-            ),
+            ],
           ],
           if (!controller.fullThreatMapUnlocked) ...[
             const SizedBox(height: 10),
             Text(
-              'Fully stabilize the first region and defeat its boss to unlock the full map.',
+              'All 37 regions are fixed for every player. Fully stabilize the first region and defeat its boss before scans can radiate outward.',
               style: textTheme.bodySmall?.copyWith(
                 color: LightcorePalette.warning,
               ),
@@ -352,21 +661,36 @@ class _ThreatRegionMapPainter extends CustomPainter {
     required this.regions,
     required this.states,
     required this.selectedRegionId,
+    this.scanOriginRegionId,
+    this.scanHitRegionId,
+    this.scanProgress = 0,
   });
 
   final List<ThreatRegionConfig> regions;
   final Map<String, ThreatRegionState> states;
   final String? selectedRegionId;
+  final String? scanOriginRegionId;
+  final String? scanHitRegionId;
+  final double scanProgress;
 
   @override
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height / 2);
     final radius = math.min(size.width, size.height) / 9.2;
     final paint = Paint()..style = PaintingStyle.fill;
-    final stroke = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.4
-      ..color = LightcorePalette.mist.withValues(alpha: 0.24);
+    final origin = _regionById(scanOriginRegionId ?? selectedRegionId);
+    final maxScanDistance = origin == null
+        ? 0
+        : regions.fold<int>(
+            0,
+            (maxDistance, region) => math.max(
+              maxDistance,
+              ThreatRegionLibrary.hexDistance(
+                region.q - origin.q,
+                region.r - origin.r,
+              ),
+            ),
+          );
     for (final region in regions) {
       final state = states[region.id];
       final point = _axialToPixel(region.q, region.r, radius, center);
@@ -378,15 +702,53 @@ class _ThreatRegionMapPainter extends CustomPainter {
           ? (full
                 ? LightcorePalette.success.withValues(alpha: 0.74)
                 : _rarityTint(region.rarity).withValues(alpha: 0.66))
-          : LightcorePalette.night.withValues(alpha: 0.62);
+          : LightcorePalette.mist.withValues(alpha: 0.12);
       canvas.drawPath(path, paint);
+      if (!revealed) {
+        final lockedFill = Paint()
+          ..style = PaintingStyle.fill
+          ..color = LightcorePalette.night.withValues(alpha: 0.34);
+        canvas.drawPath(path, lockedFill);
+      }
+      final stroke = Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = revealed ? 1.4 : 1.1
+        ..color = revealed
+            ? LightcorePalette.mist.withValues(alpha: 0.24)
+            : LightcorePalette.mist.withValues(alpha: 0.18);
       canvas.drawPath(path, stroke);
+      if (origin != null && scanProgress > 0) {
+        final distance = ThreatRegionLibrary.hexDistance(
+          region.q - origin.q,
+          region.r - origin.r,
+        );
+        final wavePoint = maxScanDistance == 0
+            ? 1.0
+            : distance / maxScanDistance;
+        final delta = (scanProgress - wavePoint).abs();
+        if (delta < 0.23) {
+          final alpha = (1 - (delta / 0.23)).clamp(0.0, 1.0) * 0.42;
+          final scanPaint = Paint()
+            ..style = PaintingStyle.fill
+            ..color = LightcorePalette.scanGlow.withValues(alpha: alpha);
+          canvas.drawPath(path, scanPaint);
+        }
+      }
       if (region.id == selectedRegionId) {
         final selectedStroke = Paint()
           ..style = PaintingStyle.stroke
           ..strokeWidth = 3
           ..color = LightcorePalette.solar;
         canvas.drawPath(path, selectedStroke);
+      }
+      if (region.id == scanHitRegionId && scanProgress > 0.72) {
+        final hitStroke = Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 3.4
+          ..color = LightcorePalette.scanGlow.withValues(
+            alpha: ((scanProgress - 0.72) / 0.28).clamp(0.0, 1.0),
+          );
+        canvas.drawPath(path, hitStroke);
       }
       if (region.hasDoubleBoss && revealed) {
         final dotPaint = Paint()
@@ -395,6 +757,14 @@ class _ThreatRegionMapPainter extends CustomPainter {
         canvas.drawCircle(point, radius * 0.16, dotPaint);
       }
     }
+  }
+
+  ThreatRegionConfig? _regionById(String? regionId) {
+    if (regionId == null) {
+      return null;
+    }
+    final matches = regions.where((region) => region.id == regionId);
+    return matches.isEmpty ? null : matches.first;
   }
 
   Offset _axialToPixel(int q, int r, double radius, Offset center) {
@@ -421,7 +791,10 @@ class _ThreatRegionMapPainter extends CustomPainter {
   bool shouldRepaint(covariant _ThreatRegionMapPainter oldDelegate) {
     return oldDelegate.regions != regions ||
         oldDelegate.states != states ||
-        oldDelegate.selectedRegionId != selectedRegionId;
+        oldDelegate.selectedRegionId != selectedRegionId ||
+        oldDelegate.scanOriginRegionId != scanOriginRegionId ||
+        oldDelegate.scanHitRegionId != scanHitRegionId ||
+        oldDelegate.scanProgress != scanProgress;
   }
 }
 
@@ -434,19 +807,29 @@ class EnemyPullSheet extends StatefulWidget {
   State<EnemyPullSheet> createState() => _EnemyPullSheetState();
 }
 
-class _EnemyPullSheetState extends State<EnemyPullSheet> {
+class _EnemyPullSheetState extends State<EnemyPullSheet>
+    with SingleTickerProviderStateMixin {
   static const int _rewardedTicketGrant = 5;
   static const bool _localFlutterRunFakeScansEnabled = kDebugMode;
 
+  late final AnimationController _scanPulseController;
+  ThreatRegionScanResult? _scanPulseResult;
+  String? _scanPulseOriginRegionId;
+  bool _scanPulseActive = false;
   bool _revealBusy = false;
   bool _rewardAdBusy = false;
   _ThreatPullTab _tab = _ThreatPullTab.enemies;
 
   LightcoreController get controller => widget.controller;
+  bool get _scanBusy => _revealBusy || _scanPulseActive;
 
   @override
   void initState() {
     super.initState();
+    _scanPulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1050),
+    );
     _tab = _preferredInitialPullTab(widget.controller);
     widget.controller.addListener(_handleControllerChange);
   }
@@ -465,6 +848,7 @@ class _EnemyPullSheetState extends State<EnemyPullSheet> {
   @override
   void dispose() {
     widget.controller.removeListener(_handleControllerChange);
+    _scanPulseController.dispose();
     super.dispose();
   }
 
@@ -615,6 +999,12 @@ class _EnemyPullSheetState extends State<EnemyPullSheet> {
                                     'White Warden is already the starter Apex. Create the Prism Shell to claim ${LightcoreCurrencyLabels.bossScanCount(LightcoreController.bossUnlockTicketGrant)} and start clearing regional Apex bosses.',
                                 tint: LightcorePalette.warning,
                               ),
+                            ] else if (!controller.fullThreatMapUnlocked) ...[
+                              _InlineEnemyNote(
+                                message:
+                                    'Regional boss scan-out unlocks after the starter region is fully stabilized and its boss is defeated.',
+                                tint: LightcorePalette.warning,
+                              ),
                             ] else ...[
                               LayoutBuilder(
                                 builder: (context, constraints) {
@@ -647,7 +1037,9 @@ class _EnemyPullSheetState extends State<EnemyPullSheet> {
                                             label: '1',
                                             enabled:
                                                 controller.canOpenBossTickets &&
-                                                !_revealBusy,
+                                                controller
+                                                    .fullThreatMapUnlocked &&
+                                                !_scanBusy,
                                             onPressed: () =>
                                                 _openBossTickets(context, 1),
                                           ),
@@ -658,10 +1050,12 @@ class _EnemyPullSheetState extends State<EnemyPullSheet> {
                                           label: '10+',
                                           enabled:
                                               controller.bossHuntsUnlocked &&
+                                              controller
+                                                  .fullThreatMapUnlocked &&
                                               controller.enemyTickets >= 10 &&
                                               !controller
                                                   .tutorialHighlightsBossSinglePullButton &&
-                                              !_revealBusy,
+                                              !_scanBusy,
                                           onPressed: () =>
                                               _openBossBatchTickets(context),
                                         ),
@@ -671,10 +1065,12 @@ class _EnemyPullSheetState extends State<EnemyPullSheet> {
                                           label: 'MAX',
                                           enabled:
                                               controller.bossHuntsUnlocked &&
+                                              controller
+                                                  .fullThreatMapUnlocked &&
                                               controller.enemyTickets > 1 &&
                                               !controller
                                                   .tutorialHighlightsBossSinglePullButton &&
-                                              !_revealBusy,
+                                              !_scanBusy,
                                           onPressed: () =>
                                               _openBossMaxTickets(context),
                                         ),
@@ -684,7 +1080,7 @@ class _EnemyPullSheetState extends State<EnemyPullSheet> {
                                           onPressed:
                                               LightcoreRewardedAds
                                                       .isSupportedPlatform &&
-                                                  !_revealBusy &&
+                                                  !_scanBusy &&
                                                   !_rewardAdBusy
                                               ? () => _claimRewardedBossTickets(
                                                   context,
@@ -759,7 +1155,7 @@ class _EnemyPullSheetState extends State<EnemyPullSheet> {
                       ],
                     ] else ...[
                       _ThreatScanSection(
-                        title: 'Anomalies',
+                        title: 'Threat Map',
                         tint: enemyTint,
                         icon: LightcoreIcons.threatScan,
                         progress: controller.summoningLevelProgress,
@@ -794,6 +1190,27 @@ class _EnemyPullSheetState extends State<EnemyPullSheet> {
                               ],
                             ),
                             const SizedBox(height: 12),
+                            AnimatedBuilder(
+                              animation: _scanPulseController,
+                              builder: (context, _) {
+                                return _ThreatRegionMapPanel(
+                                  controller: controller,
+                                  compact: true,
+                                  scanOriginRegionId: _scanPulseOriginRegionId,
+                                  scanHitRegionId: _scanPulseResult?.region.id,
+                                  scanProgress: _scanPulseController.value,
+                                );
+                              },
+                            ),
+                            if (!controller.fullThreatMapUnlocked) ...[
+                              const SizedBox(height: 12),
+                              _InlineEnemyNote(
+                                message:
+                                    'Scan-out is locked until the starter region is fully stabilized and its boss is defeated.',
+                                tint: LightcorePalette.warning,
+                              ),
+                            ],
+                            const SizedBox(height: 12),
                             LayoutBuilder(
                               builder: (context, constraints) {
                                 const spacing = 10.0;
@@ -824,8 +1241,10 @@ class _EnemyPullSheetState extends State<EnemyPullSheet> {
                                         child: _TicketButton(
                                           label: '1',
                                           enabled:
+                                              controller
+                                                  .fullThreatMapUnlocked &&
                                               controller.enemyTickets >= 1 &&
-                                              !_revealBusy,
+                                              !_scanBusy,
                                           onPressed: () =>
                                               _openTickets(context, 1),
                                         ),
@@ -835,10 +1254,11 @@ class _EnemyPullSheetState extends State<EnemyPullSheet> {
                                       _TicketButton(
                                         label: '10+',
                                         enabled:
+                                            controller.fullThreatMapUnlocked &&
                                             controller.enemyTickets >= 10 &&
                                             !controller
                                                 .tutorialHighlightsEnemySinglePullButton &&
-                                            !_revealBusy,
+                                            !_scanBusy,
                                         onPressed: () =>
                                             _openBatchTickets(context),
                                       ),
@@ -847,10 +1267,11 @@ class _EnemyPullSheetState extends State<EnemyPullSheet> {
                                       _TicketButton(
                                         label: 'MAX',
                                         enabled:
+                                            controller.fullThreatMapUnlocked &&
                                             controller.enemyTickets > 1 &&
                                             !controller
                                                 .tutorialHighlightsEnemySinglePullButton &&
-                                            !_revealBusy,
+                                            !_scanBusy,
                                         onPressed: () =>
                                             _openMaxTickets(context),
                                       ),
@@ -860,7 +1281,7 @@ class _EnemyPullSheetState extends State<EnemyPullSheet> {
                                         onPressed:
                                             LightcoreRewardedAds
                                                     .isSupportedPlatform &&
-                                                !_revealBusy &&
+                                                !_scanBusy &&
                                                 !_rewardAdBusy
                                             ? () =>
                                                   _claimRewardedTickets(context)
@@ -907,12 +1328,27 @@ class _EnemyPullSheetState extends State<EnemyPullSheet> {
   }
 
   Future<void> _openTickets(BuildContext context, int count) async {
-    if (_revealBusy) {
+    if (_scanBusy ||
+        !controller.fullThreatMapUnlocked ||
+        controller.enemyTickets < count) {
       return;
     }
+    final originRegionId = controller.selectedThreatRegionId;
     final result = controller.scanThreatMap(count: count);
     if (result == null) {
       return;
+    }
+    setState(() {
+      _scanPulseOriginRegionId =
+          originRegionId ?? controller.selectedThreatRegionId;
+      _scanPulseResult = result;
+      _scanPulseActive = true;
+    });
+    await _scanPulseController.forward(from: 0);
+    if (mounted) {
+      setState(() {
+        _scanPulseActive = false;
+      });
     }
     if (!context.mounted) {
       return;
@@ -921,7 +1357,9 @@ class _EnemyPullSheetState extends State<EnemyPullSheet> {
   }
 
   Future<void> _openBatchTickets(BuildContext context) async {
-    if (_revealBusy || controller.enemyTickets < 10) {
+    if (_scanBusy ||
+        !controller.fullThreatMapUnlocked ||
+        controller.enemyTickets < 10) {
       return;
     }
     final count = await _showBatchOpenSheet(
@@ -937,21 +1375,25 @@ class _EnemyPullSheetState extends State<EnemyPullSheet> {
   }
 
   Future<void> _openMaxTickets(BuildContext context) async {
-    if (_revealBusy || controller.enemyTickets <= 0) {
+    if (_scanBusy ||
+        !controller.fullThreatMapUnlocked ||
+        controller.enemyTickets <= 0) {
       return;
     }
     await _openTickets(context, controller.enemyTickets);
   }
 
   Future<void> _openBossTickets(BuildContext context, int count) async {
-    if (_revealBusy) {
+    if (_scanBusy || !controller.fullThreatMapUnlocked) {
       return;
     }
     await _openTickets(context, count);
   }
 
   Future<void> _openBossBatchTickets(BuildContext context) async {
-    if (_revealBusy || controller.enemyTickets < 10) {
+    if (_scanBusy ||
+        !controller.fullThreatMapUnlocked ||
+        controller.enemyTickets < 10) {
       return;
     }
     final count = await _showBatchOpenSheet(
@@ -967,7 +1409,9 @@ class _EnemyPullSheetState extends State<EnemyPullSheet> {
   }
 
   Future<void> _openBossMaxTickets(BuildContext context) async {
-    if (_revealBusy || controller.enemyTickets <= 0) {
+    if (_scanBusy ||
+        !controller.fullThreatMapUnlocked ||
+        controller.enemyTickets <= 0) {
       return;
     }
     await _openBossTickets(context, controller.enemyTickets);

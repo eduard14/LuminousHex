@@ -26,7 +26,7 @@ class _ThreatLibraryTabs extends StatelessWidget {
                   : null,
             ),
             icon: const Icon(LightcoreIcons.threatScan),
-            label: const Text('Anomalies'),
+            label: const Text('Boss Build'),
           ),
         ),
         const SizedBox(width: 10),
@@ -46,7 +46,7 @@ class _ThreatLibraryTabs extends StatelessWidget {
               icon: Icon(
                 bossesUnlocked ? Icons.shield_moon_rounded : Icons.lock_rounded,
               ),
-              label: const Text('Apex'),
+              label: const Text('Apex Library'),
             ),
           ),
         ),

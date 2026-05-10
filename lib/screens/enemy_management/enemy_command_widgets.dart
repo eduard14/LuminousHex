@@ -356,6 +356,7 @@ class _ThreatSummonCard extends StatelessWidget {
   }
 }
 
+// ignore: unused_element
 class _SwarmPressurePanel extends StatelessWidget {
   const _SwarmPressurePanel({required this.controller});
 

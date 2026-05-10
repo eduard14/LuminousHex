@@ -87,6 +87,13 @@ extension LightcoreControllerThreatRegions on LightcoreController {
             true;
   }
 
+  bool get enemySuiteBuilderUnlocked =>
+      overallLevel >= dailyDungeonUnlockLevel ||
+      overallLevel >= tournamentUnlockLevel ||
+      fullyStabilizedRegionCount > 0 ||
+      _apexCores.any((core) => core.isOwned) ||
+      _bossTraits.any((trait) => trait.isOwned);
+
   bool get hasCompleteEnemySuite {
     final apexId = _activeEnemySuite.apexCoreBossId;
     if (apexId == null || _apexCoreByBossId(apexId)?.isOwned != true) {
@@ -96,8 +103,13 @@ extension LightcoreControllerThreatRegions on LightcoreController {
         _activeEnemySuite.anomalyCardIds.length != 3) {
       return false;
     }
+    final traitCounts = <String, int>{};
     for (final traitId in _activeEnemySuite.bossTraitIds) {
-      if (_bossTraitById(traitId)?.isOwned != true) {
+      traitCounts[traitId] = (traitCounts[traitId] ?? 0) + 1;
+    }
+    for (final entry in traitCounts.entries) {
+      final trait = _bossTraitById(entry.key);
+      if (trait == null || !trait.isOwned || trait.copies < entry.value) {
         return false;
       }
     }

@@ -101,7 +101,7 @@ class _ThreatPullTabs extends StatelessWidget {
                   : null,
             ),
             icon: const Icon(LightcoreIcons.threatScan),
-            label: const Text('Anomalies'),
+            label: const Text('Threat Map'),
           ),
         ),
         const SizedBox(width: 10),
