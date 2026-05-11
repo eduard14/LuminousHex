@@ -49,6 +49,18 @@ void _unlockBossHunts(LightcoreController controller) {
   }
 }
 
+void _unlockThreatMapScans(LightcoreController controller) {
+  if (!controller.bossHuntsUnlocked) {
+    _unlockBossHunts(controller);
+  }
+  final starter = controller.threatRegionConfigs.first;
+  controller.debugRevealThreatRegion(
+    starter.id,
+    stabilizedLevel: starter.stabilizationLayers,
+  );
+  controller.debugGrantApexCore(starter.primaryBossId);
+}
+
 void main() {
   test('overall kill level progress tracks cumulative kills', () {
     final controller = LightcoreController();
@@ -409,6 +421,7 @@ void main() {
 
     final tsBefore = controller.towerStrength;
 
+    _unlockThreatMapScans(controller);
     controller.debugAddBossTickets(1);
     final pulls = controller.openBossTickets(1);
 
@@ -492,7 +505,7 @@ void main() {
     final controller = LightcoreController(packRandom: Random(13));
     addTearDown(controller.dispose);
 
-    _unlockBossHunts(controller);
+    _unlockThreatMapScans(controller);
     controller.debugAddBossTickets(50);
     final pulls = controller.openBossTickets(50);
     PackPullResult? duplicatePull;

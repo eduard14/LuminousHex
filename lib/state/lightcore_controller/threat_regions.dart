@@ -187,7 +187,7 @@ extension LightcoreControllerThreatRegions on LightcoreController {
   }
 
   ThreatRegionScanResult? scanThreatMap({int count = 1}) {
-    if (count <= 0 || enemyTickets < count) {
+    if (!fullThreatMapUnlocked || count <= 0 || enemyTickets < count) {
       return null;
     }
     ThreatRegionScanResult? lastResult;
@@ -346,6 +346,11 @@ extension LightcoreControllerThreatRegions on LightcoreController {
   }
 
   bool startThreatRegionChallenge(String regionId) {
+    if (!bossHuntsUnlocked) {
+      _showBanner('Region challenges unlock after the Prism Shell is online.');
+      _notifyNow();
+      return false;
+    }
     if (_threatRegionChallenge != null) {
       return false;
     }

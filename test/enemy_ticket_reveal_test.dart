@@ -32,11 +32,14 @@ void _unlockThreatMapScans(LightcoreController controller) {
     stabilizedLevel: starter.stabilizationLayers,
   );
   controller.debugGrantApexCore(starter.primaryBossId);
+  controller.debugDisableTutorial();
 }
 
 void main() {
   test('openEnemyTickets consumes the full requested stash', () {
     final controller = LightcoreController();
+    _unlockBossHunts(controller);
+    _unlockThreatMapScans(controller);
     final startingTickets = controller.enemyTickets;
 
     final pulls = controller.openEnemyTickets(startingTickets);
@@ -48,6 +51,8 @@ void main() {
 
   test('openEnemyTickets does not show a pre-reveal result banner', () {
     final controller = LightcoreController();
+    _unlockBossHunts(controller);
+    _unlockThreatMapScans(controller);
     final initialBanner = controller.bannerMessage;
 
     final pulls = controller.openEnemyTickets(1);
@@ -60,13 +65,14 @@ void main() {
   test('openBossTickets does not show a pre-reveal result banner', () {
     final controller = LightcoreController();
     _unlockBossHunts(controller);
+    _unlockThreatMapScans(controller);
     controller.bossTickets = 1;
     final initialBanner = controller.bannerMessage;
 
     final pulls = controller.openBossTickets(1);
 
     expect(pulls, hasLength(1));
-    expect(controller.bannerMessage, isNot(initialBanner));
+    expect(controller.bannerMessage, initialBanner);
     expect(controller.bannerMessage, isNot(contains('Resolved')));
   });
 
@@ -86,6 +92,8 @@ void main() {
 
   test('crossing a summoning level grants ticket milestone rewards', () {
     final controller = LightcoreController();
+    _unlockBossHunts(controller);
+    _unlockThreatMapScans(controller);
     controller.enemyPullCount =
         LightcoreController.summoningLevelPullTargetForLevel(2) - 1;
     controller.enemyTickets = 1;
@@ -616,8 +624,9 @@ void main() {
 
   testWidgets('pull sheet omits recent scan summaries', (tester) async {
     final controller = LightcoreController();
-    controller.openEnemyTickets(1);
     _unlockBossHunts(controller);
+    _unlockThreatMapScans(controller);
+    controller.openEnemyTickets(1);
     controller.debugAddBossTickets(1);
     controller.openBossTickets(1);
 

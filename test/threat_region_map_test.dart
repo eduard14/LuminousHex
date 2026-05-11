@@ -3,6 +3,20 @@ import 'package:lightcore/data/threat_region_configs.dart';
 import 'package:lightcore/models/lightcore_types.dart';
 import 'package:lightcore/state/lightcore_controller.dart';
 
+void _unlockRegionChallenges(LightcoreController controller) {
+  expect(controller.debugSeedProgressionLayer(2), isTrue);
+}
+
+void _unlockFullThreatMap(LightcoreController controller) {
+  _unlockRegionChallenges(controller);
+  final starter = ThreatRegionLibrary.all.first;
+  controller.debugRevealThreatRegion(
+    starter.id,
+    stabilizedLevel: starter.stabilizationLayers,
+  );
+  controller.debugGrantApexCore(starter.primaryBossId);
+}
+
 void main() {
   test('threat map has 37 fixed axial hexes across three complete rings', () {
     final regions = ThreatRegionLibrary.all;
@@ -58,6 +72,7 @@ void main() {
     () {
       final controller = LightcoreController();
       addTearDown(controller.dispose);
+      _unlockRegionChallenges(controller);
 
       final starter = ThreatRegionLibrary.all.first;
       expect(controller.startThreatRegionChallenge(starter.id), isTrue);
@@ -80,6 +95,7 @@ void main() {
     () {
       final controller = LightcoreController();
       addTearDown(controller.dispose);
+      _unlockRegionChallenges(controller);
 
       final starter = ThreatRegionLibrary.all.first;
       controller.debugRevealThreatRegion(
@@ -126,6 +142,7 @@ void main() {
   test('double-boss final layers require both bosses defeated', () {
     final controller = LightcoreController();
     addTearDown(controller.dispose);
+    _unlockRegionChallenges(controller);
 
     final doubleBossRegion = ThreatRegionLibrary.all.firstWhere(
       (region) => region.hasDoubleBoss,
@@ -186,6 +203,7 @@ void main() {
     () {
       final controller = LightcoreController();
       addTearDown(controller.dispose);
+      _unlockRegionChallenges(controller);
 
       final starter = ThreatRegionLibrary.all.first;
       final ringOne = ThreatRegionLibrary.all.firstWhere(
@@ -246,6 +264,7 @@ void main() {
   test('scans can hit revealed regions and award region echoes', () {
     final controller = LightcoreController();
     addTearDown(controller.dispose);
+    _unlockFullThreatMap(controller);
 
     for (final region in ThreatRegionLibrary.all) {
       controller.debugRevealThreatRegion(region.id);
@@ -295,6 +314,7 @@ void main() {
     () {
       final controller = LightcoreController();
       addTearDown(controller.dispose);
+      _unlockRegionChallenges(controller);
 
       controller
         ..experience = LightcoreController.experienceForOverallLevel(
@@ -344,6 +364,7 @@ void main() {
   test('fully stabilized regions grant permanent inventory effects', () {
     final controller = LightcoreController();
     addTearDown(controller.dispose);
+    _unlockRegionChallenges(controller);
 
     final starter = ThreatRegionLibrary.all.first;
     expect(controller.regionInventoryBonuses.isEmpty, isTrue);

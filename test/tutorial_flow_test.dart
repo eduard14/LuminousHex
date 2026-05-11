@@ -161,6 +161,8 @@ void main() {
 
     expect(controller.tutorialStep, LightcoreTutorialStep.unfoldShell);
     controller.selectCenter();
+    expect(controller.tutorialStep, LightcoreTutorialStep.tapBattleCore);
+    controller.handleBattleCenterTap();
     expect(controller.tutorialStep, LightcoreTutorialStep.buildFirstRedTower);
     expect(controller.enemyTickets, initialThreatScans + 1);
     expect(controller.tutorialStep, LightcoreTutorialStep.buildFirstRedTower);
@@ -176,15 +178,7 @@ void main() {
       expect(controller.activateTowerSlot(0, showBanner: false), isTrue);
     }
 
-    expect(controller.tutorialStep, LightcoreTutorialStep.pullFirstWhiteEnemy);
-
-    final firstPull = controller.openEnemyTickets(1);
-    expect(firstPull.single.config.id, EnemyLibrary.basicWhite.id);
-
-    expect(controller.tutorialStep, LightcoreTutorialStep.readEffectiveGain);
-
     controller.lumens = 1000;
-    controller.markTutorialStabilityPanelOpened();
     expect(
       controller.tutorialStep,
       LightcoreTutorialStep.upgradeFirstTowerToLevel3,
@@ -197,6 +191,9 @@ void main() {
     controller.lumens = controller.upgradeCost(controller.slots[0]);
     expect(controller.tutorialUpgradeTower(0), isTrue);
     expect(controller.slots[0].level, 3);
+    expect(controller.tutorialStep, LightcoreTutorialStep.readEffectiveGain);
+
+    controller.markTutorialStabilityPanelOpened();
     expect(controller.tutorialStep, LightcoreTutorialStep.assignTowerManager);
     expect(controller.cards, isNotEmpty);
     controller.equipCardToSlot(controller.cards.first.instanceId, 0);
@@ -204,17 +201,16 @@ void main() {
 
     var guard = 0;
     while (controller.tutorialStep == LightcoreTutorialStep.autoQueueCheck &&
-        guard++ < 80) {
+        guard++ < 240) {
       controller.tick(0.25);
     }
-    expect(controller.tutorialStep, LightcoreTutorialStep.pullFirstRedEnemy);
-    final secondPull = controller.openEnemyTickets(1);
-    expect(secondPull.single.config.id, EnemyLibrary.basicRed.id);
-    expect(controller.tutorialStep, LightcoreTutorialStep.adjustEnemyCount);
     expect(
-      controller.setEnemyTargetCount(controller.enemyTargetFloor + 1),
-      isTrue,
+      controller.tutorialStep,
+      LightcoreTutorialStep.upgradeFirstTowerToLevel4,
     );
+    controller.lumens = controller.upgradeCost(controller.slots[0]);
+    expect(controller.tutorialUpgradeTower(0), isTrue);
+    expect(controller.slots[0].level, 4);
 
     controller.experience = LightcoreController.experienceForOverallLevel(2);
     controller.tick(0);
@@ -228,19 +224,38 @@ void main() {
     expect(controller.tutorialTowerChoices.length, greaterThan(1));
   });
 
-  test('first red tower unlocks the full palette for later empty hexes', () {
+  test('first red tower gates the palette until it is used and upgraded', () {
     final controller = LightcoreController();
     addTearDown(controller.dispose);
 
+    controller.selectCenter();
+    controller.handleBattleCenterTap();
     controller.kills = LightcoreController.unlockKillsForOuterSlot(1);
     controller.lumens = 1000;
 
     expect(controller.tutorialTowerChoices, const [TowerLibrary.redPrism]);
     expect(controller.tutorialBuildTowerAt(0, TowerLibrary.redPrism), isTrue);
-    expect(controller.tutorialTowerChoices, contains(TowerLibrary.greenPrism));
 
     controller.selectSlot(1);
 
+    expect(
+      controller.tutorialBuildTowerAt(1, TowerLibrary.greenPrism),
+      isFalse,
+    );
+    controller.markTutorialFirstTowerStatsOpened();
+    for (var tap = 0; tap < 3; tap += 1) {
+      expect(controller.debugSetTowerCharge(0, charge: 1), isTrue);
+      expect(controller.activateTowerSlot(0, showBanner: false), isTrue);
+    }
+    controller.selectSlot(0);
+    while (controller.slots[0].level < 3) {
+      controller.lumens = controller.upgradeCost(controller.slots[0]);
+      expect(controller.tutorialUpgradeTower(0), isTrue);
+    }
+
+    expect(controller.tutorialTowerChoices, contains(TowerLibrary.greenPrism));
+    controller.selectSlot(1);
+    controller.lumens = 1000;
     expect(controller.tutorialBuildTowerAt(1, TowerLibrary.greenPrism), isTrue);
     expect(controller.slots[1].config?.id, TowerLibrary.greenPrism.id);
   });
@@ -250,6 +265,7 @@ void main() {
     addTearDown(controller.dispose);
 
     controller.selectCenter();
+    controller.handleBattleCenterTap();
     controller.applyOfflineClaim(
       LightcoreOfflineClaimResult(
         secondsClaimed: 1,
@@ -295,32 +311,21 @@ void main() {
     controller.selectCenter();
 
     expect(controller.isOuterSlotUnlocked(0), isTrue);
-    expect(controller.tutorialStep, LightcoreTutorialStep.buildFirstRedTower);
+    expect(controller.tutorialStep, LightcoreTutorialStep.tapBattleCore);
   });
 
-  test('core shot tutorial appears when first enemy reaches core range', () {
+  test('core shot tutorial appears immediately after the shell opens', () {
     final controller = LightcoreController();
     addTearDown(controller.dispose);
 
     controller.selectCenter();
-
-    expect(controller.tutorialStep, LightcoreTutorialStep.buildFirstRedTower);
-
-    final enemy = controller.debugSpawnEnemyFromCard(
-      EnemyLibrary.basicWhite.id,
-      angle: 0,
-      radius: controller.coreEffectiveRange - 1,
-    );
-    expect(enemy, isNotNull);
-
-    controller.tick(0.01);
 
     expect(controller.tutorialStep, LightcoreTutorialStep.tapBattleCore);
     expect(controller.tutorialHighlightsBattleCore, isTrue);
     expect(controller.tutorialBattleCoreGuideLabel, 'TAP CORE');
     expect(
       controller.tutorialPrompt,
-      'Tap the glowing Lightcore to create a basic shot when an anomaly reaches core range.',
+      'Tap the glowing Lightcore once. The center can create a basic shot before tower queues take over.',
     );
 
     controller.handleBattleCenterTap();

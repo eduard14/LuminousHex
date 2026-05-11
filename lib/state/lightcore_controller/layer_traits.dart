@@ -120,15 +120,13 @@ extension LightcoreControllerLayerTraits on LightcoreController {
     if (tower.config?.id != TowerLibrary.redPrism.id) {
       return false;
     }
-    return tower.fireSequence >= 3 &&
+    return _tutorialCoreShotTapLearned &&
+        tower.fireSequence >= 3 &&
         tower.level >= 3 &&
-        enemyPullCount >= 2 &&
         _tutorialFirstTowerStatsOpened &&
         _tutorialStabilityPanelOpened &&
         _tutorialTowerManagerAssigned &&
         _tutorialAutoQueuedPulses >= 5 &&
-        (_tutorialFirstEnemyTargetSet || _ownsBasicRedEnemy) &&
-        _tutorialEnemyCountAdjusted &&
         (totalRadianceStatPointsSpent > 0 || _core.rangeUpgradeLevel > 0);
   }
 
@@ -143,14 +141,6 @@ extension LightcoreControllerLayerTraits on LightcoreController {
       !_tutorialOverdriveLearned &&
       !_hasPermanentOverdrive &&
       canUseManualOverdrive;
-
-  bool get _enemyInsideCoreRangeForTutorial {
-    if (_enemies.isEmpty) {
-      return false;
-    }
-    final coreRange = coreEffectiveRange;
-    return _enemies.any((enemy) => enemy.radius <= coreRange);
-  }
 
   bool get _ownsBasicRedEnemy => _enemyCards.any(
     (card) => card.config.id == EnemyLibrary.basicRed.id && card.isOwned,
@@ -215,8 +205,8 @@ extension LightcoreControllerLayerTraits on LightcoreController {
       LightcoreTutorialStep.openStore => _tutorialStoreOpened,
       LightcoreTutorialStep.claimBattlePassReward =>
         _tutorialBattlePassRewardClaimed,
-      LightcoreTutorialStep.openBossPulls => bossPullCount > 0,
-      LightcoreTutorialStep.armFirstBoss => activeBossEnemyCard != null,
+      LightcoreTutorialStep.openBossPulls => fullThreatMapUnlocked,
+      LightcoreTutorialStep.armFirstBoss => hasCompleteEnemySuite,
       LightcoreTutorialStep.defeatFirstBoss =>
         _tutorialFirstBossDefeated || totalBossesDefeated > 0,
       LightcoreTutorialStep.openEquipment => _tutorialFirstEquipmentOpened,
@@ -257,7 +247,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
     if (!_outerRingRevealed && builtTowerCount == 0) {
       return LightcoreTutorialStep.unfoldShell;
     }
-    if (!_tutorialCoreShotTapLearned && _enemyInsideCoreRangeForTutorial) {
+    if (!_tutorialCoreShotTapLearned) {
       return LightcoreTutorialStep.tapBattleCore;
     }
     if (!isOuterSlotUnlocked(0)) {
@@ -277,19 +267,14 @@ extension LightcoreControllerLayerTraits on LightcoreController {
     if (firstTower.fireSequence < 3) {
       return LightcoreTutorialStep.tapFirstTower;
     }
-    if (enemyPullCount < 1) {
-      return enemyPullCount >= 1 || canOpenEnemyTickets
-          ? LightcoreTutorialStep.pullFirstWhiteEnemy
-          : null;
-    }
-    if (!_tutorialStabilityPanelOpened) {
-      return LightcoreTutorialStep.readEffectiveGain;
-    }
     final firstTowerUpgradeCost = upgradeCost(firstTower);
     if (firstTower.level < 3 &&
         firstTowerUpgradeCost > 0 &&
         lumens >= firstTowerUpgradeCost) {
       return LightcoreTutorialStep.upgradeFirstTowerToLevel3;
+    }
+    if (!_tutorialStabilityPanelOpened) {
+      return LightcoreTutorialStep.readEffectiveGain;
     }
     if (!_tutorialTowerManagerAssigned) {
       _ensureStarterCoreManagerForTutorial();
@@ -304,14 +289,6 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         nextFirstTowerUpgradeCost > 0 &&
         lumens >= nextFirstTowerUpgradeCost) {
       return LightcoreTutorialStep.upgradeFirstTowerToLevel4;
-    }
-    if (enemyPullCount < 2) {
-      return canOpenEnemyTickets
-          ? LightcoreTutorialStep.pullFirstRedEnemy
-          : null;
-    }
-    if (_ownsBasicRedEnemy && !_tutorialEnemyCountAdjusted) {
-      return LightcoreTutorialStep.adjustEnemyCount;
     }
     if (totalRadianceStatPointsSpent == 0) {
       return hasUnspentRadianceStatPoints
@@ -432,25 +409,6 @@ extension LightcoreControllerLayerTraits on LightcoreController {
     if (!_tutorialFirstEquipmentOpened && introBossDefeated) {
       return LightcoreTutorialStep.openEquipment;
     }
-    if (bossHuntsUnlocked) {
-      if (bossPullCount == 0) {
-        return canOpenBossTickets
-            ? LightcoreTutorialStep.openBossPulls
-            : LightcoreTutorialStep.none;
-      }
-      if (!introBossDefeated) {
-        if (activeBossEnemyCard == null) {
-          return LightcoreTutorialStep.armFirstBoss;
-        }
-        if (_tutorialTrackedBossEnemyId != null || bossAlive) {
-          return LightcoreTutorialStep.defeatFirstBoss;
-        }
-        return LightcoreTutorialStep.none;
-      }
-      if (!_tutorialFirstEquipmentOpened) {
-        return LightcoreTutorialStep.openEquipment;
-      }
-    }
     final managerStep = _deriveManagerTutorialStep();
     if (managerStep != null) {
       return managerStep;
@@ -467,6 +425,23 @@ extension LightcoreControllerLayerTraits on LightcoreController {
     final sidecarStep = _deriveSidecarTutorialStep();
     if (sidecarStep != null) {
       return sidecarStep;
+    }
+    if (bossHuntsUnlocked) {
+      if (!fullThreatMapUnlocked) {
+        return LightcoreTutorialStep.openBossPulls;
+      }
+      if (!hasCompleteEnemySuite) {
+        return LightcoreTutorialStep.armFirstBoss;
+      }
+      if (!introBossDefeated) {
+        if (_tutorialTrackedBossEnemyId != null || bossAlive) {
+          return LightcoreTutorialStep.defeatFirstBoss;
+        }
+        return LightcoreTutorialStep.none;
+      }
+      if (!_tutorialFirstEquipmentOpened) {
+        return LightcoreTutorialStep.openEquipment;
+      }
     }
     final tournamentStep = _deriveTournamentTutorialStep();
     if (tournamentStep == LightcoreTutorialStep.setScreenName) {
@@ -532,6 +507,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
       LightcoreTutorialStep.tapSecondShellTower => 42,
       LightcoreTutorialStep.upgradeFirstTowerToLevel3 => 48,
       LightcoreTutorialStep.readEffectiveGain => 40,
+      LightcoreTutorialStep.autoQueueCheck => 120,
       LightcoreTutorialStep.upgradeFirstTowerToLevel4 => 64,
       LightcoreTutorialStep.setFirstEnemyTarget => 45,
       LightcoreTutorialStep.adjustEnemyCount => 55,
@@ -629,6 +605,8 @@ extension LightcoreControllerLayerTraits on LightcoreController {
       'Red pressure reviewed. Same-color resistance is active in the deck.',
     LightcoreTutorialStep.adjustEnemyCount =>
       'Region pressure reviewed. Higher pressure can pay more, but watch Output Efficiency.',
+    LightcoreTutorialStep.openBossPulls =>
+      'Starter region stabilized. The full Threat Map can now accept scan pulses.',
     LightcoreTutorialStep.upgradeCoreRange =>
       'Global stat assigned. Account upgrades make every shell easier to grow.',
     _ => null,
@@ -740,6 +718,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
       LightcoreTutorialStep.selectFirstHex ||
       LightcoreTutorialStep.buildFirstRedTower ||
       LightcoreTutorialStep.inspectFirstTowerStats ||
+      LightcoreTutorialStep.tapBattleCore ||
       LightcoreTutorialStep.tapFirstTower ||
       LightcoreTutorialStep.tapSecondShellTower ||
       LightcoreTutorialStep.upgradeFirstTowerToLevel3 ||

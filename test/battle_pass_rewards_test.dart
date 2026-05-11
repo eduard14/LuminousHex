@@ -14,6 +14,16 @@ int _sumRewardQuantity(
       .fold(0, (total, reward) => total + reward.quantity);
 }
 
+void _unlockThreatMapScans(LightcoreController controller) {
+  expect(controller.debugSeedProgressionLayer(2), isTrue);
+  final starter = controller.threatRegionConfigs.first;
+  controller.debugRevealThreatRegion(
+    starter.id,
+    stabilizedLevel: starter.stabilizationLayers,
+  );
+  controller.debugGrantApexCore(starter.primaryBossId);
+}
+
 void main() {
   test('battle pass tiers keep currency rewards except final premium pulls', () {
     final controller = LightcoreController(
@@ -163,6 +173,7 @@ void main() {
       );
       addTearDown(controller.dispose);
       controller.debugDisableTutorial();
+      _unlockThreatMapScans(controller);
 
       const type = BattlePassType.enemyPulls;
       const premiumUnlockCost = 90;

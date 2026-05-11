@@ -2,7 +2,7 @@ part of '../lightcore_controller.dart';
 
 extension LightcoreControllerBattleEnemyActions on LightcoreController {
   List<PackPullResult> openEnemyTickets(int count) {
-    if (count <= 0 || enemyTickets < count) {
+    if (!fullThreatMapUnlocked || count <= 0 || enemyTickets < count) {
       return const <PackPullResult>[];
     }
 
@@ -57,7 +57,10 @@ extension LightcoreControllerBattleEnemyActions on LightcoreController {
   }
 
   List<PackPullResult> openBossTickets(int count) {
-    if (!bossHuntsUnlocked || count <= 0 || bossTickets < count) {
+    if (!bossHuntsUnlocked ||
+        !fullThreatMapUnlocked ||
+        count <= 0 ||
+        bossTickets < count) {
       return const <PackPullResult>[];
     }
 

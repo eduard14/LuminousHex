@@ -28,6 +28,7 @@ void main() {
   test('battle slot taps activate built towers without opening stats', () {
     final controller = LightcoreController();
     addTearDown(controller.dispose);
+    controller.debugDisableTutorial();
 
     controller.lumens = 1000;
     controller.kills = LightcoreController.unlockKillsForOuterSlot(0);

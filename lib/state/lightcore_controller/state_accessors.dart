@@ -626,7 +626,14 @@ extension LightcoreControllerStateAccessors on LightcoreController {
     if (_earlyTutorialComplete) {
       return false;
     }
-    return _firstTutorialTower == null;
+    final tower = _firstTutorialTower;
+    if (tower == null) {
+      return true;
+    }
+    return !_tutorialCoreShotTapLearned ||
+        !_tutorialFirstTowerStatsOpened ||
+        tower.fireSequence < 3 ||
+        tower.level < 3;
   }
 
   bool get tutorialHighlightsBattleCore =>
@@ -677,8 +684,6 @@ extension LightcoreControllerStateAccessors on LightcoreController {
   }
 
   bool get tutorialHighlightsPullsButton =>
-      _tutorialStep == LightcoreTutorialStep.pullFirstWhiteEnemy ||
-      _tutorialStep == LightcoreTutorialStep.pullFirstRedEnemy ||
       _tutorialStep == LightcoreTutorialStep.openBossPulls;
 
   bool get tutorialHighlightsStoreButton =>
@@ -700,19 +705,22 @@ extension LightcoreControllerStateAccessors on LightcoreController {
       _tutorialStep == LightcoreTutorialStep.inspectArenaFlow;
 
   bool get tutorialHighlightsEnemySinglePullButton =>
-      _tutorialStep == LightcoreTutorialStep.pullFirstWhiteEnemy ||
-      _tutorialStep == LightcoreTutorialStep.pullFirstRedEnemy;
+      fullThreatMapUnlocked &&
+      (_tutorialStep == LightcoreTutorialStep.pullFirstWhiteEnemy ||
+          _tutorialStep == LightcoreTutorialStep.pullFirstRedEnemy);
 
   bool get tutorialHighlightsBossSinglePullButton =>
+      fullThreatMapUnlocked &&
+      _tutorialStep == LightcoreTutorialStep.openBossPulls;
+
+  bool get tutorialHighlightsThreatChallengeButton =>
       _tutorialStep == LightcoreTutorialStep.openBossPulls;
 
   bool get tutorialHighlightsTowersNav =>
       _tutorialStep == LightcoreTutorialStep.openTowerMatrix;
 
   bool get tutorialHighlightsEnemiesNav =>
-      _tutorialStep == LightcoreTutorialStep.armFirstBoss ||
-      _tutorialStep == LightcoreTutorialStep.setFirstEnemyTarget ||
-      _tutorialStep == LightcoreTutorialStep.adjustEnemyCount;
+      _tutorialStep == LightcoreTutorialStep.armFirstBoss;
 
   bool get tutorialHighlightsManagersNav =>
       _tutorialStep == LightcoreTutorialStep.openManagers ||
@@ -951,10 +959,13 @@ extension LightcoreControllerStateAccessors on LightcoreController {
 
   double get ringProgress => builtTowerCount / slotCount;
 
-  bool get canOpenEnemyTickets => enemyTickets >= enemyTicketCost;
+  bool get canOpenEnemyTickets =>
+      fullThreatMapUnlocked && enemyTickets >= enemyTicketCost;
 
   bool get canOpenBossTickets =>
-      bossHuntsUnlocked && enemyTickets >= enemyTicketCost;
+      bossHuntsUnlocked &&
+      fullThreatMapUnlocked &&
+      enemyTickets >= enemyTicketCost;
 
   bool get canForgeTowerManager =>
       managersUnlocked && flux >= towerManagerFluxCost;

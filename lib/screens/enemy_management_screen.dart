@@ -605,46 +605,61 @@ class _ThreatRegionMapPanel extends StatelessWidget {
                       'Forge a Threat Director to validate this region for offline output.',
                   tint: LightcorePalette.layer2,
                 ),
-              const SizedBox(height: 12),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  FilledButton.icon(
-                    onPressed: controller.activeThreatRegionChallenge == null
+            ],
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                GuidedFocusFrame(
+                  active: controller.tutorialHighlightsThreatChallengeButton,
+                  tint: LightcorePalette.quest,
+                  child: FilledButton.icon(
+                    onPressed:
+                        controller.bossHuntsUnlocked &&
+                            controller.activeThreatRegionChallenge == null &&
+                            selectedState.stabilizedLevel <
+                                selected.stabilizationLayers
                         ? () =>
                               controller.startThreatRegionChallenge(selected.id)
                         : null,
                     icon: const Icon(Icons.flag_rounded),
-                    label: const Text('Challenge'),
+                    label: Text(
+                      selectedState.stabilizedLevel >=
+                              selected.stabilizationLayers
+                          ? 'Stable'
+                          : 'Challenge Lv ${selectedState.stabilizedLevel + 1}',
+                    ),
                   ),
-                  OutlinedButton.icon(
-                    onPressed:
-                        controller.fullThreatMapUnlocked &&
-                            controller.enemyTickets > 0
-                        ? () => controller.scanThreatMap()
-                        : null,
-                    icon: const Icon(Icons.radar_rounded),
-                    label: const Text('Scan'),
-                  ),
-                  OutlinedButton.icon(
-                    onPressed: mergeTarget == null
-                        ? null
-                        : () => controller.mergeRegionEchoesToReveal(
-                            sourceRegionId: selected.id,
-                            targetRegionId: mergeTarget!.id,
-                          ),
-                    icon: const Icon(Icons.hub_rounded),
-                    label: const Text('Merge Echoes'),
-                  ),
-                ],
-              ),
-            ],
+                ),
+                OutlinedButton.icon(
+                  onPressed:
+                      controller.fullThreatMapUnlocked &&
+                          controller.enemyTickets > 0
+                      ? () => controller.scanThreatMap()
+                      : null,
+                  icon: const Icon(Icons.radar_rounded),
+                  label: const Text('Scan'),
+                ),
+                OutlinedButton.icon(
+                  onPressed: mergeTarget == null
+                      ? null
+                      : () => controller.mergeRegionEchoesToReveal(
+                          sourceRegionId: selected.id,
+                          targetRegionId: mergeTarget!.id,
+                        ),
+                  icon: const Icon(Icons.hub_rounded),
+                  label: const Text('Merge Echoes'),
+                ),
+              ],
+            ),
           ],
           if (!controller.fullThreatMapUnlocked) ...[
             const SizedBox(height: 10),
             Text(
-              'All 37 regions are fixed for every player. Fully stabilize the first region and defeat its boss before scans can radiate outward.',
+              controller.bossHuntsUnlocked
+                  ? 'All 37 regions are fixed for every player. Challenge the starter region until its final boss layer is cleared; then scans can radiate outward.'
+                  : 'All 37 regions are fixed for every player. Create the Prism Shell to unlock starter-region challenges, then clear its boss before scans can radiate outward.',
               style: textTheme.bodySmall?.copyWith(
                 color: LightcorePalette.warning,
               ),
@@ -694,7 +709,8 @@ class _ThreatRegionMapPainter extends CustomPainter {
     for (final region in regions) {
       final state = states[region.id];
       final point = _axialToPixel(region.q, region.r, radius, center);
-      final path = _hexPath(point, radius * 0.92);
+      final hexRadius = radius * 0.92;
+      final path = _hexPath(point, hexRadius);
       final revealed = state?.revealed ?? false;
       final full =
           state != null && state.stabilizedLevel >= region.stabilizationLayers;
@@ -734,6 +750,15 @@ class _ThreatRegionMapPainter extends CustomPainter {
           canvas.drawPath(path, scanPaint);
         }
       }
+      if (region.id == scanHitRegionId && scanProgress > 0) {
+        _drawScanHitAnticipation(
+          canvas,
+          path: path,
+          center: point,
+          radius: hexRadius,
+          progress: scanProgress,
+        );
+      }
       if (region.id == selectedRegionId) {
         final selectedStroke = Paint()
           ..style = PaintingStyle.stroke
@@ -757,6 +782,172 @@ class _ThreatRegionMapPainter extends CustomPainter {
         canvas.drawCircle(point, radius * 0.16, dotPaint);
       }
     }
+  }
+
+  void _drawScanHitAnticipation(
+    Canvas canvas, {
+    required Path path,
+    required Offset center,
+    required double radius,
+    required double progress,
+  }) {
+    final clamped = progress.clamp(0.0, 1.0).toDouble();
+    final tension = Curves.easeInCubic.transform(
+      _progressWindow(clamped, 0.18, 0.76),
+    );
+    final fillProgress = _progressWindow(clamped, 0.38, 0.82);
+    final outlineProgress = _progressWindow(clamped, 0.54, 0.92);
+    final idlePulseStrength = (0.5 + (0.5 * math.sin(clamped * math.pi * 8)))
+        .clamp(0.0, 1.0)
+        .toDouble();
+    final accent = Color.lerp(
+      LightcorePalette.layer2,
+      LightcorePalette.scanGlow,
+      _progressWindow(clamped, 0.34, 0.72),
+    )!;
+    final finalAccent = Color.lerp(
+      accent,
+      LightcorePalette.aether,
+      _progressWindow(clamped, 0.78, 1),
+    )!;
+
+    final haloRadius = radius * (1.34 + (0.08 * tension));
+    final haloPaint = Paint()
+      ..shader = RadialGradient(
+        colors: [
+          finalAccent.withValues(alpha: (0.18 + (0.08 * tension))),
+          finalAccent.withValues(alpha: 0.06 + (0.05 * fillProgress)),
+          Colors.transparent,
+        ],
+        stops: const [0.0, 0.58, 1.0],
+      ).createShader(Rect.fromCircle(center: center, radius: haloRadius));
+    canvas.drawCircle(center, haloRadius, haloPaint);
+
+    if (tension > 0) {
+      final gatePaint = Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.0 + (1.4 * idlePulseStrength)
+        ..strokeJoin = StrokeJoin.round
+        ..color = finalAccent.withValues(
+          alpha: (0.08 + (0.24 * idlePulseStrength)) * tension,
+        );
+      canvas.drawPath(
+        _hexPath(center, radius * (1.06 + (0.04 * idlePulseStrength))),
+        gatePaint,
+      );
+    }
+
+    final fillPaint = Paint()
+      ..shader = LinearGradient(
+        colors: [
+          finalAccent.withValues(alpha: 0.28 * fillProgress),
+          finalAccent.withValues(alpha: 0.05 * fillProgress),
+        ],
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+      ).createShader(Rect.fromCircle(center: center, radius: radius));
+    canvas.drawPath(path, fillPaint);
+
+    _drawScanResolvePulse(
+      canvas,
+      center: center,
+      radius: radius,
+      color: LightcorePalette.layer2,
+      progress: _progressWindow(clamped, 0.2, 0.46),
+      radiusBias: 0,
+    );
+    _drawScanResolvePulse(
+      canvas,
+      center: center,
+      radius: radius,
+      color: LightcorePalette.scanGlow,
+      progress: _progressWindow(clamped, 0.48, 0.78),
+      radiusBias: 0.1,
+    );
+    _drawScanResolvePulse(
+      canvas,
+      center: center,
+      radius: radius,
+      color: LightcorePalette.scanGlow,
+      progress: _progressWindow(clamped, 0.64, 0.9),
+      radiusBias: 0.16,
+      alphaScale: 0.72,
+    );
+    _drawScanResolvePulse(
+      canvas,
+      center: center,
+      radius: radius,
+      color: LightcorePalette.aether,
+      progress: _progressWindow(clamped, 0.78, 1),
+      radiusBias: 0.22,
+    );
+
+    final baseStroke = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.8
+      ..strokeJoin = StrokeJoin.round
+      ..color = LightcorePalette.stroke.withValues(alpha: 0.7);
+    canvas.drawPath(path, baseStroke);
+
+    final metrics = path.computeMetrics().toList(growable: false);
+    if (metrics.isNotEmpty && outlineProgress > 0) {
+      final metric = metrics.first;
+      final trace = metric.extractPath(0, metric.length * outlineProgress);
+      final tracePaint = Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 3.2 + (1.2 * idlePulseStrength)
+        ..strokeCap = StrokeCap.round
+        ..strokeJoin = StrokeJoin.round
+        ..color = finalAccent.withValues(alpha: 0.96);
+      canvas.drawPath(trace, tracePaint);
+    }
+  }
+
+  void _drawScanResolvePulse(
+    Canvas canvas, {
+    required Offset center,
+    required double radius,
+    required Color color,
+    required double progress,
+    required double radiusBias,
+    double alphaScale = 1,
+  }) {
+    if (progress <= 0 || progress >= 1) {
+      return;
+    }
+    final visibility = math.sin(progress * math.pi).clamp(0.0, 1.0).toDouble();
+    if (visibility <= 0) {
+      return;
+    }
+    final expansion = Curves.easeOutCubic.transform(progress);
+    final pulseRadius = radius * (0.92 + radiusBias + (0.54 * expansion));
+    final pulsePaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 4.8 - (3.2 * progress)
+      ..color = color.withValues(alpha: 0.82 * visibility * alphaScale);
+    canvas.drawCircle(center, pulseRadius, pulsePaint);
+
+    final washRadius = radius * (1.0 + radiusBias + (0.46 * expansion));
+    final washPaint = Paint()
+      ..shader = RadialGradient(
+        colors: [
+          color.withValues(alpha: 0.2 * visibility * alphaScale),
+          color.withValues(alpha: 0.06 * visibility * alphaScale),
+          Colors.transparent,
+        ],
+        stops: const [0.0, 0.56, 1.0],
+      ).createShader(Rect.fromCircle(center: center, radius: washRadius));
+    canvas.drawCircle(center, washRadius, washPaint);
+  }
+
+  double _progressWindow(double value, double start, double end) {
+    if (value <= start) {
+      return 0;
+    }
+    if (value >= end) {
+      return 1;
+    }
+    return ((value - start) / (end - start)).clamp(0.0, 1.0).toDouble();
   }
 
   ThreatRegionConfig? _regionById(String? regionId) {

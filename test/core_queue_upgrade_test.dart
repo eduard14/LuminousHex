@@ -294,7 +294,7 @@ void main() {
     expect(controller.queuedCorePackets, 0);
     expect(controller.shots, isEmpty);
 
-    controller.tick(0.65);
+    _tickUntil(controller, () => controller.shots.isNotEmpty);
 
     expect(controller.queuedCorePackets, 0);
     expect(controller.shots, hasLength(1));
@@ -325,7 +325,7 @@ void main() {
 
     controller.selectCenter();
     controller.handleBattleCenterTap();
-    controller.tick(0.65);
+    _tickUntil(controller, () => controller.shots.isNotEmpty);
     for (var step = 0; step < 20 && controller.shots.isNotEmpty; step++) {
       controller.tick(0.05);
     }

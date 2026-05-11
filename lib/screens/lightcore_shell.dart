@@ -1027,7 +1027,8 @@ class _LightcoreShellState extends State<LightcoreShell> {
                                 final claimablePassRewards =
                                     controller.totalClaimableBattlePassRewards;
                                 final pullBadgeLabel =
-                                    controller.enemyTickets >= 10
+                                    controller.fullThreatMapUnlocked &&
+                                        controller.enemyTickets >= 10
                                     ? '10+'
                                     : null;
                                 final managerNotificationLabel =
@@ -1067,9 +1068,11 @@ class _LightcoreShellState extends State<LightcoreShell> {
                                   ),
                                   _HeaderActionButton(
                                     icon: LightcoreIcons.threatScan,
-                                    tooltip: controller.canOpenEnemyTickets
-                                        ? 'Open Scans (${controller.enemyTickets} scans ready)'
-                                        : 'Open Scans',
+                                    tooltip: controller.fullThreatMapUnlocked
+                                        ? (controller.canOpenEnemyTickets
+                                              ? 'Open Scans (${controller.enemyTickets} scans ready)'
+                                              : 'Open Scans')
+                                        : 'Open Threat Map',
                                     badgeLabel: pullBadgeLabel,
                                     highlighted: controller
                                         .tutorialHighlightsPullsButton,

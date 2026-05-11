@@ -26,7 +26,6 @@ import 'package:lightcore/services/lightcore_audio.dart';
 import 'package:lightcore/services/lightcore_firebase_backend.dart';
 import 'package:lightcore/services/lightcore_firebase_runtime_config.dart';
 import 'package:lightcore/state/lightcore_controller.dart';
-import 'package:lightcore/theme/lightcore_icons.dart';
 import 'package:lightcore/theme/lightcore_theme.dart';
 import 'package:lightcore/widgets/cosmic_guide_avatar.dart';
 import 'package:lightcore/widgets/meta_progression_sheet.dart';
@@ -1362,9 +1361,7 @@ void main() {
 
     await _pumpShell(tester, controller);
 
-    final pullsButton = find.byTooltip(
-      'Open Scans (${controller.enemyTickets} scans ready)',
-    );
+    final pullsButton = find.byTooltip('Open Threat Map');
 
     expect(pullsButton, findsOneWidget);
 
@@ -1874,6 +1871,8 @@ void main() {
 
     final controller = LightcoreController();
     addTearDown(controller.dispose);
+    final starterRegion = controller.threatRegionConfigs.first;
+    controller.debugGrantApexCore(starterRegion.primaryBossId);
 
     await _pumpShell(tester, controller, disableTutorial: false);
 
@@ -1921,6 +1920,8 @@ void main() {
   ) async {
     final controller = LightcoreController();
     addTearDown(controller.dispose);
+    final starterRegion = controller.threatRegionConfigs.first;
+    controller.debugGrantApexCore(starterRegion.primaryBossId);
 
     await _pumpShell(tester, controller, disableTutorial: false);
     await tester.tap(find.byTooltip('Anomalies').first);
@@ -1996,6 +1997,7 @@ void main() {
     addTearDown(controller.dispose);
 
     controller.selectCenter();
+    controller.handleBattleCenterTap();
     controller.applyOfflineClaim(
       LightcoreOfflineClaimResult(
         secondsClaimed: 1,
@@ -2048,6 +2050,7 @@ void main() {
     addTearDown(controller.dispose);
 
     controller.selectCenter();
+    controller.handleBattleCenterTap();
     controller.applyOfflineClaim(
       LightcoreOfflineClaimResult(
         secondsClaimed: 1,
@@ -2097,6 +2100,7 @@ void main() {
     addTearDown(controller.dispose);
 
     controller.selectCenter();
+    controller.handleBattleCenterTap();
     controller.applyOfflineClaim(
       LightcoreOfflineClaimResult(
         secondsClaimed: 1,
@@ -2115,13 +2119,12 @@ void main() {
       expect(controller.debugSetTowerCharge(0, charge: 1), isTrue);
       expect(controller.activateTowerSlot(0, showBanner: false), isTrue);
     }
-    expect(controller.tutorialStep, LightcoreTutorialStep.pullFirstWhiteEnemy);
-
-    expect(controller.openEnemyTickets(1), hasLength(1));
-    expect(controller.tutorialStep, LightcoreTutorialStep.readEffectiveGain);
+    expect(
+      controller.tutorialStep,
+      LightcoreTutorialStep.upgradeFirstTowerToLevel3,
+    );
 
     controller.lumens = controller.upgradeCost(controller.slots[0]);
-    controller.markTutorialStabilityPanelOpened();
     controller.selectSlot(0);
     expect(
       controller.tutorialStep,
@@ -2153,6 +2156,7 @@ void main() {
     await tester.binding.setSurfaceSize(const Size(900, 900));
     await _pumpBattleScreen(tester, controller);
 
+    controller.handleBattleCenterTap();
     controller.handleBattleCenterTap();
     await tester.pump();
 
@@ -2262,6 +2266,13 @@ void main() {
     tester,
   ) async {
     final controller = LightcoreController();
+    final starterRegion = controller.threatRegionConfigs.first;
+    controller
+      ..debugRevealThreatRegion(
+        starterRegion.id,
+        stabilizedLevel: starterRegion.stabilizationLayers,
+      )
+      ..debugGrantApexCore(starterRegion.primaryBossId);
     controller.enemyTickets = 9;
     addTearDown(controller.dispose);
 
@@ -2425,33 +2436,31 @@ void main() {
     expect(find.textContaining('Storm Chain'), findsOneWidget);
   });
 
-  testWidgets(
-    'enemy management stays in bottom navigation without pull buttons',
-    (tester) async {
-      final controller = LightcoreController();
-      addTearDown(controller.dispose);
+  testWidgets('anomaly management stays locked until boss suite pieces exist', (
+    tester,
+  ) async {
+    final controller = LightcoreController();
+    addTearDown(controller.dispose);
 
-      await _pumpShell(tester, controller);
+    await _pumpShell(tester, controller);
 
-      expect(
-        find.descendant(
-          of: find.byTooltip('Anomalies'),
-          matching: find.byIcon(LightcoreIcons.anomalies),
-        ),
-        findsOneWidget,
-      );
+    expect(
+      find.descendant(
+        of: find.byTooltip('Anomalies'),
+        matching: find.byIcon(Icons.lock_rounded),
+      ),
+      findsOneWidget,
+    );
 
-      await tester.tap(find.byTooltip('Anomalies').first);
-      await _pumpTransition(tester);
+    await tester.tap(find.byTooltip('Anomalies').first);
+    await _pumpTransition(tester);
 
-      expect(find.text('Boss Build'), findsWidgets);
-      expect(find.text('Boss Build Locked'), findsOneWidget);
-      expect(find.text('Anomaly Deck Pressure'), findsNothing);
-      expect(find.text('Anomaly Assignment'), findsNothing);
-      expect(find.text('Open 1', skipOffstage: false), findsNothing);
-      expect(find.text('Threat Scans', skipOffstage: false), findsNothing);
-    },
-  );
+    expect(find.text('Boss Build'), findsNothing);
+    expect(find.text('Anomaly Deck Pressure'), findsNothing);
+    expect(find.text('Anomaly Assignment'), findsNothing);
+    expect(find.text('Open 1', skipOffstage: false), findsNothing);
+    expect(find.text('Threat Scans', skipOffstage: false), findsNothing);
+  });
 
   testWidgets('reopening anomaly management starts at the top', (tester) async {
     addTearDown(() async {
@@ -2461,6 +2470,8 @@ void main() {
 
     final controller = LightcoreController();
     addTearDown(controller.dispose);
+    final starterRegion = controller.threatRegionConfigs.first;
+    controller.debugGrantApexCore(starterRegion.primaryBossId);
     const enemyScrollKey = PageStorageKey<String>('enemy-management-scroll');
 
     await _pumpShell(tester, controller);

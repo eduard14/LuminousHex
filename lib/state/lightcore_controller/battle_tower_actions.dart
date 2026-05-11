@@ -11,10 +11,15 @@ extension LightcoreControllerBattleTowerActions on LightcoreController {
   }
 
   bool _prepareTutorialTowerBuild(int slotIndex, TowerConfig config) {
+    if (tutorialNeedsTowerPaletteGate && slotIndex != 0) {
+      _showBanner('Tune the first Red Prism before expanding to another hex.');
+      _notifyNow();
+      return false;
+    }
     if (tutorialNeedsTowerPaletteGate &&
         config.id != TowerLibrary.redPrism.id) {
       _showBanner(
-        'Start with the Red Prism. The rest of the colors unlock after the counter-color lesson.',
+        'Start with the Red Prism. The rest of the colors unlock after the first tower is ready and upgraded.',
       );
       _notifyNow();
       return false;

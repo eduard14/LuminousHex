@@ -582,6 +582,7 @@ extension on _ShellOverlayDestination {
   String? lockedMessage(LightcoreController controller) => switch (this) {
     _ShellOverlayDestination.towers => _towerArchiveLockMessage(controller),
     _ShellOverlayDestination.managers => _managerLockMessage(controller),
+    _ShellOverlayDestination.enemies => _enemySuiteLockMessage(controller),
     _ShellOverlayDestination.mentees ||
     _ShellOverlayDestination.mentors => _mentorshipLockMessage(controller),
     _ShellOverlayDestination.dungeons => _dailyDungeonLockMessage(controller),
@@ -589,6 +590,16 @@ extension on _ShellOverlayDestination {
     _ShellOverlayDestination.prestige => _advancementLockMessage(controller),
     _ => null,
   };
+}
+
+String? _enemySuiteLockMessage(LightcoreController controller) {
+  if (controller.enemySuiteBuilderUnlocked) {
+    return null;
+  }
+  if (controller.bossHuntsUnlocked) {
+    return 'Anomalies unlock after the first regional boss drops suite pieces. Use the Scan reticle, open Threat Map, and challenge the starter region.';
+  }
+  return 'Anomalies unlock after regional boss suite pieces exist. Create the Prism Shell first, then challenge the starter region from the Scan reticle.';
 }
 
 String? _towerArchiveLockMessage(LightcoreController controller) {

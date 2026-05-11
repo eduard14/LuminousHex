@@ -389,15 +389,15 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
     id: 'TUT-006',
     title: 'Tap the Core',
     teachGoal:
-        'The Lightcore is your emergency shot source when an anomaly reaches the center range.',
-    trigger: 'An anomaly enters core range before tower lessons finish',
+        'The Lightcore can create a basic shot directly. Learn that manual shot before adding tower pressure.',
+    trigger: 'The first shell opens',
     primaryClickTarget: 'Battlefield > center Lightcore',
     coachCopy:
-        'Tap the glowing Lightcore to create a basic shot when an anomaly reaches core range.',
+        'Tap the glowing Lightcore once. The center can create a basic shot before tower queues take over.',
     completionCondition: 'Generate one core shot',
     reward: 'Small Lumen grant',
     failureHelpState:
-        'Tap the highlighted center core while the threat is near.',
+        'Tap the highlighted center core before opening another hex.',
     analyticsEvent: 'tutorial_core_shot_tap',
   ),
   LightcoreTutorialStep.tapFirstTower: LightcoreTutorialQuestDefinition(
@@ -486,7 +486,7 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
     coachCopy:
         'Watch the assigned manager generate queued pulses. You can still tap manually during active play.',
     completionCondition: 'Let manager generate 5 pulses',
-    reward: 'Threat Scan x1',
+    reward: 'Lumens and Threat Scan x1',
     failureHelpState:
         'Keep the managed tower in view and show generated pulse count.',
     analyticsEvent: 'tutorial_auto_queue_check',
@@ -611,13 +611,13 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
     teachGoal:
         'The full hex map unlocks after the starter region is fully stabilized and its boss is defeated.',
     trigger: 'Prism Shell created',
-    primaryClickTarget: 'Anomalies > Threat Map > Challenge',
+    primaryClickTarget: 'Top HUD > Scans > Threat Map > Challenge',
     coachCopy:
-        'Keep challenging the starter region until the final boss layer is cleared.',
+        'Open the Threat Map from the scan reticle and challenge the starter region until the final boss layer is cleared.',
     completionCondition: 'Starter region fully stabilized',
     reward: 'Full Threat Map',
     failureHelpState:
-        'Use the Threat Map panel and start the next stabilization challenge.',
+        'Use the Scan reticle, open the Threat Map panel, and start the next stabilization challenge.',
     analyticsEvent: 'tutorial_open_boss_pulls',
   ),
   LightcoreTutorialStep.armFirstBoss: LightcoreTutorialQuestDefinition(
@@ -626,10 +626,11 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
     teachGoal:
         'Portable enemy suites use 1 Apex Core, 2 boss traits, and 3 anomaly cards.',
     trigger: 'First Apex card owned',
-    primaryClickTarget: 'Anomalies > Threat Map > Suite',
+    primaryClickTarget: 'Bottom nav > Anomalies > Boss Build',
     coachCopy:
         'Use boss drops from stabilized regions to assemble your first enemy suite.',
-    completionCondition: 'Enemy suite has an Apex Core',
+    completionCondition:
+        'Enemy suite has 1 Apex Core, 2 traits, and 3 anomalies',
     reward: 'Suite primer',
     failureHelpState:
         'Open Anomalies and review boss-core, trait, and anomaly-card slots.',
