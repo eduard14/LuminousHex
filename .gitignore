@@ -35,6 +35,7 @@ migrate_working_dir/
 .firebase/
 firepit-log.txt
 golden_test/failures/
+/flutter_*.png
 
 # Symbolication related
 app.*.symbols

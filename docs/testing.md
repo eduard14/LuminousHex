@@ -57,6 +57,14 @@ if the local device toolchain is unavailable, run the equivalent fast regression
 flutter test test/layer2_ui_regression_test.dart
 ```
 
+## Manual web screenshots
+
+Avoid the interactive screenshot shortcut from `flutter run -d chrome` for now.
+On Flutter 3.38.5 it can crash inside `flutter_tools` while handling the
+Chrome screenshot request, leaving an empty root-level `flutter_*.png` file.
+Use the checked-in golden tests for regression screenshots, or capture the
+running web app from Chrome/DevTools instead.
+
 ## Development impact
 
 The default development loop is unchanged: `flutter test` does not include the
