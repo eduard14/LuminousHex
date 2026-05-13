@@ -67,7 +67,7 @@ class CardManagementScreen extends StatelessWidget {
                   title: 'Main Manager Help',
                   message: controller.managerAssignmentUnlocked
                       ? 'Socket one Core Manager into the Tower Core. Threat Directors attach to revealed regions on the Threat Map and must be validated through stabilization.'
-                      : 'Manager assignment unlocks at Core Lv ${LightcoreController.managerCoreLevelRequirement} or Account Radiance Lv ${LightcoreController.managerUnlockLevel}. Flux still banks now so the foundry is ready when it opens.',
+                      : 'Manager assignment unlocks when this Layer 1 shell has all ${LightcoreController.slotCount} outer towers online. Flux still banks now so the foundry is ready when it opens.',
                   tint: LightcorePalette.aether,
                 ),
               ],
@@ -116,7 +116,7 @@ class CardManagementScreen extends StatelessWidget {
               title: 'Tower Core Sockets',
               tint: LightcorePalette.aether,
               subtitle: !controller.managerAssignmentUnlocked
-                  ? 'Reach Core Lv ${LightcoreController.managerCoreLevelRequirement} or Account Radiance Lv ${LightcoreController.managerUnlockLevel} before tower sockets can take managers.'
+                  ? 'Build all ${LightcoreController.slotCount} outer towers in this Layer 1 shell before tower sockets can take managers.'
                   : 'Core Managers mount on the shell. Threat Directors are assigned per region from the selected Threat Map hex.',
             ),
             const SizedBox(height: 10),
@@ -210,7 +210,7 @@ class CardManagementScreen extends StatelessWidget {
               tint: LightcorePalette.solar,
               subtitle: controller.managersUnlocked
                   ? 'Open single rolls or bulk packs. Bulk packs add Manager Shards and guarantee a floor on the final roll.'
-                  : 'The foundry unlocks at Core Lv ${LightcoreController.managerCoreLevelRequirement} or Account Radiance Lv ${LightcoreController.managerUnlockLevel}. Flux still banks now so it has real fuel when it comes online.',
+                  : 'The foundry unlocks when a Layer 1 shell has all ${LightcoreController.slotCount} outer towers online. Flux still banks now so it has real fuel when it comes online.',
             ),
             const SizedBox(height: 10),
             _ManagerForgePanel(
@@ -255,7 +255,7 @@ class CardManagementScreen extends StatelessWidget {
               title: 'Tower Upgraders',
               tint: LightcorePalette.violet,
               subtitle: !controller.managerAssignmentUnlocked
-                  ? 'Reach Core Lv ${LightcoreController.managerCoreLevelRequirement} or Account Radiance Lv ${LightcoreController.managerUnlockLevel} before Core Managers can be assigned.'
+                  ? 'Build all ${LightcoreController.slotCount} outer towers in this Layer 1 shell before Core Managers can be assigned.'
                   : controller.cards.isEmpty
                   ? 'No Core Managers in inventory yet. Locked roster previews are collapsed below.'
                   : 'Owned rolls appear first. Locked roster previews stay collapsed until requested.',
@@ -265,7 +265,7 @@ class CardManagementScreen extends StatelessWidget {
               _InlineSectionNotice(
                 message: controller.managersUnlocked
                     ? 'Forge a Core Manager when you have enough Flux.'
-                    : 'No Core Managers in inventory. The foundry unlocks at Core Lv ${LightcoreController.managerCoreLevelRequirement} or Account Radiance Lv ${LightcoreController.managerUnlockLevel}.',
+                    : 'No Core Managers in inventory. The foundry unlocks when a Layer 1 shell has all ${LightcoreController.slotCount} outer towers online.',
                 tint: LightcorePalette.violet,
               ),
               const SizedBox(height: 10),
@@ -306,7 +306,7 @@ class CardManagementScreen extends StatelessWidget {
               title: 'Threat Directors',
               tint: LightcorePalette.warning,
               subtitle: !controller.managerAssignmentUnlocked
-                  ? 'Reach Core Lv ${LightcoreController.managerCoreLevelRequirement} or Account Radiance Lv ${LightcoreController.managerUnlockLevel} before Threat Directors can be assigned.'
+                  ? 'Build all ${LightcoreController.slotCount} outer towers in this Layer 1 shell before Threat Directors can be assigned.'
                   : controller.enemyManagers.isEmpty
                   ? 'No Threat Directors in inventory yet. Locked roster previews are collapsed below.'
                   : 'Assign a Director to the selected Threat Map region, then restabilize that region to validate offline output.',
@@ -316,7 +316,7 @@ class CardManagementScreen extends StatelessWidget {
               _InlineSectionNotice(
                 message: controller.managersUnlocked
                     ? 'Forge a Threat Director when you have enough Flux.'
-                    : 'No Threat Directors in inventory. The foundry unlocks at Core Lv ${LightcoreController.managerCoreLevelRequirement} or Account Radiance Lv ${LightcoreController.managerUnlockLevel}.',
+                    : 'No Threat Directors in inventory. The foundry unlocks when a Layer 1 shell has all ${LightcoreController.slotCount} outer towers online.',
                 tint: LightcorePalette.warning,
               ),
               const SizedBox(height: 10),
@@ -2614,7 +2614,7 @@ class _TowerManagerDetailSheet extends StatelessWidget {
                     : onAssign,
                 child: Text(
                   !controller.managerAssignmentUnlocked
-                      ? 'Locked until Core Lv ${LightcoreController.managerCoreLevelRequirement} or AR Lv ${LightcoreController.managerUnlockLevel}'
+                      ? 'Locked until all ${LightcoreController.slotCount} outer towers are online'
                       : assignedHere
                       ? 'Equipped to Core'
                       : 'Assign to Tower Core',
@@ -2735,7 +2735,7 @@ class _EnemyManagerDetailSheet extends StatelessWidget {
                     : onAssign,
                 child: Text(
                   !controller.managerAssignmentUnlocked
-                      ? 'Locked until Core Lv ${LightcoreController.managerCoreLevelRequirement} or AR Lv ${LightcoreController.managerUnlockLevel}'
+                      ? 'Locked until all ${LightcoreController.slotCount} outer towers are online'
                       : !hasSelectedRegion
                       ? 'Select a Threat Map Region'
                       : assignedHere

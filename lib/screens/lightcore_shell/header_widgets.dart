@@ -596,10 +596,10 @@ String? _enemySuiteLockMessage(LightcoreController controller) {
   if (controller.enemySuiteBuilderUnlocked) {
     return null;
   }
-  if (controller.bossHuntsUnlocked) {
-    return 'Anomalies unlock after the first regional boss drops suite pieces. Use the Scan reticle, open Threat Map, and challenge the starter region.';
+  if (controller.threatRegionsUnlocked) {
+    return 'Anomalies unlock after the first regional boss drops suite pieces. Use the Scan reticle, open Threat Map, and stabilize the starter region.';
   }
-  return 'Anomalies unlock after regional boss suite pieces exist. Create the Prism Shell first, then challenge the starter region from the Scan reticle.';
+  return 'Anomalies unlock after regional boss suite pieces exist. Build the first tower, then challenge the starter region from the Scan reticle.';
 }
 
 String? _towerArchiveLockMessage(LightcoreController controller) {
@@ -613,7 +613,7 @@ String? _managerLockMessage(LightcoreController controller) {
   if (controller.managerAssignmentUnlocked) {
     return null;
   }
-  return 'Manager assignment unlocks at Core Lv ${LightcoreController.managerCoreLevelRequirement} or Account Radiance Lv ${LightcoreController.managerUnlockLevel}.';
+  return 'Manager assignment unlocks when this Layer 1 shell has all ${LightcoreController.slotCount} outer towers online.';
 }
 
 String? _mentorshipLockMessage(LightcoreController controller) {
@@ -628,7 +628,7 @@ String? _dailyDungeonLockMessage(LightcoreController controller) {
   if (controller.dailyDungeonsUnlocked) {
     return null;
   }
-  return 'Daily Dungeons unlock at Account Radiance Lv ${LightcoreController.dailyDungeonUnlockLevel}. Need ${controller.dailyDungeonLevelsRemaining} more level${controller.dailyDungeonLevelsRemaining == 1 ? '' : 's'} before dungeon runs open.';
+  return 'Daily Dungeons unlock after the first regional boss or at Account Radiance Lv ${LightcoreController.dailyDungeonUnlockLevel}. Need ${controller.dailyDungeonLevelsRemaining} more level${controller.dailyDungeonLevelsRemaining == 1 ? '' : 's'} before the level fallback opens.';
 }
 
 String? _advancementLockMessage(LightcoreController controller) {
@@ -660,7 +660,7 @@ String? _advancementLockMessage(LightcoreController controller) {
 String? _tournamentLockMessage(LightcoreController controller) {
   if (!controller.tournamentsUnlocked) {
     final remaining = controller.tournamentLevelsRemaining;
-    return 'Tournaments unlock at Account Radiance Lv ${LightcoreController.tournamentUnlockLevel}. Need $remaining more level${remaining == 1 ? '' : 's'}.';
+    return 'Tournaments unlock at Prism, full first-ring stabilization, or Account Radiance Lv ${LightcoreController.tournamentUnlockLevel}. Need $remaining more level${remaining == 1 ? '' : 's'} for the level fallback.';
   }
   if (!controller.hasCustomScreenName) {
     return 'Set a screen name in Settings before entering tournaments.';

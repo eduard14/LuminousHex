@@ -98,8 +98,7 @@ void main() {
       await tester.tap(find.byTooltip('Managers').first);
       await tester.pump();
 
-      expect(controller.bannerMessage, contains('Core Lv 3'));
-      expect(controller.bannerMessage, contains('Account Radiance'));
+      expect(controller.bannerMessage, contains('all 6 outer towers'));
     },
   );
 
@@ -203,9 +202,18 @@ void main() {
       controller.toggleEnemyCardSelection(EnemyLibrary.basicRed.id);
       controller.toggleEnemyCardSelection(EnemyLibrary.basicWhite.id);
       controller.setEnemyTargetCount(controller.enemyTargetMax);
-      controller.experience = LightcoreController.experienceForOverallLevel(
-        LightcoreController.managerUnlockLevel,
-      );
+      controller
+        ..kills = LightcoreController.unlockKillsForOuterSlot(
+          LightcoreController.slotCount - 1,
+        )
+        ..lumens = 1000000;
+      for (var index = 0; index < LightcoreController.slotCount; index++) {
+        expect(
+          controller.buildTowerAt(index, controller.towerConfigs[index]),
+          isTrue,
+        );
+      }
+      expect(controller.managerAssignmentUnlocked, isTrue);
       controller.flux = 10000;
       expect(controller.forgeEnemyManagerBatch(1), isTrue);
       controller.assignEnemyManagerToCore(

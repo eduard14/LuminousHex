@@ -205,6 +205,11 @@ extension LightcoreControllerRewardsSocial on LightcoreController {
     if (_directTowerCoreManagerForLayer(layer) != null) {
       return layer.id;
     }
+    if (layer.tier == 1 &&
+        layer.parentLayerId != null &&
+        !_managerShellCoverageUnlockedForLayer(layer)) {
+      return null;
+    }
     final inheritedLayerId = layer.promotedParentLayerId ?? layer.parentLayerId;
     if (inheritedLayerId == null) {
       return null;
@@ -375,26 +380,13 @@ extension LightcoreControllerRewardsSocial on LightcoreController {
 
   bool _managerAssignmentUnlockedForLayer(TowerLayerSnapshot layer) =>
       _towerCoreManagerForLayer(layer) != null ||
-      _managerCoreLevelUnlockedForLayer(layer) ||
-      overallLevel >= managerUnlockLevel ||
-      (layer.parentLayerId == null &&
-          layer.tier == 1 &&
-          _starterManagerTutorialUnlocked);
+      (layer.tier == 1
+          ? _managerShellCoverageUnlockedForLayer(layer)
+          : overallLevel >= managerUnlockLevel || _cards.isNotEmpty);
 
-  bool _managerCoreLevelUnlockedForLayer(TowerLayerSnapshot layer) =>
-      layer.core.level >= managerCoreLevelRequirement ||
-      _layer1TowerLevelUnlockedForManagers(layer);
-
-  bool _layer1TowerLevelUnlockedForManagers(TowerLayerSnapshot layer) {
-    if (layer.parentLayerId != null || layer.tier != 1) {
-      return false;
-    }
-    return layer.slots.any(
-      (tower) =>
-          _slotCountsTowardRing(tower) &&
-          tower.level >= managerCoreLevelRequirement,
-    );
-  }
+  bool _managerShellCoverageUnlockedForLayer(TowerLayerSnapshot layer) =>
+      layer.tier == 1 &&
+      layer.slots.where(_slotCountsTowardRing).length == slotCount;
 
   int _managedTowerCountForLayer(TowerLayerSnapshot layer) => layer.slots
       .where((tower) => _slotHasAutomationManager(layer, tower))

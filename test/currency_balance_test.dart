@@ -1,9 +1,26 @@
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:lightcore/data/enemy_configs.dart';
+import 'package:lightcore/data/tower_configs.dart';
 import 'package:lightcore/models/lightcore_currency_labels.dart';
 import 'package:lightcore/models/lightcore_types.dart';
 import 'package:lightcore/state/lightcore_controller.dart';
+
+void _completeLayer1Coverage(LightcoreController controller) {
+  controller.lumens = 100000000;
+  controller.kills = LightcoreController.unlockKillsForOuterSlot(
+    LightcoreController.slotCount - 1,
+  );
+  for (var index = 0; index < LightcoreController.slotCount; index++) {
+    final config = TowerLibrary.all[index % TowerLibrary.all.length];
+    expect(controller.buildTowerAt(index, config), isTrue);
+    final remaining = controller.slots[index].fabricationRemainingSeconds;
+    if (remaining > 0) {
+      controller.tick(remaining + 0.1);
+    }
+  }
+  expect(controller.managerAssignmentUnlocked, isTrue);
+}
 
 void main() {
   test('retired apex scan labels display as threat scans', () {
@@ -38,9 +55,7 @@ void main() {
     final controller = LightcoreController();
     addTearDown(controller.dispose);
 
-    controller.experience = LightcoreController.experienceForOverallLevel(
-      LightcoreController.managerUnlockLevel,
-    );
+    _completeLayer1Coverage(controller);
     controller.flux = LightcoreController.towerManagerFluxCost * 10;
 
     expect(controller.forgeTowerManagerBatch(10), isTrue);

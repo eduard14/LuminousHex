@@ -1157,30 +1157,6 @@ extension LightcoreControllerInventoryRuntime on LightcoreController {
     return;
   }
 
-  void _ensureStarterCoreManagerForTutorial() {
-    if (_cards.any((card) => card.instanceId == 'tutorial_starter_manager')) {
-      return;
-    }
-    _cards.add(
-      InventoryCard(
-        instanceId: 'tutorial_starter_manager',
-        config: CardLibrary.yellaNova,
-        rarity: ManagerRarity.common,
-        forgeCost: 0,
-        powerMultiplier: 1,
-        chargeMultiplier: 1.18,
-        cooldownMultiplier: 0.86,
-        advantageMultiplier: 1,
-        automationRate: 2.4,
-        favoredAffinity: TowerLibrary.redPrism.affinity,
-        projectileFocus: TowerLibrary.redPrism.defaultProjectileType,
-        payloadFocus: null,
-        primaryTraitLabel: 'Starter automation • Charge +18%',
-        secondaryTraitLabel: 'Automation 2.40/s • Cooldown +14%',
-      ),
-    );
-  }
-
   void _updateFlowEfficiency() {
     _core = _core.copyWith(
       flowEfficiency: _outputEfficiencyPercentForStability(_core.coreStability),

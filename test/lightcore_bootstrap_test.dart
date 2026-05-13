@@ -3,6 +3,24 @@ import 'package:lightcore/app/lightcore_bootstrap.dart';
 import 'package:lightcore/data/tower_configs.dart';
 import 'package:lightcore/state/lightcore_controller.dart';
 
+void _completeLayer1Coverage(LightcoreController controller) {
+  controller.lumens = 100000000;
+  controller.kills = LightcoreController.unlockKillsForOuterSlot(
+    LightcoreController.slotCount - 1,
+  );
+  for (var index = 0; index < LightcoreController.slotCount; index++) {
+    final config = TowerLibrary.all[index % TowerLibrary.all.length];
+    if (controller.slots[index].config == null) {
+      expect(controller.buildTowerAt(index, config), isTrue);
+    }
+    final remaining = controller.slots[index].fabricationRemainingSeconds;
+    if (remaining > 0) {
+      controller.tick(remaining + 0.1);
+    }
+  }
+  expect(controller.managerAssignmentUnlocked, isTrue);
+}
+
 void main() {
   test('version comparison handles semantic ordering', () {
     expect(compareVersionStrings('1.0.0', '1.0.0'), 0);
@@ -84,7 +102,7 @@ void main() {
       addTearDown(controller.dispose);
 
       expect(controller.balanceTuning.balanceEpoch, 12);
-      expect(controller.buildCostForConfig(TowerLibrary.redPrism), 10);
+      expect(controller.buildCostForConfig(TowerLibrary.redPrism), 11);
     },
   );
 
@@ -261,12 +279,8 @@ void main() {
     final controller = LightcoreController();
 
     controller.selectCenter();
-    controller.kills = LightcoreController.unlockKillsForOuterSlot(0);
-    controller.experience = LightcoreController.killsForOverallLevel(
-      LightcoreController.managerUnlockLevel,
-    );
+    _completeLayer1Coverage(controller);
     controller.flux = LightcoreController.towerManagerFluxCost;
-    expect(controller.buildTowerAt(0, TowerLibrary.all.first), isTrue);
     expect(controller.forgeTowerManager(), isTrue);
     controller.equipCardToSlot(controller.cards.last.instanceId, 0);
 
@@ -416,7 +430,8 @@ void main() {
     expect(restoredTutorial['stabilityPanelOpened'], isTrue);
     expect(restoredTutorial['coreShotTapLearned'], isTrue);
     expect(restoredTutorial['autoQueuedPulses'], greaterThanOrEqualTo(5));
-    expect(restored.tutorialStep, LightcoreTutorialStep.openManagers);
+    expect(restored.managerAssignmentUnlocked, isFalse);
+    expect(restored.tutorialStep, LightcoreTutorialStep.openStore);
   });
 
   test('outer slots unlock from cumulative kill milestones', () {

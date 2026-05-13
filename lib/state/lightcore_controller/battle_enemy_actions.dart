@@ -146,6 +146,9 @@ extension LightcoreControllerBattleEnemyActions on LightcoreController {
     if (_tutorialFirstTowerStatsOpened) {
       return;
     }
+    if (_firstTutorialTower == null || _slots[0].isFabricating) {
+      return;
+    }
     _tutorialFirstTowerStatsOpened = true;
     _syncTutorialStep(showBanner: false);
     _notifyNow();
@@ -156,7 +159,6 @@ extension LightcoreControllerBattleEnemyActions on LightcoreController {
       return;
     }
     _tutorialStabilityPanelOpened = true;
-    _ensureStarterCoreManagerForTutorial();
     _syncTutorialStep(showBanner: false);
     _notifyNow();
   }
@@ -651,7 +653,7 @@ extension LightcoreControllerBattleEnemyActions on LightcoreController {
     final packCount = max(1, count);
     if (!managersUnlocked) {
       _showBanner(
-        'Managers unlock at Core Lv $managerCoreLevelRequirement or Account Radiance Lv $managerUnlockLevel.',
+        'Managers unlock when a Layer 1 shell has all $slotCount outer towers online.',
       );
       _notifyNow();
       return false;
@@ -692,7 +694,7 @@ extension LightcoreControllerBattleEnemyActions on LightcoreController {
     final packCount = max(1, count);
     if (!managersUnlocked) {
       _showBanner(
-        'Managers unlock at Core Lv $managerCoreLevelRequirement or Account Radiance Lv $managerUnlockLevel.',
+        'Managers unlock when a Layer 1 shell has all $slotCount outer towers online.',
       );
       _notifyNow();
       return false;
@@ -836,7 +838,7 @@ extension LightcoreControllerBattleEnemyActions on LightcoreController {
   void assignEnemyManagerToCore(String managerId) {
     if (!managerAssignmentUnlocked) {
       _showBanner(
-        'Manager assignment unlocks at Core Lv $managerCoreLevelRequirement or Account Radiance Lv $managerUnlockLevel.',
+        'Manager assignment unlocks when this Layer 1 shell has all $slotCount outer towers online.',
       );
       _notifyNow();
       return;

@@ -6,13 +6,31 @@ import 'package:lightcore/models/lightcore_config.dart';
 import 'package:lightcore/models/lightcore_types.dart';
 import 'package:lightcore/state/lightcore_controller.dart';
 
-void _maxOutCurrentShell(LightcoreController controller, TowerConfig config) {
+void _completeLayer1Coverage(
+  LightcoreController controller,
+  TowerConfig config,
+) {
   controller.lumens = 100000000;
   controller.kills = LightcoreController.unlockKillsForOuterSlot(
     LightcoreController.slotCount - 1,
   );
   for (var index = 0; index < LightcoreController.slotCount; index++) {
-    expect(controller.buildTowerAt(index, config), isTrue);
+    if (controller.slots[index].config == null &&
+        !controller.slots[index].isPromotedChildTower) {
+      expect(controller.buildTowerAt(index, config), isTrue);
+    }
+    final remaining = controller.slots[index].fabricationRemainingSeconds;
+    if (remaining > 0) {
+      controller.tick(remaining + 0.1);
+    }
+  }
+  expect(controller.managerAssignmentUnlocked, isTrue);
+}
+
+void _maxOutCurrentShell(LightcoreController controller, TowerConfig config) {
+  _completeLayer1Coverage(controller, config);
+  controller.lumens = 100000000;
+  for (var index = 0; index < LightcoreController.slotCount; index++) {
     while (controller.slots[index].level < LightcoreController.maxTowerLevel) {
       expect(controller.upgradeTower(index), isTrue);
     }
@@ -59,9 +77,7 @@ void main() {
     expect(controller.pulses, isEmpty);
     expect(controller.queuedCorePackets, 0);
 
-    controller.experience = LightcoreController.experienceForOverallLevel(
-      LightcoreController.managerUnlockLevel,
-    );
+    _completeLayer1Coverage(controller, TowerLibrary.redPrism);
     controller.flux = LightcoreController.towerManagerFluxCost;
     expect(controller.forgeTowerManager(), isTrue);
     controller.equipCardToSlot(controller.cards.single.instanceId, 0);
@@ -81,9 +97,7 @@ void main() {
     expect(controller.buildTowerAt(0, TowerLibrary.redPrism), isTrue);
     expect(controller.debugSetTowerCharge(0, charge: 1.2), isTrue);
 
-    controller.experience = LightcoreController.experienceForOverallLevel(
-      LightcoreController.managerUnlockLevel,
-    );
+    _completeLayer1Coverage(controller, TowerLibrary.redPrism);
     controller.flux = LightcoreController.towerManagerFluxCost;
     expect(controller.forgeTowerManager(), isTrue);
     controller.equipCardToSlot(controller.cards.single.instanceId, 0);
@@ -106,9 +120,7 @@ void main() {
     final controller = LightcoreController();
     addTearDown(controller.dispose);
 
-    controller.experience = LightcoreController.experienceForOverallLevel(
-      LightcoreController.managerUnlockLevel,
-    );
+    _completeLayer1Coverage(controller, TowerLibrary.redPrism);
     controller.flux = LightcoreController.towerManagerFluxCost;
     expect(controller.forgeTowerManager(), isTrue);
     controller.equipCardToCore(controller.cards.single.instanceId);
@@ -133,9 +145,7 @@ void main() {
     final controller = LightcoreController();
     addTearDown(controller.dispose);
 
-    controller.experience = LightcoreController.experienceForOverallLevel(
-      LightcoreController.managerUnlockLevel,
-    );
+    _completeLayer1Coverage(controller, TowerLibrary.redPrism);
     controller.flux = LightcoreController.towerManagerFluxCost;
     expect(controller.forgeTowerManager(), isTrue);
     controller.equipCardToCore(controller.cards.single.instanceId);
@@ -153,9 +163,7 @@ void main() {
     final controller = LightcoreController();
     addTearDown(controller.dispose);
 
-    controller.experience = LightcoreController.experienceForOverallLevel(
-      LightcoreController.managerUnlockLevel,
-    );
+    _completeLayer1Coverage(controller, TowerLibrary.redPrism);
     controller.flux = LightcoreController.towerManagerFluxCost;
     expect(controller.forgeTowerManager(), isTrue);
     final managerId = controller.cards.single.instanceId;
@@ -168,46 +176,48 @@ void main() {
     expect(controller.towerCoreManager?.instanceId, managerId);
   });
 
-  test('layer 2 core manager inherits into new child shells immediately', () {
-    final controller = LightcoreController();
-    addTearDown(controller.dispose);
+  test(
+    'layer 2 core manager waits for child shell coverage before inheriting',
+    () {
+      final controller = LightcoreController();
+      addTearDown(controller.dispose);
 
-    controller.experience = LightcoreController.experienceForOverallLevel(
-      LightcoreController.managerUnlockLevel,
-    );
-    controller.flux = LightcoreController.towerManagerFluxCost;
-    expect(controller.forgeTowerManager(), isTrue);
-    final managerId = controller.cards.single.instanceId;
-    controller.equipCardToCore(managerId);
+      _completeLayer1Coverage(controller, TowerLibrary.redPrism);
+      controller.flux = LightcoreController.towerManagerFluxCost;
+      expect(controller.forgeTowerManager(), isTrue);
+      final managerId = controller.cards.single.instanceId;
+      controller.equipCardToCore(managerId);
 
-    _maxOutCurrentShell(controller, TowerLibrary.redPrism);
-    controller.unlockLayer2Tower();
-    expect(controller.activeLayer.tier, 2);
-    expect(controller.towerCoreManager?.instanceId, managerId);
+      _maxOutCurrentShell(controller, TowerLibrary.redPrism);
+      controller.unlockLayer2Tower();
+      expect(controller.activeLayer.tier, 2);
+      expect(controller.towerCoreManager?.instanceId, managerId);
 
-    expect(controller.createChildLayer(0, PrototypeAffinity.aether), isTrue);
-    expect(controller.activeLayer.tier, 1);
-    expect(controller.towerCoreManager?.instanceId, managerId);
+      expect(controller.createChildLayer(0, PrototypeAffinity.aether), isTrue);
+      expect(controller.activeLayer.tier, 1);
+      expect(controller.managerAssignmentUnlocked, isFalse);
+      expect(controller.towerCoreManager, isNull);
 
-    controller.lumens = 1000;
-    controller.kills = LightcoreController.unlockKillsForOuterSlot(0);
-    expect(controller.buildTowerAt(0, TowerLibrary.bluePrism), isTrue);
-    expect(controller.cardForSlot(controller.slots[0])?.instanceId, managerId);
-    expect(controller.debugSetTowerCharge(0, charge: 1.2), isTrue);
+      _completeLayer1Coverage(controller, TowerLibrary.bluePrism);
+      expect(controller.towerCoreManager?.instanceId, managerId);
+      expect(
+        controller.cardForSlot(controller.slots[0])?.instanceId,
+        managerId,
+      );
+      expect(controller.debugSetTowerCharge(0, charge: 1.2), isTrue);
 
-    controller.tick(0.1);
+      controller.tick(0.1);
 
-    expect(controller.pulses, isNotEmpty);
-    expect(controller.slots[0].charge, 0);
-  });
+      expect(controller.pulses, isNotEmpty);
+      expect(controller.slots[0].charge, 0);
+    },
+  );
 
   test('layer 2 core manager automates promoted child towers', () {
     final controller = LightcoreController();
     addTearDown(controller.dispose);
 
-    controller.experience = LightcoreController.experienceForOverallLevel(
-      LightcoreController.managerUnlockLevel,
-    );
+    _completeLayer1Coverage(controller, TowerLibrary.redPrism);
     controller.flux = LightcoreController.towerManagerFluxCost;
     expect(controller.forgeTowerManager(), isTrue);
     final managerId = controller.cards.single.instanceId;
@@ -236,13 +246,7 @@ void main() {
     final controller = LightcoreController();
     addTearDown(controller.dispose);
 
-    controller.lumens = 1000;
-    controller.kills = LightcoreController.unlockKillsForOuterSlot(1);
-    expect(controller.buildTowerAt(0, TowerLibrary.redPrism), isTrue);
-    expect(controller.buildTowerAt(1, TowerLibrary.greenPrism), isTrue);
-    controller.experience = LightcoreController.experienceForOverallLevel(
-      LightcoreController.managerUnlockLevel,
-    );
+    _completeLayer1Coverage(controller, TowerLibrary.redPrism);
 
     controller.flux =
         LightcoreController.towerManagerFluxCost +

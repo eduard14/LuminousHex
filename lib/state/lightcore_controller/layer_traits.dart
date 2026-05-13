@@ -106,7 +106,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
       return null;
     }
     final tower = _slots[0];
-    return tower.isBuilt ? tower : null;
+    return tower.isBuilt && !tower.isFabricating ? tower : null;
   }
 
   bool get _currentLayerEarlyTutorialComplete {
@@ -122,12 +122,12 @@ extension LightcoreControllerLayerTraits on LightcoreController {
     }
     return _tutorialCoreShotTapLearned &&
         tower.fireSequence >= 3 &&
-        tower.level >= 3 &&
+        tower.level >= 4 &&
         _tutorialFirstTowerStatsOpened &&
         _tutorialStabilityPanelOpened &&
-        _tutorialTowerManagerAssigned &&
-        _tutorialAutoQueuedPulses >= 5 &&
-        (totalRadianceStatPointsSpent > 0 || _core.rangeUpgradeLevel > 0);
+        (totalRadianceStatPointsSpent > 0 ||
+            _core.rangeUpgradeLevel > 0 ||
+            !hasUnspentRadianceStatPoints);
   }
 
   bool get _earlyTutorialComplete =>
@@ -180,7 +180,8 @@ extension LightcoreControllerLayerTraits on LightcoreController {
       LightcoreTutorialStep.waitForFirstHex => isOuterSlotUnlocked(0),
       LightcoreTutorialStep.selectFirstHex => selectedSlotIndex == 0,
       LightcoreTutorialStep.buildFirstRedTower =>
-        firstTower?.config?.id == TowerLibrary.redPrism.id,
+        firstTower?.config?.id == TowerLibrary.redPrism.id &&
+            firstTower?.isFabricating == false,
       LightcoreTutorialStep.inspectFirstTowerStats =>
         _tutorialFirstTowerStatsOpened,
       LightcoreTutorialStep.tapBattleCore => _tutorialCoreShotTapLearned,
@@ -213,7 +214,9 @@ extension LightcoreControllerLayerTraits on LightcoreController {
       LightcoreTutorialStep.openManagers => _tutorialFirstManagersOpened,
       LightcoreTutorialStep.forgeTowerManager => _cards.isNotEmpty,
       LightcoreTutorialStep.assignTowerManager =>
-        _tutorialTowerManagerAssigned || _hasAssignedTowerManagerOnActiveLayer,
+        managerAssignmentUnlocked &&
+            (_tutorialTowerManagerAssigned ||
+                _hasAssignedTowerManagerOnActiveLayer),
       LightcoreTutorialStep.forgeEnemyManager => _enemyManagers.isNotEmpty,
       LightcoreTutorialStep.assignEnemyManager =>
         _tutorialEnemyManagerAssigned || _hasAssignedEnemyManagerOnActiveLayer,
@@ -258,6 +261,9 @@ extension LightcoreControllerLayerTraits on LightcoreController {
     if (!firstTower.isBuilt) {
       return LightcoreTutorialStep.buildFirstRedTower;
     }
+    if (firstTower.isFabricating) {
+      return LightcoreTutorialStep.none;
+    }
     if (firstTower.config?.id != TowerLibrary.redPrism.id) {
       return null;
     }
@@ -275,13 +281,6 @@ extension LightcoreControllerLayerTraits on LightcoreController {
     }
     if (!_tutorialStabilityPanelOpened) {
       return LightcoreTutorialStep.readEffectiveGain;
-    }
-    if (!_tutorialTowerManagerAssigned) {
-      _ensureStarterCoreManagerForTutorial();
-      return LightcoreTutorialStep.assignTowerManager;
-    }
-    if (_tutorialAutoQueuedPulses < 5) {
-      return LightcoreTutorialStep.autoQueueCheck;
     }
     final nextFirstTowerUpgradeCost = upgradeCost(firstTower);
     if (firstTower.level < 4 &&
@@ -343,7 +342,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
   }
 
   LightcoreTutorialStep? _deriveManagerTutorialStep() {
-    if (!managersUnlocked) {
+    if (!managersUnlocked || !managerAssignmentUnlocked) {
       return null;
     }
     if (!_tutorialFirstManagersOpened) {
@@ -1236,11 +1235,11 @@ extension LightcoreControllerLayerTraits on LightcoreController {
 
   String get managerUnlockLabel => managersUnlocked
       ? 'Managers online'
-      : 'Managers unlock at Core Lv $managerCoreLevelRequirement or Account Radiance Lv $managerUnlockLevel';
+      : 'Managers unlock when a Layer 1 shell has all $slotCount outer towers online';
 
   String get managerAssignmentUnlockLabel => managerAssignmentUnlocked
       ? 'Manager assignment online'
-      : 'Manager assignment unlocks at Core Lv $managerCoreLevelRequirement or Account Radiance Lv $managerUnlockLevel';
+      : 'Manager assignment unlocks when this Layer 1 shell has all $slotCount outer towers online';
 
   int promotedChildTowerRerollsUsed(OuterTowerState tower) {
     return 0;
@@ -1517,7 +1516,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         LightcoreTutorialStep.readEffectiveGain =>
           'Output Efficiency turns threat pressure into a visible gain multiplier, so the best scan is the one your core can keep stable.',
         LightcoreTutorialStep.autoQueueCheck =>
-          'Automation proves the guide-loaned starter manager is helping the core by taking over ready taps before permanent foundry managers unlock.',
+          'Automation proves an assigned manager can support the core by taking over ready taps after the full shell is online.',
         LightcoreTutorialStep.upgradeFirstTowerToLevel4 =>
           'A level 4 anchor keeps the lane efficient before Lumens get split across multiple towers.',
         LightcoreTutorialStep.pullFirstRedEnemy =>
@@ -1596,7 +1595,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
           LightcoreTutorialStep.readEffectiveGain =>
             'The crew pins the real-gain formula beside the output dial before opening harder scans.',
           LightcoreTutorialStep.autoQueueCheck =>
-            'The guide-loaned starter manager takes the relay chair and begins feeding the core without a manual command.',
+            'The assigned Core Manager takes the relay chair and begins feeding the core without a manual command.',
           LightcoreTutorialStep.upgradeFirstTowerToLevel4 =>
             'The shell is absorbing denser traffic now, so the first lane needs one more tune pass before expansion.',
           LightcoreTutorialStep.pullFirstRedEnemy =>

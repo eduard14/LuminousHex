@@ -1,8 +1,6 @@
 part of '../lightcore_controller.dart';
 
-// TODO: Restore the Account Radiance level walls after tournament and dungeon
-// testing no longer needs early access.
-const bool _openEventLevelWallsForTesting = true;
+const bool _openEventLevelWallsForTesting = false;
 
 extension LightcoreControllerStateAccessors on LightcoreController {
   void _recordLumenSpend(int amount) {
@@ -26,8 +24,6 @@ extension LightcoreControllerStateAccessors on LightcoreController {
   void _recordUpgradePurchase() {
     _totalUpgradesBought += 1;
   }
-
-  bool get _starterManagerTutorialUnlocked => _tutorialAutoQueuedPulses > 0;
 
   String _tutorialTowerShotGuideLabel(int slotIndex) {
     if (slotIndex < 0 || slotIndex >= _slots.length) {
@@ -460,9 +456,9 @@ extension LightcoreControllerStateAccessors on LightcoreController {
   bool get payloadsUnlocked => progressionLayer >= payloadUnlockLayer;
 
   bool get managersUnlocked =>
-      _managerCoreLevelUnlockedForLayer(activeLayer) ||
-      overallLevel >= managerUnlockLevel ||
-      _starterManagerTutorialUnlocked;
+      _layers.any(_managerShellCoverageUnlockedForLayer) ||
+      _cards.isNotEmpty ||
+      _enemyManagers.isNotEmpty;
 
   bool get managerAssignmentUnlocked =>
       _managerAssignmentUnlockedForLayer(activeLayer);
@@ -481,10 +477,15 @@ extension LightcoreControllerStateAccessors on LightcoreController {
   bool get bossHuntsUnlocked => progressionLayer >= bossUnlockLayer;
 
   bool get dailyDungeonsUnlocked =>
-      _openEventLevelWallsForTesting || overallLevel >= dailyDungeonUnlockLevel;
+      _openEventLevelWallsForTesting ||
+      firstRegionalBossCleared ||
+      overallLevel >= dailyDungeonUnlockLevel;
 
   bool get tournamentsUnlocked =>
-      _openEventLevelWallsForTesting || overallLevel >= tournamentUnlockLevel;
+      _openEventLevelWallsForTesting ||
+      bossHuntsUnlocked ||
+      firstThreatRingFullyStabilized ||
+      overallLevel >= tournamentUnlockLevel;
 
   bool get mentorshipUnlocked => overallLevel >= mentorshipUnlockLevel;
 

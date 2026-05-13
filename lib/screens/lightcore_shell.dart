@@ -1027,7 +1027,7 @@ class _LightcoreShellState extends State<LightcoreShell> {
                                 final claimablePassRewards =
                                     controller.totalClaimableBattlePassRewards;
                                 final pullBadgeLabel =
-                                    controller.fullThreatMapUnlocked &&
+                                    controller.canScanThreatMap &&
                                         controller.enemyTickets >= 10
                                     ? '10+'
                                     : null;
@@ -1068,7 +1068,7 @@ class _LightcoreShellState extends State<LightcoreShell> {
                                   ),
                                   _HeaderActionButton(
                                     icon: LightcoreIcons.threatScan,
-                                    tooltip: controller.fullThreatMapUnlocked
+                                    tooltip: controller.canScanThreatMap
                                         ? (controller.canOpenEnemyTickets
                                               ? 'Open Scans (${controller.enemyTickets} scans ready)'
                                               : 'Open Scans')

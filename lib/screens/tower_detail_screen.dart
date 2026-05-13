@@ -182,7 +182,7 @@ class _TowerDetailContent extends StatelessWidget {
         label: 'Core Manager',
         value: controller.managerAssignmentUnlocked
             ? card?.name ?? 'Open'
-            : 'Locked until Core Lv ${LightcoreController.managerCoreLevelRequirement} or AR Lv ${LightcoreController.managerUnlockLevel}',
+            : 'Locked until all ${LightcoreController.slotCount} outer towers are online',
       ),
       _TowerStatRowData(
         label: 'Automation',
@@ -339,7 +339,7 @@ class _TowerDetailContent extends StatelessWidget {
           subtitle: controller.managerAssignmentUnlocked
               ? card?.summary ??
                     'Open the Managers tab to socket a Core Manager for every tower on this shell.'
-              : 'Manager assignment unlocks when this core reaches Lv ${LightcoreController.managerCoreLevelRequirement} or Account Radiance reaches Lv ${LightcoreController.managerUnlockLevel}. Until then, tap ready towers manually.',
+              : 'Manager assignment unlocks when this Layer 1 shell has all ${LightcoreController.slotCount} outer towers online. Until then, tap ready towers manually.',
           tint: LightcorePalette.layer2,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,

@@ -616,10 +616,7 @@ class _ThreatRegionMapPanel extends StatelessWidget {
                   tint: LightcorePalette.quest,
                   child: FilledButton.icon(
                     onPressed:
-                        controller.bossHuntsUnlocked &&
-                            controller.activeThreatRegionChallenge == null &&
-                            selectedState.stabilizedLevel <
-                                selected.stabilizationLayers
+                        controller.canStartThreatRegionChallenge(selected.id)
                         ? () =>
                               controller.startThreatRegionChallenge(selected.id)
                         : null,
@@ -633,9 +630,7 @@ class _ThreatRegionMapPanel extends StatelessWidget {
                   ),
                 ),
                 OutlinedButton.icon(
-                  onPressed:
-                      controller.fullThreatMapUnlocked &&
-                          controller.enemyTickets > 0
+                  onPressed: controller.canScanThreatMap
                       ? () => controller.scanThreatMap()
                       : null,
                   icon: const Icon(Icons.radar_rounded),
@@ -657,9 +652,9 @@ class _ThreatRegionMapPanel extends StatelessWidget {
           if (!controller.fullThreatMapUnlocked) ...[
             const SizedBox(height: 10),
             Text(
-              controller.bossHuntsUnlocked
-                  ? 'All 37 regions are fixed for every player. Challenge the starter region until its final boss layer is cleared; then scans can radiate outward.'
-                  : 'All 37 regions are fixed for every player. Create the Prism Shell to unlock starter-region challenges, then clear its boss before scans can radiate outward.',
+              controller.threatRegionsUnlocked
+                  ? 'Starter and ring-1 regions can be revealed and stabilized before Prism. Ring 2+ scan-out opens after the Prism Shell is online.'
+                  : 'All 37 regions are fixed for every player. Build the first tower to start starter-region challenges and ring-1 scans.',
               style: textTheme.bodySmall?.copyWith(
                 color: LightcorePalette.warning,
               ),
@@ -1396,8 +1391,9 @@ class _EnemyPullSheetState extends State<EnemyPullSheet>
                             if (!controller.fullThreatMapUnlocked) ...[
                               const SizedBox(height: 12),
                               _InlineEnemyNote(
-                                message:
-                                    'Scan-out is locked until the starter region is fully stabilized and its boss is defeated.',
+                                message: controller.threatRegionsUnlocked
+                                    ? 'Early scan-out prioritizes unrevealed ring-1 regions. Ring 2+ opens after Prism.'
+                                    : 'Build the first tower to start starter-region challenges and ring-1 scan-out.',
                                 tint: LightcorePalette.warning,
                               ),
                             ],
@@ -1432,8 +1428,7 @@ class _EnemyPullSheetState extends State<EnemyPullSheet>
                                         child: _TicketButton(
                                           label: '1',
                                           enabled:
-                                              controller
-                                                  .fullThreatMapUnlocked &&
+                                              controller.canScanThreatMap &&
                                               controller.enemyTickets >= 1 &&
                                               !_scanBusy,
                                           onPressed: () =>
@@ -1445,7 +1440,7 @@ class _EnemyPullSheetState extends State<EnemyPullSheet>
                                       _TicketButton(
                                         label: '10+',
                                         enabled:
-                                            controller.fullThreatMapUnlocked &&
+                                            controller.canScanThreatMap &&
                                             controller.enemyTickets >= 10 &&
                                             !controller
                                                 .tutorialHighlightsEnemySinglePullButton &&
@@ -1458,7 +1453,7 @@ class _EnemyPullSheetState extends State<EnemyPullSheet>
                                       _TicketButton(
                                         label: 'MAX',
                                         enabled:
-                                            controller.fullThreatMapUnlocked &&
+                                            controller.canScanThreatMap &&
                                             controller.enemyTickets > 1 &&
                                             !controller
                                                 .tutorialHighlightsEnemySinglePullButton &&
@@ -1520,7 +1515,7 @@ class _EnemyPullSheetState extends State<EnemyPullSheet>
 
   Future<void> _openTickets(BuildContext context, int count) async {
     if (_scanBusy ||
-        !controller.fullThreatMapUnlocked ||
+        !controller.canScanThreatMap ||
         controller.enemyTickets < count) {
       return;
     }
@@ -1549,7 +1544,7 @@ class _EnemyPullSheetState extends State<EnemyPullSheet>
 
   Future<void> _openBatchTickets(BuildContext context) async {
     if (_scanBusy ||
-        !controller.fullThreatMapUnlocked ||
+        !controller.canScanThreatMap ||
         controller.enemyTickets < 10) {
       return;
     }
@@ -1567,7 +1562,7 @@ class _EnemyPullSheetState extends State<EnemyPullSheet>
 
   Future<void> _openMaxTickets(BuildContext context) async {
     if (_scanBusy ||
-        !controller.fullThreatMapUnlocked ||
+        !controller.canScanThreatMap ||
         controller.enemyTickets <= 0) {
       return;
     }
@@ -1575,7 +1570,7 @@ class _EnemyPullSheetState extends State<EnemyPullSheet>
   }
 
   Future<void> _openBossTickets(BuildContext context, int count) async {
-    if (_scanBusy || !controller.fullThreatMapUnlocked) {
+    if (_scanBusy || !controller.canScanThreatMap) {
       return;
     }
     await _openTickets(context, count);
@@ -1583,7 +1578,7 @@ class _EnemyPullSheetState extends State<EnemyPullSheet>
 
   Future<void> _openBossBatchTickets(BuildContext context) async {
     if (_scanBusy ||
-        !controller.fullThreatMapUnlocked ||
+        !controller.canScanThreatMap ||
         controller.enemyTickets < 10) {
       return;
     }
@@ -1601,7 +1596,7 @@ class _EnemyPullSheetState extends State<EnemyPullSheet>
 
   Future<void> _openBossMaxTickets(BuildContext context) async {
     if (_scanBusy ||
-        !controller.fullThreatMapUnlocked ||
+        !controller.canScanThreatMap ||
         controller.enemyTickets <= 0) {
       return;
     }

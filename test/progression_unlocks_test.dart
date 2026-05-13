@@ -28,21 +28,6 @@ void _promoteRootShell(LightcoreController controller) {
   expect(controller.activeLayer.tier, 2);
 }
 
-LightcoreController _restoreActiveCoreLevel(
-  LightcoreController controller,
-  int level,
-) {
-  final payload = controller.buildCloudSavePayload();
-  final layers = payload['layers'] as Map<String, dynamic>;
-  final activeLayerId = layers['activeLayerId'] as String;
-  final activeLayer = (layers['items'] as List<dynamic>)
-      .cast<Map<String, dynamic>>()
-      .firstWhere((layer) => layer['id'] == activeLayerId);
-  final core = activeLayer['core'] as Map<String, dynamic>;
-  core['level'] = level;
-  return LightcoreController.fromCloudSavePayload(payload);
-}
-
 void _promoteTier1ChildIntoCurrentCompositeSlot(
   LightcoreController controller,
   int slotIndex,
@@ -138,34 +123,36 @@ void main() {
     expect(controller.canForgeEnemyManager, isFalse);
   });
 
-  test('layer 1 tower level 3 unlocks manager foundry and assignment', () {
+  test('complete layer 1 coverage unlocks manager foundry and assignment', () {
     final controller = LightcoreController(traitRandom: Random(13));
     addTearDown(controller.dispose);
 
-    controller.lumens = 1000;
-    controller.kills = LightcoreController.unlockKillsForOuterSlot(0);
-    expect(controller.buildTowerAt(0, TowerLibrary.redPrism), isTrue);
-
-    controller.markTutorialStabilityPanelOpened();
+    controller.lumens = 1000000;
+    controller.kills = LightcoreController.unlockKillsForOuterSlot(
+      LightcoreController.slotCount - 1,
+    );
     controller.flux =
         LightcoreController.towerManagerFluxCost +
         LightcoreController.enemyManagerFluxCost;
 
-    expect(controller.slots[0].level, 1);
     expect(controller.managersUnlocked, isFalse);
     expect(controller.managerAssignmentUnlocked, isFalse);
     expect(controller.canForgeTowerManager, isFalse);
     expect(controller.canForgeEnemyManager, isFalse);
 
-    controller.lumens = controller.upgradeCost(controller.slots[0]);
-    expect(controller.upgradeTower(0), isTrue);
-    expect(controller.slots[0].level, 2);
-    expect(controller.managersUnlocked, isFalse);
-    expect(controller.managerAssignmentUnlocked, isFalse);
+    for (var index = 0; index < LightcoreController.slotCount - 1; index++) {
+      expect(controller.buildTowerAt(index, TowerLibrary.all[index]), isTrue);
+      expect(controller.managersUnlocked, isFalse);
+      expect(controller.managerAssignmentUnlocked, isFalse);
+    }
 
-    controller.lumens = controller.upgradeCost(controller.slots[0]);
-    expect(controller.upgradeTower(0), isTrue);
-    expect(controller.slots[0].level, 3);
+    expect(
+      controller.buildTowerAt(
+        LightcoreController.slotCount - 1,
+        TowerLibrary.all[LightcoreController.slotCount - 1],
+      ),
+      isTrue,
+    );
     expect(controller.managersUnlocked, isTrue);
     expect(controller.managerAssignmentUnlocked, isTrue);
     expect(controller.canForgeTowerManager, isTrue);
@@ -182,18 +169,10 @@ void main() {
 
       expect(controller.layerNavigationUnlocked, isTrue);
       expect(controller.payloadsUnlocked, isTrue);
-      expect(controller.managersUnlocked, isFalse);
+      expect(controller.managersUnlocked, isTrue);
       expect(controller.managerAssignmentUnlocked, isFalse);
       expect(controller.coreState.projectileType.tier, 2);
       expect(controller.coreState.payloadType.tier, 2);
-
-      final coreLevel3 = _restoreActiveCoreLevel(
-        controller,
-        LightcoreController.managerCoreLevelRequirement,
-      );
-      addTearDown(coreLevel3.dispose);
-      expect(coreLevel3.managersUnlocked, isTrue);
-      expect(coreLevel3.managerAssignmentUnlocked, isTrue);
 
       expect(controller.createChildLayer(0, PrototypeAffinity.aether), isTrue);
       controller.lumens = 1000;
@@ -491,75 +470,55 @@ void main() {
     },
   );
 
-  test('core level 3 unlocks manager foundry and assignment', () {
-    final controller = LightcoreController(traitRandom: Random(9));
-    addTearDown(controller.dispose);
+  test(
+    'new layer 1 shells wait for full coverage before manager assignment',
+    () {
+      final controller = LightcoreController(traitRandom: Random(9));
+      addTearDown(controller.dispose);
 
-    controller.experience = LightcoreController.experienceForOverallLevel(
-      LightcoreController.managerUnlockLevel,
-    );
-    controller.flux =
-        LightcoreController.towerManagerFluxCost +
-        LightcoreController.enemyManagerFluxCost;
-    expect(controller.forgeTowerManager(), isTrue);
-    expect(controller.forgeEnemyManager(), isTrue);
-    final towerManagerId = controller.cards.single.instanceId;
-    final enemyManagerId = controller.enemyManagers.single.instanceId;
+      _maxOutCurrentTier1Shell(controller);
+      controller.flux =
+          LightcoreController.towerManagerFluxCost +
+          LightcoreController.enemyManagerFluxCost;
+      expect(controller.forgeTowerManager(), isTrue);
+      expect(controller.forgeEnemyManager(), isTrue);
+      final towerManagerId = controller.cards.single.instanceId;
+      final enemyManagerId = controller.enemyManagers.single.instanceId;
 
-    controller.experience = 0;
-    controller.equipCardToCore(towerManagerId);
-    controller.assignEnemyManagerToCore(enemyManagerId);
-    expect(controller.towerCoreManager, isNull);
-    expect(controller.enemyCoreManager, isNull);
+      controller.equipCardToCore(towerManagerId);
+      controller.assignEnemyManagerToCore(enemyManagerId);
+      expect(controller.towerCoreManager?.instanceId, towerManagerId);
+      expect(controller.enemyCoreManager?.instanceId, enemyManagerId);
 
-    _promoteRootShell(controller);
-    controller.flux =
-        LightcoreController.towerManagerFluxCost +
-        LightcoreController.enemyManagerFluxCost;
+      controller.unlockLayer2Tower();
+      expect(controller.createChildLayer(0, PrototypeAffinity.aether), isTrue);
+      expect(controller.activeLayer.tier, 1);
+      expect(controller.managerAssignmentUnlocked, isFalse);
 
-    expect(
-      controller.overallLevel,
-      lessThan(LightcoreController.managerUnlockLevel),
-    );
-    expect(controller.managersUnlocked, isFalse);
-    expect(controller.managerAssignmentUnlocked, isFalse);
-    expect(controller.canForgeTowerManager, isFalse);
-    expect(controller.canForgeEnemyManager, isFalse);
+      controller.equipCardToCore(towerManagerId);
+      controller.assignEnemyManagerToCore(enemyManagerId);
+      expect(controller.towerCoreManager, isNull);
+      expect(controller.enemyCoreManager, isNull);
 
-    controller.equipCardToCore(towerManagerId);
-    controller.assignEnemyManagerToCore(enemyManagerId);
-    expect(controller.towerCoreManager, isNull);
-    expect(controller.enemyCoreManager, isNull);
+      controller.lumens = 1000000;
+      for (var index = 0; index < LightcoreController.slotCount; index++) {
+        expect(controller.buildTowerAt(index, TowerLibrary.all[index]), isTrue);
+      }
+      expect(controller.managerAssignmentUnlocked, isTrue);
+      controller.equipCardToCore(towerManagerId);
+      controller.assignEnemyManagerToCore(enemyManagerId);
 
-    final coreLevel3 = _restoreActiveCoreLevel(
-      controller,
-      LightcoreController.managerCoreLevelRequirement,
-    );
-    addTearDown(coreLevel3.dispose);
+      expect(controller.towerCoreManager?.instanceId, towerManagerId);
+      expect(
+        controller
+            .enemyManagerForCard(EnemyLibrary.starterDefault.id)
+            ?.instanceId,
+        enemyManagerId,
+      );
+    },
+  );
 
-    expect(
-      coreLevel3.overallLevel,
-      lessThan(LightcoreController.managerUnlockLevel),
-    );
-    expect(coreLevel3.managersUnlocked, isTrue);
-    expect(coreLevel3.managerAssignmentUnlocked, isTrue);
-    expect(coreLevel3.canForgeTowerManager, isTrue);
-    expect(coreLevel3.canForgeEnemyManager, isTrue);
-
-    coreLevel3.equipCardToCore(towerManagerId);
-    coreLevel3.assignEnemyManagerToCore(enemyManagerId);
-
-    expect(coreLevel3.towerCoreManager?.instanceId, towerManagerId);
-    expect(coreLevel3.enemyCoreManager?.instanceId, enemyManagerId);
-    expect(
-      coreLevel3
-          .enemyManagerForCard(EnemyLibrary.starterDefault.id)
-          ?.instanceId,
-      enemyManagerId,
-    );
-  });
-
-  test('overall level 10 unlocks the manager foundry', () {
+  test('overall level 10 alone does not unlock the manager foundry', () {
     final controller = LightcoreController(traitRandom: Random(11));
     addTearDown(controller.dispose);
 
@@ -573,36 +532,55 @@ void main() {
         LightcoreController.enemyManagerFluxCost;
 
     expect(controller.payloadsUnlocked, isFalse);
-    expect(controller.managersUnlocked, isTrue);
-    expect(controller.canForgeTowerManager, isTrue);
-    expect(controller.canForgeEnemyManager, isTrue);
-
-    expect(controller.forgeTowerManager(), isTrue);
-    expect(controller.forgeEnemyManager(), isTrue);
-    expect(controller.cards, hasLength(1));
-    expect(controller.enemyManagers, hasLength(1));
+    expect(controller.managersUnlocked, isFalse);
+    expect(controller.canForgeTowerManager, isFalse);
+    expect(controller.canForgeEnemyManager, isFalse);
+    expect(controller.forgeTowerManager(), isFalse);
+    expect(controller.forgeEnemyManager(), isFalse);
   });
 
-  test(
-    'daily dungeons and tournaments are temporarily open before level walls',
-    () {
-      final controller = LightcoreController(traitRandom: Random(13));
-      addTearDown(controller.dispose);
+  test('daily dungeons and tournaments use boss, prism, and level gates', () {
+    final controller = LightcoreController(traitRandom: Random(13));
+    addTearDown(controller.dispose);
 
-      expect(controller.dailyDungeonsUnlocked, isTrue);
-      expect(controller.dailyDungeonLevelsRemaining, 0);
-      expect(controller.tournamentsUnlocked, isTrue);
-      expect(controller.tournamentLevelsRemaining, 0);
+    expect(controller.dailyDungeonsUnlocked, isFalse);
+    expect(controller.tournamentsUnlocked, isFalse);
 
-      controller.experience = LightcoreController.experienceForOverallLevel(
-        LightcoreController.dailyDungeonUnlockLevel,
+    controller.debugGrantApexCore(BossEnemyLibrary.starterWhiteWarden.id);
+    expect(controller.dailyDungeonsUnlocked, isTrue);
+    expect(controller.tournamentsUnlocked, isFalse);
+
+    final prismController = LightcoreController(traitRandom: Random(14));
+    addTearDown(prismController.dispose);
+    _promoteRootShell(prismController);
+    expect(prismController.tournamentsUnlocked, isTrue);
+
+    final ringController = LightcoreController(traitRandom: Random(16));
+    addTearDown(ringController.dispose);
+    for (final region in ringController.threatRegionConfigs.where(
+      (region) => region.ring <= 1,
+    )) {
+      ringController.debugRevealThreatRegion(
+        region.id,
+        stabilizedLevel: region.stabilizationLayers,
       );
+    }
+    expect(ringController.tournamentsUnlocked, isTrue);
 
-      expect(controller.managersUnlocked, isTrue);
-      expect(controller.dailyDungeonsUnlocked, isTrue);
-      expect(controller.tournamentsUnlocked, isTrue);
-    },
-  );
+    final levelController = LightcoreController(traitRandom: Random(15));
+    addTearDown(levelController.dispose);
+    levelController.experience = LightcoreController.experienceForOverallLevel(
+      LightcoreController.dailyDungeonUnlockLevel,
+    );
+
+    expect(levelController.dailyDungeonsUnlocked, isTrue);
+    expect(levelController.tournamentsUnlocked, isFalse);
+
+    levelController.experience = LightcoreController.experienceForOverallLevel(
+      LightcoreController.tournamentUnlockLevel,
+    );
+    expect(levelController.tournamentsUnlocked, isTrue);
+  });
 
   test('overall level 30 unlocks mentorship', () {
     final controller = LightcoreController(traitRandom: Random(15));

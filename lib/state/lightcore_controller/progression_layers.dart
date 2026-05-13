@@ -1017,7 +1017,11 @@ extension LightcoreControllerProgressionLayers on LightcoreController {
   int get builtRelayCount => _slots.where((slot) => slot.config != null).length;
 
   int buildCostForConfig(TowerConfig config) {
-    final shellCurve = pow(1.85, builtRelayCount).toDouble();
+    final shellCurve = activeLayer.tier == 1
+        ? layer1TowerBuildCostMultipliers[builtRelayCount
+              .clamp(0, layer1TowerBuildCostMultipliers.length - 1)
+              .toInt()]
+        : pow(1.85, builtRelayCount).toDouble();
     final price =
         _balancedTowerStat(config, 'buildCost', config.buildCost.toDouble()) *
         activeLayerPriceMultiplier *
@@ -1029,14 +1033,10 @@ extension LightcoreControllerProgressionLayers on LightcoreController {
     if (activeLayer.tier != 1) {
       return towerConstructionDurationSeconds;
     }
-    final rampIndex = builtRelayCount.clamp(0, slotCount - 1);
-    final rampProgress = slotCount <= 1 ? 1.0 : rampIndex / (slotCount - 1);
-    final duration =
-        towerConstructionDurationSeconds +
-        ((layer1ChildTowerMaxConstructionDurationSeconds -
-                towerConstructionDurationSeconds) *
-            rampProgress);
-    return min(layer1ChildTowerMaxConstructionDurationSeconds, duration);
+    final rampIndex = builtRelayCount.clamp(0, slotCount - 1).toInt();
+    return layer1TowerConstructionDurationsSeconds[rampIndex
+        .clamp(0, layer1TowerConstructionDurationsSeconds.length - 1)
+        .toInt()];
   }
 
   String towerFabricationDurationLabelForConfig(TowerConfig config) =>

@@ -80,11 +80,51 @@ extension LightcoreControllerThreatRegions on LightcoreController {
     final starter = _threatRegions.firstWhere(
       (state) => state.regionId == ThreatRegionLibrary.all.first.id,
     );
-    return starter.fullyStabilizedAtMillis != null &&
+    return bossHuntsUnlocked &&
+        starter.fullyStabilizedAtMillis != null &&
         _apexCoreByBossId(
               ThreatRegionLibrary.all.first.primaryBossId,
             )?.isOwned ==
             true;
+  }
+
+  bool get threatRegionsUnlocked =>
+      builtTowerCount > 0 || bossHuntsUnlocked || fullThreatMapUnlocked;
+
+  bool get firstRegionalBossCleared => _apexCores.any((core) => core.isOwned);
+
+  int get fullyStabilizedFirstRingRegionCount => ThreatRegionLibrary.all
+      .where((region) => region.ring <= 1)
+      .where((region) {
+        final state = threatRegionStateById(region.id);
+        return state != null &&
+            state.stabilizedLevel >= region.stabilizationLayers;
+      })
+      .length;
+
+  bool get firstThreatRingFullyStabilized =>
+      fullyStabilizedFirstRingRegionCount ==
+      ThreatRegionLibrary.all.where((region) => region.ring <= 1).length;
+
+  bool get canScanThreatMap =>
+      enemyTickets > 0 && (fullThreatMapUnlocked || threatRegionsUnlocked);
+
+  bool canStartThreatRegionChallenge(String regionId) {
+    if (_threatRegionChallenge != null) {
+      return false;
+    }
+    final state = threatRegionStateById(regionId);
+    final config = threatRegionConfigById(regionId);
+    if (state == null || config == null || !state.revealed) {
+      return false;
+    }
+    if (state.stabilizedLevel >= config.stabilizationLayers) {
+      return false;
+    }
+    if (fullThreatMapUnlocked) {
+      return true;
+    }
+    return threatRegionsUnlocked && config.ring <= 1;
   }
 
   bool get enemySuiteBuilderUnlocked =>
@@ -187,19 +227,57 @@ extension LightcoreControllerThreatRegions on LightcoreController {
   }
 
   ThreatRegionScanResult? scanThreatMap({int count = 1}) {
-    if (!fullThreatMapUnlocked || count <= 0 || enemyTickets < count) {
+    if (count <= 0 ||
+        enemyTickets < count ||
+        !(fullThreatMapUnlocked || threatRegionsUnlocked)) {
       return null;
     }
     ThreatRegionScanResult? lastResult;
     for (var index = 0; index < count; index += 1) {
       enemyTickets -= 1;
       enemyPullCount += 1;
-      lastResult = _resolveSingleThreatMapScan();
+      lastResult = fullThreatMapUnlocked
+          ? _resolveSingleThreatMapScan()
+          : _resolveFirstRingThreatMapScan();
     }
     _advanceBattlePass(BattlePassType.enemyPulls, count);
     _syncTutorialStep(showBanner: false);
     _notifyNow();
     return lastResult;
+  }
+
+  ThreatRegionScanResult _resolveFirstRingThreatMapScan() {
+    final starter = ThreatRegionLibrary.all.first;
+    final unrevealedRingOne = ThreatRegionLibrary.all
+        .where((region) => region.ring == 1)
+        .where((region) => threatRegionStateById(region.id)?.revealed != true)
+        .toList(growable: false);
+    if (unrevealedRingOne.isNotEmpty) {
+      final region = unrevealedRingOne.first;
+      final state = threatRegionStateById(region.id)!;
+      _replaceThreatRegionState(state.copyWith(revealed: true));
+      _selectedThreatRegionId = region.id;
+      _showBanner('${region.name} revealed on the threat map.');
+      return ThreatRegionScanResult(
+        region: region,
+        revealedNewRegion: true,
+        echoGranted: 0,
+        rarityRolled: region.rarity,
+      );
+    }
+
+    final origin = selectedThreatRegionConfig ?? starter;
+    final echoRegion = origin.ring <= 1 ? origin : starter;
+    _regionEchoes[echoRegion.id] = regionEchoCount(echoRegion.id) + 1;
+    _showBanner(
+      '${echoRegion.name} echoed. Region Echoes: ${regionEchoCount(echoRegion.id)}.',
+    );
+    return ThreatRegionScanResult(
+      region: echoRegion,
+      revealedNewRegion: false,
+      echoGranted: 1,
+      rarityRolled: echoRegion.rarity,
+    );
   }
 
   ThreatRegionScanResult _resolveSingleThreatMapScan() {
@@ -346,17 +424,19 @@ extension LightcoreControllerThreatRegions on LightcoreController {
   }
 
   bool startThreatRegionChallenge(String regionId) {
-    if (!bossHuntsUnlocked) {
-      _showBanner('Region challenges unlock after the Prism Shell is online.');
+    if (!canStartThreatRegionChallenge(regionId)) {
+      final config = threatRegionConfigById(regionId);
+      final message =
+          config != null && config.ring > 1 && !fullThreatMapUnlocked
+          ? 'Ring 2+ region challenges unlock after the Prism Shell is online.'
+          : 'Region challenges unlock after the first tower is online.';
+      _showBanner(message);
       _notifyNow();
-      return false;
-    }
-    if (_threatRegionChallenge != null) {
       return false;
     }
     final state = threatRegionStateById(regionId);
     final config = threatRegionConfigById(regionId);
-    if (state == null || config == null || !state.revealed) {
+    if (state == null || config == null) {
       return false;
     }
     final targetLevel = state.stabilizedLevel + 1;
@@ -650,10 +730,39 @@ extension LightcoreControllerThreatRegions on LightcoreController {
       _grantBossTraitForBoss(bossId);
     }
     final bossCount = max(1, defeatedBossIds.length);
+    if (defeatedBossIds.length == 1) {
+      _grantBossTraitForBoss(defeatedBossIds.single);
+    }
     for (final anomalyId in region.anomalyCardIds) {
       _grantEnemyCardById(anomalyId);
     }
+    _seedEnemySuiteFromRegionRewards(region, defeatedBossIds);
     enemyTickets += max(1, region.ring + bossCount);
+  }
+
+  void _seedEnemySuiteFromRegionRewards(
+    ThreatRegionConfig region,
+    Set<String> defeatedBossIds,
+  ) {
+    if (hasCompleteEnemySuite || defeatedBossIds.isEmpty) {
+      return;
+    }
+    final apexBossId = defeatedBossIds.first;
+    final traitIds = defeatedBossIds
+        .map((bossId) => ThreatRegionLibrary.traitForBoss(bossId)?.id)
+        .whereType<String>()
+        .toList(growable: true);
+    if (traitIds.isEmpty) {
+      return;
+    }
+    while (traitIds.length < 2) {
+      traitIds.add(traitIds.first);
+    }
+    _activeEnemySuite = EnemySuiteState(
+      apexCoreBossId: apexBossId,
+      bossTraitIds: traitIds.take(2).toList(growable: false),
+      anomalyCardIds: region.anomalyCardIds.take(3).toList(growable: false),
+    );
   }
 
   void _grantEnemyCardById(String cardId) {

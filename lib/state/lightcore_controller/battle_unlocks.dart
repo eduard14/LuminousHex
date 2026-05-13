@@ -161,17 +161,7 @@ extension LightcoreControllerBattleUnlocks on LightcoreController {
     required int previousExperience,
     required int currentExperience,
   }) {
-    if (_managerCoreLevelUnlockedForLayer(activeLayer) ||
-        _starterManagerTutorialUnlocked) {
-      return null;
-    }
-    final previousLevel = overallLevelForExperience(previousExperience);
-    final currentLevel = overallLevelForExperience(currentExperience);
-    if (previousLevel >= managerUnlockLevel ||
-        currentLevel < managerUnlockLevel) {
-      return null;
-    }
-    return 'Managers unlocked. Assign Core Managers to the Tower Core to automate ready-taps, or forge Threat Directors to tune anomaly pressure.';
+    return null;
   }
 
   String? _dailyDungeonUnlockBannerFragment({

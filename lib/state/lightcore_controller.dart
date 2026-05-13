@@ -1001,14 +1001,16 @@ const int payloadUnlockLayer = LightcoreController.payloadUnlockLayer;
 const double rainbowPromotionChance =
     LightcoreController.rainbowPromotionChance;
 const int managerUnlockLevel = LightcoreController.managerUnlockLevel;
-const int managerCoreLevelRequirement =
-    LightcoreController.managerCoreLevelRequirement;
 const List<PrototypeAffinity> childCoreAffinityChoices =
     LightcoreController.childCoreAffinityChoices;
 const double towerConstructionDurationSeconds =
     LightcoreController.towerConstructionDurationSeconds;
 const double layer1ChildTowerMaxConstructionDurationSeconds =
     LightcoreController.layer1ChildTowerMaxConstructionDurationSeconds;
+const List<double> layer1TowerConstructionDurationsSeconds =
+    LightcoreController.layer1TowerConstructionDurationsSeconds;
+const List<double> layer1TowerBuildCostMultipliers =
+    LightcoreController.layer1TowerBuildCostMultipliers;
 const int friendRelayLevelBand = LightcoreController.friendRelayLevelBand;
 const int defaultGuildCreationUnlockLevel =
     LightcoreController.defaultGuildCreationUnlockLevel;
@@ -1338,7 +1340,6 @@ class LightcoreController extends ChangeNotifier {
   static const int payloadUnlockLayer = 2;
   static const double rainbowPromotionChance = 0.10;
   static const int managerUnlockLevel = 10;
-  static const int managerCoreLevelRequirement = 3;
   static const List<PrototypeAffinity> childCoreAffinityChoices =
       <PrototypeAffinity>[
         PrototypeAffinity.ember,
@@ -1349,7 +1350,23 @@ class LightcoreController extends ChangeNotifier {
         PrototypeAffinity.violet,
       ];
   static const double towerConstructionDurationSeconds = 5;
-  static const double layer1ChildTowerMaxConstructionDurationSeconds = 20 * 60;
+  static const double layer1ChildTowerMaxConstructionDurationSeconds = 10 * 60;
+  static const List<double> layer1TowerConstructionDurationsSeconds = <double>[
+    towerConstructionDurationSeconds,
+    45,
+    2 * 60,
+    4 * 60,
+    7 * 60,
+    layer1ChildTowerMaxConstructionDurationSeconds,
+  ];
+  static const List<double> layer1TowerBuildCostMultipliers = <double>[
+    1.10,
+    2.80,
+    5.50,
+    13.75,
+    27.50,
+    40.00,
+  ];
   static const int friendRelayLevelBand = 6;
   static const int defaultGuildCreationUnlockLevel = 10;
   static const int guildMemberCap = slotCount + 1;

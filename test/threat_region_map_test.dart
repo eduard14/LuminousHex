@@ -90,6 +90,48 @@ void main() {
     },
   );
 
+  test('starter and ring one regions can be worked before layer 2', () {
+    final controller = LightcoreController();
+    addTearDown(controller.dispose);
+
+    final starter = ThreatRegionLibrary.all.first;
+    final ringOne = ThreatRegionLibrary.all
+        .where((region) => region.ring == 1)
+        .toList(growable: false);
+    final ringTwo = ThreatRegionLibrary.all.firstWhere(
+      (region) => region.ring == 2,
+    );
+
+    expect(controller.bossHuntsUnlocked, isFalse);
+    expect(controller.canStartThreatRegionChallenge(starter.id), isFalse);
+
+    controller
+      ..kills = LightcoreController.unlockKillsForOuterSlot(0)
+      ..lumens = 1000;
+    expect(controller.buildTowerAt(0, controller.towerConfigs.first), isTrue);
+    expect(controller.canStartThreatRegionChallenge(starter.id), isTrue);
+    expect(controller.startThreatRegionChallenge(starter.id), isTrue);
+    expect(controller.failThreatRegionChallenge(), isFalse);
+
+    controller.enemyTickets = ringOne.length;
+    for (var index = 0; index < ringOne.length; index += 1) {
+      final result = controller.scanThreatMap();
+      expect(result, isNotNull);
+      expect(result!.revealedNewRegion, isTrue);
+      expect(result.region.ring, 1);
+    }
+    expect(
+      ringOne.every(
+        (region) => controller.threatRegionStateById(region.id)!.revealed,
+      ),
+      isTrue,
+    );
+
+    controller.debugRevealThreatRegion(ringTwo.id);
+    expect(controller.canStartThreatRegionChallenge(ringTwo.id), isFalse);
+    expect(controller.startThreatRegionChallenge(ringTwo.id), isFalse);
+  });
+
   test(
     'final stabilization grants boss-driven suite pieces and anomaly cards',
     () {
@@ -136,13 +178,19 @@ void main() {
             .every((card) => card?.isOwned ?? false),
         isTrue,
       );
+      expect(controller.hasCompleteEnemySuite, isTrue);
+      expect(controller.activeEnemySuite.apexCoreBossId, starter.primaryBossId);
+      expect(controller.activeEnemySuite.bossTraitIds, <String>[
+        'trait_${starter.primaryBossId}',
+        'trait_${starter.primaryBossId}',
+      ]);
     },
   );
 
   test('double-boss final layers require both bosses defeated', () {
     final controller = LightcoreController();
     addTearDown(controller.dispose);
-    _unlockRegionChallenges(controller);
+    _unlockFullThreatMap(controller);
 
     final doubleBossRegion = ThreatRegionLibrary.all.firstWhere(
       (region) => region.hasDoubleBoss,

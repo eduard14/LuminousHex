@@ -900,11 +900,12 @@ void main() {
     expect(find.byTooltip('Battle'), findsOneWidget);
   });
 
-  testWidgets('tournament overlay opens before level 20 for testing', (
+  testWidgets('tournament overlay opens after Prism before level 20', (
     tester,
   ) async {
     final controller = LightcoreController();
     addTearDown(controller.dispose);
+    _promoteRootShell(controller);
 
     await _pumpShell(tester, controller);
 
@@ -1036,11 +1037,12 @@ void main() {
     );
   });
 
-  testWidgets('daily dungeon overlay opens before level 15 for testing', (
+  testWidgets('daily dungeon overlay opens after first regional boss', (
     tester,
   ) async {
     final controller = LightcoreController();
     addTearDown(controller.dispose);
+    controller.debugGrantApexCore(BossEnemyLibrary.starterWhiteWarden.id);
 
     await _pumpShell(tester, controller);
 
@@ -1332,17 +1334,17 @@ void main() {
       expect(
         controller.bannerMessage,
         contains(
-          'Manager assignment unlocks at Core Lv ${LightcoreController.managerCoreLevelRequirement}',
+          'Manager assignment unlocks when this Layer 1 shell has all ${LightcoreController.slotCount} outer towers online',
         ),
       );
       expect(find.text('Main Manager', skipOffstage: false), findsNothing);
 
       await _openHeaderMenuDestination(tester, 'Daily Dungeons');
-
-      expect(find.text('Daily Dungeons'), findsOneWidget);
-
-      await tester.tap(find.byTooltip('Return to Battle'));
-      await _pumpTransition(tester);
+      expect(
+        controller.bannerMessage,
+        contains('Daily Dungeons unlock after the first regional boss'),
+      );
+      expect(find.text('Daily Dungeons', skipOffstage: false), findsNothing);
 
       await tester.tap(find.byTooltip('Advance').first);
       await tester.pump();
@@ -2267,6 +2269,7 @@ void main() {
   ) async {
     final controller = LightcoreController();
     final starterRegion = controller.threatRegionConfigs.first;
+    controller.debugSeedProgressionLayer(2);
     controller
       ..debugRevealThreatRegion(
         starterRegion.id,

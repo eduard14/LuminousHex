@@ -193,17 +193,8 @@ void main() {
     expect(controller.slots[0].level, 3);
     expect(controller.tutorialStep, LightcoreTutorialStep.readEffectiveGain);
 
+    controller.lumens = controller.upgradeCost(controller.slots[0]);
     controller.markTutorialStabilityPanelOpened();
-    expect(controller.tutorialStep, LightcoreTutorialStep.assignTowerManager);
-    expect(controller.cards, isNotEmpty);
-    controller.equipCardToSlot(controller.cards.first.instanceId, 0);
-    expect(controller.tutorialStep, LightcoreTutorialStep.autoQueueCheck);
-
-    var guard = 0;
-    while (controller.tutorialStep == LightcoreTutorialStep.autoQueueCheck &&
-        guard++ < 240) {
-      controller.tick(0.25);
-    }
     expect(
       controller.tutorialStep,
       LightcoreTutorialStep.upgradeFirstTowerToLevel4,
@@ -301,6 +292,48 @@ void main() {
 
     expect(controller.tutorialStep, LightcoreTutorialStep.tapFirstTower);
   });
+
+  test(
+    'first tower inspect, fire, and upgrade lessons wait for fabrication',
+    () {
+      final controller = LightcoreController();
+      addTearDown(controller.dispose);
+
+      controller.selectCenter();
+      controller.handleBattleCenterTap();
+      controller
+        ..kills = LightcoreController.unlockKillsForOuterSlot(0)
+        ..lumens = controller.buildCostForConfig(TowerLibrary.redPrism);
+
+      expect(
+        controller.tutorialStartTowerFabricationAt(0, TowerLibrary.redPrism),
+        isTrue,
+      );
+      expect(controller.slots[0].isFabricating, isTrue);
+      expect(
+        controller.tutorialStep,
+        isNot(LightcoreTutorialStep.inspectFirstTowerStats),
+      );
+
+      controller.markTutorialFirstTowerStatsOpened();
+      expect(
+        controller.tutorialStep,
+        isNot(LightcoreTutorialStep.tapFirstTower),
+      );
+      expect(controller.activateTowerSlot(0, showBanner: false), isFalse);
+      expect(controller.tutorialUpgradeTower(0), isFalse);
+
+      controller.tick(controller.slots[0].fabricationRemainingSeconds + 0.1);
+      expect(controller.slots[0].isFabricating, isFalse);
+      expect(
+        controller.tutorialStep,
+        LightcoreTutorialStep.inspectFirstTowerStats,
+      );
+
+      controller.markTutorialFirstTowerStatsOpened();
+      expect(controller.tutorialStep, LightcoreTutorialStep.tapFirstTower);
+    },
+  );
 
   test('tutorial pauses instead of showing wait-only steps', () {
     final controller = LightcoreController();
@@ -466,32 +499,35 @@ void main() {
     expect(controller.tutorialStep, LightcoreTutorialStep.openTowerMatrix);
   });
 
-  test('manager quest appears when overall level 10 unlocks managers', () {
-    final controller = LightcoreController();
-    addTearDown(controller.dispose);
+  test(
+    'manager quest appears after shell coverage and advanced assignment',
+    () {
+      final controller = LightcoreController();
+      addTearDown(controller.dispose);
 
-    _promoteToLayer3(controller);
-    _finishBossAndEquipmentTutorial(controller);
-    controller.experience = LightcoreController.experienceForOverallLevel(
-      LightcoreController.managerUnlockLevel,
-    );
-    controller.tick(0.01);
+      _promoteToLayer3(controller);
+      _finishBossAndEquipmentTutorial(controller);
+      controller.experience = LightcoreController.experienceForOverallLevel(
+        LightcoreController.managerUnlockLevel,
+      );
+      controller.tick(0.01);
 
-    expect(controller.managersUnlocked, isTrue);
+      expect(controller.managersUnlocked, isTrue);
 
-    if (controller.tutorialStep == LightcoreTutorialStep.holdOverdrive) {
-      controller.startManualOverdrive();
-      controller.tick(0.35);
-    }
+      if (controller.tutorialStep == LightcoreTutorialStep.holdOverdrive) {
+        controller.startManualOverdrive();
+        controller.tick(0.35);
+      }
 
-    expect(controller.tutorialStep, LightcoreTutorialStep.openManagers);
+      expect(controller.tutorialStep, LightcoreTutorialStep.openManagers);
 
-    controller.markTutorialManagersOpened();
+      controller.markTutorialManagersOpened();
 
-    expect(controller.tutorialStep, LightcoreTutorialStep.forgeTowerManager);
-    _completeManagerTutorials(controller);
-    expect(controller.tutorialStep, LightcoreTutorialStep.openTowerMatrix);
-  });
+      expect(controller.tutorialStep, LightcoreTutorialStep.forgeTowerManager);
+      _completeManagerTutorials(controller);
+      expect(controller.tutorialStep, LightcoreTutorialStep.openTowerMatrix);
+    },
+  );
 
   test(
     'level 20 unlocks screen-name setup and level 30 unlocks mentorship',

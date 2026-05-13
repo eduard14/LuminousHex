@@ -74,9 +74,18 @@ void main() {
     addTearDown(controller.dispose);
 
     controller.debugDisableTutorial();
-    controller.experience = LightcoreController.experienceForOverallLevel(
-      LightcoreController.managerUnlockLevel,
-    );
+    controller
+      ..kills = LightcoreController.unlockKillsForOuterSlot(
+        LightcoreController.slotCount - 1,
+      )
+      ..lumens = 1000000;
+    for (var index = 0; index < LightcoreController.slotCount; index++) {
+      expect(
+        controller.buildTowerAt(index, controller.towerConfigs[index]),
+        isTrue,
+      );
+    }
+    expect(controller.managersUnlocked, isTrue);
     controller.flux = LightcoreController.towerManagerFluxCost;
 
     await tester.pumpWidget(

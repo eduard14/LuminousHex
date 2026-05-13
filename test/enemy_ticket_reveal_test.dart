@@ -26,6 +26,9 @@ void _unlockBossHunts(LightcoreController controller) {
 }
 
 void _unlockThreatMapScans(LightcoreController controller) {
+  if (!controller.bossHuntsUnlocked) {
+    _unlockBossHunts(controller);
+  }
   final starter = controller.threatRegionConfigs.first;
   controller.debugRevealThreatRegion(
     starter.id,

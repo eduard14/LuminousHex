@@ -157,16 +157,14 @@ void main() {
       durations.first,
       LightcoreController.towerConstructionDurationSeconds,
     );
-    for (var index = 1; index < durations.length; index++) {
-      expect(durations[index], greaterThan(durations[index - 1]));
-    }
+    expect(durations, <double>[5, 45, 120, 240, 420, 600]);
     expect(
       durations.last,
       LightcoreController.layer1ChildTowerMaxConstructionDurationSeconds,
     );
   });
 
-  test('layer 1 child-shell fabrication ramps up to twenty minutes', () {
+  test('layer 1 child-shell fabrication ramps up to ten minutes', () {
     final controller = LightcoreController();
     addTearDown(controller.dispose);
 
@@ -191,13 +189,31 @@ void main() {
       durations.first,
       LightcoreController.towerConstructionDurationSeconds,
     );
-    for (var index = 1; index < durations.length; index++) {
-      expect(durations[index], greaterThan(durations[index - 1]));
-    }
+    expect(durations, <double>[5, 45, 120, 240, 420, 600]);
     expect(
       durations.last,
       LightcoreController.layer1ChildTowerMaxConstructionDurationSeconds,
     );
+  });
+
+  test('layer 1 tower build costs ramp toward a meaningful sixth tower', () {
+    final controller = LightcoreController();
+    addTearDown(controller.dispose);
+
+    controller.kills = LightcoreController.unlockKillsForOuterSlot(
+      LightcoreController.slotCount - 1,
+    );
+    controller.lumens = 1000000000;
+
+    final costs = <int>[];
+    for (var index = 0; index < LightcoreController.slotCount; index++) {
+      final config = TowerLibrary.all[index];
+      costs.add(controller.buildCostForConfig(config));
+      expect(controller.buildTowerAt(index, config), isTrue);
+    }
+
+    expect(costs, <int>[10, 25, 55, 110, 220, 400]);
+    expect(costs.last, greaterThanOrEqualTo(costs.first * 40));
   });
 
   test('layer 2 caps active layer 1 set projects at one', () {

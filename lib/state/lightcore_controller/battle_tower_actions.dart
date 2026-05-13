@@ -887,7 +887,7 @@ extension LightcoreControllerBattleTowerActions on LightcoreController {
   void equipCardToCore(String cardId) {
     if (!managerAssignmentUnlocked) {
       _showBanner(
-        'Manager assignment unlocks at Core Lv $managerCoreLevelRequirement or Account Radiance Lv $managerUnlockLevel.',
+        'Manager assignment unlocks when this Layer 1 shell has all $slotCount outer towers online.',
       );
       _notifyNow();
       return;
