@@ -48,7 +48,6 @@ extension LightcoreBattleGameArenaSlotRendering on LightcoreBattleGame {
       );
       final selected = selectedSlotIndex == index;
       final markerColor = selected ? LightcorePalette.mist : ringColor;
-      final markerRadius = _slotRadius * (selected ? 0.09 : 0.07);
       final markerStroke = selected ? 3.4 : 2.2;
       final markerCenter = Offset(
         center.dx + (math.cos(angle) * (ringRadius - (_slotRadius * 0.28))),
@@ -72,26 +71,6 @@ extension LightcoreBattleGameArenaSlotRendering on LightcoreBattleGame {
           ..strokeWidth = markerStroke
           ..strokeCap = StrokeCap.round
           ..color = markerColor.withValues(alpha: selected ? 0.88 : 0.58),
-      );
-      canvas.drawCircle(
-        markerCenter,
-        markerRadius * 2.2,
-        Paint()
-          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8)
-          ..color = markerColor.withValues(alpha: selected ? 0.16 : 0.12),
-      );
-      canvas.drawCircle(
-        markerCenter,
-        markerRadius,
-        Paint()..color = markerColor.withValues(alpha: selected ? 0.98 : 0.82),
-      );
-      canvas.drawCircle(
-        markerCenter,
-        markerRadius,
-        Paint()
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 1.6
-          ..color = LightcorePalette.abyss.withValues(alpha: 0.52),
       );
     }
   }
@@ -130,19 +109,6 @@ extension LightcoreBattleGameArenaSlotRendering on LightcoreBattleGame {
         ..strokeWidth = 2.2
         ..color = coreColor.withValues(alpha: 0.34 + (pulse * 0.12)),
     );
-
-    for (var index = 0; index < 6; index++) {
-      final angle = ((math.pi * 2) / 6) * index + (math.pi / 6);
-      final marker = Offset(
-        center.dx + (math.cos(angle) * rangeVisual),
-        center.dy + (math.sin(angle) * rangeVisual),
-      );
-      canvas.drawCircle(
-        marker,
-        _coreRadius * 0.055,
-        Paint()..color = coreColor.withValues(alpha: 0.72),
-      );
-    }
   }
 
   void _renderSelectedTowerRange(Canvas canvas) {
@@ -205,11 +171,6 @@ extension LightcoreBattleGameArenaSlotRendering on LightcoreBattleGame {
       Paint()
         ..strokeWidth = 2.2
         ..color = towerColor.withValues(alpha: 0.34),
-    );
-    canvas.drawCircle(
-      tetherEnd,
-      _slotRadius * 0.08,
-      Paint()..color = towerColor.withValues(alpha: 0.92),
     );
   }
 
