@@ -24,6 +24,15 @@ extension LightcoreControllerBattleTowerActions on LightcoreController {
       _notifyNow();
       return false;
     }
+    if (tutorialShowsStarterProjectileChoices &&
+        config.id != TowerLibrary.cyanPrism.id &&
+        config.id != TowerLibrary.greenPrism.id) {
+      _showBanner(
+        'Choose one of the two starter projectile lessons first: Thread Beam or Shield Halo.',
+      );
+      _notifyNow();
+      return false;
+    }
     if (_tutorialStep == LightcoreTutorialStep.buildFirstRedTower &&
         slotIndex == 0 &&
         config.id == TowerLibrary.redPrism.id) {

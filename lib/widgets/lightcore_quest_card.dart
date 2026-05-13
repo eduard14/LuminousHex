@@ -12,11 +12,13 @@ class LightcoreQuestCard extends StatefulWidget {
     required this.controller,
     required this.compact,
     this.initiallyExpanded = false,
+    this.instructionOverride,
   });
 
   final LightcoreController controller;
   final bool compact;
   final bool initiallyExpanded;
+  final String? instructionOverride;
 
   @override
   State<LightcoreQuestCard> createState() => _LightcoreQuestCardState();
@@ -86,7 +88,7 @@ class _LightcoreQuestCardState extends State<LightcoreQuestCard> {
   Widget build(BuildContext context) {
     final controller = widget.controller;
     final headline = controller.tutorialHeadline;
-    final instruction = controller.tutorialPrompt;
+    final instruction = widget.instructionOverride ?? controller.tutorialPrompt;
     if (headline == null || instruction == null) {
       return const SizedBox.shrink();
     }

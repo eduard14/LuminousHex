@@ -1649,9 +1649,18 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         }
       : null;
 
-  List<TowerConfig> get tutorialTowerChoices => tutorialNeedsTowerPaletteGate
-      ? const <TowerConfig>[TowerLibrary.redPrism]
-      : towerConfigs.toList(growable: false);
+  List<TowerConfig> get tutorialTowerChoices {
+    if (tutorialNeedsTowerPaletteGate) {
+      return const <TowerConfig>[TowerLibrary.redPrism];
+    }
+    if (tutorialShowsStarterProjectileChoices) {
+      return const <TowerConfig>[
+        TowerLibrary.cyanPrism,
+        TowerLibrary.greenPrism,
+      ];
+    }
+    return towerConfigs.toList(growable: false);
+  }
 
   bool tutorialHighlightsBuildButton(TowerConfig config) =>
       _tutorialStep == LightcoreTutorialStep.buildFirstRedTower &&
@@ -1978,7 +1987,8 @@ extension LightcoreControllerLayerTraits on LightcoreController {
       1 + _normalizeCoreMultiShotUpgradeLevel(upgradeLevel);
 
   String traitBiasSummary(TowerConfig config) {
-    return '${config.defaultProjectileType.label} • ${config.affinity.projectileFamilyLabel} family • no Root payload';
+    final projectile = config.defaultProjectileType;
+    return '${projectile.label}: ${projectile.summary}';
   }
 
   bool showcaseCurrentTutorialTarget() {

@@ -212,44 +212,87 @@ void main() {
       controller.tutorialStep,
       isNot(LightcoreTutorialStep.upgradeCoreRange),
     );
-    expect(controller.tutorialTowerChoices.length, greaterThan(1));
+    expect(controller.tutorialTowerChoices, const [
+      TowerLibrary.cyanPrism,
+      TowerLibrary.greenPrism,
+    ]);
   });
 
-  test('first red tower gates the palette until it is used and upgraded', () {
-    final controller = LightcoreController();
-    addTearDown(controller.dispose);
+  test(
+    'first red tower gates the palette until the flow lesson is complete',
+    () {
+      final controller = LightcoreController();
+      addTearDown(controller.dispose);
 
-    controller.selectCenter();
-    controller.handleBattleCenterTap();
-    controller.kills = LightcoreController.unlockKillsForOuterSlot(1);
-    controller.lumens = 1000;
+      controller.selectCenter();
+      controller.handleBattleCenterTap();
+      controller.kills = LightcoreController.unlockKillsForOuterSlot(1);
+      controller.lumens = 1000;
 
-    expect(controller.tutorialTowerChoices, const [TowerLibrary.redPrism]);
-    expect(controller.tutorialBuildTowerAt(0, TowerLibrary.redPrism), isTrue);
+      expect(controller.tutorialTowerChoices, const [TowerLibrary.redPrism]);
+      expect(controller.tutorialBuildTowerAt(0, TowerLibrary.redPrism), isTrue);
 
-    controller.selectSlot(1);
+      controller.selectSlot(1);
 
-    expect(
-      controller.tutorialBuildTowerAt(1, TowerLibrary.greenPrism),
-      isFalse,
-    );
-    controller.markTutorialFirstTowerStatsOpened();
-    for (var tap = 0; tap < 3; tap += 1) {
-      expect(controller.debugSetTowerCharge(0, charge: 1), isTrue);
-      expect(controller.activateTowerSlot(0, showBanner: false), isTrue);
-    }
-    controller.selectSlot(0);
-    while (controller.slots[0].level < 3) {
-      controller.lumens = controller.upgradeCost(controller.slots[0]);
-      expect(controller.tutorialUpgradeTower(0), isTrue);
-    }
+      expect(
+        controller.tutorialBuildTowerAt(1, TowerLibrary.greenPrism),
+        isFalse,
+      );
+      controller.markTutorialFirstTowerStatsOpened();
+      for (var tap = 0; tap < 3; tap += 1) {
+        expect(controller.debugSetTowerCharge(0, charge: 1), isTrue);
+        expect(controller.activateTowerSlot(0, showBanner: false), isTrue);
+      }
+      controller.selectSlot(0);
+      while (controller.slots[0].level < 3) {
+        controller.lumens = controller.upgradeCost(controller.slots[0]);
+        expect(controller.tutorialUpgradeTower(0), isTrue);
+      }
 
-    expect(controller.tutorialTowerChoices, contains(TowerLibrary.greenPrism));
-    controller.selectSlot(1);
-    controller.lumens = 1000;
-    expect(controller.tutorialBuildTowerAt(1, TowerLibrary.greenPrism), isTrue);
-    expect(controller.slots[1].config?.id, TowerLibrary.greenPrism.id);
-  });
+      expect(controller.tutorialTowerChoices, const [TowerLibrary.redPrism]);
+      expect(
+        controller.tutorialBuildTowerAt(1, TowerLibrary.greenPrism),
+        isFalse,
+      );
+
+      controller.markTutorialStabilityPanelOpened();
+      while (controller.slots[0].level < 4) {
+        controller.lumens = controller.upgradeCost(controller.slots[0]);
+        expect(controller.tutorialUpgradeTower(0), isTrue);
+      }
+      if (controller.hasUnspentRadianceStatPoints) {
+        expect(
+          controller.upgradeRadianceStat(LightcoreRadianceStat.might),
+          isTrue,
+        );
+      }
+
+      expect(controller.tutorialTowerChoices, const [
+        TowerLibrary.cyanPrism,
+        TowerLibrary.greenPrism,
+      ]);
+      expect(
+        controller.traitBiasSummary(TowerLibrary.cyanPrism),
+        contains('Thread Beam:'),
+      );
+      expect(
+        controller.traitBiasSummary(TowerLibrary.greenPrism),
+        contains('Shield Halo:'),
+      );
+      expect(
+        controller.tutorialBuildTowerAt(1, TowerLibrary.orangePrism),
+        isFalse,
+      );
+      controller.selectSlot(1);
+      controller.lumens = 1000;
+      expect(
+        controller.tutorialBuildTowerAt(1, TowerLibrary.greenPrism),
+        isTrue,
+      );
+      expect(controller.slots[1].config?.id, TowerLibrary.greenPrism.id);
+      expect(controller.tutorialTowerChoices.length, TowerLibrary.all.length);
+    },
+  );
 
   test('tap quest shows charge state until the tower can shoot', () {
     final controller = LightcoreController();

@@ -2036,7 +2036,7 @@ void main() {
     );
     expect(
       find.text(
-        'Tap the charged Red Prism to add pulses. More queued shots means faster kills, more Lumens, and earlier upgrades.',
+        'Close the open tower controls, then tap the charged Comet Mortar on the battlefield.',
       ),
       findsOneWidget,
     );

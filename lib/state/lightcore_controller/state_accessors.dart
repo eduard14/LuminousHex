@@ -624,18 +624,19 @@ extension LightcoreControllerStateAccessors on LightcoreController {
   bool get hasActiveTutorial => _tutorialStep != LightcoreTutorialStep.none;
 
   bool get tutorialNeedsTowerPaletteGate {
-    if (_earlyTutorialComplete) {
+    if (_earlyTutorialComplete || _currentLayerEarlyTutorialComplete) {
       return false;
     }
-    final tower = _firstTutorialTower;
-    if (tower == null) {
-      return true;
-    }
-    return !_tutorialCoreShotTapLearned ||
-        !_tutorialFirstTowerStatsOpened ||
-        tower.fireSequence < 3 ||
-        tower.level < 3;
+    return true;
   }
+
+  bool get tutorialShowsStarterProjectileChoices =>
+      _earlyTutorialComplete &&
+      _totalTowersBuilt <= 1 &&
+      builtTowerCount == 1 &&
+      activeLayer.parentLayerId == null &&
+      activeLayer.tier == 1 &&
+      !_layer2.unlocked;
 
   bool get tutorialHighlightsBattleCore =>
       _tutorialStep == LightcoreTutorialStep.unfoldShell ||

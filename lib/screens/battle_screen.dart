@@ -670,7 +670,7 @@ class _BattleScreenState extends State<BattleScreen> {
     }
     if (_completeTowerStatsTutorialFor(target)) {
       setState(() {
-        _selectionControlsVisible = true;
+        _selectionControlsVisible = false;
       });
       return;
     }
@@ -792,6 +792,10 @@ class _BattleScreenState extends State<BattleScreen> {
     LightcoreController controller,
     _BattleStatsTarget target,
   ) {
+    if (_tutorialOpenPanelBlocksCurrentStep(controller) &&
+        _isStatsTargetOpen(target)) {
+      return true;
+    }
     switch (target.kind) {
       case _BattleStatsTargetKind.core:
         return false;
@@ -807,6 +811,10 @@ class _BattleScreenState extends State<BattleScreen> {
     LightcoreController controller,
     _BattleStatsTarget target,
   ) {
+    final targetOpen = _isStatsTargetOpen(target) && _selectionControlsVisible;
+    if (_tutorialOpenPanelBlocksCurrentStep(controller) && targetOpen) {
+      return 'Close panel';
+    }
     switch (target.kind) {
       case _BattleStatsTargetKind.core:
         return null;
@@ -816,10 +824,10 @@ class _BattleScreenState extends State<BattleScreen> {
           return null;
         }
         if (controller.tutorialHighlightsTowerStatsButton(slotIndex)) {
-          return 'Open stats';
+          return targetOpen ? 'Done' : 'Open stats';
         }
         if (controller.tutorialHighlightsUpgradeButton(slotIndex)) {
-          return 'Open upgrades';
+          return targetOpen ? 'Upgrade' : 'Open upgrades';
         }
         return null;
     }
@@ -932,6 +940,7 @@ class _BattleScreenState extends State<BattleScreen> {
     LightcoreController controller, {
     required bool compact,
     required bool initiallyExpanded,
+    String? instructionOverride,
   }) {
     if (!widget.showBattleHud ||
         !widget.showQuestPanel ||
@@ -944,6 +953,7 @@ class _BattleScreenState extends State<BattleScreen> {
       controller: controller,
       compact: compact,
       initiallyExpanded: initiallyExpanded,
+      instructionOverride: instructionOverride,
     );
   }
 
@@ -980,6 +990,87 @@ class _BattleScreenState extends State<BattleScreen> {
     return false;
   }
 
+  bool _tutorialOpenPanelBlocksCurrentStep(LightcoreController controller) {
+    if (!_selectionControlsVisible) {
+      return false;
+    }
+    return switch (controller.tutorialStep) {
+      LightcoreTutorialStep.tapBattleCore ||
+      LightcoreTutorialStep.tapFirstTower ||
+      LightcoreTutorialStep.tapSecondShellTower ||
+      LightcoreTutorialStep.pullFirstWhiteEnemy ||
+      LightcoreTutorialStep.pullFirstRedEnemy ||
+      LightcoreTutorialStep.setFirstEnemyTarget ||
+      LightcoreTutorialStep.adjustEnemyCount ||
+      LightcoreTutorialStep.openTowerMatrix ||
+      LightcoreTutorialStep.openStore ||
+      LightcoreTutorialStep.claimBattlePassReward ||
+      LightcoreTutorialStep.openBossPulls ||
+      LightcoreTutorialStep.armFirstBoss ||
+      LightcoreTutorialStep.defeatFirstBoss ||
+      LightcoreTutorialStep.openEquipment ||
+      LightcoreTutorialStep.openManagers ||
+      LightcoreTutorialStep.forgeTowerManager ||
+      LightcoreTutorialStep.assignTowerManager ||
+      LightcoreTutorialStep.forgeEnemyManager ||
+      LightcoreTutorialStep.assignEnemyManager ||
+      LightcoreTutorialStep.setScreenName ||
+      LightcoreTutorialStep.openFriends ||
+      LightcoreTutorialStep.openMentees ||
+      LightcoreTutorialStep.openMentors ||
+      LightcoreTutorialStep.inspectEnemyBlitz ||
+      LightcoreTutorialStep.inspectHexGauntlet ||
+      LightcoreTutorialStep.inspectArenaFlow => true,
+      _ => false,
+    };
+  }
+
+  String? _tutorialInstructionOverride({
+    required LightcoreController controller,
+    required OuterTowerState? selected,
+    required bool selectionOverlayVisible,
+  }) {
+    if (!selectionOverlayVisible) {
+      return null;
+    }
+    final selectedSlotIndex = selected?.slotIndex;
+    switch (controller.tutorialStep) {
+      case LightcoreTutorialStep.buildFirstRedTower:
+        if (selectedSlotIndex == 0 && selected?.isBuilt == false) {
+          return 'Hex 1 build controls are already open. Choose Comet Mortar to start the first fabrication.';
+        }
+      case LightcoreTutorialStep.inspectFirstTowerStats:
+        if (selectedSlotIndex == 0 && selected?.isBuilt == true) {
+          return 'Tower Stats are already open. Read power, charge, cooldown, and the Core Bomb projectile, then tap the highlighted tower-control button when done.';
+        }
+      case LightcoreTutorialStep.upgradeFirstTowerToLevel3:
+        if (selectedSlotIndex == 0 && selected?.isBuilt == true) {
+          return 'Use the Upgrade button in the open Comet Mortar controls until it reaches level 3.';
+        }
+      case LightcoreTutorialStep.upgradeFirstTowerToLevel4:
+        if (selectedSlotIndex == 0 && selected?.isBuilt == true) {
+          return 'Use the Upgrade button in the open Comet Mortar controls one more time before expanding.';
+        }
+      case LightcoreTutorialStep.tapBattleCore:
+        if (_tutorialOpenPanelBlocksCurrentStep(controller)) {
+          return 'Close the open battle controls, then tap the glowing Lightcore on the battlefield.';
+        }
+      case LightcoreTutorialStep.tapFirstTower:
+        if (_tutorialOpenPanelBlocksCurrentStep(controller)) {
+          return 'Close the open tower controls, then tap the charged Comet Mortar on the battlefield.';
+        }
+      case LightcoreTutorialStep.tapSecondShellTower:
+        if (_tutorialOpenPanelBlocksCurrentStep(controller)) {
+          return 'Close the open tower controls, then tap the charged child-shell tower on the battlefield.';
+        }
+      default:
+        if (_tutorialOpenPanelBlocksCurrentStep(controller)) {
+          return 'Close the open battle controls, then continue this quest.';
+        }
+    }
+    return null;
+  }
+
   Widget _buildBattleLayout({
     required BuildContext context,
     required LightcoreController controller,
@@ -1001,12 +1092,18 @@ class _BattleScreenState extends State<BattleScreen> {
       controller: controller,
       selected: selected,
     );
+    final selectionOverlayVisible = selectionOverlay != null;
     final questDetailsShouldYield =
         _tutorialQuestDetailsShouldYieldVisibleTarget(controller);
     final questPanel = _buildQuestPanel(
       controller,
       compact: compact,
       initiallyExpanded: !compact && !questDetailsShouldYield,
+      instructionOverride: _tutorialInstructionOverride(
+        controller: controller,
+        selected: selected,
+        selectionOverlayVisible: selectionOverlayVisible,
+      ),
     );
 
     return Stack(
@@ -1834,6 +1931,8 @@ class _EmptySlotPanel extends StatelessWidget {
         Text(
           controller.isCompositeLayer
               ? 'This empty edge can create a new lower-class shell that shares the global economy.'
+              : controller.tutorialShowsStarterProjectileChoices
+              ? 'Choose one of two starter projectile styles. Thread Beam is steady single-target pressure; Shield Halo is a persistent guard ring.'
               : 'Pick one of the unlocked color prisms to activate this surrounding slot.',
           style: textTheme.bodyMedium,
         ),
