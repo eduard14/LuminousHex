@@ -457,7 +457,7 @@ class _SuiteDropdown<T> extends StatelessWidget {
   }
 }
 
-class _ThreatRegionMapPanel extends StatelessWidget {
+class _ThreatRegionMapPanel extends StatefulWidget {
   const _ThreatRegionMapPanel({
     required this.controller,
     this.compact = false,
@@ -473,9 +473,45 @@ class _ThreatRegionMapPanel extends StatelessWidget {
   final double scanProgress;
 
   @override
+  State<_ThreatRegionMapPanel> createState() => _ThreatRegionMapPanelState();
+}
+
+class _ThreatRegionMapPanelState extends State<_ThreatRegionMapPanel> {
+  String? _previewRegionId;
+
+  LightcoreController get controller => widget.controller;
+
+  void _handleRegionTap(ThreatRegionConfig region) {
+    final state = controller.threatRegionStateById(region.id);
+    if (state?.revealed ?? false) {
+      controller.selectThreatRegion(region.id);
+      setState(() {
+        _previewRegionId = null;
+      });
+      return;
+    }
+    setState(() {
+      _previewRegionId = region.id;
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     final selected = controller.selectedThreatRegionConfig;
     final selectedState = controller.selectedThreatRegionState;
+    final previewCandidate = _previewRegionId == null
+        ? null
+        : ThreatRegionLibrary.byId[_previewRegionId!];
+    final previewState = previewCandidate == null
+        ? null
+        : controller.threatRegionStateById(previewCandidate.id);
+    final previewed =
+        previewCandidate != null && !(previewState?.revealed ?? false)
+        ? previewCandidate
+        : null;
+    final detailRegion = previewed ?? selected;
+    final detailState = previewed == null ? selectedState : previewState;
+    final detailRevealed = detailState?.revealed ?? false;
     final textTheme = Theme.of(context).textTheme;
     final displayedRegions = controller.threatRegionConfigs;
     ThreatRegionConfig? mergeTarget;
@@ -495,7 +531,9 @@ class _ThreatRegionMapPanel extends StatelessWidget {
       }
     }
     return AuroraPanel(
-      tint: selected == null
+      tint: previewed != null
+          ? _rarityTint(previewed.rarity)
+          : selected == null
           ? LightcorePalette.solar
           : _rarityTint(selected.rarity),
       padding: const EdgeInsets.all(14),
@@ -516,20 +554,26 @@ class _ThreatRegionMapPanel extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           SizedBox(
-            height: compact ? 220 : 260,
-            child: CustomPaint(
+            height: widget.compact ? 240 : 286,
+            child: _ThreatRegionMapViewport(
+              compact: widget.compact,
+              onRegionTapped: _handleRegionTap,
               painter: _ThreatRegionMapPainter(
                 regions: displayedRegions,
                 states: {
                   for (final state in controller.threatRegions)
                     state.regionId: state,
                 },
+                echoCounts: {
+                  for (final region in displayedRegions)
+                    region.id: controller.regionEchoCount(region.id),
+                },
                 selectedRegionId: controller.selectedThreatRegionId,
-                scanOriginRegionId: scanOriginRegionId,
-                scanHitRegionId: scanHitRegionId,
-                scanProgress: scanProgress,
+                previewRegionId: previewed?.id,
+                scanOriginRegionId: widget.scanOriginRegionId,
+                scanHitRegionId: widget.scanHitRegionId,
+                scanProgress: widget.scanProgress,
               ),
-              child: const SizedBox.expand(),
             ),
           ),
           const SizedBox(height: 12),
@@ -552,23 +596,35 @@ class _ThreatRegionMapPanel extends StatelessWidget {
             onChanged: (value) {
               if (value != null) {
                 controller.selectThreatRegion(value);
+                setState(() {
+                  _previewRegionId = null;
+                });
               }
             },
           ),
-          if (selected != null && selectedState != null) ...[
+          if (detailRegion != null && detailState != null) ...[
             const SizedBox(height: 12),
             Text(
-              '${selected.name}: Lv ${selectedState.stabilizedLevel}/${selected.stabilizationLayers} stabilized • Echoes ${controller.regionEchoCount(selected.id)}',
+              detailRevealed
+                  ? '${detailRegion.name}: Lv ${detailState.stabilizedLevel}/${detailRegion.stabilizationLayers} stabilized • Echoes ${controller.regionEchoCount(detailRegion.id)}'
+                  : '${detailRegion.name}: uncharted Ring ${detailRegion.ring} sector',
               style: textTheme.bodyMedium,
             ),
             const SizedBox(height: 8),
             Text(
-              selected.anomalyCardIds.join(' • '),
+              _threatRegionLore(detailRegion),
               style: textTheme.bodySmall?.copyWith(
                 color: LightcorePalette.mist.withValues(alpha: 0.72),
               ),
             ),
-            if (!compact) ...[
+            const SizedBox(height: 8),
+            Text(
+              _threatRegionSignatureLine(detailRegion),
+              style: textTheme.bodySmall?.copyWith(
+                color: _rarityTint(detailRegion.rarity).withValues(alpha: 0.82),
+              ),
+            ),
+            if (detailRevealed && !widget.compact) ...[
               const SizedBox(height: 12),
               if (controller.enemyManagers.isNotEmpty)
                 DropdownButtonFormField<String>(
@@ -576,9 +632,9 @@ class _ThreatRegionMapPanel extends StatelessWidget {
                       controller.enemyManagers.any(
                         (manager) =>
                             manager.instanceId ==
-                            selectedState.assignedThreatDirectorId,
+                            detailState.assignedThreatDirectorId,
                       )
-                      ? selectedState.assignedThreatDirectorId
+                      ? detailState.assignedThreatDirectorId
                       : null,
                   decoration: const InputDecoration(
                     labelText: 'Region Threat Director',
@@ -593,7 +649,7 @@ class _ThreatRegionMapPanel extends StatelessWidget {
                   onChanged: (value) {
                     if (value != null) {
                       controller.assignThreatDirectorToRegion(
-                        regionId: selected.id,
+                        regionId: detailRegion.id,
                         managerId: value,
                       );
                     }
@@ -606,48 +662,53 @@ class _ThreatRegionMapPanel extends StatelessWidget {
                   tint: LightcorePalette.layer2,
                 ),
             ],
-            const SizedBox(height: 12),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                GuidedFocusFrame(
-                  active: controller.tutorialHighlightsThreatChallengeButton,
-                  tint: LightcorePalette.quest,
-                  child: FilledButton.icon(
-                    onPressed:
-                        controller.canStartThreatRegionChallenge(selected.id)
-                        ? () =>
-                              controller.startThreatRegionChallenge(selected.id)
-                        : null,
-                    icon: const Icon(Icons.flag_rounded),
-                    label: Text(
-                      selectedState.stabilizedLevel >=
-                              selected.stabilizationLayers
-                          ? 'Stable'
-                          : 'Challenge Lv ${selectedState.stabilizedLevel + 1}',
+            if (detailRevealed) ...[
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  GuidedFocusFrame(
+                    active: controller.tutorialHighlightsThreatChallengeButton,
+                    tint: LightcorePalette.quest,
+                    child: FilledButton.icon(
+                      onPressed:
+                          controller.canStartThreatRegionChallenge(
+                            detailRegion.id,
+                          )
+                          ? () => controller.startThreatRegionChallenge(
+                              detailRegion.id,
+                            )
+                          : null,
+                      icon: const Icon(Icons.flag_rounded),
+                      label: Text(
+                        detailState.stabilizedLevel >=
+                                detailRegion.stabilizationLayers
+                            ? 'Stable'
+                            : 'Challenge Lv ${detailState.stabilizedLevel + 1}',
+                      ),
                     ),
                   ),
-                ),
-                OutlinedButton.icon(
-                  onPressed: controller.canScanThreatMap
-                      ? () => controller.scanThreatMap()
-                      : null,
-                  icon: const Icon(Icons.radar_rounded),
-                  label: const Text('Scan'),
-                ),
-                OutlinedButton.icon(
-                  onPressed: mergeTarget == null
-                      ? null
-                      : () => controller.mergeRegionEchoesToReveal(
-                          sourceRegionId: selected.id,
-                          targetRegionId: mergeTarget!.id,
-                        ),
-                  icon: const Icon(Icons.hub_rounded),
-                  label: const Text('Merge Echoes'),
-                ),
-              ],
-            ),
+                  OutlinedButton.icon(
+                    onPressed: controller.canScanThreatMap
+                        ? () => controller.scanThreatMap()
+                        : null,
+                    icon: const Icon(Icons.radar_rounded),
+                    label: const Text('Scan'),
+                  ),
+                  OutlinedButton.icon(
+                    onPressed: mergeTarget == null
+                        ? null
+                        : () => controller.mergeRegionEchoesToReveal(
+                            sourceRegionId: detailRegion.id,
+                            targetRegionId: mergeTarget!.id,
+                          ),
+                    icon: const Icon(Icons.hub_rounded),
+                    label: const Text('Merge Echoes'),
+                  ),
+                ],
+              ),
+            ],
           ],
           if (!controller.fullThreatMapUnlocked) ...[
             const SizedBox(height: 10),
@@ -666,28 +727,178 @@ class _ThreatRegionMapPanel extends StatelessWidget {
   }
 }
 
+class _ThreatRegionMapViewport extends StatefulWidget {
+  const _ThreatRegionMapViewport({
+    required this.painter,
+    required this.onRegionTapped,
+    this.compact = false,
+  });
+
+  final _ThreatRegionMapPainter painter;
+  final ValueChanged<ThreatRegionConfig> onRegionTapped;
+  final bool compact;
+
+  @override
+  State<_ThreatRegionMapViewport> createState() =>
+      _ThreatRegionMapViewportState();
+}
+
+class _ThreatRegionMapViewportState extends State<_ThreatRegionMapViewport> {
+  late final TransformationController _transformationController;
+  double _zoomScale = 1;
+
+  @override
+  void initState() {
+    super.initState();
+    _transformationController = TransformationController()
+      ..addListener(_handleTransformChanged);
+  }
+
+  @override
+  void dispose() {
+    _transformationController
+      ..removeListener(_handleTransformChanged)
+      ..dispose();
+    super.dispose();
+  }
+
+  void _handleTransformChanged() {
+    final nextScale = _transformationController.value
+        .getMaxScaleOnAxis()
+        .clamp(0.9, 3.6)
+        .toDouble();
+    if ((nextScale - _zoomScale).abs() < 0.03) {
+      return;
+    }
+    setState(() {
+      _zoomScale = nextScale;
+    });
+  }
+
+  void _handleTapUp(TapUpDetails details, Size size) {
+    final scenePoint = _transformationController.toScene(details.localPosition);
+    final region = widget.painter.regionAt(scenePoint, size);
+    if (region != null) {
+      widget.onRegionTapped(region);
+    }
+  }
+
+  void _resetTransform() {
+    _transformationController.value = Matrix4.identity();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final width = constraints.maxWidth.isFinite
+            ? constraints.maxWidth
+            : 320.0;
+        final height = constraints.maxHeight.isFinite
+            ? constraints.maxHeight
+            : (widget.compact ? 240.0 : 286.0);
+        final size = Size(width, height);
+        return DecoratedBox(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: LightcorePalette.stroke.withValues(alpha: 0.48),
+            ),
+            gradient: LinearGradient(
+              colors: [
+                LightcorePalette.night.withValues(alpha: 0.94),
+                LightcorePalette.abyss.withValues(alpha: 0.88),
+                LightcorePalette.panel.withValues(alpha: 0.76),
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(16),
+            child: InteractiveViewer(
+              transformationController: _transformationController,
+              minScale: 0.9,
+              maxScale: 3.6,
+              boundaryMargin: const EdgeInsets.all(96),
+              panEnabled: true,
+              scaleEnabled: true,
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTapUp: (details) => _handleTapUp(details, size),
+                onDoubleTap: _resetTransform,
+                child: RepaintBoundary(
+                  child: CustomPaint(
+                    isComplex: true,
+                    painter: widget.painter.copyWithZoom(_zoomScale),
+                    child: SizedBox(width: width, height: height),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
 class _ThreatRegionMapPainter extends CustomPainter {
   const _ThreatRegionMapPainter({
     required this.regions,
     required this.states,
+    required this.echoCounts,
     required this.selectedRegionId,
+    this.previewRegionId,
     this.scanOriginRegionId,
     this.scanHitRegionId,
     this.scanProgress = 0,
+    this.zoomScale = 1,
   });
 
   final List<ThreatRegionConfig> regions;
   final Map<String, ThreatRegionState> states;
+  final Map<String, int> echoCounts;
   final String? selectedRegionId;
+  final String? previewRegionId;
   final String? scanOriginRegionId;
   final String? scanHitRegionId;
   final double scanProgress;
+  final double zoomScale;
+
+  _ThreatRegionMapPainter copyWithZoom(double zoomScale) {
+    return _ThreatRegionMapPainter(
+      regions: regions,
+      states: states,
+      echoCounts: echoCounts,
+      selectedRegionId: selectedRegionId,
+      previewRegionId: previewRegionId,
+      scanOriginRegionId: scanOriginRegionId,
+      scanHitRegionId: scanHitRegionId,
+      scanProgress: scanProgress,
+      zoomScale: zoomScale,
+    );
+  }
+
+  ThreatRegionConfig? regionAt(Offset position, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = _hexGridRadius(size);
+    for (final region in regions.reversed) {
+      final point = _axialToPixel(region.q, region.r, radius, center);
+      final path = _hexPath(point, radius * 0.92);
+      if (path.contains(position)) {
+        return region;
+      }
+    }
+    return null;
+  }
 
   @override
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height / 2);
-    final radius = math.min(size.width, size.height) / 9.2;
-    final paint = Paint()..style = PaintingStyle.fill;
+    final radius = _hexGridRadius(size);
+    _drawMapBackdrop(canvas, size, center, radius);
+    _drawSectorLinks(canvas, center, radius);
     final origin = _regionById(scanOriginRegionId ?? selectedRegionId);
     final maxScanDistance = origin == null
         ? 0
@@ -709,25 +920,41 @@ class _ThreatRegionMapPainter extends CustomPainter {
       final revealed = state?.revealed ?? false;
       final full =
           state != null && state.stabilizedLevel >= region.stabilizationLayers;
-      paint.color = revealed
-          ? (full
-                ? LightcorePalette.success.withValues(alpha: 0.74)
-                : _rarityTint(region.rarity).withValues(alpha: 0.66))
-          : LightcorePalette.mist.withValues(alpha: 0.12);
-      canvas.drawPath(path, paint);
-      if (!revealed) {
-        final lockedFill = Paint()
-          ..style = PaintingStyle.fill
-          ..color = LightcorePalette.night.withValues(alpha: 0.34);
-        canvas.drawPath(path, lockedFill);
-      }
-      final stroke = Paint()
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = revealed ? 1.4 : 1.1
-        ..color = revealed
-            ? LightcorePalette.mist.withValues(alpha: 0.24)
-            : LightcorePalette.mist.withValues(alpha: 0.18);
-      canvas.drawPath(path, stroke);
+      final tint = full ? LightcorePalette.success : _rarityTint(region.rarity);
+      _drawSectorFill(
+        canvas,
+        path: path,
+        center: point,
+        radius: hexRadius,
+        tint: tint,
+        revealed: revealed,
+        full: full,
+        previewed: region.id == previewRegionId,
+      );
+      _drawSectorTexture(
+        canvas,
+        path: path,
+        center: point,
+        radius: hexRadius,
+        region: region,
+        tint: tint,
+        revealed: revealed,
+      );
+      _drawAnomalyMarkers(
+        canvas,
+        center: point,
+        radius: hexRadius,
+        region: region,
+        revealed: revealed,
+      );
+      _drawSectorLabels(
+        canvas,
+        center: point,
+        radius: hexRadius,
+        region: region,
+        state: state,
+        revealed: revealed,
+      );
       if (origin != null && scanProgress > 0) {
         final distance = ThreatRegionLibrary.hexDistance(
           region.q - origin.q,
@@ -757,9 +984,16 @@ class _ThreatRegionMapPainter extends CustomPainter {
       if (region.id == selectedRegionId) {
         final selectedStroke = Paint()
           ..style = PaintingStyle.stroke
-          ..strokeWidth = 3
+          ..strokeWidth = 2.8
           ..color = LightcorePalette.solar;
         canvas.drawPath(path, selectedStroke);
+      }
+      if (region.id == previewRegionId) {
+        final previewStroke = Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 2.4
+          ..color = LightcorePalette.scanGlow.withValues(alpha: 0.88);
+        canvas.drawPath(path, previewStroke);
       }
       if (region.id == scanHitRegionId && scanProgress > 0.72) {
         final hitStroke = Paint()
@@ -770,13 +1004,318 @@ class _ThreatRegionMapPainter extends CustomPainter {
           );
         canvas.drawPath(path, hitStroke);
       }
-      if (region.hasDoubleBoss && revealed) {
-        final dotPaint = Paint()
-          ..style = PaintingStyle.fill
-          ..color = LightcorePalette.warning;
-        canvas.drawCircle(point, radius * 0.16, dotPaint);
+    }
+  }
+
+  double _hexGridRadius(Size size) {
+    return math.min(size.width / 12.4, size.height / 10.9);
+  }
+
+  void _drawMapBackdrop(
+    Canvas canvas,
+    Size size,
+    Offset center,
+    double radius,
+  ) {
+    final rect = Offset.zero & size;
+    final wash = Paint()
+      ..shader = RadialGradient(
+        center: const Alignment(-0.24, -0.28),
+        radius: 1.18,
+        colors: [
+          LightcorePalette.stroke.withValues(alpha: 0.2),
+          LightcorePalette.abyss.withValues(alpha: 0.5),
+          LightcorePalette.night.withValues(alpha: 0.9),
+        ],
+        stops: const [0, 0.5, 1],
+      ).createShader(rect);
+    canvas.drawRect(rect, wash);
+
+    final starPaint = Paint()..style = PaintingStyle.fill;
+    final starCount = (42 + (zoomScale * 14)).round();
+    for (var index = 0; index < starCount; index += 1) {
+      final x = _hashUnit(index, 11) * size.width;
+      final y = _hashUnit(index, 29) * size.height;
+      final alpha = 0.08 + (_hashUnit(index, 47) * 0.22);
+      final starRadius = 0.45 + (_hashUnit(index, 71) * 1.05);
+      starPaint.color = Color.lerp(
+        LightcorePalette.mist,
+        LightcorePalette.aether,
+        _hashUnit(index, 101),
+      )!.withValues(alpha: alpha);
+      canvas.drawCircle(Offset(x, y), starRadius, starPaint);
+    }
+
+    final ringPaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 0.7
+      ..color = LightcorePalette.stroke.withValues(alpha: 0.14);
+    for (var ring = 1; ring <= 3; ring += 1) {
+      canvas.drawCircle(center, radius * (ring * 1.78 + 0.8), ringPaint);
+    }
+  }
+
+  void _drawSectorLinks(Canvas canvas, Offset center, double radius) {
+    final linkPaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 0.9
+      ..strokeCap = StrokeCap.round
+      ..color = LightcorePalette.aether.withValues(alpha: 0.16);
+    for (final region in regions) {
+      final state = states[region.id];
+      if (!(state?.revealed ?? false)) {
+        continue;
+      }
+      final origin = _axialToPixel(region.q, region.r, radius, center);
+      for (final neighbor in regions) {
+        if (neighbor.id.compareTo(region.id) <= 0) {
+          continue;
+        }
+        final neighborState = states[neighbor.id];
+        if (!(neighborState?.revealed ?? false)) {
+          continue;
+        }
+        final distance = ThreatRegionLibrary.hexDistance(
+          neighbor.q - region.q,
+          neighbor.r - region.r,
+        );
+        if (distance == 1) {
+          canvas.drawLine(
+            origin,
+            _axialToPixel(neighbor.q, neighbor.r, radius, center),
+            linkPaint,
+          );
+        }
       }
     }
+  }
+
+  void _drawSectorFill(
+    Canvas canvas, {
+    required Path path,
+    required Offset center,
+    required double radius,
+    required Color tint,
+    required bool revealed,
+    required bool full,
+    required bool previewed,
+  }) {
+    final bounds = path.getBounds().inflate(radius * 0.14);
+    final fillPaint = Paint()
+      ..style = PaintingStyle.fill
+      ..shader = RadialGradient(
+        center: const Alignment(-0.36, -0.42),
+        radius: 1.18,
+        colors: revealed
+            ? [
+                tint.withValues(alpha: full ? 0.5 : 0.36),
+                LightcorePalette.panel.withValues(alpha: 0.52),
+                LightcorePalette.abyss.withValues(alpha: 0.88),
+              ]
+            : [
+                tint.withValues(alpha: previewed ? 0.16 : 0.08),
+                LightcorePalette.panel.withValues(alpha: 0.28),
+                LightcorePalette.night.withValues(alpha: 0.86),
+              ],
+        stops: const [0, 0.48, 1],
+      ).createShader(bounds);
+    canvas.drawPath(path, fillPaint);
+
+    final rimPaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = revealed ? 1.35 : 1.0
+      ..strokeJoin = StrokeJoin.round
+      ..color = revealed
+          ? tint.withValues(alpha: full ? 0.72 : 0.52)
+          : LightcorePalette.mist.withValues(alpha: previewed ? 0.28 : 0.14);
+    canvas.drawPath(path, rimPaint);
+
+    final innerPaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 0.65
+      ..strokeJoin = StrokeJoin.round
+      ..color = LightcorePalette.mist.withValues(alpha: revealed ? 0.18 : 0.08);
+    canvas.drawPath(_hexPath(center, radius * 0.72), innerPaint);
+  }
+
+  void _drawSectorTexture(
+    Canvas canvas, {
+    required Path path,
+    required Offset center,
+    required double radius,
+    required ThreatRegionConfig region,
+    required Color tint,
+    required bool revealed,
+  }) {
+    canvas.save();
+    canvas.clipPath(path);
+    final lanePaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 0.55
+      ..strokeCap = StrokeCap.round
+      ..color = tint.withValues(alpha: revealed ? 0.18 : 0.08);
+    final laneCount = zoomScale > 1.7 ? 4 : 2;
+    for (var lane = -laneCount; lane <= laneCount; lane += 1) {
+      final offset = lane * radius * 0.25;
+      canvas.drawLine(
+        center + Offset(-radius * 0.88, offset - radius * 0.58),
+        center + Offset(radius * 0.88, offset + radius * 0.58),
+        lanePaint,
+      );
+    }
+
+    final dustPaint = Paint()..style = PaintingStyle.fill;
+    final dustCount = zoomScale > 2.1 ? 11 : 5;
+    final seed = (region.q * 31) + (region.r * 47) + (region.ring * 83);
+    for (var index = 0; index < dustCount; index += 1) {
+      final angle = _hashUnit(seed + index, 17) * math.pi * 2;
+      final distance = radius * (0.18 + (_hashUnit(seed + index, 43) * 0.56));
+      final point =
+          center + Offset(math.cos(angle), math.sin(angle)) * distance;
+      dustPaint.color = Color.lerp(
+        tint,
+        LightcorePalette.layer2,
+        0.42,
+      )!.withValues(alpha: revealed ? 0.28 : 0.1);
+      canvas.drawCircle(
+        point,
+        0.55 + (_hashUnit(seed + index, 67) * 0.75),
+        dustPaint,
+      );
+    }
+    canvas.restore();
+  }
+
+  void _drawAnomalyMarkers(
+    Canvas canvas, {
+    required Offset center,
+    required double radius,
+    required ThreatRegionConfig region,
+    required bool revealed,
+  }) {
+    final orbitPaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 0.75
+      ..color = LightcorePalette.mist.withValues(alpha: revealed ? 0.16 : 0.08);
+    canvas.drawCircle(center, radius * 0.32, orbitPaint);
+
+    for (var index = 0; index < region.anomalyCardIds.length; index += 1) {
+      final config = _enemyConfigById(region.anomalyCardIds[index]);
+      final color = config?.affinity.color ?? _rarityTint(region.rarity);
+      final angle = (-math.pi / 2) + (index * math.pi * 2 / 3);
+      final point =
+          center + Offset(math.cos(angle), math.sin(angle)) * radius * 0.32;
+      final markerPaint = Paint()
+        ..style = PaintingStyle.fill
+        ..color = revealed
+            ? color.withValues(alpha: 0.9)
+            : color.withValues(alpha: 0.22);
+      canvas.drawCircle(
+        point,
+        radius * (revealed ? 0.075 : 0.052),
+        markerPaint,
+      );
+      final glowPaint = Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 0.8
+        ..color = color.withValues(alpha: revealed ? 0.48 : 0.14);
+      canvas.drawCircle(point, radius * 0.11, glowPaint);
+    }
+
+    if (region.hasDoubleBoss) {
+      final bossPaint = Paint()
+        ..style = PaintingStyle.fill
+        ..color = LightcorePalette.warning.withValues(
+          alpha: revealed ? 0.88 : 0.24,
+        );
+      canvas.drawCircle(center, radius * 0.13, bossPaint);
+      canvas.drawCircle(
+        center + Offset(radius * 0.16, -radius * 0.04),
+        radius * 0.09,
+        bossPaint,
+      );
+    }
+  }
+
+  void _drawSectorLabels(
+    Canvas canvas, {
+    required Offset center,
+    required double radius,
+    required ThreatRegionConfig region,
+    required ThreatRegionState? state,
+    required bool revealed,
+  }) {
+    if (zoomScale < 1.45) {
+      return;
+    }
+    final tint = _rarityTint(region.rarity);
+    final title = region.ring == 0 ? 'CORE' : 'R${region.ring}.${region.q}';
+    _drawCenteredText(
+      canvas,
+      title,
+      center + Offset(0, -radius * 0.54),
+      fontSize: radius * 0.18,
+      color: revealed
+          ? LightcorePalette.mist.withValues(alpha: 0.78)
+          : LightcorePalette.mist.withValues(alpha: 0.32),
+      weight: FontWeight.w700,
+    );
+    if (zoomScale < 2.05) {
+      return;
+    }
+    final progress = revealed && state != null
+        ? 'Lv ${state.stabilizedLevel}/${region.stabilizationLayers}'
+        : 'UNCHARTED';
+    _drawCenteredText(
+      canvas,
+      progress,
+      center + Offset(0, radius * 0.5),
+      fontSize: radius * 0.16,
+      color: revealed
+          ? tint.withValues(alpha: 0.92)
+          : LightcorePalette.warning.withValues(alpha: 0.58),
+      weight: FontWeight.w700,
+    );
+    if (zoomScale < 2.65 || !revealed) {
+      return;
+    }
+    final echoCount = echoCounts[region.id] ?? 0;
+    _drawCenteredText(
+      canvas,
+      'E$echoCount',
+      center + Offset(0, radius * 0.68),
+      fontSize: radius * 0.13,
+      color: LightcorePalette.aether.withValues(alpha: 0.74),
+      weight: FontWeight.w600,
+    );
+  }
+
+  void _drawCenteredText(
+    Canvas canvas,
+    String text,
+    Offset center, {
+    required double fontSize,
+    required Color color,
+    FontWeight weight = FontWeight.w500,
+  }) {
+    final painter = TextPainter(
+      text: TextSpan(
+        text: text,
+        style: TextStyle(
+          color: color,
+          fontSize: fontSize,
+          fontWeight: weight,
+          letterSpacing: 0,
+        ),
+      ),
+      textAlign: TextAlign.center,
+      textDirection: TextDirection.ltr,
+      maxLines: 1,
+    )..layout();
+    painter.paint(
+      canvas,
+      center - Offset(painter.width / 2, painter.height / 2),
+    );
   }
 
   void _drawScanHitAnticipation(
@@ -953,6 +1492,11 @@ class _ThreatRegionMapPainter extends CustomPainter {
     return matches.isEmpty ? null : matches.first;
   }
 
+  double _hashUnit(int seed, int salt) {
+    final raw = math.sin((seed * 12.9898) + (salt * 78.233)) * 43758.5453;
+    return raw - raw.floorToDouble();
+  }
+
   Offset _axialToPixel(int q, int r, double radius, Offset center) {
     final x = radius * math.sqrt(3) * (q + (r / 2));
     final y = radius * 1.5 * r;
@@ -977,11 +1521,107 @@ class _ThreatRegionMapPainter extends CustomPainter {
   bool shouldRepaint(covariant _ThreatRegionMapPainter oldDelegate) {
     return oldDelegate.regions != regions ||
         oldDelegate.states != states ||
+        oldDelegate.echoCounts != echoCounts ||
         oldDelegate.selectedRegionId != selectedRegionId ||
+        oldDelegate.previewRegionId != previewRegionId ||
         oldDelegate.scanOriginRegionId != scanOriginRegionId ||
         oldDelegate.scanHitRegionId != scanHitRegionId ||
-        oldDelegate.scanProgress != scanProgress;
+        oldDelegate.scanProgress != scanProgress ||
+        oldDelegate.zoomScale != zoomScale;
   }
+}
+
+EnemyConfig? _enemyConfigById(String id) {
+  if (EnemyLibrary.starterDefault.id == id) {
+    return EnemyLibrary.starterDefault;
+  }
+  for (final config in EnemyLibrary.all) {
+    if (config.id == id) {
+      return config;
+    }
+  }
+  return null;
+}
+
+EnemyConfig? _bossConfigById(String? id) {
+  if (id == null) {
+    return null;
+  }
+  for (final config in BossEnemyLibrary.all) {
+    if (config.id == id) {
+      return config;
+    }
+  }
+  return null;
+}
+
+String _threatRegionSignatureLine(ThreatRegionConfig region) {
+  final anomalies = region.anomalyCardIds
+      .map(_enemyConfigById)
+      .whereType<EnemyConfig>()
+      .map((config) => config.name)
+      .toList(growable: false);
+  final boss = _bossConfigById(region.primaryBossId);
+  final secondaryBoss = _bossConfigById(region.secondaryBossId);
+  final bossNames = [
+    if (boss != null) boss.name,
+    if (secondaryBoss != null) secondaryBoss.name,
+  ];
+  final anomalyLabel = anomalies.isEmpty
+      ? 'unresolved anomaly signatures'
+      : anomalies.join(' • ');
+  final bossLabel = bossNames.isEmpty
+      ? 'unresolved apex signature'
+      : bossNames.join(' • ');
+  return 'Anomalies: $anomalyLabel\nApex: $bossLabel';
+}
+
+String _threatRegionLore(ThreatRegionConfig region) {
+  final boss = _bossConfigById(region.primaryBossId);
+  final secondaryBoss = _bossConfigById(region.secondaryBossId);
+  final anomalies = region.anomalyCardIds
+      .map(_enemyConfigById)
+      .whereType<EnemyConfig>()
+      .toList(growable: false);
+  final leadAffinity =
+      boss?.affinity ??
+      (anomalies.isEmpty
+          ? PrototypeAffinity.neutral
+          : anomalies.first.affinity);
+  final myth = _sectorMythFor(leadAffinity, boss?.name ?? 'the apex signature');
+  final traits = anomalies
+      .map((config) => config.traitLabel.toLowerCase())
+      .toSet()
+      .take(3)
+      .join(', ');
+  final anomalyClause = traits.isEmpty
+      ? 'soft static and incomplete wake traces'
+      : traits;
+  final bossClause = secondaryBoss == null
+      ? 'The deepest return points to ${boss?.name ?? 'an unnamed apex anomaly'}.'
+      : 'Two apex returns overlap: ${boss?.name ?? 'an unnamed apex anomaly'} and ${secondaryBoss.name}.';
+  return '$myth Sensor drift shows $anomalyClause. $bossClause';
+}
+
+String _sectorMythFor(PrototypeAffinity affinity, String bossName) {
+  return switch (affinity) {
+    PrototypeAffinity.black =>
+      'This region has been avoided because of the myth of a leviathan-sized black hole; no one has seen the shadow behind $bossName and returned with their clocks intact.',
+    PrototypeAffinity.ember =>
+      'Crews route around this sector because old hulls still glow red on approach, as if $bossName keeps a furnace awake between the lanes.',
+    PrototypeAffinity.flare =>
+      'Pilots call this a slingshot sector: ships enter fast, exit faster, and leave orange afterimages that point back toward $bossName.',
+    PrototypeAffinity.solar =>
+      'Navigation charts stutter here, repeating the same yellow coordinates until scouts swear $bossName is blinking through the beacon grid.',
+    PrototypeAffinity.verdant =>
+      'Derelict stations in this sector bloom with green light after power failure, a sign that $bossName is feeding on abandoned routes.',
+    PrototypeAffinity.aether =>
+      'Every rescue ping in this sector comes back blue and doubled, like $bossName is turning distress calls into bait.',
+    PrototypeAffinity.violet =>
+      'Expeditions report violet echoes from trips they never took, and each duplicate log places $bossName one hex closer.',
+    PrototypeAffinity.neutral =>
+      'This sector looks quiet on first scan, which is why crews distrust it; the clean readings keep bending back toward $bossName.',
+  };
 }
 
 class EnemyPullSheet extends StatefulWidget {
