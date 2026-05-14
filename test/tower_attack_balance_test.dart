@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:lightcore/data/enemy_configs.dart';
 import 'package:lightcore/data/tower_configs.dart';
 import 'package:lightcore/models/lightcore_config.dart';
 import 'package:lightcore/models/lightcore_state.dart';
@@ -127,6 +128,13 @@ List<Map<String, dynamic>> _towerStrengthTowerSlots() {
       'payloadType': PayloadType.none.name,
     };
   });
+}
+
+EnemyConfig _basicEnemyForAffinity(PrototypeAffinity affinity) {
+  return EnemyLibrary.all.firstWhere(
+    (config) =>
+        config.rarity == EnemyCardRarity.basic && config.affinity == affinity,
+  );
 }
 
 void main() {
@@ -486,5 +494,120 @@ void main() {
         firstController.enemies.take(3).map((enemy) => enemy.angle).toList()
           ..sort();
     expect(firstClusterAngles.last - firstClusterAngles.first, lessThan(0.14));
+  });
+
+  test('basic anomalies pressure the relay faster while still spiraling', () {
+    final relayHits = <EnemyState>[];
+    final controller = LightcoreController(
+      relayHitListener: relayHits.add,
+      spawnRandom: Random(4),
+    );
+    addTearDown(controller.dispose);
+
+    final spawned = controller.debugSpawnEnemyFromCard(
+      EnemyLibrary.basicWhite.id,
+      angle: 0,
+      radius: controller.spawnRadius,
+    )!;
+
+    controller.tick(8);
+    final advanced = controller.enemies.single;
+    expect((advanced.angle - spawned.angle).abs(), greaterThan(0.5));
+    expect(relayHits, isEmpty);
+
+    controller.tick(34);
+    expect(relayHits, hasLength(1));
+    expect(controller.enemies, isEmpty);
+  });
+
+  test('yellow anomalies blink inward unless shocked', () {
+    final yellow = _basicEnemyForAffinity(PrototypeAffinity.solar);
+    final blinking = LightcoreController(spawnRandom: Random(9));
+    final shocked = LightcoreController(spawnRandom: Random(9));
+    addTearDown(blinking.dispose);
+    addTearDown(shocked.dispose);
+
+    blinking.debugSpawnEnemyFromCard(
+      yellow.id,
+      angle: 0,
+      radius: blinking.spawnRadius,
+    );
+    shocked.debugSpawnEnemyFromCard(
+      yellow.id,
+      angle: 0,
+      radius: shocked.spawnRadius,
+      shockRemaining: 5,
+    );
+
+    blinking.tick(2.2);
+    shocked.tick(2.2);
+
+    expect(
+      blinking.enemies.single.radius,
+      lessThan(shocked.enemies.single.radius - 45),
+    );
+  });
+
+  test('purple split children spawn inward from the defeated parent', () {
+    final controller = LightcoreController();
+    addTearDown(controller.dispose);
+    final purple = _basicEnemyForAffinity(PrototypeAffinity.violet);
+
+    final parent = controller.debugSpawnEnemyFromCard(
+      purple.id,
+      angle: 0,
+      radius: 320,
+    )!;
+
+    expect(controller.debugDefeatEnemy(parent.id), isTrue);
+    expect(controller.enemies, hasLength(2));
+    expect(
+      controller.enemies.every((enemy) => enemy.radius < parent.radius),
+      isTrue,
+    );
+  });
+
+  test('relay stability damage scales with remaining enemy health', () {
+    double leakDamageForHealth(double healthFraction) {
+      final controller = LightcoreController();
+      addTearDown(controller.dispose);
+      controller.debugSpawnEnemyFromCard(
+        EnemyLibrary.basicWhite.id,
+        angle: -pi / 2,
+        radius: controller.relayImpactRadius + 1,
+        healthFraction: healthFraction,
+      );
+      controller.tick(0.1);
+      return controller.coreDamageAmount;
+    }
+
+    final fullHealthDamage = leakDamageForHealth(1);
+    final lowHealthDamage = leakDamageForHealth(0.1);
+
+    expect(fullHealthDamage, greaterThan(lowHealthDamage * 2));
+  });
+
+  test('empty lane leaks remain harsher than occupied lane leaks', () {
+    final emptyLane = LightcoreController();
+    final occupiedLane = LightcoreController();
+    addTearDown(emptyLane.dispose);
+    addTearDown(occupiedLane.dispose);
+
+    occupiedLane.lumens = 10000;
+    expect(occupiedLane.buildTowerAt(0, TowerLibrary.bluePrism), isTrue);
+
+    for (final controller in <LightcoreController>[emptyLane, occupiedLane]) {
+      controller.debugSpawnEnemyFromCard(
+        EnemyLibrary.basicWhite.id,
+        angle: -pi / 2,
+        radius: controller.relayImpactRadius + 1,
+      );
+      controller.tick(0.1);
+    }
+
+    expect(
+      emptyLane.coreDamageAmount,
+      greaterThan(occupiedLane.coreDamageAmount),
+    );
   });
 }

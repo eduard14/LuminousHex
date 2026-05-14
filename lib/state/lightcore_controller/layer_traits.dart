@@ -1766,6 +1766,18 @@ extension LightcoreControllerLayerTraits on LightcoreController {
       _activeLayerAllowsProgressionUpgrades &&
       _core.multiShotUpgradeLevel < maxCoreMultiShotUpgradeLevel;
 
+  bool get coreEnergyUnlocked => activeLayer.tier >= _coreEnergyUnlockLayer;
+
+  bool get canUpgradeCoreEnergyCapacity =>
+      coreEnergyUnlocked &&
+      _activeLayerAllowsProgressionUpgrades &&
+      _core.energyCapacityUpgradeLevel < _maxCoreEnergyUpgradeLevel;
+
+  bool get canUpgradeCoreEnergyRecovery =>
+      coreEnergyUnlocked &&
+      _activeLayerAllowsProgressionUpgrades &&
+      _core.energyRecoveryUpgradeLevel < _maxCoreEnergyUpgradeLevel;
+
   int get coreRangeUpgradeCost => canUpgradeCoreRange
       ? _coreUpgradeCost(baseCost: 18, upgradeLevel: _core.rangeUpgradeLevel)
       : 0;
@@ -1794,6 +1806,56 @@ extension LightcoreControllerLayerTraits on LightcoreController {
   int get coreLevelUpgradeCost => canUpgradeCoreLevel
       ? _coreUpgradeCost(baseCost: 26, upgradeLevel: max(0, _core.level - 1))
       : 0;
+
+  int get coreEnergyCapacityUpgradeCost => canUpgradeCoreEnergyCapacity
+      ? _coreUpgradeCost(
+          baseCost: 28,
+          upgradeLevel: _core.energyCapacityUpgradeLevel,
+        )
+      : 0;
+
+  int get coreEnergyRecoveryUpgradeCost => canUpgradeCoreEnergyRecovery
+      ? _coreUpgradeCost(
+          baseCost: 24,
+          upgradeLevel: _core.energyRecoveryUpgradeLevel,
+        )
+      : 0;
+
+  double _coreEnergyCapacityForUpgradeLevel(int upgradeLevel) {
+    final normalized = upgradeLevel.clamp(0, _maxCoreEnergyUpgradeLevel);
+    return _baseCoreEnergyCapacity +
+        (normalized * _coreEnergyCapacityUpgradeStep);
+  }
+
+  double _coreEnergyRecoveryForUpgradeLevel(int upgradeLevel) {
+    final normalized = upgradeLevel.clamp(0, _maxCoreEnergyUpgradeLevel);
+    return _baseCoreEnergyRecoveryPerSecond +
+        (normalized * _coreEnergyRecoveryUpgradeStep);
+  }
+
+  double get coreEnergyCapacity =>
+      _coreEnergyCapacityForUpgradeLevel(_core.energyCapacityUpgradeLevel);
+
+  double get coreEnergyRecoveryPerSecond =>
+      _coreEnergyRecoveryForUpgradeLevel(_core.energyRecoveryUpgradeLevel);
+
+  double get coreEnergyRatio => coreEnergyUnlocked
+      ? (_core.coreEnergy / max(0.001, coreEnergyCapacity))
+            .clamp(0.0, 1.0)
+            .toDouble()
+      : 1.0;
+
+  String get coreEnergyLabel =>
+      '${_core.coreEnergy.clamp(0, coreEnergyCapacity).round()}/${coreEnergyCapacity.round()}';
+
+  String get coreEnergyRecoveryLabel =>
+      '+${coreEnergyRecoveryPerSecond.toStringAsFixed(1)}/s';
+
+  double get _coreEnergyOutputMultiplier =>
+      coreEnergyUnlocked ? 0.92 + (0.08 * coreEnergyRatio) : 1.0;
+
+  double get _coreEnergyStabilityRecoveryMultiplier =>
+      coreEnergyUnlocked ? 0.90 + (0.20 * coreEnergyRatio) : 1.0;
 
   int coreStatUpgradeCost(TowerUpgradeOptionState upgrade) {
     if (!canTrainCoreStats || upgrade.rank >= maxTowerUpgradeRank) {

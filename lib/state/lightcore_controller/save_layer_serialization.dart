@@ -498,6 +498,7 @@ extension LightcoreControllerSaveLayerSerialization on LightcoreController {
   Map<String, dynamic> _serializeCoreState(CoreState core) {
     return <String, dynamic>{
       'coreStability': core.coreStability,
+      'coreEnergy': core.coreEnergy,
       'flowEfficiency': core.flowEfficiency,
       'fireCooldownRemaining': core.fireCooldownRemaining,
       'packetCooldownRemaining': core.packetCooldownRemaining,
@@ -518,6 +519,8 @@ extension LightcoreControllerSaveLayerSerialization on LightcoreController {
       'fireSpeedUpgradeLevel': core.fireSpeedUpgradeLevel,
       'multiShotUpgradeLevel': core.multiShotUpgradeLevel,
       'queueLimitUpgradeLevel': core.queueLimitUpgradeLevel,
+      'energyCapacityUpgradeLevel': core.energyCapacityUpgradeLevel,
+      'energyRecoveryUpgradeLevel': core.energyRecoveryUpgradeLevel,
       'coreUpgradeOptions': core.coreUpgradeOptions
           .map(_serializeTowerUpgradeState)
           .toList(growable: false),
@@ -544,6 +547,16 @@ extension LightcoreControllerSaveLayerSerialization on LightcoreController {
       data['coreStability'],
       fallback: _stabilityForLegacyOutputEfficiency(legacyFlowEfficiency),
     ).clamp(0.0, _maxCoreStability);
+    final energyCapacityUpgradeLevel = _intValue(
+      data['energyCapacityUpgradeLevel'],
+    ).clamp(0, _maxCoreEnergyUpgradeLevel);
+    final coreEnergyCapacity = _coreEnergyCapacityForUpgradeLevel(
+      energyCapacityUpgradeLevel,
+    );
+    final coreEnergy = _doubleValue(
+      data['coreEnergy'],
+      fallback: coreEnergyCapacity,
+    ).clamp(0.0, coreEnergyCapacity);
     final projectileType =
         _enumByName(
           ProjectileType.values,
@@ -559,6 +572,7 @@ extension LightcoreControllerSaveLayerSerialization on LightcoreController {
         .toList(growable: false);
     return CoreState(
       coreStability: coreStability,
+      coreEnergy: coreEnergy,
       flowEfficiency: _outputEfficiencyPercentForStability(coreStability),
       fireCooldownRemaining: _doubleValue(data['fireCooldownRemaining']),
       packetCooldownRemaining: _doubleValue(data['packetCooldownRemaining']),
@@ -595,6 +609,10 @@ extension LightcoreControllerSaveLayerSerialization on LightcoreController {
       fireSpeedUpgradeLevel: _intValue(data['fireSpeedUpgradeLevel']),
       multiShotUpgradeLevel: _intValue(data['multiShotUpgradeLevel']),
       queueLimitUpgradeLevel: _intValue(data['queueLimitUpgradeLevel']),
+      energyCapacityUpgradeLevel: energyCapacityUpgradeLevel,
+      energyRecoveryUpgradeLevel: _intValue(
+        data['energyRecoveryUpgradeLevel'],
+      ).clamp(0, _maxCoreEnergyUpgradeLevel),
       coreUpgradeOptions: coreUpgradeOptions.isNotEmpty
           ? coreUpgradeOptions
           : _rollCoreUpgradeBoardForLoadout(projectileType, payloadType),

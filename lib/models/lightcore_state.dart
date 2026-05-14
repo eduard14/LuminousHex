@@ -1520,6 +1520,7 @@ class ImpactState {
 class CoreState {
   const CoreState({
     this.coreStability = 100,
+    this.coreEnergy = 100,
     required this.flowEfficiency,
     required this.fireCooldownRemaining,
     this.packetCooldownRemaining = 0,
@@ -1536,10 +1537,13 @@ class CoreState {
     this.fireSpeedUpgradeLevel = 0,
     this.multiShotUpgradeLevel = 0,
     this.queueLimitUpgradeLevel = 0,
+    this.energyCapacityUpgradeLevel = 0,
+    this.energyRecoveryUpgradeLevel = 0,
     this.coreUpgradeOptions = const <TowerUpgradeOptionState>[],
   });
 
   final double coreStability;
+  final double coreEnergy;
   final double flowEfficiency;
   final double fireCooldownRemaining;
   final double packetCooldownRemaining;
@@ -1556,10 +1560,13 @@ class CoreState {
   final int fireSpeedUpgradeLevel;
   final int multiShotUpgradeLevel;
   final int queueLimitUpgradeLevel;
+  final int energyCapacityUpgradeLevel;
+  final int energyRecoveryUpgradeLevel;
   final List<TowerUpgradeOptionState> coreUpgradeOptions;
 
   CoreState copyWith({
     double? coreStability,
+    double? coreEnergy,
     double? flowEfficiency,
     double? fireCooldownRemaining,
     double? packetCooldownRemaining,
@@ -1576,10 +1583,13 @@ class CoreState {
     int? fireSpeedUpgradeLevel,
     int? multiShotUpgradeLevel,
     int? queueLimitUpgradeLevel,
+    int? energyCapacityUpgradeLevel,
+    int? energyRecoveryUpgradeLevel,
     List<TowerUpgradeOptionState>? coreUpgradeOptions,
   }) {
     return CoreState(
       coreStability: coreStability ?? this.coreStability,
+      coreEnergy: coreEnergy ?? this.coreEnergy,
       flowEfficiency: flowEfficiency ?? this.flowEfficiency,
       fireCooldownRemaining:
           fireCooldownRemaining ?? this.fireCooldownRemaining,
@@ -1602,6 +1612,10 @@ class CoreState {
           multiShotUpgradeLevel ?? this.multiShotUpgradeLevel,
       queueLimitUpgradeLevel:
           queueLimitUpgradeLevel ?? this.queueLimitUpgradeLevel,
+      energyCapacityUpgradeLevel:
+          energyCapacityUpgradeLevel ?? this.energyCapacityUpgradeLevel,
+      energyRecoveryUpgradeLevel:
+          energyRecoveryUpgradeLevel ?? this.energyRecoveryUpgradeLevel,
       coreUpgradeOptions: coreUpgradeOptions ?? this.coreUpgradeOptions,
     );
   }

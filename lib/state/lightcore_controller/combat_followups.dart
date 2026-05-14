@@ -132,7 +132,7 @@ extension LightcoreControllerCombatFollowups on LightcoreController {
         _buildEnemyFromCard(
           source.copyWith(level: enemy.cardLevel),
           angle: enemy.angle + (0.18 * direction),
-          radius: enemy.radius + 8,
+          radius: max(_relayImpactRadius + 12, enemy.radius - 14),
           splitDepth: enemy.splitDepth + 1,
           angularJitter: 0.36 * direction,
         ),
@@ -153,7 +153,14 @@ extension LightcoreControllerCombatFollowups on LightcoreController {
     final slotIndex = _slotIndexForAngle(enemy.angle);
     final tower = _slots[slotIndex];
     final slotAngle = _slotAngle(slotIndex);
-    final hitDamage = enemy.jamStrength * _relayHitLumenHarvestDamageScale;
+    final occupiedLaneHitDamage =
+        enemy.jamStrength *
+        _relayHitLumenHarvestDamageScale *
+        _relayHitHealthDamageFactor(enemy, emptyLane: false);
+    final emptyLaneHitDamage =
+        enemy.jamStrength *
+        _emptyLaneLumenHarvestDamageScale *
+        _relayHitHealthDamageFactor(enemy, emptyLane: true);
     _impacts.add(
       ImpactState(
         id: 'impact_${_impactCounter++}',
@@ -176,7 +183,7 @@ extension LightcoreControllerCombatFollowups on LightcoreController {
           _queueDisruptionMultiplierForEnemy(enemy);
       final nextDisruption = min(1.25, tower.disruption + jamAmount);
       final nextCharge = max(0.0, tower.charge - (enemy.jamStrength * 0.28));
-      _applyLumenHarvestDamage(hitDamage, source: enemy);
+      _applyLumenHarvestDamage(occupiedLaneHitDamage, source: enemy);
       _slots[slotIndex] = tower.copyWith(
         disruption: nextDisruption,
         charge: nextCharge,
@@ -192,7 +199,7 @@ extension LightcoreControllerCombatFollowups on LightcoreController {
         _ammoQueue.removeAt(0);
       }
       _applyLumenHarvestDamage(
-        enemy.jamStrength * _emptyLaneLumenHarvestDamageScale,
+        emptyLaneHitDamage,
         source: enemy,
         emptyLane: true,
       );
@@ -201,6 +208,18 @@ extension LightcoreControllerCombatFollowups on LightcoreController {
         category: LightcoreNotificationCategory.battle,
       );
     }
+  }
+
+  double _relayHitHealthDamageFactor(
+    EnemyState enemy, {
+    required bool emptyLane,
+  }) {
+    final healthRatio = (enemy.health / max(0.001, enemy.maxHealth))
+        .clamp(0.0, 1.0)
+        .toDouble();
+    return emptyLane
+        ? 0.30 + (0.70 * healthRatio)
+        : 0.20 + (0.80 * healthRatio);
   }
 
   int _slotIndexForAngle(double angle) {
@@ -323,8 +342,34 @@ extension LightcoreControllerCombatFollowups on LightcoreController {
       return;
     }
     _setCoreStability(
-      _core.coreStability + (coreStabilityRecoveryPerSecond * dt),
+      _core.coreStability +
+          (coreStabilityRecoveryPerSecond *
+              _coreEnergyStabilityRecoveryMultiplier *
+              dt),
     );
+  }
+
+  void _recoverCoreEnergy(double dt) {
+    if (!coreEnergyUnlocked || dt <= 0) {
+      return;
+    }
+    final capacity = coreEnergyCapacity;
+    if (_core.coreEnergy >= capacity) {
+      return;
+    }
+    _core = _core.copyWith(
+      coreEnergy: min(
+        capacity,
+        _core.coreEnergy + (coreEnergyRecoveryPerSecond * dt),
+      ),
+    );
+  }
+
+  void _spendCoreEnergy(double amount) {
+    if (!coreEnergyUnlocked || amount <= 0) {
+      return;
+    }
+    _core = _core.copyWith(coreEnergy: max(0.0, _core.coreEnergy - amount));
   }
 
   double _normalEnemyRarityHealthScale(EnemyCardRarity rarity) =>

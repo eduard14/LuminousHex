@@ -29,6 +29,7 @@ extension LightcoreControllerCombatLoop on LightcoreController {
       if (foreground) {
         _prepareLocalhostAutoTapper();
       }
+      _recoverCoreEnergy(dt);
       _recoverLumenHarvest(dt);
       elapsed += battleDt;
       _advanceShots(battleDt);

@@ -418,12 +418,11 @@ extension LightcoreControllerCombatProjectiles on LightcoreController {
     while (remaining > 0) {
       final step = min(remaining, 0.05);
       final movementSlowFactor = slowRemaining > 0 ? enemy.slowFactor : 1.0;
-      final progressFactor = (radius / spawnRadius).clamp(0.22, 1.0);
       radius = max(
         _relayImpactRadius,
         radius - (enemy.speed * movementSlowFactor * step),
       );
-      angle += enemy.angularVelocity * step * (1.4 - progressFactor);
+      angle += _enemyAngularDriftStep(enemy, radius, step);
       slowRemaining = max(0.0, slowRemaining - step);
       remaining -= step;
       if (radius <= _relayImpactRadius) {

@@ -801,6 +801,58 @@ extension LightcoreControllerBattleTowerActions on LightcoreController {
     return true;
   }
 
+  bool upgradeCoreEnergyCapacity() {
+    if (!canUpgradeCoreEnergyCapacity) {
+      return false;
+    }
+
+    final cost = coreEnergyCapacityUpgradeCost;
+    if (lumens < cost) {
+      return false;
+    }
+
+    final previousCapacity = coreEnergyCapacity;
+    final nextLevel = _core.energyCapacityUpgradeLevel + 1;
+    final nextCapacity = _coreEnergyCapacityForUpgradeLevel(nextLevel);
+    lumens -= cost;
+    _recordLumenSpend(cost);
+    _recordUpgradePurchase();
+    _core = _core.copyWith(
+      energyCapacityUpgradeLevel: nextLevel,
+      coreEnergy: min(
+        nextCapacity,
+        _core.coreEnergy + (nextCapacity - previousCapacity),
+      ),
+    );
+    _storeActiveLayer();
+    _showBanner('Core energy capacity upgraded to ${nextCapacity.round()}.');
+    _notifyNow();
+    return true;
+  }
+
+  bool upgradeCoreEnergyRecovery() {
+    if (!canUpgradeCoreEnergyRecovery) {
+      return false;
+    }
+
+    final cost = coreEnergyRecoveryUpgradeCost;
+    if (lumens < cost) {
+      return false;
+    }
+
+    final nextLevel = _core.energyRecoveryUpgradeLevel + 1;
+    lumens -= cost;
+    _recordLumenSpend(cost);
+    _recordUpgradePurchase();
+    _core = _core.copyWith(energyRecoveryUpgradeLevel: nextLevel);
+    _storeActiveLayer();
+    _showBanner(
+      'Core energy recovery upgraded to ${_coreEnergyRecoveryForUpgradeLevel(nextLevel).toStringAsFixed(1)}/s.',
+    );
+    _notifyNow();
+    return true;
+  }
+
   bool sellTower(int slotIndex) {
     if (slotIndex < 0 || slotIndex >= _slots.length) {
       return false;

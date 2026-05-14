@@ -150,11 +150,17 @@ extension LightcoreControllerCombatEnemies on LightcoreController {
 
       final movementSlowFactor = enemy.slowRemaining > 0 ? enemy.slowFactor : 1;
       final slowedSpeed = enemy.speed * movementSlowFactor;
-      final progressFactor = (enemy.radius / spawnRadius).clamp(0.22, 1.0);
-      final radius = enemy.radius - (slowedSpeed * dt);
-      final angle =
-          enemy.angle + (enemy.angularVelocity * dt * (1.4 - progressFactor));
       final nextAge = enemy.age + dt;
+      var radius = enemy.radius - (slowedSpeed * dt);
+      var angle = enemy.angle + _enemyAngularDriftStep(enemy, enemy.radius, dt);
+      final blinkMovement = _yellowBlinkMovement(
+        enemy,
+        nextAge: nextAge,
+        radius: radius,
+        angle: angle,
+      );
+      radius = blinkMovement.radius;
+      angle = blinkMovement.angle;
       if (radius <= _relayImpactRadius) {
         _registerRelayHit(enemy.copyWith(health: health));
       } else {
@@ -191,6 +197,58 @@ extension LightcoreControllerCombatEnemies on LightcoreController {
         payloadType: PayloadType.overheat,
       );
     }
+  }
+
+  double _enemyAngularDriftStep(EnemyState enemy, double radius, double dt) {
+    if (dt <= 0 || enemy.angularVelocity == 0) {
+      return 0;
+    }
+    final progressFactor = (radius / spawnRadius).clamp(0.22, 1.0);
+    final driftScale = 0.58 + ((1 - progressFactor) * 0.42);
+    final angularSpeed = (enemy.angularVelocity * driftScale)
+        .clamp(
+          -LightcoreController._enemyAngularDriftCapPerSecond,
+          LightcoreController._enemyAngularDriftCapPerSecond,
+        )
+        .toDouble();
+    return angularSpeed * dt;
+  }
+
+  ({double angle, double radius}) _yellowBlinkMovement(
+    EnemyState enemy, {
+    required double nextAge,
+    required double radius,
+    required double angle,
+  }) {
+    if (!enemy.config.affinities.contains(PrototypeAffinity.solar) ||
+        enemy.shockRemaining > 0 ||
+        !_crossedYellowBlinkWindow(enemy.age, nextAge)) {
+      return (angle: angle, radius: radius);
+    }
+
+    final rarityBonus = enemy.config.rarity.index * 8.0;
+    return (
+      angle: _normalizeAngle(
+        angle + _randomCentered(LightcoreController._yellowBlinkAngleShift),
+      ),
+      radius:
+          radius -
+          (LightcoreController._yellowBlinkBaseRadiusSkip + rarityBonus),
+    );
+  }
+
+  bool _crossedYellowBlinkWindow(double previousAge, double nextAge) {
+    int blinkCount(double age) {
+      if (age < LightcoreController._yellowBlinkFirstSeconds) {
+        return 0;
+      }
+      return 1 +
+          ((age - LightcoreController._yellowBlinkFirstSeconds) /
+                  LightcoreController._yellowBlinkIntervalSeconds)
+              .floor();
+    }
+
+    return blinkCount(nextAge) > blinkCount(previousAge);
   }
 
   void _maybeSpawnBossMinions(

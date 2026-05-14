@@ -185,6 +185,7 @@ extension LightcoreControllerCombatFiring on LightcoreController {
       ProjectileType projectileType;
       PayloadType payloadType;
       double shotPower;
+      double energySpend;
       int? sourceSlotIndex;
       double cooldownMultiplier = 1.0;
       double critChance;
@@ -253,10 +254,12 @@ extension LightcoreControllerCombatFiring on LightcoreController {
               ammo.minDamageMultiplier,
               ammo.maxDamageMultiplier,
             ) *
-            _projectileDamageMultiplier(projectileType);
+            _projectileDamageMultiplier(projectileType) *
+            _coreEnergyOutputMultiplier;
         if (_ammoUsesBlueFocusLaser(ammo)) {
           shotPower *= _blueFocusLaserDamageMultiplier;
         }
+        energySpend = 3 + (payloadType == PayloadType.none ? 0 : 1);
       } else {
         if (!allowDefaultShot) {
           break;
@@ -291,7 +294,9 @@ extension LightcoreControllerCombatFiring on LightcoreController {
               coreMaxDamageMultiplier,
             ) *
             _projectileDamageMultiplier(projectileType) *
-            _gearPowerMultiplier;
+            _gearPowerMultiplier *
+            _coreEnergyOutputMultiplier;
+        energySpend = 5 + (payloadType == PayloadType.none ? 0 : 1);
         advancesCoreSequence = true;
       }
 
@@ -346,6 +351,7 @@ extension LightcoreControllerCombatFiring on LightcoreController {
       if (advancesCoreSequence) {
         nextFireSequence += 1;
       }
+      _spendCoreEnergy(energySpend);
       volleyTargetIds.add(target.id);
       firedShots += 1;
     }

@@ -172,7 +172,8 @@ extension LightcoreControllerBattleResetActions on LightcoreController {
     _swarmActivated = false;
     _battleSpawnPolicy = LightcoreBattleSpawnPolicy.automatic;
     _enemySpiralMovementEnabled = true;
-    _enemyMovementSpeedMultiplier = 1.0;
+    _enemyMovementSpeedMultiplier =
+        LightcoreController._defaultEnemyMovementSpeedMultiplier;
     _battleKillRewardsEnabled = true;
     _lastEnemyPackPulls = <PackPullResult>[];
     _lastBossPackPulls = <PackPullResult>[];

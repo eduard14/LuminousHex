@@ -1359,6 +1359,16 @@ class _CoreStatsPanel extends StatelessWidget {
             fontWeight: FontWeight.w600,
           ),
         ),
+        if (controller.coreEnergyUnlocked) ...[
+          const SizedBox(height: 6),
+          Text(
+            'Nexus Energy: ${controller.coreEnergyLabel}  •  Recovery ${controller.coreEnergyRecoveryLabel}',
+            style: textTheme.bodyMedium?.copyWith(
+              color: LightcorePalette.aether,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
         const SizedBox(height: 14),
         Wrap(
           spacing: 12,
@@ -1430,6 +1440,36 @@ class _CoreStatsPanel extends StatelessWidget {
                     : 'Multi-Shot Maxed',
               ),
             ),
+            if (controller.coreEnergyUnlocked)
+              FilledButton.icon(
+                onPressed:
+                    controller.canUpgradeCoreEnergyCapacity &&
+                        controller.lumens >=
+                            controller.coreEnergyCapacityUpgradeCost
+                    ? controller.upgradeCoreEnergyCapacity
+                    : null,
+                icon: const Icon(Icons.battery_charging_full_rounded),
+                label: Text(
+                  controller.canUpgradeCoreEnergyCapacity
+                      ? 'Energy Cap • ${controller.coreEnergyCapacityUpgradeCost}L'
+                      : 'Energy Cap Maxed',
+                ),
+              ),
+            if (controller.coreEnergyUnlocked)
+              FilledButton.icon(
+                onPressed:
+                    controller.canUpgradeCoreEnergyRecovery &&
+                        controller.lumens >=
+                            controller.coreEnergyRecoveryUpgradeCost
+                    ? controller.upgradeCoreEnergyRecovery
+                    : null,
+                icon: const Icon(Icons.bolt_rounded),
+                label: Text(
+                  controller.canUpgradeCoreEnergyRecovery
+                      ? 'Energy Recovery • ${controller.coreEnergyRecoveryUpgradeCost}L'
+                      : 'Energy Recovery Maxed',
+                ),
+              ),
             if (controller.hasSourceLayer)
               OutlinedButton.icon(
                 onPressed: controller.enterSourceLayer,

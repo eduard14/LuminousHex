@@ -928,6 +928,17 @@ const double _minimumOutputEfficiency =
     LightcoreController._minimumOutputEfficiency;
 const double _baseCoreStabilityRecoveryPerSecond =
     LightcoreController._baseCoreStabilityRecoveryPerSecond;
+const int _coreEnergyUnlockLayer = LightcoreController._coreEnergyUnlockLayer;
+const int _maxCoreEnergyUpgradeLevel =
+    LightcoreController._maxCoreEnergyUpgradeLevel;
+const double _baseCoreEnergyCapacity =
+    LightcoreController._baseCoreEnergyCapacity;
+const double _coreEnergyCapacityUpgradeStep =
+    LightcoreController._coreEnergyCapacityUpgradeStep;
+const double _baseCoreEnergyRecoveryPerSecond =
+    LightcoreController._baseCoreEnergyRecoveryPerSecond;
+const double _coreEnergyRecoveryUpgradeStep =
+    LightcoreController._coreEnergyRecoveryUpgradeStep;
 const double _apexBaseStabilityDamageMultiplier =
     LightcoreController._apexBaseStabilityDamageMultiplier;
 const double _apexRarityStabilityDamageStep =
@@ -1287,6 +1298,12 @@ class LightcoreController extends ChangeNotifier {
   static const double _minimumOutputEfficiency = 0.15;
   static const double _outputEfficiencyGamma = 1.10;
   static const double _baseCoreStabilityRecoveryPerSecond = 0.8;
+  static const int _coreEnergyUnlockLayer = 3;
+  static const int _maxCoreEnergyUpgradeLevel = 5;
+  static const double _baseCoreEnergyCapacity = 100;
+  static const double _coreEnergyCapacityUpgradeStep = 20;
+  static const double _baseCoreEnergyRecoveryPerSecond = 7;
+  static const double _coreEnergyRecoveryUpgradeStep = 1.4;
   static const double _apexBaseStabilityDamageMultiplier = 2.5;
   static const double _apexRarityStabilityDamageStep = 0.82;
   static const double _minimumSpawnRadius = 860;
@@ -1314,6 +1331,13 @@ class LightcoreController extends ChangeNotifier {
   static const double _bossBaseDefenseScale = 0.62;
   static const double _bossTierDefenseScaleStep = 0.04;
   static const double _bossSpeedScale = 0.74;
+  static const double _defaultEnemyMovementSpeedMultiplier = 1.32;
+  static const double _enemyAngularDriftCapPerSecond = 0.42;
+  static const double _yellowBlinkFirstSeconds = 1.6;
+  static const double _yellowBlinkIntervalSeconds = 3.1;
+  static const double _yellowBlinkAngleShift = 0.34;
+  static const double _yellowBlinkBaseRadiusSkip =
+      _spawnRadiusBandSpacing * 3.5;
   static const double _uiNotifyCadence = 0.12;
   static const double _coreBaseRange =
       _relayImpactRadius +
@@ -1540,7 +1564,7 @@ class LightcoreController extends ChangeNotifier {
   LightcoreBattleSpawnPolicy _battleSpawnPolicy =
       LightcoreBattleSpawnPolicy.automatic;
   bool _enemySpiralMovementEnabled = true;
-  double _enemyMovementSpeedMultiplier = 1.0;
+  double _enemyMovementSpeedMultiplier = _defaultEnemyMovementSpeedMultiplier;
   bool _battleKillRewardsEnabled = true;
 
   // TODO(authority): Move persistent player state behind a repository backed by

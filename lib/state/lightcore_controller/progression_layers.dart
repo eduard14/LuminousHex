@@ -1700,6 +1700,8 @@ extension LightcoreControllerProgressionLayers on LightcoreController {
     required double radius,
     int? level,
     bool boss = false,
+    double? healthFraction,
+    double shockRemaining = 0,
   }) {
     final cards = boss ? _bossEnemyCards : _enemyCards;
     final sourceIndex = cards.indexWhere((card) => card.config.id == cardId);
@@ -1708,11 +1710,18 @@ extension LightcoreControllerProgressionLayers on LightcoreController {
     }
 
     final source = cards[sourceIndex];
-    final enemy = _buildEnemyFromCard(
+    var enemy = _buildEnemyFromCard(
       source.copyWith(level: level ?? source.level),
       angle: angle,
       radius: radius,
     );
+    if (healthFraction != null || shockRemaining > 0) {
+      final healthRatio = (healthFraction ?? 1).clamp(0.0, 1.0).toDouble();
+      enemy = enemy.copyWith(
+        health: enemy.maxHealth * healthRatio,
+        shockRemaining: shockRemaining,
+      );
+    }
     _enemies.add(enemy);
     return enemy;
   }
@@ -1752,6 +1761,28 @@ extension LightcoreControllerProgressionLayers on LightcoreController {
     _completeLayer3Trial();
     _notifyNow();
     return true;
+  }
+
+  @visibleForTesting
+  void debugSetCoreEnergy(double value) {
+    if (!kDebugMode) {
+      return;
+    }
+    _core = _core.copyWith(
+      coreEnergy: value.clamp(0.0, coreEnergyCapacity).toDouble(),
+    );
+    activeLayer.core = _core;
+    _notifyNow();
+  }
+
+  @visibleForTesting
+  void debugSetCoreStability(double value) {
+    if (!kDebugMode) {
+      return;
+    }
+    _setCoreStability(value);
+    activeLayer.core = _core;
+    _notifyNow();
   }
 
   @visibleForTesting

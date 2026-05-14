@@ -21,7 +21,8 @@ class _EventBattleConfig {
     this.installCoreManager = true,
     this.spawnPolicy = LightcoreBattleSpawnPolicy.automatic,
     this.enemySpiralMovementEnabled = true,
-    this.enemyMovementSpeedMultiplier = 1.0,
+    this.enemyMovementSpeedMultiplier =
+        LightcoreController._defaultEnemyMovementSpeedMultiplier,
     this.killRewardsEnabled = true,
     this.seedUnlockExperience = true,
     this.outerRingRevealed = true,
