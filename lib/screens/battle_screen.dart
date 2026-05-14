@@ -503,7 +503,10 @@ class _BattleScreenState extends State<BattleScreen> {
     controller.handleBattleCenterTap();
     setState(() {
       _statsTarget = const _BattleStatsTarget.core();
-      if (_panelFocus != _BattlePanelFocus.core) {
+      if (controller.tutorialStep == LightcoreTutorialStep.waitForFirstHex) {
+        _panelFocus = _BattlePanelFocus.core;
+        _selectionControlsVisible = true;
+      } else if (_panelFocus != _BattlePanelFocus.core) {
         _panelFocus = _BattlePanelFocus.none;
       }
     });
@@ -797,7 +800,7 @@ class _BattleScreenState extends State<BattleScreen> {
     }
     switch (target.kind) {
       case _BattleStatsTargetKind.core:
-        return false;
+        return controller.tutorialHighlightsCoreStats;
       case _BattleStatsTargetKind.slot:
         final slotIndex = target.slotIndex;
         return slotIndex != null &&
@@ -816,7 +819,11 @@ class _BattleScreenState extends State<BattleScreen> {
     }
     switch (target.kind) {
       case _BattleStatsTargetKind.core:
-        return null;
+        return controller.tutorialHighlightsCoreStats
+            ? targetOpen
+                  ? 'Core stats'
+                  : 'Open core'
+            : null;
       case _BattleStatsTargetKind.slot:
         final slotIndex = target.slotIndex;
         if (slotIndex == null) {
@@ -1020,19 +1027,19 @@ class _BattleScreenState extends State<BattleScreen> {
     switch (controller.tutorialStep) {
       case LightcoreTutorialStep.buildFirstRedTower:
         if (selectedSlotIndex == 0 && selected?.isBuilt == false) {
-          return 'Hex 1 build controls are already open. Choose Comet Mortar to start the first fabrication.';
+          return 'Hex 1 build controls are already open. Choose Comet Mortar or Rayline Spire to start the first fabrication.';
         }
       case LightcoreTutorialStep.inspectFirstTowerStats:
         if (selectedSlotIndex == 0 && selected?.isBuilt == true) {
-          return 'Tower Stats are already open. Read power, charge, cooldown, and the Core Bomb projectile, then tap the highlighted tower-control button when done.';
+          return 'Tower Stats are already open. Read power, charge, cooldown, and the projectile type, then tap the highlighted tower-control button when done.';
         }
       case LightcoreTutorialStep.upgradeFirstTowerToLevel3:
         if (selectedSlotIndex == 0 && selected?.isBuilt == true) {
-          return 'Use the Upgrade button in the open Comet Mortar controls until it reaches level 3.';
+          return 'Use the Tower Level button in the open Hex 1 controls until it reaches level 3.';
         }
       case LightcoreTutorialStep.upgradeFirstTowerToLevel4:
         if (selectedSlotIndex == 0 && selected?.isBuilt == true) {
-          return 'Use the Upgrade button in the open Comet Mortar controls one more time before expanding.';
+          return 'Use the Tower Level button in the open Hex 1 controls one more time before expanding.';
         }
       case LightcoreTutorialStep.tapBattleCore:
         if (_tutorialOpenPanelBlocksCurrentStep(controller)) {
@@ -1040,7 +1047,7 @@ class _BattleScreenState extends State<BattleScreen> {
         }
       case LightcoreTutorialStep.tapFirstTower:
         if (_tutorialOpenPanelBlocksCurrentStep(controller)) {
-          return 'Close the open tower controls, then tap the charged Comet Mortar on the battlefield.';
+          return 'Close the open tower controls, then tap the charged first tower on the battlefield.';
         }
       case LightcoreTutorialStep.tapSecondShellTower:
         if (_tutorialOpenPanelBlocksCurrentStep(controller)) {
@@ -1782,7 +1789,7 @@ class _TowerStatsPanel extends StatelessWidget {
         if (hasTowerProgression && !tower.isFabricating) ...[
           const SizedBox(height: 6),
           Text(
-            'Level ${levelCost}L  •  Stat ranks ${controller.towerUpgradePointsSpent(tower)}/${controller.towerUpgradePointsCap(tower)}',
+            'Tower Level ${tower.level}/${LightcoreController.maxTowerLevel} • Next ${levelCost}L  •  Tower stat ranks ${controller.towerUpgradePointsSpent(tower)}/${controller.towerUpgradePointsCap(tower)}',
             style: textTheme.bodyMedium?.copyWith(
               color: LightcorePalette.solar,
               fontWeight: FontWeight.w600,
@@ -1817,7 +1824,7 @@ class _TowerStatsPanel extends StatelessWidget {
                             ? 'Inner Shell Ready'
                             : 'Open Shell'
                       : tower.level < LightcoreController.maxTowerLevel
-                      ? 'Upgrade Level $levelCost Lumens'
+                      ? 'Tower Level • $levelCost Lumens'
                       : controller.isTowerComplete(tower)
                       ? 'Complete'
                       : 'Level Max',
@@ -1914,6 +1921,8 @@ class _EmptySlotPanel extends StatelessWidget {
         Text(
           controller.isCompositeLayer
               ? 'This empty edge can create a new lower-class shell that shares the global economy.'
+              : controller.tutorialNeedsTowerPaletteGate
+              ? 'Choose one of two starter projectile styles. Comet Mortar is slower area pressure; Rayline Spire is steadier beam pressure.'
               : controller.tutorialShowsStarterProjectileChoices
               ? 'Choose one of two starter projectile styles. Thread Beam is steady single-target pressure; Shield Halo is a persistent guard ring.'
               : 'Pick one of the unlocked color prisms to activate this surrounding slot.',

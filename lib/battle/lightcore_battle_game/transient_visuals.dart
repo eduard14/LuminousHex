@@ -116,9 +116,7 @@ extension LightcoreBattleGameTransientVisuals on LightcoreBattleGame {
   }
 
   void _updateEnemyFaceVisuals(double dt) {
-    final currentEnemyIds = controller.enemies
-        .map((enemy) => enemy.id)
-        .toSet();
+    final currentEnemyIds = controller.enemies.map((enemy) => enemy.id).toSet();
 
     for (final entry in _enemyHitFaceRemaining.entries.toList()) {
       if (!currentEnemyIds.contains(entry.key)) {

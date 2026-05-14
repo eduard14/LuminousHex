@@ -12,14 +12,15 @@ extension LightcoreControllerBattleTowerActions on LightcoreController {
 
   bool _prepareTutorialTowerBuild(int slotIndex, TowerConfig config) {
     if (tutorialNeedsTowerPaletteGate && slotIndex != 0) {
-      _showBanner('Tune the first Red Prism before expanding to another hex.');
+      _showBanner(
+        'Tune the first starter tower before expanding to another hex.',
+      );
       _notifyNow();
       return false;
     }
-    if (tutorialNeedsTowerPaletteGate &&
-        config.id != TowerLibrary.redPrism.id) {
+    if (tutorialNeedsTowerPaletteGate && !_isOpeningStarterTower(config)) {
       _showBanner(
-        'Start with the Red Prism. The rest of the colors unlock after the first tower is ready and upgraded.',
+        'Start with Comet Mortar or Rayline Spire. The rest of the colors unlock after the first tower is ready and upgraded.',
       );
       _notifyNow();
       return false;
@@ -35,7 +36,7 @@ extension LightcoreControllerBattleTowerActions on LightcoreController {
     }
     if (_tutorialStep == LightcoreTutorialStep.buildFirstRedTower &&
         slotIndex == 0 &&
-        config.id == TowerLibrary.redPrism.id) {
+        _isOpeningStarterTower(config)) {
       final buildCost = buildCostForConfig(config);
       if (lumens < buildCost) {
         lumens = buildCost;
@@ -372,7 +373,9 @@ extension LightcoreControllerBattleTowerActions on LightcoreController {
 
   bool tutorialUpgradeTower(int slotIndex) {
     if (!_earlyTutorialComplete && slotIndex != 0) {
-      _showBanner('Keep tuning the first Red Prism until the lesson finishes.');
+      _showBanner(
+        'Keep tuning the first starter tower until the lesson finishes.',
+      );
       _notifyNow();
       return false;
     }

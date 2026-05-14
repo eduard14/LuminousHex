@@ -709,7 +709,7 @@ class _TowerRankSummary extends StatelessWidget {
                     ? isComplete
                           ? 'Complete'
                           : 'Level Max'
-                    : 'Upgrade Level • ${levelCost}L',
+                    : 'Tower Level • ${levelCost}L',
               ),
             ),
           ),

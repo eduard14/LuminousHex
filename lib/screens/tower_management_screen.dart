@@ -1055,7 +1055,7 @@ class _BuiltSlotCard extends StatelessWidget {
                                 ? 'Inner Shell Ready'
                                 : 'Continue Layer'
                           : slot.level < LightcoreController.maxTowerLevel
-                          ? 'Upgrade Level ${controller.upgradeCost(slot)} Lumens'
+                          ? 'Tower Level • ${controller.upgradeCost(slot)} Lumens'
                           : controller.isTowerComplete(slot)
                           ? 'Complete'
                           : 'Level Max',
@@ -1200,6 +1200,8 @@ class _EmptySlotCard extends StatelessWidget {
           Text(
             controller.isCompositeLayer
                 ? 'Create a lower-class shell here. It starts as a new run with shared resources and its own anomaly deck.'
+                : controller.tutorialNeedsTowerPaletteGate
+                ? 'Choose one of two starter projectile styles. Comet Mortar is slower area pressure; Rayline Spire is steadier beam pressure.'
                 : 'Choose one of the seven Source Towers to start feeding the center tower. Source Towers lock in one Spectrum Band and one projectile family, and payloads appear once that shell is aligned into a Prism Shell.',
             style: textTheme.bodyMedium,
           ),

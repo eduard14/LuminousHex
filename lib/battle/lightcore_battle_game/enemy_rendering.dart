@@ -91,6 +91,13 @@ extension _LightcoreBattleGameEnemyRendering on LightcoreBattleGame {
           ..color = (isBoss ? LightcorePalette.solar : LightcorePalette.mist)
               .withValues(alpha: 0.42 * revealProgress),
       );
+      _renderEnemyFace(
+        canvas,
+        enemy,
+        position,
+        radius,
+        revealProgress: revealProgress,
+      );
 
       canvas.drawArc(
         Rect.fromCircle(center: position, radius: radius * 1.24),
@@ -198,6 +205,174 @@ extension _LightcoreBattleGameEnemyRendering on LightcoreBattleGame {
         );
       }
     }
+  }
+
+  void _renderEnemyFace(
+    Canvas canvas,
+    EnemyState enemy,
+    Offset position,
+    double radius, {
+    required double revealProgress,
+  }) {
+    if (radius < 5 || revealProgress <= 0) {
+      return;
+    }
+
+    final hitProgress = _enemyHitFaceProgress(enemy.id);
+    final hitEase = Curves.easeOutCubic.transform(hitProgress);
+    final bodyColor = enemy.config.affinity.color;
+    final bodyIsLight = bodyColor.computeLuminance() > 0.52;
+    final usesDarkEyeFill = enemy.config.affinity == PrototypeAffinity.neutral;
+    final faceAlpha = revealProgress.clamp(0.0, 1.0).toDouble();
+    final inkColor = bodyIsLight
+        ? LightcorePalette.abyss
+        : LightcorePalette.mist;
+    final eyeFill = usesDarkEyeFill
+        ? LightcorePalette.abyss
+        : LightcorePalette.layer2;
+    final pupilFill = LightcorePalette.abyss;
+    final browColor = Color.lerp(
+      inkColor,
+      LightcorePalette.warning,
+      0.18 + (hitEase * 0.2),
+    )!;
+    final hitJitterSeed =
+        (controller.elapsed * 42) + (enemy.id.hashCode * 0.0017);
+    final faceCenter = position.translate(
+      math.sin(hitJitterSeed) * radius * 0.035 * hitEase,
+      math.cos(hitJitterSeed * 0.7) * radius * 0.025 * hitEase,
+    );
+    final eyeWidth =
+        radius * (usesDarkEyeFill ? 0.26 : 0.31) * (1 + (hitEase * 0.08));
+    final eyeHeight =
+        radius * (usesDarkEyeFill ? 0.33 : 0.38) * (1 - (hitEase * 0.38));
+    final leftEye = faceCenter.translate(-radius * 0.28, -radius * 0.15);
+    final rightEye = faceCenter.translate(radius * 0.28, -radius * 0.15);
+    final eyePaint = Paint()
+      ..style = PaintingStyle.fill
+      ..color = eyeFill.withValues(alpha: 0.96 * faceAlpha);
+    final eyeStrokePaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = math.max(1.0, radius * 0.035)
+      ..color = inkColor.withValues(
+        alpha: (usesDarkEyeFill ? 0.16 : 0.42) * faceAlpha,
+      );
+    final gazeSeed = (controller.elapsed * 1.3) + (enemy.id.hashCode * 0.002);
+    final gaze = Offset(
+      math.sin(gazeSeed) * radius * 0.025,
+      math.cos(gazeSeed * 1.4) * radius * 0.018,
+    );
+
+    void drawEye(Offset center, {required bool left}) {
+      final rect = Rect.fromCenter(
+        center: center,
+        width: eyeWidth,
+        height: math.max(radius * 0.08, eyeHeight),
+      );
+      canvas.drawOval(rect, eyePaint);
+      canvas.drawOval(rect, eyeStrokePaint);
+      if (usesDarkEyeFill) {
+        final highlight = center.translate(
+          eyeWidth * (left ? 0.14 : -0.1),
+          -eyeHeight * 0.16,
+        );
+        canvas.drawCircle(
+          highlight,
+          radius * 0.043,
+          Paint()..color = LightcorePalette.layer2.withValues(alpha: faceAlpha),
+        );
+      } else {
+        final pupilCenter = center + gaze.translate(0, hitEase * radius * 0.02);
+        canvas.drawCircle(
+          pupilCenter,
+          radius * (0.075 + (hitEase * 0.012)),
+          Paint()..color = pupilFill.withValues(alpha: 0.95 * faceAlpha),
+        );
+        canvas.drawCircle(
+          pupilCenter.translate(radius * 0.028, -radius * 0.032),
+          radius * 0.025,
+          Paint()..color = LightcorePalette.layer2.withValues(alpha: faceAlpha),
+        );
+      }
+    }
+
+    drawEye(leftEye, left: true);
+    drawEye(rightEye, left: false);
+
+    final browPaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = math.max(1.3, radius * (0.065 + (hitEase * 0.018)))
+      ..strokeCap = StrokeCap.round
+      ..color = browColor.withValues(alpha: 0.9 * faceAlpha);
+    canvas.drawLine(
+      faceCenter.translate(-radius * 0.48, -radius * (0.45 + hitEase * 0.05)),
+      faceCenter.translate(-radius * 0.12, -radius * (0.31 - hitEase * 0.02)),
+      browPaint,
+    );
+    canvas.drawLine(
+      faceCenter.translate(radius * 0.12, -radius * (0.31 - hitEase * 0.02)),
+      faceCenter.translate(radius * 0.48, -radius * (0.45 + hitEase * 0.05)),
+      browPaint,
+    );
+
+    final mouthStroke = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = math.max(1.1, radius * 0.05)
+      ..strokeCap = StrokeCap.round
+      ..color = inkColor.withValues(alpha: 0.88 * faceAlpha);
+    if (hitEase > 0.04) {
+      final mouthRect = Rect.fromCenter(
+        center: faceCenter.translate(0, radius * (0.28 + hitEase * 0.03)),
+        width: radius * (0.28 + hitEase * 0.12),
+        height: radius * (0.16 + hitEase * 0.18),
+      );
+      canvas.drawOval(
+        mouthRect,
+        Paint()
+          ..color =
+              (bodyIsLight ? LightcorePalette.abyss : LightcorePalette.warning)
+                  .withValues(alpha: 0.86 * faceAlpha),
+      );
+      canvas.drawOval(mouthRect, mouthStroke);
+      canvas.drawLine(
+        faceCenter.translate(-radius * 0.46, radius * 0.11),
+        faceCenter.translate(-radius * 0.36, radius * 0.2),
+        Paint()
+          ..strokeWidth = math.max(1.0, radius * 0.035)
+          ..strokeCap = StrokeCap.round
+          ..color = LightcorePalette.warning.withValues(
+            alpha: hitEase * faceAlpha,
+          ),
+      );
+      canvas.drawLine(
+        faceCenter.translate(radius * 0.46, radius * 0.11),
+        faceCenter.translate(radius * 0.36, radius * 0.2),
+        Paint()
+          ..strokeWidth = math.max(1.0, radius * 0.035)
+          ..strokeCap = StrokeCap.round
+          ..color = LightcorePalette.warning.withValues(
+            alpha: hitEase * faceAlpha,
+          ),
+      );
+      return;
+    }
+
+    final mouthPath = Path()
+      ..moveTo(faceCenter.dx - (radius * 0.24), faceCenter.dy + (radius * 0.3))
+      ..quadraticBezierTo(
+        faceCenter.dx,
+        faceCenter.dy + (radius * 0.16),
+        faceCenter.dx + (radius * 0.24),
+        faceCenter.dy + (radius * 0.3),
+      );
+    canvas.drawPath(mouthPath, mouthStroke);
+  }
+
+  double _enemyHitFaceProgress(String enemyId) {
+    final remaining = _enemyHitFaceRemaining[enemyId] ?? 0;
+    return (remaining / LightcoreBattleGame._enemyHitFaceDuration)
+        .clamp(0.0, 1.0)
+        .toDouble();
   }
 
   void _renderTutorialSlotGuides(Canvas canvas) {

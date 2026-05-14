@@ -109,6 +109,26 @@ extension LightcoreControllerLayerTraits on LightcoreController {
     return tower.isBuilt && !tower.isFabricating ? tower : null;
   }
 
+  bool _isOpeningStarterTower(TowerConfig? config) =>
+      config != null &&
+      (config.id == TowerLibrary.redPrism.id ||
+          config.id == TowerLibrary.cyanPrism.id);
+
+  bool get _tutorialFirstHexTemporarilyLocked =>
+      !_earlyTutorialComplete &&
+      _outerRingRevealed &&
+      builtTowerCount == 0 &&
+      !_slots[0].isBuilt &&
+      progressionExperience <
+          LightcoreController.tutorialFirstHexUnlockExperience;
+
+  int _outerSlotUnlockExperienceForProgression(int slotIndex) {
+    if (slotIndex == 0 && _tutorialFirstHexTemporarilyLocked) {
+      return LightcoreController.tutorialFirstHexUnlockExperience;
+    }
+    return unlockExperienceForOuterSlot(slotIndex);
+  }
+
   bool get _currentLayerEarlyTutorialComplete {
     final tower = _firstTutorialTower;
     if (builtTowerCount > 1) {
@@ -117,7 +137,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
     if (tower == null) {
       return false;
     }
-    if (tower.config?.id != TowerLibrary.redPrism.id) {
+    if (!_isOpeningStarterTower(tower.config)) {
       return false;
     }
     return _tutorialCoreShotTapLearned &&
@@ -180,7 +200,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
       LightcoreTutorialStep.waitForFirstHex => isOuterSlotUnlocked(0),
       LightcoreTutorialStep.selectFirstHex => selectedSlotIndex == 0,
       LightcoreTutorialStep.buildFirstRedTower =>
-        firstTower?.config?.id == TowerLibrary.redPrism.id &&
+        _isOpeningStarterTower(firstTower?.config) &&
             firstTower?.isFabricating == false,
       LightcoreTutorialStep.inspectFirstTowerStats =>
         _tutorialFirstTowerStatsOpened,
@@ -254,17 +274,20 @@ extension LightcoreControllerLayerTraits on LightcoreController {
       return LightcoreTutorialStep.tapBattleCore;
     }
     if (!isOuterSlotUnlocked(0)) {
-      return null;
+      return LightcoreTutorialStep.waitForFirstHex;
     }
 
     final firstTower = _slots[0];
     if (!firstTower.isBuilt) {
+      if (selectedSlotIndex != 0) {
+        return LightcoreTutorialStep.selectFirstHex;
+      }
       return LightcoreTutorialStep.buildFirstRedTower;
     }
     if (firstTower.isFabricating) {
       return LightcoreTutorialStep.none;
     }
-    if (firstTower.config?.id != TowerLibrary.redPrism.id) {
+    if (!_isOpeningStarterTower(firstTower.config)) {
       return null;
     }
     if (!_tutorialFirstTowerStatsOpened) {
@@ -579,7 +602,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
     LightcoreTutorialStep.unfoldShell =>
       'Core online. The shell can now open lanes and start earning.',
     LightcoreTutorialStep.buildFirstRedTower =>
-      'Red Prism online. It will charge, then feed packets into the core queue.',
+      'First tower online. It will charge, then feed packets into the core queue.',
     LightcoreTutorialStep.inspectFirstTowerStats =>
       'Stats mapped. Use power, charge, cooldown, automation, and load to decide what to tune next.',
     LightcoreTutorialStep.tapBattleCore =>
@@ -1374,7 +1397,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         LightcoreTutorialStep.unfoldShell => 'Unfold The Shell',
         LightcoreTutorialStep.waitForFirstHex => 'Hold The Lane',
         LightcoreTutorialStep.selectFirstHex => 'Select Hex 1',
-        LightcoreTutorialStep.buildFirstRedTower => 'Build Red First',
+        LightcoreTutorialStep.buildFirstRedTower => 'Choose First Tower',
         LightcoreTutorialStep.inspectFirstTowerStats => 'Read Tower Stats',
         LightcoreTutorialStep.tapBattleCore => 'Tap The Core To Fire',
         LightcoreTutorialStep.tapFirstTower => 'Tap The Tower To Fire',
@@ -1418,20 +1441,21 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         LightcoreTutorialStep.none => null,
         LightcoreTutorialStep.unfoldShell =>
           'Click the center core to wake the shell.',
-        LightcoreTutorialStep.waitForFirstHex => 'Wait for Hex 1 to unlock.',
+        LightcoreTutorialStep.waitForFirstHex =>
+          'Review Core Upgrades while Hex 1 stabilizes.',
         LightcoreTutorialStep.selectFirstHex => 'Click Hex 1.',
         LightcoreTutorialStep.buildFirstRedTower =>
-          'Click Hex 1 and build a Red Prism.',
+          'Click Hex 1 and choose Comet Mortar or Rayline Spire.',
         LightcoreTutorialStep.inspectFirstTowerStats =>
           'Open the first tower stats pop-out.',
         LightcoreTutorialStep.tapBattleCore =>
           'Tap the glowing Lightcore on the battlefield to generate a shot.',
         LightcoreTutorialStep.tapFirstTower =>
-          'Tap the glowing charged Red Prism on the battlefield to fire.',
+          'Tap the glowing charged first tower on the battlefield to fire.',
         LightcoreTutorialStep.tapSecondShellTower =>
           'Tap the glowing charged tower on the battlefield to fire.',
         LightcoreTutorialStep.upgradeFirstTowerToLevel3 =>
-          'Click the Red Prism in Hex 1 and upgrade it to level 3.',
+          'Click the first tower in Hex 1 and upgrade it to level 3.',
         LightcoreTutorialStep.pullFirstWhiteEnemy =>
           'Click Map and run 1 threat scan.',
         LightcoreTutorialStep.readEffectiveGain =>
@@ -1439,7 +1463,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         LightcoreTutorialStep.autoQueueCheck =>
           'Watch your manager generate 5 queued pulses.',
         LightcoreTutorialStep.upgradeFirstTowerToLevel4 =>
-          'Click the Red Prism in Hex 1 and upgrade it again.',
+          'Click the first tower in Hex 1 and upgrade it again.',
         LightcoreTutorialStep.pullFirstRedEnemy =>
           'Click Map and run 1 more threat scan.',
         LightcoreTutorialStep.setFirstEnemyTarget =>
@@ -1496,11 +1520,11 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         LightcoreTutorialStep.unfoldShell =>
           'The shell stays folded until the core wakes up, so lanes and combat systems remain locked while it sleeps.',
         LightcoreTutorialStep.waitForFirstHex =>
-          'Starter driftlings feed total EXP automatically. New hexes unlock from battle progress, not from spending Lumens.',
+          'Starter driftlings feed total EXP automatically. Hex 1 is held briefly so core stat upgrades and core-wide range, fire speed, queue, and multi-shot upgrades are visible first.',
         LightcoreTutorialStep.selectFirstHex =>
           'Command opens the shell one lane at a time so flow stays stable while the relay network comes online.',
         LightcoreTutorialStep.buildFirstRedTower =>
-          'Tower colors matter. Red Prism is your first affinity counter tool and starts the color-match lesson.',
+          'Tower projectile families matter. Comet Mortar opens with area pressure, while Rayline Spire opens with steady single-target pressure.',
         LightcoreTutorialStep.inspectFirstTowerStats =>
           'Tower stats show power, charge, cooldown, automation, and lane load before the tower starts feeding the core queue.',
         LightcoreTutorialStep.tapBattleCore =>
@@ -1651,9 +1675,15 @@ extension LightcoreControllerLayerTraits on LightcoreController {
 
   List<TowerConfig> get tutorialTowerChoices {
     if (tutorialNeedsTowerPaletteGate) {
-      return const <TowerConfig>[TowerLibrary.redPrism];
+      return const <TowerConfig>[TowerLibrary.redPrism, TowerLibrary.cyanPrism];
     }
     if (tutorialShowsStarterProjectileChoices) {
+      if (_slots.firstOrNull?.config?.id == TowerLibrary.cyanPrism.id) {
+        return const <TowerConfig>[
+          TowerLibrary.redPrism,
+          TowerLibrary.greenPrism,
+        ];
+      }
       return const <TowerConfig>[
         TowerLibrary.cyanPrism,
         TowerLibrary.greenPrism,
@@ -1664,7 +1694,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
 
   bool tutorialHighlightsBuildButton(TowerConfig config) =>
       _tutorialStep == LightcoreTutorialStep.buildFirstRedTower &&
-      config.id == TowerLibrary.redPrism.id;
+      _isOpeningStarterTower(config);
 
   bool tutorialHighlightsUpgradeButton(int slotIndex) =>
       slotIndex == 0 &&

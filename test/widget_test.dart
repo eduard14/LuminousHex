@@ -30,6 +30,20 @@ import 'package:lightcore/theme/lightcore_theme.dart';
 import 'package:lightcore/widgets/cosmic_guide_avatar.dart';
 import 'package:lightcore/widgets/meta_progression_sheet.dart';
 
+void _unlockTutorialFirstHex(LightcoreController controller) {
+  controller.applyOfflineClaim(
+    const LightcoreOfflineClaimResult(
+      secondsClaimed: 1,
+      lumensGranted: 0,
+      fluxGranted: 0,
+      enemyTicketsGranted: 0,
+      killsGranted: LightcoreController.tutorialFirstHexUnlockExperience,
+      serverValidated: true,
+    ),
+    showBanner: false,
+  );
+}
+
 Future<void> _pumpShell(
   WidgetTester tester,
   LightcoreController controller, {
@@ -2068,7 +2082,7 @@ void main() {
         lumensGranted: 1000,
         fluxGranted: 0,
         enemyTicketsGranted: 0,
-        killsGranted: LightcoreController.unlockKillsForOuterSlot(0),
+        killsGranted: LightcoreController.tutorialFirstHexUnlockExperience,
         serverValidated: true,
       ),
       showBanner: false,
@@ -2098,7 +2112,7 @@ void main() {
     );
     expect(
       find.text(
-        'Close the open tower controls, then tap the charged Comet Mortar on the battlefield.',
+        'Close the open tower controls, then tap the charged first tower on the battlefield.',
       ),
       findsOneWidget,
     );
@@ -2121,7 +2135,7 @@ void main() {
         lumensGranted: 1000,
         fluxGranted: 0,
         enemyTicketsGranted: 0,
-        killsGranted: LightcoreController.unlockKillsForOuterSlot(0),
+        killsGranted: LightcoreController.tutorialFirstHexUnlockExperience,
         serverValidated: true,
       ),
       showBanner: false,
@@ -2171,7 +2185,7 @@ void main() {
         lumensGranted: 1000,
         fluxGranted: 0,
         enemyTicketsGranted: 0,
-        killsGranted: LightcoreController.unlockKillsForOuterSlot(0),
+        killsGranted: LightcoreController.tutorialFirstHexUnlockExperience,
         serverValidated: true,
       ),
       showBanner: false,
@@ -2199,7 +2213,7 @@ void main() {
     await _pumpBattleScreen(tester, controller);
 
     expect(find.text('Tower Upgrades'), findsOneWidget);
-    expect(find.textContaining('Upgrade Level'), findsOneWidget);
+    expect(find.textContaining('Tower Level •'), findsOneWidget);
     expect(
       find.byKey(const ValueKey<String>('battle-quest-card-collapsed')),
       findsOneWidget,
@@ -2210,7 +2224,7 @@ void main() {
     );
   });
 
-  testWidgets('tracked quest details reopen when the next step starts', (
+  testWidgets('tracked quest details yield when the next step has a target', (
     tester,
   ) async {
     final controller = LightcoreController();
@@ -2222,16 +2236,18 @@ void main() {
 
     controller.handleBattleCenterTap();
     controller.handleBattleCenterTap();
+    _unlockTutorialFirstHex(controller);
+    controller.selectSlot(0);
     await tester.pump();
 
     expect(controller.tutorialStep, LightcoreTutorialStep.buildFirstRedTower);
     expect(
       find.byKey(const ValueKey<String>('battle-quest-card-collapsed')),
-      findsNothing,
+      findsOneWidget,
     );
     expect(
       find.byKey(const ValueKey<String>('battle-quest-detail-card')),
-      findsOneWidget,
+      findsNothing,
     );
   });
 
@@ -2377,10 +2393,10 @@ void main() {
     final controller = LightcoreController();
     addTearDown(controller.dispose);
 
-    controller.kills = LightcoreController.unlockKillsForOuterSlot(0);
+    controller.kills = LightcoreController.tutorialFirstHexUnlockExperience;
     controller.selectSlot(0);
     controller.buildTowerForSelected(TowerLibrary.redPrism);
-    final upgradeButton = find.textContaining('Upgrade Level');
+    final upgradeButton = find.textContaining('Tower Level •');
 
     await _pumpShell(tester, controller);
 
@@ -2602,7 +2618,7 @@ void main() {
     final controller = LightcoreController();
     addTearDown(controller.dispose);
 
-    controller.kills = LightcoreController.unlockKillsForOuterSlot(0);
+    controller.kills = LightcoreController.tutorialFirstHexUnlockExperience;
     controller.selectSlot(0);
     controller.buildTowerForSelected(TowerLibrary.redPrism);
 

@@ -329,11 +329,11 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
     id: 'TUT-002',
     title: 'Wait for Hex 1',
     teachGoal:
-        'Battle progress opens build lanes. More lanes mean more places to add Lumen-producing towers.',
+        'Battle progress opens build lanes. Use the short hold to inspect core-wide range, queue, and stat upgrades before picking a tower.',
     trigger: 'Shell is awake before the first lane unlocks',
     primaryClickTarget: 'Battlefield > Hex 1',
     coachCopy:
-        'Keep the shell open while early drift fights feed the EXP gate for Hex 1.',
+        'Keep the shell open and review Core Upgrades while early drift fights feed the EXP gate for Hex 1.',
     completionCondition: 'Hex 1 unlocks',
     reward: 'Small Lumen grant',
     failureHelpState: 'Leave the battle view active until the first hex opens.',
@@ -356,17 +356,18 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
   ),
   LightcoreTutorialStep.buildFirstRedTower: LightcoreTutorialQuestDefinition(
     id: 'TUT-004',
-    title: 'Fabricate First Light',
+    title: 'Choose First Light',
     teachGoal:
-        'Towers feed the core queue. That queue creates kills, and kills pay the Lumens used to grow the shell.',
+        'The first tower sets your opening projectile style. Comet Mortar gives slow area hits; Rayline Spire gives steady beam pressure.',
     trigger: 'First hex selected',
-    primaryClickTarget: 'Hex 1 controls > Red Prism > Fabricate',
+    primaryClickTarget:
+        'Hex 1 controls > Comet Mortar or Rayline Spire > Fabricate',
     coachCopy:
-        'Build the Red Prism in Hex 1 so the shell has its first reliable source of queued pulses.',
+        'Choose Comet Mortar or Rayline Spire in Hex 1 so the shell has its first reliable source of queued pulses.',
     completionCondition: 'Start or finish first Fabrication',
     reward: 'Instant first tower',
     failureHelpState:
-        'Open the first hex controls, then choose the highlighted Red Prism build button.',
+        'Open the first hex controls, then choose one of the highlighted starter build buttons.',
     analyticsEvent: 'tutorial_fabricate_first_light',
   ),
   LightcoreTutorialStep
@@ -378,7 +379,7 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
     trigger: 'First tower exists',
     primaryClickTarget: 'Lower-left prism control > Tower Stats pop-out',
     coachCopy:
-        'Open Tower Stats before combat speeds up. The numbers show what this Red Prism contributes to the core queue.',
+        'Open Tower Stats before combat speeds up. The numbers show what this tower contributes to the core queue.',
     completionCondition: 'Open the first tower stats pop-out',
     reward: 'Tower stat labels unlocked',
     failureHelpState:
@@ -406,9 +407,9 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
     teachGoal:
         'Charged towers do not fire by themselves yet. Tapping one adds a packet to the core queue, then the core spends it as a shot.',
     trigger: 'First tower exists',
-    primaryClickTarget: 'Battlefield > charged Red Prism',
+    primaryClickTarget: 'Battlefield > charged first tower',
     coachCopy:
-        'Tap the charged Red Prism to add pulses. More queued shots means faster kills, more Lumens, and earlier upgrades.',
+        'Tap the charged first tower to add pulses. More queued shots means faster kills, more Lumens, and earlier upgrades.',
     completionCondition: 'Add 3 queue pulses',
     reward: 'Lumens and White Drift practice scan',
     failureHelpState:
@@ -439,8 +440,8 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
     trigger: 'First tower can be upgraded',
     primaryClickTarget: 'Tower Stats pop-out > Upgrade',
     coachCopy:
-        'Upgrade the Red Prism before expanding. Higher levels make each queued packet matter more.',
-    completionCondition: 'Red Prism reaches level 3',
+        'Upgrade the first tower before expanding. Higher levels make each queued packet matter more.',
+    completionCondition: 'First tower reaches level 3',
     reward: 'Small Lumen grant',
     failureHelpState:
         'Open Hex 1 stats and use the highlighted Upgrade button when Lumens are available.',
@@ -499,8 +500,8 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
     trigger: 'Early red scan lesson',
     primaryClickTarget: 'Tower Stats pop-out > Upgrade',
     coachCopy:
-        'Upgrade the Red Prism again before spreading Lumens across more towers.',
-    completionCondition: 'Red Prism reaches level 4',
+        'Upgrade the first tower again before spreading Lumens across more towers.',
+    completionCondition: 'First tower reaches level 4',
     reward: 'Small Lumen grant',
     failureHelpState:
         'Open Hex 1 stats and use Upgrade when the Lumen cost is affordable.',
@@ -1471,6 +1472,7 @@ class LightcoreController extends ChangeNotifier {
   static const double _maxLumenHarvestSlowdown = 0.24;
   static const double _relayHitLumenHarvestDamageScale = 12;
   static const double _emptyLaneLumenHarvestDamageScale = 18;
+  static const int tutorialFirstHexUnlockExperience = 8;
   static const int firstOuterSlotKillRequirement = 100;
   static const List<int> outerSlotUnlockExperienceThresholds = <int>[
     0,

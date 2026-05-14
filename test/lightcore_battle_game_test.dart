@@ -210,4 +210,42 @@ void main() {
 
     expect(game.debugActiveShotFireBurstCount, 0);
   });
+
+  test('surviving enemy hits trigger a short face reaction', () {
+    final controller = LightcoreController();
+    addTearDown(controller.dispose);
+    final game = buildGame(controller);
+
+    controller.lumens = 1000;
+    controller.kills = LightcoreController.unlockKillsForOuterSlot(0);
+    expect(controller.buildTowerAt(0, TowerLibrary.purplePrism), isTrue);
+    expect(controller.debugSetTowerCharge(0, charge: 1.2), isTrue);
+    expect(controller.activateTowerSlot(0, showBanner: false), isTrue);
+    final enemy = controller.debugSpawnEnemyFromCard(
+      EnemyLibrary.basicWhite.id,
+      angle: 0,
+      radius: 220,
+      level: 50,
+    );
+    expect(enemy, isNotNull);
+    final enemyId = enemy!.id;
+
+    game.update(0);
+    for (
+      var step = 0;
+      step < 220 && !game.debugEnemyHitFaceRemaining.containsKey(enemyId);
+      step += 1
+    ) {
+      game.update(0.05);
+    }
+
+    expect(game.debugEnemyHitFaceRemaining[enemyId], greaterThan(0));
+    expect(controller.enemies.any((active) => active.id == enemyId), isTrue);
+
+    for (var step = 0; step < 8; step += 1) {
+      game.update(0.05);
+    }
+
+    expect(game.debugEnemyHitFaceRemaining.containsKey(enemyId), isFalse);
+  });
 }

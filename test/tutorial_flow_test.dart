@@ -8,6 +8,20 @@ import 'package:lightcore/models/lightcore_progression.dart';
 import 'package:lightcore/models/lightcore_types.dart';
 import 'package:lightcore/state/lightcore_controller.dart';
 
+void _unlockTutorialFirstHex(LightcoreController controller) {
+  controller.applyOfflineClaim(
+    const LightcoreOfflineClaimResult(
+      secondsClaimed: 1,
+      lumensGranted: 0,
+      fluxGranted: 0,
+      enemyTicketsGranted: 0,
+      killsGranted: LightcoreController.tutorialFirstHexUnlockExperience,
+      serverValidated: true,
+    ),
+    showBanner: false,
+  );
+}
+
 void _promoteRootShell(LightcoreController controller) {
   controller.lumens = 100000;
   controller.kills = LightcoreController.unlockKillsForOuterSlot(
@@ -156,13 +170,23 @@ void main() {
       controller.activeEnemyDeck.single.config.id,
       EnemyLibrary.basicWhite.id,
     );
-    expect(controller.tutorialTowerChoices, const [TowerLibrary.redPrism]);
+    expect(controller.tutorialTowerChoices, const [
+      TowerLibrary.redPrism,
+      TowerLibrary.cyanPrism,
+    ]);
     final initialThreatScans = controller.enemyTickets;
 
     expect(controller.tutorialStep, LightcoreTutorialStep.unfoldShell);
     controller.selectCenter();
     expect(controller.tutorialStep, LightcoreTutorialStep.tapBattleCore);
     controller.handleBattleCenterTap();
+    expect(controller.tutorialStep, LightcoreTutorialStep.waitForFirstHex);
+    expect(controller.isOuterSlotUnlocked(0), isFalse);
+    expect(controller.tutorialBuildTowerAt(0, TowerLibrary.redPrism), isFalse);
+    _unlockTutorialFirstHex(controller);
+    expect(controller.isOuterSlotUnlocked(0), isTrue);
+    expect(controller.tutorialStep, LightcoreTutorialStep.selectFirstHex);
+    controller.selectSlot(0);
     expect(controller.tutorialStep, LightcoreTutorialStep.buildFirstRedTower);
     expect(controller.enemyTickets, initialThreatScans + 1);
     expect(controller.tutorialStep, LightcoreTutorialStep.buildFirstRedTower);
@@ -219,7 +243,7 @@ void main() {
   });
 
   test(
-    'first red tower gates the palette until the flow lesson is complete',
+    'first starter tower gates the palette until the flow lesson is complete',
     () {
       final controller = LightcoreController();
       addTearDown(controller.dispose);
@@ -229,7 +253,10 @@ void main() {
       controller.kills = LightcoreController.unlockKillsForOuterSlot(1);
       controller.lumens = 1000;
 
-      expect(controller.tutorialTowerChoices, const [TowerLibrary.redPrism]);
+      expect(controller.tutorialTowerChoices, const [
+        TowerLibrary.redPrism,
+        TowerLibrary.cyanPrism,
+      ]);
       expect(controller.tutorialBuildTowerAt(0, TowerLibrary.redPrism), isTrue);
 
       controller.selectSlot(1);
@@ -249,7 +276,10 @@ void main() {
         expect(controller.tutorialUpgradeTower(0), isTrue);
       }
 
-      expect(controller.tutorialTowerChoices, const [TowerLibrary.redPrism]);
+      expect(controller.tutorialTowerChoices, const [
+        TowerLibrary.redPrism,
+        TowerLibrary.cyanPrism,
+      ]);
       expect(
         controller.tutorialBuildTowerAt(1, TowerLibrary.greenPrism),
         isFalse,
@@ -294,6 +324,27 @@ void main() {
     },
   );
 
+  test('first hex offers two starter projectile choices', () {
+    final controller = LightcoreController();
+    addTearDown(controller.dispose);
+
+    controller.selectCenter();
+    controller.handleBattleCenterTap();
+    _unlockTutorialFirstHex(controller);
+    controller.selectSlot(0);
+
+    expect(controller.tutorialTowerChoices, const [
+      TowerLibrary.redPrism,
+      TowerLibrary.cyanPrism,
+    ]);
+    expect(controller.tutorialBuildTowerAt(0, TowerLibrary.cyanPrism), isTrue);
+    expect(controller.slots[0].config?.id, TowerLibrary.cyanPrism.id);
+    expect(
+      controller.tutorialStep,
+      LightcoreTutorialStep.inspectFirstTowerStats,
+    );
+  });
+
   test('tap quest shows charge state until the tower can shoot', () {
     final controller = LightcoreController();
     addTearDown(controller.dispose);
@@ -306,7 +357,7 @@ void main() {
         lumensGranted: 1000,
         fluxGranted: 0,
         enemyTicketsGranted: 0,
-        killsGranted: LightcoreController.unlockKillsForOuterSlot(0),
+        killsGranted: LightcoreController.tutorialFirstHexUnlockExperience,
         serverValidated: true,
       ),
       showBanner: false,
@@ -328,7 +379,7 @@ void main() {
     expect(controller.tutorialHeadline, 'Queue a Pulse');
     expect(
       controller.tutorialPrompt,
-      'Tap the charged Red Prism to add pulses. More queued shots means faster kills, more Lumens, and earlier upgrades.',
+      'Tap the charged first tower to add pulses. More queued shots means faster kills, more Lumens, and earlier upgrades.',
     );
     expect(controller.tutorialBattleSlotGuideLabel(0), 'ADD TO QUEUE');
     expect(controller.activateTowerSlot(0, showBanner: false), isTrue);
@@ -345,7 +396,7 @@ void main() {
       controller.selectCenter();
       controller.handleBattleCenterTap();
       controller
-        ..kills = LightcoreController.unlockKillsForOuterSlot(0)
+        ..kills = LightcoreController.tutorialFirstHexUnlockExperience
         ..lumens = controller.buildCostForConfig(TowerLibrary.redPrism);
 
       expect(
@@ -378,7 +429,7 @@ void main() {
     },
   );
 
-  test('tutorial pauses instead of showing wait-only steps', () {
+  test('first hex stays locked during the core opening beat', () {
     final controller = LightcoreController();
     addTearDown(controller.dispose);
 
@@ -386,8 +437,18 @@ void main() {
 
     controller.selectCenter();
 
-    expect(controller.isOuterSlotUnlocked(0), isTrue);
+    expect(controller.isOuterSlotUnlocked(0), isFalse);
     expect(controller.tutorialStep, LightcoreTutorialStep.tapBattleCore);
+
+    controller.handleBattleCenterTap();
+
+    expect(controller.tutorialStep, LightcoreTutorialStep.waitForFirstHex);
+    expect(controller.isOuterSlotUnlocked(0), isFalse);
+
+    _unlockTutorialFirstHex(controller);
+
+    expect(controller.tutorialStep, LightcoreTutorialStep.selectFirstHex);
+    expect(controller.isOuterSlotUnlocked(0), isTrue);
   });
 
   test('core shot tutorial appears immediately after the shell opens', () {
@@ -408,7 +469,8 @@ void main() {
 
     expect(controller.pulses, hasLength(1));
     expect(controller.queuedCorePackets, 0);
-    expect(controller.tutorialStep, LightcoreTutorialStep.buildFirstRedTower);
+    expect(controller.tutorialStep, LightcoreTutorialStep.waitForFirstHex);
+    expect(controller.tutorialHighlightsCoreStats, isTrue);
   });
 
   test('same-color attacks are resisted', () {

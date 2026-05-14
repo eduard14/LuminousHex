@@ -588,8 +588,10 @@ extension LightcoreControllerStateAccessors on LightcoreController {
               experienceNeededForCurrentOverallLevel)
           .clamp(0.0, 1.0);
 
-  int get unlockedOuterSlotCount =>
-      unlockedOuterSlotCountForExperience(progressionExperience);
+  int get unlockedOuterSlotCount {
+    final unlocked = unlockedOuterSlotCountForExperience(progressionExperience);
+    return _tutorialFirstHexTemporarilyLocked ? 0 : unlocked;
+  }
 
   int get bossKillsIntoCycle => activeLayer.bossReady
       ? bossSpawnKillRequirement
@@ -646,6 +648,7 @@ extension LightcoreControllerStateAccessors on LightcoreController {
       _tutorialStep == LightcoreTutorialStep.tapBattleCore ? 'TAP CORE' : null;
 
   bool get tutorialHighlightsCoreStats =>
+      _tutorialStep == LightcoreTutorialStep.waitForFirstHex ||
       _tutorialStep == LightcoreTutorialStep.readEffectiveGain ||
       _tutorialStep == LightcoreTutorialStep.autoQueueCheck;
 

@@ -510,8 +510,10 @@ extension LightcoreControllerProgressionLayers on LightcoreController {
     return _slots[slotIndex].isBuilt || slotIndex < unlockedOuterSlotCount;
   }
 
-  int experienceRemainingForOuterSlot(int slotIndex) =>
-      max(0, unlockExperienceForOuterSlot(slotIndex) - progressionExperience);
+  int experienceRemainingForOuterSlot(int slotIndex) => max(
+    0,
+    _outerSlotUnlockExperienceForProgression(slotIndex) - progressionExperience,
+  );
 
   int killsRemainingForOuterSlot(int slotIndex) =>
       experienceRemainingForOuterSlot(slotIndex);
@@ -521,7 +523,9 @@ extension LightcoreControllerProgressionLayers on LightcoreController {
 
   int? get nextOuterSlotKillRequirement {
     final slotIndex = nextLockedOuterSlotIndex;
-    return slotIndex == null ? null : unlockExperienceForOuterSlot(slotIndex);
+    return slotIndex == null
+        ? null
+        : _outerSlotUnlockExperienceForProgression(slotIndex);
   }
 
   int get nextOuterSlotKillsRemaining {
@@ -540,8 +544,8 @@ extension LightcoreControllerProgressionLayers on LightcoreController {
     }
     final previousRequirement = slotIndex == 0
         ? 0
-        : unlockExperienceForOuterSlot(slotIndex - 1);
-    final requirement = unlockExperienceForOuterSlot(slotIndex);
+        : _outerSlotUnlockExperienceForProgression(slotIndex - 1);
+    final requirement = _outerSlotUnlockExperienceForProgression(slotIndex);
     final span = max(1, requirement - previousRequirement);
     return ((progressionExperience - previousRequirement) / span).clamp(
       0.0,
@@ -550,7 +554,7 @@ extension LightcoreControllerProgressionLayers on LightcoreController {
   }
 
   String lockedOuterSlotSummary(int slotIndex) {
-    final requirement = unlockExperienceForOuterSlot(slotIndex);
+    final requirement = _outerSlotUnlockExperienceForProgression(slotIndex);
     final remaining = max(0, requirement - progressionExperience);
     return remaining <= 0
         ? 'Hex ${slotIndex + 1} is stable. Anchor a prism relay when ready.'
@@ -562,7 +566,7 @@ extension LightcoreControllerProgressionLayers on LightcoreController {
     if (slotIndex == null) {
       return 'All $slotCount prism anchors are stable.';
     }
-    return 'Prism anchors $unlockedOuterSlotCount/$slotCount stable • Hex ${slotIndex + 1} opens at ${unlockExperienceForOuterSlot(slotIndex)} EXP.';
+    return 'Prism anchors $unlockedOuterSlotCount/$slotCount stable • Hex ${slotIndex + 1} opens at ${_outerSlotUnlockExperienceForProgression(slotIndex)} EXP.';
   }
 
   String get promotionStatusLabel {
