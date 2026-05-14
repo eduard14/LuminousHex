@@ -49,6 +49,7 @@ class LightcoreBattleGame extends FlameGame with ScaleDetector {
   static const double _slotBuildBurstDuration = 0.68;
   static const double _slotFuseBurstDuration = 0.52;
   static const double _shotFireBurstDuration = 0.28;
+  static const double _enemyHitFaceDuration = 0.28;
   static const double _enemySpawnRevealDuration = 5.0;
   static const double _coreDamageShakeDuration = 0.34;
   static const double shellPromotionStatsDelay = 3.35;
@@ -75,6 +76,8 @@ class LightcoreBattleGame extends FlameGame with ScaleDetector {
   Set<String> _knownShotIds = <String>{};
   Set<String> _knownImpactIds = <String>{};
   Set<String> _knownEnemyIds = <String>{};
+  Map<String, double> _previousEnemyHealth = <String, double>{};
+  Map<String, double> _enemyHitFaceRemaining = <String, double>{};
   List<_ShotFireBurst> _shotFireBursts = <_ShotFireBurst>[];
   int _previousCoreFireSequence = 0;
   int _previousCoreDamageSequence = 0;
@@ -112,6 +115,8 @@ class LightcoreBattleGame extends FlameGame with ScaleDetector {
   List<ProjectileType> get debugActiveShotFireBurstTypes => _shotFireBursts
       .map((burst) => burst.projectileType)
       .toList(growable: false);
+  Map<String, double> get debugEnemyHitFaceRemaining =>
+      Map.unmodifiable(_enemyHitFaceRemaining);
   bool get isShellPromotionAnimating => _shellPromotion != null;
   double get debugShellPromotionElapsed => _shellPromotionElapsed;
 
@@ -218,6 +223,7 @@ class LightcoreBattleGame extends FlameGame with ScaleDetector {
     _syncCombatAudio();
     _updateSlotVisuals(clamped);
     _updateCoreVisuals(clamped);
+    _updateEnemyFaceVisuals(clamped);
     _updateShotFireBursts(clamped);
     _updateScreenShake(clamped);
   }

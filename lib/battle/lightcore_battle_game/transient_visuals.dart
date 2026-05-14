@@ -52,6 +52,10 @@ extension LightcoreBattleGameTransientVisuals on LightcoreBattleGame {
     _knownShotIds = controller.shots.map((shot) => shot.id).toSet();
     _knownImpactIds = controller.impacts.map((impact) => impact.id).toSet();
     _knownEnemyIds = controller.enemies.map((enemy) => enemy.id).toSet();
+    _previousEnemyHealth = {
+      for (final enemy in controller.enemies) enemy.id: enemy.health,
+    };
+    _enemyHitFaceRemaining = <String, double>{};
     _shotFireBursts = <_ShotFireBurst>[];
     _coreHexFirePopRemaining = 0;
     _screenShakeRemaining = 0;
@@ -109,6 +113,38 @@ extension LightcoreBattleGameTransientVisuals on LightcoreBattleGame {
 
     _knownEnemyIds = currentEnemyIds;
     _knownImpactIds = currentImpactIds;
+  }
+
+  void _updateEnemyFaceVisuals(double dt) {
+    final currentEnemyIds = controller.enemies
+        .map((enemy) => enemy.id)
+        .toSet();
+
+    for (final entry in _enemyHitFaceRemaining.entries.toList()) {
+      if (!currentEnemyIds.contains(entry.key)) {
+        _enemyHitFaceRemaining.remove(entry.key);
+        continue;
+      }
+      final remaining = entry.value - dt;
+      if (remaining <= 0) {
+        _enemyHitFaceRemaining.remove(entry.key);
+      } else {
+        _enemyHitFaceRemaining[entry.key] = remaining;
+      }
+    }
+
+    final currentHealth = <String, double>{};
+    for (final enemy in controller.enemies) {
+      final previousHealth = _previousEnemyHealth[enemy.id];
+      currentHealth[enemy.id] = enemy.health;
+      if (previousHealth == null || enemy.health >= previousHealth - 0.001) {
+        continue;
+      }
+      _enemyHitFaceRemaining[enemy.id] =
+          LightcoreBattleGame._enemyHitFaceDuration;
+    }
+
+    _previousEnemyHealth = currentHealth;
   }
 
   void _updateSlotVisuals(double dt) {

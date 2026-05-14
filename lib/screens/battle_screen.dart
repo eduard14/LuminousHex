@@ -18,7 +18,6 @@ import '../widgets/guided_focus_frame.dart';
 import '../widgets/lightcore_quest_card.dart';
 import '../widgets/meter_bar.dart';
 import '../widgets/symbol_grid_tile.dart';
-import '../widgets/tower_level_hex_badge.dart';
 import '../widgets/tower_ring_icon.dart';
 import 'tower_detail_screen.dart';
 
@@ -833,28 +832,12 @@ class _BattleScreenState extends State<BattleScreen> {
     }
   }
 
-  IconData _statsTargetIcon(
-    LightcoreController controller,
-    _BattleStatsTarget target,
-  ) {
+  IconData _statsTargetIcon(_BattleStatsTarget target) {
     switch (target.kind) {
       case _BattleStatsTargetKind.core:
         return Icons.flash_on_rounded;
       case _BattleStatsTargetKind.slot:
-        final slotIndex = target.slotIndex;
-        if (slotIndex == null ||
-            slotIndex < 0 ||
-            slotIndex >= controller.slots.length) {
-          return Icons.build_rounded;
-        }
-        final slot = controller.slots[slotIndex];
-        if (!slot.isBuilt || slot.isLayerProject) {
-          return Icons.build_rounded;
-        }
-        if (slot.isFabricating) {
-          return Icons.precision_manufacturing_rounded;
-        }
-        return towerProjectileIcon(controller.towerProjectileType(slot));
+        return Icons.build_rounded;
     }
   }
 
@@ -920,7 +903,7 @@ class _BattleScreenState extends State<BattleScreen> {
     final tooltip = targetOpen
         ? _selectionTooltip(controller, selected, panelFocus)
         : _statsTargetTooltip(controller, target);
-    final icon = _statsTargetIcon(controller, target);
+    final icon = _statsTargetIcon(target);
     if (tint == null || tooltip == null) {
       return null;
     }

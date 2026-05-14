@@ -221,7 +221,7 @@ void main() {
     expect(find.text('Tower Stats'), findsNothing);
   });
 
-  testWidgets('green shield tower shows shield icon in selection hud', (
+  testWidgets('green shield tower shows wrench icon in selection hud', (
     tester,
   ) async {
     final controller = LightcoreController();
@@ -247,7 +247,7 @@ void main() {
     expect(
       find.descendant(
         of: selectionButton,
-        matching: find.byIcon(Icons.shield_moon_rounded),
+        matching: find.byIcon(Icons.build_rounded),
       ),
       findsOneWidget,
     );
