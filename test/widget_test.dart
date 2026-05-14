@@ -1357,21 +1357,83 @@ void main() {
     },
   );
 
-  testWidgets('header pulls action opens the summon sheet', (tester) async {
+  testWidgets('bottom map action opens the dedicated threat map screen', (
+    tester,
+  ) async {
     final controller = LightcoreController();
     addTearDown(controller.dispose);
+    controller
+      ..kills = LightcoreController.unlockKillsForOuterSlot(0)
+      ..lumens = 1000;
+    controller.buildTowerAt(0, TowerLibrary.redPrism);
 
     await _pumpShell(tester, controller);
 
-    final pullsButton = find.byTooltip('Open Threat Map');
+    expect(find.byTooltip('Open Threat Map'), findsNothing);
 
-    expect(pullsButton, findsOneWidget);
+    final mapButton = find.byTooltip('Threat Map');
 
-    await tester.tap(pullsButton);
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 500));
+    expect(mapButton, findsOneWidget);
 
-    expect(find.text('Threat Scans'), findsOneWidget);
+    await tester.tap(mapButton);
+    await _pumpTransition(tester);
+
+    expect(
+      find.byKey(const ValueKey<String>('threat-map-surface')),
+      findsOneWidget,
+    );
+    expect(find.text('Threat Map'), findsWidgets);
+    expect(find.text('Apex'), findsNothing);
+    expect(find.text('Fake Threat Scan'), findsNothing);
+  });
+
+  testWidgets('threat map hex taps open centered region intel', (tester) async {
+    final controller = LightcoreController();
+    addTearDown(controller.dispose);
+    controller
+      ..kills = LightcoreController.unlockKillsForOuterSlot(0)
+      ..lumens = 1000;
+    controller.buildTowerAt(0, TowerLibrary.redPrism);
+
+    await _pumpShell(tester, controller);
+    await tester.tap(find.byTooltip('Threat Map'));
+    await _pumpTransition(tester);
+
+    final surface = find.byKey(const ValueKey<String>('threat-map-surface'));
+    final center = tester.getCenter(surface);
+
+    await tester.tapAt(center);
+    await tester.pumpAndSettle();
+
+    expect(find.byType(Dialog), findsOneWidget);
+    expect(find.text('First Stabilizer'), findsWidgets);
+
+    await tester.tap(find.byTooltip('Close region intel'));
+    await tester.pumpAndSettle();
+
+    await tester.tapAt(center + const Offset(-46, -72));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(Dialog), findsOneWidget);
+    expect(find.textContaining('Uncharted Ring'), findsOneWidget);
+  });
+
+  testWidgets('active threat challenge is visible on battle hud', (
+    tester,
+  ) async {
+    final controller = LightcoreController();
+    addTearDown(controller.dispose);
+    controller
+      ..kills = LightcoreController.unlockKillsForOuterSlot(0)
+      ..lumens = 1000;
+    controller.buildTowerAt(0, TowerLibrary.redPrism);
+    final starter = controller.threatRegionConfigs.first;
+    expect(controller.startThreatRegionChallenge(starter.id), isTrue);
+
+    await _pumpShell(tester, controller);
+
+    expect(find.textContaining('First Stabilizer'), findsWidgets);
+    expect(find.textContaining('Pressure run'), findsOneWidget);
   });
 
   testWidgets(
@@ -2264,9 +2326,7 @@ void main() {
     );
   });
 
-  testWidgets('header scan badge appears only at 10 or more tickets', (
-    tester,
-  ) async {
+  testWidgets('threat scan batch control lives on map screen', (tester) async {
     final controller = LightcoreController();
     final starterRegion = controller.threatRegionConfigs.first;
     controller.debugSeedProgressionLayer(2);
@@ -2276,15 +2336,15 @@ void main() {
         stabilizedLevel: starterRegion.stabilizationLayers,
       )
       ..debugGrantApexCore(starterRegion.primaryBossId);
-    controller.enemyTickets = 9;
+    controller.enemyTickets = 10;
     addTearDown(controller.dispose);
 
     await _pumpShell(tester, controller);
 
     expect(find.text('10+'), findsNothing);
 
-    controller.debugAddEnemyTickets(1);
-    await tester.pump();
+    await tester.tap(find.byTooltip('Threat Map'));
+    await _pumpTransition(tester);
 
     expect(find.text('10+'), findsOneWidget);
   });

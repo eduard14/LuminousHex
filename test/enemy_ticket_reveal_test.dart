@@ -286,18 +286,10 @@ void main() {
     expect(controller.enemyCardById(EnemyLibrary.basicRed.id)?.copies, 0);
   });
 
-  testWidgets('local fake scan previews pulses without mutating inventory', (
+  testWidgets('pull sheet no longer exposes local fake threat scans', (
     tester,
   ) async {
     final controller = LightcoreController();
-    Map<String, ({int copies, bool unlocked})> enemySnapshot() => {
-      for (final card in controller.enemyCards)
-        card.config.id: (copies: card.copies, unlocked: card.unlocked),
-    };
-    final startingTickets = controller.enemyTickets;
-    final startingPullCount = controller.enemyPullCount;
-    final startingLastPulls = controller.lastEnemyPackPulls.length;
-    final startingInventory = enemySnapshot();
     addTearDown(() {
       tester.view.resetPhysicalSize();
       tester.view.resetDevicePixelRatio();
@@ -313,109 +305,22 @@ void main() {
     );
     await tester.pump();
 
-    final fakeScanButton = find.text('Fake Threat Scan');
-
-    expect(fakeScanButton, findsOneWidget);
-
-    await tester.tap(fakeScanButton);
-    await tester.pump();
-
+    expect(find.text('Threat Scans'), findsOneWidget);
+    expect(find.text('Fake Threat Scan'), findsNothing);
+    expect(find.text('Preview Only'), findsNothing);
     expect(
-      find.descendant(
-        of: find.byType(Dialog),
-        matching: find.text('Threat Scans'),
+      find.textContaining(
+        RegExp('preview', caseSensitive: false),
+        findRichText: true,
       ),
-      findsOneWidget,
+      findsNothing,
     );
-    expect(find.text('Preview Only'), findsOneWidget);
-    expect(find.textContaining('Silver sweep - no indication'), findsOneWidget);
-    expect(find.textContaining('Orange'), findsNothing);
-    expect(find.textContaining('Azure'), findsNothing);
-    expect(find.textContaining('Close in'), findsOneWidget);
-    final initialCloseButton = tester.widget<FilledButton>(
-      find
-          .ancestor(
-            of: find.textContaining('Close in'),
-            matching: find.byType(FilledButton),
-          )
-          .first,
-    );
-    expect(initialCloseButton.onPressed, isNull);
-
-    await tester.pump(const Duration(milliseconds: 1300));
-    await tester.pump();
-
-    expect(find.textContaining('Silver pulse - no indication'), findsOneWidget);
-    expect(find.textContaining('Orange'), findsNothing);
-    expect(find.textContaining('Azure'), findsNothing);
-    expect(find.text('x3'), findsNothing);
-    expect(find.text('Skip'), findsNothing);
-    expect(find.text('Close'), findsNothing);
-    expect(find.textContaining('Close in'), findsOneWidget);
-
-    await tester.pump(const Duration(milliseconds: 2100));
-    await tester.pump();
-
-    expect(find.textContaining('Scan pulse resolving'), findsOneWidget);
-    expect(find.textContaining('Azure'), findsNothing);
-    expect(find.text('x3'), findsNothing);
-
-    await tester.pump(const Duration(milliseconds: 1500));
-    await tester.pump();
-
-    expect(find.textContaining('Scan pulse resolving'), findsOneWidget);
-    expect(find.text('x3'), findsNothing);
-
-    await tester.pump(const Duration(milliseconds: 1300));
-    await tester.pump();
-
-    expect(find.textContaining('Azure lock held'), findsOneWidget);
-    expect(find.text('x3'), findsNothing);
-
-    await tester.pump(const Duration(milliseconds: 350));
-    await tester.pump();
-
-    expect(find.textContaining('Azure pulse stacking'), findsOneWidget);
-    expect(find.text('x3'), findsNothing);
-
-    await tester.pump(const Duration(milliseconds: 1800));
-    await tester.pump();
-
-    expect(
-      find.byKey(const ValueKey<String>('rarity-hidden-rare')),
-      findsWidgets,
-    );
-    expect(
-      find.byKey(const ValueKey<String>('rarity-wash-rare')),
-      findsOneWidget,
-    );
-    expect(find.text('x2'), findsNothing);
-
-    await tester.pump(const Duration(milliseconds: 5200));
-    await tester.pump();
-
-    expect(find.text('x3'), findsOneWidget);
-    expect(find.text('x2'), findsOneWidget);
-    expect(find.text('Skip'), findsNothing);
-    expect(find.text('Close'), findsOneWidget);
-    expect(controller.enemyTickets, startingTickets);
-    expect(controller.enemyPullCount, startingPullCount);
-    expect(controller.lastEnemyPackPulls, hasLength(startingLastPulls));
-    expect(enemySnapshot(), startingInventory);
   });
 
-  testWidgets('local fake apex scan does not mutate apex inventory', (
+  testWidgets('pull sheet no longer exposes local fake apex scans', (
     tester,
   ) async {
     final controller = LightcoreController();
-    Map<String, ({int copies, bool unlocked})> bossSnapshot() => {
-      for (final card in controller.bossEnemyCards)
-        card.config.id: (copies: card.copies, unlocked: card.unlocked),
-    };
-    final startingTickets = controller.bossTickets;
-    final startingPullCount = controller.bossPullCount;
-    final startingLastPulls = controller.lastBossPackPulls.length;
-    final startingInventory = bossSnapshot();
     addTearDown(() {
       tester.view.resetPhysicalSize();
       tester.view.resetDevicePixelRatio();
@@ -436,29 +341,16 @@ void main() {
 
     final fakeBossButton = find.text('Fake Boss Reveal');
 
-    expect(fakeBossButton, findsOneWidget);
-
-    await tester.tap(fakeBossButton);
-    await tester.pump();
-
+    expect(find.text('Regional Bosses'), findsOneWidget);
+    expect(fakeBossButton, findsNothing);
+    expect(find.text('Preview Only'), findsNothing);
     expect(
-      find.descendant(
-        of: find.byType(Dialog),
-        matching: find.text('Regional Bosses'),
+      find.textContaining(
+        RegExp('preview', caseSensitive: false),
+        findRichText: true,
       ),
-      findsOneWidget,
+      findsNothing,
     );
-    expect(find.text('Preview Only'), findsOneWidget);
-
-    await tester.pump(const Duration(seconds: 13));
-    await tester.pump();
-    await tester.tap(find.text('Close'));
-    await tester.pump(const Duration(milliseconds: 300));
-
-    expect(controller.bossTickets, startingTickets);
-    expect(controller.bossPullCount, startingPullCount);
-    expect(controller.lastBossPackPulls, hasLength(startingLastPulls));
-    expect(bossSnapshot(), startingInventory);
   });
 
   testWidgets('10+ option opens a batch slider', (tester) async {

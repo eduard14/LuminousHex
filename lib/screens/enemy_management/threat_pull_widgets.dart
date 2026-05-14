@@ -302,7 +302,7 @@ class _BossSignalOrb extends StatelessWidget {
         dimension: 68,
         artSize: 42,
         locked: !bossCard.isOwned,
-        semanticLabel: '${config.name} active Apex scan preview',
+        semanticLabel: '${config.name} active Apex card preview',
         topRight: !bossCard.isOwned
             ? const Icon(
                 Icons.lock_rounded,
@@ -368,7 +368,7 @@ class _BossScanPreview extends StatelessWidget {
         selected: active && owned,
         onTap: onTap,
         semanticLabel:
-            '${card.config.name}, ${owned ? 'owned' : 'locked'} Apex scan preview',
+            '${card.config.name}, ${owned ? 'owned' : 'locked'} Apex card preview',
         topRight: Icon(
           !owned
               ? Icons.lock_rounded
@@ -382,53 +382,6 @@ class _BossScanPreview extends StatelessWidget {
               ? LightcorePalette.warning
               : card.config.affinity.color,
         ),
-      ),
-    );
-  }
-}
-
-class _LocalRunFakeScanButton extends StatelessWidget {
-  const _LocalRunFakeScanButton({
-    required this.title,
-    required this.description,
-    required this.buttonLabel,
-    required this.revealBusy,
-    required this.onPressed,
-  });
-
-  final String title;
-  final String description;
-  final String buttonLabel;
-  final bool revealBusy;
-  final VoidCallback onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: LightcorePalette.panelRaised.withValues(alpha: 0.6),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: LightcorePalette.aether.withValues(alpha: 0.18),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(title, style: Theme.of(context).textTheme.titleMedium),
-          const SizedBox(height: 6),
-          Text(description, style: Theme.of(context).textTheme.bodySmall),
-          const SizedBox(height: 12),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: _TicketButton(
-              label: buttonLabel,
-              enabled: !revealBusy,
-              onPressed: onPressed,
-            ),
-          ),
-        ],
       ),
     );
   }

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
@@ -35,6 +36,7 @@ import 'enemy_management_screen.dart';
 import 'friend_management_screen.dart';
 import 'prestige_screen.dart';
 import 'space_room_screen.dart';
+import 'threat_map_screen.dart';
 import 'tournament_screen.dart';
 import 'tower_management_screen.dart';
 
@@ -88,6 +90,7 @@ class _LightcoreShellState extends State<LightcoreShell> {
     _ShellOverlayDestination.battle,
     _ShellOverlayDestination.towers,
     _ShellOverlayDestination.managers,
+    _ShellOverlayDestination.threatMap,
     _ShellOverlayDestination.enemies,
     _ShellOverlayDestination.prestige,
   ];
@@ -109,6 +112,9 @@ class _LightcoreShellState extends State<LightcoreShell> {
   _overlayScrollControllers = {
     _ShellOverlayDestination.towers: ScrollController(keepScrollOffset: false),
     _ShellOverlayDestination.managers: ScrollController(
+      keepScrollOffset: false,
+    ),
+    _ShellOverlayDestination.threatMap: ScrollController(
       keepScrollOffset: false,
     ),
     _ShellOverlayDestination.spaceRoom: ScrollController(
@@ -307,7 +313,7 @@ class _LightcoreShellState extends State<LightcoreShell> {
       _SettingsStatEntry(
         label: 'Scans Resolved',
         value: _formatMetricCount(controller.totalPullsOpened),
-        subtitle: 'Threat scans and apex scans resolved across your shell.',
+        subtitle: 'Threat scans resolved across your sector map.',
         tint: LightcorePalette.scanGlow,
         icon: LightcoreIcons.threatScan,
       ),
@@ -721,6 +727,8 @@ class _LightcoreShellState extends State<LightcoreShell> {
         widget.controller.markTutorialTowerMatrixOpened();
       case _ShellOverlayDestination.managers:
         widget.controller.markTutorialManagersOpened();
+      case _ShellOverlayDestination.threatMap:
+        break;
       case _ShellOverlayDestination.spaceRoom:
         break;
       case _ShellOverlayDestination.friends:
@@ -731,6 +739,7 @@ class _LightcoreShellState extends State<LightcoreShell> {
         widget.controller.markTutorialMentorshipOpened();
       case _ShellOverlayDestination.battle ||
           _ShellOverlayDestination.enemies ||
+          _ShellOverlayDestination.threatMap ||
           _ShellOverlayDestination.dungeons ||
           _ShellOverlayDestination.tournaments ||
           _ShellOverlayDestination.prestige:
@@ -756,6 +765,11 @@ class _LightcoreShellState extends State<LightcoreShell> {
         controller: controller,
         isActive: true,
         scrollController: _overlayScrollControllerFor(destination),
+      ),
+      _ShellOverlayDestination.threatMap => ThreatMapScreen(
+        controller: controller,
+        isActive: true,
+        onClose: _closeOverlay,
       ),
       _ShellOverlayDestination.spaceRoom => SpaceRoomScreen(
         controller: controller,
@@ -1026,11 +1040,6 @@ class _LightcoreShellState extends State<LightcoreShell> {
                               builder: (context, _) {
                                 final claimablePassRewards =
                                     controller.totalClaimableBattlePassRewards;
-                                final pullBadgeLabel =
-                                    controller.canScanThreatMap &&
-                                        controller.enemyTickets >= 10
-                                    ? '10+'
-                                    : null;
                                 final managerNotificationLabel =
                                     controller.newEquipmentNotificationCount ==
                                         1
@@ -1065,24 +1074,6 @@ class _LightcoreShellState extends State<LightcoreShell> {
                                         .tutorialHighlightsStoreButton,
                                     highlightTint: LightcorePalette.quest,
                                     onPressed: () => _openStore(context),
-                                  ),
-                                  _HeaderActionButton(
-                                    icon: LightcoreIcons.threatScan,
-                                    tooltip: controller.canScanThreatMap
-                                        ? (controller.canOpenEnemyTickets
-                                              ? 'Open Scans (${controller.enemyTickets} scans ready)'
-                                              : 'Open Scans')
-                                        : 'Open Threat Map',
-                                    badgeLabel: pullBadgeLabel,
-                                    highlighted: controller
-                                        .tutorialHighlightsPullsButton,
-                                    highlightTint: LightcorePalette.quest,
-                                    pulseSignal: controller
-                                        .tutorialPulseSignalFor(
-                                          LightcoreTutorialPulseTarget
-                                              .pullsButton,
-                                        ),
-                                    onPressed: () => _openEnemyPulls(context),
                                   ),
                                   _HeaderActionButton(
                                     icon: Icons.workspace_premium_rounded,
@@ -1169,6 +1160,30 @@ class _LightcoreShellState extends State<LightcoreShell> {
                           ),
                         if (battleHudVisible)
                           Positioned(
+                            top: isCompactLayout ? 78 : 86,
+                            left: isCompactLayout ? 8 : 120,
+                            right: isCompactLayout ? 8 : 120,
+                            child: AnimatedBuilder(
+                              animation: controller,
+                              builder: (context, _) {
+                                final challenge =
+                                    controller.activeThreatRegionChallenge;
+                                if (challenge == null) {
+                                  return const SizedBox.shrink();
+                                }
+                                return _ThreatChallengeHudBanner(
+                                  controller: controller,
+                                  onTap: () => showThreatRegionIntelDialog(
+                                    context,
+                                    controller,
+                                    challenge.regionId,
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                        if (battleHudVisible)
+                          Positioned(
                             left: 0,
                             right: 0,
                             bottom: 0,
@@ -1236,7 +1251,10 @@ class _LightcoreShellState extends State<LightcoreShell> {
                                   destination: _activeOverlay!,
                                   onClose: _closeOverlay,
                                   onOpenLayers: () => _openLayerPicker(context),
-                                  fullscreen: _eventBattleSurfaceActive,
+                                  fullscreen:
+                                      _eventBattleSurfaceActive ||
+                                      _activeOverlay ==
+                                          _ShellOverlayDestination.threatMap,
                                   child: _buildOverlayScreen(_activeOverlay!),
                                 ),
                               ),
@@ -1265,17 +1283,6 @@ class _LightcoreShellState extends State<LightcoreShell> {
         );
       },
     );
-  }
-
-  Future<void> _openEnemyPulls(BuildContext context) {
-    if (widget.controller.tutorialStep == LightcoreTutorialStep.armFirstBoss) {
-      widget.controller.pushNotification(
-        'Go to Anomalies so you can add the Apex Anomaly you just scanned.',
-        duration: 4.0,
-      );
-      return Future<void>.value();
-    }
-    return showEnemyPullSheet(context, widget.controller);
   }
 
   void _openBattlePass(BuildContext context) {

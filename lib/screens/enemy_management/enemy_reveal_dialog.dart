@@ -5,15 +5,11 @@ class _EnemyPackRevealDialog extends StatefulWidget {
     required this.pulls,
     required this.highestAvailableRarity,
     required this.secondHighestAvailableRarity,
-    this.title = 'Threat Scans',
-    this.previewOnly = false,
   });
 
   final List<PackPullResult> pulls;
   final EnemyCardRarity highestAvailableRarity;
   final EnemyCardRarity? secondHighestAvailableRarity;
-  final String title;
-  final bool previewOnly;
 
   @override
   State<_EnemyPackRevealDialog> createState() => _EnemyPackRevealDialogState();
@@ -508,7 +504,7 @@ class _EnemyPackRevealDialogState extends State<_EnemyPackRevealDialog>
 
   String get _statusLabel {
     if (_isComplete) {
-      return '${widget.title} resolved';
+      return 'Threat Scans resolved';
     }
     if (_revealProgress > 0) {
       return 'Signatures resolving';
@@ -624,21 +620,15 @@ class _EnemyPackRevealDialogState extends State<_EnemyPackRevealDialog>
                         children: [
                           Expanded(
                             child: Text(
-                              widget.title,
+                              'Threat Scans',
                               style: textTheme.titleLarge,
                             ),
                           ),
-                          if (widget.previewOnly) ...[
-                            const SizedBox(width: 12),
-                            const _DialogStatPill(label: 'Preview Only'),
-                          ],
                         ],
                       ),
                       const SizedBox(height: 6),
                       Text(
-                        widget.previewOnly
-                            ? '$_statusLabel - inventory unchanged'
-                            : _statusLabel,
+                        _statusLabel,
                         style: textTheme.bodyMedium?.copyWith(
                           color: _accentColor,
                           fontWeight: FontWeight.w700,

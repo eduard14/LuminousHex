@@ -721,6 +721,12 @@ extension LightcoreControllerStateAccessors on LightcoreController {
   bool get tutorialHighlightsTowersNav =>
       _tutorialStep == LightcoreTutorialStep.openTowerMatrix;
 
+  bool get tutorialHighlightsThreatMapNav =>
+      _tutorialStep == LightcoreTutorialStep.pullFirstWhiteEnemy ||
+      _tutorialStep == LightcoreTutorialStep.pullFirstRedEnemy ||
+      _tutorialStep == LightcoreTutorialStep.adjustEnemyCount ||
+      _tutorialStep == LightcoreTutorialStep.openBossPulls;
+
   bool get tutorialHighlightsEnemiesNav =>
       _tutorialStep == LightcoreTutorialStep.armFirstBoss;
 

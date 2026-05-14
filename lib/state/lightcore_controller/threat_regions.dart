@@ -45,6 +45,40 @@ extension LightcoreControllerThreatRegions on LightcoreController {
   ThreatRegionChallengeState? get activeThreatRegionChallenge =>
       _threatRegionChallenge;
 
+  double get activeThreatRegionChallengeProgress {
+    final challenge = _threatRegionChallenge;
+    if (challenge == null) {
+      return 0;
+    }
+    return (challenge.elapsedSeconds / threatRegionChallengeSeconds).clamp(
+      0.0,
+      1.0,
+    );
+  }
+
+  double get activeThreatRegionChallengeRemainingSeconds {
+    final challenge = _threatRegionChallenge;
+    if (challenge == null) {
+      return 0;
+    }
+    return max(0, threatRegionChallengeSeconds - challenge.elapsedSeconds);
+  }
+
+  int get activeThreatRegionRequiredBossCount {
+    final challenge = _threatRegionChallenge;
+    if (challenge == null || !challenge.finalLayer) {
+      return 0;
+    }
+    final config = threatRegionConfigById(challenge.regionId);
+    if (config == null) {
+      return 0;
+    }
+    return config.secondaryBossId == null ? 1 : 2;
+  }
+
+  int get activeThreatRegionDefeatedBossCount =>
+      _threatRegionDefeatedBossIds.length;
+
   String? get selectedThreatRegionId => _selectedThreatRegionId;
 
   ThreatRegionConfig? get selectedThreatRegionConfig =>

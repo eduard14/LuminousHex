@@ -75,7 +75,7 @@ const List<_HelpSectionData> _baseHelpSections = <_HelpSectionData>[
         'Top action icons:\n'
         '- Storefront opens the Store.\n'
         '- Friends opens friend requests and daily Threat Scan gifts.\n'
-        '- Scan reticle opens Threat Scans. A badge appears once 10 or more scans are ready.\n'
+        '- Map opens Threat Scans and region stabilization.\n'
         '- Premium badge opens Passes. A number badge means claimable rewards are waiting.\n'
         '- Settings opens stats, help, and reset controls.\n\n'
         'Status icons:\n'

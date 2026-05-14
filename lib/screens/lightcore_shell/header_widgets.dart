@@ -285,7 +285,6 @@ class _HeaderActionButton extends StatelessWidget {
     this.badgeLabel,
     this.highlighted = false,
     this.highlightTint = LightcorePalette.aether,
-    this.pulseSignal = 0,
   });
 
   final IconData icon;
@@ -294,7 +293,6 @@ class _HeaderActionButton extends StatelessWidget {
   final String? badgeLabel;
   final bool highlighted;
   final Color highlightTint;
-  final int pulseSignal;
 
   @override
   Widget build(BuildContext context) {
@@ -320,7 +318,6 @@ class _HeaderActionButton extends StatelessWidget {
       active: highlighted,
       tint: highlightTint,
       radius: 18,
-      pulseSignal: pulseSignal,
       child: button,
     );
   }
@@ -508,6 +505,7 @@ enum _ShellOverlayDestination {
   battle,
   towers,
   managers,
+  threatMap,
   spaceRoom,
   friends,
   mentees,
@@ -523,6 +521,7 @@ extension on _ShellOverlayDestination {
     _ShellOverlayDestination.battle => 'Battle',
     _ShellOverlayDestination.towers => 'Towers',
     _ShellOverlayDestination.managers => 'Managers',
+    _ShellOverlayDestination.threatMap => 'Threat Map',
     _ShellOverlayDestination.spaceRoom => 'Space Room',
     _ShellOverlayDestination.friends => 'Friends',
     _ShellOverlayDestination.mentees => 'Mentorship',
@@ -537,6 +536,7 @@ extension on _ShellOverlayDestination {
     _ShellOverlayDestination.battle => 'Battle',
     _ShellOverlayDestination.towers => 'Towers',
     _ShellOverlayDestination.managers => 'Managers',
+    _ShellOverlayDestination.threatMap => 'Map',
     _ShellOverlayDestination.spaceRoom => 'Space',
     _ShellOverlayDestination.friends => 'Friends',
     _ShellOverlayDestination.mentees => 'Mentees',
@@ -551,6 +551,7 @@ extension on _ShellOverlayDestination {
     _ShellOverlayDestination.battle => LightcorePalette.aether,
     _ShellOverlayDestination.towers => LightcorePalette.solar,
     _ShellOverlayDestination.managers => LightcorePalette.verdant,
+    _ShellOverlayDestination.threatMap => LightcorePalette.scanGlow,
     _ShellOverlayDestination.spaceRoom => LightcorePalette.aether,
     _ShellOverlayDestination.friends => LightcorePalette.aether,
     _ShellOverlayDestination.mentees => LightcorePalette.violet,
@@ -565,6 +566,7 @@ extension on _ShellOverlayDestination {
     _ShellOverlayDestination.battle => const Icon(Icons.radar_rounded),
     _ShellOverlayDestination.towers => const TowerRingIcon(),
     _ShellOverlayDestination.managers => const Icon(Icons.style_rounded),
+    _ShellOverlayDestination.threatMap => const Icon(LightcoreIcons.threatScan),
     _ShellOverlayDestination.spaceRoom => const Icon(Icons.public_rounded),
     _ShellOverlayDestination.friends => const Icon(Icons.group_add_rounded),
     _ShellOverlayDestination.mentees => const Icon(Icons.account_tree_rounded),
@@ -582,6 +584,7 @@ extension on _ShellOverlayDestination {
   String? lockedMessage(LightcoreController controller) => switch (this) {
     _ShellOverlayDestination.towers => _towerArchiveLockMessage(controller),
     _ShellOverlayDestination.managers => _managerLockMessage(controller),
+    _ShellOverlayDestination.threatMap => _threatMapLockMessage(controller),
     _ShellOverlayDestination.enemies => _enemySuiteLockMessage(controller),
     _ShellOverlayDestination.mentees ||
     _ShellOverlayDestination.mentors => _mentorshipLockMessage(controller),
@@ -592,14 +595,21 @@ extension on _ShellOverlayDestination {
   };
 }
 
+String? _threatMapLockMessage(LightcoreController controller) {
+  if (controller.threatRegionsUnlocked) {
+    return null;
+  }
+  return 'Threat Map unlocks after the first tower is online.';
+}
+
 String? _enemySuiteLockMessage(LightcoreController controller) {
   if (controller.enemySuiteBuilderUnlocked) {
     return null;
   }
   if (controller.threatRegionsUnlocked) {
-    return 'Anomalies unlock after the first regional boss drops suite pieces. Use the Scan reticle, open Threat Map, and stabilize the starter region.';
+    return 'Anomalies unlock after the first regional boss drops suite pieces. Open Map and stabilize the starter region.';
   }
-  return 'Anomalies unlock after regional boss suite pieces exist. Build the first tower, then challenge the starter region from the Scan reticle.';
+  return 'Anomalies unlock after regional boss suite pieces exist. Build the first tower, then stabilize the starter region from Map.';
 }
 
 String? _towerArchiveLockMessage(LightcoreController controller) {

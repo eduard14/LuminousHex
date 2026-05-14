@@ -2,13 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lightcore/data/enemy_configs.dart';
 import 'package:lightcore/screens/card_management_screen.dart';
-import 'package:lightcore/screens/enemy_management_screen.dart';
 import 'package:lightcore/screens/prestige_screen.dart';
+import 'package:lightcore/screens/threat_map_screen.dart';
 
 import 'helpers/lightcore_test_fixtures.dart';
 
 void main() {
-  testWidgets('scan sheet explains threat and apex spending roles', (
+  testWidgets('threat map presents sectors separately from apex builds', (
     tester,
   ) async {
     final controller = createDeterministicController();
@@ -20,35 +20,23 @@ void main() {
         debugShowCheckedModeBanner: false,
         theme: buildTestLightcoreTheme(),
         home: Scaffold(
-          body: Builder(
-            builder: (context) {
-              return Center(
-                child: FilledButton(
-                  onPressed: () => showEnemyPullSheet(context, controller),
-                  child: const Text('Open scans'),
-                ),
-              );
-            },
+          body: ThreatMapScreen(
+            controller: controller,
+            isActive: true,
+            onClose: () {},
           ),
         ),
       ),
     );
-
-    await tester.tap(find.text('Open scans'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Threat Scans reveal map regions'), findsOneWidget);
-    expect(find.textContaining('fixed hex map'), findsOneWidget);
+    expect(find.text('Threat Map'), findsOneWidget);
     expect(
-      find.text('These are enemies and encounter modifiers, not allies.'),
+      find.byKey(const ValueKey<String>('threat-map-surface')),
       findsOneWidget,
     );
-
-    await tester.tap(find.text('Apex'));
-    await tester.pumpAndSettle();
-
-    expect(find.text('Threat Scans reveal region bosses'), findsOneWidget);
-    expect(find.textContaining('Final clears drop Apex Cores'), findsOneWidget);
+    expect(find.text('Apex'), findsNothing);
+    expect(find.text('Fake Threat Scan'), findsNothing);
   });
 
   testWidgets(

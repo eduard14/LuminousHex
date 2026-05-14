@@ -1433,7 +1433,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         LightcoreTutorialStep.upgradeFirstTowerToLevel3 =>
           'Click the Red Prism in Hex 1 and upgrade it to level 3.',
         LightcoreTutorialStep.pullFirstWhiteEnemy =>
-          'Click Pulls and run 1 threat scan.',
+          'Click Map and run 1 threat scan.',
         LightcoreTutorialStep.readEffectiveGain =>
           'Tap Output Efficiency to inspect Effective Gain.',
         LightcoreTutorialStep.autoQueueCheck =>
@@ -1441,11 +1441,11 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         LightcoreTutorialStep.upgradeFirstTowerToLevel4 =>
           'Click the Red Prism in Hex 1 and upgrade it again.',
         LightcoreTutorialStep.pullFirstRedEnemy =>
-          'Click Pulls and run 1 more threat scan.',
+          'Click Map and run 1 more threat scan.',
         LightcoreTutorialStep.setFirstEnemyTarget =>
           'Click Anomalies and review Basic Red in the active deck.',
         LightcoreTutorialStep.adjustEnemyCount =>
-          'Click Anomalies and inspect the Region Echo and stabilization controls.',
+          'Click Map and inspect the Region Echo and stabilization controls.',
         LightcoreTutorialStep.openTowerMatrix =>
           'Click Towers to inspect completed Layer 1 sets and Layer 2 shell tools.',
         LightcoreTutorialStep.upgradeCoreRange =>
@@ -1455,7 +1455,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         LightcoreTutorialStep.claimBattlePassReward =>
           'Click Passes and claim a reward.',
         LightcoreTutorialStep.openBossPulls =>
-          'Click Pulls and use Threat Scans to reveal or echo a region.',
+          'Click Map and stabilize the starter region.',
         LightcoreTutorialStep.armFirstBoss =>
           'Click Anomalies, open Apex, and review the enemy suite pieces from regional bosses.',
         LightcoreTutorialStep.defeatFirstBoss =>

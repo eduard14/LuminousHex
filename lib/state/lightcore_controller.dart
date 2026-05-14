@@ -452,13 +452,12 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
     teachGoal:
         'Threat Scans radiate across the hex map. A scan can reveal a region or echo one you already know.',
     trigger: 'Queue tutorial done',
-    primaryClickTarget: 'Top HUD > Scans > Threat Map',
+    primaryClickTarget: 'Bottom nav > Map',
     coachCopy:
         'Run one Threat Scan from the starter region. Watch the pulse move across hex edges.',
     completionCondition: 'Resolve 1 Threat Scan',
     reward: 'Threat Map primer',
-    failureHelpState:
-        'Use the highlighted scan button and review the hit region or Region Echo.',
+    failureHelpState: 'Open Map and run one Threat Scan from the scan toolbar.',
     analyticsEvent: 'tutorial_safe_threat_scan',
   ),
   LightcoreTutorialStep.readEffectiveGain: LightcoreTutorialQuestDefinition(
@@ -513,12 +512,12 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
     teachGoal:
         'Regions define the anomaly combination. Harder rings bring rarer mixes and boss pressure.',
     trigger: 'After safe scan lesson',
-    primaryClickTarget: 'Anomalies > Threat Map > Challenge',
+    primaryClickTarget: 'Bottom nav > Map > Challenge',
     coachCopy:
         'Challenge the next starter-region stabilization layer. Failing returns you to the previous stabilized level.',
     completionCondition: 'Resolve second Threat Scan',
     reward: 'Threat Scan x1',
-    failureHelpState: 'Open Scans and run the highlighted single scan.',
+    failureHelpState: 'Open Map and run the highlighted single scan.',
     analyticsEvent: 'tutorial_red_counter_scan',
   ),
   LightcoreTutorialStep.setFirstEnemyTarget: LightcoreTutorialQuestDefinition(
@@ -541,12 +540,12 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
     teachGoal:
         'Scans can hit revealed regions. Region Echoes merge from stabilized regions to reveal higher-ring hexes.',
     trigger: 'Red signature is available',
-    primaryClickTarget: 'Anomalies > Threat Map',
+    primaryClickTarget: 'Bottom nav > Map',
     coachCopy:
         'Review the Threat Map. Echoes are not wasted scans; enough of them become a beacon.',
     completionCondition: 'Region Echo reviewed',
     reward: 'Small Lumen grant',
-    failureHelpState: 'Open Anomalies and read the Threat Map panel.',
+    failureHelpState: 'Open Map and inspect a region.',
     analyticsEvent: 'tutorial_adjust_enemy_count',
   ),
   LightcoreTutorialStep.openTowerMatrix: LightcoreTutorialQuestDefinition(
@@ -611,13 +610,12 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
     teachGoal:
         'The full hex map unlocks after the starter region is fully stabilized and its boss is defeated.',
     trigger: 'Prism Shell created',
-    primaryClickTarget: 'Top HUD > Scans > Threat Map > Challenge',
+    primaryClickTarget: 'Bottom nav > Map > Challenge',
     coachCopy:
-        'Open the Threat Map from the scan reticle and challenge the starter region until the final boss layer is cleared.',
+        'Open Map and challenge the starter region until the final boss layer is cleared.',
     completionCondition: 'Starter region fully stabilized',
     reward: 'Full Threat Map',
-    failureHelpState:
-        'Use the Scan reticle, open the Threat Map panel, and start the next stabilization challenge.',
+    failureHelpState: 'Open Map and start the next stabilization challenge.',
     analyticsEvent: 'tutorial_open_boss_pulls',
   ),
   LightcoreTutorialStep.armFirstBoss: LightcoreTutorialQuestDefinition(

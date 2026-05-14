@@ -1636,7 +1636,6 @@ class EnemyPullSheet extends StatefulWidget {
 class _EnemyPullSheetState extends State<EnemyPullSheet>
     with SingleTickerProviderStateMixin {
   static const int _rewardedTicketGrant = 5;
-  static const bool _localFlutterRunFakeScansEnabled = kDebugMode;
 
   late final AnimationController _scanPulseController;
   ThreatRegionScanResult? _scanPulseResult;
@@ -1777,8 +1776,8 @@ class _EnemyPullSheetState extends State<EnemyPullSheet>
                             ? 'MAX'
                             : '${controller.pullsToNextBossSummoningLevel}',
                         statusLabel: controller.isBossSummoningLevelMaxed
-                            ? 'Boss scan tier maxed'
-                            : '${controller.pullsToNextBossSummoningLevel} to boss scan tier ${controller.nextBossSummoningLevel}',
+                            ? 'Boss intel tier maxed'
+                            : '${controller.pullsToNextBossSummoningLevel} to boss intel tier ${controller.nextBossSummoningLevel}',
                         trailing: IconButton.filledTonal(
                           onPressed: () => _showBossPullRates(context),
                           tooltip: 'Show boss reveal rates',
@@ -1968,17 +1967,6 @@ class _EnemyPullSheetState extends State<EnemyPullSheet>
                           ],
                         ),
                       ),
-                      if (_localFlutterRunFakeScansEnabled) ...[
-                        const SizedBox(height: 18),
-                        _LocalRunFakeScanButton(
-                          title: 'Local Fake Boss Reveal',
-                          description:
-                              'Preview-only. Does not spend sigils or write Apex cards to inventory.',
-                          buttonLabel: 'Fake Boss Reveal',
-                          revealBusy: _revealBusy,
-                          onPressed: () => _fakeBossHunt(context),
-                        ),
-                      ],
                     ] else ...[
                       _ThreatScanSection(
                         title: 'Threat Map',
@@ -2131,17 +2119,6 @@ class _EnemyPullSheetState extends State<EnemyPullSheet>
                           ],
                         ),
                       ),
-                      if (_localFlutterRunFakeScansEnabled) ...[
-                        const SizedBox(height: 18),
-                        _LocalRunFakeScanButton(
-                          title: 'Local Fake Threat Scan',
-                          description:
-                              'Preview-only. Does not spend scans or write anomaly cards to inventory.',
-                          buttonLabel: 'Fake Threat Scan',
-                          revealBusy: _revealBusy,
-                          onPressed: () => _fakeThreatScan(context),
-                        ),
-                      ],
                     ],
                   ],
                 );
@@ -2414,78 +2391,6 @@ class _EnemyPullSheetState extends State<EnemyPullSheet>
     }
   }
 
-  Future<void> _fakeThreatScan(BuildContext context) async {
-    if (_revealBusy) {
-      return;
-    }
-    await _showPullReveal(
-      context,
-      pulls: _buildFakePulls(
-        focusRarity: controller.highestAvailableEnemyPullRarity,
-        availableRarities: controller.availableEnemyPullRarities,
-        poolsByRarity: EnemyLibrary.byRarity,
-      ),
-      highestAvailableRarity: controller.highestAvailableEnemyPullRarity,
-      secondHighestAvailableRarity:
-          controller.secondHighestAvailableEnemyPullRarity,
-      previewOnly: true,
-    );
-  }
-
-  Future<void> _fakeBossHunt(BuildContext context) async {
-    if (_revealBusy) {
-      return;
-    }
-    await _showPullReveal(
-      context,
-      pulls: _buildFakePulls(
-        focusRarity: controller.highestAvailableBossPullRarity,
-        availableRarities: controller.availableBossPullRarities,
-        poolsByRarity: BossEnemyLibrary.byRarity,
-      ),
-      highestAvailableRarity: controller.highestAvailableBossPullRarity,
-      secondHighestAvailableRarity:
-          controller.secondHighestAvailableBossPullRarity,
-      title: 'Regional Bosses',
-      previewOnly: true,
-    );
-  }
-
-  Future<void> _showPullReveal(
-    BuildContext context, {
-    required List<PackPullResult> pulls,
-    required EnemyCardRarity highestAvailableRarity,
-    required EnemyCardRarity? secondHighestAvailableRarity,
-    String title = 'Threat Scans',
-    bool previewOnly = false,
-  }) async {
-    setState(() {
-      _revealBusy = true;
-    });
-    try {
-      await showDialog<void>(
-        context: context,
-        barrierDismissible: false,
-        barrierColor: LightcorePalette.night.withValues(alpha: 0.92),
-        builder: (dialogContext) {
-          return _EnemyPackRevealDialog(
-            pulls: pulls,
-            highestAvailableRarity: highestAvailableRarity,
-            secondHighestAvailableRarity: secondHighestAvailableRarity,
-            title: title,
-            previewOnly: previewOnly,
-          );
-        },
-      );
-    } finally {
-      if (mounted) {
-        setState(() {
-          _revealBusy = false;
-        });
-      }
-    }
-  }
-
   Future<void> _showThreatMapScanResult(
     BuildContext context,
     ThreatRegionScanResult result,
@@ -2543,33 +2448,6 @@ class _EnemyPullSheetState extends State<EnemyPullSheet>
         });
       }
     }
-  }
-
-  List<PackPullResult> _buildFakePulls({
-    required EnemyCardRarity focusRarity,
-    required List<EnemyCardRarity> availableRarities,
-    required Map<EnemyCardRarity, List<EnemyConfig>> poolsByRarity,
-  }) {
-    final allowedRarities = availableRarities
-        .where((rarity) => rarity.index <= focusRarity.index)
-        .toList(growable: false);
-    final floorRarity = allowedRarities.first;
-    final bridgeRarity = allowedRarities.length > 1
-        ? allowedRarities[allowedRarities.length - 2]
-        : floorRarity;
-    final focusPool = poolsByRarity[focusRarity]!;
-    final bridgePool = poolsByRarity[bridgeRarity]!;
-    final floorPool = poolsByRarity[floorRarity]!;
-    return <PackPullResult>[
-      PackPullResult(config: focusPool[0], isNew: false),
-      PackPullResult(config: bridgePool[1 % bridgePool.length], isNew: false),
-      PackPullResult(config: focusPool[0], isNew: false),
-      PackPullResult(config: floorPool[2 % floorPool.length], isNew: false),
-      PackPullResult(config: focusPool[3 % focusPool.length], isNew: false),
-      PackPullResult(config: focusPool[0], isNew: false),
-      PackPullResult(config: bridgePool[4 % bridgePool.length], isNew: false),
-      PackPullResult(config: focusPool[3 % focusPool.length], isNew: false),
-    ];
   }
 
   void _showPullRates(BuildContext context) {
@@ -2654,7 +2532,7 @@ class _EnemyPullSheetState extends State<EnemyPullSheet>
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Boss scan tier ${controller.bossSummoningLevel}'),
+                Text('Boss intel tier ${controller.bossSummoningLevel}'),
                 Text('Total boss reveals ${controller.bossPullCount}'),
                 const SizedBox(height: 12),
                 MeterBar(
@@ -2665,8 +2543,8 @@ class _EnemyPullSheetState extends State<EnemyPullSheet>
                 const SizedBox(height: 8),
                 Text(
                   maxed
-                      ? 'Boss scan tier maxed. Every Apex Anomaly rarity tier is live.'
-                      : '${controller.bossSummoningLevelPullsIntoCurrent}/${LightcoreController.bossPullsPerSummoningLevel} scans in this tier. ${controller.pullsToNextBossSummoningLevel} more scans unlock boss scan tier ${controller.nextBossSummoningLevel} and ${LightcoreCurrencyLabels.rewardBossScans(controller.nextBossSummoningLevelTicketReward)}.',
+                      ? 'Boss intel tier maxed. Every Apex Anomaly rarity tier is live.'
+                      : '${controller.bossSummoningLevelPullsIntoCurrent}/${LightcoreController.bossPullsPerSummoningLevel} clears in this tier. ${controller.pullsToNextBossSummoningLevel} more clears unlock boss intel tier ${controller.nextBossSummoningLevel} and ${LightcoreCurrencyLabels.rewardBossScans(controller.nextBossSummoningLevelTicketReward)}.',
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
                 const SizedBox(height: 12),
@@ -2682,7 +2560,7 @@ class _EnemyPullSheetState extends State<EnemyPullSheet>
                   ),
                 const SizedBox(height: 8),
                 Text(
-                  'Boss scan tier increases every ${LightcoreController.bossPullsPerSummoningLevel} resolved scans and caps at tier ${LightcoreController.maxBossSummoningLevel}.',
+                  'Boss intel tier increases every ${LightcoreController.bossPullsPerSummoningLevel} resolved boss clears and caps at tier ${LightcoreController.maxBossSummoningLevel}.',
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
               ],

@@ -102,7 +102,7 @@ extension LightcoreControllerBattleEnemyActions on LightcoreController {
   List<PackPullResult> tutorialOpenBossTickets(int count) {
     if (_tutorialStep == LightcoreTutorialStep.openBossPulls && count != 1) {
       _showBanner(
-        'Resolve exactly 1 apex scan so the first Apex lesson stays readable.',
+        'Resolve exactly 1 regional boss intel pulse so the first Apex lesson stays readable.',
       );
       _notifyNow();
       return const <PackPullResult>[];

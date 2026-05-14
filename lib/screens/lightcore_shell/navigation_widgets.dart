@@ -155,6 +155,125 @@ class _ProgressStrip extends StatelessWidget {
   }
 }
 
+class _ThreatChallengeHudBanner extends StatelessWidget {
+  const _ThreatChallengeHudBanner({
+    required this.controller,
+    required this.onTap,
+  });
+
+  final LightcoreController controller;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final challenge = controller.activeThreatRegionChallenge;
+    if (challenge == null) {
+      return const SizedBox.shrink();
+    }
+    final region = controller.threatRegionConfigById(challenge.regionId);
+    if (region == null) {
+      return const SizedBox.shrink();
+    }
+    final progress = controller.activeThreatRegionChallengeProgress;
+    final remaining = controller.activeThreatRegionChallengeRemainingSeconds
+        .ceil();
+    final requiredBosses = controller.activeThreatRegionRequiredBossCount;
+    final defeatedBosses = controller.activeThreatRegionDefeatedBossCount;
+    final bossLabel = requiredBosses <= 0
+        ? 'Pressure run'
+        : 'Apex $defeatedBosses/$requiredBosses';
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(18),
+        onTap: onTap,
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: LightcorePalette.panel.withValues(alpha: 0.94),
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+              color: LightcorePalette.warning.withValues(alpha: 0.48),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: LightcorePalette.warning.withValues(alpha: 0.12),
+                blurRadius: 18,
+                spreadRadius: -8,
+              ),
+            ],
+          ),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Icon(
+                      Icons.flag_rounded,
+                      size: 18,
+                      color: LightcorePalette.warning,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        '${region.name}  •  Lv ${challenge.targetStabilizationLevel}/${region.stabilizationLayers}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                          color: LightcorePalette.mist,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Text(
+                      _formatChallengeDuration(remaining),
+                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                        color: LightcorePalette.warning,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(999),
+                  child: LinearProgressIndicator(
+                    minHeight: 6,
+                    value: progress,
+                    backgroundColor: LightcorePalette.night.withValues(
+                      alpha: 0.72,
+                    ),
+                    color: LightcorePalette.warning,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  bossLabel,
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: LightcorePalette.mist.withValues(alpha: 0.72),
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+String _formatChallengeDuration(int totalSeconds) {
+  final safeSeconds = math.max(0, totalSeconds);
+  final minutes = safeSeconds ~/ 60;
+  final seconds = safeSeconds % 60;
+  return '$minutes:${seconds.toString().padLeft(2, '0')}';
+}
+
 class _ShellBottomNavigation extends StatelessWidget {
   const _ShellBottomNavigation({
     required this.controller,
@@ -377,6 +496,8 @@ class _ShellNavigationItem extends StatelessWidget {
         : LightcorePalette.mist.withValues(alpha: locked ? 0.46 : 0.72);
     final highlighted = switch (destination) {
       _ShellOverlayDestination.towers => controller.tutorialHighlightsTowersNav,
+      _ShellOverlayDestination.threatMap =>
+        controller.tutorialHighlightsThreatMapNav,
       _ShellOverlayDestination.enemies =>
         controller.tutorialHighlightsEnemiesNav,
       _ShellOverlayDestination.managers =>
