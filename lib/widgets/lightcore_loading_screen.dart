@@ -1,9 +1,18 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import '../models/lightcore_guide.dart';
 import '../theme/lightcore_palette.dart';
+import 'cosmic_guide_avatar.dart';
 import 'tower_ring_icon.dart';
+
+const List<String> _defaultLoadingTips = <String>[
+  'The optimal growth strategy may not be 100% flow.',
+  'Output Efficiency can beat raw reward boosts when stability starts slipping.',
+  'Threat Scans are safer when your tower colors already counter the region.',
+];
 
 class LightcoreLoadingScreen extends StatefulWidget {
   const LightcoreLoadingScreen({
@@ -15,7 +24,8 @@ class LightcoreLoadingScreen extends StatefulWidget {
     this.progress,
     this.compact,
     this.signalLabels = const ['BOOT', 'LINK', 'FLOW'],
-    this.tips = const <String>[],
+    this.tips = _defaultLoadingTips,
+    this.guide = LightcoreGuideProfile.lumo,
   });
 
   final String title;
@@ -26,6 +36,7 @@ class LightcoreLoadingScreen extends StatefulWidget {
   final bool? compact;
   final List<String> signalLabels;
   final List<String> tips;
+  final LightcoreGuideProfile guide;
 
   @override
   State<LightcoreLoadingScreen> createState() => _LightcoreLoadingScreenState();
@@ -33,7 +44,11 @@ class LightcoreLoadingScreen extends StatefulWidget {
 
 class _LightcoreLoadingScreenState extends State<LightcoreLoadingScreen>
     with SingleTickerProviderStateMixin {
+  static const Duration _tipCycleDuration = Duration(milliseconds: 3600);
+
   late final AnimationController _controller;
+  Timer? _tipTimer;
+  int _tipIndex = 0;
 
   @override
   void initState() {
@@ -42,12 +57,52 @@ class _LightcoreLoadingScreenState extends State<LightcoreLoadingScreen>
       vsync: this,
       duration: const Duration(milliseconds: 4200),
     )..repeat();
+    _startTipTimer();
+  }
+
+  @override
+  void didUpdateWidget(covariant LightcoreLoadingScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.tips != widget.tips) {
+      _tipIndex = 0;
+      _startTipTimer();
+    }
   }
 
   @override
   void dispose() {
+    _tipTimer?.cancel();
     _controller.dispose();
     super.dispose();
+  }
+
+  List<String> get _normalizedTips {
+    return widget.tips
+        .map((tip) => tip.trim())
+        .where((tip) => tip.isNotEmpty)
+        .toList(growable: false);
+  }
+
+  String? get _activeTip {
+    final tips = _normalizedTips;
+    if (tips.isEmpty) {
+      return null;
+    }
+    return tips[_tipIndex % tips.length];
+  }
+
+  void _startTipTimer() {
+    _tipTimer?.cancel();
+    final tipCount = _normalizedTips.length;
+    if (tipCount < 2) {
+      return;
+    }
+    _tipTimer = Timer.periodic(_tipCycleDuration, (_) {
+      if (!mounted) {
+        return;
+      }
+      setState(() => _tipIndex = (_tipIndex + 1) % tipCount);
+    });
   }
 
   @override
@@ -106,7 +161,8 @@ class _LightcoreLoadingScreenState extends State<LightcoreLoadingScreen>
                               signalLabels: widget.signalLabels.isEmpty
                                   ? const ['BOOT', 'LINK', 'FLOW']
                                   : widget.signalLabels,
-                              tips: widget.tips,
+                              activeTip: _activeTip,
+                              guide: widget.guide,
                             ),
                           ),
                         ),
@@ -133,7 +189,8 @@ class _LoadingCard extends StatelessWidget {
     required this.phase,
     required this.compact,
     required this.signalLabels,
-    required this.tips,
+    required this.activeTip,
+    required this.guide,
   });
 
   final String title;
@@ -144,7 +201,8 @@ class _LoadingCard extends StatelessWidget {
   final double phase;
   final bool compact;
   final List<String> signalLabels;
-  final List<String> tips;
+  final String? activeTip;
+  final LightcoreGuideProfile guide;
 
   @override
   Widget build(BuildContext context) {
@@ -154,15 +212,6 @@ class _LoadingCard extends StatelessWidget {
         .floor()
         .clamp(0, signalLabels.length - 1)
         .toInt();
-    final normalizedTips = tips
-        .where((tip) => tip.trim().isNotEmpty)
-        .toList(growable: false);
-    final activeTip = normalizedTips.isEmpty
-        ? null
-        : normalizedTips[(phase * normalizedTips.length)
-              .floor()
-              .clamp(0, normalizedTips.length - 1)
-              .toInt()];
 
     return DecoratedBox(
       decoration: BoxDecoration(
@@ -276,17 +325,87 @@ class _LoadingCard extends StatelessWidget {
               SizedBox(height: compact ? 14 : 16),
               AnimatedSwitcher(
                 duration: const Duration(milliseconds: 260),
-                child: Text(
-                  activeTip,
-                  key: ValueKey<String>(activeTip),
-                  textAlign: TextAlign.center,
-                  style: textTheme.bodySmall?.copyWith(
-                    color: LightcorePalette.mist.withValues(alpha: 0.78),
-                    height: 1.3,
-                  ),
+                child: _GuideTipCallout(
+                  key: ValueKey<String>(activeTip!),
+                  guide: guide,
+                  tip: activeTip!,
+                  accent: accent,
+                  compact: compact,
+                  phase: phase,
                 ),
               ),
             ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _GuideTipCallout extends StatelessWidget {
+  const _GuideTipCallout({
+    super.key,
+    required this.guide,
+    required this.tip,
+    required this.accent,
+    required this.compact,
+    required this.phase,
+  });
+
+  final LightcoreGuideProfile guide;
+  final String tip;
+  final Color accent;
+  final bool compact;
+  final double phase;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    final avatarSize = compact ? 54.0 : 62.0;
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(compact ? 18 : 22),
+        border: Border.all(color: accent.withValues(alpha: 0.26)),
+        color: Colors.black.withValues(alpha: 0.2),
+      ),
+      child: Padding(
+        padding: EdgeInsets.all(compact ? 12 : 14),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            CosmicGuideAvatar(
+              guide: guide,
+              size: avatarSize,
+              phase: phase,
+              boosting: true,
+              semanticLabel: '${guide.displayName} loading guide',
+            ),
+            SizedBox(width: compact ? 12 : 14),
+            Expanded(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '${guide.displayName} tip',
+                    style: textTheme.labelSmall?.copyWith(
+                      color: accent.withValues(alpha: 0.92),
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 0,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    tip,
+                    style: textTheme.bodySmall?.copyWith(
+                      color: LightcorePalette.mist.withValues(alpha: 0.82),
+                      height: 1.3,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ],
         ),
       ),

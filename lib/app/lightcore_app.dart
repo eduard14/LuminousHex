@@ -45,7 +45,7 @@ class _LightcoreAppState extends State<LightcoreApp>
   static const Duration _serverSyncInterval = Duration(minutes: 3);
   static const Duration _socialOverviewRefreshInterval = Duration(minutes: 3);
   static const Duration _screenLinkDuration = Duration(milliseconds: 820);
-  static const Duration _studioSplashDuration = Duration(milliseconds: 1050);
+  static const Duration _studioSplashDuration = Duration(milliseconds: 1650);
   static const int _maxMissedServerSyncs = 2;
 
   late final LightcoreSessionStore _sessionStore;
@@ -1533,18 +1533,20 @@ class _LightcoreAppState extends State<LightcoreApp>
         child: LemonGooseSplashScreen(),
       );
     } else if (_isLinkingScreen) {
-      currentScreen = const KeyedSubtree(
-        key: ValueKey<String>('lightcore-screen-link'),
+      currentScreen = KeyedSubtree(
+        key: const ValueKey<String>('lightcore-screen-link'),
         child: LightcoreLoadingScreen(
           title: 'Opening Shell',
           subtitle: 'Routing command through the tower lattice.',
           statusLabel: 'Screen Link',
           accent: LightcorePalette.aether,
           signalLabels: ['SYNC', 'LINK', 'ARM'],
-          tips: [
-            'Tip: Dungeons stay joined once unlocked; start a run whenever your loadout is ready.',
-            'Tip: Tournament entry happens automatically when your first run starts.',
-            'Tip: Offline rewards are reconciled by the server before the shell opens.',
+          guide: _guideProfile ?? LightcoreGuideProfile.lumo,
+          tips: const [
+            'The optimal growth strategy may not be 100% flow.',
+            'Output Efficiency can beat raw reward boosts when stability starts slipping.',
+            'Threat Scans are safer when your tower colors already counter the region.',
+            'Managers keep relays moving, but manual taps still bail out pressure spikes.',
           ],
         ),
       );

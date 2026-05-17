@@ -76,6 +76,8 @@ shell, and keep climbing.
 - First-session guidance stays lightweight: collapsed guide flags, target cues,
   transient top notifications, and bottom action prompts keep the battlefield
   visible during early taps.
+- Lumo/Luma guide callouts appear on loading interstitials with strategic tips
+  such as balancing growth, flow, and Output Efficiency.
 
 ### Towers And Builds
 
