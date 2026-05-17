@@ -174,9 +174,15 @@ class _ThreatChallengeHudBanner extends StatelessWidget {
     if (region == null) {
       return const SizedBox.shrink();
     }
-    final progress = controller.activeThreatRegionChallengeProgress;
-    final remaining = controller.activeThreatRegionChallengeRemainingSeconds
+    final progress = controller.activeThreatRegionChallengeWaveProgress;
+    final waveRemaining = controller
+        .activeThreatRegionChallengeWaveRemainingSeconds
         .ceil();
+    final totalRemaining = controller
+        .activeThreatRegionChallengeRemainingSeconds
+        .ceil();
+    final waveLabel =
+        'Wave ${challenge.waveIndex + 1}/${LightcoreController.threatRegionChallengeWaveCount}';
     final requiredBosses = controller.activeThreatRegionRequiredBossCount;
     final defeatedBosses = controller.activeThreatRegionDefeatedBossCount;
     final bossLabel = requiredBosses <= 0
@@ -219,7 +225,7 @@ class _ThreatChallengeHudBanner extends StatelessWidget {
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        '${region.name}  •  Lv ${challenge.targetStabilizationLevel}/${region.stabilizationLayers}',
+                        '$waveLabel  •  ${region.name} Lv ${challenge.targetStabilizationLevel}/${region.stabilizationLayers}',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: Theme.of(context).textTheme.labelLarge?.copyWith(
@@ -230,7 +236,7 @@ class _ThreatChallengeHudBanner extends StatelessWidget {
                     ),
                     const SizedBox(width: 10),
                     Text(
-                      _formatChallengeDuration(remaining),
+                      _formatChallengeDuration(waveRemaining),
                       style: Theme.of(context).textTheme.labelLarge?.copyWith(
                         color: LightcorePalette.warning,
                         fontWeight: FontWeight.w900,
@@ -252,7 +258,7 @@ class _ThreatChallengeHudBanner extends StatelessWidget {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  bossLabel,
+                  '$bossLabel  •  Total ${_formatChallengeDuration(totalRemaining)}',
                   style: Theme.of(context).textTheme.labelSmall?.copyWith(
                     color: LightcorePalette.mist.withValues(alpha: 0.72),
                     fontWeight: FontWeight.w700,

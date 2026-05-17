@@ -214,7 +214,8 @@ class _LightcoreShellState extends State<LightcoreShell> {
     if (!mounted) {
       return;
     }
-    if (_shellPromotionHudSuppressed) {
+    if (_shellPromotionHudSuppressed ||
+        widget.controller.activeThreatRegionChallenge != null) {
       _lastRaisedNotificationMessage = null;
       _removeNotificationOverlay();
       return;
@@ -933,11 +934,14 @@ class _LightcoreShellState extends State<LightcoreShell> {
   Widget build(BuildContext context) {
     final controller = widget.controller;
     final isCompactLayout = MediaQuery.sizeOf(context).width < 760;
-    final overlayActive = _activeOverlay != null;
+    final challengeActive = controller.activeThreatRegionChallenge != null;
+    final effectiveOverlay = challengeActive ? null : _activeOverlay;
+    final overlayActive = effectiveOverlay != null;
     final battleSurfaceClosedForEvent =
-        _activeOverlay == _ShellOverlayDestination.dungeons ||
-        _activeOverlay == _ShellOverlayDestination.tournaments;
+        effectiveOverlay == _ShellOverlayDestination.dungeons ||
+        effectiveOverlay == _ShellOverlayDestination.tournaments;
     final battleHudVisible = !overlayActive && !_shellPromotionHudSuppressed;
+    final battleChromeVisible = battleHudVisible && !challengeActive;
     final shellPadding = isCompactLayout ? 12.0 : 16.0;
     final sectionGap = isCompactLayout ? 8.0 : 16.0;
 
@@ -994,21 +998,21 @@ class _LightcoreShellState extends State<LightcoreShell> {
                               ),
                               controller: controller,
                               isActive: !overlayActive && !_settingsDialogOpen,
-                              showQuestPanel: battleHudVisible,
-                              showBattleHud: battleHudVisible,
+                              showQuestPanel: battleChromeVisible,
+                              showBattleHud: battleChromeVisible,
                               promotionPresentation:
                                   _activeShellPromotionPresentation,
                               onPromotionPresentationComplete:
                                   _handleShellPromotionComplete,
-                              topOverlayInset: battleHudVisible
+                              topOverlayInset: battleChromeVisible
                                   ? _battleHeaderOverlayInset(isCompactLayout)
                                   : 0,
-                              bottomOverlayInset: battleHudVisible
+                              bottomOverlayInset: battleChromeVisible
                                   ? _battleFooterOverlayInset(isCompactLayout)
                                   : 0,
                             ),
                           ),
-                        if (battleHudVisible)
+                        if (battleChromeVisible)
                           Positioned.fill(
                             child: AnimatedBuilder(
                               animation: controller,
@@ -1043,7 +1047,7 @@ class _LightcoreShellState extends State<LightcoreShell> {
                               },
                             ),
                           ),
-                        if (battleHudVisible)
+                        if (battleChromeVisible)
                           Positioned(
                             top: 0,
                             left: 0,
@@ -1164,7 +1168,7 @@ class _LightcoreShellState extends State<LightcoreShell> {
                               },
                             ),
                           ),
-                        if (battleHudVisible)
+                        if (battleChromeVisible)
                           Positioned.fill(
                             child: _BattleResourceFlyoutLayer(
                               controller: controller,
@@ -1195,7 +1199,7 @@ class _LightcoreShellState extends State<LightcoreShell> {
                               },
                             ),
                           ),
-                        if (battleHudVisible)
+                        if (battleChromeVisible)
                           Positioned(
                             left: 0,
                             right: 0,
@@ -1229,7 +1233,7 @@ class _LightcoreShellState extends State<LightcoreShell> {
                                           _visibleNavigationDestinations,
                                       selectedIndex: _selectedNavigationIndex,
                                       tint:
-                                          (_activeOverlay ??
+                                          (effectiveOverlay ??
                                                   _ShellOverlayDestination
                                                       .battle)
                                               .tint,
@@ -1245,32 +1249,33 @@ class _LightcoreShellState extends State<LightcoreShell> {
                   ),
                   Positioned.fill(
                     child: IgnorePointer(
-                      ignoring: _activeOverlay == null,
+                      ignoring: effectiveOverlay == null,
                       child: LightcoreTransitionSwitcher(
                         duration: const Duration(milliseconds: 320),
                         reverseDuration: const Duration(milliseconds: 240),
                         enterOffset: const Offset(0.025, 0),
                         tint:
-                            (_activeOverlay ?? _ShellOverlayDestination.battle)
+                            (effectiveOverlay ??
+                                    _ShellOverlayDestination.battle)
                                 .tint,
-                        child: _activeOverlay == null
+                        child: effectiveOverlay == null
                             ? const SizedBox.shrink(
                                 key: ValueKey<String>('battle-default'),
                               )
                             : KeyedSubtree(
                                 key: ValueKey<_ShellOverlayDestination>(
-                                  _activeOverlay!,
+                                  effectiveOverlay,
                                 ),
                                 child: _ShellOverlayFrame(
                                   controller: controller,
-                                  destination: _activeOverlay!,
+                                  destination: effectiveOverlay,
                                   onClose: _closeOverlay,
                                   onOpenLayers: () => _openLayerPicker(context),
                                   fullscreen:
                                       _eventBattleSurfaceActive ||
-                                      _activeOverlay ==
+                                      effectiveOverlay ==
                                           _ShellOverlayDestination.threatMap,
-                                  child: _buildOverlayScreen(_activeOverlay!),
+                                  child: _buildOverlayScreen(effectiveOverlay),
                                 ),
                               ),
                       ),

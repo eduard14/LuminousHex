@@ -2,7 +2,11 @@ part of '../lightcore_controller.dart';
 
 extension LightcoreControllerThreatRegions on LightcoreController {
   static const double threatRegionChallengeSeconds = 90;
+  static const int threatRegionChallengeWaveCount =
+      LightcoreController.threatRegionChallengeWaveCount;
   static const double threatRegionMinimumStabilityPercent = 70;
+  static const double _threatRegionChallengeWaveSeconds =
+      threatRegionChallengeSeconds / threatRegionChallengeWaveCount;
 
   List<ThreatRegionState> _createThreatRegionStates() {
     final starterId = ThreatRegionLibrary.all.first.id;
@@ -107,6 +111,26 @@ extension LightcoreControllerThreatRegions on LightcoreController {
       return 0;
     }
     return max(0, threatRegionChallengeSeconds - challenge.elapsedSeconds);
+  }
+
+  double get activeThreatRegionChallengeWaveProgress {
+    final challenge = _threatRegionChallenge;
+    if (challenge == null) {
+      return 0;
+    }
+    return (challenge.waveElapsedSeconds / _threatRegionChallengeWaveSeconds)
+        .clamp(0.0, 1.0);
+  }
+
+  double get activeThreatRegionChallengeWaveRemainingSeconds {
+    final challenge = _threatRegionChallenge;
+    if (challenge == null) {
+      return 0;
+    }
+    return max(
+      0,
+      _threatRegionChallengeWaveSeconds - challenge.waveElapsedSeconds,
+    );
   }
 
   int get activeThreatRegionRequiredBossCount {
@@ -558,6 +582,8 @@ extension LightcoreControllerThreatRegions on LightcoreController {
       finalLayer: targetLevel == config.stabilizationLayers,
       startedAtMillis: DateTime.now().millisecondsSinceEpoch,
     );
+    bannerMessage = '';
+    _bannerTimer = 0;
     _applyChallengeSwarmPressure();
     _threatRegionDefeatedBossIds.clear();
     if (_threatRegionChallenge!.finalLayer) {
@@ -847,12 +873,42 @@ extension LightcoreControllerThreatRegions on LightcoreController {
     if (challenge == null) {
       return;
     }
-    final nextElapsed = challenge.elapsedSeconds + battleDt;
-    _threatRegionChallenge = challenge.copyWith(elapsedSeconds: nextElapsed);
-    if (nextElapsed < threatRegionChallengeSeconds) {
+    final nextElapsed = min(
+      threatRegionChallengeSeconds,
+      challenge.elapsedSeconds + battleDt,
+    );
+    if (nextElapsed >= threatRegionChallengeSeconds) {
+      _threatRegionChallenge = challenge.copyWith(
+        elapsedSeconds: threatRegionChallengeSeconds,
+        waveIndex: threatRegionChallengeWaveCount - 1,
+        waveElapsedSeconds: _threatRegionChallengeWaveSeconds,
+      );
+      completeThreatRegionChallenge(
+        endingStabilityPercent: _core.coreStability,
+      );
       return;
     }
-    completeThreatRegionChallenge(endingStabilityPercent: _core.coreStability);
+    final nextWaveIndex = min(
+      threatRegionChallengeWaveCount - 1,
+      (nextElapsed / _threatRegionChallengeWaveSeconds).floor(),
+    );
+    final nextWaveElapsed =
+        nextElapsed - (nextWaveIndex * _threatRegionChallengeWaveSeconds);
+    _threatRegionChallenge = challenge.copyWith(
+      elapsedSeconds: nextElapsed,
+      waveIndex: nextWaveIndex,
+      waveElapsedSeconds: nextWaveElapsed,
+    );
+    if (nextWaveIndex <= challenge.waveIndex) {
+      return;
+    }
+    _enemies.clear();
+    _pulses.clear();
+    _shots.clear();
+    _impacts.clear();
+    _blueFocusTargetEnemyIdBySlot.clear();
+    _clearFocusTarget();
+    _spawnTimer = 0.01;
   }
 
   void _advanceThreatRegionFarmValidation(double battleDt) {

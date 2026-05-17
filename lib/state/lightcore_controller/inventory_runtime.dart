@@ -1195,7 +1195,7 @@ extension LightcoreControllerInventoryRuntime on LightcoreController {
     LightcoreNotificationCategory category =
         LightcoreNotificationCategory.action,
   }) {
-    if (_suppressRuntimeBanners) {
+    if (_suppressRuntimeBanners || _threatRegionChallenge != null) {
       return;
     }
     if (category == LightcoreNotificationCategory.battle &&

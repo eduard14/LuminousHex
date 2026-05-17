@@ -1329,6 +1329,7 @@ class LightcoreController extends ChangeNotifier {
   static const int _legacyEnemyTargetUpgradeStep = 8;
   static const int maxEnemyTargetUpgradeLevel =
       (maxActiveEnemies - baseEnemyTargetMax) ~/ enemyTargetUpgradeStep;
+  static const int threatRegionChallengeWaveCount = 3;
   static const int farmValidationWaveCount = 3;
   static const int swarmMagnetRerollCost = 1;
   static const double focusTargetDurationSeconds = 5;

@@ -598,6 +598,9 @@ extension LightcoreControllerBattleEnemyActions on LightcoreController {
   }
 
   bool upgradeEnemyTargetMax() {
+    if (_threatRegionChallenge != null) {
+      return false;
+    }
     if (!canUpgradeEnemyTargetMax) {
       return false;
     }
@@ -628,6 +631,9 @@ extension LightcoreControllerBattleEnemyActions on LightcoreController {
   }
 
   bool upgradeManagerPower() {
+    if (_threatRegionChallenge != null) {
+      return false;
+    }
     if (managerPowerLevel >= maxManagerPowerLevel) {
       _showBanner('Manager Power is already at Lv $maxManagerPowerLevel.');
       _notifyNow();
@@ -936,6 +942,7 @@ extension LightcoreControllerBattleEnemyActions on LightcoreController {
       };
 
   bool canUpgradeEnemyCard(EnemyCardState card) =>
+      _threatRegionChallenge == null &&
       card.isOwned &&
       card.level < enemyLevelCap(card) &&
       card.copies >= enemyUpgradeRequirement(card);
@@ -950,6 +957,9 @@ extension LightcoreControllerBattleEnemyActions on LightcoreController {
   // write on the server. The client should request an upgrade and reconcile the
   // returned profile state instead of consuming copies locally.
   bool upgradeEnemyCard(String cardId) {
+    if (_threatRegionChallenge != null) {
+      return false;
+    }
     final cardIndex = _enemyCards.indexWhere(
       (card) => card.config.id == cardId,
     );

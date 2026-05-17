@@ -105,7 +105,9 @@ shell, and keep climbing.
 - Enemy Research Cards are anomaly knowledge and farming progression, not
   friendly units.
 - Threat Map regions define the main enemy progression path.
-- Region challenges are short stabilization tests with standard pressure.
+- Region challenges are short three-wave stabilization tests with isolated
+  combat pressure: no EXP, upgrade spending, or notification clutter during the
+  run.
 - Farm Validation asks players to survive repeated farming pressure before a
   region can produce offline rewards.
 - Swarm Magnet controls the account-wide farming swarm size and can be rerolled

@@ -362,28 +362,6 @@ class _BattleScreenState extends State<BattleScreen> {
     return null;
   }
 
-  VoidCallback? _buildInspectAction(
-    BuildContext context,
-    LightcoreController controller,
-    OuterTowerState? selected,
-  ) {
-    if (selected == null ||
-        !selected.isBuilt ||
-        selected.isFabricating ||
-        selected.isChildLayerNode) {
-      return null;
-    }
-
-    return () {
-      controller.selectSlot(selected.slotIndex);
-      showTowerDetailOverlay(
-        context: context,
-        controller: controller,
-        slotIndex: selected.slotIndex,
-      );
-    };
-  }
-
   Widget _buildGameCanvas(double radius) {
     return ClipRRect(
       borderRadius: BorderRadius.circular(radius),
@@ -494,6 +472,14 @@ class _BattleScreenState extends State<BattleScreen> {
     final wasCorePanelOpen =
         _panelFocus == _BattlePanelFocus.core && _selectionControlsVisible;
     controller.handleBattleCenterTap();
+    if (controller.activeThreatRegionChallenge != null) {
+      setState(() {
+        _statsTarget = null;
+        _panelFocus = _BattlePanelFocus.none;
+        _selectionControlsVisible = false;
+      });
+      return;
+    }
     setState(() {
       _statsTarget = const _BattleStatsTarget.core();
       if (wasCorePanelOpen) {
@@ -533,6 +519,14 @@ class _BattleScreenState extends State<BattleScreen> {
             slot.isFabricating ||
             controller.activeLayerPassiveOnly);
     controller.handleBattleSlotTap(slotIndex);
+    if (controller.activeThreatRegionChallenge != null) {
+      setState(() {
+        _statsTarget = null;
+        _panelFocus = _BattlePanelFocus.none;
+        _selectionControlsVisible = false;
+      });
+      return;
+    }
     setState(() {
       _statsTarget = target;
       _panelFocus = _BattlePanelFocus.none;
@@ -698,7 +692,52 @@ class _BattleScreenState extends State<BattleScreen> {
     return true;
   }
 
-  void _toggleSelectionControlsFor(_BattleStatsTarget target) {
+  bool _opensTowerDetailOverlay(_BattleStatsTarget target) {
+    if (target.kind != _BattleStatsTargetKind.slot) {
+      return false;
+    }
+    final slotIndex = target.slotIndex;
+    if (slotIndex == null ||
+        slotIndex < 0 ||
+        slotIndex >= widget.controller.slots.length) {
+      return false;
+    }
+    final tower = widget.controller.slots[slotIndex];
+    return tower.isBuilt && !tower.isFabricating && !tower.isLayerProject;
+  }
+
+  void _openTowerDetailOverlay(
+    BuildContext context,
+    _BattleStatsTarget target,
+  ) {
+    final slotIndex = target.slotIndex;
+    if (slotIndex == null ||
+        slotIndex < 0 ||
+        slotIndex >= widget.controller.slots.length) {
+      return;
+    }
+    widget.controller.selectSlot(slotIndex);
+    _completeTowerStatsTutorialFor(target);
+    setState(() {
+      _statsTarget = target;
+      _panelFocus = _BattlePanelFocus.none;
+      _selectionControlsVisible = false;
+    });
+    showTowerDetailOverlay(
+      context: context,
+      controller: widget.controller,
+      slotIndex: slotIndex,
+    );
+  }
+
+  void _toggleSelectionControlsFor(
+    BuildContext context,
+    _BattleStatsTarget target,
+  ) {
+    if (_opensTowerDetailOverlay(target)) {
+      _openTowerDetailOverlay(context, target);
+      return;
+    }
     if (!_isStatsTargetOpen(target)) {
       _openStatsTarget(target);
       _completeTowerStatsTutorialFor(target);
@@ -886,7 +925,6 @@ class _BattleScreenState extends State<BattleScreen> {
     required BuildContext context,
     required LightcoreController controller,
     required OuterTowerState? selected,
-    required VoidCallback? onInspect,
     required bool compact,
   }) {
     final panelFocus = controller.outerRingRevealed
@@ -898,11 +936,14 @@ class _BattleScreenState extends State<BattleScreen> {
     if (!showOverlay) {
       return null;
     }
+    final target = _selectionButtonTarget(controller, selected, panelFocus);
+    if (target != null && _opensTowerDetailOverlay(target)) {
+      return null;
+    }
 
     final overlayContent = _BattleControlPanel(
       controller: controller,
       selected: selected,
-      onInspect: onInspect,
       panelFocus: panelFocus,
       onBuildTower: _buildTutorialTowerAt,
     );
@@ -938,6 +979,7 @@ class _BattleScreenState extends State<BattleScreen> {
   }
 
   Widget? _buildSelectionHud({
+    required BuildContext context,
     required LightcoreController controller,
     required OuterTowerState? selected,
   }) {
@@ -967,7 +1009,7 @@ class _BattleScreenState extends State<BattleScreen> {
       selected: targetOpen && _selectionControlsVisible,
       highlighted: _selectionButtonHighlighted(controller, target),
       tapCueLabel: _selectionButtonTapCueLabel(controller, target),
-      onPressed: () => _toggleSelectionControlsFor(target),
+      onPressed: () => _toggleSelectionControlsFor(context, target),
     );
   }
 
@@ -1102,7 +1144,6 @@ class _BattleScreenState extends State<BattleScreen> {
     required BuildContext context,
     required LightcoreController controller,
     required OuterTowerState? selected,
-    required VoidCallback? onInspect,
     required bool compact,
   }) {
     final inset = compact ? 12.0 : 16.0;
@@ -1112,10 +1153,10 @@ class _BattleScreenState extends State<BattleScreen> {
       context: context,
       controller: controller,
       selected: selected,
-      onInspect: onInspect,
       compact: compact,
     );
     final selectionHud = _buildSelectionHud(
+      context: context,
       controller: controller,
       selected: selected,
     );
@@ -1190,11 +1231,6 @@ class _BattleScreenState extends State<BattleScreen> {
           animation: controller,
           builder: (context, _) {
             final selected = controller.selectedSlotOrNull;
-            final onInspect = _buildInspectAction(
-              context,
-              controller,
-              selected,
-            );
 
             return LayoutBuilder(
               builder: (context, constraints) {
@@ -1205,7 +1241,6 @@ class _BattleScreenState extends State<BattleScreen> {
                   context: context,
                   controller: controller,
                   selected: selected,
-                  onInspect: onInspect,
                   compact: useStackedLayout,
                 );
               },
@@ -1310,14 +1345,12 @@ class _BattleControlPanel extends StatelessWidget {
   const _BattleControlPanel({
     required this.controller,
     required this.selected,
-    required this.onInspect,
     required this.panelFocus,
     required this.onBuildTower,
   });
 
   final LightcoreController controller;
   final OuterTowerState? selected;
-  final VoidCallback? onInspect;
   final _BattlePanelFocus panelFocus;
   final bool Function(int slotIndex, TowerConfig config) onBuildTower;
 
@@ -1353,11 +1386,7 @@ class _BattleControlPanel extends StatelessWidget {
     }
 
     if (selected!.isBuilt) {
-      return _TowerStatsPanel(
-        controller: controller,
-        tower: selected!,
-        onInspect: onInspect,
-      );
+      return const SizedBox.shrink();
     }
 
     return _EmptySlotPanel(
@@ -1829,262 +1858,6 @@ class _TowerFabricationPanel extends StatelessWidget {
           onPressed: () => controller.sellTower(tower.slotIndex),
           child: Text('Cancel for ${refund.clamp(1, 1 << 30)}L'),
         ),
-      ],
-    );
-  }
-}
-
-class _TowerStatsPanel extends StatelessWidget {
-  const _TowerStatsPanel({
-    required this.controller,
-    required this.tower,
-    required this.onInspect,
-  });
-
-  final LightcoreController controller;
-  final OuterTowerState tower;
-  final VoidCallback? onInspect;
-
-  @override
-  Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-    final manager = controller.cardForSlot(tower);
-    final levelCost = controller.upgradeCost(tower);
-    final hasTowerProgression = tower.hasTowerProgression;
-    final towerStats = [
-      [
-        _InlineStatEntry(
-          label: 'Level',
-          value: hasTowerProgression
-              ? '${tower.level}/${LightcoreController.maxTowerLevel}'
-              : tower.isChildLayerNode
-              ? '${tower.childCoreLevel ?? 1}'
-              : '1/${LightcoreController.maxTowerLevel}',
-        ),
-        if (hasTowerProgression)
-          _InlineStatEntry(
-            label: 'Stats',
-            value:
-                '${controller.towerUpgradePointsSpent(tower)}/${controller.towerUpgradePointsCap(tower)}',
-          ),
-        _InlineStatEntry(
-          label: 'Power',
-          value: controller.towerPower(tower).toStringAsFixed(1),
-        ),
-        _InlineStatEntry(
-          label: 'Charge',
-          value: controller.towerLiveChargeRate(tower).toStringAsFixed(2),
-        ),
-        _InlineStatEntry(
-          label: 'Cooldown',
-          value: '${controller.towerLiveCooldown(tower).toStringAsFixed(2)}s',
-        ),
-        _InlineStatEntry(
-          label: 'Automation',
-          value: controller.towerAutomationLabel(tower),
-        ),
-        _InlineStatEntry(
-          label: 'Load',
-          value:
-              '${(controller.towerDisruptionFraction(tower) * 100).round()}%',
-        ),
-      ],
-      [
-        _InlineStatEntry(
-          label: 'Signature',
-          value: controller.towerAffinitySignatureLabel(tower),
-        ),
-        _InlineStatEntry(
-          label: 'Arsenal',
-          value: controller.towerProjectileArsenalLabel(tower),
-        ),
-        _InlineStatEntry(
-          label: 'Payloads',
-          value: controller.towerPayloadArsenalLabel(tower),
-        ),
-      ],
-      [
-        _InlineStatEntry(
-          label: 'Range',
-          value: controller.towerRangeLabel(tower),
-        ),
-        _InlineStatEntry(
-          label: 'Generation',
-          value: controller.towerGenerationLabel(tower),
-        ),
-        _InlineStatEntry(
-          label: 'Crit',
-          value: controller.towerCritLabel(tower),
-        ),
-        _InlineStatEntry(
-          label: 'Damage',
-          value: controller.towerDamageRangeLabel(tower),
-        ),
-      ],
-      [
-        _InlineStatEntry(
-          label: 'Final',
-          value: controller.towerFinalDamageLabel(tower),
-        ),
-        _InlineStatEntry(
-          label: 'Apex',
-          value: controller.towerBossDamageLabel(tower),
-        ),
-        _InlineStatEntry(
-          label: 'Normal',
-          value: controller.towerNormalDamageLabel(tower),
-        ),
-        _InlineStatEntry(
-          label: 'Pen',
-          value: controller.towerDefensePenetrationLabel(tower),
-        ),
-      ],
-      [
-        _InlineStatEntry(
-          label: 'Target',
-          value: controller.towerTargetLabel(tower),
-        ),
-        _InlineStatEntry(
-          label: 'Pattern',
-          value: controller.towerPatternAchievementLabel(tower),
-        ),
-        if (hasTowerProgression && controller.managerAssignmentUnlocked)
-          _InlineStatEntry(
-            label: 'Core Manager',
-            value: manager?.name ?? 'Open',
-          ),
-      ],
-    ];
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(controller.towerDisplayName(tower), style: textTheme.titleLarge),
-        const SizedBox(height: 4),
-        Text(
-          tower.isLayerProject ? 'Shell Actions' : 'Tower Upgrades',
-          style: textTheme.titleMedium?.copyWith(color: LightcorePalette.solar),
-        ),
-        const SizedBox(height: 6),
-        Text(
-          tower.isLayerProject
-              ? '${controller.childTowerGrowthLabel(tower)}  •  ${controller.childShellProgressLabel(tower)}'
-              : tower.isPromotedChildTower
-              ? '${controller.towerCompletionLabel(tower)}  •  Source ${controller.childShellProgressLabel(tower)}'
-              : tower.isFabricating
-              ? controller.towerFabricationProgressLabel(tower)
-              : tower.config!.passiveLabel,
-          style: textTheme.bodyMedium,
-        ),
-        if (hasTowerProgression && !tower.isFabricating) ...[
-          const SizedBox(height: 6),
-          Text(
-            'Tower Level ${tower.level}/${LightcoreController.maxTowerLevel} • Next ${levelCost}L  •  Tower stat ranks ${controller.towerUpgradePointsSpent(tower)}/${controller.towerUpgradePointsCap(tower)}',
-            style: textTheme.bodyMedium?.copyWith(
-              color: LightcorePalette.solar,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
-        const SizedBox(height: 14),
-        Wrap(
-          spacing: 12,
-          runSpacing: 10,
-          children: [
-            GuidedFocusFrame(
-              active: controller.tutorialHighlightsUpgradeButton(
-                tower.slotIndex,
-              ),
-              tint: LightcorePalette.quest,
-              child: FilledButton(
-                onPressed: tower.isFabricating
-                    ? null
-                    : tower.isLayerProject
-                    ? () => controller.enterChildLayer(tower.slotIndex)
-                    : controller.activeLayerPassiveOnly
-                    ? null
-                    : tower.level < LightcoreController.maxTowerLevel
-                    ? () => controller.tutorialUpgradeTower(tower.slotIndex)
-                    : null,
-                child: Text(
-                  tower.isFabricating
-                      ? 'Fabricating ${controller.towerFabricationRemainingLabel(tower)}'
-                      : tower.isLayerProject
-                      ? controller.isSlotPromotionReady(tower)
-                            ? 'Inner Shell Ready'
-                            : 'Open Shell'
-                      : tower.level < LightcoreController.maxTowerLevel
-                      ? 'Tower Level • $levelCost Lumens'
-                      : controller.isTowerComplete(tower)
-                      ? 'Complete'
-                      : 'Level Max',
-                ),
-              ),
-            ),
-            if ((onInspect != null || tower.isChildLayerNode) &&
-                manager == null)
-              OutlinedButton(
-                onPressed: controller.canManuallyActivateTower(tower)
-                    ? () => controller.activateTowerSlot(tower.slotIndex)
-                    : null,
-                child: Text(
-                  tower.isChildLayerNode
-                      ? 'Generate Ready Packet'
-                      : 'Fire Ready Packet',
-                ),
-              ),
-            if (tower.isPromotedChildTower)
-              OutlinedButton(
-                onPressed: () => controller.enterChildLayer(tower.slotIndex),
-                child: const Text('Source Layer'),
-              ),
-            if (!tower.isChildLayerNode && onInspect != null)
-              OutlinedButton(onPressed: onInspect, child: const Text('Stats')),
-            if (!tower.isChildLayerNode)
-              OutlinedButton(
-                onPressed: controller.activeLayerPassiveOnly
-                    ? null
-                    : () => controller.sellTower(tower.slotIndex),
-                child: Text('Sell ${(tower.investedLumens * 0.7).round()}L'),
-              ),
-          ],
-        ),
-        if (!tower.isChildLayerNode) ...[
-          const SizedBox(height: 16),
-          Text(
-            'Live Projectile Target',
-            style: textTheme.titleSmall?.copyWith(
-              color: LightcorePalette.mist.withValues(alpha: 0.8),
-            ),
-          ),
-          const SizedBox(height: 8),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              for (final priority in TargetPriority.values)
-                ChoiceChip(
-                  label: Text(priority.label),
-                  selected: controller.towerTargetPriority(tower) == priority,
-                  onSelected: controller.activeLayerPassiveOnly
-                      ? null
-                      : (_) => controller.setTowerTargetPriority(
-                          tower.slotIndex,
-                          priority,
-                        ),
-                ),
-            ],
-          ),
-        ],
-        const SizedBox(height: 16),
-        Text(
-          tower.isLayerProject ? 'Shell Stats' : 'Tower Stats',
-          style: textTheme.titleSmall?.copyWith(
-            color: LightcorePalette.mist.withValues(alpha: 0.8),
-          ),
-        ),
-        const SizedBox(height: 8),
-        _InlineStatList(rows: towerStats),
       ],
     );
   }

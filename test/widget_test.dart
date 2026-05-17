@@ -1442,7 +1442,13 @@ void main() {
     await _pumpShell(tester, controller);
 
     expect(find.textContaining('First Stabilizer'), findsWidgets);
+    expect(find.textContaining('Wave 1/3'), findsOneWidget);
     expect(find.textContaining('Pressure run'), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey<String>('battle-resource-rail')),
+      findsNothing,
+    );
+    expect(find.byTooltip('Open Store'), findsNothing);
   });
 
   testWidgets('raise threat prompt stays static without tap-pulse chrome', (
@@ -2263,7 +2269,15 @@ void main() {
 
     await _pumpBattleScreen(tester, controller);
 
-    expect(find.text('Tower Upgrades'), findsOneWidget);
+    expect(find.text('Tower Upgrades'), findsNothing);
+    expect(find.textContaining('Tower Level •'), findsNothing);
+
+    await tester.tap(
+      find.byKey(const ValueKey<String>('battle-tower-selection-button')),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Upgrade Board'), findsOneWidget);
     expect(find.textContaining('Tower Level •'), findsOneWidget);
     expect(
       find.byKey(const ValueKey<String>('battle-quest-card-collapsed')),
@@ -2435,7 +2449,9 @@ void main() {
     expect(find.text('Tower Stats'), findsNothing);
   });
 
-  testWidgets('selected battle tower shows inline stats', (tester) async {
+  testWidgets('selected battle tower opens the unified detail surface', (
+    tester,
+  ) async {
     addTearDown(() async {
       await tester.binding.setSurfaceSize(null);
     });
@@ -2447,22 +2463,26 @@ void main() {
     controller.kills = LightcoreController.tutorialFirstHexUnlockExperience;
     controller.selectSlot(0);
     controller.buildTowerForSelected(TowerLibrary.redPrism);
-    final upgradeButton = find.textContaining('Tower Level •');
 
     await _pumpShell(tester, controller);
 
-    expect(find.text('Tower Upgrades'), findsOneWidget);
-    expect(find.text('Tower Stats'), findsOneWidget);
-    expect(find.textContaining('Power '), findsOneWidget);
-    expect(upgradeButton, findsOneWidget);
-    expect(find.widgetWithText(OutlinedButton, 'Stats'), findsOneWidget);
-    expect(
-      tester.getTopLeft(find.text('Tower Upgrades')).dy,
-      lessThan(tester.getTopLeft(find.text('Tower Stats')).dy),
+    expect(find.text('Tower Detail'), findsNothing);
+    expect(find.text('Tower Upgrades'), findsNothing);
+    expect(find.text('Tower Stats'), findsNothing);
+    expect(find.widgetWithText(OutlinedButton, 'Stats'), findsNothing);
+
+    await tester.tap(
+      find.byKey(const ValueKey<String>('battle-tower-selection-button')),
     );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Tower Detail'), findsOneWidget);
+    expect(find.text('Projectile Targeting'), findsOneWidget);
+    expect(find.text('Upgrade Board'), findsOneWidget);
+    expect(find.widgetWithText(OutlinedButton, 'Stats'), findsNothing);
     expect(
-      tester.getTopLeft(upgradeButton).dy,
-      lessThan(tester.getTopLeft(find.text('Tower Stats')).dy),
+      tester.getTopLeft(find.text('Projectile Targeting')).dy,
+      lessThan(tester.getTopLeft(find.text('HEX 1')).dy),
     );
   });
 
@@ -2675,14 +2695,18 @@ void main() {
 
     await _pumpShell(tester, controller);
 
-    expect(find.text('Live Projectile Target'), findsOneWidget);
+    await tester.tap(
+      find.byKey(const ValueKey<String>('battle-tower-selection-button')),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Projectile Targeting'), findsOneWidget);
     expect(
       controller.towerTargetPriority(controller.slots[0]),
       TargetPriority.close,
     );
 
     final strongTargetChip = find.widgetWithText(ChoiceChip, 'Strong');
-    await tester.ensureVisible(strongTargetChip);
     await tester.tap(strongTargetChip);
     await tester.pump();
 

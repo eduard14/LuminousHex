@@ -146,6 +146,11 @@ extension LightcoreControllerBattleTowerActions on LightcoreController {
       _notifyNow();
       return;
     }
+    if (_threatRegionChallenge != null) {
+      _syncTutorialStep(showBanner: false);
+      _notifyNow();
+      return;
+    }
     if (hasSourceLayer) {
       enterSourceLayer();
       return;
@@ -162,6 +167,16 @@ extension LightcoreControllerBattleTowerActions on LightcoreController {
       return;
     }
     final tower = _slots[slotIndex];
+    if (_threatRegionChallenge != null) {
+      if (!tower.isBuilt ||
+          tower.isFabricating ||
+          tower.isLayerProject ||
+          activeLayerPassiveOnly) {
+        return;
+      }
+      activateTowerSlot(slotIndex, selectForStats: false);
+      return;
+    }
     if (isCompositeLayer && tower.isLayerProject) {
       enterChildLayer(slotIndex);
       return;
@@ -394,6 +409,9 @@ extension LightcoreControllerBattleTowerActions on LightcoreController {
     if (slotIndex < 0 || slotIndex >= _slots.length) {
       return false;
     }
+    if (_threatRegionChallenge != null) {
+      return false;
+    }
     if (activeLayerPassiveOnly) {
       _showBanner('$activeLayerLabel is a static archive.');
       _notifyNow();
@@ -438,6 +456,9 @@ extension LightcoreControllerBattleTowerActions on LightcoreController {
 
   bool buildTowerAt(int slotIndex, TowerConfig config) {
     if (slotIndex < 0 || slotIndex >= _slots.length) {
+      return false;
+    }
+    if (_threatRegionChallenge != null) {
       return false;
     }
     if (activeLayerPassiveOnly) {
@@ -506,6 +527,9 @@ extension LightcoreControllerBattleTowerActions on LightcoreController {
     if (slotIndex < 0 || slotIndex >= _slots.length) {
       return false;
     }
+    if (_threatRegionChallenge != null) {
+      return false;
+    }
     if (activeLayerPassiveOnly) {
       return false;
     }
@@ -539,6 +563,9 @@ extension LightcoreControllerBattleTowerActions on LightcoreController {
 
   bool upgradeTowerStat(int slotIndex, TowerUpgradeStatType type) {
     if (slotIndex < 0 || slotIndex >= _slots.length) {
+      return false;
+    }
+    if (_threatRegionChallenge != null) {
       return false;
     }
     if (activeLayerPassiveOnly) {
@@ -588,6 +615,9 @@ extension LightcoreControllerBattleTowerActions on LightcoreController {
   }
 
   bool upgradeActiveChildTowerStat(ChildTowerUpgradeType type) {
+    if (_threatRegionChallenge != null) {
+      return false;
+    }
     if (activeLayer.promotedIntoParentSlot ||
         activeLayerPassiveOnly ||
         !activeLayerHasParentSlot) {
@@ -649,6 +679,9 @@ extension LightcoreControllerBattleTowerActions on LightcoreController {
   }
 
   bool upgradeCoreLevel() {
+    if (_threatRegionChallenge != null) {
+      return false;
+    }
     if (!canUpgradeCoreLevel) {
       return false;
     }
@@ -671,6 +704,9 @@ extension LightcoreControllerBattleTowerActions on LightcoreController {
   }
 
   bool upgradeCoreStat(TowerUpgradeStatType type) {
+    if (_threatRegionChallenge != null) {
+      return false;
+    }
     if (!canTrainCoreStats) {
       return false;
     }
@@ -709,6 +745,9 @@ extension LightcoreControllerBattleTowerActions on LightcoreController {
   }
 
   bool upgradeCoreRange() {
+    if (_threatRegionChallenge != null) {
+      return false;
+    }
     if (!canUpgradeCoreRange) {
       return false;
     }
@@ -733,6 +772,9 @@ extension LightcoreControllerBattleTowerActions on LightcoreController {
   }
 
   bool upgradeCoreFireSpeed() {
+    if (_threatRegionChallenge != null) {
+      return false;
+    }
     if (!canUpgradeCoreFireSpeed) {
       return false;
     }
@@ -756,6 +798,9 @@ extension LightcoreControllerBattleTowerActions on LightcoreController {
   }
 
   bool upgradeCoreQueueLimit() {
+    if (_threatRegionChallenge != null) {
+      return false;
+    }
     if (!canUpgradeCoreQueueLimit) {
       return false;
     }
@@ -779,6 +824,9 @@ extension LightcoreControllerBattleTowerActions on LightcoreController {
   }
 
   bool upgradeCoreMultiShot() {
+    if (_threatRegionChallenge != null) {
+      return false;
+    }
     if (!canUpgradeCoreMultiShot) {
       return false;
     }
@@ -802,6 +850,9 @@ extension LightcoreControllerBattleTowerActions on LightcoreController {
   }
 
   bool upgradeCoreEnergyCapacity() {
+    if (_threatRegionChallenge != null) {
+      return false;
+    }
     if (!canUpgradeCoreEnergyCapacity) {
       return false;
     }
@@ -831,6 +882,9 @@ extension LightcoreControllerBattleTowerActions on LightcoreController {
   }
 
   bool upgradeCoreEnergyRecovery() {
+    if (_threatRegionChallenge != null) {
+      return false;
+    }
     if (!canUpgradeCoreEnergyRecovery) {
       return false;
     }
@@ -855,6 +909,9 @@ extension LightcoreControllerBattleTowerActions on LightcoreController {
 
   bool sellTower(int slotIndex) {
     if (slotIndex < 0 || slotIndex >= _slots.length) {
+      return false;
+    }
+    if (_threatRegionChallenge != null) {
       return false;
     }
     if (activeLayerPassiveOnly) {

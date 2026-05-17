@@ -560,6 +560,7 @@ extension LightcoreControllerCombatDamage on LightcoreController {
       return;
     }
 
+    final challengeActive = _threatRegionChallenge != null;
     final previousExperience = progressionExperience;
     final killCredit = _killCreditForEnemy(enemy);
     final scaledExperienceReward =
@@ -571,7 +572,6 @@ extension LightcoreControllerCombatDamage on LightcoreController {
       enemy.experienceReward,
       scaledExperienceReward,
     );
-    kills += killCredit;
     if (enemy.config.isBoss) {
       _totalBossesDefeated += 1;
       _recordThreatRegionBossDefeat(enemy.config);
@@ -580,32 +580,39 @@ extension LightcoreControllerCombatDamage on LightcoreController {
         _tutorialSafeScanDefeats < 5) {
       _tutorialSafeScanDefeats += 1;
     }
-    experience += _boostedExperienceReward(experienceReward);
-    _advanceBattlePass(BattlePassType.dailyKills, killCredit);
-    final bossUnlockBanner = _grantBossUnlockIfNeeded();
-    final tournamentUnlockBanner = _tournamentUnlockBannerFragment(
-      previousExperience: previousExperience,
-      currentExperience: progressionExperience,
-    );
-    final managerUnlockBanner = _managerUnlockBannerFragment(
-      previousExperience: previousExperience,
-      currentExperience: progressionExperience,
-    );
-    final dailyDungeonUnlockBanner = _dailyDungeonUnlockBannerFragment(
-      previousExperience: previousExperience,
-      currentExperience: progressionExperience,
-    );
-    final mentorshipUnlockBanner = _mentorshipUnlockBannerFragment(
-      previousExperience: previousExperience,
-      currentExperience: progressionExperience,
-    );
-    final unlockBanner = _towerUnlockBannerFragment(
-      previousExperience,
-      progressionExperience,
-    );
-    final suppressBossProgress =
-        _threatRegionChallenge != null && !_threatRegionChallenge!.finalLayer;
-    if (!suppressBossProgress &&
+    String? bossUnlockBanner;
+    String? tournamentUnlockBanner;
+    String? managerUnlockBanner;
+    String? dailyDungeonUnlockBanner;
+    String? mentorshipUnlockBanner;
+    String? unlockBanner;
+    if (!challengeActive) {
+      kills += killCredit;
+      experience += _boostedExperienceReward(experienceReward);
+      _advanceBattlePass(BattlePassType.dailyKills, killCredit);
+      bossUnlockBanner = _grantBossUnlockIfNeeded();
+      tournamentUnlockBanner = _tournamentUnlockBannerFragment(
+        previousExperience: previousExperience,
+        currentExperience: progressionExperience,
+      );
+      managerUnlockBanner = _managerUnlockBannerFragment(
+        previousExperience: previousExperience,
+        currentExperience: progressionExperience,
+      );
+      dailyDungeonUnlockBanner = _dailyDungeonUnlockBannerFragment(
+        previousExperience: previousExperience,
+        currentExperience: progressionExperience,
+      );
+      mentorshipUnlockBanner = _mentorshipUnlockBannerFragment(
+        previousExperience: previousExperience,
+        currentExperience: progressionExperience,
+      );
+      unlockBanner = _towerUnlockBannerFragment(
+        previousExperience,
+        progressionExperience,
+      );
+    }
+    if (!challengeActive &&
         !enemy.config.isBoss &&
         !bossAlive &&
         !activeLayer.bossReady) {

@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lightcore/data/enemy_configs.dart';
 import 'package:lightcore/data/threat_region_configs.dart';
 import 'package:lightcore/models/lightcore_types.dart';
 import 'package:lightcore/state/lightcore_controller.dart';
@@ -132,8 +133,41 @@ void main() {
     expect(controller.startThreatRegionChallenge(ringTwo.id), isFalse);
   });
 
+  test('starter challenge raises pressure and rewards the next push', () {
+    final controller = LightcoreController();
+    addTearDown(controller.dispose);
+
+    final starter = ThreatRegionLibrary.all.first;
+    controller
+      ..kills = LightcoreController.unlockKillsForOuterSlot(0)
+      ..lumens = 1000;
+    expect(controller.buildTowerAt(0, controller.towerConfigs.first), isTrue);
+
+    final baselineTargetCount = controller.enemyTargetCount;
+    final baselineStats = controller.activeThreatAssignmentGroupStats;
+    final startingLumens = controller.lumens;
+    final startingScans = controller.enemyTickets;
+
+    expect(controller.startThreatRegionChallenge(starter.id), isTrue);
+
+    expect(controller.enemyTargetCount, greaterThan(baselineTargetCount));
+    expect(
+      controller.activeThreatAssignmentGroupStats.anomalyCount,
+      greaterThan(baselineStats.anomalyCount),
+    );
+
+    expect(
+      controller.completeThreatRegionChallenge(endingStabilityPercent: 100),
+      isTrue,
+    );
+    expect(controller.lumens, greaterThan(startingLumens));
+    expect(controller.enemyTickets, greaterThan(startingScans));
+    expect(controller.threatRegionStateById(starter.id)!.stabilizedLevel, 1);
+    expect(controller.enemyTargetCount, baselineTargetCount);
+  });
+
   test(
-    'starter challenge raises pressure and rewards the next push',
+    'stabilization challenges use waves without exp or upgrade progress',
     () {
       final controller = LightcoreController();
       addTearDown(controller.dispose);
@@ -143,31 +177,43 @@ void main() {
         ..kills = LightcoreController.unlockKillsForOuterSlot(0)
         ..lumens = 1000;
       expect(controller.buildTowerAt(0, controller.towerConfigs.first), isTrue);
-
-      final baselineTargetCount = controller.enemyTargetCount;
-      final baselineStats = controller.activeThreatAssignmentGroupStats;
-      final startingLumens = controller.lumens;
-      final startingScans = controller.enemyTickets;
+      final startingLevel = controller.slots[0].level;
+      final startingExperience = controller.experience;
+      final startingKills = controller.kills;
 
       expect(controller.startThreatRegionChallenge(starter.id), isTrue);
-
+      expect(controller.bannerMessage, isEmpty);
+      expect(controller.activeThreatRegionChallenge!.waveIndex, 0);
       expect(
-        controller.enemyTargetCount,
-        greaterThan(baselineTargetCount),
-      );
-      expect(
-        controller.activeThreatAssignmentGroupStats.anomalyCount,
-        greaterThan(baselineStats.anomalyCount),
+        controller.activeThreatRegionChallengeWaveRemainingSeconds,
+        closeTo(30, 0.001),
       );
 
+      controller.tick(41);
+
+      expect(controller.activeThreatRegionChallenge, isNotNull);
+      expect(controller.activeThreatRegionChallenge!.waveIndex, 1);
       expect(
-        controller.completeThreatRegionChallenge(endingStabilityPercent: 100),
-        isTrue,
+        controller.activeThreatRegionChallengeWaveRemainingSeconds,
+        lessThan(30),
       );
-      expect(controller.lumens, greaterThan(startingLumens));
-      expect(controller.enemyTickets, greaterThan(startingScans));
-      expect(controller.threatRegionStateById(starter.id)!.stabilizedLevel, 1);
-      expect(controller.enemyTargetCount, baselineTargetCount);
+
+      final enemy = controller.debugSpawnEnemyFromCard(
+        EnemyLibrary.basicWhite.id,
+        angle: 0,
+        radius: 140,
+      );
+      expect(enemy, isNotNull);
+      expect(controller.debugDefeatEnemy(enemy!.id), isTrue);
+      expect(controller.experience, startingExperience);
+      expect(controller.kills, startingKills);
+
+      controller.pushNotification('Hidden while the challenge runs.');
+      expect(controller.bannerMessage, isEmpty);
+
+      controller.lumens = controller.upgradeCost(controller.slots[0]);
+      expect(controller.upgradeTower(0), isFalse);
+      expect(controller.slots[0].level, startingLevel);
     },
   );
 

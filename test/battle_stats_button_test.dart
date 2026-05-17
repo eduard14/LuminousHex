@@ -210,11 +210,14 @@ void main() {
     await tester.pump(const Duration(milliseconds: 180));
 
     expect(controller.selectedSlotIndex, 0);
-    expect(find.text('Tower Stats'), findsOneWidget);
-    expect(find.text('Live Projectile Target'), findsOneWidget);
+    expect(find.text('Tower Detail'), findsOneWidget);
+    expect(find.text('Projectile Targeting'), findsOneWidget);
+    expect(
+      tester.getTopLeft(find.text('Projectile Targeting')).dy,
+      lessThan(tester.getTopLeft(find.text('HEX 1')).dy),
+    );
 
     final strongTargetChip = find.widgetWithText(ChoiceChip, 'Strong');
-    await tester.ensureVisible(strongTargetChip);
     await tester.tap(strongTargetChip);
     await tester.pump();
     expect(
@@ -222,10 +225,10 @@ void main() {
       TargetPriority.strong,
     );
 
-    await tester.tap(selectionButton);
+    await tester.tap(find.byIcon(Icons.close_rounded));
     await tester.pump(const Duration(milliseconds: 180));
 
-    expect(find.text('Tower Stats'), findsNothing);
+    expect(find.text('Tower Detail'), findsNothing);
   });
 
   testWidgets('building a tower closes controls until the wrench is tapped', (
@@ -349,7 +352,8 @@ void main() {
     await tester.pump(const Duration(milliseconds: 50));
 
     expect(controller.selectedSlotIndex, 1);
-    expect(find.text('Tower Stats'), findsOneWidget);
+    expect(find.text('Tower Detail'), findsOneWidget);
+    expect(find.text('Projectile Targeting'), findsOneWidget);
   });
 
   testWidgets('blank map tap closes core stats without folding shell', (

@@ -23,7 +23,9 @@ Future<void> showTowerDetailOverlay({
         builder: (context, _) {
           final tower = controller.slots[slotIndex];
           final tint = tower.isBuilt
-              ? tower.config?.affinity.color ?? LightcorePalette.aether
+              ? tower.config?.affinity.color ??
+                    tower.childAffinity?.color ??
+                    LightcorePalette.aether
               : LightcorePalette.warning;
 
           return Dialog(
@@ -148,7 +150,10 @@ class _TowerDetailContent extends StatelessWidget {
     final hasDotStat =
         tower.dotDamageFactor > 1 ||
         controller.towerHasUpgradeOption(tower, TowerUpgradeStatType.dotDamage);
-    final tint = tower.config!.affinity.color;
+    final tint =
+        tower.config?.affinity.color ??
+        tower.childAffinity?.color ??
+        LightcorePalette.layer2;
     final projectiles = controller.towerProjectileArsenal(tower);
     final isMaxed = tower.level >= LightcoreController.maxTowerLevel;
     final statRows = <_TowerStatRowData>[
@@ -259,6 +264,14 @@ class _TowerDetailContent extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.fromLTRB(0, 0, 0, 6),
       children: [
+        _ProjectileTargetingSection(
+          controller: controller,
+          tower: tower,
+          slotIndex: slotIndex,
+          projectiles: projectiles,
+          staticArchive: staticArchive,
+        ),
+        const SizedBox(height: 14),
         _TowerPortraitPanel(controller: controller, tower: tower, tint: tint),
         if (staticArchive) ...[
           const SizedBox(height: 14),
@@ -321,12 +334,19 @@ class _TowerDetailContent extends StatelessWidget {
               const SizedBox(height: 14),
               SizedBox(
                 width: double.infinity,
-                child: OutlinedButton(
-                  onPressed: staticArchive
-                      ? null
-                      : () => controller.sellTower(slotIndex),
-                  child: Text('Sell ${(tower.investedLumens * 0.7).round()}L'),
-                ),
+                child: tower.isChildLayerNode
+                    ? OutlinedButton(
+                        onPressed: () => controller.enterChildLayer(slotIndex),
+                        child: const Text('Source Layer'),
+                      )
+                    : OutlinedButton(
+                        onPressed: staticArchive
+                            ? null
+                            : () => controller.sellTower(slotIndex),
+                        child: Text(
+                          'Sell ${(tower.investedLumens * 0.7).round()}L',
+                        ),
+                      ),
               ),
             ],
           ),
@@ -366,37 +386,6 @@ class _TowerDetailContent extends StatelessWidget {
         ),
         const SizedBox(height: 14),
         _ConsoleSection(
-          title: 'Projectile Targeting',
-          subtitle:
-              'Assign a target bias to each projectile trait this prism can fire. Root towers only expose their own fixed projectile.',
-          tint: LightcorePalette.mist,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              for (final projectile in projectiles) ...[
-                _ProjectileTargetRow(
-                  projectileType: projectile,
-                  isActive: controller.towerProjectileType(tower) == projectile,
-                  selectedPriority: controller.towerTargetPriorityForProjectile(
-                    tower,
-                    projectile,
-                  ),
-                  onSelected: staticArchive
-                      ? null
-                      : (priority) =>
-                            controller.setTowerProjectileTargetPriority(
-                              slotIndex,
-                              projectile,
-                              priority,
-                            ),
-                ),
-                if (projectile != projectiles.last) const SizedBox(height: 12),
-              ],
-            ],
-          ),
-        ),
-        const SizedBox(height: 14),
-        _ConsoleSection(
           title: 'Pattern Bonus',
           tint: tint,
           child: TowerPatternBonusPanel(
@@ -427,6 +416,22 @@ class _TowerPortraitPanel extends StatelessWidget {
     final textTheme = Theme.of(context).textTheme;
     final chargeLabel =
         '${(tower.charge * 100).clamp(0, 100).toStringAsFixed(0)}%';
+    final title = controller.towerDisplayName(tower);
+    final summary =
+        tower.config?.summary ??
+        (tower.isPromotedChildTower
+            ? 'Aligned lower-shell tower with inherited projectile and payload traits. Its source shell remains linked for deeper inspection.'
+            : 'Lower-shell project linked to this hex. Enter the layer to finish alignment and promote it into the parent shell.');
+    final roleLabel =
+        tower.config?.passiveLabel ??
+        (tower.isPromotedChildTower
+            ? controller.towerCompletionLabel(tower)
+            : controller.childTowerGrowthLabel(tower));
+    final traitSummary = tower.config != null
+        ? controller.payloadsUnlocked
+              ? 'Root towers stay single-color and projectile-only after promotion unlocks. This prism feeds ${controller.towerProjectileLabel(tower)}.'
+              : 'Root towers stay single-color and projectile-only: ${controller.towerAffinitySignatureLabel(tower)} • ${controller.towerProjectileArsenalLabel(tower)}.'
+        : '${controller.towerAffinitySignatureLabel(tower)} • ${controller.towerProjectileArsenalLabel(tower)} / ${controller.towerPayloadArsenalLabel(tower)}.';
     final portrait = Container(
       width: 116,
       height: 136,
@@ -464,14 +469,11 @@ class _TowerPortraitPanel extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 4),
-        Text(tower.config!.name, style: textTheme.headlineMedium),
+        Text(title, style: textTheme.headlineMedium),
         const SizedBox(height: 8),
-        Text(tower.config!.summary, style: textTheme.bodyMedium),
+        Text(summary, style: textTheme.bodyMedium),
         const SizedBox(height: 10),
-        Text(
-          tower.config!.passiveLabel,
-          style: textTheme.titleMedium?.copyWith(color: tint),
-        ),
+        Text(roleLabel, style: textTheme.titleMedium?.copyWith(color: tint)),
       ],
     );
 
@@ -524,12 +526,7 @@ class _TowerPortraitPanel extends StatelessWidget {
             },
           ),
           const SizedBox(height: 14),
-          Text(
-            controller.payloadsUnlocked
-                ? 'Root towers stay single-color and projectile-only after promotion unlocks. This prism feeds ${controller.towerProjectileLabel(tower)}.'
-                : 'Root towers stay single-color and projectile-only: ${controller.towerAffinitySignatureLabel(tower)} • ${controller.towerProjectileArsenalLabel(tower)}.',
-            style: textTheme.bodyMedium,
-          ),
+          Text(traitSummary, style: textTheme.bodyMedium),
           const SizedBox(height: 14),
           MeterBar(value: tower.charge.clamp(0, 1), color: tint, height: 12),
           const SizedBox(height: 10),
@@ -837,6 +834,55 @@ class _TowerStatRowData {
   final String label;
   final String value;
   final bool accent;
+}
+
+class _ProjectileTargetingSection extends StatelessWidget {
+  const _ProjectileTargetingSection({
+    required this.controller,
+    required this.tower,
+    required this.slotIndex,
+    required this.projectiles,
+    required this.staticArchive,
+  });
+
+  final LightcoreController controller;
+  final OuterTowerState tower;
+  final int slotIndex;
+  final List<ProjectileType> projectiles;
+  final bool staticArchive;
+
+  @override
+  Widget build(BuildContext context) {
+    return _ConsoleSection(
+      title: 'Projectile Targeting',
+      subtitle:
+          'Assign a target bias to each projectile trait this prism can fire. Root towers only expose their own fixed projectile.',
+      tint: LightcorePalette.mist,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          for (final projectile in projectiles) ...[
+            _ProjectileTargetRow(
+              projectileType: projectile,
+              isActive: controller.towerProjectileType(tower) == projectile,
+              selectedPriority: controller.towerTargetPriorityForProjectile(
+                tower,
+                projectile,
+              ),
+              onSelected: staticArchive
+                  ? null
+                  : (priority) => controller.setTowerProjectileTargetPriority(
+                      slotIndex,
+                      projectile,
+                      priority,
+                    ),
+            ),
+            if (projectile != projectiles.last) const SizedBox(height: 12),
+          ],
+        ],
+      ),
+    );
+  }
 }
 
 class _ProjectileTargetRow extends StatelessWidget {

@@ -244,7 +244,8 @@ extension LightcoreControllerStateAccessors on LightcoreController {
   bool get activeLayerPassiveOnly => isLayerPassiveOnly(activeLayer);
 
   bool get _activeLayerAllowsProgressionUpgrades =>
-      !activeLayerPassiveOnly || activeLayerHasParentSlot;
+      _threatRegionChallenge == null &&
+      (!activeLayerPassiveOnly || activeLayerHasParentSlot);
 
   int get newEquipmentNotificationCount => _newEquipmentItemIds.length;
 
@@ -1010,6 +1011,7 @@ extension LightcoreControllerStateAccessors on LightcoreController {
   }
 
   bool get canUpgradeManagerPower =>
+      _threatRegionChallenge == null &&
       managerPowerLevel < maxManagerPowerLevel &&
       managerShards >= managerPowerUpgradeCost;
 
@@ -1129,7 +1131,7 @@ extension LightcoreControllerStateAccessors on LightcoreController {
       max(0, _radianceStatRanks[stat] ?? 0);
 
   bool canUpgradeRadianceStat(LightcoreRadianceStat stat) =>
-      unspentRadianceStatPoints > 0;
+      _threatRegionChallenge == null && unspentRadianceStatPoints > 0;
 
   bool get canPurchaseRadianceStatReset =>
       totalRadianceStatPointsSpent > 0 &&
@@ -1149,6 +1151,9 @@ extension LightcoreControllerStateAccessors on LightcoreController {
   }
 
   bool purchaseRadianceStatReset({bool showBanner = true}) {
+    if (_threatRegionChallenge != null) {
+      return false;
+    }
     final spentPoints = totalRadianceStatPointsSpent;
     const cost = LightcoreController.radianceStatResetPrismShardCost;
     if (spentPoints <= 0 || prismShards < cost) {
@@ -1439,7 +1444,8 @@ extension LightcoreControllerStateAccessors on LightcoreController {
     return items;
   }
 
-  bool get canUpgradeEnemyTargetMax => enemyTargetMax < maxActiveEnemies;
+  bool get canUpgradeEnemyTargetMax =>
+      _threatRegionChallenge == null && enemyTargetMax < maxActiveEnemies;
 
   bool get isCompositeLayer => activeLayer.tier > 1;
 

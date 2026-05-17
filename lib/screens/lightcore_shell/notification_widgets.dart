@@ -38,6 +38,7 @@ class _ShellNotificationOverlayState extends State<_ShellNotificationOverlay> {
             final visible =
                 _shown &&
                 widget.controller.notificationBannersEnabled &&
+                widget.controller.activeThreatRegionChallenge == null &&
                 message.isNotEmpty;
             return Align(
               alignment: Alignment.topCenter,

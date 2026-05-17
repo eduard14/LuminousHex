@@ -1198,11 +1198,15 @@ extension LightcoreControllerProgressionLayers on LightcoreController {
       1 + card.config.rarity.index + ((card.level - 1) ~/ 3);
 
   bool canUpgradeBossEnemyCard(EnemyCardState card) =>
+      _threatRegionChallenge == null &&
       card.isOwned &&
       card.level < bossLevelCap(card) &&
       threatShards >= bossUpgradeRequirement(card);
 
   bool upgradeBossEnemyCard(String cardId) {
+    if (_threatRegionChallenge != null) {
+      return false;
+    }
     final cardIndex = _bossEnemyCards.indexWhere(
       (card) => card.config.id == cardId,
     );

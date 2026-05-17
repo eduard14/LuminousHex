@@ -1010,6 +1010,8 @@ class ThreatRegionChallengeState {
     required this.finalLayer,
     required this.startedAtMillis,
     this.elapsedSeconds = 0,
+    this.waveIndex = 0,
+    this.waveElapsedSeconds = 0,
   });
 
   final String regionId;
@@ -1017,14 +1019,22 @@ class ThreatRegionChallengeState {
   final bool finalLayer;
   final int startedAtMillis;
   final double elapsedSeconds;
+  final int waveIndex;
+  final double waveElapsedSeconds;
 
-  ThreatRegionChallengeState copyWith({double? elapsedSeconds}) {
+  ThreatRegionChallengeState copyWith({
+    double? elapsedSeconds,
+    int? waveIndex,
+    double? waveElapsedSeconds,
+  }) {
     return ThreatRegionChallengeState(
       regionId: regionId,
       targetStabilizationLevel: targetStabilizationLevel,
       finalLayer: finalLayer,
       startedAtMillis: startedAtMillis,
       elapsedSeconds: elapsedSeconds ?? this.elapsedSeconds,
+      waveIndex: waveIndex ?? this.waveIndex,
+      waveElapsedSeconds: waveElapsedSeconds ?? this.waveElapsedSeconds,
     );
   }
 }
