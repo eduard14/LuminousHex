@@ -756,7 +756,7 @@ extension LightcoreControllerSaveTournamentCloud on LightcoreController {
         'managerPowerLevel': managerPowerLevel,
         'shellCores': shellCores,
         'enemyTickets': enemyTickets,
-        'bossTickets': 0,
+        'bossTickets': bossTickets,
         'bossCores': 0,
         'threatShards': threatShards,
         'swarmMagnets': swarmMagnets,

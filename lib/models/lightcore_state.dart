@@ -1079,20 +1079,6 @@ class ThreatRegionFarmValidationState {
   }
 }
 
-class ThreatRegionScanResult {
-  const ThreatRegionScanResult({
-    required this.region,
-    required this.revealedNewRegion,
-    required this.echoGranted,
-    required this.rarityRolled,
-  });
-
-  final ThreatRegionConfig region;
-  final bool revealedNewRegion;
-  final int echoGranted;
-  final EnemyCardRarity rarityRolled;
-}
-
 class EnemyManagerState {
   const EnemyManagerState({
     required this.instanceId,

@@ -54,13 +54,13 @@ void main() {
     expect(controller.bannerMessage, contains('Sent 2 Threat Scan gifts'));
     expect(find.text('Send All'), findsOneWidget);
 
-    final startingTickets = controller.enemyTickets;
+    final startingTickets = controller.bossTickets;
     await tester.tap(find.text('Claim All (1)'));
     await tester.pump();
     await tester.pump();
 
     expect(backend.claimAllCalls, 1);
-    expect(controller.enemyTickets, startingTickets + 1);
+    expect(controller.bossTickets, startingTickets + 1);
     expect(controller.bannerMessage, contains('+1 Threat Scan'));
     expect(find.text('Claim All'), findsOneWidget);
   });

@@ -110,6 +110,17 @@ extension LightcoreControllerThreatRegions on LightcoreController {
     if (challenge == null) {
       return 0;
     }
+    return max(
+      0,
+      _threatRegionChallengeWaveSeconds - challenge.waveElapsedSeconds,
+    );
+  }
+
+  double get activeThreatRegionChallengeTotalRemainingSeconds {
+    final challenge = _threatRegionChallenge;
+    if (challenge == null) {
+      return 0;
+    }
     return max(0, threatRegionChallengeSeconds - challenge.elapsedSeconds);
   }
 
@@ -211,8 +222,19 @@ extension LightcoreControllerThreatRegions on LightcoreController {
       fullyStabilizedFirstRingRegionCount ==
       ThreatRegionLibrary.all.where((region) => region.ring <= 1).length;
 
-  bool get canScanThreatMap =>
-      enemyTickets > 0 && (fullThreatMapUnlocked || threatRegionsUnlocked);
+  ThreatRegionConfig? get nextThreatRegionConfig {
+    for (final region in ThreatRegionLibrary.all) {
+      final state = threatRegionStateById(region.id);
+      if (state == null || state.revealed) {
+        continue;
+      }
+      return region;
+    }
+    return null;
+  }
+
+  int threatRegionSpiralIndex(String regionId) =>
+      ThreatRegionLibrary.all.indexWhere((region) => region.id == regionId);
 
   bool canStartThreatRegionChallenge(String regionId) {
     if (_threatRegionChallenge != null || _threatRegionFarmValidation != null) {
@@ -226,10 +248,7 @@ extension LightcoreControllerThreatRegions on LightcoreController {
     if (state.stabilizedLevel >= config.stabilizationLayers) {
       return false;
     }
-    if (fullThreatMapUnlocked) {
-      return true;
-    }
-    return threatRegionsUnlocked && config.ring <= 1;
+    return threatRegionsUnlocked;
   }
 
   bool get canStartFirstThreatChallenge =>
@@ -330,12 +349,7 @@ extension LightcoreControllerThreatRegions on LightcoreController {
   }
 
   String get threatScanRateInfo =>
-      'Threat Scans roll rarity first from the fixed rarity table. Current-region and adjacent-hex weighting only changes which matching region is hit, and scans can hit already revealed or fully stabilized regions to create Region Echoes.';
-
-  int regionEchoCount(String regionId) => _regionEchoes[regionId] ?? 0;
-
-  int regionEchoMergeCostForRing(int ring) =>
-      ThreatRegionLibrary.stabilizationLayersForRing(ring);
+      'Threat Scans now resolve Enemy Research Cards. Threat Map progression follows the fixed spiral path and reveals the next region through stabilization.';
 
   ThreatRegionState? threatRegionStateById(String regionId) {
     final match = _threatRegions.where((state) => state.regionId == regionId);
@@ -351,159 +365,6 @@ extension LightcoreControllerThreatRegions on LightcoreController {
       return false;
     }
     _selectedThreatRegionId = regionId;
-    _notifyNow();
-    return true;
-  }
-
-  ThreatRegionScanResult? scanThreatMap({int count = 1}) {
-    if (count <= 0 ||
-        enemyTickets < count ||
-        !(fullThreatMapUnlocked || threatRegionsUnlocked)) {
-      return null;
-    }
-    ThreatRegionScanResult? lastResult;
-    for (var index = 0; index < count; index += 1) {
-      enemyTickets -= 1;
-      enemyPullCount += 1;
-      lastResult = fullThreatMapUnlocked
-          ? _resolveSingleThreatMapScan()
-          : _resolveFirstRingThreatMapScan();
-    }
-    _advanceBattlePass(BattlePassType.enemyPulls, count);
-    _syncTutorialStep(showBanner: false);
-    _notifyNow();
-    return lastResult;
-  }
-
-  ThreatRegionScanResult _resolveFirstRingThreatMapScan() {
-    final starter = ThreatRegionLibrary.all.first;
-    final unrevealedRingOne = ThreatRegionLibrary.all
-        .where((region) => region.ring == 1)
-        .where((region) => threatRegionStateById(region.id)?.revealed != true)
-        .toList(growable: false);
-    if (unrevealedRingOne.isNotEmpty) {
-      final region = unrevealedRingOne.first;
-      final state = threatRegionStateById(region.id)!;
-      _replaceThreatRegionState(state.copyWith(revealed: true));
-      _selectedThreatRegionId = region.id;
-      _showBanner('${region.name} revealed on the threat map.');
-      return ThreatRegionScanResult(
-        region: region,
-        revealedNewRegion: true,
-        echoGranted: 0,
-        rarityRolled: region.rarity,
-      );
-    }
-
-    final origin = selectedThreatRegionConfig ?? starter;
-    final echoRegion = origin.ring <= 1 ? origin : starter;
-    _regionEchoes[echoRegion.id] = regionEchoCount(echoRegion.id) + 1;
-    _showBanner(
-      '${echoRegion.name} echoed. Region Echoes: ${regionEchoCount(echoRegion.id)}.',
-    );
-    return ThreatRegionScanResult(
-      region: echoRegion,
-      revealedNewRegion: false,
-      echoGranted: 1,
-      rarityRolled: echoRegion.rarity,
-    );
-  }
-
-  ThreatRegionScanResult _resolveSingleThreatMapScan() {
-    final rarity = _rollPackRarity();
-    var candidates = ThreatRegionLibrary.all
-        .where((region) => region.rarity == rarity)
-        .toList(growable: false);
-    if (candidates.isEmpty) {
-      candidates = ThreatRegionLibrary.all;
-    }
-    final region = _weightedScanRegion(candidates);
-    final state = threatRegionStateById(region.id)!;
-    final revealedNew = !state.revealed;
-    if (revealedNew) {
-      _replaceThreatRegionState(state.copyWith(revealed: true));
-      _selectedThreatRegionId = region.id;
-      _showBanner('${region.name} revealed on the threat map.');
-      return ThreatRegionScanResult(
-        region: region,
-        revealedNewRegion: true,
-        echoGranted: 0,
-        rarityRolled: rarity,
-      );
-    }
-
-    _regionEchoes[region.id] = regionEchoCount(region.id) + 1;
-    _showBanner(
-      '${region.name} echoed. Region Echoes: ${regionEchoCount(region.id)}.',
-    );
-    return ThreatRegionScanResult(
-      region: region,
-      revealedNewRegion: false,
-      echoGranted: 1,
-      rarityRolled: rarity,
-    );
-  }
-
-  ThreatRegionConfig _weightedScanRegion(List<ThreatRegionConfig> candidates) {
-    final origin = selectedThreatRegionConfig ?? ThreatRegionLibrary.all.first;
-    final weighted = <({ThreatRegionConfig region, double weight})>[];
-    for (final region in candidates) {
-      var weight = 1.0;
-      if (region.id == origin.id) {
-        weight += 5;
-      }
-      final distance = ThreatRegionLibrary.hexDistance(
-        region.q - origin.q,
-        region.r - origin.r,
-      );
-      if (distance == 1) {
-        weight += 4;
-      } else if (distance == 2) {
-        weight += 1.5;
-      }
-      if (!(threatRegionStateById(region.id)?.revealed ?? false)) {
-        weight += max(0, 3 - region.ring);
-      }
-      weighted.add((region: region, weight: weight));
-    }
-    final total = weighted.fold<double>(0, (sum, item) => sum + item.weight);
-    var roll = _packRandom.nextDouble() * total;
-    for (final item in weighted) {
-      roll -= item.weight;
-      if (roll <= 0) {
-        return item.region;
-      }
-    }
-    return weighted.last.region;
-  }
-
-  bool mergeRegionEchoesToReveal({
-    required String sourceRegionId,
-    required String targetRegionId,
-  }) {
-    final source = threatRegionStateById(sourceRegionId);
-    final target = threatRegionStateById(targetRegionId);
-    final targetConfig = threatRegionConfigById(targetRegionId);
-    if (source == null ||
-        target == null ||
-        targetConfig == null ||
-        !source.revealed ||
-        target.revealed) {
-      return false;
-    }
-    final sourceConfig = threatRegionConfigById(sourceRegionId);
-    if (sourceConfig == null ||
-        source.stabilizedLevel < sourceConfig.stabilizationLayers) {
-      return false;
-    }
-    final cost = regionEchoMergeCostForRing(targetConfig.ring);
-    if (regionEchoCount(sourceRegionId) < cost) {
-      return false;
-    }
-    _regionEchoes[sourceRegionId] = regionEchoCount(sourceRegionId) - cost;
-    _replaceThreatRegionState(target.copyWith(revealed: true));
-    _selectedThreatRegionId = targetRegionId;
-    _showBanner('${targetConfig.name} revealed by Region Echo beacon.');
     _notifyNow();
     return true;
   }
@@ -585,6 +446,14 @@ extension LightcoreControllerThreatRegions on LightcoreController {
     bannerMessage = '';
     _bannerTimer = 0;
     _applyChallengeSwarmPressure();
+    _enemies.clear();
+    _pulses.clear();
+    _shots.clear();
+    _impacts.clear();
+    _blueFocusTargetEnemyIdBySlot.clear();
+    _clearFocusTarget();
+    _swarmActivated = true;
+    _spawnTimer = min(_spawnTimer, 0.01);
     _threatRegionDefeatedBossIds.clear();
     if (_threatRegionChallenge!.finalLayer) {
       activeLayer.bossReady = true;
@@ -645,6 +514,9 @@ extension LightcoreControllerThreatRegions on LightcoreController {
           : state.fullyStabilizedAtMillis,
     );
     _replaceThreatRegionState(nextState);
+    final revealedNext = fullyStabilized
+        ? _revealNextSpiralRegionAfter(config)
+        : null;
     _threatRegionChallenge = null;
     _threatRegionDefeatedBossIds.clear();
     _applyFarmSwarmPressure();
@@ -667,24 +539,40 @@ extension LightcoreControllerThreatRegions on LightcoreController {
       LightcoreCurrencyLabels.rewardLumens(lumenReward),
       if (scanReward > 0) LightcoreCurrencyLabels.rewardThreatScans(scanReward),
     ];
+    final revealText = revealedNext == null
+        ? ''
+        : ' Next spiral sector: ${revealedNext.name}.';
     _showBanner(
-      '${config.name} stabilized Lv ${nextState.stabilizedLevel}/${config.stabilizationLayers}. Live farm unlocked. Reward: ${rewardParts.join(', ')}.',
+      '${config.name} stabilized Lv ${nextState.stabilizedLevel}/${config.stabilizationLayers}. Live farm unlocked.$revealText Reward: ${rewardParts.join(', ')}.',
     );
     _notifyNow();
     return true;
   }
 
   void _applyChallengeSwarmPressure() {
-    final targetLevel = _threatRegionChallenge?.targetStabilizationLevel ?? 1;
-    _enemyTargetCount = _normalizeEnemyTargetCount(
-      initialEnemyTarget + max(1, targetLevel),
-    );
+    _enemyTargetCount = _normalizeEnemyTargetCount(initialEnemyTarget);
     activeLayer.enemyTargetCount = _enemyTargetCount;
   }
 
   void _applyFarmSwarmPressure() {
     _enemyTargetCount = _normalizeEnemyTargetCount(_farmSwarmSize);
     activeLayer.enemyTargetCount = _enemyTargetCount;
+  }
+
+  ThreatRegionConfig? _revealNextSpiralRegionAfter(ThreatRegionConfig region) {
+    final currentIndex = threatRegionSpiralIndex(region.id);
+    if (currentIndex < 0 ||
+        currentIndex + 1 >= ThreatRegionLibrary.all.length) {
+      return null;
+    }
+    final nextRegion = ThreatRegionLibrary.all[currentIndex + 1];
+    final nextState = threatRegionStateById(nextRegion.id);
+    if (nextState == null || nextState.revealed) {
+      return null;
+    }
+    _replaceThreatRegionState(nextState.copyWith(revealed: true));
+    _selectedThreatRegionId = nextRegion.id;
+    return nextRegion;
   }
 
   int _threatRegionChallengeLumenReward(
@@ -1204,11 +1092,6 @@ extension LightcoreControllerThreatRegions on LightcoreController {
   }
 
   @visibleForTesting
-  void debugGrantRegionEcho(String regionId, int count) {
-    _regionEchoes[regionId] = regionEchoCount(regionId) + max(0, count);
-  }
-
-  @visibleForTesting
   void debugGrantApexCore(String bossId) => _grantApexCore(bossId);
 
   @visibleForTesting
@@ -1365,7 +1248,6 @@ extension LightcoreControllerThreatRegions on LightcoreController {
       'regions': _threatRegions
           .map(_serializeThreatRegionState)
           .toList(growable: false),
-      'regionEchoes': <String, int>{..._regionEchoes},
       'activeEnemySuite': _serializeEnemySuiteState(_activeEnemySuite),
     };
   }
@@ -1422,11 +1304,6 @@ extension LightcoreControllerThreatRegions on LightcoreController {
           .map((region) => byId[region.id]!)
           .toList(growable: false);
     }
-    _regionEchoes = <String, int>{
-      for (final entry in _coerceMap(data['regionEchoes']).entries)
-        if (_stringOrNull(entry.key) != null)
-          _stringOrNull(entry.key)!: _intValue(entry.value),
-    };
     _selectedThreatRegionId =
         _stringOrNull(data['selectedRegionId']) ?? _selectedThreatRegionId;
     if (threatRegionStateById(_selectedThreatRegionId ?? '')?.revealed !=

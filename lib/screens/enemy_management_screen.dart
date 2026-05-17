@@ -504,22 +504,6 @@ class _ThreatRegionMapPanelState extends State<_ThreatRegionMapPanel> {
     final detailRevealed = detailState?.revealed ?? false;
     final textTheme = Theme.of(context).textTheme;
     final displayedRegions = controller.threatRegionConfigs;
-    ThreatRegionConfig? mergeTarget;
-    if (selected != null &&
-        selectedState != null &&
-        selectedState.stabilizedLevel >= selected.stabilizationLayers) {
-      for (final region in controller.threatRegionConfigs) {
-        if (region.ring <= selected.ring ||
-            (controller.threatRegionStateById(region.id)?.revealed ?? false)) {
-          continue;
-        }
-        final cost = controller.regionEchoMergeCostForRing(region.ring);
-        if (controller.regionEchoCount(selected.id) >= cost) {
-          mergeTarget = region;
-          break;
-        }
-      }
-    }
     return AuroraPanel(
       tint: previewed != null
           ? _rarityTint(previewed.rarity)
@@ -554,10 +538,6 @@ class _ThreatRegionMapPanelState extends State<_ThreatRegionMapPanel> {
                 states: {
                   for (final state in controller.threatRegions)
                     state.regionId: state,
-                },
-                echoCounts: {
-                  for (final region in displayedRegions)
-                    region.id: controller.regionEchoCount(region.id),
                 },
                 selectedRegionId: controller.selectedThreatRegionId,
                 previewRegionId: previewed?.id,
@@ -594,7 +574,7 @@ class _ThreatRegionMapPanelState extends State<_ThreatRegionMapPanel> {
             const SizedBox(height: 12),
             Text(
               detailRevealed
-                  ? '${detailRegion.name}: Lv ${detailState.stabilizedLevel}/${detailRegion.stabilizationLayers} stabilized • Echoes ${controller.regionEchoCount(detailRegion.id)}'
+                  ? '${detailRegion.name}: Lv ${detailState.stabilizedLevel}/${detailRegion.stabilizationLayers} stabilized'
                   : '${detailRegion.name}: uncharted Ring ${detailRegion.ring} sector',
               style: textTheme.bodyMedium,
             ),
@@ -704,23 +684,6 @@ class _ThreatRegionMapPanelState extends State<_ThreatRegionMapPanel> {
                           : 'Validate Farm',
                     ),
                   ),
-                  OutlinedButton.icon(
-                    onPressed: controller.canScanThreatMap
-                        ? () => controller.scanThreatMap()
-                        : null,
-                    icon: const Icon(Icons.radar_rounded),
-                    label: const Text('Scan'),
-                  ),
-                  OutlinedButton.icon(
-                    onPressed: mergeTarget == null
-                        ? null
-                        : () => controller.mergeRegionEchoesToReveal(
-                            sourceRegionId: detailRegion.id,
-                            targetRegionId: mergeTarget!.id,
-                          ),
-                    icon: const Icon(Icons.hub_rounded),
-                    label: const Text('Merge Echoes'),
-                  ),
                 ],
               ),
             ],
@@ -729,8 +692,8 @@ class _ThreatRegionMapPanelState extends State<_ThreatRegionMapPanel> {
             const SizedBox(height: 10),
             Text(
               controller.threatRegionsUnlocked
-                  ? 'Starter and ring-1 regions can be revealed and stabilized before Prism. Ring 2+ scan-out opens after the Prism Shell is online.'
-                  : 'All 37 regions are fixed for every player. Build the first tower to start starter-region challenges and ring-1 scans.',
+                  ? 'The fixed spiral reveals one sector at a time as regions are fully stabilized.'
+                  : 'All 37 regions are fixed for every player. Build the first tower to start the spiral path.',
               style: textTheme.bodySmall?.copyWith(
                 color: LightcorePalette.warning,
               ),
@@ -862,7 +825,6 @@ class _ThreatRegionMapPainter extends CustomPainter {
   const _ThreatRegionMapPainter({
     required this.regions,
     required this.states,
-    required this.echoCounts,
     required this.selectedRegionId,
     this.previewRegionId,
     this.zoomScale = 1,
@@ -870,7 +832,6 @@ class _ThreatRegionMapPainter extends CustomPainter {
 
   final List<ThreatRegionConfig> regions;
   final Map<String, ThreatRegionState> states;
-  final Map<String, int> echoCounts;
   final String? selectedRegionId;
   final String? previewRegionId;
   final double zoomScale;
@@ -879,7 +840,6 @@ class _ThreatRegionMapPainter extends CustomPainter {
     return _ThreatRegionMapPainter(
       regions: regions,
       states: states,
-      echoCounts: echoCounts,
       selectedRegionId: selectedRegionId,
       previewRegionId: previewRegionId,
       zoomScale: zoomScale,
@@ -904,7 +864,7 @@ class _ThreatRegionMapPainter extends CustomPainter {
     final center = Offset(size.width / 2, size.height / 2);
     final radius = _hexGridRadius(size);
     _drawMapBackdrop(canvas, size, center, radius);
-    _drawSectorLinks(canvas, center, radius);
+    _drawSpiralPath(canvas, center, radius);
     for (final region in regions) {
       final state = states[region.id];
       final point = _axialToPixel(region.q, region.r, radius, center);
@@ -1013,39 +973,51 @@ class _ThreatRegionMapPainter extends CustomPainter {
     }
   }
 
-  void _drawSectorLinks(Canvas canvas, Offset center, double radius) {
-    final linkPaint = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 0.9
-      ..strokeCap = StrokeCap.round
-      ..color = LightcorePalette.aether.withValues(alpha: 0.16);
-    for (final region in regions) {
-      final state = states[region.id];
-      if (!(state?.revealed ?? false)) {
-        continue;
-      }
-      final origin = _axialToPixel(region.q, region.r, radius, center);
-      for (final neighbor in regions) {
-        if (neighbor.id.compareTo(region.id) <= 0) {
-          continue;
-        }
-        final neighborState = states[neighbor.id];
-        if (!(neighborState?.revealed ?? false)) {
-          continue;
-        }
-        final distance = ThreatRegionLibrary.hexDistance(
-          neighbor.q - region.q,
-          neighbor.r - region.r,
-        );
-        if (distance == 1) {
-          canvas.drawLine(
-            origin,
-            _axialToPixel(neighbor.q, neighbor.r, radius, center),
-            linkPaint,
-          );
-        }
+  void _drawSpiralPath(Canvas canvas, Offset center, double radius) {
+    if (regions.length < 2) {
+      return;
+    }
+    final points = [
+      for (final region in regions)
+        _axialToPixel(region.q, region.r, radius, center),
+    ];
+    final basePath = Path()..moveTo(points.first.dx, points.first.dy);
+    for (final point in points.skip(1)) {
+      basePath.lineTo(point.dx, point.dy);
+    }
+    final width = radius * 0.18;
+    canvas.drawPath(
+      basePath,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = width
+        ..strokeCap = StrokeCap.round
+        ..strokeJoin = StrokeJoin.round
+        ..color = LightcorePalette.stroke.withValues(alpha: 0.3),
+    );
+
+    var lastRevealedIndex = 0;
+    for (var index = 0; index < regions.length; index += 1) {
+      if (states[regions[index].id]?.revealed ?? false) {
+        lastRevealedIndex = index;
       }
     }
+    if (lastRevealedIndex <= 0) {
+      return;
+    }
+    final revealedPath = Path()..moveTo(points.first.dx, points.first.dy);
+    for (var index = 1; index <= lastRevealedIndex; index += 1) {
+      revealedPath.lineTo(points[index].dx, points[index].dy);
+    }
+    canvas.drawPath(
+      revealedPath,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = width * 0.68
+        ..strokeCap = StrokeCap.round
+        ..strokeJoin = StrokeJoin.round
+        ..color = LightcorePalette.solar.withValues(alpha: 0.72),
+    );
   }
 
   void _drawSectorFill(
@@ -1207,7 +1179,10 @@ class _ThreatRegionMapPainter extends CustomPainter {
       return;
     }
     final tint = _rarityTint(region.rarity);
-    final title = region.ring == 0 ? 'CORE' : 'R${region.ring}.${region.q}';
+    final spiralIndex = regions.indexWhere((item) => item.id == region.id);
+    final title = spiralIndex < 0
+        ? 'S--'
+        : 'S${(spiralIndex + 1).toString().padLeft(2, '0')}';
     _drawCenteredText(
       canvas,
       title,
@@ -1233,18 +1208,6 @@ class _ThreatRegionMapPainter extends CustomPainter {
           ? tint.withValues(alpha: 0.92)
           : LightcorePalette.warning.withValues(alpha: 0.58),
       weight: FontWeight.w700,
-    );
-    if (zoomScale < 2.65 || !revealed) {
-      return;
-    }
-    final echoCount = echoCounts[region.id] ?? 0;
-    _drawCenteredText(
-      canvas,
-      'E$echoCount',
-      center + Offset(0, radius * 0.68),
-      fontSize: radius * 0.13,
-      color: LightcorePalette.aether.withValues(alpha: 0.74),
-      weight: FontWeight.w600,
     );
   }
 
@@ -1305,7 +1268,6 @@ class _ThreatRegionMapPainter extends CustomPainter {
   bool shouldRepaint(covariant _ThreatRegionMapPainter oldDelegate) {
     return oldDelegate.regions != regions ||
         oldDelegate.states != states ||
-        oldDelegate.echoCounts != echoCounts ||
         oldDelegate.selectedRegionId != selectedRegionId ||
         oldDelegate.previewRegionId != previewRegionId ||
         oldDelegate.zoomScale != zoomScale;
@@ -1598,7 +1560,7 @@ class _EnemyPullSheetState extends State<EnemyPullSheet> {
                             ] else if (!controller.fullThreatMapUnlocked) ...[
                               _InlineEnemyNote(
                                 message:
-                                    'Regional boss scan-out unlocks after the starter region is fully stabilized and its boss is defeated.',
+                                    'Regional boss pulls unlock after the starter region is fully stabilized and its boss is defeated.',
                                 tint: LightcorePalette.warning,
                               ),
                             ] else ...[
@@ -1648,7 +1610,7 @@ class _EnemyPullSheetState extends State<EnemyPullSheet> {
                                               controller.bossHuntsUnlocked &&
                                               controller
                                                   .fullThreatMapUnlocked &&
-                                              controller.enemyTickets >= 10 &&
+                                              controller.bossTickets >= 10 &&
                                               !controller
                                                   .tutorialHighlightsBossSinglePullButton &&
                                               !_scanBusy,
@@ -1663,7 +1625,7 @@ class _EnemyPullSheetState extends State<EnemyPullSheet> {
                                               controller.bossHuntsUnlocked &&
                                               controller
                                                   .fullThreatMapUnlocked &&
-                                              controller.enemyTickets > 1 &&
+                                              controller.bossTickets > 1 &&
                                               !controller
                                                   .tutorialHighlightsBossSinglePullButton &&
                                               !_scanBusy,
@@ -1785,9 +1747,8 @@ class _EnemyPullSheetState extends State<EnemyPullSheet> {
                             if (!controller.fullThreatMapUnlocked) ...[
                               const SizedBox(height: 12),
                               _InlineEnemyNote(
-                                message: controller.threatRegionsUnlocked
-                                    ? 'Early scan-out prioritizes unrevealed ring-1 regions. Ring 2+ opens after Prism.'
-                                    : 'Build the first tower to start starter-region challenges and ring-1 scan-out.',
+                                message:
+                                    'Threat Scans resolve Enemy Research Cards. Threat Map regions reveal through the fixed spiral path.',
                                 tint: LightcorePalette.warning,
                               ),
                             ],
@@ -1945,39 +1906,43 @@ class _EnemyPullSheetState extends State<EnemyPullSheet> {
     await _openTickets(context, controller.enemyTickets);
   }
 
-  Future<void> _openMapScanTickets(BuildContext context, int count) async {
-    if (_scanBusy ||
-        !controller.canScanThreatMap ||
-        controller.enemyTickets < count) {
-      return;
-    }
-    final result = controller.scanThreatMap(count: count);
-    if (result == null) {
-      return;
-    }
-    if (!context.mounted) {
-      return;
-    }
-    await _showThreatMapScanResult(context, result);
-  }
-
   Future<void> _openBossTickets(BuildContext context, int count) async {
-    if (_scanBusy || !controller.canScanThreatMap) {
+    if (_scanBusy || controller.bossTickets < count) {
       return;
     }
-    await _openMapScanTickets(context, count);
+    setState(() => _revealBusy = true);
+    try {
+      final pulls = controller.tutorialHighlightsBossSinglePullButton
+          ? controller.tutorialOpenBossTickets(count)
+          : controller.openBossTickets(count);
+      if (pulls.isEmpty || !context.mounted) {
+        return;
+      }
+      await showDialog<void>(
+        context: context,
+        barrierDismissible: false,
+        builder: (dialogContext) => _EnemyPackRevealDialog(
+          pulls: pulls,
+          highestAvailableRarity: controller.highestAvailableBossPullRarity,
+          secondHighestAvailableRarity:
+              controller.secondHighestAvailableBossPullRarity,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _revealBusy = false);
+      }
+    }
   }
 
   Future<void> _openBossBatchTickets(BuildContext context) async {
-    if (_scanBusy ||
-        !controller.canScanThreatMap ||
-        controller.enemyTickets < 10) {
+    if (_scanBusy || controller.bossTickets < 10) {
       return;
     }
     final count = await _showBatchOpenSheet(
       context,
       title: 'Open 10+',
-      maxTickets: controller.enemyTickets,
+      maxTickets: controller.bossTickets,
       unitLabel: 'scans',
     );
     if (!mounted || count == null) {
@@ -1987,12 +1952,10 @@ class _EnemyPullSheetState extends State<EnemyPullSheet> {
   }
 
   Future<void> _openBossMaxTickets(BuildContext context) async {
-    if (_scanBusy ||
-        !controller.canScanThreatMap ||
-        controller.enemyTickets <= 0) {
+    if (_scanBusy || controller.bossTickets <= 0) {
       return;
     }
-    await _openBossTickets(context, controller.enemyTickets);
+    await _openBossTickets(context, controller.bossTickets);
   }
 
   Future<int?> _showBatchOpenSheet(
@@ -2161,65 +2124,6 @@ class _EnemyPullSheetState extends State<EnemyPullSheet> {
       if (mounted) {
         setState(() {
           _rewardAdBusy = false;
-        });
-      }
-    }
-  }
-
-  Future<void> _showThreatMapScanResult(
-    BuildContext context,
-    ThreatRegionScanResult result,
-  ) async {
-    setState(() {
-      _revealBusy = true;
-    });
-    try {
-      await showDialog<void>(
-        context: context,
-        barrierColor: LightcorePalette.night.withValues(alpha: 0.88),
-        builder: (dialogContext) {
-          final title = result.revealedNewRegion
-              ? 'Region Revealed'
-              : 'Region Echo';
-          final echoText = result.echoGranted > 0
-              ? 'Echo +${result.echoGranted} • Total ${controller.regionEchoCount(result.region.id)}'
-              : 'New region on the threat map';
-          return AlertDialog(
-            backgroundColor: LightcorePalette.abyss,
-            title: Text(title),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(result.region.name),
-                const SizedBox(height: 8),
-                Text(
-                  'Ring ${result.region.ring} • ${result.region.rarity.label} • ${result.region.stabilizationLayers} stabilization layers',
-                ),
-                const SizedBox(height: 8),
-                Text(echoText),
-                const SizedBox(height: 12),
-                Text(
-                  controller.threatScanRateInfo,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: LightcorePalette.mist.withValues(alpha: 0.72),
-                  ),
-                ),
-              ],
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(dialogContext).pop(),
-                child: const Text('Close'),
-              ),
-            ],
-          );
-        },
-      );
-    } finally {
-      if (mounted) {
-        setState(() {
-          _revealBusy = false;
         });
       }
     }

@@ -51,6 +51,17 @@ void main() {
       regions.where((region) => region.ring == 3 && region.hasDoubleBoss),
       hasLength(3),
     );
+    for (var index = 1; index < regions.length; index += 1) {
+      final previous = regions[index - 1];
+      final current = regions[index];
+      expect(
+        ThreatRegionLibrary.hexDistance(
+          current.q - previous.q,
+          current.r - previous.r,
+        ),
+        1,
+      );
+    }
   });
 
   test('rarer threat combinations live farther from center', () {
@@ -91,49 +102,48 @@ void main() {
     },
   );
 
-  test('starter and ring one regions can be worked before layer 2', () {
+  test('fixed spiral reveals one next region at a time', () {
     final controller = LightcoreController();
     addTearDown(controller.dispose);
 
     final starter = ThreatRegionLibrary.all.first;
-    final ringOne = ThreatRegionLibrary.all
-        .where((region) => region.ring == 1)
-        .toList(growable: false);
+    final nextRegion = ThreatRegionLibrary.all[1];
     final ringTwo = ThreatRegionLibrary.all.firstWhere(
       (region) => region.ring == 2,
     );
 
     expect(controller.bossHuntsUnlocked, isFalse);
     expect(controller.canStartThreatRegionChallenge(starter.id), isFalse);
+    expect(controller.threatRegionStateById(nextRegion.id)!.revealed, isFalse);
 
     controller
       ..kills = LightcoreController.unlockKillsForOuterSlot(0)
       ..lumens = 1000;
     expect(controller.buildTowerAt(0, controller.towerConfigs.first), isTrue);
     expect(controller.canStartThreatRegionChallenge(starter.id), isTrue);
-    expect(controller.startThreatRegionChallenge(starter.id), isTrue);
-    expect(controller.failThreatRegionChallenge(), isFalse);
+    expect(controller.canStartThreatRegionChallenge(nextRegion.id), isFalse);
 
-    controller.enemyTickets = ringOne.length;
-    for (var index = 0; index < ringOne.length; index += 1) {
-      final result = controller.scanThreatMap();
-      expect(result, isNotNull);
-      expect(result!.revealedNewRegion, isTrue);
-      expect(result.region.ring, 1);
+    for (var level = 1; level <= starter.stabilizationLayers; level += 1) {
+      expect(controller.startThreatRegionChallenge(starter.id), isTrue);
+      expect(
+        controller.completeThreatRegionChallenge(
+          endingStabilityPercent: 100,
+          defeatedBossIds: level == starter.stabilizationLayers
+              ? {starter.primaryBossId}
+              : null,
+        ),
+        isTrue,
+      );
     }
-    expect(
-      ringOne.every(
-        (region) => controller.threatRegionStateById(region.id)!.revealed,
-      ),
-      isTrue,
-    );
+
+    expect(controller.threatRegionStateById(nextRegion.id)!.revealed, isTrue);
+    expect(controller.canStartThreatRegionChallenge(nextRegion.id), isTrue);
 
     controller.debugRevealThreatRegion(ringTwo.id);
-    expect(controller.canStartThreatRegionChallenge(ringTwo.id), isFalse);
-    expect(controller.startThreatRegionChallenge(ringTwo.id), isFalse);
+    expect(controller.canStartThreatRegionChallenge(ringTwo.id), isTrue);
   });
 
-  test('starter challenge raises pressure and rewards the next push', () {
+  test('starter challenge uses standard swarm and rewards the next push', () {
     final controller = LightcoreController();
     addTearDown(controller.dispose);
 
@@ -150,7 +160,7 @@ void main() {
 
     expect(controller.startThreatRegionChallenge(starter.id), isTrue);
 
-    expect(controller.enemyTargetCount, greaterThan(baselineTargetCount));
+    expect(controller.enemyTargetCount, baselineTargetCount);
     expect(
       controller.activeThreatAssignmentGroupStats.anomalyCount,
       greaterThan(baselineStats.anomalyCount),
@@ -361,88 +371,6 @@ void main() {
           .isOwned,
       isTrue,
     );
-  });
-
-  test(
-    'region echoes merge from stabilized regions into higher-ring reveal',
-    () {
-      final controller = LightcoreController();
-      addTearDown(controller.dispose);
-      _unlockRegionChallenges(controller);
-
-      final starter = ThreatRegionLibrary.all.first;
-      final ringOne = ThreatRegionLibrary.all.firstWhere(
-        (region) => region.ring == 1,
-      );
-      controller.debugRevealThreatRegion(
-        starter.id,
-        stabilizedLevel: starter.stabilizationLayers,
-      );
-      controller.debugGrantRegionEcho(starter.id, 5);
-
-      expect(
-        controller.mergeRegionEchoesToReveal(
-          sourceRegionId: starter.id,
-          targetRegionId: ringOne.id,
-        ),
-        isTrue,
-      );
-      expect(controller.threatRegionStateById(ringOne.id)!.revealed, isTrue);
-      expect(controller.regionEchoCount(starter.id), 0);
-
-      final ringTwo = ThreatRegionLibrary.all.firstWhere(
-        (region) => region.ring == 2,
-      );
-      controller.debugRevealThreatRegion(
-        ringOne.id,
-        stabilizedLevel: ringOne.stabilizationLayers,
-      );
-      controller.debugGrantRegionEcho(ringOne.id, 8);
-      expect(
-        controller.mergeRegionEchoesToReveal(
-          sourceRegionId: ringOne.id,
-          targetRegionId: ringTwo.id,
-        ),
-        isTrue,
-      );
-      expect(controller.regionEchoCount(ringOne.id), 0);
-
-      final ringThree = ThreatRegionLibrary.all.firstWhere(
-        (region) => region.ring == 3,
-      );
-      controller.debugRevealThreatRegion(
-        ringTwo.id,
-        stabilizedLevel: ringTwo.stabilizationLayers,
-      );
-      controller.debugGrantRegionEcho(ringTwo.id, 13);
-      expect(
-        controller.mergeRegionEchoesToReveal(
-          sourceRegionId: ringTwo.id,
-          targetRegionId: ringThree.id,
-        ),
-        isTrue,
-      );
-      expect(controller.regionEchoCount(ringTwo.id), 0);
-    },
-  );
-
-  test('scans can hit revealed regions and award region echoes', () {
-    final controller = LightcoreController();
-    addTearDown(controller.dispose);
-    _unlockFullThreatMap(controller);
-
-    for (final region in ThreatRegionLibrary.all) {
-      controller.debugRevealThreatRegion(region.id);
-    }
-    controller.enemyTickets = 20;
-
-    controller.scanThreatMap(count: 20);
-
-    final echoTotal = ThreatRegionLibrary.all.fold<int>(
-      0,
-      (sum, region) => sum + controller.regionEchoCount(region.id),
-    );
-    expect(echoTotal, 20);
   });
 
   test('arena suite gate requires 1 apex core, 2 traits, and 3 anomalies', () {

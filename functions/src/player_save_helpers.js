@@ -1291,13 +1291,17 @@ function createPlayerSaveHelpers({ db, logger, HttpsError, constants, helpers })
         0,
       ),
       enemyTickets: clampInt(
-        clampInt(data.enemyTickets, 0, PLAYER_SAVE_LIMITS.maxCurrency, 0) +
-          clampInt(data.bossTickets, 0, PLAYER_SAVE_LIMITS.maxCurrency, 0),
+        data.enemyTickets,
         0,
         PLAYER_SAVE_LIMITS.maxCurrency,
         0,
       ),
-      bossTickets: 0,
+      bossTickets: clampInt(
+        data.bossTickets,
+        0,
+        PLAYER_SAVE_LIMITS.maxCurrency,
+        0,
+      ),
       threatShards: clampInt(
         clampInt(data.threatShards, 0, PLAYER_SAVE_LIMITS.maxCurrency, 0) +
           clampInt(data.bossCores, 0, PLAYER_SAVE_LIMITS.maxCounter, 0),

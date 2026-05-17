@@ -274,12 +274,12 @@ void main() {
         LightcoreController.bossSpawnKillRequirement,
       );
 
-      final startingThreatScans = controller.enemyTickets;
+      final startingThreatScans = controller.bossTickets;
       _unlockBossHunts(controller);
 
       expect(controller.bossHuntsUnlocked, isTrue);
       expect(
-        controller.enemyTickets,
+        controller.bossTickets,
         greaterThanOrEqualTo(
           startingThreatScans + LightcoreController.bossUnlockTicketGrant,
         ),

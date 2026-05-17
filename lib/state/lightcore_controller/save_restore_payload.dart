@@ -90,9 +90,7 @@ extension LightcoreControllerSaveRestorePayload on LightcoreController {
       resourceData['enemyTickets'],
       fallback: enemyTickets,
     );
-    final restoredBossTickets = _intValue(resourceData['bossTickets']);
-    enemyTickets += restoredBossTickets;
-    bossTickets = 0;
+    bossTickets = _intValue(resourceData['bossTickets'], fallback: bossTickets);
     final restoredBossCores = _intValue(resourceData['bossCores']);
     threatShards =
         _intValue(resourceData['threatShards'], fallback: threatShards) +

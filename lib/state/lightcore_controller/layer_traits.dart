@@ -1443,14 +1443,14 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         LightcoreTutorialStep.upgradeFirstTowerToLevel3 =>
           'Tune The Main Tower',
         LightcoreTutorialStep.raiseThreat => 'Raise Threat',
-        LightcoreTutorialStep.pullFirstWhiteEnemy => 'Summon A New Anomaly',
+        LightcoreTutorialStep.pullFirstWhiteEnemy => 'Open Enemy Research',
         LightcoreTutorialStep.readEffectiveGain => 'Read Effective Gain',
         LightcoreTutorialStep.autoQueueCheck => 'Auto Queue Check',
         LightcoreTutorialStep.upgradeFirstTowerToLevel4 =>
           'Tune Before Expanding',
         LightcoreTutorialStep.pullFirstRedEnemy => 'Teach Color Counters',
         LightcoreTutorialStep.setFirstEnemyTarget => 'Review Red Pressure',
-        LightcoreTutorialStep.adjustEnemyCount => 'Read Region Echoes',
+        LightcoreTutorialStep.adjustEnemyCount => 'Read Spiral Path',
         LightcoreTutorialStep.openTowerMatrix => 'Inspect Tower Lists',
         LightcoreTutorialStep.upgradeCoreRange => 'Upgrade A Global Stat',
         LightcoreTutorialStep.openStore => 'Inspect The Store',
@@ -1506,11 +1506,11 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         LightcoreTutorialStep.upgradeFirstTowerToLevel4 =>
           'Click the first tower in Hex 1 and upgrade it again.',
         LightcoreTutorialStep.pullFirstRedEnemy =>
-          'Click Map and run 1 more threat scan.',
+          'Click Map and start the next stabilization challenge.',
         LightcoreTutorialStep.setFirstEnemyTarget =>
           'Click Anomalies and review Basic Red in the active deck.',
         LightcoreTutorialStep.adjustEnemyCount =>
-          'Click Map and inspect the Region Echo and stabilization controls.',
+          'Click Map and inspect the fixed spiral path and stabilization controls.',
         LightcoreTutorialStep.openTowerMatrix =>
           'Click Towers to inspect completed Layer 1 sets and Layer 2 shell tools.',
         LightcoreTutorialStep.upgradeCoreRange =>

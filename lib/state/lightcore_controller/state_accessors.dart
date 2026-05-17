@@ -987,7 +987,7 @@ extension LightcoreControllerStateAccessors on LightcoreController {
   bool get canOpenBossTickets =>
       bossHuntsUnlocked &&
       fullThreatMapUnlocked &&
-      enemyTickets >= enemyTicketCost;
+      bossTickets >= enemyTicketCost;
 
   bool get canForgeTowerManager =>
       managersUnlocked && flux >= towerManagerFluxCost;
@@ -1030,12 +1030,12 @@ extension LightcoreControllerStateAccessors on LightcoreController {
       '$echoSeeds Echo Seed${echoSeeds == 1 ? '' : 's'}';
 
   String get bossTicketCurrencyName =>
-      LightcoreCurrencyLabels.threatScanName(enemyTickets);
+      LightcoreCurrencyLabels.bossScanName(bossTickets);
 
   String get bossCoreCurrencyName =>
       threatShards == 1 ? 'Threat Shard' : 'Threat Shards';
 
-  String get bossTicketLabel => '$enemyTickets $bossTicketCurrencyName';
+  String get bossTicketLabel => '$bossTickets $bossTicketCurrencyName';
 
   String get bossCoreLabel => '$threatShards $bossCoreCurrencyName';
 

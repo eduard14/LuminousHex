@@ -35,6 +35,12 @@ void _unlockThreatMapScans(LightcoreController controller) {
     stabilizedLevel: starter.stabilizationLayers,
   );
   controller.debugGrantApexCore(starter.primaryBossId);
+  if (controller.enemyTickets < LightcoreController.bossUnlockTicketGrant) {
+    controller.enemyTickets = LightcoreController.bossUnlockTicketGrant;
+  }
+  if (controller.bossTickets < LightcoreController.bossUnlockTicketGrant) {
+    controller.bossTickets = LightcoreController.bossUnlockTicketGrant;
+  }
   controller.debugDisableTutorial();
 }
 
@@ -79,17 +85,18 @@ void main() {
     expect(controller.bannerMessage, isNot(contains('Resolved')));
   });
 
-  test('rewarded resources convert apex grants into threat scans', () {
+  test('rewarded resources keep apex grants in apex scans', () {
     final controller = LightcoreController();
     final startingTickets = controller.enemyTickets;
+    final startingBossTickets = controller.bossTickets;
 
     controller.grantRewardedResources(
       bossTicketsGranted: 3,
       sourceLabel: 'Test reward',
     );
 
-    expect(controller.bossTickets, 0);
-    expect(controller.enemyTickets, startingTickets + 3);
+    expect(controller.bossTickets, startingBossTickets + 3);
+    expect(controller.enemyTickets, startingTickets);
     expect(controller.bannerMessage, contains('+3 Threat Scans'));
   });
 
@@ -419,7 +426,7 @@ void main() {
     _unlockThreatMapScans(controller);
     controller.debugDisableTutorial();
     controller.bossPullCount = 1;
-    controller.enemyTickets = 7;
+    controller.bossTickets = 7;
     addTearDown(() {
       tester.view.resetPhysicalSize();
       tester.view.resetDevicePixelRatio();
@@ -443,9 +450,9 @@ void main() {
     await tester.tap(find.text('MAX'));
     await tester.pump();
 
-    expect(controller.enemyTickets, 0);
-    expect(controller.lastBossPackPulls, isEmpty);
-    expect(controller.bossPullCount, 1);
+    expect(controller.bossTickets, 0);
+    expect(controller.lastBossPackPulls, hasLength(7));
+    expect(controller.bossPullCount, 8);
 
     await tester.pump(const Duration(seconds: 13));
     await tester.pump();

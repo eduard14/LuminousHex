@@ -52,8 +52,8 @@ shell, and keep climbing.
 5. Upgrade towers, core stats, and encounter capacity with earned resources.
 6. Roll Threat Scans into Enemy Research Cards that make anomaly families easier
    to understand and farm.
-7. Stabilize Threat Map regions, then validate harder farm pressure for offline
-   rewards.
+7. Follow the fixed Threat Map spiral, stabilize each region, then validate
+   harder farm pressure for offline rewards.
 8. Defeat normal anomalies to prime Apex Anomaly encounters.
 9. Promote completed shells into higher classes and inherited child towers.
 10. Return to older shells as passive support archives while the live shell grows.
@@ -106,10 +106,10 @@ shell, and keep climbing.
 - Threat Scans unlock Enemy Research Cards and add research copies.
 - Enemy Research Cards are anomaly knowledge and farming progression, not
   friendly units.
-- Threat Map regions define the main enemy progression path.
+- Threat Map regions define the main enemy progression path as a fixed spiral.
 - Region challenges are short three-wave stabilization tests with isolated
-  combat pressure: no EXP, upgrade spending, or notification clutter during the
-  run.
+  combat pressure and a per-wave timer: no EXP, upgrade spending, or
+  notification clutter during the run.
 - Farm Validation asks players to survive repeated farming pressure before a
   region can produce offline rewards.
 - Swarm Magnet controls the account-wide farming swarm size and can be rerolled
@@ -171,7 +171,8 @@ video hooks.
 - Tap relays. Charge the core. Hold the hex.
 - Your towers do not just shoot; they power the Lightcore.
 - Build a Root Shell, promote it, and forge a deeper prism lattice.
-- Research anomaly families with Threat Scans, then push into harsher regions.
+- Research anomaly families with Threat Scans, then push outward on the spiral
+  Threat Map.
 - Reroll Swarm Magnet pressure and validate farms for stronger offline gains.
 - Turn completed shells into inherited power for Prism, Nexus, and Ascendant
   builds.
@@ -233,6 +234,7 @@ Suggested first release order:
 - Do not claim web is a release platform; web is currently staging/test only.
 - Do not call enemy cards friendly units, heroes, summons, or allies.
 - Do not describe Enemy Research Cards as the primary live encounter deck.
+- Do not describe Threat Scans as a Threat Map reveal mechanic.
 - Do not imply every shell runs a full battle simulation while offline.
 - Do not market guilds as a launch feature until the live guild loop is complete.
 - Do not use Lumicore as a public title or franchise name.

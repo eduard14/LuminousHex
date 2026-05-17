@@ -46,7 +46,8 @@ extension LightcoreControllerEconomyStore on LightcoreController {
     final previousExperience = progressionExperience;
     lumens += grantedLumens;
     flux += grantedFlux;
-    enemyTickets += grantedTickets + grantedBossTickets;
+    enemyTickets += grantedTickets;
+    bossTickets += grantedBossTickets;
     kills += grantedKills;
     experience += grantedExperience;
     final levelUpBanner = _handleOverallLevelIncrease(
@@ -68,7 +69,7 @@ extension LightcoreControllerEconomyStore on LightcoreController {
     }
     if (grantedBossTickets > 0) {
       rewardParts.add(
-        LightcoreCurrencyLabels.rewardThreatScans(grantedBossTickets),
+        LightcoreCurrencyLabels.rewardBossScans(grantedBossTickets),
       );
     }
     if (grantedExperience > 0) {
@@ -877,14 +878,14 @@ extension LightcoreControllerEconomyStore on LightcoreController {
   void applySocialBossGiftClaim(LightcoreBossGiftClaimResult claim) {
     final granted = max(0, claim.bossTicketsGranted);
     if (granted > 0) {
-      enemyTickets += granted;
+      bossTickets += granted;
     }
     _socialOverview = claim.overview;
     _showBanner(
       _threatScanGiftMessage(
         claim.message,
         fallback:
-            'Threat Scan gift claimed: ${LightcoreCurrencyLabels.rewardThreatScans(granted)}.',
+            'Threat Scan gift claimed: ${LightcoreCurrencyLabels.rewardBossScans(granted)}.',
       ),
       duration: 3.2,
     );

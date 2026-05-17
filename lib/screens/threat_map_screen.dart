@@ -3,16 +3,12 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../data/enemy_configs.dart';
-import '../data/threat_region_configs.dart';
 import '../models/lightcore_config.dart';
-import '../models/lightcore_currency_labels.dart';
 import '../models/lightcore_state.dart';
 import '../models/lightcore_types.dart';
-import '../services/lightcore_rewarded_ads.dart';
 import '../state/lightcore_controller.dart';
 import '../theme/lightcore_palette.dart';
 import '../widgets/aurora_panel.dart';
-import '../widgets/guided_focus_frame.dart';
 
 class ThreatMapScreen extends StatefulWidget {
   const ThreatMapScreen({
@@ -30,106 +26,8 @@ class ThreatMapScreen extends StatefulWidget {
   State<ThreatMapScreen> createState() => _ThreatMapScreenState();
 }
 
-class _ThreatMapScreenState extends State<ThreatMapScreen>
-    with SingleTickerProviderStateMixin {
-  static const int _rewardedTicketGrant = 5;
-
-  late final AnimationController _scanPulseController;
-  String? _scanOriginRegionId;
-  String? _scanHitRegionId;
-  bool _scanBusy = false;
-  bool _rewardAdBusy = false;
-
+class _ThreatMapScreenState extends State<ThreatMapScreen> {
   LightcoreController get controller => widget.controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _scanPulseController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 920),
-    );
-  }
-
-  @override
-  void dispose() {
-    _scanPulseController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _runThreatScans(int requestedCount) async {
-    if (_scanBusy || requestedCount <= 0 || !controller.canScanThreatMap) {
-      return;
-    }
-    final count = math.min(requestedCount, controller.enemyTickets);
-    if (count <= 0) {
-      return;
-    }
-
-    final originRegionId = controller.selectedThreatRegionId;
-    final results = <ThreatRegionScanResult>[];
-    setState(() {
-      _scanBusy = true;
-      _scanOriginRegionId = originRegionId;
-      _scanHitRegionId = null;
-    });
-
-    for (var index = 0; index < count; index += 1) {
-      final result = controller.scanThreatMap();
-      if (result == null) {
-        break;
-      }
-      results.add(result);
-    }
-
-    if (results.isEmpty) {
-      if (mounted) {
-        setState(() => _scanBusy = false);
-      }
-      return;
-    }
-
-    if (!mounted) {
-      return;
-    }
-    setState(() {
-      _scanHitRegionId = results.last.region.id;
-    });
-    await _scanPulseController.forward(from: 0);
-    if (!mounted) {
-      return;
-    }
-    setState(() {
-      _scanBusy = false;
-    });
-    await showThreatScanSummaryDialog(context, results);
-  }
-
-  Future<void> _claimRewardedTickets(BuildContext context) async {
-    if (_rewardAdBusy) {
-      return;
-    }
-    setState(() => _rewardAdBusy = true);
-    try {
-      final earned = await showLightcoreRewardedAd(
-        context,
-        rewardLabel: LightcoreCurrencyLabels.rewardThreatScans(
-          _rewardedTicketGrant,
-        ),
-      );
-      if (!mounted || !earned) {
-        return;
-      }
-      controller.grantRewardedResources(
-        enemyTicketsGranted: _rewardedTicketGrant,
-        sourceLabel: 'Reward ad - Threat Map resupply',
-      );
-    } finally {
-      if (mounted) {
-        setState(() => _rewardAdBusy = false);
-      }
-    }
-  }
 
   Future<void> _openRegion(ThreatRegionConfig region) async {
     final state = controller.threatRegionStateById(region.id);
@@ -149,7 +47,6 @@ class _ThreatMapScreenState extends State<ThreatMapScreen>
     return AnimatedBuilder(
       animation: controller,
       builder: (context, _) {
-        final canScan = controller.canScanThreatMap && !_scanBusy;
         return DecoratedBox(
           decoration: const BoxDecoration(
             gradient: LinearGradient(
@@ -187,7 +84,7 @@ class _ThreatMapScreenState extends State<ThreatMapScreen>
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
-                                  'Sector scan grid',
+                                  'Spiral region path',
                                   style: textTheme.labelLarge?.copyWith(
                                     color: LightcorePalette.aether,
                                     fontWeight: FontWeight.w800,
@@ -208,31 +105,11 @@ class _ThreatMapScreenState extends State<ThreatMapScreen>
                       _ThreatMapStatusBar(controller: controller),
                       const SizedBox(height: 12),
                       Expanded(
-                        child: AnimatedBuilder(
-                          animation: _scanPulseController,
-                          builder: (context, _) {
-                            return _ThreatSectorMap(
-                              key: const ValueKey<String>('threat-map-surface'),
-                              controller: controller,
-                              scanOriginRegionId: _scanOriginRegionId,
-                              scanHitRegionId: _scanHitRegionId,
-                              scanProgress: _scanPulseController.value,
-                              onRegionTapped: _openRegion,
-                            );
-                          },
+                        child: _ThreatSectorMap(
+                          key: const ValueKey<String>('threat-map-surface'),
+                          controller: controller,
+                          onRegionTapped: _openRegion,
                         ),
-                      ),
-                      const SizedBox(height: 12),
-                      _ThreatMapScanToolbar(
-                        controller: controller,
-                        scanBusy: _scanBusy,
-                        rewardAdBusy: _rewardAdBusy,
-                        canScan: canScan,
-                        onScanOne: () => _runThreatScans(1),
-                        onScanTen: () => _runThreatScans(10),
-                        onScanMax: () =>
-                            _runThreatScans(controller.enemyTickets),
-                        onReward: () => _claimRewardedTickets(context),
                       ),
                     ],
                   ),
@@ -274,10 +151,15 @@ class _ThreatMapStatusBar extends StatelessWidget {
       spacing: 8,
       runSpacing: 8,
       children: [
-        _MapChip(label: '${controller.enemyTickets} scans'),
-        _MapChip(label: 'Scan Lv ${controller.summoningLevel}'),
+        _MapChip(label: '${controller.enemyTickets} research scans'),
+        _MapChip(label: 'Research Lv ${controller.summoningLevel}'),
         _MapChip(label: 'Swarm ${controller.farmSwarmSize}'),
         _MapChip(label: '${controller.fullyStabilizedRegionCount} stable'),
+        if (controller.nextThreatRegionConfig != null)
+          _MapChip(
+            label: 'Next ${controller.nextThreatRegionConfig!.name}',
+            tint: LightcorePalette.warning,
+          ),
         if (!controller.isSummoningLevelMaxed)
           _MapChip(
             label:
@@ -300,105 +182,15 @@ class _ThreatMapStatusBar extends StatelessWidget {
   }
 }
 
-class _ThreatMapScanToolbar extends StatelessWidget {
-  const _ThreatMapScanToolbar({
-    required this.controller,
-    required this.scanBusy,
-    required this.rewardAdBusy,
-    required this.canScan,
-    required this.onScanOne,
-    required this.onScanTen,
-    required this.onScanMax,
-    required this.onReward,
-  });
-
-  final LightcoreController controller;
-  final bool scanBusy;
-  final bool rewardAdBusy;
-  final bool canScan;
-  final VoidCallback onScanOne;
-  final VoidCallback onScanTen;
-  final VoidCallback onScanMax;
-  final VoidCallback onReward;
-
-  @override
-  Widget build(BuildContext context) {
-    return AuroraPanel(
-      tint: LightcorePalette.scanGlow,
-      padding: const EdgeInsets.all(12),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          const spacing = 8.0;
-          final showAd = LightcoreRewardedAds.isSupportedPlatform;
-          final columns = showAd ? 4 : 3;
-          final width =
-              (constraints.maxWidth - (spacing * (columns - 1))) / columns;
-
-          Widget action(Widget child) => SizedBox(width: width, child: child);
-
-          return Wrap(
-            spacing: spacing,
-            runSpacing: spacing,
-            children: [
-              action(
-                GuidedFocusFrame(
-                  active: controller.tutorialHighlightsEnemySinglePullButton,
-                  tint: LightcorePalette.quest,
-                  child: FilledButton.tonal(
-                    onPressed: canScan && controller.enemyTickets >= 1
-                        ? onScanOne
-                        : null,
-                    child: Text(scanBusy ? '...' : '1'),
-                  ),
-                ),
-              ),
-              action(
-                FilledButton.tonal(
-                  onPressed: canScan && controller.enemyTickets >= 10
-                      ? onScanTen
-                      : null,
-                  child: const Text('10+'),
-                ),
-              ),
-              action(
-                FilledButton.tonal(
-                  onPressed: canScan && controller.enemyTickets > 1
-                      ? onScanMax
-                      : null,
-                  child: const Text('MAX'),
-                ),
-              ),
-              if (showAd)
-                action(
-                  FilledButton.tonalIcon(
-                    onPressed: canScan && !rewardAdBusy ? onReward : null,
-                    icon: const Icon(Icons.play_circle_fill_rounded),
-                    label: Text(rewardAdBusy ? '...' : 'Ad'),
-                  ),
-                ),
-            ],
-          );
-        },
-      ),
-    );
-  }
-}
-
 class _ThreatSectorMap extends StatefulWidget {
   const _ThreatSectorMap({
     super.key,
     required this.controller,
     required this.onRegionTapped,
-    this.scanOriginRegionId,
-    this.scanHitRegionId,
-    this.scanProgress = 0,
   });
 
   final LightcoreController controller;
   final ValueChanged<ThreatRegionConfig> onRegionTapped;
-  final String? scanOriginRegionId;
-  final String? scanHitRegionId;
-  final double scanProgress;
 
   @override
   State<_ThreatSectorMap> createState() => _ThreatSectorMapState();
@@ -480,14 +272,7 @@ class _ThreatSectorMapState extends State<_ThreatSectorMap> {
         for (final state in widget.controller.threatRegions)
           state.regionId: state,
       },
-      echoCounts: {
-        for (final region in regions)
-          region.id: widget.controller.regionEchoCount(region.id),
-      },
       selectedRegionId: widget.controller.selectedThreatRegionId,
-      scanOriginRegionId: widget.scanOriginRegionId,
-      scanHitRegionId: widget.scanHitRegionId,
-      scanProgress: widget.scanProgress,
       gridScale: _gridScale,
       gridOffset: _gridOffset,
     );
@@ -526,22 +311,14 @@ class _ThreatSectorMapPainter extends CustomPainter {
   const _ThreatSectorMapPainter({
     required this.regions,
     required this.states,
-    required this.echoCounts,
     required this.selectedRegionId,
     required this.gridScale,
     required this.gridOffset,
-    this.scanOriginRegionId,
-    this.scanHitRegionId,
-    this.scanProgress = 0,
   });
 
   final List<ThreatRegionConfig> regions;
   final Map<String, ThreatRegionState> states;
-  final Map<String, int> echoCounts;
   final String? selectedRegionId;
-  final String? scanOriginRegionId;
-  final String? scanHitRegionId;
-  final double scanProgress;
   final double gridScale;
   final Offset gridOffset;
 
@@ -569,7 +346,7 @@ class _ThreatSectorMapPainter extends CustomPainter {
     canvas.translate(center.dx, center.dy);
     canvas.scale(gridScale);
     canvas.translate(-center.dx, -center.dy);
-    _drawSectorLinks(canvas, center, radius);
+    _drawSpiralPath(canvas, center, radius);
     _drawSectors(canvas, center, radius);
     canvas.restore();
   }
@@ -627,51 +404,7 @@ class _ThreatSectorMapPainter extends CustomPainter {
     );
   }
 
-  void _drawSectorLinks(Canvas canvas, Offset center, double radius) {
-    final linkPaint = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 0.9 / gridScale.clamp(1, 2.2)
-      ..strokeCap = StrokeCap.round
-      ..color = LightcorePalette.aether.withValues(alpha: 0.16);
-    for (final region in regions) {
-      if (!(states[region.id]?.revealed ?? false)) {
-        continue;
-      }
-      final origin = _axialToPixel(region.q, region.r, radius, center);
-      for (final neighbor in regions) {
-        if (neighbor.id.compareTo(region.id) <= 0 ||
-            !(states[neighbor.id]?.revealed ?? false)) {
-          continue;
-        }
-        final distance = ThreatRegionLibrary.hexDistance(
-          neighbor.q - region.q,
-          neighbor.r - region.r,
-        );
-        if (distance == 1) {
-          canvas.drawLine(
-            origin,
-            _axialToPixel(neighbor.q, neighbor.r, radius, center),
-            linkPaint,
-          );
-        }
-      }
-    }
-  }
-
   void _drawSectors(Canvas canvas, Offset center, double radius) {
-    final origin = _regionById(scanOriginRegionId ?? selectedRegionId);
-    final maxScanDistance = origin == null
-        ? 0
-        : regions.fold<int>(
-            0,
-            (maxDistance, region) => math.max(
-              maxDistance,
-              ThreatRegionLibrary.hexDistance(
-                region.q - origin.q,
-                region.r - origin.r,
-              ),
-            ),
-          );
     for (final region in regions) {
       final state = states[region.id];
       final point = _axialToPixel(region.q, region.r, radius, center);
@@ -715,36 +448,6 @@ class _ThreatSectorMapPainter extends CustomPainter {
         state: state,
         revealed: revealed,
       );
-
-      if (origin != null && scanProgress > 0) {
-        final distance = ThreatRegionLibrary.hexDistance(
-          region.q - origin.q,
-          region.r - origin.r,
-        );
-        final wavePoint = maxScanDistance == 0
-            ? 1.0
-            : distance / maxScanDistance;
-        final delta = (scanProgress - wavePoint).abs();
-        if (delta < 0.24) {
-          final alpha = (1 - (delta / 0.24)).clamp(0.0, 1.0) * 0.44;
-          canvas.drawPath(
-            path,
-            Paint()
-              ..style = PaintingStyle.fill
-              ..color = LightcorePalette.scanGlow.withValues(alpha: alpha),
-          );
-        }
-      }
-
-      if (region.id == scanHitRegionId && scanProgress > 0) {
-        _drawScanHitPulse(
-          canvas,
-          path: path,
-          center: point,
-          radius: hexRadius,
-          progress: scanProgress,
-        );
-      }
       if (region.id == selectedRegionId) {
         canvas.drawPath(
           path,
@@ -756,6 +459,53 @@ class _ThreatSectorMapPainter extends CustomPainter {
         );
       }
     }
+  }
+
+  void _drawSpiralPath(Canvas canvas, Offset center, double radius) {
+    if (regions.length < 2) {
+      return;
+    }
+    final points = [
+      for (final region in regions)
+        _axialToPixel(region.q, region.r, radius, center),
+    ];
+    final basePath = Path()..moveTo(points.first.dx, points.first.dy);
+    for (final point in points.skip(1)) {
+      basePath.lineTo(point.dx, point.dy);
+    }
+    final baseWidth = (radius * 0.2) / gridScale.clamp(1, 2.4);
+    canvas.drawPath(
+      basePath,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeCap = StrokeCap.round
+        ..strokeJoin = StrokeJoin.round
+        ..strokeWidth = baseWidth
+        ..color = LightcorePalette.stroke.withValues(alpha: 0.32),
+    );
+
+    var lastRevealedIndex = 0;
+    for (var index = 0; index < regions.length; index += 1) {
+      if (states[regions[index].id]?.revealed ?? false) {
+        lastRevealedIndex = index;
+      }
+    }
+    if (lastRevealedIndex <= 0) {
+      return;
+    }
+    final revealedPath = Path()..moveTo(points.first.dx, points.first.dy);
+    for (var index = 1; index <= lastRevealedIndex; index += 1) {
+      revealedPath.lineTo(points[index].dx, points[index].dy);
+    }
+    canvas.drawPath(
+      revealedPath,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeCap = StrokeCap.round
+        ..strokeJoin = StrokeJoin.round
+        ..strokeWidth = baseWidth * 0.7
+        ..color = LightcorePalette.solar.withValues(alpha: 0.72),
+    );
   }
 
   void _drawSectorFill(
@@ -928,7 +678,10 @@ class _ThreatSectorMapPainter extends CustomPainter {
     if (gridScale < 1.45) {
       return;
     }
-    final title = region.ring == 0 ? 'CORE' : 'R${region.ring}.${region.q}';
+    final spiralIndex = regions.indexWhere((item) => item.id == region.id);
+    final title = spiralIndex < 0
+        ? 'S--'
+        : 'S${(spiralIndex + 1).toString().padLeft(2, '0')}';
     _drawCenteredText(
       canvas,
       title,
@@ -954,54 +707,6 @@ class _ThreatSectorMapPainter extends CustomPainter {
           ? _rarityTint(region.rarity).withValues(alpha: 0.92)
           : LightcorePalette.warning.withValues(alpha: 0.58),
       weight: FontWeight.w700,
-    );
-    if (gridScale < 2.65 || !revealed) {
-      return;
-    }
-    _drawCenteredText(
-      canvas,
-      'E${echoCounts[region.id] ?? 0}',
-      center + Offset(0, radius * 0.68),
-      fontSize: radius * 0.13,
-      color: LightcorePalette.aether.withValues(alpha: 0.74),
-      weight: FontWeight.w600,
-    );
-  }
-
-  void _drawScanHitPulse(
-    Canvas canvas, {
-    required Path path,
-    required Offset center,
-    required double radius,
-    required double progress,
-  }) {
-    final clamped = progress.clamp(0.0, 1.0).toDouble();
-    final pulse = math.sin(clamped * math.pi).clamp(0.0, 1.0).toDouble();
-    final accent = Color.lerp(
-      LightcorePalette.scanGlow,
-      LightcorePalette.aether,
-      clamped,
-    )!;
-    canvas.drawCircle(
-      center,
-      radius * (1.1 + (0.34 * clamped)),
-      Paint()
-        ..shader = RadialGradient(
-          colors: [
-            accent.withValues(alpha: 0.2 * pulse),
-            accent.withValues(alpha: 0.08 * pulse),
-            Colors.transparent,
-          ],
-          stops: const [0, 0.62, 1],
-        ).createShader(Rect.fromCircle(center: center, radius: radius * 1.4)),
-    );
-    canvas.drawPath(
-      path,
-      Paint()
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = (2.1 + (1.3 * pulse)) / gridScale.clamp(1, 2.4)
-        ..strokeJoin = StrokeJoin.round
-        ..color = accent.withValues(alpha: 0.62 + (0.3 * pulse)),
     );
   }
 
@@ -1037,14 +742,6 @@ class _ThreatSectorMapPainter extends CustomPainter {
     return math.min(size.width / 11.2, size.height / 9.8);
   }
 
-  ThreatRegionConfig? _regionById(String? regionId) {
-    if (regionId == null) {
-      return null;
-    }
-    final matches = regions.where((region) => region.id == regionId);
-    return matches.isEmpty ? null : matches.first;
-  }
-
   Offset _axialToPixel(int q, int r, double radius, Offset center) {
     final x = radius * math.sqrt(3) * (q + (r / 2));
     final y = radius * 1.5 * r;
@@ -1074,11 +771,7 @@ class _ThreatSectorMapPainter extends CustomPainter {
   bool shouldRepaint(covariant _ThreatSectorMapPainter oldDelegate) {
     return oldDelegate.regions != regions ||
         oldDelegate.states != states ||
-        oldDelegate.echoCounts != echoCounts ||
         oldDelegate.selectedRegionId != selectedRegionId ||
-        oldDelegate.scanOriginRegionId != scanOriginRegionId ||
-        oldDelegate.scanHitRegionId != scanHitRegionId ||
-        oldDelegate.scanProgress != scanProgress ||
         oldDelegate.gridScale != gridScale ||
         oldDelegate.gridOffset != gridOffset;
   }
@@ -1107,20 +800,6 @@ Future<void> showThreatRegionIntelDialog(
         },
       );
     },
-  );
-}
-
-Future<void> showThreatScanSummaryDialog(
-  BuildContext context,
-  List<ThreatRegionScanResult> results,
-) {
-  if (results.isEmpty) {
-    return Future<void>.value();
-  }
-  return showDialog<void>(
-    context: context,
-    barrierColor: LightcorePalette.night.withValues(alpha: 0.74),
-    builder: (context) => _ThreatScanSummaryDialog(results: results),
   );
 }
 
@@ -1210,12 +889,6 @@ class _ThreatRegionIntelDialog extends StatelessWidget {
                     ),
                     _MapChip(label: '${bossNames.length} apex'),
                     _MapChip(label: '${region.stabilizationLayers} layers'),
-                    if (revealed)
-                      _MapChip(
-                        label:
-                            '${controller.regionEchoCount(region.id)} echoes',
-                        tint: LightcorePalette.aether,
-                      ),
                   ],
                 ),
                 const SizedBox(height: 14),
@@ -1351,73 +1024,6 @@ class _ThreatRegionIntelDialog extends StatelessWidget {
   }
 }
 
-class _ThreatScanSummaryDialog extends StatelessWidget {
-  const _ThreatScanSummaryDialog({required this.results});
-
-  final List<ThreatRegionScanResult> results;
-
-  @override
-  Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-    final reveals = results.where((result) => result.revealedNewRegion).length;
-    final echoes = results.fold<int>(
-      0,
-      (total, result) => total + result.echoGranted,
-    );
-    final finalRegion = results.last.region;
-    return Dialog(
-      backgroundColor: Colors.transparent,
-      insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 460),
-        child: AuroraPanel(
-          tint: _rarityTint(finalRegion.rarity),
-          padding: const EdgeInsets.all(18),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Scan resolved', style: textTheme.titleLarge),
-              const SizedBox(height: 12),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  _MapChip(label: '${results.length} scans'),
-                  _MapChip(label: '$reveals revealed'),
-                  _MapChip(label: '$echoes echoes'),
-                  _MapChip(
-                    label: finalRegion.rarity.label,
-                    tint: _rarityTint(finalRegion.rarity),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 14),
-              Text(
-                results.last.revealedNewRegion
-                    ? '${finalRegion.name} surfaced on the map.'
-                    : '${finalRegion.name} echoed across the grid.',
-                style: textTheme.bodyMedium?.copyWith(
-                  color: LightcorePalette.mist.withValues(alpha: 0.82),
-                ),
-              ),
-              const SizedBox(height: 18),
-              Align(
-                alignment: Alignment.centerRight,
-                child: FilledButton.icon(
-                  onPressed: () => Navigator.of(context).maybePop(),
-                  icon: const Icon(Icons.check_rounded),
-                  label: const Text('Close'),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 class _IntelSection extends StatelessWidget {
   const _IntelSection({required this.title, required this.value});
 
@@ -1507,12 +1113,16 @@ class _ThreatMapStarfieldPainter extends CustomPainter {
 }
 
 String _challengeStatus(LightcoreController controller) {
+  final challenge = controller.activeThreatRegionChallenge;
   final remaining = controller.activeThreatRegionChallengeRemainingSeconds
       .ceil();
   final defeated = controller.activeThreatRegionDefeatedBossCount;
   final required = controller.activeThreatRegionRequiredBossCount;
   final bossText = required <= 0 ? '' : ' • Apex $defeated/$required';
-  return 'Active ${_formatDuration(remaining)}$bossText';
+  final waveText = challenge == null
+      ? 'Wave'
+      : 'Wave ${challenge.waveIndex + 1}/${LightcoreController.threatRegionChallengeWaveCount}';
+  return '$waveText • ${_formatDuration(remaining)}$bossText';
 }
 
 String _farmValidationStatus(LightcoreController controller) {

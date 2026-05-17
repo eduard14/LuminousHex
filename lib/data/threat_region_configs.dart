@@ -73,11 +73,7 @@ class ThreatRegionLibrary {
   }
 
   static List<ThreatRegionConfig> _buildRegions() {
-    final coords = <({int q, int r, int ring})>[
-      for (var ring = 0; ring <= 3; ring += 1)
-        for (final coord in axialRing(ring))
-          (q: coord.q, r: coord.r, ring: ring),
-    ];
+    final coords = _spiralCoords(maxRing: 3);
     final bosses = _orderedBosses();
     final regions = <ThreatRegionConfig>[];
     for (var index = 0; index < coords.length; index += 1) {
@@ -108,6 +104,35 @@ class ThreatRegionLibrary {
       );
     }
     return List<ThreatRegionConfig>.unmodifiable(regions);
+  }
+
+  static List<({int q, int r, int ring})> _spiralCoords({
+    required int maxRing,
+  }) {
+    final coords = <({int q, int r, int ring})>[(q: 0, r: 0, ring: 0)];
+    var previous = (q: 0, r: 0);
+    for (var ring = 1; ring <= maxRing; ring += 1) {
+      final ringCoords = axialRing(ring);
+      var startIndex = 0;
+      var bestDistance = 999;
+      for (var index = 0; index < ringCoords.length; index += 1) {
+        final coord = ringCoords[index];
+        final distance = hexDistance(
+          coord.q - previous.q,
+          coord.r - previous.r,
+        );
+        if (distance < bestDistance) {
+          bestDistance = distance;
+          startIndex = index;
+        }
+      }
+      for (var offset = 0; offset < ringCoords.length; offset += 1) {
+        final coord = ringCoords[(startIndex + offset) % ringCoords.length];
+        coords.add((q: coord.q, r: coord.r, ring: ring));
+        previous = coord;
+      }
+    }
+    return List<({int q, int r, int ring})>.unmodifiable(coords);
   }
 
   static List<EnemyConfig> _orderedBosses() {

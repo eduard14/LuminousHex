@@ -465,16 +465,16 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
   ),
   LightcoreTutorialStep.pullFirstWhiteEnemy: LightcoreTutorialQuestDefinition(
     id: 'TUT-010',
-    title: 'Scan the First Region',
+    title: 'Open Enemy Research',
     teachGoal:
-        'Threat Scans radiate across the hex map. A scan can reveal a region or echo one you already know.',
+        'Threat Scans resolve Enemy Research Cards that make anomaly families stronger to farm against.',
     trigger: 'Queue tutorial done',
-    primaryClickTarget: 'Bottom nav > Map',
+    primaryClickTarget: 'Anomalies > Research',
     coachCopy:
-        'Run one Threat Scan from the starter region. Watch the pulse move across hex edges.',
-    completionCondition: 'Resolve 1 Threat Scan',
-    reward: 'Threat Map primer',
-    failureHelpState: 'Open Map and run one Threat Scan from the scan toolbar.',
+        'Resolve one Threat Scan in Enemy Research. Map regions now reveal through the fixed spiral path.',
+    completionCondition: 'Resolve 1 Enemy Research scan',
+    reward: 'Enemy Research primer',
+    failureHelpState: 'Open Anomalies and resolve one Enemy Research scan.',
     analyticsEvent: 'tutorial_safe_threat_scan',
   ),
   LightcoreTutorialStep.readEffectiveGain: LightcoreTutorialQuestDefinition(
@@ -482,7 +482,7 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
     title: 'Read Flow and Gain',
     teachGoal:
         'Output Efficiency is the real farming limiter. Bigger threats only help when your shell stays stable enough to cash them in.',
-    trigger: 'After first scan',
+    trigger: 'After first research scan',
     primaryClickTarget: 'Left stat stack > Output Efficiency %',
     coachCopy:
         'Open Output Efficiency to see the income formula: Base Gain x Threat Reward x Output Efficiency.',
@@ -512,8 +512,8 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
     id: 'TUT-013',
     title: 'Tune Before Expanding',
     teachGoal:
-        'A stronger anchor lane gives you room to test harder scans without crushing Output Efficiency.',
-    trigger: 'Early red scan lesson',
+        'A stronger anchor lane gives you room to test harder regions without crushing Output Efficiency.',
+    trigger: 'Early red research lesson',
     primaryClickTarget: 'Tower Stats pop-out > Upgrade',
     coachCopy:
         'Upgrade the first tower again before spreading Lumens across more towers.',
@@ -528,13 +528,13 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
     title: 'Challenge Region Pressure',
     teachGoal:
         'Regions define the anomaly combination. Harder rings bring rarer mixes and boss pressure.',
-    trigger: 'After safe scan lesson',
+    trigger: 'After safe research lesson',
     primaryClickTarget: 'Bottom nav > Map > Challenge',
     coachCopy:
         'Challenge the next starter-region stabilization layer. Failing returns you to the previous stabilized level.',
-    completionCondition: 'Resolve second Threat Scan',
+    completionCondition: 'Start the next stabilization challenge',
     reward: 'Threat Scan x1',
-    failureHelpState: 'Open Map and run the highlighted single scan.',
+    failureHelpState: 'Open Map and start the highlighted Challenge.',
     analyticsEvent: 'tutorial_red_counter_scan',
   ),
   LightcoreTutorialStep.setFirstEnemyTarget: LightcoreTutorialQuestDefinition(
@@ -553,14 +553,14 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
   ),
   LightcoreTutorialStep.adjustEnemyCount: LightcoreTutorialQuestDefinition(
     id: 'TUT-016',
-    title: 'Read Region Echoes',
+    title: 'Read the Spiral Path',
     teachGoal:
-        'Scans can hit revealed regions. Region Echoes merge from stabilized regions to reveal higher-ring hexes.',
+        'The Threat Map is a fixed spiral. Fully stabilizing a region reveals the next sector on the path.',
     trigger: 'Red signature is available',
     primaryClickTarget: 'Bottom nav > Map',
     coachCopy:
-        'Review the Threat Map. Echoes are not wasted scans; enough of them become a beacon.',
-    completionCondition: 'Region Echo reviewed',
+        'Review the Threat Map and find the next unrevealed sector on the spiral path.',
+    completionCondition: 'Spiral path reviewed',
     reward: 'Small Lumen grant',
     failureHelpState: 'Open Map and inspect a region.',
     analyticsEvent: 'tutorial_adjust_enemy_count',
@@ -1201,7 +1201,6 @@ class LightcoreController extends ChangeNotifier {
     _enemyCards = _createEnemyCardInventory();
     _bossEnemyCards = _createBossEnemyCardInventory();
     _threatRegions = _createThreatRegionStates();
-    _regionEchoes = <String, int>{};
     _bossTraits = _createBossTraitInventory();
     _apexCores = _createApexCoreInventory();
     _activeEnemySuite = const EnemySuiteState();
@@ -1562,7 +1561,6 @@ class LightcoreController extends ChangeNotifier {
   late List<EnemyCardState> _enemyCards;
   late List<EnemyCardState> _bossEnemyCards;
   late List<ThreatRegionState> _threatRegions;
-  late Map<String, int> _regionEchoes;
   late List<BossTraitState> _bossTraits;
   late List<ApexCoreState> _apexCores;
   late EnemySuiteState _activeEnemySuite;

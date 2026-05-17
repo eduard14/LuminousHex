@@ -178,9 +178,6 @@ class _ThreatChallengeHudBanner extends StatelessWidget {
     final waveRemaining = controller
         .activeThreatRegionChallengeWaveRemainingSeconds
         .ceil();
-    final totalRemaining = controller
-        .activeThreatRegionChallengeRemainingSeconds
-        .ceil();
     final waveLabel =
         'Wave ${challenge.waveIndex + 1}/${LightcoreController.threatRegionChallengeWaveCount}';
     final requiredBosses = controller.activeThreatRegionRequiredBossCount;
@@ -258,7 +255,7 @@ class _ThreatChallengeHudBanner extends StatelessWidget {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  '$bossLabel  •  Total ${_formatChallengeDuration(totalRemaining)}',
+                  '$bossLabel  •  Current wave timer',
                   style: Theme.of(context).textTheme.labelSmall?.copyWith(
                     color: LightcorePalette.mist.withValues(alpha: 0.72),
                     fontWeight: FontWeight.w700,
