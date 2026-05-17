@@ -28,6 +28,7 @@ import 'package:lightcore/services/lightcore_firebase_runtime_config.dart';
 import 'package:lightcore/state/lightcore_controller.dart';
 import 'package:lightcore/theme/lightcore_theme.dart';
 import 'package:lightcore/widgets/cosmic_guide_avatar.dart';
+import 'package:lightcore/widgets/guided_focus_frame.dart';
 import 'package:lightcore/widgets/meta_progression_sheet.dart';
 
 void _unlockTutorialFirstHex(LightcoreController controller) {
@@ -1448,6 +1449,48 @@ void main() {
 
     expect(find.textContaining('First Stabilizer'), findsWidgets);
     expect(find.textContaining('Pressure run'), findsOneWidget);
+  });
+
+  testWidgets('raise threat prompt stays static without tap-pulse chrome', (
+    tester,
+  ) async {
+    final controller = LightcoreController();
+    addTearDown(controller.dispose);
+
+    controller.selectCenter();
+    controller.handleBattleCenterTap();
+    _unlockTutorialFirstHex(controller);
+    controller.selectSlot(0);
+    expect(controller.tutorialBuildTowerAt(0, TowerLibrary.redPrism), isTrue);
+    controller.markTutorialFirstTowerStatsOpened();
+    for (var tap = 0; tap < 3; tap++) {
+      expect(controller.debugSetTowerCharge(0, charge: 1), isTrue);
+      expect(controller.activateTowerSlot(0, showBanner: false), isTrue);
+    }
+    controller.lumens = 1000;
+    expect(controller.tutorialUpgradeTower(0), isTrue);
+    controller.lumens = controller.upgradeCost(controller.slots[0]);
+    expect(controller.tutorialUpgradeTower(0), isTrue);
+    expect(controller.tutorialStep, LightcoreTutorialStep.raiseThreat);
+
+    await _pumpShell(tester, controller, disableTutorial: false);
+
+    final prompt = find.byKey(
+      const ValueKey<String>('battle-raise-threat-prompt'),
+    );
+    expect(prompt, findsOneWidget);
+    expect(find.text('Threat too low'), findsOneWidget);
+    expect(
+      find.descendant(of: prompt, matching: find.byType(GuidedFocusFrame)),
+      findsNothing,
+    );
+    expect(
+      find.descendant(
+        of: prompt,
+        matching: find.byIcon(Icons.touch_app_rounded),
+      ),
+      findsNothing,
+    );
   });
 
   testWidgets(

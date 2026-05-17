@@ -1200,47 +1200,44 @@ class _RaiseThreatPrompt extends StatelessWidget {
     final textTheme = Theme.of(context).textTheme;
     final width = compact ? 230.0 : 280.0;
     return SizedBox(
+      key: const ValueKey<String>('battle-raise-threat-prompt'),
       width: width,
-      child: GuidedFocusFrame(
-        active: enabled,
+      child: AuroraPanel(
+        radius: 16,
+        padding: EdgeInsets.all(compact ? 10 : 12),
         tint: LightcorePalette.quest,
-        child: AuroraPanel(
-          radius: 16,
-          padding: EdgeInsets.all(compact ? 10 : 12),
-          tint: LightcorePalette.quest,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Row(
-                children: [
-                  Icon(
-                    Icons.flag_rounded,
-                    size: compact ? 17 : 19,
-                    color: LightcorePalette.quest,
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'Threat too low',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: textTheme.labelLarge?.copyWith(
-                        color: LightcorePalette.layer2,
-                        fontWeight: FontWeight.w800,
-                      ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  Icons.flag_rounded,
+                  size: compact ? 17 : 19,
+                  color: LightcorePalette.quest,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Threat too low',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: textTheme.labelLarge?.copyWith(
+                      color: LightcorePalette.layer2,
+                      fontWeight: FontWeight.w800,
                     ),
                   ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              FilledButton.icon(
-                onPressed: enabled ? onPressed : null,
-                icon: const Icon(Icons.play_arrow_rounded),
-                label: Text(label),
-              ),
-            ],
-          ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            FilledButton.icon(
+              onPressed: enabled ? onPressed : null,
+              icon: const Icon(Icons.play_arrow_rounded),
+              label: Text(label),
+            ),
+          ],
         ),
       ),
     );
