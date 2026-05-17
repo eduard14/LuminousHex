@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:lightcore/theme/lightcore_theme.dart';
+import 'package:lightcore/widgets/lemon_goose_splash_screen.dart';
 import 'package:lightcore/widgets/lightcore_loading_screen.dart';
 
 void main() {
@@ -33,6 +34,29 @@ void main() {
     expect(
       find.text('Auto entry starts when the first event run begins.'),
       findsOneWidget,
+    );
+    expect(tester.takeException(), isNull);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump();
+  });
+
+  testWidgets('studio splash renders Lemon Goose logo', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: buildLightcoreTheme(),
+        home: const LemonGooseSplashScreen(),
+      ),
+    );
+
+    final image = tester.widget<Image>(find.byType(Image));
+    expect(
+      image.image,
+      isA<AssetImage>().having(
+        (asset) => asset.assetName,
+        'assetName',
+        LemonGooseSplashScreen.logoAsset,
+      ),
     );
     expect(tester.takeException(), isNull);
 
