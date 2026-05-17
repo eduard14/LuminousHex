@@ -339,7 +339,8 @@ extension LightcoreControllerSaveTournamentCloud on LightcoreController {
       installCoreManager: false,
       spawnPolicy: LightcoreBattleSpawnPolicy.manual,
       enemySpiralMovementEnabled: false,
-      enemyMovementSpeedMultiplier: 5.0,
+      enemyMovementSpeedMultiplier:
+          LightcoreController._defaultEnemyMovementSpeedMultiplier * 5.0,
       killRewardsEnabled: false,
       seedUnlockExperience: false,
       outerRingRevealed: true,

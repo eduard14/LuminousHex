@@ -70,6 +70,7 @@ enum LightcoreTutorialStep {
   tapFirstTower,
   tapSecondShellTower,
   upgradeFirstTowerToLevel3,
+  raiseThreat,
   pullFirstWhiteEnemy,
   readEffectiveGain,
   autoQueueCheck,
@@ -446,6 +447,21 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
     failureHelpState:
         'Open Hex 1 stats and use the highlighted Upgrade button when Lumens are available.',
     analyticsEvent: 'tutorial_upgrade_first_tower_l3',
+  ),
+  LightcoreTutorialStep.raiseThreat: LightcoreTutorialQuestDefinition(
+    id: 'TUT-010A',
+    title: 'Raise Threat',
+    teachGoal:
+        'When the first tower is overmatching the starter field, push the next stabilization level instead of idling on weak anomalies.',
+    trigger: 'First upgraded tower is clearing safely',
+    primaryClickTarget: 'Battlefield > Threat too low prompt > Challenge Lv 1',
+    coachCopy:
+        'The current anomaly field is too weak for the upgraded tower. Start Challenge Lv 1 to raise pressure and rewards.',
+    completionCondition: 'Starter-region challenge started',
+    reward: 'Threat Scan x1',
+    failureHelpState:
+        'Use the compact Challenge Lv 1 prompt on the battle screen.',
+    analyticsEvent: 'tutorial_raise_threat',
   ),
   LightcoreTutorialStep.pullFirstWhiteEnemy: LightcoreTutorialQuestDefinition(
     id: 'TUT-010',

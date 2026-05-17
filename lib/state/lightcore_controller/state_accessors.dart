@@ -719,7 +719,11 @@ extension LightcoreControllerStateAccessors on LightcoreController {
       _tutorialStep == LightcoreTutorialStep.openBossPulls;
 
   bool get tutorialHighlightsThreatChallengeButton =>
+      _tutorialStep == LightcoreTutorialStep.raiseThreat ||
       _tutorialStep == LightcoreTutorialStep.openBossPulls;
+
+  bool get tutorialShowsBattleThreatPrompt =>
+      _tutorialStep == LightcoreTutorialStep.raiseThreat;
 
   bool get tutorialHighlightsTowersNav =>
       _tutorialStep == LightcoreTutorialStep.openTowerMatrix;

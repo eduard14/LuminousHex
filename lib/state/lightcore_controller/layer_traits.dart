@@ -153,6 +153,35 @@ extension LightcoreControllerLayerTraits on LightcoreController {
   bool get _earlyTutorialComplete =>
       _tutorialEarlyQuestChainCompleted || _currentLayerEarlyTutorialComplete;
 
+  bool get _firstThreatChallengeStarted {
+    final starterId = ThreatRegionLibrary.all.first.id;
+    final starterState = threatRegionStateById(starterId);
+    return _threatRegionChallenge?.regionId == starterId ||
+        (starterState?.stabilizedLevel ?? 0) > 0;
+  }
+
+  bool get _openingThreatEscalationReady {
+    final firstTower = _firstTutorialTower;
+    if (firstTower == null ||
+        !_isOpeningStarterTower(firstTower.config) ||
+        firstTower.level < 3 ||
+        _firstThreatChallengeStarted ||
+        !canStartFirstThreatChallenge) {
+      return false;
+    }
+    if (_core.coreStability < 96 || outputEfficiencyMultiplier < 0.96) {
+      return false;
+    }
+    final stats = activeThreatAssignmentGroupStats;
+    if (!stats.hasAnomalies ||
+        stats.spawnsPerMinute <= 0 ||
+        stats.clearsPerMinute <= 0) {
+      return false;
+    }
+    return !stats.isDpsLimited ||
+        stats.clearsPerMinute >= stats.spawnsPerMinute * 0.5;
+  }
+
   bool get _hasCreatedFirstChildShell =>
       _layers.any((layer) => layer.parentLayerId != null);
 
@@ -211,6 +240,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         _tutorialSecondShellShotTapLearned,
       LightcoreTutorialStep.upgradeFirstTowerToLevel3 =>
         firstTower != null && firstTower.level >= 3,
+      LightcoreTutorialStep.raiseThreat => _firstThreatChallengeStarted,
       LightcoreTutorialStep.pullFirstWhiteEnemy => enemyPullCount >= 1,
       LightcoreTutorialStep.readEffectiveGain => _tutorialStabilityPanelOpened,
       LightcoreTutorialStep.autoQueueCheck => _tutorialAutoQueuedPulses >= 5,
@@ -301,6 +331,9 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         firstTowerUpgradeCost > 0 &&
         lumens >= firstTowerUpgradeCost) {
       return LightcoreTutorialStep.upgradeFirstTowerToLevel3;
+    }
+    if (_openingThreatEscalationReady) {
+      return LightcoreTutorialStep.raiseThreat;
     }
     if (!_tutorialStabilityPanelOpened) {
       return LightcoreTutorialStep.readEffectiveGain;
@@ -528,6 +561,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
       LightcoreTutorialStep.tapFirstTower => 48,
       LightcoreTutorialStep.tapSecondShellTower => 42,
       LightcoreTutorialStep.upgradeFirstTowerToLevel3 => 48,
+      LightcoreTutorialStep.raiseThreat => 0,
       LightcoreTutorialStep.readEffectiveGain => 40,
       LightcoreTutorialStep.autoQueueCheck => 120,
       LightcoreTutorialStep.upgradeFirstTowerToLevel4 => 64,
@@ -566,6 +600,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
       LightcoreTutorialStep.pullFirstWhiteEnemy => 0,
       LightcoreTutorialStep.pullFirstRedEnemy => 1,
       LightcoreTutorialStep.openTowerMatrix => 1,
+      LightcoreTutorialStep.raiseThreat => 1,
       LightcoreTutorialStep.openStore => 1,
       LightcoreTutorialStep.autoQueueCheck => 1,
       LightcoreTutorialStep.assignEnemyManager => 2,
@@ -611,6 +646,8 @@ extension LightcoreControllerLayerTraits on LightcoreController {
       'Queue lesson complete. Towers feed packets; the core spends packets as shots.',
     LightcoreTutorialStep.upgradeFirstTowerToLevel3 =>
       'Anchor tower tuned. Higher tower levels make every queued packet hit harder.',
+    LightcoreTutorialStep.raiseThreat =>
+      'Threat raised. The starter region is now testing that upgraded tower.',
     LightcoreTutorialStep.pullFirstWhiteEnemy =>
       'Safe signature added. Threat Scans shape the encounter, not your tower roster.',
     LightcoreTutorialStep.readEffectiveGain =>
@@ -744,6 +781,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
       LightcoreTutorialStep.tapFirstTower ||
       LightcoreTutorialStep.tapSecondShellTower ||
       LightcoreTutorialStep.upgradeFirstTowerToLevel3 ||
+      LightcoreTutorialStep.raiseThreat ||
       LightcoreTutorialStep.pullFirstWhiteEnemy ||
       LightcoreTutorialStep.readEffectiveGain ||
       LightcoreTutorialStep.autoQueueCheck ||
@@ -1404,6 +1442,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         LightcoreTutorialStep.tapSecondShellTower => 'Tap To Fire Shots',
         LightcoreTutorialStep.upgradeFirstTowerToLevel3 =>
           'Tune The Main Tower',
+        LightcoreTutorialStep.raiseThreat => 'Raise Threat',
         LightcoreTutorialStep.pullFirstWhiteEnemy => 'Summon A New Anomaly',
         LightcoreTutorialStep.readEffectiveGain => 'Read Effective Gain',
         LightcoreTutorialStep.autoQueueCheck => 'Auto Queue Check',
@@ -1456,6 +1495,8 @@ extension LightcoreControllerLayerTraits on LightcoreController {
           'Tap the glowing charged tower on the battlefield to fire.',
         LightcoreTutorialStep.upgradeFirstTowerToLevel3 =>
           'Click the first tower in Hex 1 and upgrade it to level 3.',
+        LightcoreTutorialStep.raiseThreat =>
+          'Click Challenge Lv 1 on the battlefield to raise anomaly pressure.',
         LightcoreTutorialStep.pullFirstWhiteEnemy =>
           'Click Map and run 1 threat scan.',
         LightcoreTutorialStep.readEffectiveGain =>
@@ -1535,6 +1576,8 @@ extension LightcoreControllerLayerTraits on LightcoreController {
           'Second-shell lanes use the same live rule: charged towers only feed the core after a tap, then the core converts that packet into a shot.',
         LightcoreTutorialStep.upgradeFirstTowerToLevel3 =>
           'Early upgrades beat overexpanding. One strong anchor tower produces better damage and charge flow than several weak ones.',
+        LightcoreTutorialStep.raiseThreat =>
+          'The upgraded tower is overmatching the starter field. Raise the starter-region challenge so stronger pressure turns back into better rewards.',
         LightcoreTutorialStep.pullFirstWhiteEnemy =>
           'Threat scans add real anomalies to the live deck. White anomalies establish the neutral baseline before color counters appear.',
         LightcoreTutorialStep.readEffectiveGain =>
@@ -1614,6 +1657,8 @@ extension LightcoreControllerLayerTraits on LightcoreController {
             'The next shell is awake, but its firing rhythm still needs a direct pilot tap before Lumo hands you speed controls.',
           LightcoreTutorialStep.upgradeFirstTowerToLevel3 =>
             'Command is tuning the flagship lane before exposing more of the shell to hostile traffic.',
+          LightcoreTutorialStep.raiseThreat =>
+            'Command marks the field as too quiet and opens Challenge Lv 1 directly from battle.',
           LightcoreTutorialStep.pullFirstWhiteEnemy =>
             'The starter driftling was only training noise. This is your first proper hostile signature.',
           LightcoreTutorialStep.readEffectiveGain =>

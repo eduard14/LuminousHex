@@ -947,6 +947,32 @@ class _BattleScreenState extends State<BattleScreen> {
     );
   }
 
+  Widget? _buildRaiseThreatPrompt(
+    LightcoreController controller, {
+    required bool compact,
+  }) {
+    if (!widget.showBattleHud || !controller.tutorialShowsBattleThreatPrompt) {
+      return null;
+    }
+    return _RaiseThreatPrompt(
+      compact: compact,
+      label: controller.firstThreatChallengeLabel,
+      enabled: controller.canStartFirstThreatChallenge,
+      onPressed: () {
+        LightcoreAudio.instance.playSfx(LightcoreSfx.uiConfirm);
+        final started = controller.startFirstThreatChallenge();
+        if (!started) {
+          return;
+        }
+        setState(() {
+          _statsTarget = null;
+          _selectionControlsVisible = false;
+          _panelFocus = _BattlePanelFocus.none;
+        });
+      },
+    );
+  }
+
   bool _tutorialQuestDetailsShouldYieldVisibleTarget(
     LightcoreController controller,
   ) {
@@ -1095,6 +1121,10 @@ class _BattleScreenState extends State<BattleScreen> {
         selectionOverlayVisible: selectionOverlayVisible,
       ),
     );
+    final raiseThreatPrompt = _buildRaiseThreatPrompt(
+      controller,
+      compact: compact,
+    );
 
     return Stack(
       children: [
@@ -1116,6 +1146,12 @@ class _BattleScreenState extends State<BattleScreen> {
           ),
         if (questPanel != null)
           Positioned(top: topInset, left: 0, child: questPanel),
+        if (raiseThreatPrompt != null)
+          Positioned(
+            top: topInset + (compact ? 96 : 8),
+            right: inset,
+            child: raiseThreatPrompt,
+          ),
       ],
     );
   }
@@ -1156,6 +1192,71 @@ class _BattleScreenState extends State<BattleScreen> {
               },
             );
           },
+        ),
+      ),
+    );
+  }
+}
+
+class _RaiseThreatPrompt extends StatelessWidget {
+  const _RaiseThreatPrompt({
+    required this.compact,
+    required this.label,
+    required this.enabled,
+    required this.onPressed,
+  });
+
+  final bool compact;
+  final String label;
+  final bool enabled;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    final width = compact ? 230.0 : 280.0;
+    return SizedBox(
+      width: width,
+      child: GuidedFocusFrame(
+        active: enabled,
+        tint: LightcorePalette.quest,
+        child: AuroraPanel(
+          radius: 16,
+          padding: EdgeInsets.all(compact ? 10 : 12),
+          tint: LightcorePalette.quest,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                children: [
+                  Icon(
+                    Icons.flag_rounded,
+                    size: compact ? 17 : 19,
+                    color: LightcorePalette.quest,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Threat too low',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: textTheme.labelLarge?.copyWith(
+                        color: LightcorePalette.layer2,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              FilledButton.icon(
+                onPressed: enabled ? onPressed : null,
+                icon: const Icon(Icons.play_arrow_rounded),
+                label: Text(label),
+              ),
+            ],
+          ),
         ),
       ),
     );

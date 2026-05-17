@@ -215,6 +215,20 @@ void main() {
     controller.lumens = controller.upgradeCost(controller.slots[0]);
     expect(controller.tutorialUpgradeTower(0), isTrue);
     expect(controller.slots[0].level, 3);
+    expect(controller.tutorialStep, LightcoreTutorialStep.raiseThreat);
+    expect(controller.canStartFirstThreatChallenge, isTrue);
+    final baselineStats = controller.activeThreatAssignmentGroupStats;
+    final baselineTargetCount = controller.enemyTargetCount;
+    controller.experience = LightcoreController.experienceForOverallLevel(2);
+    controller.tick(0);
+    expect(controller.tutorialStep, LightcoreTutorialStep.raiseThreat);
+    expect(controller.startFirstThreatChallenge(), isTrue);
+    expect(controller.activeThreatRegionChallenge, isNotNull);
+    expect(controller.enemyTargetCount, greaterThan(baselineTargetCount));
+    expect(
+      controller.activeThreatAssignmentGroupStats.anomalyCount,
+      greaterThan(baselineStats.anomalyCount),
+    );
     expect(controller.tutorialStep, LightcoreTutorialStep.readEffectiveGain);
 
     controller.lumens = controller.upgradeCost(controller.slots[0]);

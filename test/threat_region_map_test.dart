@@ -132,6 +132,38 @@ void main() {
     expect(controller.startThreatRegionChallenge(ringTwo.id), isFalse);
   });
 
+  test('starter challenge raises pressure and rewards the next push', () {
+    final controller = LightcoreController();
+    addTearDown(controller.dispose);
+
+    final starter = ThreatRegionLibrary.all.first;
+    controller
+      ..kills = LightcoreController.unlockKillsForOuterSlot(0)
+      ..lumens = 1000;
+    expect(controller.buildTowerAt(0, controller.towerConfigs.first), isTrue);
+
+    final baselineTargetCount = controller.enemyTargetCount;
+    final baselineStats = controller.activeThreatAssignmentGroupStats;
+    final startingLumens = controller.lumens;
+    final startingScans = controller.enemyTickets;
+
+    expect(controller.startThreatRegionChallenge(starter.id), isTrue);
+
+    expect(controller.enemyTargetCount, greaterThan(baselineTargetCount));
+    expect(
+      controller.activeThreatAssignmentGroupStats.anomalyCount,
+      greaterThan(baselineStats.anomalyCount),
+    );
+
+    expect(
+      controller.completeThreatRegionChallenge(endingStabilityPercent: 100),
+      isTrue,
+    );
+    expect(controller.lumens, greaterThan(startingLumens));
+    expect(controller.enemyTickets, greaterThan(startingScans));
+    expect(controller.threatRegionStateById(starter.id)!.stabilizedLevel, 1);
+  });
+
   test(
     'final stabilization grants boss-driven suite pieces and anomaly cards',
     () {

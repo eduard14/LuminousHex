@@ -161,6 +161,21 @@ extension LightcoreControllerThreatRegions on LightcoreController {
     return threatRegionsUnlocked && config.ring <= 1;
   }
 
+  bool get canStartFirstThreatChallenge =>
+      canStartThreatRegionChallenge(ThreatRegionLibrary.all.first.id);
+
+  String get firstThreatChallengeLabel {
+    final starter = ThreatRegionLibrary.all.first;
+    final state = threatRegionStateById(starter.id);
+    final nextLevel = (state?.stabilizedLevel ?? 0) + 1;
+    return nextLevel > starter.stabilizationLayers
+        ? 'Stable'
+        : 'Challenge Lv $nextLevel';
+  }
+
+  bool startFirstThreatChallenge() =>
+      startThreatRegionChallenge(ThreatRegionLibrary.all.first.id);
+
   bool get enemySuiteBuilderUnlocked =>
       overallLevel >= dailyDungeonUnlockLevel ||
       overallLevel >= tournamentUnlockLevel ||
@@ -485,6 +500,7 @@ extension LightcoreControllerThreatRegions on LightcoreController {
       finalLayer: targetLevel == config.stabilizationLayers,
       startedAtMillis: DateTime.now().millisecondsSinceEpoch,
     );
+    _raiseThreatRegionPressure(targetLevel);
     _threatRegionDefeatedBossIds.clear();
     if (_threatRegionChallenge!.finalLayer) {
       activeLayer.bossReady = true;
@@ -493,6 +509,9 @@ extension LightcoreControllerThreatRegions on LightcoreController {
     } else {
       activeLayer.bossReady = false;
       activeLayer.normalKillsSinceBoss = 0;
+    }
+    if (_tutorialStep == LightcoreTutorialStep.raiseThreat) {
+      _syncTutorialStep(showBanner: false);
     }
     _showBanner('${config.name} stabilization challenge started.');
     _notifyNow();
@@ -552,12 +571,54 @@ extension LightcoreControllerThreatRegions on LightcoreController {
     if (challenge.finalLayer) {
       _grantRegionBossRewards(config, resolvedDefeatedBossIds);
     }
+    final lumenReward = _threatRegionChallengeLumenReward(
+      config,
+      challenge.targetStabilizationLevel,
+    );
+    final scanReward = _threatRegionChallengeScanReward(
+      config,
+      challenge.targetStabilizationLevel,
+      finalLayer: challenge.finalLayer,
+    );
+    lumens += lumenReward;
+    enemyTickets += scanReward;
     _syncTutorialStep(showBanner: false);
+    final rewardParts = <String>[
+      LightcoreCurrencyLabels.rewardLumens(lumenReward),
+      if (scanReward > 0) LightcoreCurrencyLabels.rewardThreatScans(scanReward),
+    ];
     _showBanner(
-      '${config.name} stabilized Lv ${nextState.stabilizedLevel}/${config.stabilizationLayers}.',
+      '${config.name} stabilized Lv ${nextState.stabilizedLevel}/${config.stabilizationLayers}. Reward: ${rewardParts.join(', ')}.',
     );
     _notifyNow();
     return true;
+  }
+
+  void _raiseThreatRegionPressure(int targetLevel) {
+    final targetCount = min(
+      enemyTargetMax,
+      max(_enemyTargetCount, initialEnemyTarget + targetLevel),
+    );
+    _enemyTargetCount = _normalizeEnemyTargetCount(targetCount);
+    activeLayer.enemyTargetCount = _enemyTargetCount;
+  }
+
+  int _threatRegionChallengeLumenReward(
+    ThreatRegionConfig config,
+    int targetLevel,
+  ) {
+    return 28 + (targetLevel * 12) + (config.ring * 18);
+  }
+
+  int _threatRegionChallengeScanReward(
+    ThreatRegionConfig config,
+    int targetLevel, {
+    required bool finalLayer,
+  }) {
+    if (finalLayer) {
+      return 0;
+    }
+    return max(1, 1 + config.ring + (targetLevel ~/ 3));
   }
 
   bool failThreatRegionChallenge() {
