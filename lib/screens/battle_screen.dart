@@ -478,15 +478,6 @@ class _BattleScreenState extends State<BattleScreen> {
     _canvasTapCanceled = false;
   }
 
-  void _clearPanelFocus() {
-    if (_panelFocus == _BattlePanelFocus.none) {
-      return;
-    }
-    setState(() {
-      _panelFocus = _BattlePanelFocus.none;
-    });
-  }
-
   void _handleCenterTap() {
     if (!widget.enableBattlefieldTaps) {
       return;
@@ -603,11 +594,35 @@ class _BattleScreenState extends State<BattleScreen> {
       return;
     }
     _logBattle('background-tap');
+    if (_selectionOverlayIsOpen) {
+      LightcoreAudio.instance.playSfx(LightcoreSfx.uiCancel);
+      setState(() {
+        _selectionControlsVisible = false;
+      });
+      return;
+    }
+    _collapseShell();
+  }
+
+  bool get _selectionOverlayIsOpen {
+    if (!_selectionControlsVisible) {
+      return false;
+    }
+    return _panelFocus == _BattlePanelFocus.core ||
+        widget.controller.selectedSlotOrNull != null;
+  }
+
+  void _collapseShell() {
+    if (!widget.enableBattlefieldTaps || !widget.controller.outerRingRevealed) {
+      return;
+    }
     LightcoreAudio.instance.playSfx(LightcoreSfx.uiCancel);
     widget.controller.toggleShellVisibility();
-    _statsTarget = null;
-    _selectionControlsVisible = true;
-    _clearPanelFocus();
+    setState(() {
+      _statsTarget = null;
+      _selectionControlsVisible = true;
+      _panelFocus = _BattlePanelFocus.none;
+    });
   }
 
   void _logBattle(
@@ -912,6 +927,16 @@ class _BattleScreenState extends State<BattleScreen> {
     return _ManualOverdriveHud(controller: widget.controller);
   }
 
+  Widget? _buildCollapseHud({
+    required LightcoreController controller,
+    required bool compact,
+  }) {
+    if (!controller.outerRingRevealed || _activePromotionSequence != null) {
+      return null;
+    }
+    return _BattleShellCollapseHud(compact: compact, onPressed: _collapseShell);
+  }
+
   Widget? _buildSelectionHud({
     required LightcoreController controller,
     required OuterTowerState? selected,
@@ -1109,10 +1134,16 @@ class _BattleScreenState extends State<BattleScreen> {
       controller,
       compact: compact,
     );
+    final collapseHud = _buildCollapseHud(
+      controller: controller,
+      compact: compact,
+    );
 
     return Stack(
       children: [
         Positioned.fill(child: _buildGameCanvas(compact ? 20 : 0)),
+        if (widget.showBattleHud && collapseHud != null)
+          Positioned(right: inset, top: topInset, child: collapseHud),
         if (widget.showBattleHud && selectionHud != null)
           Positioned(left: inset, bottom: bottomInset, child: selectionHud),
         if (widget.showBattleHud)
@@ -2138,6 +2169,60 @@ class _EmptySlotPanel extends StatelessWidget {
                 ],
               ),
       ],
+    );
+  }
+}
+
+class _BattleShellCollapseHud extends StatelessWidget {
+  const _BattleShellCollapseHud({
+    required this.compact,
+    required this.onPressed,
+  });
+
+  final bool compact;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final size = compact ? 42.0 : 46.0;
+    return Tooltip(
+      message: 'Collapse shell',
+      child: Semantics(
+        button: true,
+        label: 'Collapse shell',
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            key: const ValueKey<String>('battle-shell-collapse-button'),
+            borderRadius: BorderRadius.circular(16),
+            onTap: onPressed,
+            child: Container(
+              width: size,
+              height: size,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+                color: LightcorePalette.panelRaised.withValues(alpha: 0.78),
+                border: Border.all(
+                  color: LightcorePalette.stroke.withValues(alpha: 0.52),
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: LightcorePalette.night.withValues(alpha: 0.18),
+                    blurRadius: 14,
+                    spreadRadius: -6,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
+              ),
+              child: Icon(
+                Icons.unfold_less_double_rounded,
+                color: LightcorePalette.mist.withValues(alpha: 0.84),
+                size: compact ? 22 : 24,
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

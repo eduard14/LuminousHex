@@ -44,7 +44,7 @@ Offset _battleCenter(WidgetTester tester) {
 
 Offset _blankMapPoint(WidgetTester tester) {
   final rect = tester.getRect(find.byType(BattleScreen));
-  return Offset(rect.right - 48, rect.top + 48);
+  return Offset(rect.right - 48, rect.top + 120);
 }
 
 Offset _slotCenter(WidgetTester tester, int slotIndex) {
@@ -352,7 +352,7 @@ void main() {
     expect(find.text('Tower Stats'), findsOneWidget);
   });
 
-  testWidgets('center tap keeps core stats open until blank map tap', (
+  testWidgets('blank map tap closes core stats without folding shell', (
     tester,
   ) async {
     final controller = LightcoreController();
@@ -379,6 +379,10 @@ void main() {
 
     expect(controller.outerRingRevealed, isTrue);
     expect(find.text('Core Stats'), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey<String>('battle-shell-collapse-button')),
+      findsOneWidget,
+    );
 
     await tester.tapAt(_battleCenter(tester));
     await tester.pump(const Duration(milliseconds: 50));
@@ -389,7 +393,18 @@ void main() {
     await tester.tapAt(_blankMapPoint(tester));
     await tester.pump(const Duration(milliseconds: 50));
 
-    expect(controller.outerRingRevealed, isFalse);
+    expect(controller.outerRingRevealed, isTrue);
     expect(find.text('Core Stats'), findsNothing);
+
+    await tester.tap(
+      find.byKey(const ValueKey<String>('battle-shell-collapse-button')),
+    );
+    await tester.pump(const Duration(milliseconds: 50));
+
+    expect(controller.outerRingRevealed, isFalse);
+    expect(
+      find.byKey(const ValueKey<String>('battle-shell-collapse-button')),
+      findsNothing,
+    );
   });
 }
