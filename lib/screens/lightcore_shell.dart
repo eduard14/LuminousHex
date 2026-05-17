@@ -95,6 +95,14 @@ class _LightcoreShellState extends State<LightcoreShell> {
     _ShellOverlayDestination.prestige,
   ];
 
+  List<_ShellOverlayDestination> get _visibleNavigationDestinations =>
+      _navigationDestinations
+          .where(
+            (destination) =>
+                destination.visibleInBottomNavigation(widget.controller),
+          )
+          .toList(growable: false);
+
   _ShellOverlayDestination? _activeOverlay;
   ShellPromotionPresentation? _activeShellPromotionPresentation;
   bool _shellPromotionHudSuppressed = false;
@@ -335,7 +343,8 @@ class _LightcoreShellState extends State<LightcoreShell> {
   }
 
   int get _selectedNavigationIndex {
-    final index = _navigationDestinations.indexOf(
+    final destinations = _visibleNavigationDestinations;
+    final index = destinations.indexOf(
       _activeOverlay ?? _ShellOverlayDestination.battle,
     );
     return index < 0 ? 0 : index;
@@ -671,7 +680,11 @@ class _LightcoreShellState extends State<LightcoreShell> {
   }
 
   void _selectNavigationDestination(int index) {
-    _openOverlayDestination(_navigationDestinations[index]);
+    final destinations = _visibleNavigationDestinations;
+    if (index < 0 || index >= destinations.length) {
+      return;
+    }
+    _openOverlayDestination(destinations[index]);
   }
 
   void _selectHeaderMenuAction(
@@ -1212,6 +1225,8 @@ class _LightcoreShellState extends State<LightcoreShell> {
                                     return _ShellBottomNavigation(
                                       controller: controller,
                                       compact: isCompactLayout,
+                                      destinations:
+                                          _visibleNavigationDestinations,
                                       selectedIndex: _selectedNavigationIndex,
                                       tint:
                                           (_activeOverlay ??

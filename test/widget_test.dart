@@ -1361,13 +1361,7 @@ void main() {
       );
       expect(find.text('Daily Dungeons', skipOffstage: false), findsNothing);
 
-      await tester.tap(find.byTooltip('Advance').first);
-      await tester.pump();
-
-      expect(
-        controller.bannerMessage,
-        contains('Advancement unlocks after all 6 edge towers are built'),
-      );
+      expect(find.byTooltip('Advance'), findsNothing);
       expect(find.text('Advancement Path', skipOffstage: false), findsNothing);
     },
   );
@@ -1490,6 +1484,10 @@ void main() {
         matching: find.byIcon(Icons.touch_app_rounded),
       ),
       findsNothing,
+    );
+    expect(
+      tester.getRect(prompt).center.dy,
+      greaterThan(tester.getRect(find.byType(LightcoreShell)).height * 0.5),
     );
   });
 

@@ -593,6 +593,13 @@ extension on _ShellOverlayDestination {
     _ShellOverlayDestination.prestige => _advancementLockMessage(controller),
     _ => null,
   };
+
+  bool visibleInBottomNavigation(LightcoreController controller) =>
+      switch (this) {
+        _ShellOverlayDestination.prestige =>
+          _advancementLockMessage(controller) == null,
+        _ => true,
+      };
 }
 
 String? _threatMapLockMessage(LightcoreController controller) {

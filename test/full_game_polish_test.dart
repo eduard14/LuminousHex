@@ -81,7 +81,7 @@ void main() {
       expect(find.text('Towers'), findsOneWidget);
       expect(find.text('Managers'), findsOneWidget);
       expect(find.text('Anomaly'), findsOneWidget);
-      expect(find.text('Advance'), findsOneWidget);
+      expect(find.text('Advance'), findsNothing);
 
       await tester.tap(find.byTooltip('Managers').first);
       await tester.pump();

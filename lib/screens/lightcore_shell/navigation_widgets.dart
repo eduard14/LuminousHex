@@ -278,6 +278,7 @@ class _ShellBottomNavigation extends StatelessWidget {
   const _ShellBottomNavigation({
     required this.controller,
     required this.compact,
+    required this.destinations,
     required this.selectedIndex,
     required this.tint,
     required this.onSelected,
@@ -285,6 +286,7 @@ class _ShellBottomNavigation extends StatelessWidget {
 
   final LightcoreController controller;
   final bool compact;
+  final List<_ShellOverlayDestination> destinations;
   final int selectedIndex;
   final Color tint;
   final ValueChanged<int> onSelected;
@@ -304,24 +306,20 @@ class _ShellBottomNavigation extends StatelessWidget {
         ),
         child: Row(
           children: [
-            ...List.generate(
-              _LightcoreShellState._navigationDestinations.length,
-              (index) {
-                final destination =
-                    _LightcoreShellState._navigationDestinations[index];
-                final locked = destination.lockedMessage(controller) != null;
-                return Expanded(
-                  child: _ShellNavigationItem(
-                    controller: controller,
-                    destination: destination,
-                    compact: compact,
-                    locked: locked,
-                    selected: index == selectedIndex,
-                    onTap: () => onSelected(index),
-                  ),
-                );
-              },
-            ),
+            ...List.generate(destinations.length, (index) {
+              final destination = destinations[index];
+              final locked = destination.lockedMessage(controller) != null;
+              return Expanded(
+                child: _ShellNavigationItem(
+                  controller: controller,
+                  destination: destination,
+                  compact: compact,
+                  locked: locked,
+                  selected: index == selectedIndex,
+                  onTap: () => onSelected(index),
+                ),
+              );
+            }),
           ],
         ),
       ),

@@ -1132,9 +1132,13 @@ class _BattleScreenState extends State<BattleScreen> {
           Positioned(top: topInset, left: inset, child: questPanel),
         if (raiseThreatPrompt != null)
           Positioned(
-            top: topInset + (compact ? 96 : 8),
+            left: inset,
             right: inset,
-            child: raiseThreatPrompt,
+            bottom: bottomInset + (compact ? 8 : 12),
+            child: Align(
+              alignment: Alignment.bottomCenter,
+              child: raiseThreatPrompt,
+            ),
           ),
       ],
     );
@@ -1198,48 +1202,75 @@ class _RaiseThreatPrompt extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
-    final width = compact ? 230.0 : 280.0;
-    return SizedBox(
-      key: const ValueKey<String>('battle-raise-threat-prompt'),
-      width: width,
-      child: AuroraPanel(
-        radius: 16,
-        padding: EdgeInsets.all(compact ? 10 : 12),
-        tint: LightcorePalette.quest,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              children: [
-                Icon(
-                  Icons.flag_rounded,
-                  size: compact ? 17 : 19,
-                  color: LightcorePalette.quest,
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    'Threat too low',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: textTheme.labelLarge?.copyWith(
-                      color: LightcorePalette.layer2,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
+    final width = compact ? 330.0 : 360.0;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final resolvedWidth = constraints.maxWidth.isFinite
+            ? width.clamp(0.0, constraints.maxWidth).toDouble()
+            : width;
+        return SizedBox(
+          key: const ValueKey<String>('battle-raise-threat-prompt'),
+          width: resolvedWidth,
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              color: LightcorePalette.panel.withValues(alpha: 0.96),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: LightcorePalette.quest.withValues(alpha: 0.38),
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: LightcorePalette.night.withValues(alpha: 0.28),
+                  blurRadius: 18,
+                  spreadRadius: -10,
+                  offset: const Offset(0, 8),
                 ),
               ],
             ),
-            const SizedBox(height: 8),
-            FilledButton.icon(
-              onPressed: enabled ? onPressed : null,
-              icon: const Icon(Icons.play_arrow_rounded),
-              label: Text(label),
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(
+                compact ? 10 : 12,
+                compact ? 8 : 10,
+                compact ? 8 : 10,
+                compact ? 8 : 10,
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.flag_rounded,
+                    size: compact ? 17 : 19,
+                    color: LightcorePalette.quest,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Threat too low',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: textTheme.labelLarge?.copyWith(
+                        color: LightcorePalette.layer2,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Flexible(
+                    child: FilledButton.icon(
+                      onPressed: enabled ? onPressed : null,
+                      icon: const Icon(Icons.play_arrow_rounded),
+                      label: Text(
+                        label,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 }
