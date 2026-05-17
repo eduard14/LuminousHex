@@ -2409,7 +2409,7 @@ void main() {
     );
   });
 
-  testWidgets('threat scan batch control lives on map screen', (tester) async {
+  testWidgets('threat map omits scan batch controls', (tester) async {
     final controller = LightcoreController();
     final starterRegion = controller.threatRegionConfigs.first;
     controller.debugSeedProgressionLayer(2);
@@ -2429,7 +2429,11 @@ void main() {
     await tester.tap(find.byTooltip('Threat Map'));
     await _pumpTransition(tester);
 
-    expect(find.text('10+'), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey<String>('threat-map-surface')),
+      findsOneWidget,
+    );
+    expect(find.text('10+'), findsNothing);
   });
 
   testWidgets('battle panel stays collapsed until a target is selected', (
