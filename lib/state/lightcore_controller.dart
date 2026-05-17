@@ -975,6 +975,10 @@ const double _spawnRadiusBandSpacing =
 const int _spawnRadiusBandCount = LightcoreController._spawnRadiusBandCount;
 const double _spawnCrowdRadiusPerEnemy =
     LightcoreController._spawnCrowdRadiusPerEnemy;
+const int _openingRangeProximitySpawnCount =
+    LightcoreController._openingRangeProximitySpawnCount;
+const double _openingRangeProximityBuffer =
+    LightcoreController._openingRangeProximityBuffer;
 const int _spawnClusterSize = LightcoreController._spawnClusterSize;
 const double _spawnClusterAngleStep =
     LightcoreController._spawnClusterAngleStep;
@@ -1348,6 +1352,8 @@ class LightcoreController extends ChangeNotifier {
   static const double _spawnRadiusBandSpacing = 20;
   static const int _spawnRadiusBandCount = 4;
   static const double _spawnCrowdRadiusPerEnemy = 14;
+  static const int _openingRangeProximitySpawnCount = initialEnemyTarget;
+  static const double _openingRangeProximityBuffer = 58;
   static const int _spawnClusterSize = 3;
   static const double _spawnClusterAngleStep = 0.052;
   static const double _spawnClusterAngleJitter = 0.012;

@@ -404,9 +404,11 @@ extension LightcoreControllerCombatEnemies on LightcoreController {
         _activeSpawnClusterAngle +
         (clusterOffsetIndex * _spawnClusterAngleStep) +
         _randomCentered(_spawnClusterAngleJitter);
+    final floorRadius = _spawnRadiusFloorForSequence(_spawnSequence);
     final radius = _spawnRadiusWithJitter(
       _activeSpawnClusterRadius + (clusterOffsetIndex * 4),
       _spawnClusterRadiusJitter,
+      minimumRadius: floorRadius,
     );
     return (angle: angle, radius: radius);
   }
@@ -688,21 +690,40 @@ extension LightcoreControllerCombatEnemies on LightcoreController {
     }
     _activeSpawnClusterIndex = clusterIndex;
     _activeSpawnClusterAngle = _randomSpawnAngle();
-    _activeSpawnClusterRadius = _randomSpawnRadius();
+    _activeSpawnClusterRadius = _randomSpawnRadius(
+      spawnSequence: clusterIndex * _spawnClusterSize,
+    );
   }
 
   double _randomSpawnAngle() => _spawnRandom.nextDouble() * pi * 2;
 
-  double _randomSpawnRadius() {
-    return (spawnRadius +
+  double _randomSpawnRadius({int? spawnSequence}) {
+    final floorRadius = _spawnRadiusFloorForSequence(spawnSequence);
+    return (floorRadius +
             (_spawnRandom.nextDouble() * _spawnRadiusBandVariance))
-        .clamp(spawnRadius, spawnCeilingRadius)
+        .clamp(floorRadius, spawnCeilingRadius)
         .toDouble();
   }
 
-  double _spawnRadiusWithJitter(double radius, double jitter) {
+  double _spawnRadiusFloorForSequence(int? spawnSequence) {
+    if (spawnSequence == null ||
+        spawnSequence >= _openingRangeProximitySpawnCount) {
+      return spawnRadius;
+    }
+    return min(
+      spawnRadius,
+      defaultTowerBaseRange + _openingRangeProximityBuffer,
+    ).toDouble();
+  }
+
+  double _spawnRadiusWithJitter(
+    double radius,
+    double jitter, {
+    double? minimumRadius,
+  }) {
+    final floorRadius = minimumRadius ?? spawnRadius;
     return (radius + _randomCentered(jitter))
-        .clamp(spawnRadius, spawnCeilingRadius)
+        .clamp(floorRadius, spawnCeilingRadius)
         .toDouble();
   }
 

@@ -468,6 +468,21 @@ void main() {
     final firstCluster = controller.enemies.take(3).toList();
     final angles = firstCluster.map((enemy) => enemy.angle).toList()..sort();
     expect(angles.last - angles.first, lessThan(0.14));
+    final spawnRadii = firstCluster.map((enemy) => enemy.spawnRadius).toList();
+    expect(
+      spawnRadii.every(
+        (radius) =>
+            radius > controller.defaultTowerBaseRange &&
+            radius < controller.spawnRadius,
+      ),
+      isTrue,
+    );
+    expect(
+      spawnRadii
+          .map((radius) => radius - controller.defaultTowerBaseRange)
+          .reduce(max),
+      lessThanOrEqualTo(140),
+    );
   });
 
   test('spawn random seed changes entry points while preserving clusters', () {
