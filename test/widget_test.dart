@@ -2169,7 +2169,7 @@ void main() {
     );
     expect(
       find.text(
-        'Close the open tower controls, then tap the charged first tower on the battlefield.',
+        'Tap the charged first tower to add pulses. More queued shots means faster kills, more Lumens, and earlier upgrades.',
       ),
       findsWidgets,
     );
@@ -2580,14 +2580,28 @@ void main() {
     final controller = LightcoreController();
     addTearDown(controller.dispose);
 
+    controller.lumens = 1000;
     controller.kills = LightcoreController.unlockKillsForOuterSlot(1);
-    controller.buildTowerAt(0, TowerLibrary.bluePrism);
-    controller.buildTowerAt(1, TowerLibrary.greenPrism);
+    expect(controller.buildTowerAt(0, TowerLibrary.bluePrism), isTrue);
+    expect(controller.buildTowerAt(1, TowerLibrary.greenPrism), isTrue);
     controller.selectSlot(0);
 
     await _pumpShell(tester, controller);
 
-    expect(find.textContaining('Pattern '), findsOneWidget);
+    await tester.tap(
+      find.byKey(const ValueKey<String>('battle-tower-selection-button')),
+    );
+    await _pumpTransition(tester);
+
+    expect(find.text('Tower Detail'), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.text('Pattern Bonus'),
+      240,
+      scrollable: find.byType(Scrollable).last,
+    );
+    await tester.pump();
+
+    expect(find.text('PATTERN'), findsOneWidget);
     expect(find.textContaining('Storm Chain'), findsOneWidget);
   });
 

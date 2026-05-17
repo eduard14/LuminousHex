@@ -224,10 +224,14 @@ void main() {
     expect(controller.tutorialStep, LightcoreTutorialStep.raiseThreat);
     expect(controller.startFirstThreatChallenge(), isTrue);
     expect(controller.activeThreatRegionChallenge, isNotNull);
-    expect(controller.enemyTargetCount, greaterThan(baselineTargetCount));
+    expect(controller.enemyTargetCount, baselineTargetCount);
     expect(
       controller.activeThreatAssignmentGroupStats.anomalyCount,
       greaterThan(baselineStats.anomalyCount),
+    );
+    expect(
+      controller.completeThreatRegionChallenge(endingStabilityPercent: 100),
+      isTrue,
     );
     expect(controller.tutorialStep, LightcoreTutorialStep.readEffectiveGain);
 

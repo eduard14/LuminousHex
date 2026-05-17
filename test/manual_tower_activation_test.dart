@@ -320,8 +320,8 @@ void main() {
     );
     final outsideEnemy = controller.debugSpawnEnemyFromCard(
       EnemyLibrary.basicWhite.id,
-      angle: 1.6,
-      radius: 180,
+      angle: 3.05,
+      radius: 320,
       level: 16,
     );
     expect(primaryEnemy, isNotNull);
