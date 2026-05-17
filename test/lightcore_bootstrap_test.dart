@@ -293,6 +293,7 @@ void main() {
       starterRegion.id,
       stabilizedLevel: starterRegion.stabilizationLayers,
     );
+    controller.debugValidateThreatRegionFarm(starterRegion.id);
 
     final snapshot = controller.buildOfflineProgressSnapshot();
 

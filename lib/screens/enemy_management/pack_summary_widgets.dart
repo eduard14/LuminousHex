@@ -20,6 +20,69 @@ class _TicketButton extends StatelessWidget {
   }
 }
 
+class _EnemyResearchDeckPreview extends StatelessWidget {
+  const _EnemyResearchDeckPreview({required this.controller});
+
+  final LightcoreController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    final owned = controller.enemyCards
+        .where((card) => card.isOwned)
+        .take(6)
+        .toList(growable: false);
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: LightcorePalette.aether.withValues(alpha: 0.07),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: LightcorePalette.aether.withValues(alpha: 0.2),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              _InfoChip(label: '${controller.ownedEnemyCardCount} researched'),
+              _InfoChip(
+                label: '${controller.upgradableEnemyCardCount} upgrades',
+              ),
+              _InfoChip(
+                label:
+                    'Peak ${controller.highestAvailableEnemyPullRarity.label}',
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          if (owned.isEmpty)
+            Text(
+              'Research rolls add copies, levels, and enemy-family knowledge.',
+              style: textTheme.bodySmall,
+            )
+          else
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                for (final card in owned)
+                  _InfoChip(
+                    label:
+                        '${card.config.name} Lv ${card.level} • x${card.copies}',
+                  ),
+              ],
+            ),
+        ],
+      ),
+    );
+  }
+}
+
 // ignore: unused_element
 class _SummoningLevelTrack extends StatelessWidget {
   const _SummoningLevelTrack({

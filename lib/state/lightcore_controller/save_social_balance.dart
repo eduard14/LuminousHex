@@ -269,6 +269,8 @@ extension LightcoreControllerSaveSocialBalance on LightcoreController {
       offlineRegionStabilizedLevel: _offlineRegionStabilizedLevel,
       offlineRegionValidatedThreatDirectorId:
           _offlineRegionValidatedThreatDirectorId,
+      validatedFarmSwarmSize: _validatedFarmSwarmSize,
+      validatedFarmEfficiency: _validatedFarmEfficiency,
     );
   }
 

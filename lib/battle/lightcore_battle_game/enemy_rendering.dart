@@ -75,6 +75,30 @@ extension _LightcoreBattleGameEnemyRendering on LightcoreBattleGame {
             ),
         );
       }
+      if (controller.focusedEnemyId == enemy.id) {
+        final focusPulse =
+            0.5 + (math.sin((controller.elapsed * 9.0) + radius) * 0.5);
+        canvas.drawCircle(
+          position,
+          radius * (1.72 + (focusPulse * 0.12)),
+          Paint()
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 2.8
+            ..color = LightcorePalette.aether.withValues(
+              alpha: 0.82 * revealProgress,
+            ),
+        );
+        canvas.drawCircle(
+          position,
+          radius * (1.36 + (focusPulse * 0.08)),
+          Paint()
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 1.6
+            ..color = LightcorePalette.mist.withValues(
+              alpha: 0.54 * revealProgress,
+            ),
+        );
+      }
       canvas.drawCircle(
         position,
         radius,

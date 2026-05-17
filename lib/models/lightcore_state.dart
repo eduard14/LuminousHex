@@ -1029,6 +1029,46 @@ class ThreatRegionChallengeState {
   }
 }
 
+class ThreatRegionFarmValidationState {
+  const ThreatRegionFarmValidationState({
+    required this.regionId,
+    required this.targetStabilizationLevel,
+    required this.startedAtMillis,
+    required this.farmSwarmSize,
+    this.threatDirectorId,
+    this.waveIndex = 0,
+    this.waveElapsedSeconds = 0,
+    this.lowestStabilityPercent = 100,
+  });
+
+  final String regionId;
+  final int targetStabilizationLevel;
+  final int startedAtMillis;
+  final int farmSwarmSize;
+  final String? threatDirectorId;
+  final int waveIndex;
+  final double waveElapsedSeconds;
+  final double lowestStabilityPercent;
+
+  ThreatRegionFarmValidationState copyWith({
+    int? waveIndex,
+    double? waveElapsedSeconds,
+    double? lowestStabilityPercent,
+  }) {
+    return ThreatRegionFarmValidationState(
+      regionId: regionId,
+      targetStabilizationLevel: targetStabilizationLevel,
+      startedAtMillis: startedAtMillis,
+      farmSwarmSize: farmSwarmSize,
+      threatDirectorId: threatDirectorId,
+      waveIndex: waveIndex ?? this.waveIndex,
+      waveElapsedSeconds: waveElapsedSeconds ?? this.waveElapsedSeconds,
+      lowestStabilityPercent:
+          lowestStabilityPercent ?? this.lowestStabilityPercent,
+    );
+  }
+}
+
 class ThreatRegionScanResult {
   const ThreatRegionScanResult({
     required this.region,

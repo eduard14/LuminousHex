@@ -98,6 +98,10 @@ extension LightcoreControllerSaveRestorePayload on LightcoreController {
         _intValue(resourceData['threatShards'], fallback: threatShards) +
         restoredBossCores;
     bossCores = 0;
+    swarmMagnets = _intValue(
+      resourceData['swarmMagnets'],
+      fallback: swarmMagnets,
+    );
     enemyPullCount = _intValue(
       resourceData['enemyPullCount'],
       fallback: enemyPullCount,
@@ -283,6 +287,7 @@ extension LightcoreControllerSaveRestorePayload on LightcoreController {
       _viewLayerId = _liveLayerForLayer(requestedViewLayer).id;
       _runtimeLayerId = _liveLayerForLayer(requestedRuntimeLayer).id;
       _loadLayer(resolvedActiveLayer);
+      _applyFarmSwarmPressure();
     }
     _completedTowerShells = _coerceList(payload['completedTowerShells'])
         .map((item) => _deserializeCompletedTowerShellState(_coerceMap(item)))

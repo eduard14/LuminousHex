@@ -85,8 +85,8 @@ void main() {
         isTrue,
       );
       expect(controller.threatRegionStateById(starter.id)!.stabilizedLevel, 1);
-      expect(controller.offlineRegionId, starter.id);
-      expect(controller.offlineRegionStabilizedLevel, 1);
+      expect(controller.offlineRegionId, isNull);
+      expect(controller.offlineRegionStabilizedLevel, 0);
     },
   );
 
@@ -132,7 +132,46 @@ void main() {
     expect(controller.startThreatRegionChallenge(ringTwo.id), isFalse);
   });
 
-  test('starter challenge raises pressure and rewards the next push', () {
+  test(
+    'starter challenge uses standard pressure and rewards the next push',
+    () {
+      final controller = LightcoreController();
+      addTearDown(controller.dispose);
+
+      final starter = ThreatRegionLibrary.all.first;
+      controller
+        ..kills = LightcoreController.unlockKillsForOuterSlot(0)
+        ..lumens = 1000;
+      expect(controller.buildTowerAt(0, controller.towerConfigs.first), isTrue);
+
+      final baselineTargetCount = controller.enemyTargetCount;
+      final baselineStats = controller.activeThreatAssignmentGroupStats;
+      final startingLumens = controller.lumens;
+      final startingScans = controller.enemyTickets;
+
+      expect(controller.startThreatRegionChallenge(starter.id), isTrue);
+
+      expect(
+        controller.enemyTargetCount,
+        LightcoreController.initialEnemyTarget,
+      );
+      expect(
+        controller.activeThreatAssignmentGroupStats.anomalyCount,
+        greaterThan(baselineStats.anomalyCount),
+      );
+
+      expect(
+        controller.completeThreatRegionChallenge(endingStabilityPercent: 100),
+        isTrue,
+      );
+      expect(controller.lumens, greaterThan(startingLumens));
+      expect(controller.enemyTickets, greaterThan(startingScans));
+      expect(controller.threatRegionStateById(starter.id)!.stabilizedLevel, 1);
+      expect(controller.enemyTargetCount, baselineTargetCount);
+    },
+  );
+
+  test('farm validation stores offline snapshot with account swarm', () {
     final controller = LightcoreController();
     addTearDown(controller.dispose);
 
@@ -141,27 +180,27 @@ void main() {
       ..kills = LightcoreController.unlockKillsForOuterSlot(0)
       ..lumens = 1000;
     expect(controller.buildTowerAt(0, controller.towerConfigs.first), isTrue);
-
-    final baselineTargetCount = controller.enemyTargetCount;
-    final baselineStats = controller.activeThreatAssignmentGroupStats;
-    final startingLumens = controller.lumens;
-    final startingScans = controller.enemyTickets;
+    controller.setEnemyTargetCount(12);
 
     expect(controller.startThreatRegionChallenge(starter.id), isTrue);
-
-    expect(controller.enemyTargetCount, greaterThan(baselineTargetCount));
-    expect(
-      controller.activeThreatAssignmentGroupStats.anomalyCount,
-      greaterThan(baselineStats.anomalyCount),
-    );
-
     expect(
       controller.completeThreatRegionChallenge(endingStabilityPercent: 100),
       isTrue,
     );
-    expect(controller.lumens, greaterThan(startingLumens));
-    expect(controller.enemyTickets, greaterThan(startingScans));
-    expect(controller.threatRegionStateById(starter.id)!.stabilizedLevel, 1);
+    expect(controller.threatRegionOfflineKillsPerHour, 0);
+    expect(controller.canStartThreatRegionFarmValidation(starter.id), isTrue);
+
+    controller.debugValidateThreatRegionFarm(starter.id);
+
+    expect(controller.offlineRegionId, starter.id);
+    expect(controller.offlineRegionStabilizedLevel, 1);
+    expect(controller.validatedFarmSwarmSize, 12);
+    expect(controller.threatRegionOfflineKillsPerHour, greaterThan(0));
+
+    controller.debugGrantSwarmMagnets(1);
+    expect(controller.rerollFarmSwarmSize(), isTrue);
+    expect(controller.threatRegionOfflineKillsPerHour, 0);
+    expect(controller.offlineRegionId, isNull);
   });
 
   test(
@@ -390,7 +429,7 @@ void main() {
   });
 
   test(
-    'manager swaps invalidate offline region validation until restabilized',
+    'manager swaps invalidate offline farm validation until revalidated',
     () {
       final controller = LightcoreController();
       addTearDown(controller.dispose);
@@ -421,6 +460,8 @@ void main() {
         controller.completeThreatRegionChallenge(endingStabilityPercent: 100),
         isTrue,
       );
+      expect(controller.threatRegionOfflineKillsPerHour, 0);
+      controller.debugValidateThreatRegionFarm(starter.id);
       expect(controller.threatRegionOfflineKillsPerHour, greaterThan(0));
 
       expect(
@@ -432,11 +473,7 @@ void main() {
       );
       expect(controller.threatRegionOfflineKillsPerHour, 0);
 
-      expect(controller.startThreatRegionChallenge(starter.id), isTrue);
-      expect(
-        controller.completeThreatRegionChallenge(endingStabilityPercent: 100),
-        isTrue,
-      );
+      controller.debugValidateThreatRegionFarm(starter.id);
       expect(controller.threatRegionOfflineKillsPerHour, greaterThan(0));
     },
   );

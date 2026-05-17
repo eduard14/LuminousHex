@@ -156,6 +156,7 @@ function createPlayerSaveHelpers({ db, logger, HttpsError, constants, helpers })
       "enemyTickets",
       "bossTickets",
       "threatShards",
+      "swarmMagnets",
     ]) {
       rejectInvalidNumericRange(
         resources[field],
@@ -728,16 +729,43 @@ function createPlayerSaveHelpers({ db, logger, HttpsError, constants, helpers })
       1,
     );
     const threatMap = normalizeObject(payload.threatMap);
-    const offlineRegionId = sanitizeOptionalString(threatMap.offlineRegionId);
+    const offlineRegionId =
+      sanitizeOptionalString(threatMap.validatedFarmRegionId) ||
+      sanitizeOptionalString(threatMap.offlineRegionId);
     const offlineRegionStabilizedLevel = clampInt(
-      threatMap.offlineRegionStabilizedLevel,
+      threatMap.validatedFarmStabilizedLevel ??
+        threatMap.offlineRegionStabilizedLevel,
       0,
       100,
+      0,
+    );
+    const offlineRegionValidatedThreatDirectorId =
+      sanitizeOptionalString(threatMap.validatedFarmThreatDirectorId) ||
+      sanitizeOptionalString(threatMap.offlineRegionValidatedThreatDirectorId);
+    const validatedFarmSwarmSize = clampInt(
+      threatMap.validatedFarmSwarmSize,
+      6,
+      84,
+      6,
+    );
+    const validatedFarmEfficiency = clampNumber(
+      threatMap.validatedFarmEfficiency,
+      0,
+      1,
+      0,
+    );
+    const validatedFarmKillsPerHour = clampNumber(
+      threatMap.validatedFarmKillsPerHour,
+      0,
+      SERVER_BALANCE_LIMITS.maxOfflineKillsPerHour,
       0,
     );
     const killsPerHour = estimateOfflineKillsPerHour({
       offlineRegionId,
       offlineRegionStabilizedLevel,
+      validatedFarmSwarmSize,
+      validatedFarmEfficiency,
+      validatedFarmKillsPerHour,
     });
 
     return {
@@ -747,9 +775,9 @@ function createPlayerSaveHelpers({ db, logger, HttpsError, constants, helpers })
       builtTowerCount: totalBuiltTowerCount,
       offlineRegionId,
       offlineRegionStabilizedLevel,
-      offlineRegionValidatedThreatDirectorId: sanitizeOptionalString(
-        threatMap.offlineRegionValidatedThreatDirectorId,
-      ),
+      offlineRegionValidatedThreatDirectorId,
+      validatedFarmSwarmSize,
+      validatedFarmEfficiency,
     };
   }
 
@@ -793,15 +821,36 @@ function createPlayerSaveHelpers({ db, logger, HttpsError, constants, helpers })
       ),
       offlineRegionValidatedThreatDirectorId:
         envelope.offlineRegionValidatedThreatDirectorId || null,
+      validatedFarmSwarmSize: clampInt(
+        envelope.validatedFarmSwarmSize,
+        0,
+        84,
+        0,
+      ),
+      validatedFarmEfficiency: clampNumber(
+        envelope.validatedFarmEfficiency,
+        0,
+        1,
+        0,
+      ),
     };
   }
 
   function estimateOfflineKillsPerHour({
     offlineRegionId,
     offlineRegionStabilizedLevel,
+    validatedFarmSwarmSize,
+    validatedFarmEfficiency,
+    validatedFarmKillsPerHour,
   }) {
     if (!offlineRegionId || offlineRegionStabilizedLevel <= 0) {
       return 0;
+    }
+    if (validatedFarmKillsPerHour > 0) {
+      return Math.min(
+        SERVER_BALANCE_LIMITS.maxOfflineKillsPerHour,
+        validatedFarmKillsPerHour,
+      );
     }
     const ringMatch = offlineRegionId.match(/^region_r(\d+)_/);
     const ring = ringMatch ? clampInt(ringMatch[1], 0, 3, 0) : 0;
@@ -813,9 +862,11 @@ function createPlayerSaveHelpers({ db, logger, HttpsError, constants, helpers })
       0,
     );
     const base = 18 + (ring * 18);
+    const swarmScale = clampNumber(validatedFarmSwarmSize / 6, 1, 8, 1);
+    const efficiencyScale = clampNumber(validatedFarmEfficiency, 0.7, 1, 1);
     return Math.min(
       SERVER_BALANCE_LIMITS.maxOfflineKillsPerHour,
-      base * (0.4 + (layerRatio * 0.6)),
+      base * (0.4 + (layerRatio * 0.6)) * swarmScale * efficiencyScale,
     );
   }
 
@@ -1254,6 +1305,12 @@ function createPlayerSaveHelpers({ db, logger, HttpsError, constants, helpers })
         PLAYER_SAVE_LIMITS.maxCurrency,
         0,
       ),
+      swarmMagnets: clampInt(
+        data.swarmMagnets,
+        0,
+        PLAYER_SAVE_LIMITS.maxCurrency,
+        0,
+      ),
       bossCores: 0,
       enemyPullCount: clampInt(
         data.enemyPullCount,
@@ -1435,6 +1492,34 @@ function createPlayerSaveHelpers({ db, logger, HttpsError, constants, helpers })
     const data = normalizeObject(value);
     return {
       selectedRegionId: sanitizeSavedNullableString(data.selectedRegionId, 96),
+      farmSwarmSize: clampInt(data.farmSwarmSize, 6, 84, 6),
+      validatedFarmRegionId: sanitizeSavedNullableString(
+        data.validatedFarmRegionId,
+        96,
+      ),
+      validatedFarmSwarmSize: clampInt(data.validatedFarmSwarmSize, 6, 84, 6),
+      validatedFarmThreatDirectorId: sanitizeSavedNullableString(
+        data.validatedFarmThreatDirectorId,
+        96,
+      ),
+      validatedFarmStabilizedLevel: clampInt(
+        data.validatedFarmStabilizedLevel,
+        0,
+        100,
+        0,
+      ),
+      validatedFarmEfficiency: clampNumber(
+        data.validatedFarmEfficiency,
+        0,
+        1,
+        0,
+      ),
+      validatedFarmKillsPerHour: clampNumber(
+        data.validatedFarmKillsPerHour,
+        0,
+        SERVER_BALANCE_LIMITS.maxOfflineKillsPerHour,
+        0,
+      ),
       offlineRegionId: sanitizeSavedNullableString(data.offlineRegionId, 96),
       offlineRegionStabilizedLevel: clampInt(
         data.offlineRegionStabilizedLevel,

@@ -101,7 +101,7 @@ class _ThreatPullTabs extends StatelessWidget {
                   : null,
             ),
             icon: const Icon(LightcoreIcons.threatScan),
-            label: const Text('Threat Map'),
+            label: const Text('Research'),
           ),
         ),
         const SizedBox(width: 10),
@@ -138,13 +138,13 @@ class _ScanSpendExplanation extends StatelessWidget {
   Widget build(BuildContext context) {
     final title = selected == _ThreatPullTab.bosses
         ? 'Threat Scans reveal region bosses'
-        : 'Threat Scans reveal map regions';
+        : 'Threat Scans resolve Enemy Research Cards';
     final body = selected == _ThreatPullTab.bosses
         ? 'Bosses now sit inside stabilized regions. Final clears drop Apex Cores, boss traits, and the region anomaly cards for enemy suites.'
-        : 'Threat Scans pulse across the fixed hex map. A hit can reveal a region or echo one you already know.';
+        : 'Enemy Research rolls use the current scan level, rarity gates, copy merges, and anomaly reveal animation.';
     final footer = selected == _ThreatPullTab.bosses
         ? 'These are encounter targets, not Core Managers.'
-        : 'These are enemies and encounter modifiers, not allies.';
+        : 'These are research bonuses against enemy families, not map regions.';
 
     return Container(
       width: double.infinity,

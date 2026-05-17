@@ -458,19 +458,9 @@ class _SuiteDropdown<T> extends StatelessWidget {
 }
 
 class _ThreatRegionMapPanel extends StatefulWidget {
-  const _ThreatRegionMapPanel({
-    required this.controller,
-    this.compact = false,
-    this.scanOriginRegionId,
-    this.scanHitRegionId,
-    this.scanProgress = 0,
-  });
+  const _ThreatRegionMapPanel({required this.controller});
 
   final LightcoreController controller;
-  final bool compact;
-  final String? scanOriginRegionId;
-  final String? scanHitRegionId;
-  final double scanProgress;
 
   @override
   State<_ThreatRegionMapPanel> createState() => _ThreatRegionMapPanelState();
@@ -547,6 +537,7 @@ class _ThreatRegionMapPanelState extends State<_ThreatRegionMapPanel> {
             children: [
               Text('Threat Map', style: textTheme.titleMedium),
               _InfoChip(label: controller.enemyTicketLabel),
+              _InfoChip(label: 'Swarm ${controller.farmSwarmSize}'),
               _InfoChip(
                 label: '${controller.fullyStabilizedRegionCount} stabilized',
               ),
@@ -554,9 +545,9 @@ class _ThreatRegionMapPanelState extends State<_ThreatRegionMapPanel> {
           ),
           const SizedBox(height: 12),
           SizedBox(
-            height: widget.compact ? 240 : 286,
+            height: 286,
             child: _ThreatRegionMapViewport(
-              compact: widget.compact,
+              compact: false,
               onRegionTapped: _handleRegionTap,
               painter: _ThreatRegionMapPainter(
                 regions: displayedRegions,
@@ -570,9 +561,6 @@ class _ThreatRegionMapPanelState extends State<_ThreatRegionMapPanel> {
                 },
                 selectedRegionId: controller.selectedThreatRegionId,
                 previewRegionId: previewed?.id,
-                scanOriginRegionId: widget.scanOriginRegionId,
-                scanHitRegionId: widget.scanHitRegionId,
-                scanProgress: widget.scanProgress,
               ),
             ),
           ),
@@ -624,7 +612,18 @@ class _ThreatRegionMapPanelState extends State<_ThreatRegionMapPanel> {
                 color: _rarityTint(detailRegion.rarity).withValues(alpha: 0.82),
               ),
             ),
-            if (detailRevealed && !widget.compact) ...[
+            if (detailRevealed) ...[
+              const SizedBox(height: 8),
+              _InlineEnemyNote(
+                message: controller.validatedFarmRegionId == detailRegion.id
+                    ? 'Offline farm validated at swarm ${controller.validatedFarmSwarmSize} • ${controller.threatRegionOfflineKillsPerHour.toStringAsFixed(0)} kills/hr.'
+                    : 'Offline progress unlocks after Farm Validation survives 3 waves at your current Swarm Magnet.',
+                tint: controller.validatedFarmRegionId == detailRegion.id
+                    ? LightcorePalette.success
+                    : LightcorePalette.warning,
+              ),
+            ],
+            if (detailRevealed) ...[
               const SizedBox(height: 12),
               if (controller.enemyManagers.isNotEmpty)
                 DropdownButtonFormField<String>(
@@ -658,7 +657,7 @@ class _ThreatRegionMapPanelState extends State<_ThreatRegionMapPanel> {
               else
                 _InlineEnemyNote(
                   message:
-                      'Forge a Threat Director to validate this region for offline output.',
+                      'Forge a Threat Director to tune this region before Farm Validation.',
                   tint: LightcorePalette.layer2,
                 ),
             ],
@@ -687,6 +686,22 @@ class _ThreatRegionMapPanelState extends State<_ThreatRegionMapPanel> {
                             ? 'Stable'
                             : 'Challenge Lv ${detailState.stabilizedLevel + 1}',
                       ),
+                    ),
+                  ),
+                  OutlinedButton.icon(
+                    onPressed:
+                        controller.canStartThreatRegionFarmValidation(
+                          detailRegion.id,
+                        )
+                        ? () => controller.startThreatRegionFarmValidation(
+                            detailRegion.id,
+                          )
+                        : null,
+                    icon: const Icon(Icons.waves_rounded),
+                    label: Text(
+                      controller.validatedFarmRegionId == detailRegion.id
+                          ? 'Revalidate Farm'
+                          : 'Validate Farm',
                     ),
                   ),
                   OutlinedButton.icon(
@@ -850,9 +865,6 @@ class _ThreatRegionMapPainter extends CustomPainter {
     required this.echoCounts,
     required this.selectedRegionId,
     this.previewRegionId,
-    this.scanOriginRegionId,
-    this.scanHitRegionId,
-    this.scanProgress = 0,
     this.zoomScale = 1,
   });
 
@@ -861,9 +873,6 @@ class _ThreatRegionMapPainter extends CustomPainter {
   final Map<String, int> echoCounts;
   final String? selectedRegionId;
   final String? previewRegionId;
-  final String? scanOriginRegionId;
-  final String? scanHitRegionId;
-  final double scanProgress;
   final double zoomScale;
 
   _ThreatRegionMapPainter copyWithZoom(double zoomScale) {
@@ -873,9 +882,6 @@ class _ThreatRegionMapPainter extends CustomPainter {
       echoCounts: echoCounts,
       selectedRegionId: selectedRegionId,
       previewRegionId: previewRegionId,
-      scanOriginRegionId: scanOriginRegionId,
-      scanHitRegionId: scanHitRegionId,
-      scanProgress: scanProgress,
       zoomScale: zoomScale,
     );
   }
@@ -899,19 +905,6 @@ class _ThreatRegionMapPainter extends CustomPainter {
     final radius = _hexGridRadius(size);
     _drawMapBackdrop(canvas, size, center, radius);
     _drawSectorLinks(canvas, center, radius);
-    final origin = _regionById(scanOriginRegionId ?? selectedRegionId);
-    final maxScanDistance = origin == null
-        ? 0
-        : regions.fold<int>(
-            0,
-            (maxDistance, region) => math.max(
-              maxDistance,
-              ThreatRegionLibrary.hexDistance(
-                region.q - origin.q,
-                region.r - origin.r,
-              ),
-            ),
-          );
     for (final region in regions) {
       final state = states[region.id];
       final point = _axialToPixel(region.q, region.r, radius, center);
@@ -955,32 +948,6 @@ class _ThreatRegionMapPainter extends CustomPainter {
         state: state,
         revealed: revealed,
       );
-      if (origin != null && scanProgress > 0) {
-        final distance = ThreatRegionLibrary.hexDistance(
-          region.q - origin.q,
-          region.r - origin.r,
-        );
-        final wavePoint = maxScanDistance == 0
-            ? 1.0
-            : distance / maxScanDistance;
-        final delta = (scanProgress - wavePoint).abs();
-        if (delta < 0.23) {
-          final alpha = (1 - (delta / 0.23)).clamp(0.0, 1.0) * 0.42;
-          final scanPaint = Paint()
-            ..style = PaintingStyle.fill
-            ..color = LightcorePalette.scanGlow.withValues(alpha: alpha);
-          canvas.drawPath(path, scanPaint);
-        }
-      }
-      if (region.id == scanHitRegionId && scanProgress > 0) {
-        _drawScanHitAnticipation(
-          canvas,
-          path: path,
-          center: point,
-          radius: hexRadius,
-          progress: scanProgress,
-        );
-      }
       if (region.id == selectedRegionId) {
         final selectedStroke = Paint()
           ..style = PaintingStyle.stroke
@@ -994,15 +961,6 @@ class _ThreatRegionMapPainter extends CustomPainter {
           ..strokeWidth = 2.4
           ..color = LightcorePalette.scanGlow.withValues(alpha: 0.88);
         canvas.drawPath(path, previewStroke);
-      }
-      if (region.id == scanHitRegionId && scanProgress > 0.72) {
-        final hitStroke = Paint()
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 3.4
-          ..color = LightcorePalette.scanGlow.withValues(
-            alpha: ((scanProgress - 0.72) / 0.28).clamp(0.0, 1.0),
-          );
-        canvas.drawPath(path, hitStroke);
       }
     }
   }
@@ -1318,180 +1276,6 @@ class _ThreatRegionMapPainter extends CustomPainter {
     );
   }
 
-  void _drawScanHitAnticipation(
-    Canvas canvas, {
-    required Path path,
-    required Offset center,
-    required double radius,
-    required double progress,
-  }) {
-    final clamped = progress.clamp(0.0, 1.0).toDouble();
-    final tension = Curves.easeInCubic.transform(
-      _progressWindow(clamped, 0.18, 0.76),
-    );
-    final fillProgress = _progressWindow(clamped, 0.38, 0.82);
-    final outlineProgress = _progressWindow(clamped, 0.54, 0.92);
-    final idlePulseStrength = (0.5 + (0.5 * math.sin(clamped * math.pi * 8)))
-        .clamp(0.0, 1.0)
-        .toDouble();
-    final accent = Color.lerp(
-      LightcorePalette.layer2,
-      LightcorePalette.scanGlow,
-      _progressWindow(clamped, 0.34, 0.72),
-    )!;
-    final finalAccent = Color.lerp(
-      accent,
-      LightcorePalette.aether,
-      _progressWindow(clamped, 0.78, 1),
-    )!;
-
-    final haloRadius = radius * (1.34 + (0.08 * tension));
-    final haloPaint = Paint()
-      ..shader = RadialGradient(
-        colors: [
-          finalAccent.withValues(alpha: (0.18 + (0.08 * tension))),
-          finalAccent.withValues(alpha: 0.06 + (0.05 * fillProgress)),
-          Colors.transparent,
-        ],
-        stops: const [0.0, 0.58, 1.0],
-      ).createShader(Rect.fromCircle(center: center, radius: haloRadius));
-    canvas.drawCircle(center, haloRadius, haloPaint);
-
-    if (tension > 0) {
-      final gatePaint = Paint()
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 1.0 + (1.4 * idlePulseStrength)
-        ..strokeJoin = StrokeJoin.round
-        ..color = finalAccent.withValues(
-          alpha: (0.08 + (0.24 * idlePulseStrength)) * tension,
-        );
-      canvas.drawPath(
-        _hexPath(center, radius * (1.06 + (0.04 * idlePulseStrength))),
-        gatePaint,
-      );
-    }
-
-    final fillPaint = Paint()
-      ..shader = LinearGradient(
-        colors: [
-          finalAccent.withValues(alpha: 0.28 * fillProgress),
-          finalAccent.withValues(alpha: 0.05 * fillProgress),
-        ],
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-      ).createShader(Rect.fromCircle(center: center, radius: radius));
-    canvas.drawPath(path, fillPaint);
-
-    _drawScanResolvePulse(
-      canvas,
-      center: center,
-      radius: radius,
-      color: LightcorePalette.layer2,
-      progress: _progressWindow(clamped, 0.2, 0.46),
-      radiusBias: 0,
-    );
-    _drawScanResolvePulse(
-      canvas,
-      center: center,
-      radius: radius,
-      color: LightcorePalette.scanGlow,
-      progress: _progressWindow(clamped, 0.48, 0.78),
-      radiusBias: 0.1,
-    );
-    _drawScanResolvePulse(
-      canvas,
-      center: center,
-      radius: radius,
-      color: LightcorePalette.scanGlow,
-      progress: _progressWindow(clamped, 0.64, 0.9),
-      radiusBias: 0.16,
-      alphaScale: 0.72,
-    );
-    _drawScanResolvePulse(
-      canvas,
-      center: center,
-      radius: radius,
-      color: LightcorePalette.aether,
-      progress: _progressWindow(clamped, 0.78, 1),
-      radiusBias: 0.22,
-    );
-
-    final baseStroke = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.8
-      ..strokeJoin = StrokeJoin.round
-      ..color = LightcorePalette.stroke.withValues(alpha: 0.7);
-    canvas.drawPath(path, baseStroke);
-
-    final metrics = path.computeMetrics().toList(growable: false);
-    if (metrics.isNotEmpty && outlineProgress > 0) {
-      final metric = metrics.first;
-      final trace = metric.extractPath(0, metric.length * outlineProgress);
-      final tracePaint = Paint()
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 3.2 + (1.2 * idlePulseStrength)
-        ..strokeCap = StrokeCap.round
-        ..strokeJoin = StrokeJoin.round
-        ..color = finalAccent.withValues(alpha: 0.96);
-      canvas.drawPath(trace, tracePaint);
-    }
-  }
-
-  void _drawScanResolvePulse(
-    Canvas canvas, {
-    required Offset center,
-    required double radius,
-    required Color color,
-    required double progress,
-    required double radiusBias,
-    double alphaScale = 1,
-  }) {
-    if (progress <= 0 || progress >= 1) {
-      return;
-    }
-    final visibility = math.sin(progress * math.pi).clamp(0.0, 1.0).toDouble();
-    if (visibility <= 0) {
-      return;
-    }
-    final expansion = Curves.easeOutCubic.transform(progress);
-    final pulseRadius = radius * (0.92 + radiusBias + (0.54 * expansion));
-    final pulsePaint = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 4.8 - (3.2 * progress)
-      ..color = color.withValues(alpha: 0.82 * visibility * alphaScale);
-    canvas.drawCircle(center, pulseRadius, pulsePaint);
-
-    final washRadius = radius * (1.0 + radiusBias + (0.46 * expansion));
-    final washPaint = Paint()
-      ..shader = RadialGradient(
-        colors: [
-          color.withValues(alpha: 0.2 * visibility * alphaScale),
-          color.withValues(alpha: 0.06 * visibility * alphaScale),
-          Colors.transparent,
-        ],
-        stops: const [0.0, 0.56, 1.0],
-      ).createShader(Rect.fromCircle(center: center, radius: washRadius));
-    canvas.drawCircle(center, washRadius, washPaint);
-  }
-
-  double _progressWindow(double value, double start, double end) {
-    if (value <= start) {
-      return 0;
-    }
-    if (value >= end) {
-      return 1;
-    }
-    return ((value - start) / (end - start)).clamp(0.0, 1.0).toDouble();
-  }
-
-  ThreatRegionConfig? _regionById(String? regionId) {
-    if (regionId == null) {
-      return null;
-    }
-    final matches = regions.where((region) => region.id == regionId);
-    return matches.isEmpty ? null : matches.first;
-  }
-
   double _hashUnit(int seed, int salt) {
     final raw = math.sin((seed * 12.9898) + (salt * 78.233)) * 43758.5453;
     return raw - raw.floorToDouble();
@@ -1524,9 +1308,6 @@ class _ThreatRegionMapPainter extends CustomPainter {
         oldDelegate.echoCounts != echoCounts ||
         oldDelegate.selectedRegionId != selectedRegionId ||
         oldDelegate.previewRegionId != previewRegionId ||
-        oldDelegate.scanOriginRegionId != scanOriginRegionId ||
-        oldDelegate.scanHitRegionId != scanHitRegionId ||
-        oldDelegate.scanProgress != scanProgress ||
         oldDelegate.zoomScale != zoomScale;
   }
 }
@@ -1633,28 +1414,19 @@ class EnemyPullSheet extends StatefulWidget {
   State<EnemyPullSheet> createState() => _EnemyPullSheetState();
 }
 
-class _EnemyPullSheetState extends State<EnemyPullSheet>
-    with SingleTickerProviderStateMixin {
+class _EnemyPullSheetState extends State<EnemyPullSheet> {
   static const int _rewardedTicketGrant = 5;
 
-  late final AnimationController _scanPulseController;
-  ThreatRegionScanResult? _scanPulseResult;
-  String? _scanPulseOriginRegionId;
-  bool _scanPulseActive = false;
   bool _revealBusy = false;
   bool _rewardAdBusy = false;
   _ThreatPullTab _tab = _ThreatPullTab.enemies;
 
   LightcoreController get controller => widget.controller;
-  bool get _scanBusy => _revealBusy || _scanPulseActive;
+  bool get _scanBusy => _revealBusy;
 
   @override
   void initState() {
     super.initState();
-    _scanPulseController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1050),
-    );
     _tab = _preferredInitialPullTab(widget.controller);
     widget.controller.addListener(_handleControllerChange);
   }
@@ -1673,7 +1445,6 @@ class _EnemyPullSheetState extends State<EnemyPullSheet>
   @override
   void dispose() {
     widget.controller.removeListener(_handleControllerChange);
-    _scanPulseController.dispose();
     super.dispose();
   }
 
@@ -1719,10 +1490,10 @@ class _EnemyPullSheetState extends State<EnemyPullSheet>
                 );
                 final sheetTitle = _tab == _ThreatPullTab.bosses
                     ? 'Regional Bosses'
-                    : 'Threat Scans';
+                    : 'Enemy Research';
                 final closeTooltip = _tab == _ThreatPullTab.bosses
                     ? 'Close regional bosses'
-                    : 'Close threat scans';
+                    : 'Close enemy research';
                 return ListView(
                   children: [
                     Row(
@@ -1969,7 +1740,7 @@ class _EnemyPullSheetState extends State<EnemyPullSheet>
                       ),
                     ] else ...[
                       _ThreatScanSection(
-                        title: 'Threat Map',
+                        title: 'Enemy Research Cards',
                         tint: enemyTint,
                         icon: LightcoreIcons.threatScan,
                         progress: controller.summoningLevelProgress,
@@ -1978,8 +1749,8 @@ class _EnemyPullSheetState extends State<EnemyPullSheet>
                             ? 'MAX'
                             : '${controller.pullsToNextSummoningLevel}',
                         statusLabel: controller.isSummoningLevelMaxed
-                            ? 'Scan level maxed'
-                            : '${controller.pullsToNextSummoningLevel} to Scan Lv ${controller.nextSummoningLevel}',
+                            ? 'Research level maxed'
+                            : '${controller.pullsToNextSummoningLevel} to Research Lv ${controller.nextSummoningLevel}',
                         trailing: IconButton.filledTonal(
                           onPressed: () => _showPullRates(context),
                           tooltip: 'Show threat rates',
@@ -2005,16 +1776,11 @@ class _EnemyPullSheetState extends State<EnemyPullSheet>
                             ),
                             const SizedBox(height: 12),
                             AnimatedBuilder(
-                              animation: _scanPulseController,
-                              builder: (context, _) {
-                                return _ThreatRegionMapPanel(
-                                  controller: controller,
-                                  compact: true,
-                                  scanOriginRegionId: _scanPulseOriginRegionId,
-                                  scanHitRegionId: _scanPulseResult?.region.id,
-                                  scanProgress: _scanPulseController.value,
-                                );
-                              },
+                              animation: controller,
+                              builder: (context, _) =>
+                                  _EnemyResearchDeckPreview(
+                                    controller: controller,
+                                  ),
                             ),
                             if (!controller.fullThreatMapUnlocked) ...[
                               const SizedBox(height: 12),
@@ -2056,7 +1822,6 @@ class _EnemyPullSheetState extends State<EnemyPullSheet>
                                         child: _TicketButton(
                                           label: '1',
                                           enabled:
-                                              controller.canScanThreatMap &&
                                               controller.enemyTickets >= 1 &&
                                               !_scanBusy,
                                           onPressed: () =>
@@ -2068,7 +1833,6 @@ class _EnemyPullSheetState extends State<EnemyPullSheet>
                                       _TicketButton(
                                         label: '10+',
                                         enabled:
-                                            controller.canScanThreatMap &&
                                             controller.enemyTickets >= 10 &&
                                             !controller
                                                 .tutorialHighlightsEnemySinglePullButton &&
@@ -2081,7 +1845,6 @@ class _EnemyPullSheetState extends State<EnemyPullSheet>
                                       _TicketButton(
                                         label: 'MAX',
                                         enabled:
-                                            controller.canScanThreatMap &&
                                             controller.enemyTickets > 1 &&
                                             !controller
                                                 .tutorialHighlightsEnemySinglePullButton &&
@@ -2131,38 +1894,36 @@ class _EnemyPullSheetState extends State<EnemyPullSheet>
   }
 
   Future<void> _openTickets(BuildContext context, int count) async {
-    if (_scanBusy ||
-        !controller.canScanThreatMap ||
-        controller.enemyTickets < count) {
+    if (_scanBusy || controller.enemyTickets < count) {
       return;
     }
-    final originRegionId = controller.selectedThreatRegionId;
-    final result = controller.scanThreatMap(count: count);
-    if (result == null) {
-      return;
+    setState(() => _revealBusy = true);
+    try {
+      final pulls = controller.tutorialHighlightsEnemySinglePullButton
+          ? controller.tutorialOpenEnemyTickets(count)
+          : controller.openEnemyTickets(count);
+      if (pulls.isEmpty || !context.mounted) {
+        return;
+      }
+      await showDialog<void>(
+        context: context,
+        barrierDismissible: false,
+        builder: (dialogContext) => _EnemyPackRevealDialog(
+          pulls: pulls,
+          highestAvailableRarity: controller.highestAvailableEnemyPullRarity,
+          secondHighestAvailableRarity:
+              controller.secondHighestAvailableEnemyPullRarity,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _revealBusy = false);
+      }
     }
-    setState(() {
-      _scanPulseOriginRegionId =
-          originRegionId ?? controller.selectedThreatRegionId;
-      _scanPulseResult = result;
-      _scanPulseActive = true;
-    });
-    await _scanPulseController.forward(from: 0);
-    if (mounted) {
-      setState(() {
-        _scanPulseActive = false;
-      });
-    }
-    if (!context.mounted) {
-      return;
-    }
-    await _showThreatMapScanResult(context, result);
   }
 
   Future<void> _openBatchTickets(BuildContext context) async {
-    if (_scanBusy ||
-        !controller.canScanThreatMap ||
-        controller.enemyTickets < 10) {
+    if (_scanBusy || controller.enemyTickets < 10) {
       return;
     }
     final count = await _showBatchOpenSheet(
@@ -2178,19 +1939,33 @@ class _EnemyPullSheetState extends State<EnemyPullSheet>
   }
 
   Future<void> _openMaxTickets(BuildContext context) async {
-    if (_scanBusy ||
-        !controller.canScanThreatMap ||
-        controller.enemyTickets <= 0) {
+    if (_scanBusy || controller.enemyTickets <= 0) {
       return;
     }
     await _openTickets(context, controller.enemyTickets);
+  }
+
+  Future<void> _openMapScanTickets(BuildContext context, int count) async {
+    if (_scanBusy ||
+        !controller.canScanThreatMap ||
+        controller.enemyTickets < count) {
+      return;
+    }
+    final result = controller.scanThreatMap(count: count);
+    if (result == null) {
+      return;
+    }
+    if (!context.mounted) {
+      return;
+    }
+    await _showThreatMapScanResult(context, result);
   }
 
   Future<void> _openBossTickets(BuildContext context, int count) async {
     if (_scanBusy || !controller.canScanThreatMap) {
       return;
     }
-    await _openTickets(context, count);
+    await _openMapScanTickets(context, count);
   }
 
   Future<void> _openBossBatchTickets(BuildContext context) async {

@@ -288,6 +288,10 @@ class LightcoreBattleGame extends FlameGame with ScaleDetector {
       }
       return;
     }
+    final tappedEnemyId = _hitTestEnemy(pointer);
+    if (tappedEnemyId != null && controller.focusBattleEnemy(tappedEnemyId)) {
+      return;
+    }
     final tappedIndex = _hitTestSlot(pointer);
     if (tappedIndex != null) {
       onSlotTap(tappedIndex);

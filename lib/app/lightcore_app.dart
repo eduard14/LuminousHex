@@ -18,6 +18,7 @@ import '../theme/lightcore_palette.dart';
 import '../theme/lightcore_theme.dart';
 import '../widgets/lightcore_loading_screen.dart';
 import '../widgets/lightcore_screen_transition.dart';
+import '../widgets/lemon_goose_splash_screen.dart';
 import 'lightcore_build_info.dart';
 import 'lightcore_bootstrap.dart';
 import 'lightcore_dev_flags.dart';
@@ -29,9 +30,10 @@ enum _GoogleCollisionAction {
 }
 
 class LightcoreApp extends StatefulWidget {
-  const LightcoreApp({super.key, this.backend});
+  const LightcoreApp({super.key, this.backend, this.showStudioSplash = true});
 
   final FirebaseLightcoreBackend? backend;
+  final bool showStudioSplash;
 
   @override
   State<LightcoreApp> createState() => _LightcoreAppState();
@@ -43,6 +45,7 @@ class _LightcoreAppState extends State<LightcoreApp>
   static const Duration _serverSyncInterval = Duration(minutes: 3);
   static const Duration _socialOverviewRefreshInterval = Duration(minutes: 3);
   static const Duration _screenLinkDuration = Duration(milliseconds: 820);
+  static const Duration _studioSplashDuration = Duration(milliseconds: 1050);
   static const int _maxMissedServerSyncs = 2;
 
   late final LightcoreSessionStore _sessionStore;
@@ -60,6 +63,7 @@ class _LightcoreAppState extends State<LightcoreApp>
   Timer? _cloudSaveTimer;
   Timer? _serverSyncTimer;
   Timer? _socialOverviewTimer;
+  Timer? _studioSplashTimer;
   LightcoreWebForegroundSubscription? _webForegroundSubscription;
   LightcoreOfflineClaimResult? _startupOfflineClaim;
   _ResolvedClientVersion _clientVersion = const _ResolvedClientVersion(
@@ -67,6 +71,7 @@ class _LightcoreAppState extends State<LightcoreApp>
     buildNumber: LightcoreBuildInfo.buildNumber,
   );
   bool _enteredGame = false;
+  bool _showStudioSplash = true;
   bool _isBootstrapping = true;
   bool _isLinkingScreen = false;
   bool _authBusy = false;
@@ -121,6 +126,14 @@ class _LightcoreAppState extends State<LightcoreApp>
     );
     _startupSocialInvite = LightcoreSocialInviteLink.maybeFromUri(Uri.base);
     _guestSession = createGuestSession();
+    _showStudioSplash = widget.showStudioSplash;
+    if (_showStudioSplash) {
+      _studioSplashTimer = Timer(_studioSplashDuration, () {
+        if (mounted) {
+          setState(() => _showStudioSplash = false);
+        }
+      });
+    }
     unawaited(_bootstrapMainMenu(reason: 'startup'));
   }
 
@@ -131,6 +144,7 @@ class _LightcoreAppState extends State<LightcoreApp>
     _cloudSaveTimer?.cancel();
     _serverSyncTimer?.cancel();
     _socialOverviewTimer?.cancel();
+    _studioSplashTimer?.cancel();
     unawaited(_runServerSync(forceCloudSave: true));
     unawaited(LightcoreAudio.instance.dispose());
     _observedController?.removeListener(_handleControllerChanged);
@@ -1512,58 +1526,66 @@ class _LightcoreAppState extends State<LightcoreApp>
   Widget build(BuildContext context) {
     final controller = _controller;
     final hasActiveGame = _enteredGame && controller != null;
-    final currentScreen = _isLinkingScreen
-        ? const KeyedSubtree(
-            key: ValueKey<String>('lightcore-screen-link'),
-            child: LightcoreLoadingScreen(
-              title: 'Opening Shell',
-              subtitle: 'Routing command through the tower lattice.',
-              statusLabel: 'Screen Link',
-              accent: LightcorePalette.aether,
-              signalLabels: ['SYNC', 'LINK', 'ARM'],
-              tips: [
-                'Tip: Dungeons stay joined once unlocked; start a run whenever your loadout is ready.',
-                'Tip: Tournament entry happens automatically when your first run starts.',
-                'Tip: Offline rewards are reconciled by the server before the shell opens.',
-              ],
-            ),
-          )
-        : hasActiveGame
-        ? KeyedSubtree(
-            key: const ValueKey<String>('lightcore-shell'),
-            child: LightcoreShell(
-              controller: controller,
-              backend: _backend,
-              battleSurfaceGeneration: _battleSurfaceGeneration,
-              clientDisplayVersion: _clientVersion.displayVersion,
-              initialOfflineClaim: _startupOfflineClaim,
-              initialSocialInvite: _startupSocialInvite,
-              authBusy: _authBusy,
-              musicEnabled: _musicEnabled,
-              soundEffectsEnabled: _soundEffectsEnabled,
-              onMusicEnabledChanged: _setMusicEnabled,
-              onSoundEffectsEnabledChanged: _setSoundEffectsEnabled,
-              onGoogleSignIn: _signInWithGoogleFromSettings,
-              onSignOut: _signOutToGuest,
-            ),
-          )
-        : KeyedSubtree(
-            key: const ValueKey<String>('lightcore-main-menu'),
-            child: LightcoreMainMenuScreen(
-              guestSession: _guestSession,
-              bootstrapReport: _bootstrapReport,
-              guideProfile: _guideProfile,
-              isLoading: _isBootstrapping,
-              onEnterGame: _enterGame,
-              onSelectGuide: _selectGuide,
-              onRetryBootstrap: () => unawaited(_bootstrapMainMenu()),
-              authBusy: _authBusy,
-              sessionNotice: _sessionNotice,
-              skipGuestSignInPrompt: _skipGuestSignInPrompt,
-              onGoogleSignIn: _signInWithGoogle,
-              onSkipGuestSignInPromptChanged: _setSkipGuestSignInPrompt,
-            ),
-          );
+    final Widget currentScreen;
+    if (_showStudioSplash) {
+      currentScreen = const KeyedSubtree(
+        key: ValueKey<String>('lemon-goose-splash'),
+        child: LemonGooseSplashScreen(),
+      );
+    } else if (_isLinkingScreen) {
+      currentScreen = const KeyedSubtree(
+        key: ValueKey<String>('lightcore-screen-link'),
+        child: LightcoreLoadingScreen(
+          title: 'Opening Shell',
+          subtitle: 'Routing command through the tower lattice.',
+          statusLabel: 'Screen Link',
+          accent: LightcorePalette.aether,
+          signalLabels: ['SYNC', 'LINK', 'ARM'],
+          tips: [
+            'Tip: Dungeons stay joined once unlocked; start a run whenever your loadout is ready.',
+            'Tip: Tournament entry happens automatically when your first run starts.',
+            'Tip: Offline rewards are reconciled by the server before the shell opens.',
+          ],
+        ),
+      );
+    } else if (hasActiveGame) {
+      currentScreen = KeyedSubtree(
+        key: const ValueKey<String>('lightcore-shell'),
+        child: LightcoreShell(
+          controller: controller,
+          backend: _backend,
+          battleSurfaceGeneration: _battleSurfaceGeneration,
+          clientDisplayVersion: _clientVersion.displayVersion,
+          initialOfflineClaim: _startupOfflineClaim,
+          initialSocialInvite: _startupSocialInvite,
+          authBusy: _authBusy,
+          musicEnabled: _musicEnabled,
+          soundEffectsEnabled: _soundEffectsEnabled,
+          onMusicEnabledChanged: _setMusicEnabled,
+          onSoundEffectsEnabledChanged: _setSoundEffectsEnabled,
+          onGoogleSignIn: _signInWithGoogleFromSettings,
+          onSignOut: _signOutToGuest,
+        ),
+      );
+    } else {
+      currentScreen = KeyedSubtree(
+        key: const ValueKey<String>('lightcore-main-menu'),
+        child: LightcoreMainMenuScreen(
+          guestSession: _guestSession,
+          bootstrapReport: _bootstrapReport,
+          guideProfile: _guideProfile,
+          isLoading: _isBootstrapping,
+          onEnterGame: _enterGame,
+          onSelectGuide: _selectGuide,
+          onRetryBootstrap: () => unawaited(_bootstrapMainMenu()),
+          authBusy: _authBusy,
+          sessionNotice: _sessionNotice,
+          skipGuestSignInPrompt: _skipGuestSignInPrompt,
+          onGoogleSignIn: _signInWithGoogle,
+          onSkipGuestSignInPromptChanged: _setSkipGuestSignInPrompt,
+        ),
+      );
+    }
 
     return MaterialApp(
       debugShowCheckedModeBanner: false,

@@ -2,7 +2,7 @@ part of '../lightcore_controller.dart';
 
 extension LightcoreControllerBattleEnemyActions on LightcoreController {
   List<PackPullResult> openEnemyTickets(int count) {
-    if (!fullThreatMapUnlocked || count <= 0 || enemyTickets < count) {
+    if (count <= 0 || enemyTickets < count) {
       return const <PackPullResult>[];
     }
 
@@ -586,6 +586,8 @@ extension LightcoreControllerBattleEnemyActions on LightcoreController {
     }
 
     _enemyTargetCount = nextValue;
+    _farmSwarmSize = nextValue;
+    _invalidateValidatedFarm();
     if (_tutorialStep == LightcoreTutorialStep.adjustEnemyCount &&
         nextValue > enemyTargetFloor) {
       _tutorialEnemyCountAdjusted = true;
@@ -618,6 +620,8 @@ extension LightcoreControllerBattleEnemyActions on LightcoreController {
     } else {
       _enemyTargetCount = _normalizeEnemyTargetCount(_enemyTargetCount);
     }
+    _farmSwarmSize = _enemyTargetCount;
+    _invalidateValidatedFarm();
     _showBanner('Swarm ceiling raised to $nextMax anomalies.');
     _notifyNow();
     return true;

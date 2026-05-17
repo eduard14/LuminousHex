@@ -266,12 +266,17 @@ class _ThreatMapStatusBar extends StatelessWidget {
     final challengeRegion = challenge == null
         ? null
         : controller.threatRegionConfigById(challenge.regionId);
+    final validation = controller.activeThreatRegionFarmValidation;
+    final validationRegion = validation == null
+        ? null
+        : controller.threatRegionConfigById(validation.regionId);
     return Wrap(
       spacing: 8,
       runSpacing: 8,
       children: [
         _MapChip(label: '${controller.enemyTickets} scans'),
         _MapChip(label: 'Scan Lv ${controller.summoningLevel}'),
+        _MapChip(label: 'Swarm ${controller.farmSwarmSize}'),
         _MapChip(label: '${controller.fullyStabilizedRegionCount} stable'),
         if (!controller.isSummoningLevelMaxed)
           _MapChip(
@@ -283,6 +288,12 @@ class _ThreatMapStatusBar extends StatelessWidget {
           _MapChip(
             label: 'Challenge: ${challengeRegion.name}',
             tint: LightcorePalette.warning,
+          ),
+        if (validationRegion != null && validation != null)
+          _MapChip(
+            label:
+                'Farm ${validation.waveIndex + 1}/${LightcoreController.farmValidationWaveCount}: ${validationRegion.name}',
+            tint: LightcorePalette.aether,
           ),
       ],
     );
@@ -1131,6 +1142,8 @@ class _ThreatRegionIntelDialog extends StatelessWidget {
         state != null && state.stabilizedLevel >= region.stabilizationLayers;
     final activeChallenge = controller.activeThreatRegionChallenge;
     final activeHere = activeChallenge?.regionId == region.id;
+    final activeValidation = controller.activeThreatRegionFarmValidation;
+    final validationHere = activeValidation?.regionId == region.id;
     final bossNames = _bossNames(region);
     final anomalyNames = _anomalyNames(region);
 
@@ -1235,12 +1248,22 @@ class _ThreatRegionIntelDialog extends StatelessWidget {
                       ),
                       _MapChip(label: _directorStatus(controller, state)),
                       _MapChip(
-                        label: activeHere
+                        label: controller.validatedFarmRegionId == region.id
+                            ? 'Offline validated'
+                            : 'Offline pending',
+                        tint: controller.validatedFarmRegionId == region.id
+                            ? LightcorePalette.success
+                            : LightcorePalette.warning,
+                      ),
+                      _MapChip(
+                        label: validationHere
+                            ? _farmValidationStatus(controller)
+                            : activeHere
                             ? _challengeStatus(controller)
                             : region.hasDoubleBoss
                             ? 'Final: 2 apex'
                             : 'Final: 1 apex',
-                        tint: activeHere
+                        tint: validationHere || activeHere
                             ? LightcorePalette.warning
                             : LightcorePalette.mist,
                       ),
@@ -1282,6 +1305,37 @@ class _ThreatRegionIntelDialog extends StatelessWidget {
                                 : activeHere
                                 ? 'Active'
                                 : 'Challenge Lv ${(state?.stabilizedLevel ?? 0) + 1}',
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed:
+                              controller.canStartThreatRegionFarmValidation(
+                                region.id,
+                              )
+                              ? () {
+                                  final started = controller
+                                      .startThreatRegionFarmValidation(
+                                        region.id,
+                                      );
+                                  if (started) {
+                                    Navigator.of(context).maybePop();
+                                  }
+                                }
+                              : null,
+                          icon: Icon(
+                            controller.validatedFarmRegionId == region.id
+                                ? Icons.verified_rounded
+                                : Icons.waves_rounded,
+                          ),
+                          label: Text(
+                            validationHere
+                                ? 'Farm Active'
+                                : controller.validatedFarmRegionId == region.id
+                                ? 'Revalidate'
+                                : 'Validate Farm',
                           ),
                         ),
                       ),
@@ -1459,6 +1513,16 @@ String _challengeStatus(LightcoreController controller) {
   final required = controller.activeThreatRegionRequiredBossCount;
   final bossText = required <= 0 ? '' : ' • Apex $defeated/$required';
   return 'Active ${_formatDuration(remaining)}$bossText';
+}
+
+String _farmValidationStatus(LightcoreController controller) {
+  final validation = controller.activeThreatRegionFarmValidation;
+  if (validation == null) {
+    return 'Farm idle';
+  }
+  final remaining = controller.activeThreatRegionFarmValidationRemainingSeconds
+      .ceil();
+  return 'Farm wave ${validation.waveIndex + 1}/${LightcoreController.farmValidationWaveCount} • ${_formatDuration(remaining)}';
 }
 
 String _formatDuration(int totalSeconds) {

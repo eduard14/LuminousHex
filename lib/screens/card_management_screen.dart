@@ -309,7 +309,7 @@ class CardManagementScreen extends StatelessWidget {
                   ? 'Build all ${LightcoreController.slotCount} outer towers in this Layer 1 shell before Threat Directors can be assigned.'
                   : controller.enemyManagers.isEmpty
                   ? 'No Threat Directors in inventory yet. Locked roster previews are collapsed below.'
-                  : 'Assign a Director to the selected Threat Map region, then restabilize that region to validate offline output.',
+                  : 'Assign a Director to the selected Threat Map region, then run Farm Validation to validate offline output.',
             ),
             const SizedBox(height: 10),
             if (controller.enemyManagers.isEmpty) ...[

@@ -1,7 +1,7 @@
 part of '../lightcore_controller.dart';
 
 extension LightcoreControllerThreatRegions on LightcoreController {
-  static const double threatRegionChallengeSeconds = 300;
+  static const double threatRegionChallengeSeconds = 90;
   static const double threatRegionMinimumStabilityPercent = 70;
 
   List<ThreatRegionState> _createThreatRegionStates() {
@@ -44,6 +44,51 @@ extension LightcoreControllerThreatRegions on LightcoreController {
 
   ThreatRegionChallengeState? get activeThreatRegionChallenge =>
       _threatRegionChallenge;
+
+  ThreatRegionFarmValidationState? get activeThreatRegionFarmValidation =>
+      _threatRegionFarmValidation;
+
+  int get farmSwarmSize => _farmSwarmSize;
+
+  int get validatedFarmSwarmSize => _validatedFarmSwarmSize;
+
+  String? get validatedFarmRegionId => _validatedFarmRegionId;
+
+  int get validatedFarmStabilizedLevel => _validatedFarmStabilizedLevel;
+
+  String? get validatedFarmThreatDirectorId => _validatedFarmThreatDirectorId;
+
+  double get validatedFarmEfficiency => _validatedFarmEfficiency;
+
+  double get validatedFarmKillsPerHour => _validatedFarmKillsPerHour;
+
+  bool get canRerollFarmSwarmSize =>
+      swarmMagnets >= swarmMagnetRerollCost && !activeLayerPassiveOnly;
+
+  double get activeThreatRegionFarmValidationWaveProgress {
+    final validation = _threatRegionFarmValidation;
+    if (validation == null) {
+      return 0;
+    }
+    return (validation.waveElapsedSeconds /
+            _farmValidationWaveSeconds(validation))
+        .clamp(0.0, 1.0);
+  }
+
+  double get activeThreatRegionFarmValidationRemainingSeconds {
+    final validation = _threatRegionFarmValidation;
+    if (validation == null) {
+      return 0;
+    }
+    final waveRemaining = max(
+      0.0,
+      _farmValidationWaveSeconds(validation) - validation.waveElapsedSeconds,
+    );
+    final remainingFullWaves =
+        farmValidationWaveCount - validation.waveIndex - 1;
+    return waveRemaining +
+        (remainingFullWaves * _farmValidationWaveSeconds(validation));
+  }
 
   double get activeThreatRegionChallengeProgress {
     final challenge = _threatRegionChallenge;
@@ -97,7 +142,9 @@ extension LightcoreControllerThreatRegions on LightcoreController {
 
   EnemyManagerState? get activeRegionThreatDirector {
     final regionId =
-        _threatRegionChallenge?.regionId ?? _selectedThreatRegionId;
+        _threatRegionFarmValidation?.regionId ??
+        _threatRegionChallenge?.regionId ??
+        _selectedThreatRegionId;
     final managerId = regionId == null
         ? null
         : threatRegionStateById(regionId)?.assignedThreatDirectorId;
@@ -144,7 +191,7 @@ extension LightcoreControllerThreatRegions on LightcoreController {
       enemyTickets > 0 && (fullThreatMapUnlocked || threatRegionsUnlocked);
 
   bool canStartThreatRegionChallenge(String regionId) {
-    if (_threatRegionChallenge != null) {
+    if (_threatRegionChallenge != null || _threatRegionFarmValidation != null) {
       return false;
     }
     final state = threatRegionStateById(regionId);
@@ -175,6 +222,18 @@ extension LightcoreControllerThreatRegions on LightcoreController {
 
   bool startFirstThreatChallenge() =>
       startThreatRegionChallenge(ThreatRegionLibrary.all.first.id);
+
+  bool canStartThreatRegionFarmValidation(String regionId) {
+    if (_threatRegionChallenge != null || _threatRegionFarmValidation != null) {
+      return false;
+    }
+    final state = threatRegionStateById(regionId);
+    final config = threatRegionConfigById(regionId);
+    if (state == null || config == null || !state.revealed) {
+      return false;
+    }
+    return state.stabilizedLevel > 0;
+  }
 
   bool get enemySuiteBuilderUnlocked =>
       overallLevel >= dailyDungeonUnlockLevel ||
@@ -219,34 +278,31 @@ extension LightcoreControllerThreatRegions on LightcoreController {
       fullyStabilizedRegionCount > 0 && hasCompleteEnemySuite;
 
   double get threatRegionOfflineKillsPerHour {
-    final regionId = _offlineRegionId;
+    final regionId = _validatedFarmRegionId ?? _offlineRegionId;
     final config = regionId == null ? null : threatRegionConfigById(regionId);
     final state = regionId == null ? null : threatRegionStateById(regionId);
-    if (config == null || state == null || _offlineRegionStabilizedLevel <= 0) {
+    final stabilizedLevel = _validatedFarmStabilizedLevel > 0
+        ? _validatedFarmStabilizedLevel
+        : _offlineRegionStabilizedLevel;
+    final directorId =
+        _validatedFarmThreatDirectorId ??
+        _offlineRegionValidatedThreatDirectorId;
+    if (config == null || state == null || stabilizedLevel <= 0) {
       return 0;
     }
-    if (state.assignedThreatDirectorId != state.validatedThreatDirectorId ||
-        state.validatedThreatDirectorId !=
-            _offlineRegionValidatedThreatDirectorId) {
+    if (state.assignedThreatDirectorId != directorId) {
       return 0;
     }
-    final layerRatio =
-        (_offlineRegionStabilizedLevel / config.stabilizationLayers).clamp(
-          0.0,
-          1.0,
-        );
-    final base = 18 + (config.ring * 18) + (config.rarity.index * 12);
-    final bossPressure = config.hasDoubleBoss ? 1.28 : 1.0;
-    final manager = _offlineRegionValidatedThreatDirectorId == null
-        ? null
-        : enemyManagerById(_offlineRegionValidatedThreatDirectorId!);
-    final managerScale = manager == null
-        ? 1.0
-        : (manager.rewardMultiplier / manager.stabilityDamageMultiplier).clamp(
-            0.65,
-            1.45,
-          );
-    return base * (0.4 + (layerRatio * 0.6)) * bossPressure * managerScale;
+    if (_validatedFarmKillsPerHour > 0) {
+      return min(maxOfflineKillsPerHour, _validatedFarmKillsPerHour);
+    }
+    return _estimateThreatRegionFarmKillsPerHour(
+      config: config,
+      stabilizedLevel: stabilizedLevel,
+      farmSwarmSize: _validatedFarmSwarmSize,
+      threatDirectorId: directorId,
+      efficiency: _validatedFarmEfficiency <= 0 ? 1 : _validatedFarmEfficiency,
+    );
   }
 
   String get threatScanRateInfo =>
@@ -443,12 +499,13 @@ extension LightcoreControllerThreatRegions on LightcoreController {
         clearValidatedThreatDirector: true,
       ),
     );
+    _invalidateValidatedFarmForRegion(regionId);
     if (_tutorialStep == LightcoreTutorialStep.assignEnemyManager) {
       _tutorialEnemyManagerAssigned = true;
       _syncTutorialStep(showBanner: false);
     }
     _showBanner(
-      'Threat Director assigned. Restabilize ${ThreatRegionLibrary.byId[regionId]?.name ?? 'region'} to validate offline output.',
+      'Threat Director assigned. Run Farm Validation in ${ThreatRegionLibrary.byId[regionId]?.name ?? 'region'} to validate offline output.',
     );
     _notifyNow();
     return true;
@@ -465,6 +522,7 @@ extension LightcoreControllerThreatRegions on LightcoreController {
         clearValidatedThreatDirector: true,
       ),
     );
+    _invalidateValidatedFarmForRegion(regionId);
     _showBanner(
       'Threat Director removed from ${ThreatRegionLibrary.byId[regionId]?.name ?? 'region'}.',
     );
@@ -500,7 +558,7 @@ extension LightcoreControllerThreatRegions on LightcoreController {
       finalLayer: targetLevel == config.stabilizationLayers,
       startedAtMillis: DateTime.now().millisecondsSinceEpoch,
     );
-    _raiseThreatRegionPressure(targetLevel);
+    _applyChallengeSwarmPressure();
     _threatRegionDefeatedBossIds.clear();
     if (_threatRegionChallenge!.finalLayer) {
       activeLayer.bossReady = true;
@@ -556,18 +614,14 @@ extension LightcoreControllerThreatRegions on LightcoreController {
         state.bestStabilityPercent,
         endingStabilityPercent,
       ),
-      validatedThreatDirectorId: state.assignedThreatDirectorId,
       fullyStabilizedAtMillis: fullyStabilized
           ? state.fullyStabilizedAtMillis ?? now
           : state.fullyStabilizedAtMillis,
     );
     _replaceThreatRegionState(nextState);
-    _offlineRegionId = config.id;
-    _offlineRegionStabilizedLevel = nextState.stabilizedLevel;
-    _offlineRegionValidatedThreatDirectorId =
-        nextState.validatedThreatDirectorId;
     _threatRegionChallenge = null;
     _threatRegionDefeatedBossIds.clear();
+    _applyFarmSwarmPressure();
     if (challenge.finalLayer) {
       _grantRegionBossRewards(config, resolvedDefeatedBossIds);
     }
@@ -588,18 +642,19 @@ extension LightcoreControllerThreatRegions on LightcoreController {
       if (scanReward > 0) LightcoreCurrencyLabels.rewardThreatScans(scanReward),
     ];
     _showBanner(
-      '${config.name} stabilized Lv ${nextState.stabilizedLevel}/${config.stabilizationLayers}. Reward: ${rewardParts.join(', ')}.',
+      '${config.name} stabilized Lv ${nextState.stabilizedLevel}/${config.stabilizationLayers}. Live farm unlocked. Reward: ${rewardParts.join(', ')}.',
     );
     _notifyNow();
     return true;
   }
 
-  void _raiseThreatRegionPressure(int targetLevel) {
-    final targetCount = min(
-      enemyTargetMax,
-      max(_enemyTargetCount, initialEnemyTarget + targetLevel),
-    );
-    _enemyTargetCount = _normalizeEnemyTargetCount(targetCount);
+  void _applyChallengeSwarmPressure() {
+    _enemyTargetCount = initialEnemyTarget;
+    activeLayer.enemyTargetCount = _enemyTargetCount;
+  }
+
+  void _applyFarmSwarmPressure() {
+    _enemyTargetCount = _normalizeEnemyTargetCount(_farmSwarmSize);
     activeLayer.enemyTargetCount = _enemyTargetCount;
   }
 
@@ -628,12 +683,146 @@ extension LightcoreControllerThreatRegions on LightcoreController {
     }
     final config = threatRegionConfigById(challenge.regionId);
     _threatRegionChallenge = null;
+    _applyFarmSwarmPressure();
     _showBanner(
       '${config?.name ?? 'Region'} challenge failed. Stabilization unchanged.',
     );
     _threatRegionDefeatedBossIds.clear();
     _notifyNow();
     return false;
+  }
+
+  bool rerollFarmSwarmSize() {
+    if (!canRerollFarmSwarmSize) {
+      _showBanner('Swarm Magnet rerolls need a Swarm Magnet charge.');
+      _notifyNow();
+      return false;
+    }
+    swarmMagnets -= swarmMagnetRerollCost;
+    final progressRatio =
+        fullyStabilizedRegionCount / max(1, ThreatRegionLibrary.all.length);
+    final dynamicMax =
+        (baseEnemyTargetMax +
+                ((maxActiveEnemies - baseEnemyTargetMax) * progressRatio))
+            .round();
+    final rollMax = max(
+      baseEnemyTargetMax,
+      dynamicMax,
+    ).clamp(initialEnemyTarget, maxActiveEnemies);
+    final nextSize =
+        initialEnemyTarget +
+        _packRandom.nextInt(rollMax - initialEnemyTarget + 1);
+    _farmSwarmSize = _normalizeEnemyTargetCount(nextSize);
+    _invalidateValidatedFarm();
+    if (_threatRegionChallenge == null && _threatRegionFarmValidation == null) {
+      _applyFarmSwarmPressure();
+    }
+    _showBanner('Swarm Magnet retuned to $_farmSwarmSize active anomalies.');
+    _notifyNow();
+    return true;
+  }
+
+  bool startThreatRegionFarmValidation(String regionId) {
+    if (!canStartThreatRegionFarmValidation(regionId)) {
+      _showBanner(
+        'Clear at least one stabilization level before Farm Validation.',
+      );
+      _notifyNow();
+      return false;
+    }
+    final config = threatRegionConfigById(regionId);
+    final state = threatRegionStateById(regionId);
+    if (config == null || state == null) {
+      return false;
+    }
+    _selectedThreatRegionId = regionId;
+    _activateThreatRegionLoadout(config);
+    _threatRegionFarmValidation = ThreatRegionFarmValidationState(
+      regionId: regionId,
+      targetStabilizationLevel: state.stabilizedLevel,
+      startedAtMillis: DateTime.now().millisecondsSinceEpoch,
+      farmSwarmSize: _farmSwarmSize,
+      threatDirectorId: state.assignedThreatDirectorId,
+      lowestStabilityPercent: _core.coreStability,
+    );
+    _applyFarmSwarmPressure();
+    _enemies.clear();
+    _pulses.clear();
+    _shots.clear();
+    _impacts.clear();
+    _blueFocusTargetEnemyIdBySlot.clear();
+    _clearFocusTarget();
+    activeLayer.bossReady = false;
+    activeLayer.normalKillsSinceBoss = 0;
+    _swarmActivated = true;
+    _spawnTimer = min(_spawnTimer, 0.01);
+    _showBanner(
+      '${config.name} Farm Validation started: survive $farmValidationWaveCount waves at $_farmSwarmSize swarm.',
+    );
+    _notifyNow();
+    return true;
+  }
+
+  bool failThreatRegionFarmValidation() {
+    final validation = _threatRegionFarmValidation;
+    if (validation == null) {
+      return false;
+    }
+    final config = threatRegionConfigById(validation.regionId);
+    _threatRegionFarmValidation = null;
+    _applyFarmSwarmPressure();
+    _showBanner(
+      '${config?.name ?? 'Region'} Farm Validation failed. Offline farm unchanged.',
+    );
+    _notifyNow();
+    return false;
+  }
+
+  bool completeThreatRegionFarmValidation({double? endingStabilityPercent}) {
+    final validation = _threatRegionFarmValidation;
+    if (validation == null) {
+      return false;
+    }
+    final config = threatRegionConfigById(validation.regionId);
+    final state = threatRegionStateById(validation.regionId);
+    if (config == null || state == null) {
+      _threatRegionFarmValidation = null;
+      return false;
+    }
+    final endingStability = endingStabilityPercent ?? _core.coreStability;
+    if (endingStability < threatRegionMinimumStabilityPercent) {
+      return failThreatRegionFarmValidation();
+    }
+    final efficiency =
+        min(validation.lowestStabilityPercent, endingStability) / 100;
+    final killsPerHour = _estimateThreatRegionFarmKillsPerHour(
+      config: config,
+      stabilizedLevel: validation.targetStabilizationLevel,
+      farmSwarmSize: validation.farmSwarmSize,
+      threatDirectorId: validation.threatDirectorId,
+      efficiency: efficiency,
+    );
+    _validatedFarmRegionId = config.id;
+    _validatedFarmSwarmSize = validation.farmSwarmSize;
+    _validatedFarmThreatDirectorId = validation.threatDirectorId;
+    _validatedFarmStabilizedLevel = validation.targetStabilizationLevel;
+    _validatedFarmEfficiency = efficiency.clamp(0.0, 1.0);
+    _validatedFarmKillsPerHour = killsPerHour;
+    _syncLegacyOfflineFarmFields();
+    _replaceThreatRegionState(
+      validation.threatDirectorId == null
+          ? state.copyWith(clearValidatedThreatDirector: true)
+          : state.copyWith(
+              validatedThreatDirectorId: validation.threatDirectorId,
+            ),
+    );
+    _threatRegionFarmValidation = null;
+    _applyFarmSwarmPressure();
+    _showBanner(
+      '${config.name} offline farm validated: ${killsPerHour.toStringAsFixed(0)} kills/hr.',
+    );
+    _notifyNow();
+    return true;
   }
 
   void _recordThreatRegionBossDefeat(EnemyConfig boss) {
@@ -663,6 +852,139 @@ extension LightcoreControllerThreatRegions on LightcoreController {
     completeThreatRegionChallenge(endingStabilityPercent: _core.coreStability);
   }
 
+  void _advanceThreatRegionFarmValidation(double battleDt) {
+    final validation = _threatRegionFarmValidation;
+    if (validation == null) {
+      return;
+    }
+    final lowestStability = min(
+      validation.lowestStabilityPercent,
+      _core.coreStability,
+    );
+    if (lowestStability < threatRegionMinimumStabilityPercent) {
+      failThreatRegionFarmValidation();
+      return;
+    }
+    final nextElapsed = validation.waveElapsedSeconds + battleDt;
+    final waveSeconds = _farmValidationWaveSeconds(validation);
+    if (nextElapsed < waveSeconds) {
+      _threatRegionFarmValidation = validation.copyWith(
+        waveElapsedSeconds: nextElapsed,
+        lowestStabilityPercent: lowestStability,
+      );
+      return;
+    }
+    final nextWaveIndex = validation.waveIndex + 1;
+    if (nextWaveIndex >= farmValidationWaveCount) {
+      _threatRegionFarmValidation = validation.copyWith(
+        waveElapsedSeconds: waveSeconds,
+        lowestStabilityPercent: lowestStability,
+      );
+      completeThreatRegionFarmValidation(
+        endingStabilityPercent: _core.coreStability,
+      );
+      return;
+    }
+    _threatRegionFarmValidation = validation.copyWith(
+      waveIndex: nextWaveIndex,
+      waveElapsedSeconds: 0,
+      lowestStabilityPercent: lowestStability,
+    );
+    _enemies.clear();
+    _pulses.clear();
+    _shots.clear();
+    _impacts.clear();
+    _blueFocusTargetEnemyIdBySlot.clear();
+    _clearFocusTarget();
+    _spawnTimer = 0.01;
+    _showBanner(
+      'Farm Validation wave ${nextWaveIndex + 1}/$farmValidationWaveCount.',
+      category: LightcoreNotificationCategory.battle,
+    );
+  }
+
+  double _farmValidationWaveSeconds(
+    ThreatRegionFarmValidationState validation,
+  ) {
+    final manager = validation.threatDirectorId == null
+        ? null
+        : enemyManagerById(validation.threatDirectorId!);
+    final frequency = _threatDirectorWaveFrequencyMultiplier(manager);
+    return (_farmValidationBaseWaveSeconds / frequency).clamp(18.0, 42.0);
+  }
+
+  double _threatDirectorWaveFrequencyMultiplier(EnemyManagerState? manager) {
+    return (manager?.spawnRateMultiplier ?? 1).clamp(0.65, 1.75);
+  }
+
+  double _estimateThreatRegionFarmKillsPerHour({
+    required ThreatRegionConfig config,
+    required int stabilizedLevel,
+    required int farmSwarmSize,
+    required String? threatDirectorId,
+    required double efficiency,
+  }) {
+    final levelRatio = (stabilizedLevel / config.stabilizationLayers).clamp(
+      0.0,
+      1.0,
+    );
+    final base = 18 + (config.ring * 18) + (config.rarity.index * 12);
+    final bossPressure = config.hasDoubleBoss ? 1.28 : 1.0;
+    final swarmScale = (farmSwarmSize / initialEnemyTarget).clamp(1.0, 8.0);
+    final manager = threatDirectorId == null
+        ? null
+        : enemyManagerById(threatDirectorId);
+    final managerRewardScale = manager == null
+        ? 1.0
+        : (manager.rewardMultiplier / manager.stabilityDamageMultiplier).clamp(
+            0.65,
+            1.45,
+          );
+    final waveFrequencyScale = _threatDirectorWaveFrequencyMultiplier(manager);
+    final stabilityScale = efficiency.clamp(0.7, 1.0);
+    return min(
+      maxOfflineKillsPerHour,
+      base *
+          (0.4 + (levelRatio * 0.6)) *
+          bossPressure *
+          swarmScale *
+          managerRewardScale *
+          waveFrequencyScale *
+          stabilityScale,
+    );
+  }
+
+  void _invalidateValidatedFarmForRegion(String regionId) {
+    if (_validatedFarmRegionId == regionId || _offlineRegionId == regionId) {
+      _invalidateValidatedFarm();
+    }
+  }
+
+  void _invalidateValidatedFarm() {
+    _validatedFarmRegionId = null;
+    _validatedFarmSwarmSize = _farmSwarmSize;
+    _validatedFarmThreatDirectorId = null;
+    _validatedFarmStabilizedLevel = 0;
+    _validatedFarmEfficiency = 0;
+    _validatedFarmKillsPerHour = 0;
+    _offlineRegionId = null;
+    _offlineRegionStabilizedLevel = 0;
+    _offlineRegionValidatedThreatDirectorId = null;
+    for (final state in _threatRegions) {
+      if (state.validatedThreatDirectorId != null) {
+        _replaceThreatRegionState(
+          state.copyWith(clearValidatedThreatDirector: true),
+        );
+      }
+    }
+  }
+
+  void _syncLegacyOfflineFarmFields() {
+    _offlineRegionId = _validatedFarmRegionId;
+    _offlineRegionStabilizedLevel = _validatedFarmStabilizedLevel;
+    _offlineRegionValidatedThreatDirectorId = _validatedFarmThreatDirectorId;
+  }
+
   void _activateThreatRegionLoadout(ThreatRegionConfig config) {
     _activeEnemyCardIds = List<String>.from(config.anomalyCardIds);
     activeLayer.activeEnemyCardIds = _activeEnemyCardIds;
@@ -673,10 +995,15 @@ extension LightcoreControllerThreatRegions on LightcoreController {
 
   List<EnemyCardState> get activeThreatRegionEnemyDeck {
     final challenge = _threatRegionChallenge;
-    if (challenge == null) {
+    final validation = _threatRegionFarmValidation;
+    if (challenge == null && validation == null) {
       return const <EnemyCardState>[];
     }
-    final config = threatRegionConfigById(challenge.regionId);
+    final regionId = challenge?.regionId ?? validation!.regionId;
+    final targetLevel =
+        challenge?.targetStabilizationLevel ??
+        validation!.targetStabilizationLevel;
+    final config = threatRegionConfigById(regionId);
     if (config == null) {
       return const <EnemyCardState>[];
     }
@@ -688,10 +1015,7 @@ extension LightcoreControllerThreatRegions on LightcoreController {
             config: enemy,
             unlocked: true,
             copies: 1,
-            level: max(
-              1,
-              min(enemy.rarity.levelCap, challenge.targetStabilizationLevel),
-            ),
+            level: max(1, min(enemy.rarity.levelCap, targetLevel)),
           ),
         )
         .toList(growable: false);
@@ -787,14 +1111,37 @@ extension LightcoreControllerThreatRegions on LightcoreController {
             : state.fullyStabilizedAtMillis,
       ),
     );
-    if (stabilizedLevel > 0) {
-      _offlineRegionId = regionId;
-      _offlineRegionStabilizedLevel = stabilizedLevel.clamp(
-        0,
-        config.stabilizationLayers,
-      );
-      _offlineRegionValidatedThreatDirectorId = state.validatedThreatDirectorId;
+  }
+
+  @visibleForTesting
+  void debugValidateThreatRegionFarm(
+    String regionId, {
+    int? swarmSize,
+    double stabilityPercent = 100,
+  }) {
+    final config = threatRegionConfigById(regionId);
+    final state = threatRegionStateById(regionId);
+    if (config == null || state == null || state.stabilizedLevel <= 0) {
+      return;
     }
+    _threatRegionFarmValidation = ThreatRegionFarmValidationState(
+      regionId: regionId,
+      targetStabilizationLevel: state.stabilizedLevel,
+      startedAtMillis: DateTime.now().millisecondsSinceEpoch,
+      farmSwarmSize: _normalizeEnemyTargetCount(swarmSize ?? _farmSwarmSize),
+      threatDirectorId: state.assignedThreatDirectorId,
+      waveIndex: farmValidationWaveCount - 1,
+      waveElapsedSeconds: _farmValidationBaseWaveSeconds,
+      lowestStabilityPercent: stabilityPercent,
+    );
+    completeThreatRegionFarmValidation(
+      endingStabilityPercent: stabilityPercent,
+    );
+  }
+
+  @visibleForTesting
+  void debugGrantSwarmMagnets(int count) {
+    swarmMagnets += max(0, count);
   }
 
   @visibleForTesting
@@ -945,6 +1292,13 @@ extension LightcoreControllerThreatRegions on LightcoreController {
   Map<String, dynamic> _serializeThreatMapState() {
     return <String, dynamic>{
       'selectedRegionId': _selectedThreatRegionId,
+      'farmSwarmSize': _farmSwarmSize,
+      'validatedFarmRegionId': _validatedFarmRegionId,
+      'validatedFarmSwarmSize': _validatedFarmSwarmSize,
+      'validatedFarmThreatDirectorId': _validatedFarmThreatDirectorId,
+      'validatedFarmStabilizedLevel': _validatedFarmStabilizedLevel,
+      'validatedFarmEfficiency': _validatedFarmEfficiency,
+      'validatedFarmKillsPerHour': _validatedFarmKillsPerHour,
       'offlineRegionId': _offlineRegionId,
       'offlineRegionStabilizedLevel': _offlineRegionStabilizedLevel,
       'offlineRegionValidatedThreatDirectorId':
@@ -1020,14 +1374,56 @@ extension LightcoreControllerThreatRegions on LightcoreController {
         true) {
       _selectedThreatRegionId = ThreatRegionLibrary.all.first.id;
     }
-    _offlineRegionId = _stringOrNull(data['offlineRegionId']);
-    _offlineRegionStabilizedLevel = _intValue(
-      data['offlineRegionStabilizedLevel'],
-      fallback: _offlineRegionStabilizedLevel,
+    _farmSwarmSize = _normalizeEnemyTargetCount(
+      _intValue(data['farmSwarmSize'], fallback: _enemyTargetCount),
     );
-    _offlineRegionValidatedThreatDirectorId = _stringOrNull(
-      data['offlineRegionValidatedThreatDirectorId'],
+    _validatedFarmRegionId =
+        _stringOrNull(data['validatedFarmRegionId']) ??
+        _stringOrNull(data['offlineRegionId']);
+    _validatedFarmSwarmSize = _normalizeEnemyTargetCount(
+      _intValue(data['validatedFarmSwarmSize'], fallback: _farmSwarmSize),
     );
+    _validatedFarmThreatDirectorId =
+        _stringOrNull(data['validatedFarmThreatDirectorId']) ??
+        _stringOrNull(data['offlineRegionValidatedThreatDirectorId']);
+    _validatedFarmStabilizedLevel = _intValue(
+      data['validatedFarmStabilizedLevel'],
+      fallback: _intValue(data['offlineRegionStabilizedLevel']),
+    );
+    _validatedFarmEfficiency = _doubleValue(
+      data['validatedFarmEfficiency'],
+      fallback: 1,
+    ).clamp(0.0, 1.0);
+    _validatedFarmKillsPerHour = _doubleValue(
+      data['validatedFarmKillsPerHour'],
+    ).clamp(0.0, maxOfflineKillsPerHour);
+    final validatedConfig = _validatedFarmRegionId == null
+        ? null
+        : threatRegionConfigById(_validatedFarmRegionId!);
+    if (validatedConfig == null || _validatedFarmStabilizedLevel <= 0) {
+      _validatedFarmRegionId = null;
+      _validatedFarmStabilizedLevel = 0;
+      _validatedFarmThreatDirectorId = null;
+      _validatedFarmEfficiency = 0;
+      _validatedFarmKillsPerHour = 0;
+    } else {
+      _validatedFarmStabilizedLevel = _validatedFarmStabilizedLevel.clamp(
+        0,
+        validatedConfig.stabilizationLayers,
+      );
+      if (_validatedFarmKillsPerHour <= 0) {
+        _validatedFarmKillsPerHour = _estimateThreatRegionFarmKillsPerHour(
+          config: validatedConfig,
+          stabilizedLevel: _validatedFarmStabilizedLevel,
+          farmSwarmSize: _validatedFarmSwarmSize,
+          threatDirectorId: _validatedFarmThreatDirectorId,
+          efficiency: _validatedFarmEfficiency <= 0
+              ? 1
+              : _validatedFarmEfficiency,
+        );
+      }
+    }
+    _syncLegacyOfflineFarmFields();
     _activeEnemySuite = _deserializeEnemySuiteState(
       _coerceMap(data['activeEnemySuite']),
     );

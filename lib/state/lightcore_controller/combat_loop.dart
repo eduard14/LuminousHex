@@ -73,12 +73,14 @@ extension LightcoreControllerCombatLoop on LightcoreController {
         _activateLocalhostReadyTowers();
       }
       _advancePulses(battleDt);
+      _advanceFocusTarget(battleDt);
       _advanceCoreTowerAutomation(battleDt);
       if (foreground) {
         _queueLocalhostCoreTap(battleDt);
       }
       _advanceEnemies(battleDt);
       _advanceThreatRegionChallenge(battleDt);
+      _advanceThreatRegionFarmValidation(battleDt);
       _fireCoreIfPossible(allowDefaultShot: false);
       _fireLayer2IfPossible();
       _updateFlowEfficiency();

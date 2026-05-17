@@ -381,6 +381,45 @@ void main() {
     expect(controller.shots.single.enemyId, isNot(pathCloserEnemy!.id));
   });
 
+  test('manual focus target overrides eligible close targeting', () {
+    final controller = LightcoreController();
+    addTearDown(controller.dispose);
+
+    controller.lumens = 1000;
+    controller.kills = LightcoreController.unlockKillsForOuterSlot(0);
+    expect(controller.buildTowerAt(0, TowerLibrary.whitePrism), isTrue);
+
+    final closeEnemy = controller.debugSpawnEnemyFromCard(
+      EnemyLibrary.basicWhite.id,
+      angle: 0,
+      radius: 120,
+      level: 8,
+    );
+    final focusedEnemy = controller.debugSpawnEnemyFromCard(
+      EnemyLibrary.basicWhite.id,
+      angle: pi,
+      radius: 260,
+      level: 8,
+    );
+    expect(closeEnemy, isNotNull);
+    expect(focusedEnemy, isNotNull);
+
+    expect(controller.focusBattleEnemy(focusedEnemy!.id), isTrue);
+    expect(controller.focusBattleEnemy(closeEnemy!.id), isFalse);
+    controller.debugSetAmmoQueue([
+      _corePacket(
+        projectileType: ProjectileType.starBolt,
+        payloadType: PayloadType.none,
+      ),
+    ]);
+
+    controller.tick(0.05);
+
+    expect(controller.shots, hasLength(1));
+    expect(controller.shots.single.enemyId, focusedEnemy.id);
+    expect(controller.focusTargetCooldownRemaining, greaterThan(0));
+  });
+
   test('green shield halo is passive, stackable, and skips generation', () {
     final single = LightcoreController(traitRandom: Random(3));
     addTearDown(single.dispose);

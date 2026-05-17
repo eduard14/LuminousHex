@@ -930,6 +930,14 @@ const int evenEntryTournamentPowerIndex =
 const int tournamentPowerIndexCap = LightcoreController.tournamentPowerIndexCap;
 const int minEnemyTarget = LightcoreController.minEnemyTarget;
 const int initialEnemyTarget = LightcoreController.initialEnemyTarget;
+const int farmValidationWaveCount = LightcoreController.farmValidationWaveCount;
+const int swarmMagnetRerollCost = LightcoreController.swarmMagnetRerollCost;
+const double focusTargetDurationSeconds =
+    LightcoreController.focusTargetDurationSeconds;
+const double focusTargetCooldownSeconds =
+    LightcoreController.focusTargetCooldownSeconds;
+const double _farmValidationBaseWaveSeconds =
+    LightcoreController._farmValidationBaseWaveSeconds;
 const int _layer3TrialEnemyCap = 18;
 const double _layer3TrialSpawnCadence = 0.22;
 const int baseEnemyTargetMax = LightcoreController.baseEnemyTargetMax;
@@ -1194,10 +1202,18 @@ class LightcoreController extends ChangeNotifier {
     _apexCores = _createApexCoreInventory();
     _activeEnemySuite = const EnemySuiteState();
     _selectedThreatRegionId = ThreatRegionLibrary.all.first.id;
-    _offlineRegionId = ThreatRegionLibrary.all.first.id;
+    _offlineRegionId = null;
     _offlineRegionStabilizedLevel = 0;
     _offlineRegionValidatedThreatDirectorId = null;
+    _farmSwarmSize = initialEnemyTarget;
+    _validatedFarmRegionId = null;
+    _validatedFarmSwarmSize = initialEnemyTarget;
+    _validatedFarmThreatDirectorId = null;
+    _validatedFarmStabilizedLevel = 0;
+    _validatedFarmEfficiency = 0;
+    _validatedFarmKillsPerHour = 0;
     _threatRegionChallenge = null;
+    _threatRegionFarmValidation = null;
     _activeBossEnemyCardId = BossEnemyLibrary.starterWhiteWarden.id;
     _seedStarterEnemyCards();
     _seedStarterManagers();
@@ -1309,6 +1325,11 @@ class LightcoreController extends ChangeNotifier {
   static const int _legacyEnemyTargetUpgradeStep = 8;
   static const int maxEnemyTargetUpgradeLevel =
       (maxActiveEnemies - baseEnemyTargetMax) ~/ enemyTargetUpgradeStep;
+  static const int farmValidationWaveCount = 3;
+  static const int swarmMagnetRerollCost = 1;
+  static const double focusTargetDurationSeconds = 5;
+  static const double focusTargetCooldownSeconds = 4;
+  static const double _farmValidationBaseWaveSeconds = 30;
   static const double _maxFlowEfficiency = 100;
   static const double _maxCoreStability = 100;
   static const double _minimumOutputEfficiency = 0.15;
@@ -1542,7 +1563,15 @@ class LightcoreController extends ChangeNotifier {
   String? _offlineRegionId;
   int _offlineRegionStabilizedLevel = 0;
   String? _offlineRegionValidatedThreatDirectorId;
+  int _farmSwarmSize = initialEnemyTarget;
+  String? _validatedFarmRegionId;
+  int _validatedFarmSwarmSize = initialEnemyTarget;
+  String? _validatedFarmThreatDirectorId;
+  int _validatedFarmStabilizedLevel = 0;
+  double _validatedFarmEfficiency = 0;
+  double _validatedFarmKillsPerHour = 0;
   ThreatRegionChallengeState? _threatRegionChallenge;
+  ThreatRegionFarmValidationState? _threatRegionFarmValidation;
   final Set<String> _threatRegionDefeatedBossIds = <String>{};
   late List<PlayerEquipmentItem> _equipmentInventory;
   late List<EnemyState> _enemies;
@@ -1596,6 +1625,7 @@ class LightcoreController extends ChangeNotifier {
   int bossTickets = 0;
   int bossCores = 0;
   int threatShards = 0;
+  int swarmMagnets = 0;
   int enemyPullCount = 0;
   int bossPullCount = 0;
   int towerManagerPullCount = 0;
@@ -1637,6 +1667,9 @@ class LightcoreController extends ChangeNotifier {
   String? _equippedHairCosmeticId;
   String? _equippedFaceCosmeticId;
   final Set<String> _unlockedProfileMedalIds = <String>{};
+  String? _focusedEnemyId;
+  double _focusTargetRemainingSeconds = 0;
+  double _focusTargetCooldownRemaining = 0;
 
   double _spawnTimer = 1.35;
   double _bannerTimer = 0;

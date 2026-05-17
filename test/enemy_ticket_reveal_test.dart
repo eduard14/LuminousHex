@@ -305,7 +305,7 @@ void main() {
     );
     await tester.pump();
 
-    expect(find.text('Threat Scans'), findsOneWidget);
+    expect(find.text('Enemy Research'), findsOneWidget);
     expect(find.text('Fake Threat Scan'), findsNothing);
     expect(find.text('Preview Only'), findsNothing);
     expect(
@@ -379,7 +379,7 @@ void main() {
     expect(find.text('Open 10'), findsOneWidget);
   });
 
-  testWidgets('max option resolves every available threat scan', (
+  testWidgets('max option resolves every available enemy research scan', (
     tester,
   ) async {
     final controller = LightcoreController();
@@ -404,7 +404,7 @@ void main() {
     await tester.pump();
 
     expect(controller.enemyTickets, 0);
-    expect(controller.lastEnemyPackPulls, isEmpty);
+    expect(controller.lastEnemyPackPulls, hasLength(9));
     expect(controller.enemyPullCount, 9);
 
     await tester.pump(const Duration(seconds: 13));
@@ -503,7 +503,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Threat Scans'), findsOneWidget);
+    expect(find.text('Enemy Research'), findsOneWidget);
     expect(find.text('Regional Bosses Locked'), findsNothing);
     expect(find.byTooltip('Show threat rates'), findsOneWidget);
     expect(find.byTooltip('Show boss reveal rates'), findsNothing);

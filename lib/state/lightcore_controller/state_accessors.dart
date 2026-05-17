@@ -193,6 +193,14 @@ extension LightcoreControllerStateAccessors on LightcoreController {
   UnmodifiableListView<EnemyState> get enemies =>
       UnmodifiableListView(_enemies);
 
+  String? get focusedEnemyId => _focusedEnemyId;
+
+  double get focusTargetRemainingSeconds => _focusTargetRemainingSeconds;
+
+  double get focusTargetCooldownRemaining => _focusTargetCooldownRemaining;
+
+  bool get canFocusBattleEnemy => _focusTargetCooldownRemaining <= 0;
+
   UnmodifiableListView<EnergyPulseState> get pulses =>
       UnmodifiableListView(_pulses);
 
@@ -974,8 +982,7 @@ extension LightcoreControllerStateAccessors on LightcoreController {
 
   double get ringProgress => builtTowerCount / slotCount;
 
-  bool get canOpenEnemyTickets =>
-      fullThreatMapUnlocked && enemyTickets >= enemyTicketCost;
+  bool get canOpenEnemyTickets => enemyTickets >= enemyTicketCost;
 
   bool get canOpenBossTickets =>
       bossHuntsUnlocked &&

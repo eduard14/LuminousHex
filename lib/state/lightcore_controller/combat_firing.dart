@@ -3,6 +3,66 @@ part of '../lightcore_controller.dart';
 const int _coreBlueFocusTargetKey = -1;
 
 extension LightcoreControllerCombatFiring on LightcoreController {
+  bool focusBattleEnemy(String enemyId) {
+    if (activeLayerPassiveOnly || _focusTargetCooldownRemaining > 0) {
+      return false;
+    }
+    final enemy = _enemyById(enemyId);
+    if (enemy == null) {
+      return false;
+    }
+    _focusedEnemyId = enemy.id;
+    _focusTargetRemainingSeconds = focusTargetDurationSeconds;
+    _focusTargetCooldownRemaining = focusTargetCooldownSeconds;
+    _showBanner(
+      '${enemy.config.name} focused.',
+      category: LightcoreNotificationCategory.battle,
+    );
+    _notifyNow();
+    return true;
+  }
+
+  void _advanceFocusTarget(double dt) {
+    _focusTargetCooldownRemaining = max(0, _focusTargetCooldownRemaining - dt);
+    final focusedId = _focusedEnemyId;
+    if (focusedId == null) {
+      return;
+    }
+    final stillAlive = _enemies.any((enemy) => enemy.id == focusedId);
+    if (!stillAlive) {
+      _clearFocusTarget();
+      return;
+    }
+    _focusTargetRemainingSeconds = max(0, _focusTargetRemainingSeconds - dt);
+    if (_focusTargetRemainingSeconds <= 0) {
+      _clearFocusTarget();
+    }
+  }
+
+  void _clearFocusTarget() {
+    _focusedEnemyId = null;
+    _focusTargetRemainingSeconds = 0;
+  }
+
+  EnemyState? _focusedEnemyTarget({
+    double? maxRadius,
+    Set<String> excludedEnemyIds = const <String>{},
+  }) {
+    final focusedId = _focusedEnemyId;
+    if (focusedId == null || excludedEnemyIds.contains(focusedId)) {
+      return null;
+    }
+    final enemy = _enemyById(focusedId);
+    if (enemy == null) {
+      _clearFocusTarget();
+      return null;
+    }
+    if (maxRadius != null && enemy.radius > maxRadius) {
+      return null;
+    }
+    return enemy;
+  }
+
   bool get canFirePrismRiftAimedShot =>
       !activeLayerPassiveOnly &&
       _core.fireCooldownRemaining <= 0 &&
@@ -439,6 +499,14 @@ extension LightcoreControllerCombatFiring on LightcoreController {
       return null;
     }
 
+    final focused = _focusedEnemyTarget(
+      maxRadius: maxRadius,
+      excludedEnemyIds: excludedEnemyIds,
+    );
+    if (focused != null) {
+      return focused;
+    }
+
     final boss = _priorityBossTarget(
       maxRadius: maxRadius,
       excludedEnemyIds: excludedEnemyIds,
@@ -549,6 +617,13 @@ extension LightcoreControllerCombatFiring on LightcoreController {
     if (_enemies.isEmpty) {
       return null;
     }
+    final focused = _focusedEnemyTarget(
+      maxRadius: maxRadius,
+      excludedEnemyIds: excludedEnemyIds,
+    );
+    if (focused != null) {
+      return focused;
+    }
     final boss = _priorityBossTarget(
       maxRadius: maxRadius,
       excludedEnemyIds: excludedEnemyIds,
@@ -599,6 +674,13 @@ extension LightcoreControllerCombatFiring on LightcoreController {
     required double maxRadius,
     Set<String> excludedEnemyIds = const <String>{},
   }) {
+    final focused = _focusedEnemyTarget(
+      maxRadius: maxRadius,
+      excludedEnemyIds: excludedEnemyIds,
+    );
+    if (focused != null) {
+      return focused;
+    }
     final sourceSlotIndex = packet.sourceSlotIndex;
     final focusTargetKey = sourceSlotIndex ?? _coreBlueFocusTargetKey;
     final lockedEnemyId = _blueFocusTargetEnemyIdBySlot[focusTargetKey];

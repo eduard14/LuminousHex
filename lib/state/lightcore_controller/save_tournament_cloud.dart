@@ -759,6 +759,7 @@ extension LightcoreControllerSaveTournamentCloud on LightcoreController {
         'bossTickets': 0,
         'bossCores': 0,
         'threatShards': threatShards,
+        'swarmMagnets': swarmMagnets,
         'enemyPullCount': enemyPullCount,
         'bossPullCount': bossPullCount,
         'towerManagerPullCount': towerManagerPullCount,
