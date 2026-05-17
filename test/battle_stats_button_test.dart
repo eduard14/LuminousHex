@@ -131,6 +131,13 @@ void main() {
     );
     expect(wrenchButton, findsOneWidget);
     expect(
+      find.descendant(
+        of: wrenchButton,
+        matching: find.byIcon(Icons.build_rounded),
+      ),
+      findsOneWidget,
+    );
+    expect(
       tester.getRect(wrenchButton).left,
       lessThan(tester.getRect(find.byType(BattleScreen)).center.dx),
     );
@@ -218,6 +225,42 @@ void main() {
     await tester.tap(selectionButton);
     await tester.pump(const Duration(milliseconds: 180));
 
+    expect(find.text('Tower Stats'), findsNothing);
+  });
+
+  testWidgets('building a tower closes controls until the wrench is tapped', (
+    tester,
+  ) async {
+    final controller = LightcoreController();
+    addTearDown(controller.dispose);
+    controller.debugDisableTutorial();
+    controller.lumens = 1000;
+    controller.kills = LightcoreController.unlockKillsForOuterSlot(0);
+    controller.selectCenter();
+
+    await _pumpBattleScreen(tester, controller);
+
+    await tester.tapAt(_slotCenter(tester, 0));
+    await tester.pump(const Duration(milliseconds: 50));
+
+    expect(find.text('Empty Hex 1'), findsOneWidget);
+
+    await tester.tap(find.text(TowerLibrary.redPrism.name));
+    await tester.pump(const Duration(milliseconds: 180));
+
+    expect(controller.slots[0].isFabricating, isTrue);
+    expect(find.text('Tower Stats'), findsNothing);
+    expect(find.text('Fabrication'), findsNothing);
+
+    final wrenchButton = find.byKey(
+      const ValueKey<String>('battle-tower-selection-button'),
+    );
+    expect(wrenchButton, findsOneWidget);
+
+    await tester.tap(wrenchButton);
+    await tester.pump(const Duration(milliseconds: 180));
+
+    expect(find.text('Fabrication'), findsOneWidget);
     expect(find.text('Tower Stats'), findsNothing);
   });
 

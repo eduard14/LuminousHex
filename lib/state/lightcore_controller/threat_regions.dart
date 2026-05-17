@@ -649,7 +649,10 @@ extension LightcoreControllerThreatRegions on LightcoreController {
   }
 
   void _applyChallengeSwarmPressure() {
-    _enemyTargetCount = initialEnemyTarget;
+    final targetLevel = _threatRegionChallenge?.targetStabilizationLevel ?? 1;
+    _enemyTargetCount = _normalizeEnemyTargetCount(
+      initialEnemyTarget + max(1, targetLevel),
+    );
     activeLayer.enemyTargetCount = _enemyTargetCount;
   }
 

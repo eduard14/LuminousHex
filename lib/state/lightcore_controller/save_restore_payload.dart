@@ -286,8 +286,15 @@ extension LightcoreControllerSaveRestorePayload on LightcoreController {
           resolvedActiveLayer;
       _viewLayerId = _liveLayerForLayer(requestedViewLayer).id;
       _runtimeLayerId = _liveLayerForLayer(requestedRuntimeLayer).id;
+      final restoredEnemyTargetCount = resolvedActiveLayer.enemyTargetCount;
       _loadLayer(resolvedActiveLayer);
       _applyFarmSwarmPressure();
+      if (restoredEnemyTargetCount > _enemyTargetCount) {
+        _enemyTargetCount = _normalizeEnemyTargetCount(
+          restoredEnemyTargetCount,
+        );
+        activeLayer.enemyTargetCount = _enemyTargetCount;
+      }
     }
     _completedTowerShells = _coerceList(payload['completedTowerShells'])
         .map((item) => _deserializeCompletedTowerShellState(_coerceMap(item)))

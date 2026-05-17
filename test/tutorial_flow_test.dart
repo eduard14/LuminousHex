@@ -484,7 +484,7 @@ void main() {
     expect(controller.pulses, hasLength(1));
     expect(controller.queuedCorePackets, 0);
     expect(controller.tutorialStep, LightcoreTutorialStep.waitForFirstHex);
-    expect(controller.tutorialHighlightsCoreStats, isTrue);
+    expect(controller.tutorialHighlightsCoreStats, isFalse);
   });
 
   test('same-color attacks are resisted', () {

@@ -133,7 +133,7 @@ void main() {
   });
 
   test(
-    'starter challenge uses standard pressure and rewards the next push',
+    'starter challenge raises pressure and rewards the next push',
     () {
       final controller = LightcoreController();
       addTearDown(controller.dispose);
@@ -153,7 +153,7 @@ void main() {
 
       expect(
         controller.enemyTargetCount,
-        LightcoreController.initialEnemyTarget,
+        greaterThan(baselineTargetCount),
       );
       expect(
         controller.activeThreatAssignmentGroupStats.anomalyCount,

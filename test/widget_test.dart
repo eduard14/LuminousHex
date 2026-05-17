@@ -1988,7 +1988,7 @@ void main() {
       find.text(
         'Tap the center Lightcore to wake the first shell and reveal where towers will go.',
       ),
-      findsOneWidget,
+      findsWidgets,
     );
     expect(find.byIcon(Icons.touch_app_rounded), findsOneWidget);
   });
@@ -2032,7 +2032,7 @@ void main() {
     );
   });
 
-  testWidgets('tracked quest shows details by default and can collapse', (
+  testWidgets('tracked quest starts collapsed and opens on demand', (
     tester,
   ) async {
     final controller = LightcoreController();
@@ -2048,11 +2048,25 @@ void main() {
     );
     expect(
       find.byKey(const ValueKey<String>('battle-quest-detail-card')),
-      findsOneWidget,
+      findsNothing,
     );
     expect(
       find.byKey(const ValueKey<String>('battle-quest-card-collapsed')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey<String>('battle-tutorial-banner')),
       findsNothing,
+    );
+
+    await tester.tap(
+      find.byKey(const ValueKey<String>('battle-quest-trigger-button')),
+    );
+    await _pumpTransition(tester);
+
+    expect(
+      find.byKey(const ValueKey<String>('battle-quest-detail-card')),
+      findsOneWidget,
     );
 
     await tester.tap(
@@ -2063,10 +2077,6 @@ void main() {
     expect(
       find.byKey(const ValueKey<String>('battle-quest-detail-card')),
       findsNothing,
-    );
-    expect(
-      find.byKey(const ValueKey<String>('battle-quest-card-collapsed')),
-      findsOneWidget,
     );
   });
 
@@ -2105,7 +2115,7 @@ void main() {
     );
     await _pumpTransition(tester);
 
-    expect(find.text('Queue a Pulse'), findsOneWidget);
+    expect(find.text('Queue a Pulse'), findsWidgets);
     expect(
       find.byKey(const ValueKey<String>('battle-quest-detail-card')),
       findsOneWidget,
@@ -2114,7 +2124,7 @@ void main() {
       find.text(
         'Close the open tower controls, then tap the charged first tower on the battlefield.',
       ),
-      findsOneWidget,
+      findsWidgets,
     );
   });
 

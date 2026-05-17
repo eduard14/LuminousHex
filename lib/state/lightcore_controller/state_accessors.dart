@@ -656,7 +656,6 @@ extension LightcoreControllerStateAccessors on LightcoreController {
       _tutorialStep == LightcoreTutorialStep.tapBattleCore ? 'TAP CORE' : null;
 
   bool get tutorialHighlightsCoreStats =>
-      _tutorialStep == LightcoreTutorialStep.waitForFirstHex ||
       _tutorialStep == LightcoreTutorialStep.readEffectiveGain ||
       _tutorialStep == LightcoreTutorialStep.autoQueueCheck;
 

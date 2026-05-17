@@ -500,14 +500,17 @@ class _BattleScreenState extends State<BattleScreen> {
     _logBattle('center-tap');
     LightcoreAudio.instance.playSfx(LightcoreSfx.uiTap);
     final controller = widget.controller;
+    final wasCorePanelOpen =
+        _panelFocus == _BattlePanelFocus.core && _selectionControlsVisible;
     controller.handleBattleCenterTap();
     setState(() {
       _statsTarget = const _BattleStatsTarget.core();
-      if (controller.tutorialStep == LightcoreTutorialStep.waitForFirstHex) {
+      if (wasCorePanelOpen) {
         _panelFocus = _BattlePanelFocus.core;
         _selectionControlsVisible = true;
-      } else if (_panelFocus != _BattlePanelFocus.core) {
+      } else {
         _panelFocus = _BattlePanelFocus.none;
+        _selectionControlsVisible = false;
       }
     });
   }
@@ -571,6 +574,22 @@ class _BattleScreenState extends State<BattleScreen> {
         });
         break;
     }
+  }
+
+  bool _buildTutorialTowerAt(int slotIndex, TowerConfig config) {
+    final started = widget.controller.tutorialStartTowerFabricationAt(
+      slotIndex,
+      config,
+    );
+    if (!started) {
+      return false;
+    }
+    setState(() {
+      _statsTarget = _BattleStatsTarget.slot(slotIndex);
+      _panelFocus = _BattlePanelFocus.none;
+      _selectionControlsVisible = false;
+    });
+    return true;
   }
 
   void _handleBackgroundTap() {
@@ -822,7 +841,7 @@ class _BattleScreenState extends State<BattleScreen> {
         return controller.tutorialHighlightsCoreStats
             ? targetOpen
                   ? 'Core stats'
-                  : 'Open core'
+                  : 'Open stats'
             : null;
       case _BattleStatsTargetKind.slot:
         final slotIndex = target.slotIndex;
@@ -842,7 +861,7 @@ class _BattleScreenState extends State<BattleScreen> {
   IconData _statsTargetIcon(_BattleStatsTarget target) {
     switch (target.kind) {
       case _BattleStatsTargetKind.core:
-        return Icons.flash_on_rounded;
+        return Icons.build_rounded;
       case _BattleStatsTargetKind.slot:
         return Icons.build_rounded;
     }
@@ -870,6 +889,7 @@ class _BattleScreenState extends State<BattleScreen> {
       selected: selected,
       onInspect: onInspect,
       panelFocus: panelFocus,
+      onBuildTower: _buildTutorialTowerAt,
     );
 
     final tint = _selectionTint(controller, selected, panelFocus);
@@ -929,7 +949,6 @@ class _BattleScreenState extends State<BattleScreen> {
   Widget? _buildQuestPanel(
     LightcoreController controller, {
     required bool compact,
-    required bool initiallyExpanded,
     String? instructionOverride,
   }) {
     if (!widget.showBattleHud ||
@@ -942,7 +961,7 @@ class _BattleScreenState extends State<BattleScreen> {
     return LightcoreQuestCard(
       controller: controller,
       compact: compact,
-      initiallyExpanded: initiallyExpanded,
+      initiallyExpanded: false,
       instructionOverride: instructionOverride,
     );
   }
@@ -971,39 +990,6 @@ class _BattleScreenState extends State<BattleScreen> {
         });
       },
     );
-  }
-
-  bool _tutorialQuestDetailsShouldYieldVisibleTarget(
-    LightcoreController controller,
-  ) {
-    if (controller.tutorialBattleCoreGuideLabel != null) {
-      return true;
-    }
-    for (var index = 0; index < controller.slots.length; index++) {
-      if (controller.tutorialBattleSlotGuideLabel(index) != null) {
-        return true;
-      }
-    }
-    final selectedSlotIndex = controller.selectedSlotIndex;
-    if (selectedSlotIndex != null &&
-        (controller.tutorialHighlightsTowerStatsButton(selectedSlotIndex) ||
-            controller.tutorialHighlightsUpgradeButton(selectedSlotIndex))) {
-      return true;
-    }
-    if (selectedSlotIndex != null &&
-        controller.tutorialTowerChoices.any(
-          controller.tutorialHighlightsBuildButton,
-        )) {
-      return true;
-    }
-    if (_panelFocus == _BattlePanelFocus.core &&
-        controller.tutorialHighlightsCoreStats) {
-      return true;
-    }
-    if (controller.tutorialHighlightsOverdriveButton) {
-      return true;
-    }
-    return false;
   }
 
   bool _tutorialOpenPanelBlocksCurrentStep(LightcoreController controller) {
@@ -1109,17 +1095,15 @@ class _BattleScreenState extends State<BattleScreen> {
       selected: selected,
     );
     final selectionOverlayVisible = selectionOverlay != null;
-    final questDetailsShouldYield =
-        _tutorialQuestDetailsShouldYieldVisibleTarget(controller);
+    final tutorialInstructionOverride = _tutorialInstructionOverride(
+      controller: controller,
+      selected: selected,
+      selectionOverlayVisible: selectionOverlayVisible,
+    );
     final questPanel = _buildQuestPanel(
       controller,
       compact: compact,
-      initiallyExpanded: !compact && !questDetailsShouldYield,
-      instructionOverride: _tutorialInstructionOverride(
-        controller: controller,
-        selected: selected,
-        selectionOverlayVisible: selectionOverlayVisible,
-      ),
+      instructionOverride: tutorialInstructionOverride,
     );
     final raiseThreatPrompt = _buildRaiseThreatPrompt(
       controller,
@@ -1145,7 +1129,7 @@ class _BattleScreenState extends State<BattleScreen> {
             child: selectionOverlay,
           ),
         if (questPanel != null)
-          Positioned(top: topInset, left: 0, child: questPanel),
+          Positioned(top: topInset, left: inset, child: questPanel),
         if (raiseThreatPrompt != null)
           Positioned(
             top: topInset + (compact ? 96 : 8),
@@ -1269,12 +1253,14 @@ class _BattleControlPanel extends StatelessWidget {
     required this.selected,
     required this.onInspect,
     required this.panelFocus,
+    required this.onBuildTower,
   });
 
   final LightcoreController controller;
   final OuterTowerState? selected;
   final VoidCallback? onInspect;
   final _BattlePanelFocus panelFocus;
+  final bool Function(int slotIndex, TowerConfig config) onBuildTower;
 
   @override
   Widget build(BuildContext context) {
@@ -1315,7 +1301,11 @@ class _BattleControlPanel extends StatelessWidget {
       );
     }
 
-    return _EmptySlotPanel(controller: controller, slot: selected!);
+    return _EmptySlotPanel(
+      controller: controller,
+      slot: selected!,
+      onBuildTower: onBuildTower,
+    );
   }
 }
 
@@ -2042,10 +2032,15 @@ class _TowerStatsPanel extends StatelessWidget {
 }
 
 class _EmptySlotPanel extends StatelessWidget {
-  const _EmptySlotPanel({required this.controller, required this.slot});
+  const _EmptySlotPanel({
+    required this.controller,
+    required this.slot,
+    required this.onBuildTower,
+  });
 
   final LightcoreController controller;
   final OuterTowerState slot;
+  final bool Function(int slotIndex, TowerConfig config) onBuildTower;
 
   @override
   Widget build(BuildContext context) {
@@ -2110,11 +2105,7 @@ class _EmptySlotPanel extends StatelessWidget {
                       highlighted: controller.tutorialHighlightsBuildButton(
                         config,
                       ),
-                      onPressed: () =>
-                          controller.tutorialStartTowerFabricationAt(
-                            slot.slotIndex,
-                            config,
-                          ),
+                      onPressed: () => onBuildTower(slot.slotIndex, config),
                     ),
                 ],
               ),

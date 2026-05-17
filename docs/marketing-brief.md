@@ -73,6 +73,8 @@ shell, and keep climbing.
 - Manual Overdrive accelerates the live shell battle.
 - Focus Target lets players briefly prioritize a dangerous anomaly during active
   challenges and live farming.
+- First-session guidance stays lightweight: collapsed guide flags, target cues,
+  and transient top notifications keep the battlefield visible during early taps.
 
 ### Towers And Builds
 
@@ -111,6 +113,8 @@ shell, and keep climbing.
   farm wave cadence, and Apex behavior.
 - Apex Anomalies spawn after normal anomaly progress and grant larger rewards.
 - Threat Map and regional challenge surfaces frame anomaly pressure by region.
+- The starter-region Challenge Lv 1 prompt appears from the battle view after
+  early overmatch, turning the first tower upgrade into immediate added pressure.
 
 ### Progression And Rewards
 

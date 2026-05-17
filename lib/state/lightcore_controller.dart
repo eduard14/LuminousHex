@@ -330,11 +330,11 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
     id: 'TUT-002',
     title: 'Wait for Hex 1',
     teachGoal:
-        'Battle progress opens build lanes. Use the short hold to inspect core-wide range, queue, and stat upgrades before picking a tower.',
+        'Battle progress opens build lanes. The first short hold should keep the battlefield visible until Hex 1 comes online.',
     trigger: 'Shell is awake before the first lane unlocks',
     primaryClickTarget: 'Battlefield > Hex 1',
     coachCopy:
-        'Keep the shell open and review Core Upgrades while early drift fights feed the EXP gate for Hex 1.',
+        'Keep the shell open. Hex 1 will light up as soon as the starter field feeds enough EXP.',
     completionCondition: 'Hex 1 unlocks',
     reward: 'Small Lumen grant',
     failureHelpState: 'Leave the battle view active until the first hex opens.',

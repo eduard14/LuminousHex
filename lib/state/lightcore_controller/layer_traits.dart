@@ -1481,7 +1481,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         LightcoreTutorialStep.unfoldShell =>
           'Click the center core to wake the shell.',
         LightcoreTutorialStep.waitForFirstHex =>
-          'Review Core Upgrades while Hex 1 stabilizes.',
+          'Keep the shell open while Hex 1 stabilizes.',
         LightcoreTutorialStep.selectFirstHex => 'Click Hex 1.',
         LightcoreTutorialStep.buildFirstRedTower =>
           'Click Hex 1 and choose Comet Mortar or Rayline Spire.',
@@ -1561,7 +1561,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         LightcoreTutorialStep.unfoldShell =>
           'The shell stays folded until the core wakes up, so lanes and combat systems remain locked while it sleeps.',
         LightcoreTutorialStep.waitForFirstHex =>
-          'Starter driftlings feed total EXP automatically. Hex 1 is held briefly so core stat upgrades and core-wide range, fire speed, queue, and multi-shot upgrades are visible first.',
+          'Starter driftlings feed total EXP automatically. Hex 1 is held briefly so the player sees the shell wake before build controls appear.',
         LightcoreTutorialStep.selectFirstHex =>
           'Command opens the shell one lane at a time so flow stays stable while the relay network comes online.',
         LightcoreTutorialStep.buildFirstRedTower =>
