@@ -2275,7 +2275,9 @@ void main() {
     await tester.tap(
       find.byKey(const ValueKey<String>('battle-tower-selection-button')),
     );
-    await tester.pumpAndSettle();
+    await _pumpTransition(tester);
+    await tester.drag(find.byType(ListView).last, const Offset(0, -480));
+    await tester.pump();
 
     expect(find.text('Upgrade Board'), findsOneWidget);
     expect(find.textContaining('Tower Level •'), findsOneWidget);
@@ -2474,11 +2476,10 @@ void main() {
     await tester.tap(
       find.byKey(const ValueKey<String>('battle-tower-selection-button')),
     );
-    await tester.pumpAndSettle();
+    await _pumpTransition(tester);
 
     expect(find.text('Tower Detail'), findsOneWidget);
     expect(find.text('Projectile Targeting'), findsOneWidget);
-    expect(find.text('Upgrade Board'), findsOneWidget);
     expect(find.widgetWithText(OutlinedButton, 'Stats'), findsNothing);
     expect(
       tester.getTopLeft(find.text('Projectile Targeting')).dy,
@@ -2698,7 +2699,7 @@ void main() {
     await tester.tap(
       find.byKey(const ValueKey<String>('battle-tower-selection-button')),
     );
-    await tester.pumpAndSettle();
+    await _pumpTransition(tester);
 
     expect(find.text('Projectile Targeting'), findsOneWidget);
     expect(
