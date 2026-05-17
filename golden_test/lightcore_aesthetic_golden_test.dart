@@ -18,7 +18,7 @@ void main() {
     await tester.pumpWidget(buildReadyMainMenu());
     await pumpFixedFrame(tester);
 
-    expect(find.text('Lumi Core'), findsOneWidget);
+    expect(find.text('LumiHex'), findsOneWidget);
     await expectLater(
       find.byType(LightcoreMainMenuScreen),
       matchesGoldenFile('goldens/lightcore_main_menu_desktop.png'),

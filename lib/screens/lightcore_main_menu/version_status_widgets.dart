@@ -379,6 +379,7 @@ class _SessionNoticeCard extends StatelessWidget {
                   ),
                   SizedBox(height: compact ? 10 : 12),
                   FilledButton.icon(
+                    key: const ValueKey<String>('main-menu-reconnect-button'),
                     onPressed: onReconnect,
                     icon: Icon(Icons.refresh_rounded, size: compact ? 16 : 18),
                     label: const Text('Reconnect'),

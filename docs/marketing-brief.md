@@ -1,6 +1,6 @@
 # LumiHex Marketing Brief
 
-Last updated: 2026-05-16
+Last updated: 2026-05-17
 
 This is the source-of-truth marketing handoff for LumiHex. Update it whenever
 player-facing features, naming, story, monetization, screenshots, or asset needs
@@ -11,7 +11,7 @@ materials would become stale.
 
 | Field | Current Direction |
 | --- | --- |
-| Public working title | LumiHex |
+| Public app name | LumiHex |
 | Preferred subtitle | Prism Relay |
 | Full marketing title | LumiHex: Prism Relay |
 | Developer / splash credit | Lemon Goose Games Inc. |

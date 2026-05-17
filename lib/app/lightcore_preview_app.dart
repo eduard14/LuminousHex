@@ -58,7 +58,7 @@ class _LightcorePreviewAppState extends State<LightcorePreviewApp> {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Lightcore Menu Preview',
+      title: 'LumiHex Menu Preview',
       theme: buildLightcoreTheme(),
       home: Scaffold(
         body: LightcoreMainMenuScreen(

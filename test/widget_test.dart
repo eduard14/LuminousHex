@@ -158,7 +158,7 @@ void _promoteRootShell(LightcoreController controller) {
 Future<void> _waitForMainMenu(WidgetTester tester) async {
   for (var attempt = 0; attempt < 20; attempt++) {
     await tester.pump(const Duration(milliseconds: 100));
-    if (find.text('Lumi Core').evaluate().isNotEmpty) {
+    if (find.text('LumiHex').evaluate().isNotEmpty) {
       break;
     }
   }
@@ -249,12 +249,12 @@ Future<void> _openSettingsCollisionDialog(WidgetTester tester) async {
 }
 
 void main() {
-  testWidgets('renders the Lightcore main menu', (tester) async {
+  testWidgets('renders the LumiHex main menu', (tester) async {
     await tester.pumpWidget(const LightcoreApp());
     await tester.pump();
     await _waitForMainMenu(tester);
 
-    expect(find.text('Lumi Core'), findsOneWidget);
+    expect(find.text('LumiHex'), findsOneWidget);
     expect(find.text('Authentication ID'), findsOneWidget);
   });
 
@@ -270,7 +270,7 @@ void main() {
     await tester.pump();
     await _waitForMainMenu(tester);
 
-    expect(find.text('Lumi Core'), findsOneWidget);
+    expect(find.text('LumiHex'), findsOneWidget);
     expect(find.text('Authentication ID'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
@@ -344,7 +344,7 @@ void main() {
 
     await tester.pump(const Duration(seconds: 1));
 
-    expect(find.text('Lumi Core'), findsOneWidget);
+    expect(find.text('LumiHex'), findsOneWidget);
     expect(find.byType(LightcoreShell), findsNothing);
     expect(backend.syncCalls, 1);
     expect(tester.takeException(), isNull);
@@ -357,7 +357,7 @@ void main() {
     await tester.pump();
     await _waitForMainMenu(tester);
 
-    expect(find.text('Lumi Core'), findsOneWidget);
+    expect(find.text('LumiHex'), findsOneWidget);
     expect(find.text('Retry'), findsOneWidget);
     expect(find.text('PLAY'), findsNothing);
     expect(tester.takeException(), isNull);
@@ -413,7 +413,7 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(seconds: 1));
 
-    expect(find.text('Lumi Core'), findsOneWidget);
+    expect(find.text('LumiHex'), findsOneWidget);
     expect(find.byType(LightcoreShell), findsNothing);
     expect(tester.takeException(), isNull);
   });
@@ -824,7 +824,7 @@ void main() {
     expect(backend.saveCalls, 0);
     expect(find.text('PLAY', skipOffstage: false), findsNothing);
     expect(find.byType(LightcoreShell), findsNothing);
-    expect(find.text('Lumi Core'), findsOneWidget);
+    expect(find.text('LumiHex'), findsOneWidget);
     expect(
       find.textContaining('Cloud save restore did not finish'),
       findsOneWidget,

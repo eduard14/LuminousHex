@@ -15,7 +15,7 @@ class _HeaderBlock extends StatelessWidget {
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
 
-    return _LumiCoreTitleLockup(
+    return _LumiHexTitleLockup(
       titleSize: titleSize,
       titleLetterSpacing: titleLetterSpacing,
       compact: compact,
@@ -24,8 +24,8 @@ class _HeaderBlock extends StatelessWidget {
   }
 }
 
-class _LumiCoreTitleLockup extends StatelessWidget {
-  const _LumiCoreTitleLockup({
+class _LumiHexTitleLockup extends StatelessWidget {
+  const _LumiHexTitleLockup({
     required this.titleSize,
     required this.titleLetterSpacing,
     required this.compact,
@@ -70,7 +70,7 @@ class _LumiCoreTitleLockup extends StatelessWidget {
                 ).createShader(bounds);
               },
               child: Text(
-                'Lumi Core',
+                'LumiHex',
                 textAlign: TextAlign.center,
                 style: textTheme.headlineLarge?.copyWith(
                   fontSize: titleSize,

@@ -102,7 +102,7 @@ void main() {
     await tester.pumpWidget(buildMenu(report: report));
 
     expect(tester.takeException(), isNull);
-    expect(find.text('Lumi Core'), findsOneWidget);
+    expect(find.text('LumiHex'), findsOneWidget);
     expect(find.text('BETA'), findsOneWidget);
     expect(find.text('Authentication ID'), findsOneWidget);
     expect(find.text('V1.0.18+19'), findsOneWidget);
@@ -206,7 +206,10 @@ void main() {
 
     expect(entered, isFalse);
 
-    await tester.tap(find.text('Reconnect'));
+    final reconnectButton = tester.widget<ButtonStyleButton>(
+      find.byKey(const ValueKey<String>('main-menu-reconnect-button')),
+    );
+    reconnectButton.onPressed?.call();
     await tester.pump();
 
     expect(reconnects, 1);

@@ -1,6 +1,6 @@
-# Lightcore
+# LumiHex
 
-Lightcore is a Flutter + Flame game built around shell-class idle tower-defense.
+LumiHex is a Flutter + Flame game built around shell-class idle tower-defense.
 The current build combines a tap-driven battle shell, tower and manager
 progression, enemy-card summoning, and an advancement loop where completed shells
 forge higher shell classes.
@@ -168,6 +168,6 @@ production release:
 
 ## Status
 
-The app is positioned as a mobile-first Lightcore build with Firebase-backed
+The app is positioned as a mobile-first LumiHex build with Firebase-backed
 profile, cloud-save, idle-progress, social, and tournament services. Remaining
 work is production hardening, balance tuning, and asset/audio completion.

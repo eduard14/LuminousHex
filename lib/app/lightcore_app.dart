@@ -1590,7 +1590,7 @@ class _LightcoreAppState extends State<LightcoreApp>
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       navigatorKey: _navigatorKey,
-      title: 'Lightcore',
+      title: 'LumiHex',
       theme: buildLightcoreTheme(),
       scaffoldMessengerKey: _scaffoldMessengerKey,
       home: Scaffold(

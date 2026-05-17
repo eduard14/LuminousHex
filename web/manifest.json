@@ -1,11 +1,11 @@
 {
-    "name": "Lightcore",
-    "short_name": "Lightcore",
+    "name": "LumiHex: Prism Relay",
+    "short_name": "LumiHex",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0C1220",
     "theme_color": "#0C1220",
-    "description": "Mobile-first idle tower-defense game with shell-class progression and live battles.",
+    "description": "Mobile-first idle tower-defense game with hex-shell progression, prism relays, and live battles.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [
