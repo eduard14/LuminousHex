@@ -64,7 +64,7 @@ const List<_HelpSectionData> _baseHelpSections = <_HelpSectionData>[
         'Why the shell is moving through space and what the swarm really is.',
     body:
         'The Lightcore is navigating fractured sectors and sealing black holes before they grow into stronger singularities. Every shell is a temporary defense ring built to stabilize the route ahead.\n\n'
-        'Anomalies keep mutating as you move deeper into space. That is why new systems come online over time, why threat scans matter, and why promoted shells must keep pushing forward instead of holding one lane forever.',
+        'Anomalies keep mutating as you move deeper into space. That is why new systems come online over time, why Enemy Research matters, and why promoted shells must keep pushing forward instead of holding one lane forever.',
   ),
   _HelpSectionData(
     id: 'header-icons',
@@ -75,7 +75,7 @@ const List<_HelpSectionData> _baseHelpSections = <_HelpSectionData>[
         'Top action icons:\n'
         '- Storefront opens the Store.\n'
         '- Friends opens friend requests and daily Threat Scan gifts.\n'
-        '- Map opens Threat Scans and region stabilization.\n'
+        '- Map opens the linear region stabilization route.\n'
         '- Premium badge opens Passes. A number badge means claimable rewards are waiting.\n'
         '- Settings opens stats, help, and reset controls.\n\n'
         'Status icons:\n'

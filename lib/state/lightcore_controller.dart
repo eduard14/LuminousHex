@@ -471,7 +471,7 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
     trigger: 'Queue tutorial done',
     primaryClickTarget: 'Anomalies > Research',
     coachCopy:
-        'Resolve one Threat Scan in Enemy Research. Map regions now reveal through the fixed spiral path.',
+        'Resolve one Threat Scan in Enemy Research. Map regions open through the linear stabilization route.',
     completionCondition: 'Resolve 1 Enemy Research scan',
     reward: 'Enemy Research primer',
     failureHelpState: 'Open Anomalies and resolve one Enemy Research scan.',
@@ -553,14 +553,14 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
   ),
   LightcoreTutorialStep.adjustEnemyCount: LightcoreTutorialQuestDefinition(
     id: 'TUT-016',
-    title: 'Read the Spiral Path',
+    title: 'Read the Route',
     teachGoal:
-        'The Threat Map is a fixed spiral. Fully stabilizing a region reveals the next sector on the path.',
+        'The Threat Map is a fixed route. Fully stabilizing a region opens the next step on the path.',
     trigger: 'Red signature is available',
     primaryClickTarget: 'Bottom nav > Map',
     coachCopy:
-        'Review the Threat Map and find the next unrevealed sector on the spiral path.',
-    completionCondition: 'Spiral path reviewed',
+        'Review the Threat Map and find the next locked step on the route.',
+    completionCondition: 'Route reviewed',
     reward: 'Small Lumen grant',
     failureHelpState: 'Open Map and inspect a region.',
     analyticsEvent: 'tutorial_adjust_enemy_count',

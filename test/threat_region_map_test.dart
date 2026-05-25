@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lightcore/data/enemy_configs.dart';
 import 'package:lightcore/data/threat_region_configs.dart';
+import 'package:lightcore/models/lightcore_config.dart';
 import 'package:lightcore/models/lightcore_types.dart';
 import 'package:lightcore/state/lightcore_controller.dart';
 
@@ -16,6 +17,22 @@ void _unlockFullThreatMap(LightcoreController controller) {
     stabilizedLevel: starter.stabilizationLayers,
   );
   controller.debugGrantApexCore(starter.primaryBossId);
+}
+
+void _debugStabilizeRouteBefore(
+  LightcoreController controller,
+  ThreatRegionConfig target,
+) {
+  final targetIndex = ThreatRegionLibrary.all.indexWhere(
+    (region) => region.id == target.id,
+  );
+  for (var index = 0; index < targetIndex; index += 1) {
+    final region = ThreatRegionLibrary.all[index];
+    controller.debugRevealThreatRegion(
+      region.id,
+      stabilizedLevel: region.stabilizationLayers,
+    );
+  }
 }
 
 void main() {
@@ -102,7 +119,7 @@ void main() {
     },
   );
 
-  test('fixed spiral reveals one next region at a time', () {
+  test('linear route reveals one next region at a time', () {
     final controller = LightcoreController();
     addTearDown(controller.dispose);
 
@@ -140,7 +157,7 @@ void main() {
     expect(controller.canStartThreatRegionChallenge(nextRegion.id), isTrue);
 
     controller.debugRevealThreatRegion(ringTwo.id);
-    expect(controller.canStartThreatRegionChallenge(ringTwo.id), isTrue);
+    expect(controller.canStartThreatRegionChallenge(ringTwo.id), isFalse);
   });
 
   test('starter challenge uses standard swarm and rewards the next push', () {
@@ -156,7 +173,6 @@ void main() {
     final baselineTargetCount = controller.enemyTargetCount;
     final baselineStats = controller.activeThreatAssignmentGroupStats;
     final startingLumens = controller.lumens;
-    final startingScans = controller.enemyTickets;
 
     expect(controller.startThreatRegionChallenge(starter.id), isTrue);
 
@@ -171,7 +187,6 @@ void main() {
       isTrue,
     );
     expect(controller.lumens, greaterThan(startingLumens));
-    expect(controller.enemyTickets, greaterThan(startingScans));
     expect(controller.threatRegionStateById(starter.id)!.stabilizedLevel, 1);
     expect(controller.enemyTargetCount, baselineTargetCount);
   });
@@ -322,6 +337,7 @@ void main() {
     final doubleBossRegion = ThreatRegionLibrary.all.firstWhere(
       (region) => region.hasDoubleBoss,
     );
+    _debugStabilizeRouteBefore(controller, doubleBossRegion);
     controller.debugRevealThreatRegion(
       doubleBossRegion.id,
       stabilizedLevel: doubleBossRegion.stabilizationLayers - 1,

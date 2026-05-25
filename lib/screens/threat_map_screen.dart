@@ -84,7 +84,7 @@ class _ThreatMapScreenState extends State<ThreatMapScreen> {
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
-                                  'Spiral region path',
+                                  'Linear stabilization route',
                                   style: textTheme.labelLarge?.copyWith(
                                     color: LightcorePalette.aether,
                                     fontWeight: FontWeight.w800,
@@ -151,20 +151,14 @@ class _ThreatMapStatusBar extends StatelessWidget {
       spacing: 8,
       runSpacing: 8,
       children: [
-        _MapChip(label: '${controller.enemyTickets} research scans'),
-        _MapChip(label: 'Research Lv ${controller.summoningLevel}'),
+        _MapChip(label: 'Route ${controller.fullyStabilizedRegionCount + 1}'),
+        const _MapChip(label: 'One path'),
         _MapChip(label: 'Swarm ${controller.farmSwarmSize}'),
         _MapChip(label: '${controller.fullyStabilizedRegionCount} stable'),
         if (controller.nextThreatRegionConfig != null)
           _MapChip(
-            label: 'Next ${controller.nextThreatRegionConfig!.name}',
+            label: 'Locked next: ${controller.nextThreatRegionConfig!.name}',
             tint: LightcorePalette.warning,
-          ),
-        if (!controller.isSummoningLevelMaxed)
-          _MapChip(
-            label:
-                '${controller.pullsToNextSummoningLevel} to Lv ${controller.nextSummoningLevel}',
-            tint: LightcorePalette.aether,
           ),
         if (challengeRegion != null)
           _MapChip(
@@ -850,8 +844,8 @@ class _ThreatRegionIntelDialog extends StatelessWidget {
                           const SizedBox(height: 4),
                           Text(
                             revealed
-                                ? 'Ring ${region.ring} ${region.rarity.label} sector'
-                                : 'Uncharted Ring ${region.ring} sector',
+                                ? 'Route step ${controller.threatRegionSpiralIndex(region.id) + 1} • Ring ${region.ring}'
+                                : 'Locked route step ${controller.threatRegionSpiralIndex(region.id) + 1}',
                             style: textTheme.labelLarge?.copyWith(
                               color: revealed
                                   ? _rarityTint(region.rarity)

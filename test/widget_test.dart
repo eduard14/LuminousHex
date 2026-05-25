@@ -1424,7 +1424,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(Dialog), findsOneWidget);
-    expect(find.textContaining('Uncharted Ring'), findsOneWidget);
+    expect(find.textContaining('Locked route step'), findsOneWidget);
   });
 
   testWidgets('active threat challenge is visible on battle hud', (

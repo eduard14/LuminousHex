@@ -520,7 +520,7 @@ class _ThreatRegionMapPanelState extends State<_ThreatRegionMapPanel> {
             crossAxisAlignment: WrapCrossAlignment.center,
             children: [
               Text('Threat Map', style: textTheme.titleMedium),
-              _InfoChip(label: controller.enemyTicketLabel),
+              const _InfoChip(label: 'Linear route'),
               _InfoChip(label: 'Swarm ${controller.farmSwarmSize}'),
               _InfoChip(
                 label: '${controller.fullyStabilizedRegionCount} stabilized',
@@ -575,7 +575,7 @@ class _ThreatRegionMapPanelState extends State<_ThreatRegionMapPanel> {
             Text(
               detailRevealed
                   ? '${detailRegion.name}: Lv ${detailState.stabilizedLevel}/${detailRegion.stabilizationLayers} stabilized'
-                  : '${detailRegion.name}: uncharted Ring ${detailRegion.ring} sector',
+                  : '${detailRegion.name}: locked route step ${controller.threatRegionSpiralIndex(detailRegion.id) + 1}',
               style: textTheme.bodyMedium,
             ),
             const SizedBox(height: 8),
@@ -692,8 +692,8 @@ class _ThreatRegionMapPanelState extends State<_ThreatRegionMapPanel> {
             const SizedBox(height: 10),
             Text(
               controller.threatRegionsUnlocked
-                  ? 'The fixed spiral reveals one sector at a time as regions are fully stabilized.'
-                  : 'All 37 regions are fixed for every player. Build the first tower to start the spiral path.',
+                  ? 'The route opens one region at a time. Fully stabilize the current region to unlock the next step.'
+                  : 'All regions are fixed for every player. Build the first tower to start the route.',
               style: textTheme.bodySmall?.copyWith(
                 color: LightcorePalette.warning,
               ),
@@ -1748,7 +1748,7 @@ class _EnemyPullSheetState extends State<EnemyPullSheet> {
                               const SizedBox(height: 12),
                               _InlineEnemyNote(
                                 message:
-                                    'Threat Scans resolve Enemy Research Cards. Threat Map regions reveal through the fixed spiral path.',
+                                    'Threat Scans resolve Enemy Research Cards. Threat Map regions open through the linear stabilization route.',
                                 tint: LightcorePalette.warning,
                               ),
                             ],

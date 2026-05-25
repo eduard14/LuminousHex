@@ -665,7 +665,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
     LightcoreTutorialStep.adjustEnemyCount =>
       'Region pressure reviewed. Higher pressure can pay more, but watch Output Efficiency.',
     LightcoreTutorialStep.openBossPulls =>
-      'Starter region stabilized. The full Threat Map can now accept scan pulses.',
+      'Starter region stabilized. The next route region opens after every region is fully stabilized.',
     LightcoreTutorialStep.upgradeCoreRange =>
       'Global stat assigned. Account upgrades make every shell easier to grow.',
     _ => null,
@@ -1510,7 +1510,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         LightcoreTutorialStep.setFirstEnemyTarget =>
           'Click Anomalies and review Basic Red in the active deck.',
         LightcoreTutorialStep.adjustEnemyCount =>
-          'Click Map and inspect the fixed spiral path and stabilization controls.',
+          'Click Map and inspect the linear route and stabilization controls.',
         LightcoreTutorialStep.openTowerMatrix =>
           'Click Towers to inspect completed Layer 1 sets and Layer 2 shell tools.',
         LightcoreTutorialStep.upgradeCoreRange =>

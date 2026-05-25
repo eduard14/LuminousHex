@@ -322,7 +322,7 @@ class _LightcoreShellState extends State<LightcoreShell> {
       _SettingsStatEntry(
         label: 'Scans Resolved',
         value: _formatMetricCount(controller.totalPullsOpened),
-        subtitle: 'Threat scans resolved across your sector map.',
+        subtitle: 'Threat Scans resolved into Enemy Research.',
         tint: LightcorePalette.scanGlow,
         icon: LightcoreIcons.threatScan,
       ),

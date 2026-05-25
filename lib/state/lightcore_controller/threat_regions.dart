@@ -225,7 +225,9 @@ extension LightcoreControllerThreatRegions on LightcoreController {
   ThreatRegionConfig? get nextThreatRegionConfig {
     for (final region in ThreatRegionLibrary.all) {
       final state = threatRegionStateById(region.id);
-      if (state == null || state.revealed) {
+      if (state == null ||
+          state.revealed ||
+          !_previousThreatRegionFullyStabilized(region.id)) {
         continue;
       }
       return region;
@@ -243,6 +245,9 @@ extension LightcoreControllerThreatRegions on LightcoreController {
     final state = threatRegionStateById(regionId);
     final config = threatRegionConfigById(regionId);
     if (state == null || config == null || !state.revealed) {
+      return false;
+    }
+    if (!_previousThreatRegionFullyStabilized(regionId)) {
       return false;
     }
     if (state.stabilizedLevel >= config.stabilizationLayers) {
@@ -349,7 +354,7 @@ extension LightcoreControllerThreatRegions on LightcoreController {
   }
 
   String get threatScanRateInfo =>
-      'Threat Scans now resolve Enemy Research Cards. Threat Map progression follows the fixed spiral path and reveals the next region through stabilization.';
+      'Threat Scans resolve Enemy Research Cards. Threat Map progression follows the fixed route and opens only after the previous region is fully stabilized.';
 
   ThreatRegionState? threatRegionStateById(String regionId) {
     final match = _threatRegions.where((state) => state.regionId == regionId);
@@ -358,6 +363,17 @@ extension LightcoreControllerThreatRegions on LightcoreController {
 
   ThreatRegionConfig? threatRegionConfigById(String regionId) =>
       ThreatRegionLibrary.byId[regionId];
+
+  bool _previousThreatRegionFullyStabilized(String regionId) {
+    final index = threatRegionSpiralIndex(regionId);
+    if (index <= 0) {
+      return index == 0;
+    }
+    final previous = ThreatRegionLibrary.all[index - 1];
+    final previousState = threatRegionStateById(previous.id);
+    return previousState != null &&
+        previousState.stabilizedLevel >= previous.stabilizationLayers;
+  }
 
   bool selectThreatRegion(String regionId) {
     final state = threatRegionStateById(regionId);
@@ -419,8 +435,8 @@ extension LightcoreControllerThreatRegions on LightcoreController {
     if (!canStartThreatRegionChallenge(regionId)) {
       final config = threatRegionConfigById(regionId);
       final message =
-          config != null && config.ring > 1 && !fullThreatMapUnlocked
-          ? 'Ring 2+ region challenges unlock after the Prism Shell is online.'
+          config != null && !_previousThreatRegionFullyStabilized(config.id)
+          ? 'Finish the previous route region at all stabilization levels before starting ${config.name}.'
           : 'Region challenges unlock after the first tower is online.';
       _showBanner(message);
       _notifyNow();
@@ -527,21 +543,14 @@ extension LightcoreControllerThreatRegions on LightcoreController {
       config,
       challenge.targetStabilizationLevel,
     );
-    final scanReward = _threatRegionChallengeScanReward(
-      config,
-      challenge.targetStabilizationLevel,
-      finalLayer: challenge.finalLayer,
-    );
     lumens += lumenReward;
-    enemyTickets += scanReward;
     _syncTutorialStep(showBanner: false);
     final rewardParts = <String>[
       LightcoreCurrencyLabels.rewardLumens(lumenReward),
-      if (scanReward > 0) LightcoreCurrencyLabels.rewardThreatScans(scanReward),
     ];
     final revealText = revealedNext == null
         ? ''
-        : ' Next spiral sector: ${revealedNext.name}.';
+        : ' Next route region: ${revealedNext.name}.';
     _showBanner(
       '${config.name} stabilized Lv ${nextState.stabilizedLevel}/${config.stabilizationLayers}. Live farm unlocked.$revealText Reward: ${rewardParts.join(', ')}.',
     );
@@ -580,17 +589,6 @@ extension LightcoreControllerThreatRegions on LightcoreController {
     int targetLevel,
   ) {
     return 28 + (targetLevel * 12) + (config.ring * 18);
-  }
-
-  int _threatRegionChallengeScanReward(
-    ThreatRegionConfig config,
-    int targetLevel, {
-    required bool finalLayer,
-  }) {
-    if (finalLayer) {
-      return 0;
-    }
-    return max(1, 1 + config.ring + (targetLevel ~/ 3));
   }
 
   bool failThreatRegionChallenge() {
