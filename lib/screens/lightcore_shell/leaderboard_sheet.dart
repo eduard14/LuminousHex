@@ -19,6 +19,8 @@ class _GlobalLeaderboardSheetState extends State<_GlobalLeaderboardSheet> {
   bool _loading = false;
   String? _error;
 
+  static const Duration _globalBoardRefreshCadence = Duration(minutes: 10);
+
   @override
   void initState() {
     super.initState();
@@ -63,11 +65,12 @@ class _GlobalLeaderboardSheetState extends State<_GlobalLeaderboardSheet> {
         .clamp(360.0, media.size.height)
         .toDouble();
     final overview = _overview ?? widget.controller.socialOverview;
-    final leaders =
+    final serverLeaders =
         overview?.globalTowerStrengthLeaderboard ??
         const <LightcoreSocialPlayer>[];
-    final self = overview?.self;
-    final rankedPlayers = self?.towerStrengthRankedPlayers ?? 0;
+    final self = _localSelfProjection(overview);
+    final leaders = _projectLeaderboardRows(serverLeaders, self);
+    final rankedPlayers = widget.controller.globalTowerStrengthRankedPlayers;
     final ownRank = self?.towerStrengthRank;
     final ownRankLabel = ownRank == null
         ? '#--'
@@ -120,7 +123,7 @@ class _GlobalLeaderboardSheetState extends State<_GlobalLeaderboardSheet> {
               const SizedBox(height: 8),
               Text(
                 rankedPlayers > 0
-                    ? 'Top ${leaders.length} of $rankedPlayers pilots by Total Strength.'
+                    ? 'Your rank previews immediately from local tower changes. The rest of the global board refreshes about every ${_globalBoardRefreshCadence.inMinutes} minutes.'
                     : 'Total Strength ranking syncs after cloud save publishes your public profile.',
                 style: Theme.of(context).textTheme.bodyMedium,
               ),
@@ -143,10 +146,19 @@ class _GlobalLeaderboardSheetState extends State<_GlobalLeaderboardSheet> {
                   ),
                   StatusPill(
                     label: 'Board',
-                    value: leaders.isEmpty ? 'Pending' : '${leaders.length}',
+                    value: serverLeaders.isEmpty
+                        ? 'Pending'
+                        : '${serverLeaders.length}',
                     tint: LightcorePalette.aether,
                     icon: Icons.public_rounded,
                   ),
+                  if (widget.controller.globalTowerStrengthRankIsProjected)
+                    const StatusPill(
+                      label: 'Rank Source',
+                      value: 'Live Preview',
+                      tint: LightcorePalette.solar,
+                      icon: Icons.bolt_rounded,
+                    ),
                 ],
               ),
               if (_error != null) ...[
@@ -190,6 +202,52 @@ class _GlobalLeaderboardSheetState extends State<_GlobalLeaderboardSheet> {
         ),
       ),
     );
+  }
+
+  LightcoreSocialPlayer? _localSelfProjection(
+    LightcoreSocialOverview? overview,
+  ) {
+    final self = overview?.self;
+    if (self == null) {
+      return null;
+    }
+    final localStrength = widget.controller.globalRankingTowerStrength;
+    final rank = widget.controller.globalTowerStrengthRank;
+    final rankedPlayers = widget.controller.globalTowerStrengthRankedPlayers;
+    return self.copyWith(
+      towerStrength: localStrength,
+      towerStrengthRank: rank,
+      towerStrengthRankedPlayers: rankedPlayers,
+    );
+  }
+
+  List<LightcoreSocialPlayer> _projectLeaderboardRows(
+    List<LightcoreSocialPlayer> serverLeaders,
+    LightcoreSocialPlayer? self,
+  ) {
+    if (self == null) {
+      return serverLeaders;
+    }
+    final rankedPlayers = widget.controller.globalTowerStrengthRankedPlayers;
+    final rows =
+        <LightcoreSocialPlayer>[
+          for (final player in serverLeaders)
+            if (player.uid != self.uid) player,
+          self,
+        ]..sort((a, b) {
+          final byStrength = b.towerStrength.compareTo(a.towerStrength);
+          if (byStrength != 0) {
+            return byStrength;
+          }
+          return a.displayName.compareTo(b.displayName);
+        });
+    return List<LightcoreSocialPlayer>.unmodifiable(<LightcoreSocialPlayer>[
+      for (var index = 0; index < rows.length; index += 1)
+        rows[index].copyWith(
+          towerStrengthRank: index + 1,
+          towerStrengthRankedPlayers: rankedPlayers,
+        ),
+    ]);
   }
 }
 

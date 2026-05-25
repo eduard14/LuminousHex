@@ -135,6 +135,8 @@ shell, and keep climbing.
 - Apex Scans feed Apex Anomaly pulls and social gifts.
 - Validated region farms determine offline reward progress.
 - Account Radiance tracks broader player growth.
+- Global Total Strength leaderboard previews the player's rank immediately from
+  local tower changes while the public board refreshes periodically.
 - Battle-pass style tracks reward daily kills, manager pulls, and scans.
 - Offline rewards are server-reconciled and can be doubled with rewarded ads.
 - Daily Dungeons and Prism Rift content create repeatable challenge surfaces.

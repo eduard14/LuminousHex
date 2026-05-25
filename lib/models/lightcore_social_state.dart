@@ -57,6 +57,47 @@ class LightcoreSocialPlayer {
       ? '$sharedRelayFilledPieceCount/7 tower'
       : 'Tower pending';
 
+  LightcoreSocialPlayer copyWith({
+    String? uid,
+    String? playerId,
+    String? displayName,
+    int? level,
+    double? progressToNextLevel,
+    double? performanceScore,
+    String? mentorUid,
+    bool? withinLevelBand,
+    bool? bonusActive,
+    int? towerStrength,
+    int? towerStrengthRank,
+    int? towerStrengthRankedPlayers,
+    int? sharedRelayFilledPieceCount,
+    double? sharedRelayAveragePower,
+    LightcoreAvatarProfile? avatar,
+    DateTime? lastActiveAt,
+  }) {
+    return LightcoreSocialPlayer(
+      uid: uid ?? this.uid,
+      playerId: playerId ?? this.playerId,
+      displayName: displayName ?? this.displayName,
+      level: level ?? this.level,
+      progressToNextLevel: progressToNextLevel ?? this.progressToNextLevel,
+      performanceScore: performanceScore ?? this.performanceScore,
+      mentorUid: mentorUid ?? this.mentorUid,
+      withinLevelBand: withinLevelBand ?? this.withinLevelBand,
+      bonusActive: bonusActive ?? this.bonusActive,
+      towerStrength: towerStrength ?? this.towerStrength,
+      towerStrengthRank: towerStrengthRank ?? this.towerStrengthRank,
+      towerStrengthRankedPlayers:
+          towerStrengthRankedPlayers ?? this.towerStrengthRankedPlayers,
+      sharedRelayFilledPieceCount:
+          sharedRelayFilledPieceCount ?? this.sharedRelayFilledPieceCount,
+      sharedRelayAveragePower:
+          sharedRelayAveragePower ?? this.sharedRelayAveragePower,
+      avatar: avatar ?? this.avatar,
+      lastActiveAt: lastActiveAt ?? this.lastActiveAt,
+    );
+  }
+
   factory LightcoreSocialPlayer.fromMap(Map<String, dynamic> data) {
     final fallbackId = _stringValue(data['uid'], fallback: 'unknown-player');
     return LightcoreSocialPlayer(

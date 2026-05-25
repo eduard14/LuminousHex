@@ -43,7 +43,7 @@ class _LightcoreAppState extends State<LightcoreApp>
     with WidgetsBindingObserver {
   static const Duration _cloudSaveDebounce = Duration(seconds: 45);
   static const Duration _serverSyncInterval = Duration(minutes: 3);
-  static const Duration _socialOverviewRefreshInterval = Duration(minutes: 3);
+  static const Duration _socialOverviewRefreshInterval = Duration(minutes: 10);
   static const Duration _screenLinkDuration = Duration(milliseconds: 820);
   static const Duration _studioSplashDuration = Duration(milliseconds: 1650);
   static const int _maxMissedServerSyncs = 2;

@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:lightcore/data/enemy_configs.dart';
 import 'package:lightcore/data/tower_configs.dart';
 import 'package:lightcore/models/lightcore_config.dart';
+import 'package:lightcore/models/lightcore_social_state.dart';
 import 'package:lightcore/models/lightcore_state.dart';
 import 'package:lightcore/models/lightcore_types.dart';
 import 'package:lightcore/state/lightcore_controller.dart';
@@ -242,6 +243,70 @@ void main() {
       socialSnapshot['towerStrength'],
       controller.globalRankingTowerStrength,
     );
+  });
+
+  test('global rank projects immediately from cached leaderboard', () {
+    final controller = LightcoreController.fromCloudSavePayload(
+      _towerStrengthMultiLayerSavePayload(activeTier: 1, highestTier: 4),
+    );
+    addTearDown(controller.dispose);
+
+    final localStrength = controller.globalRankingTowerStrength;
+    controller.syncSocialOverview(
+      LightcoreSocialOverview(
+        self: const LightcoreSocialPlayer(
+          uid: 'self',
+          playerId: 'LUMI-SELF',
+          displayName: 'Pilot Hex',
+          level: 10,
+          progressToNextLevel: 0,
+          performanceScore: 0.6,
+          towerStrength: 1000,
+          towerStrengthRank: 3,
+          towerStrengthRankedPlayers: 12,
+        ),
+        globalTowerStrengthLeaderboard: <LightcoreSocialPlayer>[
+          LightcoreSocialPlayer(
+            uid: 'leader',
+            playerId: 'LUMI-LEAD',
+            displayName: 'Nova Prime',
+            level: 20,
+            progressToNextLevel: 0,
+            performanceScore: 0.8,
+            towerStrength: localStrength + 1000,
+            towerStrengthRank: 1,
+            towerStrengthRankedPlayers: 12,
+          ),
+          const LightcoreSocialPlayer(
+            uid: 'self',
+            playerId: 'LUMI-SELF',
+            displayName: 'Pilot Hex',
+            level: 10,
+            progressToNextLevel: 0,
+            performanceScore: 0.6,
+            towerStrength: 1000,
+            towerStrengthRank: 3,
+            towerStrengthRankedPlayers: 12,
+          ),
+          const LightcoreSocialPlayer(
+            uid: 'old-second',
+            playerId: 'LUMI-OLD',
+            displayName: 'Old Second',
+            level: 12,
+            progressToNextLevel: 0,
+            performanceScore: 0.7,
+            towerStrength: 2000,
+            towerStrengthRank: 2,
+            towerStrengthRankedPlayers: 12,
+          ),
+        ],
+      ),
+    );
+
+    expect(controller.serverGlobalTowerStrengthRank, isNull);
+    expect(controller.projectedGlobalTowerStrengthRank, 2);
+    expect(controller.globalTowerStrengthRankLabel, '#2');
+    expect(controller.globalTowerStrengthRankIsProjected, isTrue);
   });
 
   test('DPS budget scales down per active enemy target', () {

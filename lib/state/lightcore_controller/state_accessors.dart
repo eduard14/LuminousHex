@@ -1359,7 +1359,7 @@ extension LightcoreControllerStateAccessors on LightcoreController {
         self.towerStrengthRank == null;
   }
 
-  int? get globalTowerStrengthRank {
+  int? get serverGlobalTowerStrengthRank {
     final self = _socialOverview?.self;
     if (self == null || self.towerStrength != globalRankingTowerStrength) {
       return null;
@@ -1367,9 +1367,36 @@ extension LightcoreControllerStateAccessors on LightcoreController {
     return self.towerStrengthRank;
   }
 
-  int get globalTowerStrengthRankedPlayers => globalTowerStrengthRank == null
-      ? 0
-      : _socialOverview?.self.towerStrengthRankedPlayers ?? 0;
+  int? get globalTowerStrengthRank =>
+      serverGlobalTowerStrengthRank ?? projectedGlobalTowerStrengthRank;
+
+  int get globalTowerStrengthRankedPlayers {
+    final overview = _socialOverview;
+    if (overview == null) {
+      return 0;
+    }
+    return max(
+      overview.self.towerStrengthRankedPlayers,
+      overview.globalTowerStrengthLeaderboard.length,
+    );
+  }
+
+  int? get projectedGlobalTowerStrengthRank {
+    final overview = _socialOverview;
+    final strength = globalRankingTowerStrength;
+    if (overview == null || strength <= 0) {
+      return null;
+    }
+    final selfUid = overview.self.uid;
+    final strongerCachedPlayers = overview.globalTowerStrengthLeaderboard.where(
+      (player) => player.uid != selfUid && player.towerStrength > strength,
+    );
+    return strongerCachedPlayers.length + 1;
+  }
+
+  bool get globalTowerStrengthRankIsProjected =>
+      serverGlobalTowerStrengthRank == null &&
+      projectedGlobalTowerStrengthRank != null;
 
   String get globalTowerStrengthRankLabel {
     final rank = globalTowerStrengthRank;
@@ -1383,7 +1410,10 @@ extension LightcoreControllerStateAccessors on LightcoreController {
     }
     final rankedPlayers = globalTowerStrengthRankedPlayers;
     final totalLabel = rankedPlayers > 0 ? ' of $rankedPlayers' : '';
-    return 'Global ranking #$rank$totalLabel based on TS $globalRankingTowerStrengthLabel.';
+    final source = globalTowerStrengthRankIsProjected
+        ? 'local live preview'
+        : 'global sync';
+    return 'Global ranking #$rank$totalLabel based on TS $globalRankingTowerStrengthLabel ($source).';
   }
 
   String get towerStrengthSummaryLabel =>
