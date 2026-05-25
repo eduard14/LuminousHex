@@ -78,6 +78,8 @@ shell, and keep climbing.
   visible during early taps.
 - Lumo/Luma guide callouts appear on loading interstitials with strategic tips
   such as balancing growth, flow, and Output Efficiency.
+- Startup, shell-linking, event-run loading, and major shell area transitions use
+  the same branded Lightcore loading interstitial.
 
 ### Towers And Builds
 

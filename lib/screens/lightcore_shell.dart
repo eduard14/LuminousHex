@@ -8,6 +8,7 @@ import '../app/lightcore_build_info.dart';
 import '../app/lightcore_bootstrap.dart';
 import '../battle/shell_promotion_presentation.dart';
 import '../models/lightcore_currency_labels.dart';
+import '../models/lightcore_guide.dart';
 import '../models/lightcore_types.dart';
 import '../models/lightcore_social_invite_link.dart';
 import '../models/lightcore_social_state.dart';
@@ -22,6 +23,7 @@ import '../widgets/aurora_panel.dart';
 import '../widgets/cosmic_guide_avatar.dart';
 import '../widgets/guided_focus_frame.dart';
 import '../widgets/lightcore_guide_badge.dart';
+import '../widgets/lightcore_loading_screen.dart';
 import '../widgets/lightcore_screen_transition.dart';
 import '../widgets/meter_bar.dart';
 import '../widgets/meta_progression_sheet.dart';
@@ -112,10 +114,12 @@ class _LightcoreShellState extends State<LightcoreShell> {
   bool _settingsDialogOpen = false;
   bool _musicEnabled = true;
   bool _soundEffectsEnabled = true;
+  _ShellOverlayDestination? _loadingOverlayDestination;
   int _shellPromotionSequence = 0;
   bool _startupOfflineClaimPresented = false;
   bool _initialSocialInviteOpened = false;
   Timer? _eventOfflineTicker;
+  Timer? _overlayLoadingTimer;
   OverlayEntry? _notificationOverlayEntry;
   String? _lastRaisedNotificationMessage;
   late final Map<_ShellOverlayDestination, ScrollController>
@@ -151,6 +155,7 @@ class _LightcoreShellState extends State<LightcoreShell> {
   );
 
   static const Duration _eventOfflineTickRate = Duration(seconds: 5);
+  static const Duration _overlayLoadingDuration = Duration(milliseconds: 160);
 
   @override
   void initState() {
@@ -205,6 +210,7 @@ class _LightcoreShellState extends State<LightcoreShell> {
   void dispose() {
     widget.controller.removeListener(_handleNotificationOverlay);
     _eventOfflineTicker?.cancel();
+    _overlayLoadingTimer?.cancel();
     _removeNotificationOverlay();
     for (final controller in _overlayScrollControllers.values) {
       controller.dispose();
@@ -348,7 +354,9 @@ class _LightcoreShellState extends State<LightcoreShell> {
   int get _selectedNavigationIndex {
     final destinations = _visibleNavigationDestinations;
     final index = destinations.indexOf(
-      _activeOverlay ?? _ShellOverlayDestination.battle,
+      _loadingOverlayDestination ??
+          _activeOverlay ??
+          _ShellOverlayDestination.battle,
     );
     return index < 0 ? 0 : index;
   }
@@ -373,22 +381,34 @@ class _LightcoreShellState extends State<LightcoreShell> {
       _resetOverlayScroll(destination);
       return;
     }
+    _overlayLoadingTimer?.cancel();
     setState(() {
-      _activeOverlay = destination;
+      _loadingOverlayDestination = destination;
       if (destination != _ShellOverlayDestination.tournaments) {
         _eventBattleSurfaceActive = false;
       }
     });
-    _syncEventOfflineTicker(destination);
-    _resetOverlayScroll(destination);
+    _overlayLoadingTimer = Timer(_overlayLoadingDuration, () {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _activeOverlay = destination;
+        _loadingOverlayDestination = null;
+      });
+      _syncEventOfflineTicker(destination);
+      _resetOverlayScroll(destination);
+    });
   }
 
   void _closeOverlay() {
-    if (_activeOverlay == null) {
+    if (_activeOverlay == null && _loadingOverlayDestination == null) {
       return;
     }
+    _overlayLoadingTimer?.cancel();
     setState(() {
       _activeOverlay = null;
+      _loadingOverlayDestination = null;
       _eventBattleSurfaceActive = false;
     });
     _syncEventOfflineTicker(null);
@@ -840,6 +860,18 @@ class _LightcoreShellState extends State<LightcoreShell> {
     };
   }
 
+  Widget _buildOverlayLoadingScreen(_ShellOverlayDestination destination) {
+    return LightcoreLoadingScreen(
+      title: 'Opening ${destination.label}',
+      subtitle: destination.loadingSubtitle,
+      statusLabel: 'Area Link',
+      accent: destination.tint,
+      signalLabels: const ['SYNC', 'MAP', 'READY'],
+      guide: LightcoreGuideProfile.lumo,
+      tips: destination.loadingTips,
+    );
+  }
+
   void _setEventBattleSurfaceActive(bool active) {
     if (_eventBattleSurfaceActive == active) {
       return;
@@ -939,7 +971,10 @@ class _LightcoreShellState extends State<LightcoreShell> {
     final controller = widget.controller;
     final isCompactLayout = MediaQuery.sizeOf(context).width < 760;
     final challengeActive = controller.activeThreatRegionChallenge != null;
-    final effectiveOverlay = challengeActive ? null : _activeOverlay;
+    final loadingOverlay = challengeActive ? null : _loadingOverlayDestination;
+    final effectiveOverlay = challengeActive
+        ? null
+        : loadingOverlay ?? _activeOverlay;
     final overlayActive = effectiveOverlay != null;
     final battleSurfaceClosedForEvent =
         effectiveOverlay == _ShellOverlayDestination.dungeons ||
@@ -1276,7 +1311,11 @@ class _LightcoreShellState extends State<LightcoreShell> {
                                       _eventBattleSurfaceActive ||
                                       effectiveOverlay ==
                                           _ShellOverlayDestination.threatMap,
-                                  child: _buildOverlayScreen(effectiveOverlay),
+                                  child: loadingOverlay == null
+                                      ? _buildOverlayScreen(effectiveOverlay)
+                                      : _buildOverlayLoadingScreen(
+                                          loadingOverlay,
+                                        ),
                                 ),
                               ),
                       ),

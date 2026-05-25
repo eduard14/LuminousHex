@@ -1749,6 +1749,43 @@ class _LightcoreAppState extends State<LightcoreApp>
         key: ValueKey<String>('lemon-goose-splash'),
         child: LemonGooseSplashScreen(),
       );
+    } else if (_isBootstrapping) {
+      currentScreen = KeyedSubtree(
+        key: const ValueKey<String>('lightcore-bootstrap-loading'),
+        child: Stack(
+          children: [
+            LightcoreMainMenuScreen(
+              guestSession: _guestSession,
+              bootstrapReport: _bootstrapReport,
+              guideProfile: _guideProfile,
+              isLoading: false,
+              onEnterGame: _enterGame,
+              onSelectGuide: _selectGuide,
+              onRetryBootstrap: () => unawaited(_bootstrapMainMenu()),
+              authBusy: _authBusy,
+              sessionNotice: _sessionNotice,
+              skipGuestSignInPrompt: _skipGuestSignInPrompt,
+              onGoogleSignIn: _signInWithGoogle,
+              onEmailSignIn: _signInWithEmail,
+              onSkipGuestSignInPromptChanged: _setSkipGuestSignInPrompt,
+            ),
+            LightcoreLoadingScreen(
+              title: 'Loading',
+              subtitle:
+                  'Checking LumiHex content, cloud save, and shell readiness.',
+              statusLabel: 'Startup Sync',
+              accent: LightcorePalette.aether,
+              signalLabels: const ['BOOT', 'SAVE', 'READY'],
+              guide: _guideProfile ?? LightcoreGuideProfile.lumo,
+              tips: const [
+                'The optimal growth strategy may not be 100% flow.',
+                'Output Efficiency can beat raw reward boosts when stability starts slipping.',
+                'Threat Scans become Knowledge Cards that improve anomaly matchups.',
+              ],
+            ),
+          ],
+        ),
+      );
     } else if (_isLinkingScreen) {
       currentScreen = KeyedSubtree(
         key: const ValueKey<String>('lightcore-screen-link'),

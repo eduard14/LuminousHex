@@ -562,6 +562,68 @@ extension on _ShellOverlayDestination {
     _ShellOverlayDestination.prestige => LightcorePalette.violet,
   };
 
+  String get loadingSubtitle => switch (this) {
+    _ShellOverlayDestination.battle =>
+      'Returning command to the active Lightcore shell.',
+    _ShellOverlayDestination.towers =>
+      'Opening tower build data and relay stat boards.',
+    _ShellOverlayDestination.managers =>
+      'Loading manager decks and automation assignments.',
+    _ShellOverlayDestination.threatMap =>
+      'Routing to the next stabilized threat region.',
+    _ShellOverlayDestination.spaceRoom =>
+      'Connecting channel chat and social relay state.',
+    _ShellOverlayDestination.friends =>
+      'Checking friend links and daily gift state.',
+    _ShellOverlayDestination.mentees =>
+      'Loading mentorship branches and mentee progress.',
+    _ShellOverlayDestination.mentors =>
+      'Loading mentor records and branch context.',
+    _ShellOverlayDestination.enemies =>
+      'Opening Knowledge Cards, Apex loadout, and threat directors.',
+    _ShellOverlayDestination.dungeons =>
+      'Preparing dungeon routes and current event progress.',
+    _ShellOverlayDestination.tournaments =>
+      'Fetching tournament modes and leaderboard snapshots.',
+    _ShellOverlayDestination.prestige =>
+      'Aligning shell promotion and layer advancement data.',
+  };
+
+  List<String> get loadingTips => switch (this) {
+    _ShellOverlayDestination.threatMap => const [
+      'Threat Map progress is linear: fully stabilize one region before the next route opens.',
+      'Farm Validation proves a region can survive three waves before offline rewards begin.',
+    ],
+    _ShellOverlayDestination.dungeons => const [
+      'Daily dungeon progress persists, so cleared targets stay unlocked.',
+      'Match the run route to your strongest Knowledge Card setup before entering.',
+    ],
+    _ShellOverlayDestination.tournaments => const [
+      'Your local rank can move immediately while global tournament data refreshes in batches.',
+      'Each tournament mode pressures a different part of the shell build.',
+    ],
+    _ShellOverlayDestination.enemies => const [
+      'Knowledge Cards improve your advantage against matching anomaly families.',
+      'Threat Directors raise spawn pressure and enemy strength for better rewards.',
+    ],
+    _ShellOverlayDestination.towers => const [
+      'Tower arrangement matters: pattern bonuses can change a shell more than one upgrade.',
+      'Older shells remain useful after promotion as passive support archives.',
+    ],
+    _ShellOverlayDestination.managers => const [
+      'Managers automate ready tower taps, but manual timing still helps during pressure spikes.',
+      'A well-matched manager can smooth charge flow across a weaker tower lane.',
+    ],
+    _ShellOverlayDestination.prestige => const [
+      'Complete shell layers become the foundation for deeper prism structures.',
+      'Promotion carries build history forward into the next shell class.',
+    ],
+    _ => const [
+      'Output Efficiency can beat raw reward boosts when stability starts slipping.',
+      'Threat Scans become Knowledge Cards that improve anomaly matchups.',
+    ],
+  };
+
   Widget get navigationIcon => switch (this) {
     _ShellOverlayDestination.battle => const Icon(Icons.radar_rounded),
     _ShellOverlayDestination.towers => const TowerRingIcon(),
