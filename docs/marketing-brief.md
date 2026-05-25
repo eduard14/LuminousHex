@@ -142,6 +142,8 @@ shell, and keep climbing.
 - Offline rewards are server-reconciled and can be doubled with rewarded ads.
 - Daily Dungeons and Prism Rift content create repeatable challenge surfaces.
 - Weekly tournaments include Anomaly Blitz, Hex Gauntlet, and Arena Flow modes.
+- Dev-only event preview URLs exist for dungeon and tournament QA in web debug
+  builds. They are not a production route or marketing claim.
 
 ### Social And Live-Ops
 

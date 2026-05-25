@@ -25,6 +25,7 @@ class _TournamentModeDetailScreen extends StatefulWidget {
     this.autoStartRun = false,
     this.onAutoStartConsumed,
     this.onBattleSurfaceActiveChanged,
+    this.devPreviewMode = false,
   });
 
   final LightcoreController controller;
@@ -39,6 +40,7 @@ class _TournamentModeDetailScreen extends StatefulWidget {
   final bool autoStartRun;
   final VoidCallback? onAutoStartConsumed;
   final ValueChanged<bool>? onBattleSurfaceActiveChanged;
+  final bool devPreviewMode;
 
   @override
   State<_TournamentModeDetailScreen> createState() =>
@@ -1269,6 +1271,28 @@ class _TournamentModeDetailScreenState
               ],
             ),
           ),
+          if (widget.devPreviewMode) ...[
+            const SizedBox(height: 12),
+            AuroraPanel(
+              tint: LightcorePalette.quest,
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.developer_mode_rounded,
+                    color: LightcorePalette.quest,
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      'Dev-only preview mode. This screen was opened from a URL parameter and is not a production release path.',
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
           const SizedBox(height: 12),
           _buildPreparationPanel(context, tint),
           const SizedBox(height: 12),

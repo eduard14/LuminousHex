@@ -36,11 +36,15 @@ class TournamentScreen extends StatefulWidget {
     required this.controller,
     required this.backend,
     this.onBattleSurfaceActiveChanged,
+    this.initialPreviewMode,
+    this.devPreviewMode = false,
   });
 
   final LightcoreController controller;
   final FirebaseLightcoreBackend backend;
   final ValueChanged<bool>? onBattleSurfaceActiveChanged;
+  final LightcoreTournamentModeId? initialPreviewMode;
+  final bool devPreviewMode;
 
   @override
   State<TournamentScreen> createState() => _TournamentScreenState();
@@ -57,6 +61,7 @@ class _TournamentScreenState extends State<TournamentScreen> {
   @override
   void initState() {
     super.initState();
+    _selectedMode = widget.initialPreviewMode;
     unawaited(_loadOverview());
   }
 
@@ -211,6 +216,7 @@ class _TournamentScreenState extends State<TournamentScreen> {
         onBattleSurfaceActiveChanged: widget.onBattleSurfaceActiveChanged,
         autoStartRun: _autoStartMode == selectedMode,
         onAutoStartConsumed: () => _consumeAutoStartMode(selectedMode),
+        devPreviewMode: widget.devPreviewMode,
       );
     }
 
@@ -222,6 +228,7 @@ class _TournamentScreenState extends State<TournamentScreen> {
       errorMessage: _errorMessage,
       onRefresh: _loadOverview,
       onOpenMode: _openMode,
+      devPreviewMode: widget.devPreviewMode,
     );
   }
 }

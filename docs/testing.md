@@ -65,6 +65,28 @@ Chrome screenshot request, leaving an empty root-level `flutter_*.png` file.
 Use the checked-in golden tests for regression screenshots, or capture the
 running web app from Chrome/DevTools instead.
 
+## Dev event preview URLs
+
+Event preview mode is a web debug-build tool only. It is gated behind
+`kDebugMode`, should not be exposed in production routes, and should not be
+marketed as a release feature.
+
+Use `eventPreview` to open the dev preview shell:
+
+```text
+/?eventPreview=dungeons&dungeon=threatDirector&tower=prism
+/?eventPreview=dungeons&dungeon=prismRift&tower=nexus
+/?eventPreview=tournaments&tournament=enemyBlitz&tower=starter
+/?eventPreview=tournaments&tournament=hexGauntlet&tower=prism
+/?eventPreview=tournaments&tournament=arenaFlow&tower=nexus
+```
+
+`devPreview` is accepted as an alias for `eventPreview`.
+
+Supported tower seeds are `starter`, `prism`, and `nexus`. Dungeon routes are
+`hub`, `threatDirector`, and `prismRift`. Tournament routes are `enemyBlitz`,
+`hexGauntlet`, and `arenaFlow`.
+
 ## Development impact
 
 The default development loop is unchanged: `flutter test` does not include the

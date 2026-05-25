@@ -9,6 +9,7 @@ class _TournamentHubScreen extends StatelessWidget {
     required this.errorMessage,
     required this.onRefresh,
     required this.onOpenMode,
+    this.devPreviewMode = false,
   });
 
   final LightcoreTournamentOverview? overview;
@@ -18,6 +19,7 @@ class _TournamentHubScreen extends StatelessWidget {
   final String? errorMessage;
   final Future<void> Function() onRefresh;
   final ValueChanged<LightcoreTournamentModeId> onOpenMode;
+  final bool devPreviewMode;
 
   @override
   Widget build(BuildContext context) {
@@ -32,6 +34,28 @@ class _TournamentHubScreen extends StatelessWidget {
             busy: busy || loading,
             onRefresh: onRefresh,
           ),
+          if (devPreviewMode) ...[
+            const SizedBox(height: 12),
+            AuroraPanel(
+              tint: LightcorePalette.quest,
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.developer_mode_rounded,
+                    color: LightcorePalette.quest,
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      'Dev-only tournament preview is active from a URL parameter. Do not ship this route as a production release surface.',
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
           if (errorMessage != null) ...[
             const SizedBox(height: 12),
             AuroraPanel(

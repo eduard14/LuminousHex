@@ -23,17 +23,23 @@ part 'daily_dungeons/dungeon_loadout_widgets.dart';
 part 'daily_dungeons/prism_rift_dungeon_math.dart';
 part 'daily_dungeons/prism_rift_dungeon_widgets.dart';
 
+enum LightcoreDungeonPreviewRoute { hub, threatDirector, prismRift }
+
 class DailyDungeonsScreen extends StatefulWidget {
   const DailyDungeonsScreen({
     super.key,
     required this.controller,
     required this.isActive,
     this.scrollController,
+    this.initialPreviewRoute = LightcoreDungeonPreviewRoute.hub,
+    this.devPreviewMode = false,
   });
 
   final LightcoreController controller;
   final bool isActive;
   final ScrollController? scrollController;
+  final LightcoreDungeonPreviewRoute initialPreviewRoute;
+  final bool devPreviewMode;
 
   @override
   State<DailyDungeonsScreen> createState() => _DailyDungeonsScreenState();
@@ -108,6 +114,20 @@ class _DailyDungeonsScreenState extends State<DailyDungeonsScreen> {
   String? _selectedDungeonEnemyManagerId;
 
   @override
+  void initState() {
+    super.initState();
+    _detailSlot = switch (widget.initialPreviewRoute) {
+      LightcoreDungeonPreviewRoute.hub => null,
+      LightcoreDungeonPreviewRoute.threatDirector =>
+        _DailyDungeonSlot.enemyManager,
+      LightcoreDungeonPreviewRoute.prismRift => _DailyDungeonSlot.prismRift,
+    };
+    if (_detailSlot != null) {
+      _selected = _detailSlot!;
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     if (!widget.isActive) {
       return const SizedBox.shrink();
@@ -155,6 +175,18 @@ class _DailyDungeonsScreenState extends State<DailyDungeonsScreen> {
               dailyKey: dailyKey,
               ownedEnemyCount: ownedCards.length,
             ),
+            if (widget.devPreviewMode) ...[
+              const SizedBox(height: 12),
+              const _DungeonGuidePanel(
+                title: 'Dev Preview',
+                instruction:
+                    'Dev-only event preview is active from a URL parameter. Do not ship this route as a production release surface.',
+                detail:
+                    'Use the preview controls outside this screen to swap routes and tower options without playing through account progression.',
+                icon: Icons.developer_mode_rounded,
+                tint: LightcorePalette.quest,
+              ),
+            ],
             const SizedBox(height: 12),
             const _DungeonGuidePanel(
               title: 'Dungeon Guide',
