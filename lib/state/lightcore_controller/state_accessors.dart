@@ -958,14 +958,14 @@ extension LightcoreControllerStateAccessors on LightcoreController {
     final towerManager = _towerCoreManagerForLayer(activeLayer);
     final threatDirector = _enemyCoreManagerForLayer(activeLayer);
     if (towerManager == null && threatDirector == null) {
-      return 'No core sockets assigned';
+      return 'No managers assigned';
     }
     final labels = <String>[];
     if (towerManager != null) {
       labels.add('Core Manager follows the new shell');
     }
     if (threatDirector != null) {
-      labels.add('Threat Director stays with this shell until reassigned');
+      labels.add('Threat Director follows the selected region');
     }
     return labels.join('; ');
   }

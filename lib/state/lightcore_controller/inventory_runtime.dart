@@ -497,7 +497,7 @@ extension LightcoreControllerInventoryRuntime on LightcoreController {
         ? 'no Threat Directors'
         : '${directorNames.length} Threat Director${directorNames.length == 1 ? '' : 's'}';
     final cardLabel = deck.map((card) => card.config.name).join(', ');
-    return 'Active anomaly deck: $affinityLabel pressure from $cardLabel with $directorLabel at $targetCount region-managed target${targetCount == 1 ? '' : 's'}.';
+    return 'Active anomaly deck: $affinityLabel pressure from $cardLabel with $directorLabel tuning current spawn cadence, enemy strength, and rewards at $targetCount region-managed target${targetCount == 1 ? '' : 's'}.';
   }
 
   PrototypeAffinity? _dominantThreatAffinity(List<EnemyCardState> deck) {
@@ -1169,9 +1169,9 @@ extension LightcoreControllerInventoryRuntime on LightcoreController {
       queueDisruptionMultiplier: queueDisruptionMultiplier,
       targetAffinity: targetAffinity,
       primaryTraitLabel:
-          'Spawn ${_formatSignedPercent(spawnRateMultiplier - 1)} • Threat ${_formatSignedPercent(rewardMultiplier - 1)} • EXP ${_formatSignedPercent(experienceMultiplier - 1)}',
+          'Spawn ${_formatSignedPercent(spawnRateMultiplier - 1)} • Rewards ${_formatSignedPercent(rewardMultiplier - 1)} • EXP ${_formatSignedPercent(experienceMultiplier - 1)}',
       secondaryTraitLabel:
-          'Health ${_formatSignedPercent(healthMultiplier - 1)} • Stability ${_formatSignedPercent(stabilityDamageMultiplier - 1)} • Apex ${_formatSignedPercent(apexStabilityMultiplier - 1)}',
+          'Enemy strength ${_formatSignedPercent(((healthMultiplier + speedMultiplier) / 2) - 1)} • Stability risk ${_formatSignedPercent(stabilityDamageMultiplier - 1)} • Apex risk ${_formatSignedPercent(apexStabilityMultiplier - 1)}',
     );
   }
 

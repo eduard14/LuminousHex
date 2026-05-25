@@ -548,7 +548,7 @@ class EnemyManagerLibrary {
       id: id,
       name: name,
       summary:
-          '$archetype archetype. Wave modifier: $modifier Design intent: $intent',
+          '$archetype archetype. Current spawn plan: $modifier Reward tradeoff: $intent',
       flavorBio: bio,
       roleLabel: 'Threat Director',
       spawnRateMultiplier: spawnRateMultiplier,

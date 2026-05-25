@@ -375,7 +375,7 @@ class _SwarmPressurePanel extends StatelessWidget {
           Text('Knowledge Book Pressure', style: textTheme.titleLarge),
           const SizedBox(height: 6),
           Text(
-            '${bundle.name}: built from the active region, Knowledge Book, and Threat Director tuning. Effective Gain is Threat Reward multiplied by Output Efficiency. ${bundle.counterplayLabel}',
+            '${bundle.name}: built from the active region, Knowledge Book, and Threat Director tuning. Directors adjust current spawn cadence and enemy strength for reward bonuses. Effective Gain is Threat Reward multiplied by Output Efficiency. ${bundle.counterplayLabel}',
             style: textTheme.bodyMedium,
           ),
           const SizedBox(height: 14),
@@ -436,7 +436,7 @@ class _SwarmPressurePanel extends StatelessWidget {
             tint: LightcorePalette.quest,
             child: _InlineEnemyNote(
               message:
-                  'Enemy quantity is no longer a manual setting. Region content and Threat Director traits define live pressure.',
+                  'Enemy quantity is no longer a manual setting. Region content and Threat Director traits define live spawn pressure.',
               tint: LightcorePalette.layer2,
             ),
           ),

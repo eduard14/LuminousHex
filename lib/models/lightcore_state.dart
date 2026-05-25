@@ -3,7 +3,7 @@ import 'lightcore_types.dart';
 
 /// Read-only projection for the active anomaly deck pressure loop.
 ///
-/// The active anomaly deck, attached Threat Directors, core stability, and
+/// The active anomaly deck, active region Threat Director, core stability, and
 /// target pressure already lived in separate controller fields. This snapshot
 /// gives UI and tests one documented surface to inspect without rebuilding the
 /// same calculations in multiple places.
@@ -42,7 +42,7 @@ class ThreatScanBundleSnapshot {
   /// Names of active anomaly cards contributing to this bundle.
   final List<String> cardNames;
 
-  /// Names of Threat Directors attached to active anomaly cards.
+  /// Names of Threat Directors attached to the active region.
   final List<String> directorNames;
 
   /// Coarse pressure tier after threat reward, stability damage, and target load.
@@ -1138,14 +1138,22 @@ class EnemyManagerState {
 
   int get dismantleFlux => forgeCost ~/ 10;
 
+  double get strengthMultiplier => (healthMultiplier + speedMultiplier) / 2;
+
+  String get spawnRewardTraitLabel =>
+      'Spawn ${_formatEnemyManagerDelta(spawnRateMultiplier - 1)} • Rewards ${_formatEnemyManagerDelta(rewardMultiplier - 1)} • EXP ${_formatEnemyManagerDelta(experienceMultiplier - 1)}';
+
+  String get strengthTraitLabel =>
+      'Enemy strength ${_formatEnemyManagerDelta(strengthMultiplier - 1)} • Stability risk ${_formatEnemyManagerDelta(stabilityDamageMultiplier - 1)} • Apex risk ${_formatEnemyManagerDelta(apexStabilityMultiplier - 1)}';
+
   String get summary {
     final focus = targetAffinity == null
         ? 'Applies to any Spectrum Band'
         : 'Best on ${targetAffinity!.label} anomalies';
     return [
       config.summary,
-      primaryTraitLabel,
-      secondaryTraitLabel,
+      spawnRewardTraitLabel,
+      strengthTraitLabel,
       focus,
     ].join('  ');
   }
@@ -1180,6 +1188,11 @@ class EnemyManagerState {
           : assignedEnemyCardId ?? this.assignedEnemyCardId,
     );
   }
+}
+
+String _formatEnemyManagerDelta(double delta) {
+  final value = (delta * 100).round();
+  return '${value >= 0 ? '+' : ''}$value%';
 }
 
 class ThreatAssignmentPresetState {

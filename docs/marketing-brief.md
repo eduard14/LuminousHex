@@ -117,8 +117,9 @@ shell, and keep climbing.
   region can produce offline rewards.
 - Swarm Magnet controls the account-wide farming swarm size and can be rerolled
   with dedicated currency.
-- Threat Directors modify encounter pressure, rewards, speed, stability damage,
-  farm wave cadence, and Apex behavior.
+- Threat Directors tune the selected region's current spawn cadence, enemy
+  strength, reward bonuses, EXP, stability risk, farm wave cadence, and Apex
+  behavior.
 - Apex Anomalies spawn after normal anomaly progress and grant larger rewards.
 - Threat Map and regional challenge surfaces frame anomaly pressure by region.
 - The starter-region Challenge Lv 1 prompt appears as a bottom battle action

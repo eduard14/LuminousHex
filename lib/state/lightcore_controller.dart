@@ -687,7 +687,7 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
     trigger: 'Managers unlocked',
     primaryClickTarget: 'Bottom nav > Managers',
     coachCopy:
-        'Open Managers. Core Managers automate tower taps, while Threat Directors reshape anomaly pressure and rewards.',
+        'Open Managers. Core Managers automate tower taps, while Threat Directors tune live spawns, enemy strength, and rewards.',
     completionCondition: 'Managers screen opened',
     reward: 'Flux',
     failureHelpState: 'Use the highlighted Managers button in the bottom nav.',
@@ -724,11 +724,11 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
     id: 'TUT-028',
     title: 'Forge a Threat Director',
     teachGoal:
-        'Threat Directors change spawn pressure, rewards, health, and speed.',
+        'Threat Directors change current spawn pressure, enemy strength, and reward bonuses.',
     trigger: 'Core Manager assigned with enough Flux',
     primaryClickTarget: 'Managers > Threat Director foundry > Forge',
     coachCopy:
-        'Forge one Threat Director. Directors are how you tune enemy pressure instead of only reacting to it.',
+        'Forge one Threat Director. Directors are how you tune enemy pressure and rewards instead of only reacting to them.',
     completionCondition: 'Own one Threat Director',
     reward: 'Flux',
     failureHelpState: 'Use the highlighted Threat Director forge control.',
@@ -738,12 +738,12 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
     id: 'TUT-029',
     title: 'Assign a Threat Director',
     teachGoal:
-        'An assigned Threat Director reshapes a revealed region after stabilization validates the setup.',
+        'An assigned Threat Director tunes the selected region immediately, then stabilization validates its offline output.',
     trigger: 'Threat Director owned',
     primaryClickTarget:
         'Managers > Threat Director > Assign to Selected Region',
     coachCopy:
-        'Assign the Threat Director to the selected Threat Map region, then restabilize that region.',
+        'Assign the Threat Director to the selected Threat Map region, then restabilize that region for offline output.',
     completionCondition: 'Assign director to region',
     reward: 'Threat Scans',
     failureHelpState:

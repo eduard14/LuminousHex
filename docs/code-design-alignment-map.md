@@ -45,7 +45,7 @@ start from a targeted `rg` search.
 | Core Stability and Output Efficiency formula | Aligned | `_outputEfficiencyPercentForStability`, `_setCoreStability`, `outputEfficiencyMultiplier`, `activeEffectiveGainMultiplier` | Formula matches V8: `E = max(E_min, (S / 100)^gamma)` with `E_min = 0.15`, `gamma = 1.10`. Effective gain is exposed as Threat Reward x Output Efficiency. |
 | Stability damage and recovery | Aligned | `_applyLumenHarvestDamage`, `_stabilityDamageMultiplierForEnemy`, `_recoverLumenHarvest`, `coreStabilityRecoveryPerSecond` | Leaks and Apex pressure reduce Core Stability rather than player health. Recovery uses base recovery plus green tower, manager, and core-level contributions. |
 | Threat Scans as risk/reward bundles | Partial | `ThreatScanBundleSnapshot`, `activeThreatScanBundle`, `openEnemyTickets`, `activeEnemyDeck`, `activeThreatRewardMultiplier`, `activeThreatStabilityMultiplier`, `enemyTargetCount` | Threat Scans unlock or copy anomaly cards, and the armed deck is now projected into a formal bundle snapshot with risk, reward, stability pressure, director names, and counterplay. This is still derived from deck composition rather than authored selectable bundle content. |
-| Threat Directors | Partial | `EnemyManagerLibrary`, `_generateEnemyManager`, `assignEnemyManagerToCard`, `_enemyManagerEffectMultiplier` | Threat Directors use the old bible display-name roster while preserving V8-style mechanical archetypes in config summaries. They modify health, speed, reward, stability, spawn pressure, queue disruption, and Apex stability. They attach to individual anomaly cards, not directly to a Threat Scan/core object. |
+| Threat Directors | Aligned | `EnemyManagerLibrary`, `_generateEnemyManager`, `assignEnemyManagerToCore`, `activeRegionThreatDirector`, `_enemyManagerEffectMultiplier` | Threat Directors use the old bible display-name roster while preserving V8-style mechanical archetypes in config summaries. They attach to Threat Map regions and tune the current spawn cadence, enemy strength, rewards, EXP, stability risk, farm wave cadence, queue disruption, and Apex stability. |
 | Apex Anomaly cadence | Aligned | `bossSpawnKillRequirement`, `normalKillsSinceBoss`, `bossReady`, `_spawnEnemy`, `_killEnemy` | Every 100 normal anomaly clears primes the next Apex spawn if an Apex card is armed. Apex clears grant Lumens, Apex Scans, Heartcores, and sometimes other rewards. |
 | Apex pressure | Aligned | `_apexBaseStabilityDamageMultiplier`, `_apexRarityStabilityDamageStep`, `_directorApexStabilityMultiplier` | Apex enemies multiply stability damage and can inherit director pressure. There is no separate health bar fail state, consistent with V8's efficiency-defense direction. |
 | Equipment acquisition | Aligned | `equipmentDropChanceForEnemy`, `_awardEquipmentDropIfRolled`, `_grantEquipmentEventCache`, `TournamentRewardPackage` | Normal and Apex anomaly clears no longer roll equipment. Event caches and tournament reward packages are the acquisition path; debug helpers remain for tests and tools. |
@@ -187,8 +187,9 @@ start from a targeted `rg` search.
   `emg_001_plain_jane_quasar` through `emg_040_the_dark_spectrum`; archetype
   math remains Swarm, Titan, Phase, Regen, Gravity, Greed, Saboteur, Volatile,
   or Apex Herald.
-- Threat Director effects are applied through `_managerValue` and
-  `_enemyManagerEffectMultiplier`.
+- Threat Directors attach to Threat Map regions. The selected or validating
+  region exposes its director through `activeRegionThreatDirector`, and effects
+  are applied through `_managerValue` and `_enemyManagerEffectMultiplier`.
 - Apex cadence is controlled by `bossSpawnKillRequirement`, currently 100.
 - `activeLayer.normalKillsSinceBoss` and `activeLayer.bossReady` are layer-local,
   matching the current shell architecture.

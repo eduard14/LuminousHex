@@ -238,7 +238,7 @@ class _EnemyManagerLoadoutSelector extends StatelessWidget {
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    'Forge a Threat Director manager to tune launch timing and impact pressure.',
+                    'Forge a Threat Director to tune spawn cadence, enemy strength, and reward bonuses.',
                     style: textTheme.bodyMedium?.copyWith(
                       color: LightcorePalette.mist.withValues(alpha: 0.68),
                     ),

@@ -66,7 +66,7 @@ class CardManagementScreen extends StatelessWidget {
                 LightcoreInfoButton(
                   title: 'Main Manager Help',
                   message: controller.managerAssignmentUnlocked
-                      ? 'Socket one Core Manager into the Tower Core. Threat Directors attach to revealed regions on the Threat Map and must be validated through stabilization.'
+                      ? 'Socket one Core Manager into the Tower Core. Threat Directors attach to revealed regions and tune the current spawn, enemy strength, and reward bonuses.'
                       : 'Manager assignment unlocks when this Layer 1 shell has all ${LightcoreController.slotCount} outer towers online. Flux still banks now so the foundry is ready when it opens.',
                   tint: LightcorePalette.aether,
                 ),
@@ -117,7 +117,7 @@ class CardManagementScreen extends StatelessWidget {
               tint: LightcorePalette.aether,
               subtitle: !controller.managerAssignmentUnlocked
                   ? 'Build all ${LightcoreController.slotCount} outer towers in this Layer 1 shell before tower sockets can take managers.'
-                  : 'Core Managers mount on the shell. Threat Directors are assigned per region from the selected Threat Map hex.',
+                  : 'Core Managers mount on the shell. Threat Directors tune the selected region live and validate offline output after stabilization.',
             ),
             const SizedBox(height: 10),
             Wrap(
@@ -309,7 +309,7 @@ class CardManagementScreen extends StatelessWidget {
                   ? 'Build all ${LightcoreController.slotCount} outer towers in this Layer 1 shell before Threat Directors can be assigned.'
                   : controller.enemyManagers.isEmpty
                   ? 'No Threat Directors in inventory yet. Locked roster previews are collapsed below.'
-                  : 'Assign a Director to the selected Threat Map region, then run Farm Validation to validate offline output.',
+                  : 'Assign a Director to tune current spawn cadence, enemy strength, and rewards for the selected region.',
             ),
             const SizedBox(height: 10),
             if (controller.enemyManagers.isEmpty) ...[
@@ -533,6 +533,19 @@ String _enemyManagerStatus(
     return 'Region Assigned';
   }
   return 'Ready';
+}
+
+double _adjustedThreatDirectorStrengthDelta(
+  LightcoreController controller,
+  EnemyManagerState manager,
+) {
+  final health = controller.managerPowerAdjustedMultiplier(
+    manager.healthMultiplier,
+  );
+  final speed = controller.managerPowerAdjustedMultiplier(
+    manager.speedMultiplier,
+  );
+  return ((health + speed) / 2) - 1;
 }
 
 String _signedPercent(double delta) {
@@ -1155,8 +1168,8 @@ class _ManagerForgeRevealPull {
       family: ManagerPortraitFamily.threat,
       tint: focus?.color ?? LightcorePalette.flare,
       tags: [
-        manager.primaryTraitLabel,
-        manager.secondaryTraitLabel,
+        manager.spawnRewardTraitLabel,
+        manager.strengthTraitLabel,
         if (focus != null) focus.label,
       ],
     );
@@ -2498,13 +2511,18 @@ class _LockedEnemyManagerDetailSheet extends StatelessWidget {
           runSpacing: 10,
           children: [
             _InfoChip(
-              label: 'Spawn ${_signedPercent(config.spawnRateMultiplier - 1)}',
+              label:
+                  'Live spawn ${_signedPercent(config.spawnRateMultiplier - 1)}',
             ),
             _InfoChip(
-              label: 'Reward ${_signedPercent(config.rewardMultiplier - 1)}',
+              label: 'Rewards ${_signedPercent(config.rewardMultiplier - 1)}',
             ),
             _InfoChip(
               label: 'EXP ${_signedPercent(config.experienceMultiplier - 1)}',
+            ),
+            _InfoChip(
+              label:
+                  'Enemy strength ${_signedPercent(((config.healthMultiplier + config.speedMultiplier) / 2) - 1)}',
             ),
             _InfoChip(
               label: 'Health ${_signedPercent(config.healthMultiplier - 1)}',
@@ -2681,7 +2699,7 @@ class _EnemyManagerDetailSheet extends StatelessWidget {
           runSpacing: 10,
           children: [
             _InfoChip(label: _enemyManagerStatus(controller, manager)),
-            const _InfoChip(label: 'Region threats'),
+            const _InfoChip(label: 'Live spawn tuning'),
           ],
         ),
         const SizedBox(height: 14),
@@ -2698,15 +2716,19 @@ class _EnemyManagerDetailSheet extends StatelessWidget {
           children: [
             _InfoChip(
               label:
-                  'Spawn ${_signedPercent(controller.managerPowerAdjustedMultiplier(manager.spawnRateMultiplier) - 1)}',
+                  'Live spawn ${_signedPercent(controller.managerPowerAdjustedMultiplier(manager.spawnRateMultiplier) - 1)}',
             ),
             _InfoChip(
               label:
-                  'Reward ${_signedPercent(controller.managerPowerAdjustedMultiplier(manager.rewardMultiplier) - 1)}',
+                  'Rewards ${_signedPercent(controller.managerPowerAdjustedMultiplier(manager.rewardMultiplier) - 1)}',
             ),
             _InfoChip(
               label:
                   'EXP ${_signedPercent(controller.managerPowerAdjustedMultiplier(manager.experienceMultiplier) - 1)}',
+            ),
+            _InfoChip(
+              label:
+                  'Enemy strength ${_signedPercent(_adjustedThreatDirectorStrengthDelta(controller, manager))}',
             ),
             _InfoChip(
               label:

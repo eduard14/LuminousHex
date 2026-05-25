@@ -33,7 +33,8 @@ whether the viewed shell is the live battle focus or a passive support archive.
 
 Anomaly pulls are also non-standard: you summon anomaly cards to define the
 anomalies you fight, not the units you own. Cards create the active anomaly
-deck for a layer, and Threat Directors tune those anomaly cards further.
+deck for a layer, and the selected region's Threat Director tunes current spawn
+cadence, enemy strength, and reward bonuses.
 
 ## Current Gameplay Loop
 

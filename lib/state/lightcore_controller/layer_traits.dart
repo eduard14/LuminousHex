@@ -1538,7 +1538,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         LightcoreTutorialStep.forgeEnemyManager =>
           'Click Managers and forge 1 Threat Director.',
         LightcoreTutorialStep.assignEnemyManager =>
-          'Click a Threat Director tile, then assign it to the Tower Core.',
+          'Click a Threat Director tile, then assign it to the selected region.',
         LightcoreTutorialStep.holdOverdrive =>
           'Hold the Overdrive button until the battle speeds up.',
         LightcoreTutorialStep.setScreenName =>
@@ -1618,9 +1618,9 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         LightcoreTutorialStep.assignTowerManager =>
           'Assigned Core Managers spend prism charge for you, turning manual taps into an automated firing rhythm.',
         LightcoreTutorialStep.forgeEnemyManager =>
-          'Threat Director pulls cost Flux and advance the Threat Director Pass. Their bonuses reshape spawn pressure and rewards.',
+          'Threat Director pulls cost Flux and advance the Threat Director Pass. Their bonuses tune live spawns, enemy strength, and rewards.',
         LightcoreTutorialStep.assignEnemyManager =>
-          'Threat Directors attach to a revealed region. Restabilizing that region validates the Director for offline output.',
+          'Threat Directors attach to a revealed region immediately. Restabilizing that region validates the Director for offline output.',
         LightcoreTutorialStep.holdOverdrive =>
           'Manual Overdrive only accelerates live battle time. Passive shell income still tracks real time, so use it when you are actively pushing lanes.',
         LightcoreTutorialStep.setScreenName =>
@@ -1699,9 +1699,9 @@ extension LightcoreControllerLayerTraits on LightcoreController {
           LightcoreTutorialStep.assignTowerManager =>
             'A manager steps into the relay chair and starts turning charged prisms into repeatable output.',
           LightcoreTutorialStep.forgeEnemyManager =>
-            'The anomaly foundry answers next, offering a Threat Director who can reshape hostile traffic instead of only fighting it.',
+            'The anomaly foundry answers next, offering a Threat Director who can tune hostile traffic and payouts instead of only fighting them.',
           LightcoreTutorialStep.assignEnemyManager =>
-            'The selected region gets a director, changing how that stabilized threat bundle pressures the shell and pays out.',
+            'The selected region gets a director, changing current spawn pressure, enemy strength, and payout bonuses.',
           LightcoreTutorialStep.holdOverdrive =>
             '"Sometimes in space, things are really far apart," Lumo says. "Hold Overdrive when a child lane feels long and pull the battle clock toward you."',
           LightcoreTutorialStep.setScreenName =>
