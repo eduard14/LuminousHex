@@ -39,7 +39,6 @@ class _ShellProfileHeaderHud extends StatelessWidget {
         guide: controller.guideProfile,
         size: avatarSize,
         equipmentLoadout: guideLoadout,
-        avatarCosmetics: controller.avatarCosmeticLoadout,
       ),
     );
 

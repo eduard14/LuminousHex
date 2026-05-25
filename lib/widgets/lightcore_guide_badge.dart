@@ -10,7 +10,6 @@ class LightcoreGuideBadge extends StatelessWidget {
     required this.guide,
     this.size = 48,
     this.equipmentLoadout = CosmicEquipmentLoadout.empty,
-    this.avatarCosmetics = AvatarCosmeticLoadout.empty,
     this.phase = 0,
     this.boosting = false,
     this.pose = LightcoreAvatarPose.idle,
@@ -19,7 +18,6 @@ class LightcoreGuideBadge extends StatelessWidget {
   final LightcoreGuideProfile guide;
   final double size;
   final CosmicEquipmentLoadout equipmentLoadout;
-  final AvatarCosmeticLoadout avatarCosmetics;
   final double phase;
   final bool boosting;
   final LightcoreAvatarPose pose;
@@ -30,7 +28,6 @@ class LightcoreGuideBadge extends StatelessWidget {
       guide: guide,
       size: size,
       loadout: equipmentLoadout,
-      avatarCosmetics: avatarCosmetics,
       phase: phase,
       boosting: boosting,
       pose: pose,

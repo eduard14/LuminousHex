@@ -17,7 +17,7 @@ materials would become stale.
 | Developer / splash credit | Lemon Goose Games Inc. |
 | Genre | Mobile idle tower defense with hex-shell progression |
 | Platforms | iOS and Android planned; web is a staging/test surface |
-| Monetization model | Free-to-play with rewarded ads, Prism Shard packs, capped bundles, cosmetics, battle-pass style tracks, and premium membership scaffolding |
+| Monetization model | Free-to-play with rewarded ads, Prism Shard packs, capped bundles, battle-pass style tracks, and premium membership scaffolding |
 | Brand rule | LumiHex is the public game name. Lightcore is the in-world core object. Lumicore should be treated as backend/project residue, not a public brand. |
 
 ## One-Line Pitch
@@ -149,7 +149,7 @@ shell, and keep climbing.
 - Friends, requests, and daily Apex Scan/Threat Scan gift flows.
 - Mentorship with mentor, mentee, and branch-context surfaces.
 - Guild state and guild creation scaffolding exist for future live-ops expansion.
-- Store, Prism Shard packs, bundles, boosts, cosmetics, and Premium Membership
+- Store, Prism Shard packs, bundles, boosts, and Premium Membership
   scaffolding exist, but production purchase wiring still needs release hardening.
 - Rewarded ad placements exist for mobile builds, but current checked-in ad IDs
   are test IDs.
@@ -166,8 +166,8 @@ Primary players:
 Secondary players:
 
 - Casual strategy players who like clear loops and daily rewards.
-- Collection-driven players interested in Knowledge Cards, managers,
-  cosmetics, passes, and event rewards.
+- Collection-driven players interested in Knowledge Cards, managers, passes, and
+  event rewards.
 
 ## Store And Landing Page Angles
 

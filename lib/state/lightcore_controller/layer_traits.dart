@@ -1610,7 +1610,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         LightcoreTutorialStep.defeatFirstBoss =>
           'Apex Anomalies are milestone fights. This first one is weakened so you can learn the scan loop before full-strength encounters.',
         LightcoreTutorialStep.openEquipment =>
-          'The profile panel is where account attributes and avatar customization live.',
+          'The profile panel is where account attributes and guide identity live.',
         LightcoreTutorialStep.openManagers =>
           'Managers are flux-forged modifiers. Core Managers assign to the shell, while Threat Directors attach to Threat Map regions.',
         LightcoreTutorialStep.forgeTowerManager =>

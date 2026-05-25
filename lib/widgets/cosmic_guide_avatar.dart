@@ -2,7 +2,6 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
-import '../data/avatar_cosmetic_configs.dart';
 import '../models/lightcore_avatar.dart';
 import '../models/lightcore_guide.dart';
 import '../models/lightcore_state.dart';
@@ -151,7 +150,6 @@ class CosmicGuideAvatar extends StatelessWidget {
     this.loadout = CosmicEquipmentLoadout.empty,
     this.phase = 0,
     this.boosting = false,
-    this.avatarCosmetics = AvatarCosmeticLoadout.empty,
     this.pose = LightcoreAvatarPose.idle,
     this.usePortraitAsset = true,
     this.framed = true,
@@ -163,7 +161,6 @@ class CosmicGuideAvatar extends StatelessWidget {
   final CosmicEquipmentLoadout loadout;
   final double phase;
   final bool boosting;
-  final AvatarCosmeticLoadout avatarCosmetics;
   final LightcoreAvatarPose pose;
   final bool usePortraitAsset;
   final bool framed;
@@ -216,10 +213,6 @@ class CosmicGuideAvatar extends StatelessWidget {
                     },
                   ),
                 ),
-                _AvatarCosmeticSpriteOverlay(
-                  guide: guide,
-                  loadout: avatarCosmetics,
-                ),
                 _EquipmentSpriteOverlay(loadout: loadout),
               ],
             ),
@@ -244,10 +237,6 @@ class CosmicGuideAvatar extends StatelessWidget {
                     pose: pose,
                     drawFrame: framed,
                   ),
-                ),
-                _AvatarCosmeticSpriteOverlay(
-                  guide: guide,
-                  loadout: avatarCosmetics,
                 ),
                 _EquipmentSpriteOverlay(loadout: loadout),
               ],
@@ -376,114 +365,6 @@ class _AvatarPoseTransform extends StatelessWidget {
   Widget build(BuildContext context) {
     return child;
   }
-}
-
-class _AvatarCosmeticSpriteOverlay extends StatelessWidget {
-  const _AvatarCosmeticSpriteOverlay({
-    required this.guide,
-    required this.loadout,
-  });
-
-  final LightcoreGuideProfile guide;
-  final AvatarCosmeticLoadout loadout;
-
-  @override
-  Widget build(BuildContext context) {
-    if (loadout.isEmpty) {
-      return const SizedBox.expand();
-    }
-    final face = loadout.faceId == null
-        ? null
-        : AvatarCosmeticCatalog.byId[loadout.faceId];
-    final hair = loadout.hairId == null
-        ? null
-        : AvatarCosmeticCatalog.byId[loadout.hairId];
-    if (face == null && hair == null) {
-      return const SizedBox.expand();
-    }
-    return IgnorePointer(
-      child: Stack(
-        fit: StackFit.expand,
-        clipBehavior: Clip.none,
-        children: [
-          if (face != null)
-            _AvatarCosmeticSprite(
-              config: face,
-              bounds: _cosmeticBoundsFor(guide, AvatarCosmeticType.face),
-            ),
-          if (hair != null)
-            _AvatarCosmeticSprite(
-              config: hair,
-              bounds: _cosmeticBoundsFor(guide, AvatarCosmeticType.hair),
-            ),
-        ],
-      ),
-    );
-  }
-
-  static _AvatarCosmeticBounds _cosmeticBoundsFor(
-    LightcoreGuideProfile guide,
-    AvatarCosmeticType type,
-  ) {
-    return switch ((guide.id, type)) {
-      (LightcoreGuideId.luma, AvatarCosmeticType.face) =>
-        const _AvatarCosmeticBounds(left: 0.31, top: 0.2, size: 0.36),
-      (LightcoreGuideId.luma, AvatarCosmeticType.hair) =>
-        const _AvatarCosmeticBounds(left: 0.25, top: 0.01, size: 0.42),
-      (LightcoreGuideId.lumo, AvatarCosmeticType.face) =>
-        const _AvatarCosmeticBounds(left: 0.31, top: 0.2, size: 0.36),
-      (LightcoreGuideId.lumo, AvatarCosmeticType.hair) =>
-        const _AvatarCosmeticBounds(left: 0.28, top: 0.02, size: 0.4),
-    };
-  }
-}
-
-class _AvatarCosmeticSprite extends StatelessWidget {
-  const _AvatarCosmeticSprite({required this.config, required this.bounds});
-
-  final AvatarCosmeticConfig config;
-  final _AvatarCosmeticBounds bounds;
-
-  @override
-  Widget build(BuildContext context) {
-    return Positioned.fill(
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final size = constraints.maxWidth * bounds.size;
-          return Stack(
-            clipBehavior: Clip.none,
-            children: [
-              Positioned(
-                left: constraints.maxWidth * bounds.left,
-                top: constraints.maxHeight * bounds.top,
-                width: size,
-                height: size,
-                child: Image.asset(
-                  config.assetPath,
-                  fit: BoxFit.contain,
-                  filterQuality: FilterQuality.high,
-                  errorBuilder: (context, error, stackTrace) =>
-                      const SizedBox.shrink(),
-                ),
-              ),
-            ],
-          );
-        },
-      ),
-    );
-  }
-}
-
-class _AvatarCosmeticBounds {
-  const _AvatarCosmeticBounds({
-    required this.left,
-    required this.top,
-    required this.size,
-  });
-
-  final double left;
-  final double top;
-  final double size;
 }
 
 class _EquipmentSprite extends StatelessWidget {

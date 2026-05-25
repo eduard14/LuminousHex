@@ -20,23 +20,6 @@ extension LightcoreControllerSaveRestorePayload on LightcoreController {
     _hasPermanentOverdrive = _boolValue(playerData['hasPermanentOverdrive']);
     _hasPremiumMembership = _boolValue(playerData['hasPremiumMembership']);
     _bossUnlockGrantClaimed = _boolValue(playerData['bossUnlockGrantClaimed']);
-    final avatarCosmeticData = _coerceMap(playerData['avatarCosmetics']);
-    _unlockedAvatarCosmeticIds
-      ..clear()
-      ..addAll(
-        _coerceList(avatarCosmeticData['unlockedIds'])
-            .map(_stringOrNull)
-            .whereType<String>()
-            .where(AvatarCosmeticCatalog.byId.containsKey),
-      );
-    _equippedHairCosmeticId = _restoreEquippedAvatarCosmetic(
-      avatarCosmeticData['equippedHairId'],
-      AvatarCosmeticType.hair,
-    );
-    _equippedFaceCosmeticId = _restoreEquippedAvatarCosmetic(
-      avatarCosmeticData['equippedFaceId'],
-      AvatarCosmeticType.face,
-    );
     _equippedProfileMedalId = _stringOrNull(
       playerData['equippedProfileMedalId'],
     );
@@ -583,22 +566,6 @@ extension LightcoreControllerSaveRestorePayload on LightcoreController {
       for (final stat in LightcoreRadianceStat.values)
         stat.name: radianceStatRank(stat),
     };
-  }
-
-  String? _restoreEquippedAvatarCosmetic(
-    dynamic value,
-    AvatarCosmeticType expectedType,
-  ) {
-    final cosmeticId = _stringOrNull(value);
-    if (cosmeticId == null ||
-        !_unlockedAvatarCosmeticIds.contains(cosmeticId)) {
-      return null;
-    }
-    final config = AvatarCosmeticCatalog.byId[cosmeticId];
-    if (config == null || config.type != expectedType) {
-      return null;
-    }
-    return cosmeticId;
   }
 
   void _restoreRadianceStats(Map<String, dynamic> data) {

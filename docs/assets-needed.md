@@ -14,8 +14,8 @@ needs real assets, product IDs, prices, reward values, and live-service config.
 - Subscriptions are purchased directly through the platform stores.
 - Every non-subscription purchase should use one premium currency.
 - Working premium currency name: `Prism Shards`.
-- Do not use direct real-money SKUs for passes, consumables, cosmetics, boosts,
-  or bundles unless this decision changes.
+- Do not use direct real-money SKUs for passes, consumables, boosts, or bundles
+  unless this decision changes.
 - Keep `Flux` as a gameplay resource unless it is intentionally renamed into the
   premium currency. The current prototype spends Flux on manager forging, store
   conversions, and premium pass unlocks, so it needs a cleanup pass before
@@ -116,7 +116,7 @@ place.
 | Equipment slot base icons | 5 | 512 x 512 each | `assets/images/gear/slots/` | Hat, Top, Pants, Shoes, Accessory. |
 | Equipment item icons | 35 or layered | 512 x 512 each | `assets/images/gear/items/` | Use 5 slot bases plus 7 set overlays for the first pass. |
 | Navigation icon set | 8 | 256 x 256 each | `assets/images/ui/nav/` | Battle, Towers, Managers, Mentees, Mentors, Anomalies, Tournament, Advance. |
-| Battle pass reward badges | 8 | 256 x 256 each | `assets/images/ui/rewards/` | Lumens, Flux, Prism Shards, Threat Scans, Core Manager, Threat Director, Anomaly Card, cosmetic. |
+| Battle pass reward badges | 7 | 256 x 256 each | `assets/images/ui/rewards/` | Lumens, Flux, Prism Shards, Threat Scans, Core Manager, Threat Director, Knowledge Card. |
 | Tournament banners | 3 | 1600 x 900 each | `assets/images/ui/tournaments/` | Anomaly Blitz, Hex Gauntlet, Arena Flow. |
 | Friend relay emblem | 1 | 512 x 512 | `assets/images/ui/social/friend_relay.png` | Used on Friend Relay and alliance surfaces. |
 | Guild crest | 1 | 512 x 512 | `assets/images/ui/social/guild_crest.png` | Used for guild creation, roster, and chat framing. |
@@ -247,7 +247,6 @@ Suggested use:
 
 - Unlock premium battle pass tracks.
 - Buy limited bundles.
-- Buy cosmetics.
 - Buy boosters.
 - Buy extra Threat Scans.
 - Buy manager forge tokens or manager packs.
@@ -382,24 +381,6 @@ Boost config checklist:
 | --- | --- | ---: | --- | --- |
 | `account_permanent_overdrive` | Permanent Overdrive | 240 | Always-on X1.50 live battle speed. | One-time Prism Shard unlock. Not a direct platform SKU. |
 
-### Cosmetics
-
-| Store ID | Name | Cost | Type | Art Needed |
-| --- | --- | ---: | --- | --- |
-| `cosmetic_core_skin_nebula` | Nebula Core | TBD | Core skin | Core sprite set. |
-| `cosmetic_tower_skin_obsidian` | Obsidian Relay Set | TBD | Tower skin set | 7 tower family states. |
-| `cosmetic_projectile_pack_starlace` | Starlace Projectiles | TBD | Projectile skin set | 9 projectile sprites. |
-| `cosmetic_profile_frame_founder` | Founder Frame | TBD | Profile frame | UI frame art. |
-| `cosmetic_guild_banner_solar` | Solar Guild Banner | TBD | Guild banner | Guild/social art. |
-
-Cosmetic config checklist:
-
-- Ownership flag.
-- Equip slot.
-- Preview art.
-- Refund behavior.
-- Whether cosmetics are account-wide.
-
 ### Bundles
 
 | Store ID | Name | Cost | Contents | Notes |
@@ -407,7 +388,7 @@ Cosmetic config checklist:
 | `bundle_starter_relay_cache` | Starter Relay Cache | 90 | 2,000 Lumens, 25 Flux, 6 Threat Scans | Prototype weekly cap: 1. Purchased with Prism Shards, not direct money. |
 | `bundle_manager_foundry` | Manager Foundry Bundle | TBD | Core manager forge, threat director forge, Flux | Unlock only after managers unlock. |
 | `bundle_battle_ready` | Battle Ready Bundle | TBD | Boosts, Threat Scans, Lumens | Rotate weekly if used. |
-| `bundle_tournament_weekly` | Weekly Tournament Bundle | TBD | Entry boosts or reruns, cosmetics | Avoid pay-to-win leaderboard pressure. |
+| `bundle_tournament_weekly` | Weekly Tournament Bundle | TBD | Entry boosts or reruns | Avoid pay-to-win leaderboard pressure. |
 
 Bundle config checklist:
 
@@ -465,7 +446,7 @@ Fields to configure for each pass:
 | Store catalog | Product IDs, prices, visible dates, purchase limits, grants, art paths, localization keys. |
 | Pass catalog | Season keys, tier tables, unlock costs, reset times, reward tables. |
 | Ad rewards | Placement IDs, grant amounts, caps, cooldowns, server-side claim ledger. |
-| Remote config | Feature flags for store, ads, subscriptions, passes, premium currency, cosmetics, boosts. |
+| Remote config | Feature flags for store, ads, subscriptions, passes, premium currency, and boosts. |
 | Save integrity | Add premium currency and entitlement fields to sanitizer and anomaly logs. |
 | Time authority | Server reset time for daily pass, daily ad caps, daily subscription grants. |
 | Privacy | Consent flow, ad personalization flags, account deletion path, purchase support copy. |
@@ -492,7 +473,6 @@ Fields to configure for each pass:
 | `ad_unavailable` | Ad placement is unavailable. |
 | `bundle_purchased` | In-game bundle bought with Prism Shards. |
 | `boost_started` | Boost is activated. |
-| `cosmetic_equipped` | Cosmetic is equipped. |
 
 ## Product Copy To Write
 

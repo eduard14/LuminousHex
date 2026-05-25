@@ -279,15 +279,10 @@ class _LightcoreStoreSheetState extends State<LightcoreStoreSheet> {
         LightcoreController.timeWarpPrismTwelveHoursId,
       )!,
     );
-    final cosmeticOffers = AvatarCosmeticCatalog.all
-        .map(_avatarCosmeticOffer)
-        .toList(growable: false);
-
     return switch (category) {
       _StoreCategory.featured => [
         premiumMembershipOffer,
         shardPacks[1],
-        ...cosmeticOffers.take(2),
         starterRelayCache,
         threatScanFive,
         prismRelayWarp,
@@ -308,63 +303,12 @@ class _LightcoreStoreSheetState extends State<LightcoreStoreSheet> {
         prismRelayWarp,
         prismDeepWarp,
       ],
-      _StoreCategory.cosmetics => cosmeticOffers,
       _StoreCategory.premium => [
         premiumMembershipOffer,
         overdriveOffer,
         radianceResetOffer,
       ],
     };
-  }
-
-  _StoreOffer _avatarCosmeticOffer(AvatarCosmeticConfig config) {
-    final owned = widget.controller.isAvatarCosmeticUnlocked(config.id);
-    final equipped = widget.controller.isAvatarCosmeticEquipped(config.id);
-    final currentLoadout = widget.controller.avatarCosmeticLoadout;
-    final previewLoadout = switch (config.type) {
-      AvatarCosmeticType.hair => AvatarCosmeticLoadout(
-        hairId: config.id,
-        faceId: currentLoadout.faceId,
-      ),
-      AvatarCosmeticType.face => AvatarCosmeticLoadout(
-        hairId: currentLoadout.hairId,
-        faceId: config.id,
-      ),
-    };
-    return _StoreOffer(
-      title: config.name,
-      subtitle: config.summary,
-      quantityLabel: _cosmeticStoreTypeLabel(config.type),
-      priceLabel: owned ? 'Owned' : config.pricePrismShards.toString(),
-      currency: _StoreCurrency.prismShards,
-      limitLabel: owned ? 'Unlocked' : 'Account',
-      noteLabel: config.rarity.label,
-      badgeLabel: 'Cosmetic',
-      buttonLabel: equipped
-          ? 'Equipped'
-          : owned
-          ? 'Equip'
-          : 'Buy',
-      icon: _cosmeticStoreIcon(config.type),
-      tint: _cosmeticStoreTint(config),
-      enabled: equipped
-          ? false
-          : owned
-          ? true
-          : widget.controller.canPurchaseAvatarCosmetic(config.id),
-      onPressed: () {
-        if (owned) {
-          widget.controller.equipAvatarCosmetic(config.id);
-        } else {
-          widget.controller.purchaseAvatarCosmetic(config.id);
-        }
-      },
-      cosmeticPreview: _StoreCosmeticPreviewData(
-        guide: widget.controller.guideProfile,
-        loadout: previewLoadout,
-        config: config,
-      ),
-    );
   }
 
   _StoreOffer _prismShardPackOffer(_PrismShardPackDefinition pack) {
@@ -523,14 +467,7 @@ class _LightcoreStoreSheetState extends State<LightcoreStoreSheet> {
   }
 }
 
-enum _StoreCategory {
-  featured,
-  shardPacks,
-  cosmetics,
-  bundles,
-  boosts,
-  premium,
-}
+enum _StoreCategory { featured, shardPacks, bundles, boosts, premium }
 
 enum _StoreCurrency { cash, flux, prismShards }
 
@@ -538,7 +475,6 @@ extension _StoreCategoryX on _StoreCategory {
   String get label => switch (this) {
     _StoreCategory.featured => 'Featured',
     _StoreCategory.shardPacks => 'Shard Packs',
-    _StoreCategory.cosmetics => 'Cosmetics',
     _StoreCategory.bundles => 'Bundles',
     _StoreCategory.boosts => 'Boosts',
     _StoreCategory.premium => 'Premium',
@@ -547,7 +483,6 @@ extension _StoreCategoryX on _StoreCategory {
   String get summary => switch (this) {
     _StoreCategory.featured => 'Subscriptions, packs, and capped offers.',
     _StoreCategory.shardPacks => 'Platform purchases that grant shards.',
-    _StoreCategory.cosmetics => 'Hair and face profile unlocks.',
     _StoreCategory.bundles => 'Weekly-capped bundles bought with shards.',
     _StoreCategory.boosts => 'Time skips with hard weekly caps.',
     _StoreCategory.premium => 'Membership and account unlocks.',
@@ -556,7 +491,6 @@ extension _StoreCategoryX on _StoreCategory {
   IconData get icon => switch (this) {
     _StoreCategory.featured => Icons.star_rounded,
     _StoreCategory.shardPacks => Icons.diamond_rounded,
-    _StoreCategory.cosmetics => Icons.face_retouching_natural_rounded,
     _StoreCategory.bundles => Icons.inventory_2_rounded,
     _StoreCategory.boosts => Icons.speed_rounded,
     _StoreCategory.premium => Icons.workspace_premium_rounded,
@@ -565,7 +499,6 @@ extension _StoreCategoryX on _StoreCategory {
   Color get tint => switch (this) {
     _StoreCategory.featured => LightcorePalette.aether,
     _StoreCategory.shardPacks => LightcorePalette.aether,
-    _StoreCategory.cosmetics => LightcorePalette.violet,
     _StoreCategory.bundles => LightcorePalette.verdant,
     _StoreCategory.boosts => LightcorePalette.flare,
     _StoreCategory.premium => LightcorePalette.gilded,
@@ -591,25 +524,6 @@ extension _StoreCurrencyX on _StoreCurrency {
     _StoreCurrency.prismShards => LightcorePalette.aether,
   };
 }
-
-String _cosmeticStoreTypeLabel(AvatarCosmeticType type) => switch (type) {
-  AvatarCosmeticType.hair => 'Hair',
-  AvatarCosmeticType.face => 'Face',
-};
-
-IconData _cosmeticStoreIcon(AvatarCosmeticType type) => switch (type) {
-  AvatarCosmeticType.hair => Icons.content_cut_rounded,
-  AvatarCosmeticType.face => Icons.face_retouching_natural_rounded,
-};
-
-Color _cosmeticStoreTint(AvatarCosmeticConfig config) =>
-    switch (config.rarity) {
-      ManagerRarity.common => LightcorePalette.mist,
-      ManagerRarity.uncommon => LightcorePalette.verdant,
-      ManagerRarity.rare => LightcorePalette.aether,
-      ManagerRarity.epic => LightcorePalette.violet,
-      ManagerRarity.legendary => LightcorePalette.gilded,
-    };
 
 class _PrismShardPackDefinition {
   const _PrismShardPackDefinition({
@@ -648,7 +562,6 @@ class _StoreOffer {
     required this.tint,
     required this.enabled,
     required this.onPressed,
-    this.cosmeticPreview,
   });
 
   final String title;
@@ -664,19 +577,6 @@ class _StoreOffer {
   final Color tint;
   final bool enabled;
   final VoidCallback onPressed;
-  final _StoreCosmeticPreviewData? cosmeticPreview;
-}
-
-class _StoreCosmeticPreviewData {
-  const _StoreCosmeticPreviewData({
-    required this.guide,
-    required this.loadout,
-    required this.config,
-  });
-
-  final LightcoreGuideProfile guide;
-  final AvatarCosmeticLoadout loadout;
-  final AvatarCosmeticConfig config;
 }
 
 class _StoreBalanceBar extends StatelessWidget {
@@ -1027,10 +927,6 @@ class _StoreOfferCard extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
               style: Theme.of(context).textTheme.bodySmall,
             ),
-            if (offer.cosmeticPreview case final preview?) ...[
-              const SizedBox(height: 12),
-              _StoreCosmeticPreview(preview: preview, tint: offer.tint),
-            ],
             const SizedBox(height: 12),
             Wrap(
               spacing: 8,
@@ -1088,56 +984,6 @@ class _StoreOfferCard extends StatelessWidget {
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _StoreCosmeticPreview extends StatelessWidget {
-  const _StoreCosmeticPreview({required this.preview, required this.tint});
-
-  final _StoreCosmeticPreviewData preview;
-  final Color tint;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: 76,
-      child: Row(
-        children: [
-          Container(
-            width: 46,
-            height: 46,
-            padding: const EdgeInsets.all(7),
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: tint.withValues(alpha: 0.14),
-            ),
-            child: Image.asset(
-              preview.config.assetPath,
-              fit: BoxFit.contain,
-              filterQuality: FilterQuality.high,
-              errorBuilder: (context, error, stackTrace) => Icon(
-                _cosmeticStoreIcon(preview.config.type),
-                color: tint,
-                size: 20,
-              ),
-            ),
-          ),
-          Expanded(
-            child: Icon(
-              Icons.arrow_forward_rounded,
-              size: 18,
-              color: tint.withValues(alpha: 0.74),
-            ),
-          ),
-          CosmicGuideAvatar(
-            guide: preview.guide,
-            size: 72,
-            avatarCosmetics: preview.loadout,
-            semanticLabel: '${preview.config.name} cosmetic preview',
-          ),
-        ],
       ),
     );
   }

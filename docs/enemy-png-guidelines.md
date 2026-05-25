@@ -72,7 +72,7 @@ Use sprite sheets only for high-value moments:
 - Apex/boss intro
 - death burst
 - rare summon/reveal
-- store/premium cosmetic preview
+- store/premium offer preview
 
 If using a sprite sheet, keep it short:
 

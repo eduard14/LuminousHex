@@ -2894,8 +2894,6 @@ function sanitizePublicAvatar(value) {
     .filter(Boolean);
   return {
     guideId: safeGuideId,
-    hairCosmeticId: sanitizeAssetToken(data.hairCosmeticId) || null,
-    faceCosmeticId: sanitizeAssetToken(data.faceCosmeticId) || null,
     equipmentPieces,
   };
 }

@@ -303,7 +303,6 @@ class _GlobalLeaderboardRow extends StatelessWidget {
                       avatar.equipmentPieces,
                     )
                   : CosmicEquipmentLoadout.empty,
-              avatarCosmetics: avatar.cosmeticLoadout,
             ),
           ),
           const SizedBox(width: 12),

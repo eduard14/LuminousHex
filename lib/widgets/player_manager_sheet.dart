@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../data/avatar_cosmetic_configs.dart';
-import '../models/lightcore_avatar.dart';
 import '../models/lightcore_config.dart';
 import '../models/lightcore_currency_labels.dart';
 import '../models/lightcore_state.dart';
@@ -199,49 +197,13 @@ class _AvatarCustomizationBoard extends StatelessWidget {
               controller.equippedPlayerItemForSlot(slot),
           ])
         : CosmicEquipmentLoadout.empty;
-    final tint = controller.avatarCosmeticLoadout.isEmpty
-        ? _loadoutTint(controller)
-        : LightcorePalette.violet;
-
     return AuroraPanel(
-      tint: tint,
+      tint: _loadoutTint(controller),
       radius: 18,
       padding: const EdgeInsets.all(12),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final compact = constraints.maxWidth < 620;
-          final preview = _AvatarPreview(
-            controller: controller,
-            equipmentLoadout: equipmentLoadout,
-          );
-          final controls = Column(
-            children: [
-              _CosmeticTypePanel(
-                controller: controller,
-                type: AvatarCosmeticType.hair,
-              ),
-              const SizedBox(height: 8),
-              _CosmeticTypePanel(
-                controller: controller,
-                type: AvatarCosmeticType.face,
-              ),
-            ],
-          );
-          if (compact) {
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [preview, const SizedBox(height: 10), controls],
-            );
-          }
-          return Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              SizedBox(width: 180, child: preview),
-              const SizedBox(width: 12),
-              Expanded(child: controls),
-            ],
-          );
-        },
+      child: _AvatarPreview(
+        controller: controller,
+        equipmentLoadout: equipmentLoadout,
       ),
     );
   }
@@ -267,7 +229,6 @@ class _AvatarPreview extends StatelessWidget {
           guide: controller.guideProfile,
           size: 124,
           loadout: equipmentLoadout,
-          avatarCosmetics: controller.avatarCosmeticLoadout,
           semanticLabel: controller.playerDisplayName,
         ),
         const SizedBox(height: 10),
@@ -281,178 +242,6 @@ class _AvatarPreview extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-}
-
-class _CosmeticTypePanel extends StatelessWidget {
-  const _CosmeticTypePanel({required this.controller, required this.type});
-
-  final LightcoreController controller;
-  final AvatarCosmeticType type;
-
-  @override
-  Widget build(BuildContext context) {
-    final equipped = controller.equippedAvatarCosmeticForType(type);
-    final configs = AvatarCosmeticCatalog.byType(type);
-    final tint = type == AvatarCosmeticType.hair
-        ? LightcorePalette.gilded
-        : LightcorePalette.aether;
-
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(14),
-        color: LightcorePalette.night.withValues(alpha: 0.28),
-        border: Border.all(color: tint.withValues(alpha: 0.24)),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(10),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(_iconForCosmeticType(type), size: 18, color: tint),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    _cosmeticTypeLabel(type),
-                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      color: LightcorePalette.mist,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                ),
-                if (equipped != null)
-                  TextButton.icon(
-                    onPressed: () => controller.unequipAvatarCosmeticType(type),
-                    icon: const Icon(Icons.close_rounded, size: 16),
-                    label: const Text('Clear'),
-                    style: TextButton.styleFrom(
-                      visualDensity: VisualDensity.compact,
-                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    ),
-                  ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                for (final config in configs)
-                  _CosmeticItemTile(controller: controller, config: config),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _CosmeticItemTile extends StatelessWidget {
-  const _CosmeticItemTile({required this.controller, required this.config});
-
-  final LightcoreController controller;
-  final AvatarCosmeticConfig config;
-
-  @override
-  Widget build(BuildContext context) {
-    final owned = controller.isAvatarCosmeticUnlocked(config.id);
-    final equipped = controller.isAvatarCosmeticEquipped(config.id);
-    final rarityTint = _equipmentRarityTint(config.rarity);
-    final canBuy = controller.canPurchaseAvatarCosmetic(config.id);
-    final actionLabel = equipped
-        ? 'Equipped'
-        : owned
-        ? 'Equip'
-        : LightcoreCurrencyLabels.prismShardCount(config.pricePrismShards);
-
-    return SizedBox(
-      width: 178,
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
-          color: rarityTint.withValues(alpha: equipped ? 0.18 : 0.1),
-          border: Border.all(
-            color: rarityTint.withValues(alpha: equipped ? 0.58 : 0.3),
-          ),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(8),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Row(
-                children: [
-                  SizedBox.square(
-                    dimension: 34,
-                    child: Image.asset(
-                      config.assetPath,
-                      fit: BoxFit.contain,
-                      filterQuality: FilterQuality.medium,
-                      errorBuilder: (context, error, stackTrace) => Icon(
-                        _iconForCosmeticType(config.type),
-                        color: rarityTint,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 7),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          config.name,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context).textTheme.labelMedium
-                              ?.copyWith(
-                                color: LightcorePalette.mist,
-                                fontWeight: FontWeight.w900,
-                              ),
-                        ),
-                        Text(
-                          config.rarity.label,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context).textTheme.labelSmall
-                              ?.copyWith(
-                                color: rarityTint,
-                                fontWeight: FontWeight.w800,
-                              ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 7),
-              FilledButton.tonal(
-                onPressed: equipped
-                    ? null
-                    : owned
-                    ? () => controller.equipAvatarCosmetic(config.id)
-                    : canBuy
-                    ? () => controller.purchaseAvatarCosmetic(config.id)
-                    : null,
-                style: FilledButton.styleFrom(
-                  minimumSize: const Size(0, 30),
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  visualDensity: VisualDensity.compact,
-                ),
-                child: Text(
-                  actionLabel,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 }
@@ -1095,16 +884,6 @@ IconData _iconForSlot(EquipmentInventorySlot? slot) => switch (slot) {
   EquipmentInventorySlot.shoes => Icons.route_rounded,
   EquipmentInventorySlot.accessory => Icons.auto_awesome_rounded,
   null => Icons.checkroom_rounded,
-};
-
-String _cosmeticTypeLabel(AvatarCosmeticType type) => switch (type) {
-  AvatarCosmeticType.hair => 'Hair',
-  AvatarCosmeticType.face => 'Face',
-};
-
-IconData _iconForCosmeticType(AvatarCosmeticType type) => switch (type) {
-  AvatarCosmeticType.hair => Icons.content_cut_rounded,
-  AvatarCosmeticType.face => Icons.face_retouching_natural_rounded,
 };
 
 int _compareInventoryDisplayPriority(

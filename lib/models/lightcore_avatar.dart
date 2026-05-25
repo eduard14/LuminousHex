@@ -1,47 +1,7 @@
 import 'lightcore_guide.dart';
 import 'lightcore_types.dart';
 
-enum AvatarCosmeticType { hair, face }
-
 enum LightcoreAvatarPose { idle, move, boost, thrust }
-
-class AvatarCosmeticConfig {
-  const AvatarCosmeticConfig({
-    required this.id,
-    required this.type,
-    required this.name,
-    required this.summary,
-    required this.assetPath,
-    required this.pricePrismShards,
-    required this.rarity,
-  });
-
-  final String id;
-  final AvatarCosmeticType type;
-  final String name;
-  final String summary;
-  final String assetPath;
-  final int pricePrismShards;
-  final ManagerRarity rarity;
-
-  bool get isPremium => pricePrismShards > 0;
-}
-
-class AvatarCosmeticLoadout {
-  const AvatarCosmeticLoadout({this.hairId, this.faceId});
-
-  static const empty = AvatarCosmeticLoadout();
-
-  final String? hairId;
-  final String? faceId;
-
-  bool get isEmpty => hairId == null && faceId == null;
-
-  String? idForType(AvatarCosmeticType type) => switch (type) {
-    AvatarCosmeticType.hair => hairId,
-    AvatarCosmeticType.face => faceId,
-  };
-}
 
 class LightcoreAvatarEquipmentPiece {
   const LightcoreAvatarEquipmentPiece({
@@ -100,8 +60,6 @@ class LightcoreAvatarEquipmentPiece {
 class LightcoreAvatarProfile {
   const LightcoreAvatarProfile({
     required this.guideId,
-    this.hairCosmeticId,
-    this.faceCosmeticId,
     this.equipmentPieces = const <LightcoreAvatarEquipmentPiece>[],
   });
 
@@ -111,22 +69,15 @@ class LightcoreAvatarProfile {
   );
 
   final String guideId;
-  final String? hairCosmeticId;
-  final String? faceCosmeticId;
   final List<LightcoreAvatarEquipmentPiece> equipmentPieces;
 
   LightcoreGuideProfile get guideProfile =>
       LightcoreGuideProfile.maybeFromStorageId(guideId) ??
       LightcoreGuideProfile.lumo;
 
-  AvatarCosmeticLoadout get cosmeticLoadout =>
-      AvatarCosmeticLoadout(hairId: hairCosmeticId, faceId: faceCosmeticId);
-
   Map<String, dynamic> toMap() {
     return <String, dynamic>{
       'guideId': guideId,
-      'hairCosmeticId': hairCosmeticId,
-      'faceCosmeticId': faceCosmeticId,
       'equipmentPieces': equipmentPieces
           .map((piece) => piece.toMap())
           .toList(growable: false),
@@ -140,12 +91,7 @@ class LightcoreAvatarProfile {
         .whereType<LightcoreAvatarEquipmentPiece>()
         .take(6)
         .toList(growable: false);
-    return LightcoreAvatarProfile(
-      guideId: guideId,
-      hairCosmeticId: _stringOrNull(data['hairCosmeticId']),
-      faceCosmeticId: _stringOrNull(data['faceCosmeticId']),
-      equipmentPieces: pieces,
-    );
+    return LightcoreAvatarProfile(guideId: guideId, equipmentPieces: pieces);
   }
 }
 
