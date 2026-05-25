@@ -372,10 +372,10 @@ class _SwarmPressurePanel extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Anomaly Deck Pressure', style: textTheme.titleLarge),
+          Text('Knowledge Book Pressure', style: textTheme.titleLarge),
           const SizedBox(height: 6),
           Text(
-            '${bundle.name}: built from the active region, anomaly deck, and Threat Director tuning. Effective Gain is Threat Reward multiplied by Output Efficiency. ${bundle.counterplayLabel}',
+            '${bundle.name}: built from the active region, Knowledge Book, and Threat Director tuning. Effective Gain is Threat Reward multiplied by Output Efficiency. ${bundle.counterplayLabel}',
             style: textTheme.bodyMedium,
           ),
           const SizedBox(height: 14),
@@ -384,7 +384,7 @@ class _SwarmPressurePanel extends StatelessWidget {
             runSpacing: 10,
             children: [
               _InfoChip(label: 'Risk ${bundle.riskLabel}'),
-              _InfoChip(label: 'Source deck ${bundle.activeCardCount}'),
+              _InfoChip(label: 'Book cards ${bundle.activeCardCount}'),
               _InfoChip(label: 'Directors ${bundle.directorCount}'),
               _InfoChip(
                 label:

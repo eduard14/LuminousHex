@@ -44,6 +44,49 @@ extension LightcoreControllerInventoryRuntime on LightcoreController {
     return base.scale(rarityScale * levelScale);
   }
 
+  double _knowledgeBookDamageMultiplierAgainstEnemy(EnemyState enemy) {
+    if (_activeEnemyCardIds.isEmpty) {
+      return 1;
+    }
+
+    var bestBonus = 0.0;
+    for (final card in activeEnemyDeck) {
+      if (!card.isOwned) {
+        continue;
+      }
+      final levelScale = 1 + ((card.level - 1).clamp(0, 99) * 0.012);
+      final rarityScale = 1 + (card.config.rarity.index * 0.018);
+      var bonus = 0.0;
+      if (card.config.id == enemy.config.id) {
+        bonus = 0.08;
+      } else if (card.config.affinity == enemy.config.affinity) {
+        bonus = 0.025;
+      }
+      if (bonus <= 0) {
+        continue;
+      }
+      bestBonus = max(bestBonus, bonus * levelScale * rarityScale);
+    }
+    return 1 + bestBonus.clamp(0.0, 0.30);
+  }
+
+  @visibleForTesting
+  double debugKnowledgeBookDamageMultiplierAgainstEnemy(EnemyState enemy) =>
+      _knowledgeBookDamageMultiplierAgainstEnemy(enemy);
+
+  String knowledgeTargetLabelForCard(EnemyCardState card) {
+    final affinity = card.config.affinity.label;
+    final exactBonus = (_knowledgeCardExactMatchBonus(card) * 100)
+        .toStringAsFixed(1);
+    return '+$exactBonus% vs ${card.config.name}; smaller bonus vs $affinity signatures';
+  }
+
+  double _knowledgeCardExactMatchBonus(EnemyCardState card) {
+    final levelScale = 1 + ((card.level - 1).clamp(0, 99) * 0.012);
+    final rarityScale = 1 + (card.config.rarity.index * 0.018);
+    return (0.08 * levelScale * rarityScale).clamp(0.0, 0.30).toDouble();
+  }
+
   double _computeTowerStrength() {
     final liveTowerScore = _slots
         .where(_slotCountsTowardRing)
@@ -447,7 +490,7 @@ extension LightcoreControllerInventoryRuntime on LightcoreController {
     required int targetCount,
   }) {
     if (deck.isEmpty) {
-      return 'No anomaly cards are armed, so this core is running baseline region pressure at $targetCount active target${targetCount == 1 ? '' : 's'}.';
+      return 'No Knowledge Cards are set, so this core is running baseline region pressure at $targetCount active target${targetCount == 1 ? '' : 's'}.';
     }
     final affinityLabel = primaryAffinity?.label ?? 'Mixed';
     final directorLabel = directorNames.isEmpty
@@ -536,7 +579,7 @@ extension LightcoreControllerInventoryRuntime on LightcoreController {
         'Counterplay: area damage, chains, and fast split cleanup.',
       PrototypeAffinity.black =>
         'Counterplay: pierce, gravity control, and high minimum damage.',
-      null => 'Arm anomaly cards to reveal this bundle counterplay package.',
+      null => 'Set Knowledge Cards to reveal this bundle counterplay package.',
     };
   }
 

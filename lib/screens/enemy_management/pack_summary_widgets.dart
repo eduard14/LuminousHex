@@ -49,7 +49,7 @@ class _EnemyResearchDeckPreview extends StatelessWidget {
             spacing: 8,
             runSpacing: 8,
             children: [
-              _InfoChip(label: '${controller.ownedEnemyCardCount} researched'),
+              _InfoChip(label: '${controller.ownedEnemyCardCount} known'),
               _InfoChip(
                 label: '${controller.upgradableEnemyCardCount} upgrades',
               ),
@@ -62,7 +62,7 @@ class _EnemyResearchDeckPreview extends StatelessWidget {
           const SizedBox(height: 10),
           if (owned.isEmpty)
             Text(
-              'Research rolls add copies, levels, and enemy-family knowledge.',
+              'Threat Scans add Knowledge Card copies, levels, and enemy-family counters.',
               style: textTheme.bodySmall,
             )
           else
@@ -166,7 +166,7 @@ class _SummoningLevelTrack extends StatelessWidget {
               const SizedBox(width: 12),
               IconButton.filledTonal(
                 onPressed: onShowRates,
-                tooltip: 'Show threat rates',
+                tooltip: 'Show knowledge rates',
                 icon: const Icon(Icons.info_outline_rounded),
               ),
             ],

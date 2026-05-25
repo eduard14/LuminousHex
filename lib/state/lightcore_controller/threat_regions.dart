@@ -354,7 +354,7 @@ extension LightcoreControllerThreatRegions on LightcoreController {
   }
 
   String get threatScanRateInfo =>
-      'Threat Scans resolve Enemy Research Cards. Threat Map progression follows the fixed route and opens only after the previous region is fully stabilized.';
+      'Threat Scans resolve Knowledge Cards. Threat Map progression follows the fixed route and opens only after the previous region is fully stabilized.';
 
   ThreatRegionState? threatRegionStateById(String regionId) {
     final match = _threatRegions.where((state) => state.regionId == regionId);

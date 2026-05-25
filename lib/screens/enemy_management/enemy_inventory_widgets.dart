@@ -80,8 +80,8 @@ class _MassEnemyFusePanel extends StatelessWidget {
           const SizedBox(height: 6),
           Text(
             !hasBulkAction
-                ? 'No anomaly cards have enough copies for bulk leveling or fusion yet.'
-                : 'Level every ready anomaly card, or fuse max-level cards from the bottom of the deck.',
+                ? 'No Knowledge Cards have enough copies for bulk leveling or fusion yet.'
+                : 'Level every ready Knowledge Card, or fuse max-level cards from the bottom of the book.',
             style: Theme.of(context).textTheme.bodyMedium,
           ),
           const SizedBox(height: 14),
@@ -791,14 +791,14 @@ class _BossInventoryEffectPanel extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            '${card.config.name} Inventory Effect',
+            '${card.config.name} Knowledge Bonus',
             style: textTheme.titleMedium,
           ),
           const SizedBox(height: 6),
           Text(
             card.isOwned
-                ? 'This positive tower bonus is active from inventory, even when another Apex is armed. Copies raise the level cap; Threat Shards upgrade the bonus.'
-                : 'Find this Apex to immediately apply its positive inventory bonus.',
+                ? 'This positive tower bonus is active from your collection, even when another Apex is armed. Copies raise the level cap; Threat Shards upgrade the bonus.'
+                : 'Find this Apex to immediately apply its positive knowledge bonus.',
             style: textTheme.bodyMedium,
           ),
           const SizedBox(height: 12),
@@ -807,7 +807,7 @@ class _BossInventoryEffectPanel extends StatelessWidget {
             runSpacing: 10,
             children: [
               _InfoChip(
-                label: card.isOwned ? 'Active from inventory' : 'Not found',
+                label: card.isOwned ? 'Active from collection' : 'Not found',
               ),
               if (card.isOwned) ...[
                 _InfoChip(label: 'Lv ${card.level}/$cap'),

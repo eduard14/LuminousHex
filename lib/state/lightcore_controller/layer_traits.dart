@@ -1446,7 +1446,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         LightcoreTutorialStep.upgradeFirstTowerToLevel3 =>
           'Tune The Main Tower',
         LightcoreTutorialStep.raiseThreat => 'Raise Threat',
-        LightcoreTutorialStep.pullFirstWhiteEnemy => 'Open Enemy Research',
+        LightcoreTutorialStep.pullFirstWhiteEnemy => 'Open Knowledge Cards',
         LightcoreTutorialStep.readEffectiveGain => 'Read Effective Gain',
         LightcoreTutorialStep.autoQueueCheck => 'Auto Queue Check',
         LightcoreTutorialStep.upgradeFirstTowerToLevel4 =>
@@ -1459,7 +1459,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         LightcoreTutorialStep.openStore => 'Inspect The Store',
         LightcoreTutorialStep.claimBattlePassReward => 'Claim A Pass Reward',
         LightcoreTutorialStep.openBossPulls => 'Stabilize A Region',
-        LightcoreTutorialStep.armFirstBoss => 'Build An Enemy Suite',
+        LightcoreTutorialStep.armFirstBoss => 'Set A Knowledge Book',
         LightcoreTutorialStep.defeatFirstBoss => 'Clear The Region Boss',
         LightcoreTutorialStep.openEquipment => 'Check Profile',
         LightcoreTutorialStep.openManagers => 'Inspect The Foundry',
@@ -1604,9 +1604,9 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         LightcoreTutorialStep.claimBattlePassReward =>
           'Passes convert normal play into side rewards. Claim during quiet moments so active combat tutorials do not pile up.',
         LightcoreTutorialStep.openBossPulls =>
-          'Regional bosses unlock in the Prism Shell. Final stabilization clears award Apex Cores, boss traits, and anomaly cards for enemy suites.',
+          'Regional bosses unlock in the Prism Shell. Final stabilization clears award Apex Cores, boss traits, and Knowledge Cards for books.',
         LightcoreTutorialStep.armFirstBoss =>
-          'Enemy suites are portable loadouts: one Apex Core, two boss traits, and three anomaly cards.',
+          'Knowledge Books are portable loadouts: one Apex Core, two boss traits, and three Knowledge Cards.',
         LightcoreTutorialStep.defeatFirstBoss =>
           'Apex Anomalies are milestone fights. This first one is weakened so you can learn the scan loop before full-strength encounters.',
         LightcoreTutorialStep.openEquipment =>

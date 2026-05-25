@@ -244,6 +244,35 @@ void main() {
     },
   );
 
+  test('Knowledge Book gives a targeted bonus against matching enemies', () {
+    final controller = LightcoreController();
+    addTearDown(controller.dispose);
+
+    controller.debugSetEnemyCardLevel(EnemyLibrary.basicRed.id, level: 4);
+    controller.toggleEnemyCardSelection(EnemyLibrary.basicRed.id);
+    controller.toggleEnemyCardSelection(EnemyLibrary.basicWhite.id);
+
+    final redEnemy = controller.debugSpawnEnemyFromCard(
+      EnemyLibrary.basicRed.id,
+      angle: 0,
+      radius: 500,
+    );
+    final whiteEnemy = controller.debugSpawnEnemyFromCard(
+      EnemyLibrary.basicWhite.id,
+      angle: 0.4,
+      radius: 500,
+    );
+
+    expect(redEnemy, isNotNull);
+    expect(whiteEnemy, isNotNull);
+    expect(
+      controller.debugKnowledgeBookDamageMultiplierAgainstEnemy(redEnemy!),
+      greaterThan(
+        controller.debugKnowledgeBookDamageMultiplierAgainstEnemy(whiteEnemy!),
+      ),
+    );
+  });
+
   test('mergeAllReadyEnemyCards fuses every available enemy merge', () {
     final controller = LightcoreController();
 
@@ -312,7 +341,7 @@ void main() {
     );
     await tester.pump();
 
-    expect(find.text('Enemy Research'), findsOneWidget);
+    expect(find.text('Knowledge Cards'), findsWidgets);
     expect(find.text('Fake Threat Scan'), findsNothing);
     expect(find.text('Preview Only'), findsNothing);
     expect(
@@ -477,14 +506,14 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    final infoButton = find.byTooltip('Show threat rates');
+    final infoButton = find.byTooltip('Show knowledge rates');
 
     expect(infoButton, findsOneWidget);
 
     await tester.tap(infoButton);
     await tester.pumpAndSettle();
 
-    expect(find.text('Threat Rates'), findsOneWidget);
+    expect(find.text('Knowledge Rates'), findsOneWidget);
     expect(
       find.textContaining('unlock Scan Lv 2 and +100 Threat Scans'),
       findsOneWidget,
@@ -510,9 +539,9 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Enemy Research'), findsOneWidget);
+    expect(find.text('Knowledge Cards'), findsWidgets);
     expect(find.text('Regional Bosses Locked'), findsNothing);
-    expect(find.byTooltip('Show threat rates'), findsOneWidget);
+    expect(find.byTooltip('Show knowledge rates'), findsOneWidget);
     expect(find.byTooltip('Show boss reveal rates'), findsNothing);
 
     await tester.tap(find.text('Apex'));
@@ -520,7 +549,7 @@ void main() {
 
     expect(find.text('Regional Bosses'), findsOneWidget);
     expect(find.textContaining('Create the Prism Shell'), findsOneWidget);
-    expect(find.byTooltip('Show threat rates'), findsNothing);
+    expect(find.byTooltip('Show knowledge rates'), findsNothing);
     expect(find.byTooltip('Show boss reveal rates'), findsOneWidget);
   });
 
@@ -612,9 +641,9 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Boss Build'), findsWidgets);
-    expect(find.text('Boss Build Locked'), findsOneWidget);
-    expect(find.text('Anomaly Assignment'), findsNothing);
+    expect(find.text('Knowledge Build'), findsWidgets);
+    expect(find.text('Knowledge Build Locked'), findsOneWidget);
+    expect(find.text('Knowledge Book'), findsNothing);
     expect(find.text('Mass Fuse Anomalies'), findsNothing);
   });
 }

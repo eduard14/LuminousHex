@@ -50,7 +50,7 @@ shell, and keep climbing.
 3. Tap charged towers to send ammo packets into the core queue.
 4. The core consumes queued packets and fires at incoming anomalies.
 5. Upgrade towers, core stats, and encounter capacity with earned resources.
-6. Roll Threat Scans into Enemy Research Cards that make anomaly families easier
+6. Roll Threat Scans into Knowledge Cards that make enemy families easier
    to understand and farm.
 7. Follow the fixed Threat Map route, fully stabilize each region to unlock the
    next one, then validate harder farm pressure for offline rewards.
@@ -103,8 +103,8 @@ shell, and keep climbing.
 
 ### Anomalies And Encounter Tuning
 
-- Threat Scans unlock Enemy Research Cards and add research copies.
-- Enemy Research Cards are anomaly knowledge and farming progression, not
+- Threat Scans unlock Knowledge Cards and add research copies.
+- Knowledge Cards are enemy-family knowledge and combat progression, not
   friendly units.
 - Threat Map regions define the main enemy progression path as a fixed linear
   route with visible connections between each step.
@@ -129,7 +129,7 @@ shell, and keep climbing.
 
 - Lumens fuel tower construction, upgrades, and core growth.
 - Flux supports manager forging and related systems.
-- Threat Scans feed Enemy Research pulls.
+- Threat Scans feed Knowledge Card pulls.
 - Apex Scans feed Apex Anomaly pulls and social gifts.
 - Validated region farms determine offline reward progress.
 - Account Radiance tracks broader player growth.
@@ -162,7 +162,7 @@ Primary players:
 Secondary players:
 
 - Casual strategy players who like clear loops and daily rewards.
-- Collection-driven players interested in Enemy Research Cards, managers,
+- Collection-driven players interested in Knowledge Cards, managers,
   cosmetics, passes, and event rewards.
 
 ## Store And Landing Page Angles
@@ -189,7 +189,7 @@ video hooks.
 | Gameplay hook | Short clips of tapping charged relays and the core firing queued packets. |
 | Progression | Before/after shell promotion, Root to Prism, Prism to Nexus, inheritance previews. |
 | Buildcraft | Color-family comparisons, pure builds versus blended projectile/payload builds. |
-| Anomaly pressure | Enemy Research pulls, Apex Anomaly reveals, Focus Target saves, lane disruption moments. |
+| Anomaly pressure | Knowledge Card pulls, Apex Anomaly reveals, Focus Target saves, lane disruption moments. |
 | Rewards | Offline gains, pass claims, tournament rewards, and event progress. |
 | Studio identity | Lemon Goose Games Inc. splash, dev updates, patch notes, asset reveals. |
 
@@ -199,7 +199,7 @@ Suggested first release order:
 
 1. Main battle screen: six relays around the Lightcore with anomalies incoming.
 2. Tower upgrade screen: trainable stats and tower family identity.
-3. Enemy Research/Threat Map screen: show research progression and region push.
+3. Knowledge Cards/Threat Map screen: show research progression and region push.
 4. Promotion screen: Root Shell to Prism Shell or child tower forge.
 5. Managers/profile screen: automation and account progression.
 6. Daily Dungeons or Tournament screen: repeatable events and competitive modes.
@@ -211,7 +211,7 @@ Suggested first release order:
 2. Fractured Lightcore premise in one short text card.
 3. Relay towers charge, player taps, core fires.
 4. Anomalies spiral inward and disrupt lanes.
-5. Threat Scan pull reveals new Enemy Research.
+5. Threat Scan pull reveals a new Knowledge Card.
 6. Region challenge and Farm Validation pressure.
 7. Apex Anomaly arrival.
 8. Shell promotion into a higher prism structure.
@@ -235,7 +235,7 @@ Suggested first release order:
 - Do not claim ad monetization is live until test ad IDs are replaced.
 - Do not claim web is a release platform; web is currently staging/test only.
 - Do not call enemy cards friendly units, heroes, summons, or allies.
-- Do not describe Enemy Research Cards as the primary live encounter deck.
+- Do not describe Knowledge Cards as friendly units, heroes, or allies.
 - Do not describe Threat Scans as a Threat Map reveal or stabilization mechanic.
 - Do not imply every shell runs a full battle simulation while offline.
 - Do not market equipment, gear drops, or gear loadouts as a launch feature.

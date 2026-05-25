@@ -113,7 +113,7 @@ class _EnemyManagementScreenState extends State<EnemyManagementScreen> {
           controller: widget.scrollController,
           padding: const EdgeInsets.fromLTRB(4, 4, 4, 24),
           children: [
-            Text('Boss Build', style: textTheme.titleLarge),
+            Text('Knowledge Build', style: textTheme.titleLarge),
             const SizedBox(height: 8),
             _ThreatLibraryTabs(
               controller: controller,
@@ -139,7 +139,7 @@ class _EnemyManagementScreenState extends State<EnemyManagementScreen> {
               ),
               const SizedBox(height: 8),
               Text(
-                'Apex cards have an equipped effect when armed and a positive inventory effect that starts as soon as the card is found.',
+                'Apex Knowledge Cards have an equipped effect when armed and a positive collection bonus that starts as soon as the card is found.',
                 style: textTheme.bodyMedium?.copyWith(
                   color: LightcorePalette.warning,
                   fontWeight: FontWeight.w700,
@@ -190,7 +190,7 @@ class _EnemySuiteBuildPanel extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Boss Build Locked', style: textTheme.titleLarge),
+            Text('Knowledge Build Locked', style: textTheme.titleLarge),
             const SizedBox(height: 6),
             Text(
               'Portable enemy suites unlock when the first mode that needs them comes online, or when a regional boss drops suite pieces.',
@@ -233,7 +233,9 @@ class _EnemySuiteBuildPanel extends StatelessWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(child: Text('Enemy Suite', style: textTheme.titleLarge)),
+              Expanded(
+                child: Text('Knowledge Book', style: textTheme.titleLarge),
+              ),
               _InfoChip(
                 label: controller.hasCompleteEnemySuite
                     ? 'Complete'
@@ -243,7 +245,7 @@ class _EnemySuiteBuildPanel extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           Text(
-            'Build the portable enemy suite used by Arena, Threat Director Dungeon, and future challenge modes.',
+            'Set the portable Knowledge Book used by Arena, Threat Director Dungeon, and future challenge modes.',
             style: textTheme.bodyMedium,
           ),
           const SizedBox(height: 14),
@@ -263,7 +265,7 @@ class _EnemySuiteBuildPanel extends StatelessWidget {
               ownedAnomalies.isEmpty)
             _InlineEnemyNote(
               message:
-                  'Clear regional bosses to earn Apex Cores, boss traits, and the region anomaly cards used here.',
+                  'Clear regional bosses to earn Apex Cores, boss traits, and the regional Knowledge Cards used here.',
               tint: LightcorePalette.warning,
             )
           else
@@ -346,7 +348,7 @@ class _EnemySuiteSlots extends StatelessWidget {
         ],
         for (var index = 0; index < 3; index += 1) ...[
           _SuiteDropdown<String>(
-            label: 'Anomaly Card ${index + 1}',
+            label: 'Knowledge Card ${index + 1}',
             value: _validAnomalyValue(selectedAnomalies[index]),
             items: [
               for (final card in ownedAnomalies)
@@ -372,8 +374,8 @@ class _EnemySuiteSlots extends StatelessWidget {
         const SizedBox(height: 14),
         _InlineEnemyNote(
           message: controller.hasCompleteEnemySuite
-              ? 'Suite ready. Duplicate trait or anomaly slots consume matching owned copies.'
-              : 'Fill 1 Apex Core, 2 boss traits, and 3 anomaly cards. Duplicate traits or anomaly cards require enough copies.',
+              ? 'Knowledge Book ready. Duplicate trait or card slots consume matching owned copies.'
+              : 'Fill 1 Apex Core, 2 boss traits, and 3 Knowledge Cards. Duplicate traits or cards require enough copies.',
           tint: controller.hasCompleteEnemySuite
               ? LightcorePalette.success
               : LightcorePalette.warning,
@@ -1452,10 +1454,10 @@ class _EnemyPullSheetState extends State<EnemyPullSheet> {
                 );
                 final sheetTitle = _tab == _ThreatPullTab.bosses
                     ? 'Regional Bosses'
-                    : 'Enemy Research';
+                    : 'Knowledge Cards';
                 final closeTooltip = _tab == _ThreatPullTab.bosses
                     ? 'Close regional bosses'
-                    : 'Close enemy research';
+                    : 'Close knowledge cards';
                 return ListView(
                   children: [
                     Row(
@@ -1702,7 +1704,7 @@ class _EnemyPullSheetState extends State<EnemyPullSheet> {
                       ),
                     ] else ...[
                       _ThreatScanSection(
-                        title: 'Enemy Research Cards',
+                        title: 'Knowledge Cards',
                         tint: enemyTint,
                         icon: LightcoreIcons.threatScan,
                         progress: controller.summoningLevelProgress,
@@ -1715,7 +1717,7 @@ class _EnemyPullSheetState extends State<EnemyPullSheet> {
                             : '${controller.pullsToNextSummoningLevel} to Research Lv ${controller.nextSummoningLevel}',
                         trailing: IconButton.filledTonal(
                           onPressed: () => _showPullRates(context),
-                          tooltip: 'Show threat rates',
+                          tooltip: 'Show knowledge rates',
                           icon: const Icon(Icons.info_outline_rounded),
                         ),
                         child: Column(
@@ -1748,7 +1750,7 @@ class _EnemyPullSheetState extends State<EnemyPullSheet> {
                               const SizedBox(height: 12),
                               _InlineEnemyNote(
                                 message:
-                                    'Threat Scans resolve Enemy Research Cards. Threat Map regions open through the linear stabilization route.',
+                                    'Threat Scans resolve Knowledge Cards. Set cards in the Knowledge Book to gain bonuses against matching enemy signatures.',
                                 tint: LightcorePalette.warning,
                               ),
                             ],
@@ -2137,7 +2139,7 @@ class _EnemyPullSheetState extends State<EnemyPullSheet> {
       builder: (context) {
         return AlertDialog(
           backgroundColor: LightcorePalette.panel,
-          title: const Text('Threat Rates'),
+          title: const Text('Knowledge Rates'),
           content: SizedBox(
             width: 360,
             child: Column(

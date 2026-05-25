@@ -1129,7 +1129,7 @@ void main() {
     );
     await tester.pump();
     expect(find.text('Threat Director Guide'), findsOneWidget);
-    expect(find.textContaining('Click anomaly cards'), findsOneWidget);
+    expect(find.textContaining('Click Knowledge Cards'), findsOneWidget);
     await tester.scrollUntilVisible(
       find.text('Enter Target'),
       220,
@@ -2624,9 +2624,9 @@ void main() {
     await tester.tap(find.byTooltip('Anomalies').first);
     await _pumpTransition(tester);
 
-    expect(find.text('Boss Build'), findsNothing);
-    expect(find.text('Anomaly Deck Pressure'), findsNothing);
-    expect(find.text('Anomaly Assignment'), findsNothing);
+    expect(find.text('Knowledge Build'), findsNothing);
+    expect(find.text('Knowledge Book Pressure'), findsNothing);
+    expect(find.text('Knowledge Book'), findsNothing);
     expect(find.text('Open 1', skipOffstage: false), findsNothing);
     expect(find.text('Threat Scans', skipOffstage: false), findsNothing);
   });

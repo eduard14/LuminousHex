@@ -322,7 +322,7 @@ class _LightcoreShellState extends State<LightcoreShell> {
       _SettingsStatEntry(
         label: 'Scans Resolved',
         value: _formatMetricCount(controller.totalPullsOpened),
-        subtitle: 'Threat Scans resolved into Enemy Research.',
+        subtitle: 'Threat Scans resolved into Knowledge Cards.',
         tint: LightcorePalette.scanGlow,
         icon: LightcoreIcons.threatScan,
       ),
@@ -1648,7 +1648,7 @@ class _LightcoreShellState extends State<LightcoreShell> {
                                   ),
                                   const SizedBox(height: 6),
                                   Text(
-                                    'Use Account Sync to link this save to Google, Audio to tune music and effects, Notifications to tune in-game banners, Change Name for your tournament callsign, Stats for the save ledger, and Help for Lightcore terms. Full reset restarts Lumens, Flux, Threat Scans, managers, outfit gear, anomaly cards, towers, EXP, and advancement progress.',
+                                    'Use Account Sync to link this save to Google, Audio to tune music and effects, Notifications to tune in-game banners, Change Name for your tournament callsign, Stats for the save ledger, and Help for Lightcore terms. Full reset restarts Lumens, Flux, Threat Scans, managers, outfit gear, Knowledge Cards, towers, EXP, and advancement progress.',
                                     style: Theme.of(
                                       context,
                                     ).textTheme.bodyMedium,
@@ -1763,7 +1763,7 @@ class _LightcoreShellState extends State<LightcoreShell> {
           ),
           title: const Text('Reset All Progress?'),
           content: Text(
-            'This wipes Lumens, Flux, Threat Scans, managers, outfit gear, anomaly cards, tower progress, and shell progression. This cannot be undone.',
+            'This wipes Lumens, Flux, Threat Scans, managers, outfit gear, Knowledge Cards, tower progress, and shell progression. This cannot be undone.',
             style: Theme.of(dialogContext).textTheme.bodyMedium,
           ),
           actions: [

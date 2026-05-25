@@ -264,7 +264,7 @@ extension LightcoreControllerBattleEnemyActions on LightcoreController {
 
     if (_activeEnemyCardIds.contains(cardId)) {
       if (_activeEnemyCardIds.length == 1) {
-        _showBanner('Keep at least one anomaly card active in the deck.');
+        _showBanner('Keep at least one Knowledge Card set in the book.');
         _notifyNow();
         return;
       }
@@ -274,20 +274,22 @@ extension LightcoreControllerBattleEnemyActions on LightcoreController {
             ? null
             : _activeEnemyCardIds.first;
       }
-      _showBanner('${card.config.name} removed from the active anomaly deck.');
+      _showBanner('${card.config.name} removed from the Knowledge Book.');
       _notifyNow();
       return;
     }
 
     if (_activeEnemyCardIds.length >= enemyDeckLimit) {
-      _showBanner('Anomaly deck is full. Remove a card before adding another.');
+      _showBanner(
+        'Knowledge Book is full. Remove a card before adding another.',
+      );
       _notifyNow();
       return;
     }
 
     _activeEnemyCardIds.add(cardId);
     selectedEnemyCardId ??= cardId;
-    _showBanner('${card.config.name} added to the active anomaly deck.');
+    _showBanner('${card.config.name} added to the Knowledge Book.');
     _notifyNow();
   }
 
@@ -1040,8 +1042,8 @@ extension LightcoreControllerBattleEnemyActions on LightcoreController {
 
     _showBanner(
       upgradedCount == 1
-          ? 'Bulk leveled 1 anomaly card.'
-          : 'Bulk leveled $upgradedCount anomaly levels.',
+          ? 'Bulk leveled 1 Knowledge Card.'
+          : 'Bulk leveled $upgradedCount Knowledge Card levels.',
     );
     _notifyNow();
     return upgradedCount;
@@ -1099,8 +1101,8 @@ extension LightcoreControllerBattleEnemyActions on LightcoreController {
 
     _showBanner(
       mergedCount == 1
-          ? 'Mass fused 1 anomaly card.'
-          : 'Mass fused $mergedCount anomaly cards.',
+          ? 'Mass fused 1 Knowledge Card.'
+          : 'Mass fused $mergedCount Knowledge Cards.',
     );
     _notifyNow();
     return mergedCount;

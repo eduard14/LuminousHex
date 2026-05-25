@@ -24,8 +24,8 @@ class _ThreatAssignmentPanelState extends State<_ThreatAssignmentPanel> {
         ? controller.enemyCards
         : controller.bossEnemyCards;
     final title = _tab == _ThreatAssignmentTab.anomalies
-        ? 'Anomaly List'
-        : 'Apex List';
+        ? 'Knowledge Cards'
+        : 'Apex Knowledge';
     final tint = _tab == _ThreatAssignmentTab.anomalies
         ? LightcorePalette.scanGlow
         : LightcorePalette.warning;
@@ -36,10 +36,10 @@ class _ThreatAssignmentPanelState extends State<_ThreatAssignmentPanel> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _EnemySectionHeader(
-          title: 'Anomaly Assignment',
+          title: 'Knowledge Book',
           tint: LightcorePalette.scanGlow,
           subtitle:
-              'Set the active anomaly deck and the main Apex for ${controller.activeLayerLabel}. Presets are saved on this core only.',
+              'Set Knowledge Cards for ${controller.activeLayerLabel}. Book cards grant bonuses against matching enemy signatures; presets are saved on this core only.',
         ),
         const SizedBox(height: 10),
         _ThreatPresetBar(
@@ -65,7 +65,7 @@ class _ThreatAssignmentPanelState extends State<_ThreatAssignmentPanel> {
                 icon: const Icon(Icons.radar_rounded),
                 label: const FittedBox(
                   fit: BoxFit.scaleDown,
-                  child: Text('Anomalies'),
+                  child: Text('Knowledge'),
                 ),
               ),
             ),
@@ -473,7 +473,7 @@ class _ActiveThreatLoadoutSummary extends StatelessWidget {
               : _ActiveThreatCardLine(card: apex, isApex: true),
         );
         final deckSlot = _ActiveThreatSlot(
-          title: 'Anomaly Deck',
+          title: 'Knowledge Book',
           tint: LightcorePalette.scanGlow,
           child: Wrap(
             spacing: 8,
@@ -967,6 +967,7 @@ class _ThreatAssignmentDetails extends StatelessWidget {
               _InfoChip(
                 label: controller.inventoryEffectSummaryLabelForCard(card),
               ),
+              _InfoChip(label: controller.knowledgeTargetLabelForCard(card)),
               for (final label in controller.inventoryEffectHighlightsForCard(
                 card,
                 maxItems: 3,
@@ -987,7 +988,7 @@ class _ThreatAssignmentDetails extends StatelessWidget {
               icon: Icon(
                 active ? Icons.remove_circle_rounded : Icons.add_rounded,
               ),
-              label: Text(active ? 'Remove From Deck' : 'Add To Deck'),
+              label: Text(active ? 'Remove From Book' : 'Set In Book'),
             ),
             FilledButton.tonalIcon(
               onPressed: canUpgrade

@@ -26,7 +26,7 @@ class _ThreatLibraryTabs extends StatelessWidget {
                   : null,
             ),
             icon: const Icon(LightcoreIcons.threatScan),
-            label: const Text('Boss Build'),
+            label: const Text('Knowledge Build'),
           ),
         ),
         const SizedBox(width: 10),

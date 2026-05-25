@@ -289,12 +289,12 @@ class _DailyDungeonsScreenState extends State<DailyDungeonsScreen> {
           _DungeonGuidePanel(
             title: 'Threat Director Guide',
             instruction: ownedCards.isEmpty
-                ? 'Complete an enemy suite or own anomaly cards before a Threat Director loadout can enter battle.'
+                ? 'Complete a Knowledge Book or own Knowledge Cards before a Threat Director loadout can enter battle.'
                 : selectedCards.length >= requiredCount
-                ? 'Click anomaly cards below to swap the loadout, then enter when the deck is ready.'
-                : 'Click anomaly cards below until $requiredCount are selected, then enter the run.',
+                ? 'Click Knowledge Cards below to swap the loadout, then enter when the book is ready.'
+                : 'Click Knowledge Cards below until $requiredCount are selected, then enter the run.',
             detail:
-                'Selected anomalies become launch buttons in the shared battle arena. Upgraded anomalies hit the tower harder.',
+                'Selected Knowledge Cards become launch buttons in the shared battle arena. Upgraded cards hit the tower harder.',
             icon: Icons.adjust_rounded,
             tint: LightcorePalette.warning,
           ),

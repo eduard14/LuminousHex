@@ -380,7 +380,8 @@ extension LightcoreControllerCombatDamage on LightcoreController {
       return;
     }
 
-    var resolvedDamage = damage;
+    var resolvedDamage =
+        damage * _knowledgeBookDamageMultiplierAgainstEnemy(enemy);
     var resolvedCritical = critical;
     final resolvedCritChance = critChance.clamp(0.0, 1.0).toDouble();
     if (!resolvedCritical &&

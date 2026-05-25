@@ -138,10 +138,10 @@ class _ScanSpendExplanation extends StatelessWidget {
   Widget build(BuildContext context) {
     final title = selected == _ThreatPullTab.bosses
         ? 'Threat Scans reveal region bosses'
-        : 'Threat Scans resolve Enemy Research Cards';
+        : 'Threat Scans resolve Knowledge Cards';
     final body = selected == _ThreatPullTab.bosses
-        ? 'Bosses now sit inside stabilized regions. Final clears drop Apex Cores, boss traits, and the region anomaly cards for enemy suites.'
-        : 'Enemy Research rolls use the current scan level, rarity gates, copy merges, and anomaly reveal animation.';
+        ? 'Bosses now sit inside stabilized regions. Final clears drop Apex Cores, boss traits, and regional Knowledge Cards for books.'
+        : 'Knowledge rolls use the current scan level, rarity gates, copy merges, and the existing card reveal animation.';
     final footer = selected == _ThreatPullTab.bosses
         ? 'These are encounter targets, not Core Managers.'
         : 'These are research bonuses against enemy families, not map regions.';

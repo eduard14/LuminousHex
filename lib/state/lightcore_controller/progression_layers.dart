@@ -1226,7 +1226,7 @@ extension LightcoreControllerProgressionLayers on LightcoreController {
     _bossEnemyCards[cardIndex] = card.copyWith(level: card.level + 1);
     _recordUpgradePurchase();
     _showBanner(
-      '${card.config.name} inventory effect raised to Lv ${card.level + 1}.',
+      '${card.config.name} Knowledge Bonus raised to Lv ${card.level + 1}.',
     );
     _notifyNow();
     return true;

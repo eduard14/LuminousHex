@@ -465,16 +465,16 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
   ),
   LightcoreTutorialStep.pullFirstWhiteEnemy: LightcoreTutorialQuestDefinition(
     id: 'TUT-010',
-    title: 'Open Enemy Research',
+    title: 'Open Knowledge Cards',
     teachGoal:
-        'Threat Scans resolve Enemy Research Cards that make anomaly families stronger to farm against.',
+        'Threat Scans resolve Knowledge Cards that make enemy families easier to fight.',
     trigger: 'Queue tutorial done',
     primaryClickTarget: 'Anomalies > Research',
     coachCopy:
-        'Resolve one Threat Scan in Enemy Research. Map regions open through the linear stabilization route.',
-    completionCondition: 'Resolve 1 Enemy Research scan',
-    reward: 'Enemy Research primer',
-    failureHelpState: 'Open Anomalies and resolve one Enemy Research scan.',
+        'Resolve one Threat Scan into a Knowledge Card. Map regions open through the linear stabilization route.',
+    completionCondition: 'Resolve 1 Knowledge Card scan',
+    reward: 'Knowledge Card primer',
+    failureHelpState: 'Open Anomalies and resolve one Knowledge Card scan.',
     analyticsEvent: 'tutorial_safe_threat_scan',
   ),
   LightcoreTutorialStep.readEffectiveGain: LightcoreTutorialQuestDefinition(
@@ -639,9 +639,9 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
     id: 'TUT-022',
     title: 'Build an Apex Suite',
     teachGoal:
-        'Portable enemy suites use 1 Apex Core, 2 boss traits, and 3 anomaly cards.',
+        'Knowledge Books use 1 Apex Core, 2 boss traits, and 3 Knowledge Cards.',
     trigger: 'First Apex card owned',
-    primaryClickTarget: 'Bottom nav > Anomalies > Boss Build',
+    primaryClickTarget: 'Bottom nav > Anomalies > Knowledge Build',
     coachCopy:
         'Use boss drops from stabilized regions to assemble your first enemy suite.',
     completionCondition:
