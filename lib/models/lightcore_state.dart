@@ -153,6 +153,8 @@ class OuterTowerState {
     this.investedLumens = 0,
     this.fabricationTotalSeconds = 0,
     this.fabricationRemainingSeconds = 0,
+    this.fabricationStartedAtServerMillis,
+    this.fabricationCompletesAtServerMillis,
     this.powerFactor = 1,
     this.chargeFactor = 1,
     this.cooldownFactor = 1,
@@ -221,6 +223,8 @@ class OuterTowerState {
   final int investedLumens;
   final double fabricationTotalSeconds;
   final double fabricationRemainingSeconds;
+  final int? fabricationStartedAtServerMillis;
+  final int? fabricationCompletesAtServerMillis;
   final double powerFactor;
   final double chargeFactor;
   final double cooldownFactor;
@@ -304,6 +308,8 @@ class OuterTowerState {
       investedLumens: investedLumens,
       fabricationTotalSeconds: fabricationTotalSeconds,
       fabricationRemainingSeconds: fabricationRemainingSeconds,
+      fabricationStartedAtServerMillis: fabricationStartedAtServerMillis,
+      fabricationCompletesAtServerMillis: fabricationCompletesAtServerMillis,
       powerFactor: powerFactor,
       chargeFactor: chargeFactor,
       cooldownFactor: cooldownFactor,
@@ -373,6 +379,8 @@ class OuterTowerState {
     int? investedLumens,
     double? fabricationTotalSeconds,
     double? fabricationRemainingSeconds,
+    int? fabricationStartedAtServerMillis,
+    int? fabricationCompletesAtServerMillis,
     double? powerFactor,
     double? chargeFactor,
     double? cooldownFactor,
@@ -449,6 +457,12 @@ class OuterTowerState {
           fabricationTotalSeconds ?? this.fabricationTotalSeconds,
       fabricationRemainingSeconds:
           fabricationRemainingSeconds ?? this.fabricationRemainingSeconds,
+      fabricationStartedAtServerMillis:
+          fabricationStartedAtServerMillis ??
+          this.fabricationStartedAtServerMillis,
+      fabricationCompletesAtServerMillis:
+          fabricationCompletesAtServerMillis ??
+          this.fabricationCompletesAtServerMillis,
       powerFactor: powerFactor ?? this.powerFactor,
       chargeFactor: chargeFactor ?? this.chargeFactor,
       cooldownFactor: cooldownFactor ?? this.cooldownFactor,

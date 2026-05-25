@@ -232,7 +232,8 @@ extension LightcoreControllerCombatLoop on LightcoreController {
     double dt, {
     bool showCompletionBanners = true,
   }) {
-    if (dt <= 0) {
+    final serverNowMillis = _trustedServerNowMillis;
+    if (dt <= 0 && serverNowMillis == null) {
       return false;
     }
     var changed = false;
@@ -241,7 +242,12 @@ extension LightcoreControllerCombatLoop on LightcoreController {
       if (!tower.isFabricating) {
         continue;
       }
-      final remaining = max(0.0, tower.fabricationRemainingSeconds - dt);
+      final remaining =
+          _serverAnchoredFabricationRemainingSeconds(tower, serverNowMillis) ??
+          max(0.0, tower.fabricationRemainingSeconds - dt);
+      if (remaining == tower.fabricationRemainingSeconds) {
+        continue;
+      }
       final completed = remaining == 0;
       _slots[index] = tower.copyWith(
         fabricationRemainingSeconds: remaining,
@@ -262,6 +268,56 @@ extension LightcoreControllerCombatLoop on LightcoreController {
       }
       changed = true;
     }
+    return changed;
+  }
+
+  int? get _trustedServerNowMillis {
+    final anchor = _serverClockAnchorMillis;
+    if (anchor == null) {
+      return null;
+    }
+    return anchor + _serverClockElapsed.elapsedMilliseconds;
+  }
+
+  double? _serverAnchoredFabricationRemainingSeconds(
+    OuterTowerState tower,
+    int? serverNowMillis,
+  ) {
+    final completesAt = tower.fabricationCompletesAtServerMillis;
+    if (serverNowMillis == null || completesAt == null) {
+      return null;
+    }
+    return max(0.0, (completesAt - serverNowMillis) / 1000);
+  }
+
+  bool _reconcileServerAnchoredTowerFabrication({
+    bool showCompletionBanners = true,
+  }) {
+    if (_trustedServerNowMillis == null || _layers.isEmpty) {
+      return false;
+    }
+
+    _storeActiveLayer();
+    final viewedLayerId = _viewLayerId;
+    var changed = false;
+    for (final layer in List<TowerLayerSnapshot>.from(_layers)) {
+      _runtimeLayerId = layer.id;
+      if (_activeLayerId != layer.id) {
+        _loadLayer(layer);
+      }
+      changed =
+          _advanceTowerFabrication(
+            0,
+            showCompletionBanners: showCompletionBanners,
+          ) ||
+          changed;
+      _storeActiveLayer();
+    }
+
+    if (_activeLayerId != viewedLayerId) {
+      _loadLayer(_layerById(viewedLayerId));
+    }
+    _runtimeLayerId = _liveLayerForLayer(_layerById(viewedLayerId)).id;
     return changed;
   }
 

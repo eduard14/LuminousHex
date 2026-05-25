@@ -1659,6 +1659,8 @@ class LightcoreController extends ChangeNotifier {
   int _totalFluxSpent = 0;
   int _totalPrismShardsSpent = 0;
   int _totalTimeWarpSecondsClaimed = 0;
+  int? _serverClockAnchorMillis;
+  final Stopwatch _serverClockElapsed = Stopwatch();
   String? _serverDayKey;
   String? _serverWeekKey;
   String _timeWarpPurchaseWeekKey = '';

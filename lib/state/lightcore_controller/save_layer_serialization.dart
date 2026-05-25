@@ -203,6 +203,10 @@ extension LightcoreControllerSaveLayerSerialization on LightcoreController {
       'investedLumens': tower.investedLumens,
       'fabricationTotalSeconds': tower.fabricationTotalSeconds,
       'fabricationRemainingSeconds': tower.fabricationRemainingSeconds,
+      'fabricationStartedAtServerMillis':
+          tower.fabricationStartedAtServerMillis,
+      'fabricationCompletesAtServerMillis':
+          tower.fabricationCompletesAtServerMillis,
       'powerFactor': tower.powerFactor,
       'chargeFactor': tower.chargeFactor,
       'cooldownFactor': tower.cooldownFactor,
@@ -311,6 +315,12 @@ extension LightcoreControllerSaveLayerSerialization on LightcoreController {
       fabricationTotalSeconds: _doubleValue(data['fabricationTotalSeconds']),
       fabricationRemainingSeconds: _doubleValue(
         data['fabricationRemainingSeconds'],
+      ),
+      fabricationStartedAtServerMillis: _intOrNull(
+        data['fabricationStartedAtServerMillis'],
+      ),
+      fabricationCompletesAtServerMillis: _intOrNull(
+        data['fabricationCompletesAtServerMillis'],
       ),
       powerFactor: _doubleValue(data['powerFactor'], fallback: 1),
       chargeFactor: _doubleValue(data['chargeFactor'], fallback: 1),

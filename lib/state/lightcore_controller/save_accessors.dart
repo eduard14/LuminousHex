@@ -1,6 +1,27 @@
 part of '../lightcore_controller.dart';
 
 extension LightcoreControllerSaveAccessors on LightcoreController {
+  void syncServerClock(
+    DateTime? serverTime, {
+    bool showCompletionBanners = false,
+  }) {
+    if (serverTime == null) {
+      return;
+    }
+
+    _serverClockAnchorMillis = serverTime.toUtc().millisecondsSinceEpoch;
+    _serverClockElapsed
+      ..reset()
+      ..start();
+
+    if (_reconcileServerAnchoredTowerFabrication(
+      showCompletionBanners: showCompletionBanners,
+    )) {
+      _syncTutorialStep(showBanner: false);
+      _notifyNow();
+    }
+  }
+
   void syncServerDateKeys({String? dayKey, String? weekKey}) {
     var changed = false;
     final normalizedDayKey = _normalizeDateKey(dayKey);

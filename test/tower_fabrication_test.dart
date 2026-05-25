@@ -62,6 +62,77 @@ void main() {
     expect(controller.upgradeTower(0), isTrue);
   });
 
+  test('server clock anchors tower fabrication completion', () {
+    final controller = LightcoreController();
+    addTearDown(controller.dispose);
+
+    final startedAt = DateTime.utc(2026, 5, 24, 12);
+    controller.syncServerClock(startedAt);
+    controller.kills = LightcoreController.unlockKillsForOuterSlot(0);
+    controller.lumens = 1000;
+
+    expect(
+      controller.startTowerFabricationAt(0, TowerLibrary.redPrism),
+      isTrue,
+    );
+
+    final fabricatingTower = controller.slots[0];
+    expect(fabricatingTower.isFabricating, isTrue);
+    expect(
+      fabricatingTower.fabricationStartedAtServerMillis,
+      startedAt.millisecondsSinceEpoch,
+    );
+    expect(
+      fabricatingTower.fabricationCompletesAtServerMillis,
+      startedAt
+          .add(
+            Duration(
+              seconds: LightcoreController.towerConstructionDurationSeconds
+                  .round(),
+            ),
+          )
+          .millisecondsSinceEpoch,
+    );
+
+    controller.tick(fabricatingTower.fabricationRemainingSeconds + 60);
+
+    expect(controller.slots[0].isFabricating, isTrue);
+    expect(controller.builtTowerCount, 0);
+
+    final restored = LightcoreController.fromCloudSavePayload(
+      controller.buildCloudSavePayload(),
+    );
+    addTearDown(restored.dispose);
+
+    expect(restored.slots[0].isFabricating, isTrue);
+    expect(
+      restored.slots[0].fabricationCompletesAtServerMillis,
+      fabricatingTower.fabricationCompletesAtServerMillis,
+    );
+
+    controller.syncServerClock(
+      startedAt.add(
+        Duration(
+          seconds: LightcoreController.towerConstructionDurationSeconds.round(),
+        ),
+      ),
+    );
+
+    expect(controller.slots[0].isFabricating, isFalse);
+    expect(controller.builtTowerCount, 1);
+
+    restored.syncServerClock(
+      startedAt.add(
+        Duration(
+          seconds: LightcoreController.towerConstructionDurationSeconds.round(),
+        ),
+      ),
+    );
+
+    expect(restored.slots[0].isFabricating, isFalse);
+    expect(restored.builtTowerCount, 1);
+  });
+
   test('server offline claim advances fabrication without rewards', () {
     final controller = LightcoreController();
     addTearDown(controller.dispose);

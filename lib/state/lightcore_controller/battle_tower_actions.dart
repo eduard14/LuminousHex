@@ -430,6 +430,10 @@ extension LightcoreControllerBattleTowerActions on LightcoreController {
     }
 
     final duration = towerFabricationDurationForConfig(config);
+    final serverStartedAtMillis = _trustedServerNowMillis;
+    final serverCompletesAtMillis = serverStartedAtMillis == null
+        ? null
+        : serverStartedAtMillis + (duration * 1000).ceil();
     lumens -= cost;
     _recordLumenSpend(cost);
     _outerRingRevealed = true;
@@ -443,6 +447,8 @@ extension LightcoreControllerBattleTowerActions on LightcoreController {
           charge: 0,
           fabricationTotalSeconds: duration,
           fabricationRemainingSeconds: duration,
+          fabricationStartedAtServerMillis: serverStartedAtMillis,
+          fabricationCompletesAtServerMillis: serverCompletesAtMillis,
         );
     selectedSlotIndex = slotIndex;
     _towerRangePreviewSlotIndex = null;

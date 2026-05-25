@@ -426,6 +426,7 @@ class _LightcoreAppState extends State<LightcoreApp>
       dayKey: launchReport.serverDayKey,
       weekKey: launchReport.serverWeekKey,
     );
+    controller.syncServerClock(launchReport.serverTime);
     controller.syncBalanceTuning(launchReport.manifest.balanceTuning);
     controller.setGraphicsQuality(_graphicsQuality);
     controller.setLocalhostAutoTapperEnabled(_localhostAutoTapperEnabled);
@@ -737,6 +738,7 @@ class _LightcoreAppState extends State<LightcoreApp>
       dayKey: syncResult.serverDayKey,
       weekKey: syncResult.serverWeekKey,
     );
+    controller?.syncServerClock(syncResult.serverTime);
     controller?.syncBalanceTuning(syncResult.manifest.balanceTuning);
     controller?.syncPlayerProfile(syncResult.profile, showBanner: false);
 
