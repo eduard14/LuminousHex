@@ -408,6 +408,8 @@ class _FriendManagementScreenState extends State<FriendManagementScreen> {
           onSend: () => unawaited(_sendGlobalChatMessage()),
         ),
         const SizedBox(height: 14),
+        const _GuildsComingSoonPanel(),
+        const SizedBox(height: 14),
         if (initialInvite != null) ...[
           _IncomingInviteLinkPanel(
             invite: initialInvite,

@@ -1170,7 +1170,7 @@ class LightcoreController extends ChangeNotifier {
     LightcoreGuideProfile? guideProfile,
     String playerId = 'LUMI-LOCAL',
     String? screenName,
-    bool guildsEnabled = true,
+    bool guildsEnabled = false,
     int guildCreationUnlockLevel = defaultGuildCreationUnlockLevel,
     LightcoreBalanceTuning balanceTuning = LightcoreBalanceTuning.defaults,
     LightcoreGraphicsQuality graphicsQuality = LightcoreGraphicsQuality.high,

@@ -158,7 +158,8 @@ shell, and keep climbing.
   instant blocking for tracked bot-message repeats.
 - Space Room is hidden from the current release surface.
 - Mentorship with mentor, mentee, and branch-context surfaces.
-- Guild state and guild creation scaffolding exist for future live-ops expansion.
+- Guilds are hidden from the current release surface and should appear only as
+  coming-soon social copy until the live guild loop is complete.
 - Store, Prism Shard packs, bundles, boosts, and Premium Membership
   scaffolding exist, but production purchase wiring still needs release hardening.
 - Rewarded ad placements exist for mobile builds, but current checked-in ad IDs

@@ -64,6 +64,9 @@ extension LightcoreControllerSocialGuild on LightcoreController {
   }
 
   GuildState? get activeGuild {
+    if (!guildsEnabled) {
+      return null;
+    }
     _syncGuildPlayerContribution();
     return _activeGuild;
   }

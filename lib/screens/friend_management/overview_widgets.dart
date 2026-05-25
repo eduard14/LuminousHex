@@ -61,6 +61,40 @@ class _SocialOverviewPanel extends StatelessWidget {
   }
 }
 
+class _GuildsComingSoonPanel extends StatelessWidget {
+  const _GuildsComingSoonPanel();
+
+  @override
+  Widget build(BuildContext context) {
+    return AuroraPanel(
+      tint: LightcorePalette.violet,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(Icons.groups_rounded, color: LightcorePalette.violet),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Guilds Coming Soon',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  'Guild creation, rosters, guild bonuses, and guild chat are parked for a later release. Global chat and friends are the active social surfaces right now.',
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 extension on FriendManagementSection {
   String get title => switch (this) {
     FriendManagementSection.friends => 'Friends',
