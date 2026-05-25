@@ -399,6 +399,7 @@ class LightcoreOfflineProgressSnapshot {
     this.offlineRegionValidatedThreatDirectorId,
     this.validatedFarmSwarmSize = 0,
     this.validatedFarmEfficiency = 0,
+    this.validatedFarmLumensPerHour = 0,
   });
 
   final int generatedAtMillis;
@@ -414,6 +415,7 @@ class LightcoreOfflineProgressSnapshot {
   final String? offlineRegionValidatedThreatDirectorId;
   final int validatedFarmSwarmSize;
   final double validatedFarmEfficiency;
+  final double validatedFarmLumensPerHour;
 
   Map<String, dynamic> toMap() {
     return <String, dynamic>{
@@ -431,6 +433,7 @@ class LightcoreOfflineProgressSnapshot {
           offlineRegionValidatedThreatDirectorId,
       'validatedFarmSwarmSize': validatedFarmSwarmSize,
       'validatedFarmEfficiency': validatedFarmEfficiency,
+      'validatedFarmLumensPerHour': validatedFarmLumensPerHour,
     };
   }
 
@@ -455,6 +458,8 @@ class LightcoreOfflineProgressSnapshot {
           (data['validatedFarmSwarmSize'] as num?)?.toInt() ?? 0,
       validatedFarmEfficiency:
           (data['validatedFarmEfficiency'] as num?)?.toDouble() ?? 0,
+      validatedFarmLumensPerHour:
+          (data['validatedFarmLumensPerHour'] as num?)?.toDouble() ?? 0,
     );
   }
 }

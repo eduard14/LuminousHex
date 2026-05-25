@@ -114,8 +114,8 @@ shell, and keep climbing.
 - Region challenges are short three-wave stabilization tests with isolated
   combat pressure and a per-wave timer: no EXP, upgrade spending, or
   notification clutter during the run.
-- Farm Validation asks players to survive repeated farming pressure before a
-  region can produce offline rewards.
+- Farm Validation asks players to survive three waves at that region level with
+  its Threat Director before the region can produce offline rewards.
 - Swarm Magnet controls the account-wide farming swarm size and can be rerolled
   with dedicated currency.
 - Threat Directors tune the selected region's current spawn cadence, enemy
@@ -133,7 +133,8 @@ shell, and keep climbing.
 - Flux supports manager forging and related systems.
 - Threat Scans feed Knowledge Card pulls.
 - Apex Scans feed Apex Anomaly pulls and social gifts.
-- Validated region farms determine offline reward progress.
+- Validated region farms determine offline rewards from elapsed sign-in time,
+  Threat Director multipliers, and that level's enemy output.
 - Account Radiance tracks broader player growth.
 - Global Total Strength leaderboard previews the player's rank immediately from
   local tower changes while the public board refreshes periodically.
@@ -243,6 +244,8 @@ Suggested first release order:
 - Do not describe Knowledge Cards as friendly units, heroes, or allies.
 - Do not describe Threat Scans as a Threat Map reveal or stabilization mechanic.
 - Do not imply every shell runs a full battle simulation while offline.
+- Do not describe offline rewards as passive tower income; they come from
+  validated region/director farm calculations.
 - Do not market equipment, gear drops, or gear loadouts as a launch feature.
 - Do not market guilds as a launch feature until the live guild loop is complete.
 - Do not use Lumicore as a public title or franchise name.

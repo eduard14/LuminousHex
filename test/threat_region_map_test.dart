@@ -267,10 +267,18 @@ void main() {
     expect(controller.offlineRegionStabilizedLevel, 1);
     expect(controller.validatedFarmSwarmSize, 12);
     expect(controller.threatRegionOfflineKillsPerHour, greaterThan(0));
+    expect(controller.threatRegionOfflineLumensPerHour, greaterThan(0));
+    final snapshot = controller.buildOfflineProgressSnapshot();
+    expect(snapshot.killsPerHour, controller.threatRegionOfflineKillsPerHour);
+    expect(
+      snapshot.passiveLumensPerHour,
+      controller.threatRegionOfflineLumensPerHour,
+    );
 
     controller.debugGrantSwarmMagnets(1);
     expect(controller.rerollFarmSwarmSize(), isTrue);
     expect(controller.threatRegionOfflineKillsPerHour, 0);
+    expect(controller.threatRegionOfflineLumensPerHour, 0);
     expect(controller.offlineRegionId, isNull);
   });
 

@@ -598,8 +598,8 @@ class _ThreatRegionMapPanelState extends State<_ThreatRegionMapPanel> {
               const SizedBox(height: 8),
               _InlineEnemyNote(
                 message: controller.validatedFarmRegionId == detailRegion.id
-                    ? 'Offline farm validated at swarm ${controller.validatedFarmSwarmSize} • ${controller.threatRegionOfflineKillsPerHour.toStringAsFixed(0)} kills/hr.'
-                    : 'Offline progress unlocks after Farm Validation survives 3 waves at your current Swarm Magnet.',
+                    ? 'Offline farm validated at swarm ${controller.validatedFarmSwarmSize} • ${controller.threatRegionOfflineKillsPerHour.toStringAsFixed(0)} kills/hr • ${controller.threatRegionOfflineLumensPerHour.toStringAsFixed(0)} Lumens/hr.'
+                    : 'Offline rewards unlock after Farm Validation survives 3 waves at this level with its Threat Director.',
                 tint: controller.validatedFarmRegionId == detailRegion.id
                     ? LightcorePalette.success
                     : LightcorePalette.warning,

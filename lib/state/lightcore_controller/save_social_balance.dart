@@ -258,7 +258,7 @@ extension LightcoreControllerSaveSocialBalance on LightcoreController {
   LightcoreOfflineProgressSnapshot buildOfflineProgressSnapshot() {
     return LightcoreOfflineProgressSnapshot(
       generatedAtMillis: DateTime.now().millisecondsSinceEpoch,
-      passiveLumensPerHour: passiveLumenPerSecond * 3600,
+      passiveLumensPerHour: threatRegionOfflineLumensPerHour,
       fluxPerHour: 0,
       enemyTicketsPerHour: 0,
       killsPerHour: threatRegionOfflineKillsPerHour,
@@ -271,6 +271,7 @@ extension LightcoreControllerSaveSocialBalance on LightcoreController {
           _offlineRegionValidatedThreatDirectorId,
       validatedFarmSwarmSize: _validatedFarmSwarmSize,
       validatedFarmEfficiency: _validatedFarmEfficiency,
+      validatedFarmLumensPerHour: _validatedFarmLumensPerHour,
     );
   }
 

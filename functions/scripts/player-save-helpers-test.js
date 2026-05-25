@@ -152,7 +152,61 @@ assert.equal(authoritativeSnapshot.fluxPerHour, 0);
 assert.equal(authoritativeSnapshot.enemyTicketsPerHour, 0);
 assert.equal(authoritativeSnapshot.activeLayerTier, 1);
 assert.equal(authoritativeSnapshot.builtTowerCount, 1);
-assert.ok(authoritativeSnapshot.passiveLumensPerHour > 0);
+assert.equal(authoritativeSnapshot.passiveLumensPerHour, 0);
+assert.equal(authoritativeSnapshot.killsPerHour, 0);
+
+const validatedFarmSnapshot = buildAuthoritativeIdleSnapshot({
+  clientSnapshot: {
+    generatedAtMillis: Date.now(),
+    passiveLumensPerHour: 120,
+    fluxPerHour: 0,
+    enemyTicketsPerHour: 0,
+    killsPerHour: 12,
+    activeLayerTier: 1,
+    builtTowerCount: 1,
+    prestigeLevel: 0,
+  },
+  savePayload: basePayload({
+    inventory: {
+      enemyManagers: [
+        {
+          instanceId: "director-1",
+          spawnRateMultiplier: 1.2,
+          rewardMultiplier: 1.3,
+          healthMultiplier: 1.1,
+          speedMultiplier: 1.05,
+        },
+      ],
+    },
+    threatMap: {
+      validatedFarmRegionId: "region_r1_0_0",
+      validatedFarmStabilizedLevel: 3,
+      validatedFarmThreatDirectorId: "director-1",
+      validatedFarmSwarmSize: 12,
+      validatedFarmEfficiency: 0.95,
+      validatedFarmLumensPerHour: 240,
+    },
+    layers: {
+      activeLayerId: "root",
+      items: [
+        {
+          id: "root",
+          tier: 1,
+          core: { level: 1 },
+          slots: [{ configId: "red-prism" }],
+        },
+      ],
+    },
+  }),
+});
+
+assert.ok(validatedFarmSnapshot.killsPerHour > 0);
+assert.equal(validatedFarmSnapshot.passiveLumensPerHour, 240);
+assert.equal(validatedFarmSnapshot.offlineRegionId, "region_r1_0_0");
+assert.equal(
+  validatedFarmSnapshot.offlineRegionValidatedThreatDirectorId,
+  "director-1",
+);
 
 assert.throws(
   () =>

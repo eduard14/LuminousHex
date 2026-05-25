@@ -760,16 +760,37 @@ function createPlayerSaveHelpers({ db, logger, HttpsError, constants, helpers })
       SERVER_BALANCE_LIMITS.maxOfflineKillsPerHour,
       0,
     );
+    const validatedFarmLumensPerHour = clampNumber(
+      threatMap.validatedFarmLumensPerHour,
+      0,
+      SNAPSHOT_LIMITS.passiveLumensPerHour,
+      0,
+    );
     const killsPerHour = estimateOfflineKillsPerHour({
       offlineRegionId,
       offlineRegionStabilizedLevel,
       validatedFarmSwarmSize,
       validatedFarmEfficiency,
       validatedFarmKillsPerHour,
+      offlineRegionValidatedThreatDirectorId,
+      enemyManagers: inventoryData.enemyManagers,
     });
+    const farmLumensPerHour =
+      offlineRegionId && offlineRegionStabilizedLevel > 0 && killsPerHour > 0
+        ? estimateOfflineLumensPerHour({
+            offlineRegionId,
+            offlineRegionStabilizedLevel,
+            validatedFarmSwarmSize,
+            validatedFarmEfficiency,
+            validatedFarmLumensPerHour,
+            killsPerHour,
+            offlineRegionValidatedThreatDirectorId,
+            enemyManagers: inventoryData.enemyManagers,
+          })
+        : 0;
 
     return {
-      passiveLumensPerHour: passiveLumensPerSecond * 3600,
+      passiveLumensPerHour: farmLumensPerHour,
       killsPerHour,
       activeLayerTier: activeTier,
       builtTowerCount: totalBuiltTowerCount,
@@ -778,6 +799,7 @@ function createPlayerSaveHelpers({ db, logger, HttpsError, constants, helpers })
       offlineRegionValidatedThreatDirectorId,
       validatedFarmSwarmSize,
       validatedFarmEfficiency,
+      validatedFarmLumensPerHour: farmLumensPerHour,
     };
   }
 
@@ -833,6 +855,12 @@ function createPlayerSaveHelpers({ db, logger, HttpsError, constants, helpers })
         1,
         0,
       ),
+      validatedFarmLumensPerHour: clampNumber(
+        envelope.validatedFarmLumensPerHour,
+        0,
+        SNAPSHOT_LIMITS.passiveLumensPerHour,
+        0,
+      ),
     };
   }
 
@@ -842,6 +870,8 @@ function createPlayerSaveHelpers({ db, logger, HttpsError, constants, helpers })
     validatedFarmSwarmSize,
     validatedFarmEfficiency,
     validatedFarmKillsPerHour,
+    offlineRegionValidatedThreatDirectorId,
+    enemyManagers,
   }) {
     if (!offlineRegionId || offlineRegionStabilizedLevel <= 0) {
       return 0;
@@ -864,10 +894,85 @@ function createPlayerSaveHelpers({ db, logger, HttpsError, constants, helpers })
     const base = 18 + (ring * 18);
     const swarmScale = clampNumber(validatedFarmSwarmSize / 6, 1, 8, 1);
     const efficiencyScale = clampNumber(validatedFarmEfficiency, 0.7, 1, 1);
+    const director = findEnemyManagerById(
+      enemyManagers,
+      offlineRegionValidatedThreatDirectorId,
+    );
+    const waveFrequencyScale = clampNumber(
+      director?.spawnRateMultiplier,
+      0.65,
+      1.75,
+      1,
+    );
+    const strengthRiskScale = director
+      ? clampNumber(
+          2 /
+            (clampNumber(director.healthMultiplier, 0.5, 3, 1) +
+              clampNumber(director.speedMultiplier, 0.5, 3, 1)),
+          0.7,
+          1.2,
+          1,
+        )
+      : 1;
     return Math.min(
       SERVER_BALANCE_LIMITS.maxOfflineKillsPerHour,
-      base * (0.4 + (layerRatio * 0.6)) * swarmScale * efficiencyScale,
+      base *
+        (0.4 + (layerRatio * 0.6)) *
+        swarmScale *
+        waveFrequencyScale *
+        strengthRiskScale *
+        efficiencyScale,
     );
+  }
+
+  function estimateOfflineLumensPerHour({
+    offlineRegionId,
+    offlineRegionStabilizedLevel,
+    validatedFarmLumensPerHour,
+    killsPerHour,
+    offlineRegionValidatedThreatDirectorId,
+    enemyManagers,
+  }) {
+    if (validatedFarmLumensPerHour > 0) {
+      return Math.min(
+        SNAPSHOT_LIMITS.passiveLumensPerHour,
+        validatedFarmLumensPerHour,
+      );
+    }
+    const ringMatch = offlineRegionId.match(/^region_r(\d+)_/);
+    const ring = ringMatch ? clampInt(ringMatch[1], 0, 3, 0) : 0;
+    const layerCap = ring === 0 ? 3 : ring === 1 ? 5 : ring === 2 ? 8 : 13;
+    const layerRatio = clampNumber(
+      offlineRegionStabilizedLevel / layerCap,
+      0,
+      1,
+      0,
+    );
+    const director = findEnemyManagerById(
+      enemyManagers,
+      offlineRegionValidatedThreatDirectorId,
+    );
+    const directorRewardScale = clampNumber(
+      director?.rewardMultiplier,
+      0.75,
+      1.65,
+      1,
+    );
+    const enemyOutputPerKill = (10 + (ring * 7)) * (0.7 + (layerRatio * 0.3));
+    return Math.min(
+      SNAPSHOT_LIMITS.passiveLumensPerHour,
+      killsPerHour * enemyOutputPerKill * directorRewardScale,
+    );
+  }
+
+  function findEnemyManagerById(enemyManagers, managerId) {
+    const normalizedId = sanitizeOptionalString(managerId);
+    if (!normalizedId) {
+      return null;
+    }
+    return normalizeArray(enemyManagers)
+      .map(normalizeObject)
+      .find((manager) => sanitizeOptionalString(manager.instanceId) === normalizedId) || null;
   }
 
   function countBuiltTowers(layer) {
@@ -1510,6 +1615,12 @@ function createPlayerSaveHelpers({ db, logger, HttpsError, constants, helpers })
         data.validatedFarmKillsPerHour,
         0,
         SERVER_BALANCE_LIMITS.maxOfflineKillsPerHour,
+        0,
+      ),
+      validatedFarmLumensPerHour: clampNumber(
+        data.validatedFarmLumensPerHour,
+        0,
+        SNAPSHOT_LIMITS.passiveLumensPerHour,
         0,
       ),
       offlineRegionId: sanitizeSavedNullableString(data.offlineRegionId, 96),

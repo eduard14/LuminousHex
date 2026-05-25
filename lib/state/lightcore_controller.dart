@@ -1211,6 +1211,7 @@ class LightcoreController extends ChangeNotifier {
     _validatedFarmStabilizedLevel = 0;
     _validatedFarmEfficiency = 0;
     _validatedFarmKillsPerHour = 0;
+    _validatedFarmLumensPerHour = 0;
     _threatRegionChallenge = null;
     _threatRegionFarmValidation = null;
     _activeBossEnemyCardId = BossEnemyLibrary.starterWhiteWarden.id;
@@ -1572,6 +1573,7 @@ class LightcoreController extends ChangeNotifier {
   int _validatedFarmStabilizedLevel = 0;
   double _validatedFarmEfficiency = 0;
   double _validatedFarmKillsPerHour = 0;
+  double _validatedFarmLumensPerHour = 0;
   ThreatRegionChallengeState? _threatRegionChallenge;
   ThreatRegionFarmValidationState? _threatRegionFarmValidation;
   final Set<String> _threatRegionDefeatedBossIds = <String>{};

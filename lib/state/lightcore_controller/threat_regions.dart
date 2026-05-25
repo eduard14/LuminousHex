@@ -66,6 +66,8 @@ extension LightcoreControllerThreatRegions on LightcoreController {
 
   double get validatedFarmKillsPerHour => _validatedFarmKillsPerHour;
 
+  double get validatedFarmLumensPerHour => _validatedFarmLumensPerHour;
+
   bool get canRerollFarmSwarmSize =>
       swarmMagnets >= swarmMagnetRerollCost && !activeLayerPassiveOnly;
 
@@ -345,6 +347,34 @@ extension LightcoreControllerThreatRegions on LightcoreController {
       return min(maxOfflineKillsPerHour, _validatedFarmKillsPerHour);
     }
     return _estimateThreatRegionFarmKillsPerHour(
+      config: config,
+      stabilizedLevel: stabilizedLevel,
+      farmSwarmSize: _validatedFarmSwarmSize,
+      threatDirectorId: directorId,
+      efficiency: _validatedFarmEfficiency <= 0 ? 1 : _validatedFarmEfficiency,
+    );
+  }
+
+  double get threatRegionOfflineLumensPerHour {
+    final regionId = _validatedFarmRegionId ?? _offlineRegionId;
+    final config = regionId == null ? null : threatRegionConfigById(regionId);
+    final state = regionId == null ? null : threatRegionStateById(regionId);
+    final stabilizedLevel = _validatedFarmStabilizedLevel > 0
+        ? _validatedFarmStabilizedLevel
+        : _offlineRegionStabilizedLevel;
+    final directorId =
+        _validatedFarmThreatDirectorId ??
+        _offlineRegionValidatedThreatDirectorId;
+    if (config == null || state == null || stabilizedLevel <= 0) {
+      return 0;
+    }
+    if (state.assignedThreatDirectorId != directorId) {
+      return 0;
+    }
+    if (_validatedFarmLumensPerHour > 0) {
+      return _validatedFarmLumensPerHour;
+    }
+    return _estimateThreatRegionFarmLumensPerHour(
       config: config,
       stabilizedLevel: stabilizedLevel,
       farmSwarmSize: _validatedFarmSwarmSize,
@@ -672,7 +702,7 @@ extension LightcoreControllerThreatRegions on LightcoreController {
     _swarmActivated = true;
     _spawnTimer = min(_spawnTimer, 0.01);
     _showBanner(
-      '${config.name} Farm Validation started: survive $farmValidationWaveCount waves at $_farmSwarmSize swarm.',
+      '${config.name} Farm Validation started: survive $farmValidationWaveCount waves at this level with its Threat Director.',
     );
     _notifyNow();
     return true;
@@ -717,12 +747,20 @@ extension LightcoreControllerThreatRegions on LightcoreController {
       threatDirectorId: validation.threatDirectorId,
       efficiency: efficiency,
     );
+    final lumensPerHour = _estimateThreatRegionFarmLumensPerHour(
+      config: config,
+      stabilizedLevel: validation.targetStabilizationLevel,
+      farmSwarmSize: validation.farmSwarmSize,
+      threatDirectorId: validation.threatDirectorId,
+      efficiency: efficiency,
+    );
     _validatedFarmRegionId = config.id;
     _validatedFarmSwarmSize = validation.farmSwarmSize;
     _validatedFarmThreatDirectorId = validation.threatDirectorId;
     _validatedFarmStabilizedLevel = validation.targetStabilizationLevel;
     _validatedFarmEfficiency = efficiency.clamp(0.0, 1.0);
     _validatedFarmKillsPerHour = killsPerHour;
+    _validatedFarmLumensPerHour = lumensPerHour;
     _syncLegacyOfflineFarmFields();
     _replaceThreatRegionState(
       validation.threatDirectorId == null
@@ -734,7 +772,7 @@ extension LightcoreControllerThreatRegions on LightcoreController {
     _threatRegionFarmValidation = null;
     _applyFarmSwarmPressure();
     _showBanner(
-      '${config.name} offline farm validated: ${killsPerHour.toStringAsFixed(0)} kills/hr.',
+      '${config.name} offline farm validated: ${killsPerHour.toStringAsFixed(0)} kills/hr • ${lumensPerHour.toStringAsFixed(0)} Lumens/hr.',
     );
     _notifyNow();
     return true;
@@ -879,24 +917,59 @@ extension LightcoreControllerThreatRegions on LightcoreController {
     final manager = threatDirectorId == null
         ? null
         : enemyManagerById(threatDirectorId);
-    final managerRewardScale = manager == null
-        ? 1.0
-        : (manager.rewardMultiplier / manager.stabilityDamageMultiplier).clamp(
-            0.65,
-            1.45,
-          );
     final waveFrequencyScale = _threatDirectorWaveFrequencyMultiplier(manager);
     final stabilityScale = efficiency.clamp(0.7, 1.0);
+    final strengthRiskScale = manager == null
+        ? 1.0
+        : (2 / (manager.healthMultiplier + manager.speedMultiplier)).clamp(
+            0.7,
+            1.2,
+          );
     return min(
       maxOfflineKillsPerHour,
       base *
           (0.4 + (levelRatio * 0.6)) *
           bossPressure *
           swarmScale *
-          managerRewardScale *
           waveFrequencyScale *
+          strengthRiskScale *
           stabilityScale,
     );
+  }
+
+  double _estimateThreatRegionFarmLumensPerHour({
+    required ThreatRegionConfig config,
+    required int stabilizedLevel,
+    required int farmSwarmSize,
+    required String? threatDirectorId,
+    required double efficiency,
+  }) {
+    final killsPerHour = _estimateThreatRegionFarmKillsPerHour(
+      config: config,
+      stabilizedLevel: stabilizedLevel,
+      farmSwarmSize: farmSwarmSize,
+      threatDirectorId: threatDirectorId,
+      efficiency: efficiency,
+    );
+    if (killsPerHour <= 0) {
+      return 0;
+    }
+    final levelRatio = (stabilizedLevel / config.stabilizationLayers).clamp(
+      0.0,
+      1.0,
+    );
+    final manager = threatDirectorId == null
+        ? null
+        : enemyManagerById(threatDirectorId);
+    final directorRewardScale = manager == null
+        ? 1.0
+        : manager.rewardMultiplier.clamp(0.75, 1.65);
+    final doubleBossScale = config.hasDoubleBoss ? 1.18 : 1.0;
+    final enemyOutputPerKill =
+        (10 + (config.ring * 7) + (config.rarity.index * 5)) *
+        (0.7 + (levelRatio * 0.3)) *
+        doubleBossScale;
+    return killsPerHour * enemyOutputPerKill * directorRewardScale;
   }
 
   void _invalidateValidatedFarmForRegion(String regionId) {
@@ -912,6 +985,7 @@ extension LightcoreControllerThreatRegions on LightcoreController {
     _validatedFarmStabilizedLevel = 0;
     _validatedFarmEfficiency = 0;
     _validatedFarmKillsPerHour = 0;
+    _validatedFarmLumensPerHour = 0;
     _offlineRegionId = null;
     _offlineRegionStabilizedLevel = 0;
     _offlineRegionValidatedThreatDirectorId = null;
@@ -1239,6 +1313,7 @@ extension LightcoreControllerThreatRegions on LightcoreController {
       'validatedFarmStabilizedLevel': _validatedFarmStabilizedLevel,
       'validatedFarmEfficiency': _validatedFarmEfficiency,
       'validatedFarmKillsPerHour': _validatedFarmKillsPerHour,
+      'validatedFarmLumensPerHour': _validatedFarmLumensPerHour,
       'offlineRegionId': _offlineRegionId,
       'offlineRegionStabilizedLevel': _offlineRegionStabilizedLevel,
       'offlineRegionValidatedThreatDirectorId':
@@ -1331,6 +1406,9 @@ extension LightcoreControllerThreatRegions on LightcoreController {
     _validatedFarmKillsPerHour = _doubleValue(
       data['validatedFarmKillsPerHour'],
     ).clamp(0.0, maxOfflineKillsPerHour);
+    _validatedFarmLumensPerHour = _doubleValue(
+      data['validatedFarmLumensPerHour'],
+    ).clamp(0.0, double.infinity);
     final validatedConfig = _validatedFarmRegionId == null
         ? null
         : threatRegionConfigById(_validatedFarmRegionId!);
@@ -1340,6 +1418,7 @@ extension LightcoreControllerThreatRegions on LightcoreController {
       _validatedFarmThreatDirectorId = null;
       _validatedFarmEfficiency = 0;
       _validatedFarmKillsPerHour = 0;
+      _validatedFarmLumensPerHour = 0;
     } else {
       _validatedFarmStabilizedLevel = _validatedFarmStabilizedLevel.clamp(
         0,
@@ -1347,6 +1426,17 @@ extension LightcoreControllerThreatRegions on LightcoreController {
       );
       if (_validatedFarmKillsPerHour <= 0) {
         _validatedFarmKillsPerHour = _estimateThreatRegionFarmKillsPerHour(
+          config: validatedConfig,
+          stabilizedLevel: _validatedFarmStabilizedLevel,
+          farmSwarmSize: _validatedFarmSwarmSize,
+          threatDirectorId: _validatedFarmThreatDirectorId,
+          efficiency: _validatedFarmEfficiency <= 0
+              ? 1
+              : _validatedFarmEfficiency,
+        );
+      }
+      if (_validatedFarmLumensPerHour <= 0) {
+        _validatedFarmLumensPerHour = _estimateThreatRegionFarmLumensPerHour(
           config: validatedConfig,
           stabilizedLevel: _validatedFarmStabilizedLevel,
           farmSwarmSize: _validatedFarmSwarmSize,
