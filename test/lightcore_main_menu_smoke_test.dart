@@ -22,6 +22,7 @@ void main() {
     VoidCallback? onEnterGame,
     VoidCallback? onRetryBootstrap,
     Future<bool> Function()? onGoogleSignIn,
+    Future<bool> Function()? onEmailSignIn,
     ValueChanged<bool>? onSkipGuestSignInPromptChanged,
   }) {
     return MaterialApp(
@@ -37,6 +38,7 @@ void main() {
         sessionNotice: sessionNotice,
         skipGuestSignInPrompt: skipGuestSignInPrompt,
         onGoogleSignIn: onGoogleSignIn,
+        onEmailSignIn: onEmailSignIn,
         onSkipGuestSignInPromptChanged: onSkipGuestSignInPromptChanged,
       ),
     );
@@ -310,6 +312,47 @@ void main() {
     expect(entered, isTrue);
     expect(googleSignInCalls, 1);
     expect(skippedPrompt, isFalse);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump();
+  });
+
+  testWidgets('guest play can sign in with email from prompt', (tester) async {
+    var entered = false;
+    var emailSignInCalls = 0;
+    final report = buildReport(
+      clientVersion: '1.0.18',
+      clientBuildNumber: '19',
+      recommendedVersion: '1.0.18',
+      recommendedBuildNumber: '19',
+    );
+
+    await tester.pumpWidget(
+      buildMenu(
+        report: report,
+        onEnterGame: () => entered = true,
+        onEmailSignIn: () async {
+          emailSignInCalls += 1;
+          return true;
+        },
+      ),
+    );
+
+    await tester.tap(find.text('PLAY'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 250));
+
+    expect(find.text('Sign In With Email'), findsOneWidget);
+    expect(find.text('Apple ID Soon'), findsOneWidget);
+
+    await tester.tap(
+      find.byKey(const ValueKey<String>('guest-sign-in-email-button')),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 250));
+
+    expect(entered, isTrue);
+    expect(emailSignInCalls, 1);
 
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump();

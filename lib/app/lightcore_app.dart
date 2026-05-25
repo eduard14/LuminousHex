@@ -29,6 +29,16 @@ enum _GoogleCollisionAction {
   cancel,
 }
 
+class _EmailCloudSaveCredentials {
+  const _EmailCloudSaveCredentials({
+    required this.email,
+    required this.password,
+  });
+
+  final String email;
+  final String password;
+}
+
 class LightcoreApp extends StatefulWidget {
   const LightcoreApp({super.key, this.backend, this.showStudioSplash = true});
 
@@ -1014,6 +1024,211 @@ class _LightcoreAppState extends State<LightcoreApp>
     }
   }
 
+  Future<bool> _signInWithEmail() async {
+    if (_authBusy) {
+      _logSession('email-sign-in-ignored', <String, Object?>{
+        'reason': 'auth-busy',
+      });
+      return false;
+    }
+    final credentials = await _showEmailCloudSaveDialog();
+    if (!mounted || credentials == null) {
+      return false;
+    }
+
+    final controller = _controller;
+    final linkCurrentGame = _enteredGame && controller != null;
+    _logSession('email-sign-in-start', <String, Object?>{
+      'linkCurrentGame': linkCurrentGame,
+      'email': _redact(credentials.email),
+    });
+    setState(() => _authBusy = true);
+    try {
+      if (linkCurrentGame) {
+        await _flushCloudSave(force: true);
+      }
+      await _backend.signInWithEmail(
+        email: credentials.email,
+        password: credentials.password,
+        requireAnonymousLink: linkCurrentGame,
+      );
+      await _bootstrapMainMenu(reason: 'after-email-sign-in');
+      if (linkCurrentGame) {
+        final profile = _bootstrapReport?.profile;
+        if (profile != null) {
+          controller.syncPlayerProfile(profile, showBanner: false);
+        }
+        try {
+          await _backend.savePlayerSave(
+            controller.buildCloudSavePayload(),
+            clientVersion: _clientVersion.versionName,
+            clientBuildNumber: _clientVersion.buildNumber,
+          );
+          controller.pushNotification(
+            'Email cloud save linked. This save can now recover on other devices.',
+            duration: 4.2,
+          );
+        } on LightcoreSessionExpiredException catch (error) {
+          _expireActiveSession(error.message);
+        } catch (_) {
+          controller.pushNotification(
+            'Email linked. Cloud backup will retry when the backend is reachable.',
+            duration: 4.2,
+          );
+        }
+        unawaited(_syncSocialOverview(controller));
+      }
+      _logSession('email-sign-in-complete', <String, Object?>{
+        'linkCurrentGame': linkCurrentGame,
+      });
+      return true;
+    } catch (error) {
+      _logSession('email-sign-in-error', <String, Object?>{'error': error});
+      if (!mounted) {
+        return false;
+      }
+      final controller = _controller;
+      if (_enteredGame && controller != null) {
+        controller.pushNotification(
+          'Email cloud save failed: $error',
+          duration: 4.8,
+        );
+      } else {
+        _showSnackBar('Email cloud save failed: $error');
+      }
+      return false;
+    } finally {
+      if (mounted) {
+        setState(() => _authBusy = false);
+      }
+    }
+  }
+
+  Future<_EmailCloudSaveCredentials?> _showEmailCloudSaveDialog() async {
+    final emailController = TextEditingController(
+      text: _backend.currentAuthEmail ?? '',
+    );
+    final passwordController = TextEditingController();
+    var obscurePassword = true;
+    var errorText = '';
+    try {
+      return await showDialog<_EmailCloudSaveCredentials>(
+        context: context,
+        barrierDismissible: true,
+        builder: (context) {
+          return StatefulBuilder(
+            builder: (context, setDialogState) {
+              final textTheme = Theme.of(context).textTheme;
+              final linkMode = _enteredGame;
+              return AlertDialog(
+                key: const ValueKey<String>('email-cloud-save-dialog'),
+                backgroundColor: LightcorePalette.panel,
+                surfaceTintColor: Colors.transparent,
+                title: Text(linkMode ? 'Link Email Save' : 'Email Cloud Save'),
+                content: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 420),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        linkMode
+                            ? 'Add email recovery to this save. Use at least 6 characters for the password.'
+                            : 'Sign in to an existing email save, or create one with a new email and password.',
+                        style: textTheme.bodyMedium,
+                      ),
+                      const SizedBox(height: 14),
+                      TextField(
+                        key: const ValueKey<String>('email-cloud-save-email'),
+                        controller: emailController,
+                        keyboardType: TextInputType.emailAddress,
+                        autofillHints: const [AutofillHints.email],
+                        decoration: const InputDecoration(labelText: 'Email'),
+                      ),
+                      const SizedBox(height: 10),
+                      TextField(
+                        key: const ValueKey<String>(
+                          'email-cloud-save-password',
+                        ),
+                        controller: passwordController,
+                        obscureText: obscurePassword,
+                        autofillHints: const [AutofillHints.password],
+                        decoration: InputDecoration(
+                          labelText: 'Password',
+                          suffixIcon: IconButton(
+                            tooltip: obscurePassword
+                                ? 'Show password'
+                                : 'Hide password',
+                            onPressed: () {
+                              setDialogState(() {
+                                obscurePassword = !obscurePassword;
+                              });
+                            },
+                            icon: Icon(
+                              obscurePassword
+                                  ? Icons.visibility_rounded
+                                  : Icons.visibility_off_rounded,
+                            ),
+                          ),
+                        ),
+                      ),
+                      if (errorText.isNotEmpty) ...[
+                        const SizedBox(height: 10),
+                        Text(
+                          errorText,
+                          style: textTheme.bodySmall?.copyWith(
+                            color: LightcorePalette.warning,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: const Text('Cancel'),
+                  ),
+                  FilledButton.icon(
+                    key: const ValueKey<String>('email-cloud-save-submit'),
+                    onPressed: () {
+                      final email = emailController.text.trim();
+                      final password = passwordController.text;
+                      if (!email.contains('@') || !email.contains('.')) {
+                        setDialogState(() {
+                          errorText = 'Enter a valid email address.';
+                        });
+                        return;
+                      }
+                      if (password.length < 6) {
+                        setDialogState(() {
+                          errorText = 'Password must be at least 6 characters.';
+                        });
+                        return;
+                      }
+                      Navigator.of(context).pop(
+                        _EmailCloudSaveCredentials(
+                          email: email,
+                          password: password,
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.mark_email_read_rounded),
+                    label: Text(linkMode ? 'Link Email' : 'Continue'),
+                  ),
+                ],
+              );
+            },
+          );
+        },
+      );
+    } finally {
+      emailController.dispose();
+      passwordController.dispose();
+    }
+  }
+
   Map<String, dynamic>? _googleReplacementPayload(
     LightcoreController? controller,
   ) {
@@ -1568,6 +1783,7 @@ class _LightcoreAppState extends State<LightcoreApp>
           onMusicEnabledChanged: _setMusicEnabled,
           onSoundEffectsEnabledChanged: _setSoundEffectsEnabled,
           onGoogleSignIn: _signInWithGoogleFromSettings,
+          onEmailSignIn: _signInWithEmail,
           onSignOut: _signOutToGuest,
         ),
       );
@@ -1586,6 +1802,7 @@ class _LightcoreAppState extends State<LightcoreApp>
           sessionNotice: _sessionNotice,
           skipGuestSignInPrompt: _skipGuestSignInPrompt,
           onGoogleSignIn: _signInWithGoogle,
+          onEmailSignIn: _signInWithEmail,
           onSkipGuestSignInPromptChanged: _setSkipGuestSignInPrompt,
         ),
       );

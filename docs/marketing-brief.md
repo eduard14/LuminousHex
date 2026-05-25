@@ -145,7 +145,8 @@ shell, and keep climbing.
 ### Social And Live-Ops
 
 - Anonymous guest startup with Firebase-backed cloud-save support.
-- Google-linked recovery and session restoration.
+- Google-linked and email/password recovery with Apple ID placeholders reserved
+  for the release auth pass.
 - Friends, requests, and daily Apex Scan/Threat Scan gift flows.
 - Mentorship with mentor, mentee, and branch-context surfaces.
 - Guild state and guild creation scaffolding exist for future live-ops expansion.

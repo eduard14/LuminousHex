@@ -49,6 +49,7 @@ Future<void> _pumpShell(
   bool disableTutorial = true,
   String? clientDisplayVersion,
   AsyncCallback? onGoogleSignIn,
+  AsyncCallback? onEmailSignIn,
   AsyncCallback? onSignOut,
 }) async {
   if (disableTutorial) {
@@ -65,6 +66,7 @@ Future<void> _pumpShell(
         ),
         clientDisplayVersion: clientDisplayVersion,
         onGoogleSignIn: onGoogleSignIn,
+        onEmailSignIn: onEmailSignIn,
         onSignOut: onSignOut,
       ),
     ),
@@ -1856,7 +1858,7 @@ void main() {
     },
   );
 
-  testWidgets('settings exposes notification toggles and Google linking', (
+  testWidgets('settings exposes notification toggles and account linking', (
     tester,
   ) async {
     final controller = LightcoreController();
@@ -1868,12 +1870,16 @@ void main() {
       LightcoreAudio.instance.setSoundEffectsEnabled(true);
     });
     var googleSignInCalls = 0;
+    var emailSignInCalls = 0;
 
     await _pumpShell(
       tester,
       controller,
       onGoogleSignIn: () async {
         googleSignInCalls += 1;
+      },
+      onEmailSignIn: () async {
+        emailSignInCalls += 1;
       },
     );
 
@@ -1887,6 +1893,14 @@ void main() {
       find.byKey(const ValueKey<String>('settings-google-sign-in-button')),
       findsOneWidget,
     );
+    expect(
+      find.byKey(const ValueKey<String>('settings-email-sign-in-button')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey<String>('settings-apple-placeholder-button')),
+      findsOneWidget,
+    );
     expect(controller.notificationBannersEnabled, isTrue);
     expect(controller.battleNotificationBannersEnabled, isFalse);
     expect(controller.tutorialPromptsEnabled, isTrue);
@@ -1896,6 +1910,12 @@ void main() {
     );
     await tester.pump();
     expect(googleSignInCalls, 1);
+
+    await tester.tap(
+      find.byKey(const ValueKey<String>('settings-email-sign-in-button')),
+    );
+    await tester.pump();
+    expect(emailSignInCalls, 1);
 
     await _scrollSettingsUntilVisible(
       tester,

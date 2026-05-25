@@ -33,6 +33,7 @@ class LightcoreMainMenuScreen extends StatefulWidget {
     this.sessionNotice,
     this.skipGuestSignInPrompt = false,
     this.onGoogleSignIn,
+    this.onEmailSignIn,
     this.onSkipGuestSignInPromptChanged,
   });
 
@@ -47,6 +48,7 @@ class LightcoreMainMenuScreen extends StatefulWidget {
   final String? sessionNotice;
   final bool skipGuestSignInPrompt;
   final Future<bool> Function()? onGoogleSignIn;
+  final Future<bool> Function()? onEmailSignIn;
   final ValueChanged<bool>? onSkipGuestSignInPromptChanged;
 
   @override
@@ -54,7 +56,11 @@ class LightcoreMainMenuScreen extends StatefulWidget {
       _LightcoreMainMenuScreenState();
 }
 
-enum _GuestSignInPromptAction { signInWithGoogle, continueAsGuest }
+enum _GuestSignInPromptAction {
+  signInWithGoogle,
+  signInWithEmail,
+  continueAsGuest,
+}
 
 class _GuestSignInPromptResult {
   const _GuestSignInPromptResult({
@@ -265,7 +271,7 @@ class _LightcoreMainMenuScreenState extends State<LightcoreMainMenuScreen>
           report != null &&
           report.profile.isAnonymous &&
           !widget.skipGuestSignInPrompt &&
-          widget.onGoogleSignIn != null;
+          (widget.onGoogleSignIn != null || widget.onEmailSignIn != null);
 
       if (shouldShowGuestPrompt) {
         final result = await _presentGuestSignInPrompt(
@@ -278,8 +284,17 @@ class _LightcoreMainMenuScreenState extends State<LightcoreMainMenuScreen>
           if (result.dontAskAgain) {
             widget.onSkipGuestSignInPromptChanged?.call(true);
           }
-        } else {
+        } else if (result.action == _GuestSignInPromptAction.signInWithGoogle) {
           final signedIn = await widget.onGoogleSignIn!.call();
+          if (!mounted || !signedIn) {
+            return;
+          }
+          await WidgetsBinding.instance.endOfFrame;
+          if (!mounted) {
+            return;
+          }
+        } else if (result.action == _GuestSignInPromptAction.signInWithEmail) {
+          final signedIn = await widget.onEmailSignIn!.call();
           if (!mounted || !signedIn) {
             return;
           }
@@ -319,6 +334,10 @@ class _LightcoreMainMenuScreenState extends State<LightcoreMainMenuScreen>
                 canUseGoogleSignIn &&
                 !widget.authBusy &&
                 widget.onGoogleSignIn != null;
+            final emailEnabled =
+                canUseGoogleSignIn &&
+                !widget.authBusy &&
+                widget.onEmailSignIn != null;
 
             return AlertDialog(
               key: const ValueKey<String>('guest-sign-in-prompt'),
@@ -363,7 +382,7 @@ class _LightcoreMainMenuScreenState extends State<LightcoreMainMenuScreen>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Sign in with Google to keep this save recoverable across devices and reinstalls, or continue with guest cloud sync on this install.',
+                      'Sign in with Google or email to keep this save recoverable across devices and reinstalls, or continue with guest cloud sync on this install.',
                       style: textTheme.bodyMedium?.copyWith(
                         color: LightcorePalette.mist.withValues(alpha: 0.86),
                         height: 1.34,
@@ -428,6 +447,32 @@ class _LightcoreMainMenuScreenState extends State<LightcoreMainMenuScreen>
                         )
                       : const Icon(Icons.login_rounded),
                   label: const Text('Sign In With Google'),
+                ),
+                FilledButton.icon(
+                  key: const ValueKey<String>('guest-sign-in-email-button'),
+                  onPressed: emailEnabled
+                      ? () {
+                          Navigator.of(context).pop(
+                            const _GuestSignInPromptResult(
+                              action: _GuestSignInPromptAction.signInWithEmail,
+                            ),
+                          );
+                        }
+                      : null,
+                  icon: widget.authBusy
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.mark_email_read_rounded),
+                  label: const Text('Sign In With Email'),
+                ),
+                OutlinedButton.icon(
+                  key: const ValueKey<String>('guest-sign-in-apple-button'),
+                  onPressed: null,
+                  icon: const Icon(Icons.apple_rounded),
+                  label: const Text('Apple ID Soon'),
                 ),
               ],
             );

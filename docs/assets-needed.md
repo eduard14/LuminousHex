@@ -441,6 +441,7 @@ Fields to configure for each pass:
 | Area | Required Config |
 | --- | --- |
 | IAP validation | App Store shared secret or StoreKit 2 validation setup, Google Play service account, server receipt validation endpoint. |
+| Auth providers | Email/password cloud saves are surfaced. Apple ID UI is placeholder-only until provider keys, redirect domains, and release copy are configured. |
 | Entitlements | Subscription state, no-ads state, offline-plus state, premium membership state. |
 | Premium currency | Server-owned balance, transaction ledger, duplicate transaction guard, refund/reversal handling. |
 | Store catalog | Product IDs, prices, visible dates, purchase limits, grants, art paths, localization keys. |

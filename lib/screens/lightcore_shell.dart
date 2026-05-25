@@ -64,6 +64,7 @@ class LightcoreShell extends StatefulWidget {
     this.onMusicEnabledChanged,
     this.onSoundEffectsEnabledChanged,
     this.onGoogleSignIn,
+    this.onEmailSignIn,
     this.onSignOut,
   });
 
@@ -79,6 +80,7 @@ class LightcoreShell extends StatefulWidget {
   final ValueChanged<bool>? onMusicEnabledChanged;
   final ValueChanged<bool>? onSoundEffectsEnabledChanged;
   final AsyncCallback? onGoogleSignIn;
+  final AsyncCallback? onEmailSignIn;
   final AsyncCallback? onSignOut;
 
   @override
@@ -1336,24 +1338,28 @@ class _LightcoreShellState extends State<LightcoreShell> {
     final linked = widget.backend.hasRecoverableAccount;
     final canUseCloud = widget.backend.canUseCloudSave;
     final canShowGoogleLinkAction = widget.onGoogleSignIn != null;
+    final canShowEmailLinkAction = widget.onEmailSignIn != null;
     final authEmail = widget.backend.currentAuthEmail;
+    final providerLabel = widget.backend.currentAuthProviderLabel;
     final tint = linked ? LightcorePalette.success : LightcorePalette.aether;
     final title = linked
-        ? 'Google Recovery Linked'
+        ? '$providerLabel Recovery Linked'
         : canUseCloud
         ? 'Guest Cloud Sync'
-        : canShowGoogleLinkAction
+        : canShowGoogleLinkAction || canShowEmailLinkAction
         ? 'Guest Save'
         : 'Local Save Mode';
     final summary = linked
-        ? 'This save is recoverable with Google${authEmail == null ? '' : ' ($authEmail)'}.'
+        ? 'This save is recoverable with $providerLabel${authEmail == null ? '' : ' ($authEmail)'}.'
         : canUseCloud
-        ? 'This anonymous save is synced for this install. Link Google to keep the same save across devices or reinstalls.'
-        : canShowGoogleLinkAction
-        ? 'Link Google to sync this anonymous save for recovery across devices or reinstalls.'
+        ? 'This anonymous save is synced for this install. Link Google or email to keep the same save across devices or reinstalls.'
+        : canShowGoogleLinkAction || canShowEmailLinkAction
+        ? 'Link Google or email to sync this anonymous save for recovery across devices or reinstalls.'
         : 'Online cloud save is unavailable on this platform or session.';
     final canLinkGoogle =
         !linked && !widget.authBusy && widget.onGoogleSignIn != null;
+    final canLinkEmail =
+        !linked && !widget.authBusy && widget.onEmailSignIn != null;
 
     return AuroraPanel(
       tint: tint,
@@ -1402,6 +1408,26 @@ class _LightcoreShellState extends State<LightcoreShell> {
                       : null,
                   icon: const Icon(Icons.login_rounded),
                   label: const Text('Sign In With Google'),
+                ),
+              if (!linked)
+                FilledButton.icon(
+                  key: const ValueKey<String>('settings-email-sign-in-button'),
+                  onPressed: canLinkEmail
+                      ? () {
+                          widget.onEmailSignIn!.call();
+                        }
+                      : null,
+                  icon: const Icon(Icons.mark_email_read_rounded),
+                  label: const Text('Link Email Save'),
+                ),
+              if (!linked)
+                OutlinedButton.icon(
+                  key: const ValueKey<String>(
+                    'settings-apple-placeholder-button',
+                  ),
+                  onPressed: null,
+                  icon: const Icon(Icons.apple_rounded),
+                  label: const Text('Apple ID Soon'),
                 ),
               if (linked && widget.onSignOut != null)
                 TextButton.icon(

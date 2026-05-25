@@ -98,6 +98,27 @@ class FirebaseLightcoreBackend {
     return email == null || email.isEmpty ? null : email;
   }
 
+  String get currentAuthProviderLabel {
+    if (Firebase.apps.isEmpty) {
+      return 'Cloud';
+    }
+    final providers =
+        FirebaseAuth.instance.currentUser?.providerData
+            .map((provider) => provider.providerId)
+            .toSet() ??
+        const <String>{};
+    if (providers.contains('apple.com')) {
+      return 'Apple ID';
+    }
+    if (providers.contains('password')) {
+      return 'Email';
+    }
+    if (providers.contains('google.com')) {
+      return 'Google';
+    }
+    return 'Cloud';
+  }
+
   Future<LightcoreBootstrapReport> bootstrap({
     required LightcoreGuestSession guestSession,
     required String clientVersion,
@@ -380,6 +401,74 @@ class FirebaseLightcoreBackend {
     _clearAuthScopedCache();
     await auth.signInWithCredential(credential);
     await _refreshCurrentAuthToken();
+  }
+
+  Future<void> signInWithEmail({
+    required String email,
+    required String password,
+    bool requireAnonymousLink = false,
+  }) async {
+    await _ensureFirebaseInitialized();
+    final normalizedEmail = email.trim();
+    if (normalizedEmail.isEmpty || password.isEmpty) {
+      throw StateError('Email and password are required.');
+    }
+
+    final auth = FirebaseAuth.instance;
+    final currentUser =
+        auth.currentUser ?? (await auth.signInAnonymously()).user;
+    final credential = EmailAuthProvider.credential(
+      email: normalizedEmail,
+      password: password,
+    );
+
+    if (currentUser != null && currentUser.isAnonymous) {
+      if (requireAnonymousLink) {
+        try {
+          await currentUser.linkWithCredential(credential);
+          await _refreshCurrentAuthToken();
+          return;
+        } on FirebaseAuthException catch (error) {
+          if (_isEmailAlreadyLinked(error)) {
+            throw StateError(
+              'That email already has a LumiHex cloud save. Sign out first if you want to switch saves.',
+            );
+          }
+          rethrow;
+        }
+      }
+
+      try {
+        _clearAuthScopedCache();
+        await auth.signInWithEmailAndPassword(
+          email: normalizedEmail,
+          password: password,
+        );
+        await _refreshCurrentAuthToken();
+        return;
+      } on FirebaseAuthException catch (error) {
+        if (!_isMissingEmailAccount(error)) {
+          rethrow;
+        }
+      }
+
+      await currentUser.linkWithCredential(credential);
+      await _refreshCurrentAuthToken();
+      return;
+    }
+
+    _clearAuthScopedCache();
+    await auth.signInWithEmailAndPassword(
+      email: normalizedEmail,
+      password: password,
+    );
+    await _refreshCurrentAuthToken();
+  }
+
+  Future<void> signInWithApplePlaceholder() async {
+    throw UnsupportedError(
+      'Apple ID cloud saves are reserved for the release auth pass.',
+    );
   }
 
   Future<void> resolvePendingGoogleAccountCollision(
@@ -1180,6 +1269,16 @@ class FirebaseLightcoreBackend {
     return error.code == 'credential-already-in-use' ||
         error.code == 'account-exists-with-different-credential' ||
         error.code == 'provider-already-linked';
+  }
+
+  bool _isEmailAlreadyLinked(FirebaseAuthException error) {
+    return error.code == 'email-already-in-use' ||
+        error.code == 'credential-already-in-use' ||
+        error.code == 'provider-already-linked';
+  }
+
+  bool _isMissingEmailAccount(FirebaseAuthException error) {
+    return error.code == 'user-not-found';
   }
 
   Never _throwGoogleAccountCollision({
