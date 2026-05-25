@@ -86,7 +86,8 @@ shell, and keep climbing.
   Burst, Impact, Arc, Shield, Rayline, and Wave.
 - Towers roll trainable stat boards and special upgrade traits.
 - Core stats can be upgraded separately from perimeter towers.
-- Tower managers can automate ready taps and improve passive output.
+- Core Managers assign to a shell, automate ready tower taps, and improve
+  passive output.
 - Pattern bonuses reward certain tower arrangements and shell build choices.
 
 ### Shell Progression

@@ -1534,7 +1534,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         LightcoreTutorialStep.forgeTowerManager =>
           'Click Managers and forge 1 Core Manager.',
         LightcoreTutorialStep.assignTowerManager =>
-          'Click a Core Manager tile, then assign it to the Tower Core.',
+          'Click a Core Manager tile, then assign it to the shell.',
         LightcoreTutorialStep.forgeEnemyManager =>
           'Click Managers and forge 1 Threat Director.',
         LightcoreTutorialStep.assignEnemyManager =>
@@ -1612,7 +1612,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         LightcoreTutorialStep.openEquipment =>
           'The profile panel is where account attributes and avatar customization live.',
         LightcoreTutorialStep.openManagers =>
-          'Managers are flux-forged modifiers. Core Managers socket into the Tower Core, while Threat Directors attach to Threat Map regions.',
+          'Managers are flux-forged modifiers. Core Managers assign to the shell, while Threat Directors attach to Threat Map regions.',
         LightcoreTutorialStep.forgeTowerManager =>
           'Core Manager pulls cost Flux and advance the Core Manager Pass. Each roll can automate ready-taps across the active shell.',
         LightcoreTutorialStep.assignTowerManager =>

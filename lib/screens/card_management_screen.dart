@@ -66,7 +66,7 @@ class CardManagementScreen extends StatelessWidget {
                 LightcoreInfoButton(
                   title: 'Main Manager Help',
                   message: controller.managerAssignmentUnlocked
-                      ? 'Socket one Core Manager into the Tower Core. Threat Directors attach to revealed regions and tune the current spawn, enemy strength, and reward bonuses.'
+                      ? 'Assign one Core Manager to the shell to automate ready tower taps. Threat Directors attach to revealed regions and tune the current spawn, enemy strength, and reward bonuses.'
                       : 'Manager assignment unlocks when this Layer 1 shell has all ${LightcoreController.slotCount} outer towers online. Flux still banks now so the foundry is ready when it opens.',
                   tint: LightcorePalette.aether,
                 ),
@@ -113,11 +113,11 @@ class CardManagementScreen extends StatelessWidget {
             ),
             const SizedBox(height: 18),
             _ManagerSectionHeader(
-              title: 'Tower Core Sockets',
+              title: 'Shell Automation',
               tint: LightcorePalette.aether,
               subtitle: !controller.managerAssignmentUnlocked
-                  ? 'Build all ${LightcoreController.slotCount} outer towers in this Layer 1 shell before tower sockets can take managers.'
-                  : 'Core Managers mount on the shell. Threat Directors tune the selected region live and validate offline output after stabilization.',
+                  ? 'Build all ${LightcoreController.slotCount} outer towers in this Layer 1 shell before managers can be assigned.'
+                  : 'Core Managers automate charged towers on this shell. Threat Directors tune the selected region live and validate offline output after stabilization.',
             ),
             const SizedBox(height: 10),
             Wrap(
@@ -147,7 +147,7 @@ class CardManagementScreen extends StatelessWidget {
                         ),
                   badgeIcon: Icons.hexagon_rounded,
                   semanticLabel:
-                      'Core Manager socket, ${towerCoreManager?.name ?? 'empty'}',
+                      'Shell Core Manager, ${towerCoreManager?.name ?? 'empty'}',
                   label: 'Towers',
                   value: towerCoreManager?.name ?? 'Open',
                   selected: towerCoreManager != null,
@@ -198,7 +198,7 @@ class CardManagementScreen extends StatelessWidget {
             ),
             const SizedBox(height: 10),
             Text(
-              'Core Manager: ${towerCoreManager?.name ?? 'Open'}  •  Region Director: ${regionThreatDirector?.name ?? 'Open'}',
+              'Shell Manager: ${towerCoreManager?.name ?? 'Open'}  •  Region Director: ${regionThreatDirector?.name ?? 'Open'}',
               style: textTheme.bodySmall?.copyWith(
                 color: LightcorePalette.mist.withValues(alpha: 0.74),
                 fontWeight: FontWeight.w700,
@@ -252,13 +252,13 @@ class CardManagementScreen extends StatelessWidget {
             _ManagerPowerPanel(controller: controller),
             const SizedBox(height: 18),
             _ManagerSectionHeader(
-              title: 'Tower Upgraders',
+              title: 'Core Managers',
               tint: LightcorePalette.violet,
               subtitle: !controller.managerAssignmentUnlocked
                   ? 'Build all ${LightcoreController.slotCount} outer towers in this Layer 1 shell before Core Managers can be assigned.'
                   : controller.cards.isEmpty
                   ? 'No Core Managers in inventory yet. Locked roster previews are collapsed below.'
-                  : 'Owned rolls appear first. Locked roster previews stay collapsed until requested.',
+                  : 'Assign one Core Manager to automate ready tower taps across the active shell.',
             ),
             const SizedBox(height: 10),
             if (controller.cards.isEmpty) ...[
@@ -508,13 +508,13 @@ String _towerManagerStatus(
   InventoryCard manager,
 ) {
   if (controller.towerCoreManager?.instanceId == manager.instanceId) {
-    return 'Tower Core';
+    return 'Shell Automation';
   }
   if (manager.equippedLayerId == null) {
     return 'Ready';
   }
   if (manager.equippedLayerId == controller.activeLayer.id) {
-    return 'Tower Core';
+    return 'Shell Automation';
   }
   return 'Other Layer';
 }
@@ -1100,8 +1100,8 @@ void _showManagerForgeReveal(
     _ManagerForgeKind.enemy => 'Threat Director Forged',
   };
   final subtitle = pulls.length == 1
-      ? 'A new roll is ready for the Tower Core.'
-      : '${pulls.length} new rolls are ready for the Tower Core.';
+      ? 'A new roll is ready for shell automation.'
+      : '${pulls.length} new rolls are ready for shell automation.';
 
   showDialog<void>(
     context: context,
@@ -2634,8 +2634,8 @@ class _TowerManagerDetailSheet extends StatelessWidget {
                   !controller.managerAssignmentUnlocked
                       ? 'Locked until all ${LightcoreController.slotCount} outer towers are online'
                       : assignedHere
-                      ? 'Equipped to Core'
-                      : 'Assign to Tower Core',
+                      ? 'Assigned to Shell'
+                      : 'Assign to Shell',
                 ),
               ),
             ),

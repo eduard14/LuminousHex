@@ -1060,7 +1060,7 @@ extension LightcoreControllerBattleTowerActions on LightcoreController {
       _syncTutorialStep(showBanner: false);
     }
     _showBanner(
-      '${_cards[cardIndex].name} assigned to the Tower Core for all towers.',
+      '${_cards[cardIndex].name} assigned to shell automation for ready tower taps.',
     );
     _notifyNow();
   }
@@ -1106,7 +1106,7 @@ extension LightcoreControllerBattleTowerActions on LightcoreController {
       }
     }
     _core = _core.copyWith(automationCooldownRemaining: 0);
-    _showBanner('Core Manager removed from the Tower Core.');
+    _showBanner('Core Manager removed from shell automation.');
     _notifyNow();
   }
 

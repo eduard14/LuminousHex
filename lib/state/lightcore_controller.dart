@@ -710,14 +710,15 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
     id: 'TUT-027',
     title: 'Assign a Core Manager',
     teachGoal:
-        'A Core Manager sockets into the Tower Core and automates every tower in the active shell.',
+        'A Core Manager assigns to the shell and automates ready taps for every built tower.',
     trigger: 'After Output Efficiency shown',
-    primaryClickTarget: 'Managers > Core Manager > Assign to Tower Core',
+    primaryClickTarget: 'Managers > Core Manager > Assign to Shell',
     coachCopy:
-        'Assign the Core Manager to the Tower Core. Managers create auto-queue and add tower-wide bonuses.',
+        'Assign the Core Manager to the shell. Managers tap charged towers automatically and add tower-wide bonuses.',
     completionCondition: 'Assign manager to core',
     reward: 'Starter manager',
-    failureHelpState: 'Highlight the starter manager and Tower Core socket.',
+    failureHelpState:
+        'Highlight the starter manager and shell assignment control.',
     analyticsEvent: 'tutorial_assign_core_manager',
   ),
   LightcoreTutorialStep.forgeEnemyManager: LightcoreTutorialQuestDefinition(

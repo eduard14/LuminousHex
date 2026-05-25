@@ -902,7 +902,7 @@ extension LightcoreControllerBattleEnemyActions on LightcoreController {
         _enemyManagers[index] = candidate.copyWith(clearAssignment: true);
       }
     }
-    _showBanner('Threat Director removed from the Tower Core.');
+    _showBanner('Threat Director removed from region tuning.');
     _notifyNow();
   }
 

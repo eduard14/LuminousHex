@@ -168,7 +168,7 @@ const List<_HelpSectionData> _baseHelpSections = <_HelpSectionData>[
     summary: 'How child towers bias shots and how managers modify behavior.',
     body:
         'Targeting priorities such as Close, Strong, and Weak tell a relay what kind of anomaly packet it should ask the core to focus when that tower contributes charge. This matters most once promoted child towers are online.\n\n'
-        'Core Managers automate your prisms. Each one has an automation rate: if the tower becomes ready faster than the manager can tap it, the tower loses efficiency while it waits. Threat Directors attach to Threat Map regions and immediately tune spawn cadence, enemy strength, reward bonuses, EXP, and stability risk; stabilization validates that setup for offline output. Both manager families unlock after Layer 1 shell coverage.',
+        'Core Managers assign to a shell and automate ready tower taps. Each one has an automation rate: if towers become ready faster than the manager can tap them, the shell loses efficiency while they wait. Threat Directors attach to Threat Map regions and immediately tune spawn cadence, enemy strength, reward bonuses, EXP, and stability risk; stabilization validates that setup for offline output. Both manager families unlock after Layer 1 shell coverage.',
   ),
 ];
 

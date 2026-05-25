@@ -536,20 +536,6 @@ extension LightcoreControllerTowerMath on LightcoreController {
     return 1 / rate;
   }
 
-  double? get _coreAutomationInterval {
-    if (!managerAssignmentUnlocked) {
-      return null;
-    }
-    final manager = _towerCoreManagerForLayer(activeLayer);
-    final rate = manager == null
-        ? null
-        : managerPowerAdjustedRate(manager.automationRate);
-    if (rate == null || rate <= 0) {
-      return null;
-    }
-    return 1 / rate;
-  }
-
   double towerWantedActivationRate(OuterTowerState tower) {
     if (!_slotCountsTowardRing(tower)) {
       return 0;

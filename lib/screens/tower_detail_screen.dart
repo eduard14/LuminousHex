@@ -184,7 +184,7 @@ class _TowerDetailContent extends StatelessWidget {
         value: '${(controller.towerDisruptionFraction(tower) * 100).round()}%',
       ),
       _TowerStatRowData(
-        label: 'Core Manager',
+        label: 'Shell Manager',
         value: controller.managerAssignmentUnlocked
             ? card?.name ?? 'Open'
             : 'Locked until all ${LightcoreController.slotCount} outer towers are online',
@@ -355,10 +355,10 @@ class _TowerDetailContent extends StatelessWidget {
         _TowerStatsLedger(rows: statRows, tint: tint),
         const SizedBox(height: 14),
         _ConsoleSection(
-          title: 'Tower Core Manager',
+          title: 'Shell Core Manager',
           subtitle: controller.managerAssignmentUnlocked
               ? card?.summary ??
-                    'Open the Managers tab to socket a Core Manager for every tower on this shell.'
+                    'Open the Managers tab to assign a Core Manager for ready tower taps on this shell.'
               : 'Manager assignment unlocks when this Layer 1 shell has all ${LightcoreController.slotCount} outer towers online. Until then, tap ready towers manually.',
           tint: LightcorePalette.layer2,
           child: Column(

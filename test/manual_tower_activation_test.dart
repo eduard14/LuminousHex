@@ -116,7 +116,7 @@ void main() {
     expect(controller.slots[0].charge, 0);
   });
 
-  test('core managers automate center core packet generation', () {
+  test('core managers automate ready tower taps', () {
     final controller = LightcoreController();
     addTearDown(controller.dispose);
 
@@ -124,24 +124,20 @@ void main() {
     controller.flux = LightcoreController.towerManagerFluxCost;
     expect(controller.forgeTowerManager(), isTrue);
     controller.equipCardToCore(controller.cards.single.instanceId);
-    controller.debugSpawnEnemyFromCard(
-      EnemyLibrary.basicWhite.id,
-      angle: 0,
-      radius: 220,
-    );
+    expect(controller.debugSetTowerCharge(0, charge: 1.2), isTrue);
 
     expect(controller.pulses, isEmpty);
 
     controller.tick(0.1);
 
-    final corePulses = controller.pulses.where(
-      (pulse) => pulse.sourceSlotIndex == null,
+    final towerPulses = controller.pulses.where(
+      (pulse) => pulse.sourceSlotIndex != null,
     );
-    expect(corePulses, hasLength(1));
-    expect(controller.coreState.automationCooldownRemaining, greaterThan(0));
+    expect(towerPulses, isNotEmpty);
+    expect(controller.coreState.automationCooldownRemaining, 0);
   });
 
-  test('core managers keep generating queued packets without enemies', () {
+  test('core managers do not generate free core packets', () {
     final controller = LightcoreController();
     addTearDown(controller.dispose);
 
@@ -155,8 +151,8 @@ void main() {
     final corePulses = controller.pulses.where(
       (pulse) => pulse.sourceSlotIndex == null,
     );
-    expect(corePulses, hasLength(1));
-    expect(controller.coreState.automationCooldownRemaining, greaterThan(0));
+    expect(corePulses, isEmpty);
+    expect(controller.coreState.automationCooldownRemaining, 0);
   });
 
   test('core manager assignment carries into promoted layer 2 shell', () {
