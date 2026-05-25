@@ -146,6 +146,8 @@ shell, and keep climbing.
 - Weekly tournaments include Anomaly Blitz, Hex Gauntlet, and Arena Flow modes.
 - Dev-only event preview URLs exist for dungeon and tournament QA in web debug
   builds. They are not a production route or marketing claim.
+- Release readiness for backend maintenance, balance QA, and chat moderation is
+  tracked in `docs/release-readiness.md`.
 
 ### Social And Live-Ops
 
@@ -258,6 +260,8 @@ Suggested first release order:
 - Do not market equipment, gear drops, or gear loadouts as a launch feature.
 - Do not market guilds as a launch feature until the live guild loop is complete.
 - Do not use Lumicore as a public title or franchise name.
+- Do not imply IAP, production sign-in, or platform purchases are ready before
+  app-store submission wiring exists.
 
 ## Current Marketing Asset Needs
 

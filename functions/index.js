@@ -1,4 +1,5 @@
 const { onCall, HttpsError } = require("firebase-functions/v2/https");
+const { onSchedule } = require("firebase-functions/v2/scheduler");
 const { setGlobalOptions, logger } = require("firebase-functions/v2");
 const { initializeApp } = require("firebase-admin/app");
 const { getAuth } = require("firebase-admin/auth");
@@ -24,10 +25,13 @@ const FRIEND_REQUEST_COLLECTION = "friendRequests";
 const DAILY_BOSS_GIFT_COLLECTION = "dailyBossGifts";
 const GLOBAL_CHAT_COLLECTION = "globalChatMessages";
 const CHAT_MODERATION_COLLECTION = "chatModeration";
+const GLOBAL_LEADERBOARD_SNAPSHOT_COLLECTION = "globalLeaderboardSnapshots";
+const GLOBAL_TOWER_STRENGTH_LEADERBOARD_DOC = "towerStrength";
 const PRIVATE_PROFILE_COLLECTION = "private";
 const PLAYER_SAVE_DOCUMENT = "saveState";
 const BALANCE_MANIFEST_DOCUMENT = "runtime/balanceManifest";
 const RUNTIME_CONFIG_CACHE_TTL_MILLIS = 60 * 1000;
+const GLOBAL_LEADERBOARD_REFRESH_MILLIS = 10 * 60 * 1000;
 
 
 const DEFAULT_TOURNAMENT_RATING = 1000;
@@ -1320,6 +1324,19 @@ exports.getGlobalChat = onCall({ enforceAppCheck: false }, async (request) => {
   return buildGlobalChatOverview(auth.uid);
 });
 
+exports.purgeGlobalChat = onSchedule("every 60 minutes", async () => {
+  const purged = await purgeExpiredGlobalChatMessages();
+  logger.info("Global chat maintenance complete.", { purged });
+});
+
+exports.refreshGlobalLeaderboard = onSchedule("every 10 minutes", async () => {
+  const snapshot = await refreshGlobalTowerStrengthLeaderboard();
+  logger.info("Global leaderboard snapshot refreshed.", {
+    entries: snapshot.entries.length,
+    rankedPlayers: snapshot.rankedPlayers,
+  });
+});
+
 exports.sendGlobalChatMessage = onCall(
   { enforceAppCheck: false },
   async (request) => {
@@ -2258,7 +2275,7 @@ async function buildSocialOverview(context) {
   const [
     strongerTowerStrengthSnap,
     rankedTowerStrengthSnap,
-    globalTowerStrengthLeaderboardSnap,
+    globalTowerStrengthLeaderboardSnapshot,
   ] = await Promise.all([
     selfTowerStrength > 0
       ? db
@@ -2272,22 +2289,19 @@ async function buildSocialOverview(context) {
       .where("towerStrength", ">", 0)
       .count()
       .get(),
-    db
-      .collection(PUBLIC_PROFILE_COLLECTION)
-      .where("towerStrength", ">", 0)
-      .orderBy("towerStrength", "desc")
-      .limit(SOCIAL_LIMITS.globalLeaderboardLimit)
-      .get(),
+    loadGlobalTowerStrengthLeaderboardSnapshot(),
   ]);
   const towerStrengthRank =
     selfTowerStrength > 0
       ? strongerTowerStrengthSnap.data().count + 1
       : null;
-  const towerStrengthRankedPlayers =
-    rankedTowerStrengthSnap?.data().count || 0;
+  const towerStrengthRankedPlayers = Math.max(
+    rankedTowerStrengthSnap?.data().count || 0,
+    globalTowerStrengthLeaderboardSnapshot.rankedPlayers,
+  );
   const globalTowerStrengthLeaderboard =
-    globalTowerStrengthLeaderboardSnap.docs.map((doc, index) =>
-      buildSocialPlayerResponse(doc.id, doc.data() || {}, {
+    globalTowerStrengthLeaderboardSnapshot.entries.map((entry, index) =>
+      buildSocialPlayerResponse(entry.uid, entry, {
         towerStrengthRank: index + 1,
         towerStrengthRankedPlayers,
       }),
@@ -2413,6 +2427,84 @@ async function fetchPublicProfileMap(uids) {
     }),
   );
   return new Map(entries);
+}
+
+async function loadGlobalTowerStrengthLeaderboardSnapshot() {
+  const snap = await globalTowerStrengthLeaderboardRef().get();
+  const data = snap.data() || {};
+  const refreshedAtMillis =
+    toMillis(data.refreshedAt) || clampInt(data.refreshedAtMillis, 0, Date.now(), 0);
+  if (
+    snap.exists &&
+    refreshedAtMillis &&
+    Date.now() - refreshedAtMillis <= GLOBAL_LEADERBOARD_REFRESH_MILLIS
+  ) {
+    return sanitizeGlobalTowerStrengthLeaderboardSnapshot(data);
+  }
+  return refreshGlobalTowerStrengthLeaderboard();
+}
+
+async function refreshGlobalTowerStrengthLeaderboard() {
+  const refreshedAtMillis = Date.now();
+  const [rankedTowerStrengthSnap, globalTowerStrengthLeaderboardSnap] =
+    await Promise.all([
+      db
+        .collection(PUBLIC_PROFILE_COLLECTION)
+        .where("towerStrength", ">", 0)
+        .count()
+        .get(),
+      db
+        .collection(PUBLIC_PROFILE_COLLECTION)
+        .where("towerStrength", ">", 0)
+        .orderBy("towerStrength", "desc")
+        .limit(SOCIAL_LIMITS.globalLeaderboardLimit)
+        .get(),
+    ]);
+  const rankedPlayers = rankedTowerStrengthSnap?.data().count || 0;
+  const entries = globalTowerStrengthLeaderboardSnap.docs.map((doc, index) =>
+    buildSocialPlayerResponse(doc.id, doc.data() || {}, {
+      towerStrengthRank: index + 1,
+      towerStrengthRankedPlayers: rankedPlayers,
+    }),
+  );
+  const snapshot = {
+    entries,
+    rankedPlayers,
+    refreshedAtMillis,
+  };
+  await globalTowerStrengthLeaderboardRef().set({
+    ...snapshot,
+    refreshedAt: FieldValue.serverTimestamp(),
+  });
+  return snapshot;
+}
+
+function globalTowerStrengthLeaderboardRef() {
+  return db
+    .collection(GLOBAL_LEADERBOARD_SNAPSHOT_COLLECTION)
+    .doc(GLOBAL_TOWER_STRENGTH_LEADERBOARD_DOC);
+}
+
+function sanitizeGlobalTowerStrengthLeaderboardSnapshot(data) {
+  const rankedPlayers = clampInt(
+    data.rankedPlayers,
+    0,
+    PLAYER_SAVE_LIMITS.maxCounter,
+    0,
+  );
+  const entries = normalizeArray(data.entries)
+    .slice(0, SOCIAL_LIMITS.globalLeaderboardLimit)
+    .map((entry, index) =>
+      buildSocialPlayerResponse(
+        sanitizeUidOrNull(entry.uid) || `leader-${index + 1}`,
+        entry,
+        {
+          towerStrengthRank: index + 1,
+          towerStrengthRankedPlayers: rankedPlayers,
+        },
+      ),
+    );
+  return { entries, rankedPlayers };
 }
 
 function buildSocialPlayerResponse(uid, data, options = {}) {
@@ -3074,11 +3166,12 @@ async function purgeExpiredGlobalChatMessages() {
     .limit(200)
     .get();
   if (expiredSnap.empty) {
-    return;
+    return 0;
   }
   const batch = db.batch();
   expiredSnap.docs.forEach((doc) => batch.delete(doc.ref));
   await batch.commit();
+  return expiredSnap.size;
 }
 
 async function buildGlobalChatOverview(uid, moderationResult = {}) {
