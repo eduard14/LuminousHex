@@ -22,6 +22,8 @@ const MENTOR_INVITE_COLLECTION = "mentorInvites";
 const FRIEND_LINK_COLLECTION = "friendLinks";
 const FRIEND_REQUEST_COLLECTION = "friendRequests";
 const DAILY_BOSS_GIFT_COLLECTION = "dailyBossGifts";
+const GLOBAL_CHAT_COLLECTION = "globalChatMessages";
+const CHAT_MODERATION_COLLECTION = "chatModeration";
 const PRIVATE_PROFILE_COLLECTION = "private";
 const PLAYER_SAVE_DOCUMENT = "saveState";
 const BALANCE_MANIFEST_DOCUMENT = "runtime/balanceManifest";
@@ -39,6 +41,21 @@ const SCREEN_NAME_LIMITS = Object.freeze({
   min: 3,
   max: 20,
 });
+
+const GLOBAL_CHAT_LIMITS = Object.freeze({
+  maxMessageLength: 180,
+  historyLimit: 80,
+  retentionMillis: 24 * 60 * 60 * 1000,
+  spamWindowMillis: 60 * 1000,
+  spamWindowLimit: 5,
+  chatBanMillis: 24 * 60 * 60 * 1000,
+});
+
+const BLOCKED_BOT_MESSAGE_PATTERNS = Object.freeze([
+  "free prism shards at lumihexgift",
+  "claim free shards now",
+  "official lumihex support will never ask for your password",
+]);
 
 const DEFAULT_BALANCE_TUNING = Object.freeze({
   balanceEpoch: 1,
@@ -1292,6 +1309,213 @@ exports.claimOfflineProgress = onCall(
     });
 
     return claimResult;
+  },
+);
+
+exports.getGlobalChat = onCall({ enforceAppCheck: false }, async (request) => {
+  const auth = requireAuth(request);
+  const manifest = await loadManifest();
+  requireAppCheckIfNeeded(request, manifest);
+  await purgeExpiredGlobalChatMessages();
+  return buildGlobalChatOverview(auth.uid);
+});
+
+exports.sendGlobalChatMessage = onCall(
+  { enforceAppCheck: false },
+  async (request) => {
+    const auth = requireAuth(request);
+    const manifest = await loadManifest();
+    requireAppCheckIfNeeded(request, manifest);
+
+    const rawMessage = typeof request.data?.message === "string"
+      ? request.data.message
+      : "";
+    const message = sanitizeGlobalChatMessage(rawMessage);
+    if (!message) {
+      throw new HttpsError("invalid-argument", "Enter a chat message first.");
+    }
+    const whisperTargetUid = sanitizeUidOrNull(request.data?.whisperTargetUid);
+    if (whisperTargetUid === auth.uid) {
+      throw new HttpsError("invalid-argument", "You cannot whisper yourself.");
+    }
+
+    await purgeExpiredGlobalChatMessages();
+    const moderationRef = db.collection(CHAT_MODERATION_COLLECTION).doc(auth.uid);
+    const profileRef = db.collection(PROFILE_COLLECTION).doc(auth.uid);
+    const publicRef = db.collection(PUBLIC_PROFILE_COLLECTION).doc(auth.uid);
+    const nowMillis = Date.now();
+
+    const moderationResult = await db.runTransaction(async (transaction) => {
+      const [moderationSnap, profileSnap, publicSnap] = await Promise.all([
+        transaction.get(moderationRef),
+        transaction.get(profileRef),
+        transaction.get(publicRef),
+      ]);
+      if (!profileSnap.exists) {
+        throw new HttpsError(
+          "failed-precondition",
+          "Player profile does not exist yet. Bootstrap first.",
+        );
+      }
+      const profileData = profileSnap.data() || {};
+      requireActiveSession(profileData, request);
+      if (profileData.accountBanned === true) {
+        throw new HttpsError("permission-denied", "This account is banned.");
+      }
+
+      const moderationData = moderationSnap.data() || {};
+      const chatBanUntilMillis = toMillis(moderationData.chatBanUntil);
+      if (chatBanUntilMillis && chatBanUntilMillis > nowMillis) {
+        return {
+          posted: false,
+          warningMessage:
+            "Chat is locked for this account for 24 hours after spam detection.",
+          chatBanUntilMillis,
+        };
+      }
+
+      const normalized = normalizeChatFingerprint(message);
+      const botMessage = isBlockedBotMessage(normalized);
+      if (botMessage) {
+        transaction.set(
+          moderationRef,
+          {
+            accountBanned: true,
+            accountBanReason: "Repeated tracked bot message.",
+            bannedAt: Timestamp.fromMillis(nowMillis),
+            lastBlockedMessageFingerprint: normalized,
+          },
+          { merge: true },
+        );
+        transaction.set(
+          profileRef,
+          {
+            accountBanned: true,
+            accountBanReason: "Repeated tracked bot message.",
+            accountBannedAt: FieldValue.serverTimestamp(),
+          },
+          { merge: true },
+        );
+        return {
+          posted: false,
+          accountBan: true,
+          warningMessage:
+            "Tracked bot message blocked. This account has been banned.",
+        };
+      }
+
+      const recentFingerprints = normalizeArray(
+        moderationData.recentFingerprints,
+      )
+        .map((entry) => normalizeObject(entry))
+        .filter((entry) => {
+          const sentAtMillis = toMillis(entry.sentAt);
+          return sentAtMillis && nowMillis - sentAtMillis <=
+            GLOBAL_CHAT_LIMITS.spamWindowMillis;
+        });
+      const duplicate = recentFingerprints.some(
+        (entry) => entry.fingerprint === normalized,
+      );
+      const spamBurst = recentFingerprints.length >=
+        GLOBAL_CHAT_LIMITS.spamWindowLimit;
+      if (duplicate || spamBurst) {
+        const priorWarnings = clampInt(moderationData.spamWarnings, 0, 20, 0);
+        if (priorWarnings >= 1) {
+          transaction.set(
+            moderationRef,
+            {
+              accountBanned: true,
+              accountBanReason: "Repeated chat spam after warning.",
+              bannedAt: Timestamp.fromMillis(nowMillis),
+              spamWarnings: priorWarnings + 1,
+            },
+            { merge: true },
+          );
+          transaction.set(
+            profileRef,
+            {
+              accountBanned: true,
+              accountBanReason: "Repeated chat spam after warning.",
+              accountBannedAt: FieldValue.serverTimestamp(),
+            },
+            { merge: true },
+          );
+          return {
+            posted: false,
+            accountBan: true,
+            warningMessage:
+              "Repeated spam after a warning. This account has been banned.",
+          };
+        }
+
+        const banUntilMillis = nowMillis + GLOBAL_CHAT_LIMITS.chatBanMillis;
+        transaction.set(
+          moderationRef,
+          {
+            spamWarnings: 1,
+            chatBanUntil: Timestamp.fromMillis(banUntilMillis),
+            lastWarningAt: Timestamp.fromMillis(nowMillis),
+            lastBlockedMessageFingerprint: normalized,
+          },
+          { merge: true },
+        );
+        return {
+          posted: false,
+          chatBanUntilMillis: banUntilMillis,
+          warningMessage:
+            "Spam detected. Chat is locked for 24 hours. A repeat offense will ban the account.",
+        };
+      }
+
+      const authorLabel = normalizeStoredScreenName(
+        publicSnap.data()?.screenName ||
+          profileData.screenName ||
+          "",
+      ) || "Player";
+      const messageRef = db.collection(GLOBAL_CHAT_COLLECTION).doc();
+      transaction.set(messageRef, {
+        authorUid: auth.uid,
+        authorLabel,
+        message,
+        messageFingerprint: normalized,
+        whisperTargetUid,
+        sentAt: Timestamp.fromMillis(nowMillis),
+        expiresAt: Timestamp.fromMillis(
+          nowMillis + GLOBAL_CHAT_LIMITS.retentionMillis,
+        ),
+      });
+      transaction.set(
+        moderationRef,
+        {
+          lastMessageFingerprint: normalized,
+          lastMessageAt: Timestamp.fromMillis(nowMillis),
+          recentFingerprints: [
+            ...recentFingerprints.slice(
+              -GLOBAL_CHAT_LIMITS.spamWindowLimit + 1,
+            ),
+            {
+              fingerprint: normalized,
+              sentAt: Timestamp.fromMillis(nowMillis),
+            },
+          ],
+        },
+        { merge: true },
+      );
+      return { posted: true };
+    });
+
+    if (moderationResult.accountBan) {
+      try {
+        await getAuth().updateUser(auth.uid, { disabled: true });
+      } catch (error) {
+        logger.warn("Failed to disable banned chat account.", {
+          uid: auth.uid,
+          error: `${error}`,
+        });
+      }
+    }
+
+    return buildGlobalChatOverview(auth.uid, moderationResult);
   },
 );
 
@@ -2804,6 +3028,104 @@ function sanitizeScreenName(value) {
     );
   }
   return normalized;
+}
+
+function sanitizeGlobalChatMessage(value) {
+  return sanitizeString(value, "")
+    .slice(0, GLOBAL_CHAT_LIMITS.maxMessageLength)
+    .replace(/\s+/g, " ")
+    .replace(/[\u0000-\u001F\u007F]/g, "")
+    .trim();
+}
+
+function sanitizeUidOrNull(value) {
+  const uid = sanitizeString(value, "")
+    .slice(0, 128)
+    .replace(/[^A-Za-z0-9:_-]/g, "");
+  return uid || null;
+}
+
+function normalizeChatFingerprint(value) {
+  return sanitizeString(value, "")
+    .slice(0, GLOBAL_CHAT_LIMITS.maxMessageLength)
+    .toLowerCase()
+    .replace(/https?:\/\/\S+/g, " ")
+    .replace(/[^a-z0-9]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function isBlockedBotMessage(normalizedMessage) {
+  if (!normalizedMessage) {
+    return false;
+  }
+  return BLOCKED_BOT_MESSAGE_PATTERNS.some((pattern) => {
+    return normalizedMessage.includes(normalizeChatFingerprint(pattern));
+  });
+}
+
+async function purgeExpiredGlobalChatMessages() {
+  const cutoff = Timestamp.fromMillis(
+    Date.now() - GLOBAL_CHAT_LIMITS.retentionMillis,
+  );
+  const expiredSnap = await db
+    .collection(GLOBAL_CHAT_COLLECTION)
+    .where("sentAt", "<", cutoff)
+    .limit(200)
+    .get();
+  if (expiredSnap.empty) {
+    return;
+  }
+  const batch = db.batch();
+  expiredSnap.docs.forEach((doc) => batch.delete(doc.ref));
+  await batch.commit();
+}
+
+async function buildGlobalChatOverview(uid, moderationResult = {}) {
+  const cutoffMillis = Date.now() - GLOBAL_CHAT_LIMITS.retentionMillis;
+  const [messageSnap, moderationSnap] = await Promise.all([
+    db
+      .collection(GLOBAL_CHAT_COLLECTION)
+      .where("sentAt", ">=", Timestamp.fromMillis(cutoffMillis))
+      .orderBy("sentAt", "desc")
+      .limit(GLOBAL_CHAT_LIMITS.historyLimit)
+      .get(),
+    db.collection(CHAT_MODERATION_COLLECTION).doc(uid).get(),
+  ]);
+  const moderationData = moderationSnap.data() || {};
+  const chatBanUntilMillis =
+    moderationResult.chatBanUntilMillis || toMillis(moderationData.chatBanUntil);
+  const messages = messageSnap.docs
+    .map((doc) => buildGlobalChatMessageResponse(doc, uid))
+    .filter((message) => {
+      return !message.whisperTargetUid ||
+        message.authorUid === uid ||
+        message.whisperTargetUid === uid;
+    })
+    .reverse();
+  return {
+    messages,
+    chatBanUntilMillis: chatBanUntilMillis || null,
+    accountBanned:
+      moderationResult.accountBan === true || moderationData.accountBanned === true,
+    warningMessage: moderationResult.warningMessage || null,
+  };
+}
+
+function buildGlobalChatMessageResponse(doc, currentUid) {
+  const data = doc.data() || {};
+  const whisperTargetUid = sanitizeUidOrNull(data.whisperTargetUid);
+  return {
+    id: doc.id,
+    authorUid: sanitizeUidOrNull(data.authorUid) || "",
+    authorLabel: normalizeStoredScreenName(data.authorLabel) || "Player",
+    message: sanitizeGlobalChatMessage(data.message),
+    sentAtMillis: toMillis(data.sentAt) || 0,
+    whisperTargetUid,
+    whisperTargetLabel: whisperTargetUid ? "Whisper" : null,
+    isLocalPlayer: data.authorUid === currentUid,
+    isSystem: data.isSystem === true,
+  };
 }
 
 function normalizeStoredScreenName(value) {

@@ -153,6 +153,10 @@ shell, and keep climbing.
 - Google-linked and email/password recovery with Apple ID placeholders reserved
   for the release auth pass.
 - Friends, requests, and daily Apex Scan/Threat Scan gift flows.
+- Global chat lives in the social screen with 24-hour message retention,
+  whispers, spam warnings, 24-hour chat bans, repeat-offense account bans, and
+  instant blocking for tracked bot-message repeats.
+- Space Room is hidden from the current release surface.
 - Mentorship with mentor, mentee, and branch-context surfaces.
 - Guild state and guild creation scaffolding exist for future live-ops expansion.
 - Store, Prism Shard packs, bundles, boosts, and Premium Membership

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
+import '../models/lightcore_global_chat.dart';
 import '../models/lightcore_friend_state.dart';
 import '../models/lightcore_social_invite_link.dart';
 import '../models/lightcore_social_state.dart';
@@ -21,6 +22,7 @@ part 'friend_management/invite_widgets.dart';
 part 'friend_management/mentorship_widgets.dart';
 part 'friend_management/profile_widgets.dart';
 part 'friend_management/gift_widgets.dart';
+part 'friend_management/global_chat_widgets.dart';
 
 enum FriendManagementSection { friends, mentees, mentors }
 
@@ -48,19 +50,25 @@ class FriendManagementScreen extends StatefulWidget {
 
 class _FriendManagementScreenState extends State<FriendManagementScreen> {
   final TextEditingController _targetController = TextEditingController();
+  final TextEditingController _globalChatController = TextEditingController();
   LightcoreSocialOverview? _overview;
+  LightcoreGlobalChatOverview? _globalChatOverview;
   String? _focusedUid;
   String? _selectedProfileUid;
+  String? _globalChatError;
   String? _error;
   bool _initialInviteConsumed = false;
   bool _loading = false;
   bool _busy = false;
+  bool _globalChatLoading = false;
+  bool _globalChatSending = false;
 
   @override
   void initState() {
     super.initState();
     if (widget.isActive) {
       unawaited(_refreshSocial());
+      unawaited(_refreshGlobalChat());
     }
   }
 
@@ -70,12 +78,89 @@ class _FriendManagementScreenState extends State<FriendManagementScreen> {
     if (!oldWidget.isActive && widget.isActive && _overview == null) {
       unawaited(_refreshSocial());
     }
+    if (!oldWidget.isActive && widget.isActive && _globalChatOverview == null) {
+      unawaited(_refreshGlobalChat());
+    }
   }
 
   @override
   void dispose() {
     _targetController.dispose();
+    _globalChatController.dispose();
     super.dispose();
+  }
+
+  Future<void> _refreshGlobalChat() async {
+    if (_globalChatLoading) {
+      return;
+    }
+    setState(() {
+      _globalChatLoading = true;
+      _globalChatError = null;
+    });
+    try {
+      final overview = await widget.backend.fetchGlobalChat();
+      if (!mounted) {
+        return;
+      }
+      setState(() => _globalChatOverview = overview);
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+      setState(() => _globalChatError = error.toString());
+    } finally {
+      if (mounted) {
+        setState(() => _globalChatLoading = false);
+      }
+    }
+  }
+
+  Future<void> _sendGlobalChatMessage({String? whisperTargetUid}) async {
+    if (_globalChatSending) {
+      return;
+    }
+    var message = _globalChatController.text.trim();
+    if (message.isEmpty) {
+      setState(() => _globalChatError = 'Enter a message first.');
+      return;
+    }
+    final whisperMatch = RegExp(
+      r'^/w\s+([A-Za-z0-9:_-]+)\s+(.+)$',
+      caseSensitive: false,
+    ).firstMatch(message);
+    final parsedWhisperTargetUid =
+        whisperTargetUid ?? whisperMatch?.group(1)?.trim();
+    if (whisperMatch != null) {
+      message = whisperMatch.group(2)?.trim() ?? '';
+    }
+    setState(() {
+      _globalChatSending = true;
+      _globalChatError = null;
+    });
+    try {
+      final overview = await widget.backend.sendGlobalChatMessage(
+        message: message,
+        whisperTargetUid: parsedWhisperTargetUid,
+      );
+      if (!mounted) {
+        return;
+      }
+      _globalChatController.clear();
+      setState(() {
+        _globalChatOverview = overview;
+        _globalChatError = overview.warningMessage;
+      });
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+      setState(() => _globalChatError = error.toString());
+    } finally {
+      if (mounted) {
+        setState(() => _globalChatSending = false);
+      }
+    }
   }
 
   Future<void> _refreshSocial() async {
@@ -313,6 +398,16 @@ class _FriendManagementScreenState extends State<FriendManagementScreen> {
     final initialInvite = _activeInitialInviteLink;
     return switch (widget.section) {
       FriendManagementSection.friends => [
+        _GlobalChatPanel(
+          controller: _globalChatController,
+          overview: _globalChatOverview,
+          error: _globalChatError,
+          loading: _globalChatLoading,
+          sending: _globalChatSending,
+          onRefresh: () => unawaited(_refreshGlobalChat()),
+          onSend: () => unawaited(_sendGlobalChatMessage()),
+        ),
+        const SizedBox(height: 14),
         if (initialInvite != null) ...[
           _IncomingInviteLinkPanel(
             invite: initialInvite,

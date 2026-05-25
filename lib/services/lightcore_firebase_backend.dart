@@ -9,6 +9,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 
 import '../app/lightcore_bootstrap.dart';
 import '../models/lightcore_cloud_save.dart';
+import '../models/lightcore_global_chat.dart';
 import '../models/lightcore_social_state.dart';
 import '../models/lightcore_tournament.dart';
 import 'lightcore_firebase_runtime_config.dart';
@@ -728,6 +729,34 @@ class FirebaseLightcoreBackend {
       <String, dynamic>{},
     );
     return LightcoreSocialOverview.fromMap(_coerceMap(result.data));
+  }
+
+  Future<LightcoreGlobalChatOverview> fetchGlobalChat() async {
+    await _ensureSocialBackendReady();
+    final callable = FirebaseFunctions.instanceFor(
+      region: runtimeConfig.functionsRegion,
+    ).httpsCallable('getGlobalChat');
+
+    final result = await callable.call<Map<String, dynamic>>(
+      const <String, dynamic>{},
+    );
+    return LightcoreGlobalChatOverview.fromMap(_coerceMap(result.data));
+  }
+
+  Future<LightcoreGlobalChatOverview> sendGlobalChatMessage({
+    required String message,
+    String? whisperTargetUid,
+  }) async {
+    await _ensureSocialBackendReady();
+    final callable = FirebaseFunctions.instanceFor(
+      region: runtimeConfig.functionsRegion,
+    ).httpsCallable('sendGlobalChatMessage');
+
+    final result = await callable.call<Map<String, dynamic>>(<String, dynamic>{
+      'message': message,
+      'whisperTargetUid': ?whisperTargetUid,
+    });
+    return LightcoreGlobalChatOverview.fromMap(_coerceMap(result.data));
   }
 
   Future<LightcoreSocialOverview> sendMentorInvite({

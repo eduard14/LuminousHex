@@ -1513,7 +1513,8 @@ void main() {
 
       expect(find.text('Settings'), findsOneWidget);
       expect(find.text('Leaderboard'), findsOneWidget);
-      expect(find.text('Space Room'), findsOneWidget);
+      expect(find.text('Global Chat'), findsOneWidget);
+      expect(find.text('Space Room'), findsNothing);
       expect(find.text('Mentorship'), findsOneWidget);
       expect(find.text('Daily Dungeons'), findsOneWidget);
       expect(find.text('Tournaments'), findsOneWidget);
@@ -1587,7 +1588,7 @@ void main() {
     expect(find.text('TS 2.5k'), findsOneWidget);
   });
 
-  testWidgets('space room opens from hamburger and sends channel chat', (
+  testWidgets('global chat opens from hamburger social entry', (
     tester,
   ) async {
     tester.view.physicalSize = const Size(1200, 900);
@@ -1599,21 +1600,12 @@ void main() {
     addTearDown(controller.dispose);
 
     await _pumpShell(tester, controller);
-    await _openHeaderMenuDestination(tester, 'Space Room');
+    await _openHeaderMenuDestination(tester, 'Global Chat');
 
-    expect(find.text('Space Room'), findsOneWidget);
-    expect(find.text('Aurora Drift 5/8'), findsOneWidget);
-    expect(find.text('Room Chat'), findsOneWidget);
-    expect(find.text('Players and Managers'), findsOneWidget);
-
-    await tester.enterText(
-      find.byKey(const ValueKey<String>('space-room-chat-field')),
-      'Signal check',
-    );
-    await tester.tap(find.byTooltip('Send chat'));
-    await tester.pump();
-
-    expect(find.text('Signal check'), findsOneWidget);
+    expect(find.text('Friends'), findsWidgets);
+    expect(find.text('Global Chat'), findsOneWidget);
+    expect(find.text('Space Room'), findsNothing);
+    expect(find.textContaining('global chat', findRichText: true), findsWidgets);
   });
 
   testWidgets('battle keeps the resource rail while settings opens stats', (
