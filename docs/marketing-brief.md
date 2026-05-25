@@ -57,7 +57,7 @@ shell, and keep climbing.
 8. Defeat normal anomalies to prime Apex Anomaly encounters.
 9. Promote completed shells into higher classes and inherited child towers.
 10. Return to older shells as passive support archives while the live shell grows.
-11. Expand into managers, equipment, daily dungeons, tournaments, and social play.
+11. Expand into managers, daily dungeons, tournaments, and social play.
 
 ## Feature Inventory
 
@@ -135,7 +135,6 @@ shell, and keep climbing.
 - Account Radiance tracks broader player growth.
 - Battle-pass style tracks reward daily kills, manager pulls, and scans.
 - Offline rewards are server-reconciled and can be doubled with rewarded ads.
-- Equipment inventory and loadouts provide permanent combat bonuses.
 - Daily Dungeons and Prism Rift content create repeatable challenge surfaces.
 - Weekly tournaments include Anomaly Blitz, Hex Gauntlet, and Arena Flow modes.
 
@@ -164,7 +163,7 @@ Secondary players:
 
 - Casual strategy players who like clear loops and daily rewards.
 - Collection-driven players interested in Enemy Research Cards, managers,
-  cosmetics, equipment, passes, and event rewards.
+  cosmetics, passes, and event rewards.
 
 ## Store And Landing Page Angles
 
@@ -191,7 +190,7 @@ video hooks.
 | Progression | Before/after shell promotion, Root to Prism, Prism to Nexus, inheritance previews. |
 | Buildcraft | Color-family comparisons, pure builds versus blended projectile/payload builds. |
 | Anomaly pressure | Enemy Research pulls, Apex Anomaly reveals, Focus Target saves, lane disruption moments. |
-| Rewards | Offline gains, pass claims, equipment drops, tournament rewards. |
+| Rewards | Offline gains, pass claims, tournament rewards, and event progress. |
 | Studio identity | Lemon Goose Games Inc. splash, dev updates, patch notes, asset reveals. |
 
 ## App Store Screenshot Set
@@ -202,7 +201,7 @@ Suggested first release order:
 2. Tower upgrade screen: trainable stats and tower family identity.
 3. Enemy Research/Threat Map screen: show research progression and region push.
 4. Promotion screen: Root Shell to Prism Shell or child tower forge.
-5. Managers/equipment screen: automation and permanent progression.
+5. Managers/profile screen: automation and account progression.
 6. Daily Dungeons or Tournament screen: repeatable events and competitive modes.
 7. Store/pass screen only after real purchase wiring and final economy review.
 
@@ -239,6 +238,7 @@ Suggested first release order:
 - Do not describe Enemy Research Cards as the primary live encounter deck.
 - Do not describe Threat Scans as a Threat Map reveal or stabilization mechanic.
 - Do not imply every shell runs a full battle simulation while offline.
+- Do not market equipment, gear drops, or gear loadouts as a launch feature.
 - Do not market guilds as a launch feature until the live guild loop is complete.
 - Do not use Lumicore as a public title or franchise name.
 

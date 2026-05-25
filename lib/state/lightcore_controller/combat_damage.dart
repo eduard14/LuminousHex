@@ -666,7 +666,9 @@ extension LightcoreControllerCombatDamage on LightcoreController {
     final defeatedTutorialIntroBoss =
         enemy.id == _tutorialTrackedBossEnemyId &&
         enemy.config.id == BossEnemyLibrary.starterWhiteWarden.id;
-    if (defeatedTutorialIntroBoss && droppedItem == null) {
+    if (LightcoreController.equipmentReleaseEnabled &&
+        defeatedTutorialIntroBoss &&
+        droppedItem == null) {
       droppedItem = _grantEquipmentEventCache(rarity: ManagerRarity.common);
     }
     if (defeatedTutorialIntroBoss) {

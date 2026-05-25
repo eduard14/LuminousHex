@@ -167,19 +167,23 @@ class _SpaceRoomScreenState extends State<SpaceRoomScreen>
       final label = manager
           ? _managerPlaceholders[index % _managerPlaceholders.length]
           : _playerPlaceholders[index % _playerPlaceholders.length];
-      final equipmentSet = EquipmentLibrary
-          .all[(config.seed + index) % EquipmentLibrary.all.length];
       return _SpaceOccupant(
         id: '${config.id}-$index',
         label: label,
         role: manager ? _SpaceOccupantRole.manager : _SpaceOccupantRole.player,
         guide: _guideForOccupant(index, manager: manager),
-        equipmentLoadout: CosmicEquipmentLoadout.preview(
-          setId: equipmentSet.id,
-          affinity: equipmentSet.affinity,
-          seed: config.seed + index,
-          manager: manager,
-        ),
+        equipmentLoadout: LightcoreController.equipmentReleaseEnabled
+            ? CosmicEquipmentLoadout.preview(
+                setId: EquipmentLibrary
+                    .all[(config.seed + index) % EquipmentLibrary.all.length]
+                    .id,
+                affinity: EquipmentLibrary
+                    .all[(config.seed + index) % EquipmentLibrary.all.length]
+                    .affinity,
+                seed: config.seed + index,
+                manager: manager,
+              )
+            : CosmicEquipmentLoadout.empty,
         avatarCosmetics: _previewAvatarCosmetics(config.seed + index),
         tint: _tintForIndex(index, manager: manager),
         position: Offset(
@@ -210,6 +214,9 @@ class _SpaceRoomScreenState extends State<SpaceRoomScreen>
   }
 
   CosmicEquipmentLoadout _currentEquipmentLoadout() {
+    if (!LightcoreController.equipmentReleaseEnabled) {
+      return CosmicEquipmentLoadout.empty;
+    }
     return CosmicEquipmentLoadout.fromItems(<PlayerEquipmentItem?>[
       for (final slot in EquipmentLoadoutSlot.values)
         widget.controller.equippedPlayerItemForSlot(slot),

@@ -48,7 +48,7 @@ extension LightcoreControllerBattleUnlocks on LightcoreController {
     final wipeLabel = destroyed == 0
         ? 'Radiance nova armed.'
         : 'Radiance nova cleared $destroyed $enemyNoun.';
-    return 'Level up: $levelLabel. $pointLabel. Choose Might, Focus, Tempo, or Insight from Main Manager > Global Attributes. $wipeLabel';
+    return 'Level up: $levelLabel. $pointLabel. Choose Might, Focus, Tempo, or Insight from Profile > Global Attributes. $wipeLabel';
   }
 
   int _triggerLevelUpRadiance(int level) {

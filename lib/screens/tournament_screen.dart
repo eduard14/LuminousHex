@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import '../data/enemy_configs.dart';
 import '../models/hex_tournament_run.dart';
 import '../models/lightcore_config.dart';
+import '../models/lightcore_currency_labels.dart';
 import '../models/lightcore_state.dart';
 import '../models/lightcore_tournament.dart';
 import '../models/lightcore_types.dart';

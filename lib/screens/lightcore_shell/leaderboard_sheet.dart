@@ -240,9 +240,11 @@ class _GlobalLeaderboardRow extends StatelessWidget {
             child: LightcoreGuideBadge(
               guide: avatar.guideProfile,
               size: 38,
-              equipmentLoadout: CosmicEquipmentLoadout.fromAvatarPieces(
-                avatar.equipmentPieces,
-              ),
+              equipmentLoadout: LightcoreController.equipmentReleaseEnabled
+                  ? CosmicEquipmentLoadout.fromAvatarPieces(
+                      avatar.equipmentPieces,
+                    )
+                  : CosmicEquipmentLoadout.empty,
               avatarCosmetics: avatar.cosmeticLoadout,
             ),
           ),

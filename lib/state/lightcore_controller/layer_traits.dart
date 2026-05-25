@@ -461,7 +461,9 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         (_tutorialTrackedBossEnemyId != null || bossAlive)) {
       return LightcoreTutorialStep.defeatFirstBoss;
     }
-    if (!_tutorialFirstEquipmentOpened && introBossDefeated) {
+    if (LightcoreController.equipmentReleaseEnabled &&
+        !_tutorialFirstEquipmentOpened &&
+        introBossDefeated) {
       return LightcoreTutorialStep.openEquipment;
     }
     final managerStep = _deriveManagerTutorialStep();
@@ -494,7 +496,8 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         }
         return LightcoreTutorialStep.none;
       }
-      if (!_tutorialFirstEquipmentOpened) {
+      if (LightcoreController.equipmentReleaseEnabled &&
+          !_tutorialFirstEquipmentOpened) {
         return LightcoreTutorialStep.openEquipment;
       }
     }
@@ -1458,7 +1461,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         LightcoreTutorialStep.openBossPulls => 'Stabilize A Region',
         LightcoreTutorialStep.armFirstBoss => 'Build An Enemy Suite',
         LightcoreTutorialStep.defeatFirstBoss => 'Clear The Region Boss',
-        LightcoreTutorialStep.openEquipment => 'Check The Drop',
+        LightcoreTutorialStep.openEquipment => 'Check Profile',
         LightcoreTutorialStep.openManagers => 'Inspect The Foundry',
         LightcoreTutorialStep.forgeTowerManager => 'Forge A Core Manager',
         LightcoreTutorialStep.assignTowerManager => 'Assign A Core Manager',
@@ -1514,7 +1517,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         LightcoreTutorialStep.openTowerMatrix =>
           'Click Towers to inspect completed Layer 1 sets and Layer 2 shell tools.',
         LightcoreTutorialStep.upgradeCoreRange =>
-          'Open Main Manager and add one Global Attribute point.',
+          'Open Profile and add one Global Attribute point.',
         LightcoreTutorialStep.openStore =>
           'Click Store and inspect the resource offers.',
         LightcoreTutorialStep.claimBattlePassReward =>
@@ -1526,7 +1529,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         LightcoreTutorialStep.defeatFirstBoss =>
           'Go back to battle and defeat White Warden.',
         LightcoreTutorialStep.openEquipment =>
-          'Click Main Manager and check your new equipment.',
+          'Click the profile HUD and review account attributes.',
         LightcoreTutorialStep.openManagers => 'Click Managers.',
         LightcoreTutorialStep.forgeTowerManager =>
           'Click Managers and forge 1 Core Manager.',
@@ -1607,7 +1610,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         LightcoreTutorialStep.defeatFirstBoss =>
           'Apex Anomalies are milestone fights. This first one is weakened so you can learn the scan loop before full-strength encounters.',
         LightcoreTutorialStep.openEquipment =>
-          'Event caches award equipment. Main Manager is where you inspect gear and start stacking permanent combat bonuses.',
+          'The profile panel is where account attributes and avatar customization live.',
         LightcoreTutorialStep.openManagers =>
           'Managers are flux-forged modifiers. Core Managers socket into the Tower Core, while Threat Directors attach to Threat Map regions.',
         LightcoreTutorialStep.forgeTowerManager =>
@@ -1688,7 +1691,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
           LightcoreTutorialStep.defeatFirstBoss =>
             'Breaking the first Warden proves the shell can survive real pursuit instead of just ambient drift.',
           LightcoreTutorialStep.openEquipment =>
-            'Warden wreckage leaves behind tuned parts the crew can salvage and repurpose into equipment.',
+            'White Warden cleared the next account-growth panel.',
           LightcoreTutorialStep.openManagers =>
             'With enough field experience logged, the foundry crews can finally start drafting Core Managers and Threat Directors.',
           LightcoreTutorialStep.forgeTowerManager =>

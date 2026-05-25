@@ -48,18 +48,23 @@ class _PlayerManagerDialogState extends State<_PlayerManagerDialog> {
   Widget build(BuildContext context) {
     final media = MediaQuery.of(context);
     final compact = media.size.width < 480;
+    final equipmentEnabled = LightcoreController.equipmentReleaseEnabled;
     final usableHeight =
         (media.size.height - media.viewInsets.vertical - media.padding.vertical)
             .clamp(360.0, media.size.height)
             .toDouble();
-    final selectedSlot = _selectedSlot;
-    final inventory = controller.equipmentInventory.toList()
-      ..sort((a, b) => _compareInventoryDisplayPriority(controller, a, b));
-    final filteredInventory = selectedSlot == null
-        ? inventory
-        : inventory
-              .where((item) => item.slotType == selectedSlot.acceptedType)
-              .toList(growable: false);
+    final selectedSlot = equipmentEnabled ? _selectedSlot : null;
+    final filteredInventory = equipmentEnabled
+        ? (controller.equipmentInventory.toList()..sort(
+                (a, b) => _compareInventoryDisplayPriority(controller, a, b),
+              ))
+              .where(
+                (item) =>
+                    selectedSlot == null ||
+                    item.slotType == selectedSlot.acceptedType,
+              )
+              .toList(growable: false)
+        : const <PlayerEquipmentItem>[];
 
     return Dialog(
       backgroundColor: Colors.transparent,
@@ -87,7 +92,7 @@ class _PlayerManagerDialogState extends State<_PlayerManagerDialog> {
                 children: [
                   Expanded(
                     child: Text(
-                      'Main Manager',
+                      equipmentEnabled ? 'Main Manager' : 'Profile',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: Theme.of(context).textTheme.titleLarge,
@@ -96,18 +101,22 @@ class _PlayerManagerDialogState extends State<_PlayerManagerDialog> {
                   const SizedBox(width: 6),
                   IconButton(
                     onPressed: () => _showManagerHelpDialog(context),
-                    tooltip: 'Equipment help',
+                    tooltip: equipmentEnabled
+                        ? 'Equipment help'
+                        : 'Profile help',
                     visualDensity: VisualDensity.compact,
                     icon: const Icon(Icons.help_outline_rounded, size: 20),
                   ),
-                  const SizedBox(width: 8),
-                  Text(
-                    '${controller.equipmentInventory.length}/${controller.equipmentInventoryCapacity}',
-                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                      color: LightcorePalette.mist.withValues(alpha: 0.76),
-                      fontWeight: FontWeight.w700,
+                  if (equipmentEnabled) ...[
+                    const SizedBox(width: 8),
+                    Text(
+                      '${controller.equipmentInventory.length}/${controller.equipmentInventoryCapacity}',
+                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                        color: LightcorePalette.mist.withValues(alpha: 0.76),
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
-                  ),
+                  ],
                   const SizedBox(width: 8),
                   IconButton(
                     onPressed: () => Navigator.of(context).pop(),
@@ -138,30 +147,32 @@ class _PlayerManagerDialogState extends State<_PlayerManagerDialog> {
                           const SizedBox(height: 12),
                         ],
                         _AvatarCustomizationBoard(controller: controller),
-                        const SizedBox(height: 12),
-                        _EquipmentLoadoutBoard(
-                          controller: controller,
-                          columns: loadoutColumns,
-                          selectedSlot: _selectedSlot,
-                          onSelectSlot: (slot) {
-                            setState(() {
-                              _selectedSlot = _selectedSlot == slot
-                                  ? null
-                                  : slot;
-                            });
-                          },
-                        ),
-                        const SizedBox(height: 12),
-                        _EquipmentSetStrip(controller: controller),
-                        const SizedBox(height: 12),
-                        SizedBox(
-                          height: inventoryHeight,
-                          child: _InventoryPanel(
+                        if (equipmentEnabled) ...[
+                          const SizedBox(height: 12),
+                          _EquipmentLoadoutBoard(
                             controller: controller,
-                            items: filteredInventory,
-                            selectedSlot: selectedSlot,
+                            columns: loadoutColumns,
+                            selectedSlot: _selectedSlot,
+                            onSelectSlot: (slot) {
+                              setState(() {
+                                _selectedSlot = _selectedSlot == slot
+                                    ? null
+                                    : slot;
+                              });
+                            },
                           ),
-                        ),
+                          const SizedBox(height: 12),
+                          _EquipmentSetStrip(controller: controller),
+                          const SizedBox(height: 12),
+                          SizedBox(
+                            height: inventoryHeight,
+                            child: _InventoryPanel(
+                              controller: controller,
+                              items: filteredInventory,
+                              selectedSlot: selectedSlot,
+                            ),
+                          ),
+                        ],
                       ],
                     );
                   },
@@ -182,11 +193,12 @@ class _AvatarCustomizationBoard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final equipmentLoadout =
-        CosmicEquipmentLoadout.fromItems(<PlayerEquipmentItem?>[
-          for (final slot in EquipmentLoadoutSlot.values)
-            controller.equippedPlayerItemForSlot(slot),
-        ]);
+    final equipmentLoadout = LightcoreController.equipmentReleaseEnabled
+        ? CosmicEquipmentLoadout.fromItems(<PlayerEquipmentItem?>[
+            for (final slot in EquipmentLoadoutSlot.values)
+              controller.equippedPlayerItemForSlot(slot),
+          ])
+        : CosmicEquipmentLoadout.empty;
     final tint = controller.avatarCosmeticLoadout.isEmpty
         ? _loadoutTint(controller)
         : LightcorePalette.violet;
@@ -614,7 +626,9 @@ Future<void> _showManagerHelpDialog(BuildContext context) {
                     children: [
                       Expanded(
                         child: Text(
-                          'Equipment Help',
+                          LightcoreController.equipmentReleaseEnabled
+                              ? 'Equipment Help'
+                              : 'Profile Help',
                           style: Theme.of(context).textTheme.titleMedium,
                         ),
                       ),
@@ -626,7 +640,9 @@ Future<void> _showManagerHelpDialog(BuildContext context) {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Tap a loadout slot to filter inventory to matching pieces, then tap Equip on the piece you want. Inventory holds up to ${LightcoreController.maxEquipmentInventorySize} pieces. Auto Dismantle removes older lower-priority unequipped gear and converts it into Flux.',
+                    LightcoreController.equipmentReleaseEnabled
+                        ? 'Tap a loadout slot to filter inventory to matching pieces, then tap Equip on the piece you want. Inventory holds up to ${LightcoreController.maxEquipmentInventorySize} pieces. Auto Dismantle removes older lower-priority unequipped gear and converts it into Flux.'
+                        : 'Use this panel to assign Account Radiance points and customize the profile icon. Equipment is deferred for a later release.',
                     style: Theme.of(context).textTheme.bodyMedium,
                   ),
                 ],

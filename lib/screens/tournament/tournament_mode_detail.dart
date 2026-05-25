@@ -1,5 +1,16 @@
 part of '../tournament_screen.dart';
 
+String _rewardSummaryLabel(LightcoreTournamentRewardPackage reward) {
+  final parts = <String>[
+    'x${reward.experienceMultiplier.toStringAsFixed(2)} EXP',
+    LightcoreCurrencyLabels.rewardFlux(reward.flux),
+    LightcoreCurrencyLabels.rewardThreatScans(reward.tickets),
+    if (reward.bonusTowerManagers > 0)
+      '${reward.bonusTowerManagers} ${reward.bonusTowerManagerRarity?.label ?? 'Bonus'} manager cache${reward.bonusTowerManagers == 1 ? '' : 's'}',
+  ];
+  return parts.join('  •  ');
+}
+
 class _TournamentModeDetailScreen extends StatefulWidget {
   const _TournamentModeDetailScreen({
     super.key,
@@ -1861,7 +1872,7 @@ class _TournamentModeDetailScreenState
           ),
           const SizedBox(height: 10),
           Text(
-            state.rewardPreview.summaryLabel,
+            _rewardSummaryLabel(state.rewardPreview),
             style: Theme.of(context).textTheme.bodyMedium,
           ),
           const SizedBox(height: 12),

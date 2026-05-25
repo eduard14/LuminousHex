@@ -906,7 +906,9 @@ class _LightcoreShellState extends State<LightcoreShell> {
       return Future<void>.value();
     }
     widget.controller.markTutorialPlayerManagerOpened();
-    widget.controller.markNewEquipmentNotificationsSeen();
+    if (LightcoreController.equipmentReleaseEnabled) {
+      widget.controller.markNewEquipmentNotificationsSeen();
+    }
     return showPlayerManagerSheet(context, widget.controller);
   }
 
@@ -1057,23 +1059,23 @@ class _LightcoreShellState extends State<LightcoreShell> {
                               builder: (context, _) {
                                 final claimablePassRewards =
                                     controller.totalClaimableBattlePassRewards;
-                                final managerNotificationLabel =
-                                    controller.newEquipmentNotificationCount ==
-                                        1
-                                    ? '1 new equipment piece'
-                                    : '${controller.newEquipmentNotificationCount} new equipment pieces';
                                 final managerAlertLabels = <String>[
                                   if (controller.hasUnspentRadianceStatPoints)
                                     controller.unspentRadianceStatPoints == 1
                                         ? '1 Radiance point ready'
                                         : '${controller.unspentRadianceStatPoints} Radiance points ready',
-                                  if (controller.hasNewEquipmentNotifications)
-                                    managerNotificationLabel,
+                                  if (LightcoreController
+                                          .equipmentReleaseEnabled &&
+                                      controller.hasNewEquipmentNotifications)
+                                    controller.newEquipmentNotificationCount ==
+                                            1
+                                        ? '1 new equipment piece'
+                                        : '${controller.newEquipmentNotificationCount} new equipment pieces',
                                 ];
                                 final managerTooltip =
                                     managerAlertLabels.isNotEmpty
-                                    ? 'Open Main Manager (${managerAlertLabels.join(', ')})'
-                                    : 'Open Main Manager';
+                                    ? 'Open Profile (${managerAlertLabels.join(', ')})'
+                                    : 'Open Profile';
                                 final friendAlertCount =
                                     _friendTopMenuAlertCount(
                                       controller.socialOverview,
@@ -1142,11 +1144,8 @@ class _LightcoreShellState extends State<LightcoreShell> {
                                               LightcoreTutorialPulseTarget
                                                   .playerManagerButton,
                                             ),
-                                        showNotificationBadge:
-                                            controller
-                                                .hasNewEquipmentNotifications ||
-                                            controller
-                                                .hasUnspentRadianceStatPoints,
+                                        showNotificationBadge: controller
+                                            .hasUnspentRadianceStatPoints,
                                         onProfilePressed: () =>
                                             _openPlayerManager(context),
                                       ),

@@ -25,11 +25,12 @@ class _ShellProfileHeaderHud extends StatelessWidget {
     final avatarSize = compact ? 40.0 : 50.0;
     final width = compact ? 128.0 : 218.0;
     final outputEfficiency = controller.outputEfficiencyLabel;
-    final guideLoadout =
-        CosmicEquipmentLoadout.fromItems(<PlayerEquipmentItem?>[
-          for (final slot in EquipmentLoadoutSlot.values)
-            controller.equippedPlayerItemForSlot(slot),
-        ]);
+    final guideLoadout = LightcoreController.equipmentReleaseEnabled
+        ? CosmicEquipmentLoadout.fromItems(<PlayerEquipmentItem?>[
+            for (final slot in EquipmentLoadoutSlot.values)
+              controller.equippedPlayerItemForSlot(slot),
+          ])
+        : CosmicEquipmentLoadout.empty;
 
     Widget profileButton = GestureDetector(
       behavior: HitTestBehavior.opaque,

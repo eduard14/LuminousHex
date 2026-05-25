@@ -957,7 +957,8 @@ extension LightcoreControllerEconomyStore on LightcoreController {
         );
       }
     }
-    if (reward.bonusEquipmentCaches > 0) {
+    if (LightcoreController.equipmentReleaseEnabled &&
+        reward.bonusEquipmentCaches > 0) {
       for (var index = 0; index < reward.bonusEquipmentCaches; index++) {
         _grantEquipmentEventCache(rarity: reward.bonusEquipmentRarity);
       }
@@ -976,7 +977,8 @@ extension LightcoreControllerEconomyStore on LightcoreController {
           LightcoreCurrencyLabels.rewardThreatScans(reward.tickets),
         if (reward.bonusTowerManagers > 0)
           '+${reward.bonusTowerManagers} ${reward.bonusTowerManagerRarity?.label ?? 'Bonus'} manager cache${reward.bonusTowerManagers == 1 ? '' : 's'}',
-        if (reward.bonusEquipmentCaches > 0)
+        if (LightcoreController.equipmentReleaseEnabled &&
+            reward.bonusEquipmentCaches > 0)
           '+${reward.bonusEquipmentCaches} ${reward.bonusEquipmentRarity?.label ?? 'Weekly'} equipment cache${reward.bonusEquipmentCaches == 1 ? '' : 's'}',
         if (reward.experienceMultiplier > 1.0)
           '${reward.experienceMultiplier.toStringAsFixed(2)}x EXP for ${reward.experienceBuffHours}h',

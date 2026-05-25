@@ -217,7 +217,7 @@ void main() {
     expect(controller.lastLevelUpRadianceDestroyedEnemies, 2);
     expect(controller.levelUpRadianceActive, isTrue);
     expect(controller.bannerMessage, contains('Radiance point ready'));
-    expect(controller.bannerMessage, contains('Main Manager'));
+    expect(controller.bannerMessage, contains('Profile'));
     expect(controller.bannerMessage, contains('Global Attributes'));
   });
 

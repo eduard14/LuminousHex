@@ -585,13 +585,13 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
     teachGoal: 'Account levels unlock permanent Global Attribute upgrades.',
     trigger: 'Player level 2',
     primaryClickTarget:
-        'Profile/Level badge > Main Manager > Global Attributes > Add Point',
+        'Profile/Level badge > Profile > Global Attributes > Add Point',
     coachCopy:
         'Leveling unlocks global stats and modes. Pick a permanent stat upgrade.',
     completionCondition: 'Add one Global Attribute point',
     reward: 'Unlock Level Goals panel',
     failureHelpState:
-        'Open Main Manager and use Add Point on any highlighted Global Attribute.',
+        'Open Profile and use Add Point on any highlighted Global Attribute.',
     analyticsEvent: 'tutorial_upgrade_global_stat',
   ),
   LightcoreTutorialStep.openStore: LightcoreTutorialQuestDefinition(
@@ -661,21 +661,21 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
     coachCopy:
         'Return to battle and defeat White Warden. This first Apex is weakened so you can learn the loop.',
     completionCondition: 'White Warden defeated',
-    reward: 'Equipment unlock',
+    reward: 'Apex progression unlock',
     failureHelpState:
         'Use the highlighted back button, then keep queueing shots.',
     analyticsEvent: 'tutorial_defeat_first_boss',
   ),
   LightcoreTutorialStep.openEquipment: LightcoreTutorialQuestDefinition(
     id: 'TUT-024',
-    title: 'Check Equipment',
+    title: 'Check Profile',
     teachGoal:
-        'Equipment lives in Main Manager and adds permanent combat bonuses.',
+        'The profile panel holds account attributes and avatar customization.',
     trigger: 'First Apex defeated',
-    primaryClickTarget: 'Top-left profile HUD > Main Manager > Equipment',
+    primaryClickTarget: 'Top-left profile HUD > Profile',
     coachCopy:
-        'Open Main Manager and check the new equipment. Gear bonuses stack with tower and account stats.',
-    completionCondition: 'Main Manager opened after first Apex',
+        'Open the profile panel and check account attributes before continuing.',
+    completionCondition: 'Profile panel opened after first Apex',
     reward: 'Flux',
     failureHelpState: 'Tap the highlighted profile HUD in the upper left.',
     analyticsEvent: 'tutorial_open_equipment',
@@ -1279,6 +1279,7 @@ class LightcoreController extends ChangeNotifier {
   }
 
   static const int slotCount = 6;
+  static const bool equipmentReleaseEnabled = false;
   static const int maxShellTier = 4;
   static const int maxTowerLevel = 5;
   static const int maxTowerUpgradeRank = maxTowerLevel - 1;

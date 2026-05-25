@@ -14,7 +14,7 @@ import 'package:lightcore/theme/lightcore_theme.dart';
 import 'package:lightcore/widgets/guided_focus_frame.dart';
 
 void main() {
-  testWidgets('top-left profile button opens the main manager sheet', (
+  testWidgets('top-left profile button opens the profile sheet', (
     tester,
   ) async {
     final controller = LightcoreController(
@@ -40,37 +40,27 @@ void main() {
     controller.dismissBanner();
     await tester.pump();
 
-    expect(find.byTooltip('Open Main Manager'), findsOneWidget);
+    expect(find.byTooltip('Open Profile'), findsOneWidget);
 
-    await tester.tap(find.byTooltip('Open Main Manager'));
+    await tester.tap(find.byTooltip('Open Profile'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 500));
 
-    expect(find.text('Main Manager'), findsOneWidget);
+    expect(find.text('Profile'), findsOneWidget);
     expect(find.text('Pilot Identity'), findsNothing);
-    final sheetScrollable = find.byType(Scrollable).first;
-    await tester.scrollUntilVisible(
-      find.text('Equipment'),
-      220,
-      scrollable: sheetScrollable,
-    );
-    expect(find.text('Equipment'), findsOneWidget);
+    expect(find.text('Equipment'), findsNothing);
     expect(
       find.byKey(const ValueKey<String>('player-screen-name-field')),
       findsNothing,
     );
-    await tester.scrollUntilVisible(
-      find.textContaining('Tap a slot to filter'),
-      220,
-      scrollable: sheetScrollable,
-    );
-    expect(find.textContaining('Tap a slot to filter'), findsOneWidget);
+    expect(find.text('Profile Icon'), findsOneWidget);
+    expect(find.textContaining('Tap a slot to filter'), findsNothing);
     expect(find.textContaining('Lumens'), findsNothing);
     expect(find.textContaining('Flux'), findsNothing);
   });
 
   testWidgets(
-    'main manager shows and clears new equipment notification badge',
+    'profile hides new equipment notification badge while equipment is deferred',
     (tester) async {
       final controller = LightcoreController(
         packRandom: Random(10),
@@ -120,20 +110,15 @@ void main() {
       controller.dismissBanner();
       await tester.pump();
 
-      expect(
-        find.byTooltip('Open Main Manager (1 new equipment piece)'),
-        findsOneWidget,
-      );
+      expect(find.byTooltip('Open Profile'), findsOneWidget);
       expect(controller.newEquipmentNotificationCount, 1);
 
-      await tester.tap(
-        find.byTooltip('Open Main Manager (1 new equipment piece)'),
-      );
+      await tester.tap(find.byTooltip('Open Profile'));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 500));
 
-      expect(controller.newEquipmentNotificationCount, 0);
-      expect(find.text('Main Manager'), findsOneWidget);
+      expect(controller.newEquipmentNotificationCount, 1);
+      expect(find.text('Profile'), findsOneWidget);
     },
   );
 
@@ -164,16 +149,18 @@ void main() {
 
     expect(
       find.byTooltip('Open Main Manager (1 Radiance point ready)'),
+      findsNothing,
+    );
+    expect(
+      find.byTooltip('Open Profile (1 Radiance point ready)'),
       findsOneWidget,
     );
 
-    await tester.tap(
-      find.byTooltip('Open Main Manager (1 Radiance point ready)'),
-    );
+    await tester.tap(find.byTooltip('Open Profile (1 Radiance point ready)'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 500));
 
-    expect(find.text('Main Manager'), findsOneWidget);
+    expect(find.text('Profile'), findsOneWidget);
     expect(find.text('Global Attributes'), findsOneWidget);
     expect(find.text('Radiance Attributes'), findsNothing);
     expect(find.text('MGT 0'), findsOneWidget);
@@ -218,9 +205,7 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 400));
 
-      await tester.tap(
-        find.byTooltip('Open Main Manager (1 Radiance point ready)'),
-      );
+      await tester.tap(find.byTooltip('Open Profile (1 Radiance point ready)'));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 500));
 
@@ -244,7 +229,7 @@ void main() {
     },
   );
 
-  testWidgets('slot selection filters inventory and equips from the grid', (
+  testWidgets('equipment inventory is hidden while equipment is deferred', (
     tester,
   ) async {
     final controller = LightcoreController(
@@ -283,51 +268,19 @@ void main() {
     controller.dismissBanner();
     await tester.pump();
 
-    await tester.tap(
-      find.byTooltip('Open Main Manager (2 new equipment pieces)'),
-    );
+    await tester.tap(find.byTooltip('Open Profile'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 500));
 
-    final sheetScrollable = find.byType(Scrollable).first;
-    await tester.scrollUntilVisible(
-      find.text(hat.name),
-      220,
-      scrollable: sheetScrollable,
-    );
-    expect(find.text(hat.name), findsOneWidget);
-    await tester.scrollUntilVisible(
-      find.text(shoes.name),
-      220,
-      scrollable: sheetScrollable,
-    );
-    expect(find.text(shoes.name), findsOneWidget);
-
-    await tester.scrollUntilVisible(
-      find.byTooltip('Hat: empty. Tap to filter inventory.'),
-      220,
-      scrollable: sheetScrollable,
-    );
-    await tester.tap(find.byTooltip('Hat: empty. Tap to filter inventory.'));
-    await tester.pump();
-
-    expect(find.text('Hat Inventory'), findsOneWidget);
-    await tester.scrollUntilVisible(
-      find.text(hat.name),
-      220,
-      scrollable: sheetScrollable,
-    );
-    expect(find.text(hat.name), findsOneWidget);
+    expect(find.text('Profile'), findsOneWidget);
+    expect(find.text('Equipment'), findsNothing);
+    expect(find.text(hat.name), findsNothing);
     expect(find.text(shoes.name), findsNothing);
-
-    await tester.tap(find.text('Equip'));
-    await tester.pump();
-
     expect(
       controller
           .equippedPlayerItemForSlot(EquipmentLoadoutSlot.hat)
           ?.instanceId,
-      hat.instanceId,
+      isNull,
     );
   });
 }
