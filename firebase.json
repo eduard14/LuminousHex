@@ -1,5 +1,6 @@
 {
   "hosting": {
+    "site": "lumicore-95c8a",
     "public": "build/web",
     "ignore": [
       "firebase.json",
