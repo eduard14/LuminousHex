@@ -104,7 +104,8 @@ extension _LightcoreBattleGameProjectileRendering on LightcoreBattleGame {
         );
       }
       final shimmer =
-          0.5 + (math.sin((controller.elapsed * 8) + pulse.id.hashCode) * 0.5);
+          0.5 +
+          (math.sin((controller.elapsed * 3.2) + pulse.id.hashCode) * 0.5);
       canvas.drawCircle(
         currentOffset,
         _slotRadius * (pulse.criticalBoosted ? 0.34 : 0.28),
