@@ -399,9 +399,9 @@ class LightcoreBattleGame extends FlameGame with ScaleDetector {
     final seed = pulse.id.hashCode.abs();
     final rotation = ((seed % 360) * math.pi / 180);
     final speed =
-        (pulse.sourceSlotIndex == null ? 0.72 : 0.88) +
-        ((seed % 7) * 0.035) +
-        (math.sin((elapsed * 0.82) + seed) * 0.08);
+        (pulse.sourceSlotIndex == null ? 0.18 : 0.22) +
+        ((seed % 7) * 0.009) +
+        (math.sin((elapsed * 0.42) + seed) * 0.02);
     final theta = (elapsed * speed) + ((seed % 628) / 100);
     final wide = pulse.sourceSlotIndex == null
         ? _coreRadius * 1.18
