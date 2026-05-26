@@ -42,6 +42,7 @@ extension LightcoreControllerCombatLoop on LightcoreController {
           _core.packetCooldownRemaining - battleDt,
         ),
       );
+      _advanceCorePayloadFeed(battleDt);
       if (_layer2.unlocked) {
         _layer2 = _layer2.copyWith(
           fireCooldownRemaining: max(
@@ -135,6 +136,20 @@ extension LightcoreControllerCombatLoop on LightcoreController {
       _swarmActivated = true;
       _needsNotify = true;
     }
+  }
+
+  void _advanceCorePayloadFeed(double dt) {
+    if (dt <= 0) {
+      return;
+    }
+    final interval = corePayloadFeedInterval();
+    var feedCooldown = _core.automationCooldownRemaining - dt;
+    if (feedCooldown <= 0 &&
+        (_ammoQueue.length + _pulses.length) < coreQueueCapacity) {
+      _queueCoreBasicAttack(showBanner: false);
+      feedCooldown = interval;
+    }
+    _core = _core.copyWith(automationCooldownRemaining: feedCooldown);
   }
 
   void _queueLocalhostCoreTap(double dt) {

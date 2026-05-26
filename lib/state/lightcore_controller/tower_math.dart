@@ -563,6 +563,24 @@ extension LightcoreControllerTowerMath on LightcoreController {
     return 1 / rate;
   }
 
+  double coreStarterPayloadFeedRate() {
+    final wantedRate = coreShotsPerSecondForUpgradeLevel(
+      _core.fireSpeedUpgradeLevel,
+      projectileType: _coreProjectileType,
+    );
+    return max(0.12, wantedRate * 0.28);
+  }
+
+  double corePayloadFeedRate() {
+    final manager = _towerCoreManagerForLayer(activeLayer);
+    final managedRate = manager == null
+        ? 0.0
+        : managerPowerAdjustedRate(manager.automationRate);
+    return max(coreStarterPayloadFeedRate(), managedRate);
+  }
+
+  double corePayloadFeedInterval() => 1 / corePayloadFeedRate();
+
   double towerWantedActivationRate(OuterTowerState tower) {
     if (!_slotCountsTowardRing(tower)) {
       return 0;

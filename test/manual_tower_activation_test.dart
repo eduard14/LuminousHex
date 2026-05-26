@@ -114,9 +114,16 @@ void main() {
     controller.tick(0.1);
 
     expect(controller.pulses, isNotEmpty);
-    final pulse = controller.pulses.single;
+    final pulse = controller.pulses.singleWhere(
+      (candidate) => candidate.sourceSlotIndex == 0,
+    );
     expect(controller.boostPulseToCore(pulse.id), isTrue);
-    expect(controller.pulses.single.progress, greaterThan(pulse.progress));
+    expect(
+      controller.pulses
+          .singleWhere((candidate) => candidate.id == pulse.id)
+          .progress,
+      greaterThan(pulse.progress),
+    );
   });
 
   test('critical boosted payload packets guarantee critical shots', () {
@@ -130,7 +137,9 @@ void main() {
     expect(controller.debugSetTowerCharge(0, charge: 1.2), isTrue);
 
     controller.tick(0.1);
-    final pulse = controller.pulses.single;
+    final pulse = controller.pulses.singleWhere(
+      (candidate) => candidate.sourceSlotIndex == 0,
+    );
     expect(
       controller.releaseDraggedPulse(pulse.id, crossedSourceTower: true),
       isTrue,
@@ -168,22 +177,30 @@ void main() {
     expect(controller.impacts.any((impact) => impact.critical), isTrue);
   });
 
-  test('core managers do not generate free core packets', () {
+  test('default auto manager generates center payload pieces', () {
     final controller = LightcoreController();
     addTearDown(controller.dispose);
-
-    _completeLayer1Coverage(controller, TowerLibrary.redPrism);
-    controller.flux = LightcoreController.towerManagerFluxCost;
-    expect(controller.forgeTowerManager(), isTrue);
-    controller.equipCardToCore(controller.cards.single.instanceId);
 
     controller.tick(0.1);
 
     final corePulses = controller.pulses.where(
       (pulse) => pulse.sourceSlotIndex == null,
     );
-    expect(corePulses, isEmpty);
-    expect(controller.coreState.automationCooldownRemaining, 0);
+    expect(corePulses, isNotEmpty);
+    expect(controller.coreState.automationCooldownRemaining, greaterThan(0));
+  });
+
+  test('core managers improve center payload feed', () {
+    final controller = LightcoreController();
+    addTearDown(controller.dispose);
+
+    final starterRate = controller.corePayloadFeedRate();
+    _completeLayer1Coverage(controller, TowerLibrary.redPrism);
+    controller.flux = LightcoreController.towerManagerFluxCost;
+    expect(controller.forgeTowerManager(), isTrue);
+    controller.equipCardToCore(controller.cards.single.instanceId);
+
+    expect(controller.corePayloadFeedRate(), greaterThan(starterRate));
   });
 
   test('core manager assignment carries into promoted layer 2 shell', () {
@@ -360,7 +377,10 @@ void main() {
 
     controller.tick(0.1);
     expect(controller.pulses, isNotEmpty);
-    controller.boostPulseToCore(controller.pulses.single.id);
+    final towerPulse = controller.pulses.singleWhere(
+      (pulse) => pulse.sourceSlotIndex == 0,
+    );
+    controller.boostPulseToCore(towerPulse.id);
     for (
       var step = 0;
       step < 80 &&

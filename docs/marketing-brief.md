@@ -68,8 +68,9 @@ shell, and keep climbing.
   directly.
 - Manual payload catches create an active idle-defense rhythm, while
   drag-through routing guarantees critical packets.
-- A visible Default Auto Manager keeps built towers feeding payloads slowly from
-  the start, so active play enhances progress instead of enabling it.
+- A visible Default Auto Manager keeps the Lightcore and built towers feeding
+  payloads slowly from the start, so active play enhances progress instead of
+  enabling it.
 - Core queue combat rewards smart timing, charge flow, and tower placement.
 - Output Efficiency pressure system replaces a simple health-loss fail state.
 - Lane disruption reduces rewards and charge flow when anomalies reach the ring.
