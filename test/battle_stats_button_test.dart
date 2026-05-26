@@ -148,6 +148,30 @@ void main() {
     expect(find.text('Core Stats'), findsOneWidget);
   });
 
+  testWidgets('core queue rail drag-scrolls without rendering a scrollbar', (
+    tester,
+  ) async {
+    final controller = LightcoreController();
+    addTearDown(controller.dispose);
+    controller.debugDisableTutorial();
+
+    await _pumpBattleScreen(tester, controller);
+
+    final queueScrollable = find.byType(Scrollable);
+    expect(queueScrollable, findsOneWidget);
+    expect(find.byType(Scrollbar), findsNothing);
+
+    final position = tester.state<ScrollableState>(queueScrollable).position;
+    expect(position.maxScrollExtent, greaterThan(0));
+    final before = position.pixels;
+
+    await tester.drag(queueScrollable, const Offset(0, 80));
+    await tester.pump(const Duration(milliseconds: 120));
+
+    expect(position.pixels, isNot(before));
+    expect(find.byType(Scrollbar), findsNothing);
+  });
+
   testWidgets('tower tap fires packet and defers tower controls', (
     tester,
   ) async {

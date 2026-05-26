@@ -2383,58 +2383,84 @@ class _CoreQueueRail extends StatelessWidget {
             color: LightcorePalette.stroke.withValues(alpha: 0.5),
           ),
         ),
-        child: ListView.separated(
-          shrinkWrap: true,
-          reverse: true,
-          itemCount: controller.coreQueueCapacity,
-          separatorBuilder: (_, _) => const SizedBox(height: 6),
-          itemBuilder: (context, index) {
-            final packet = index < packets.length ? packets[index] : null;
-            final color = packet?.projectileType.affinity.color;
-            final payloadColor = packet?.payloadType.affinity?.color;
-            return Container(
-              width: cellSize,
-              height: cellSize,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(6),
-                color:
-                    color?.withValues(alpha: 0.82) ??
-                    LightcorePalette.night.withValues(alpha: 0.45),
-                border: Border.all(
-                  color: packet == null
-                      ? LightcorePalette.stroke.withValues(alpha: 0.42)
-                      : packet.criticalBoosted
-                      ? LightcorePalette.solar
-                      : LightcorePalette.mist.withValues(alpha: 0.55),
-                  width: packet?.criticalBoosted == true ? 2.2 : 1.1,
+        child: ScrollConfiguration(
+          behavior: const _QueueRailScrollBehavior(),
+          child: ListView.separated(
+            shrinkWrap: true,
+            reverse: true,
+            itemCount: controller.coreQueueCapacity,
+            separatorBuilder: (_, _) => const SizedBox(height: 6),
+            itemBuilder: (context, index) {
+              final packet = index < packets.length ? packets[index] : null;
+              final color = packet?.projectileType.affinity.color;
+              final payloadColor = packet?.payloadType.affinity?.color;
+              return Container(
+                width: cellSize,
+                height: cellSize,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(6),
+                  color:
+                      color?.withValues(alpha: 0.82) ??
+                      LightcorePalette.night.withValues(alpha: 0.45),
+                  border: Border.all(
+                    color: packet == null
+                        ? LightcorePalette.stroke.withValues(alpha: 0.42)
+                        : packet.criticalBoosted
+                        ? LightcorePalette.solar
+                        : LightcorePalette.mist.withValues(alpha: 0.55),
+                    width: packet?.criticalBoosted == true ? 2.2 : 1.1,
+                  ),
+                  boxShadow: packet?.criticalBoosted == true
+                      ? [
+                          BoxShadow(
+                            color: LightcorePalette.solar.withValues(
+                              alpha: 0.45,
+                            ),
+                            blurRadius: 8,
+                          ),
+                        ]
+                      : null,
                 ),
-                boxShadow: packet?.criticalBoosted == true
-                    ? [
-                        BoxShadow(
-                          color: LightcorePalette.solar.withValues(alpha: 0.45),
-                          blurRadius: 8,
-                        ),
-                      ]
-                    : null,
-              ),
-              child: payloadColor == null
-                  ? null
-                  : Align(
-                      alignment: Alignment.bottomRight,
-                      child: Container(
-                        width: cellSize * 0.36,
-                        height: cellSize * 0.36,
-                        decoration: BoxDecoration(
-                          color: payloadColor,
-                          shape: BoxShape.circle,
+                child: payloadColor == null
+                    ? null
+                    : Align(
+                        alignment: Alignment.bottomRight,
+                        child: Container(
+                          width: cellSize * 0.36,
+                          height: cellSize * 0.36,
+                          decoration: BoxDecoration(
+                            color: payloadColor,
+                            shape: BoxShape.circle,
+                          ),
                         ),
                       ),
-                    ),
-            );
-          },
+              );
+            },
+          ),
         ),
       ),
     );
+  }
+}
+
+class _QueueRailScrollBehavior extends MaterialScrollBehavior {
+  const _QueueRailScrollBehavior();
+
+  @override
+  Set<PointerDeviceKind> get dragDevices => const {
+    PointerDeviceKind.touch,
+    PointerDeviceKind.mouse,
+    PointerDeviceKind.stylus,
+    PointerDeviceKind.trackpad,
+  };
+
+  @override
+  Widget buildScrollbar(
+    BuildContext context,
+    Widget child,
+    ScrollableDetails details,
+  ) {
+    return child;
   }
 }
 
