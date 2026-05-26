@@ -33,6 +33,7 @@ void main() {
     expect(find.text('SYNC'), findsOneWidget);
     expect(find.text('LINK'), findsOneWidget);
     expect(find.text('ARM'), findsOneWidget);
+    expect(find.text('RELAY ALIGNMENT'), findsOneWidget);
     expect(
       find.text('Auto entry starts when the first event run begins.'),
       findsOneWidget,

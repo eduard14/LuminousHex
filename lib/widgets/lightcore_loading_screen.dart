@@ -291,10 +291,11 @@ class _LoadingCard extends StatelessWidget {
               ),
             ),
             SizedBox(height: compact ? 20 : 24),
-            _LoadingProgressTrack(
+            _LoadingRelayPath(
               accent: accent,
               phase: phase,
               progress: progress,
+              compact: compact,
             ),
             SizedBox(height: compact ? 16 : 18),
             Wrap(
@@ -413,8 +414,129 @@ class _GuideTipCallout extends StatelessWidget {
   }
 }
 
-class _LoadingProgressTrack extends StatelessWidget {
-  const _LoadingProgressTrack({
+class _LoadingRelayPath extends StatelessWidget {
+  const _LoadingRelayPath({
+    required this.accent,
+    required this.phase,
+    required this.progress,
+    required this.compact,
+  });
+
+  final Color accent;
+  final double phase;
+  final double? progress;
+  final bool compact;
+
+  @override
+  Widget build(BuildContext context) {
+    final value = progress?.clamp(0.0, 1.0).toDouble();
+    final activeStage = value == null
+        ? (phase * 6).floor().clamp(0, 5).toInt()
+        : (value * 6).floor().clamp(0, 5).toInt();
+    final status = value == null
+        ? 'Relay alignment'
+        : 'Relay alignment ${(value * 100).round()}%';
+
+    return Semantics(
+      label: status,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: Colors.black.withValues(alpha: 0.18),
+          borderRadius: BorderRadius.circular(compact ? 20 : 24),
+          border: Border.all(color: accent.withValues(alpha: 0.22)),
+        ),
+        child: Padding(
+          padding: EdgeInsets.symmetric(
+            horizontal: compact ? 14 : 18,
+            vertical: compact ? 12 : 14,
+          ),
+          child: Column(
+            children: [
+              SizedBox(
+                height: compact ? 78 : 92,
+                child: CustomPaint(
+                  painter: _LoadingRelayPathPainter(
+                    accent: accent,
+                    phase: phase,
+                    progress: value,
+                  ),
+                  child: const SizedBox.expand(),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  for (var index = 0; index < 6; index += 1) ...[
+                    _RelayStepDot(
+                      active: value == null
+                          ? index == activeStage
+                          : index < ((value * 6).ceil()).clamp(0, 6),
+                      current: index == activeStage,
+                      accent: accent,
+                    ),
+                    if (index != 5) const SizedBox(width: 7),
+                  ],
+                ],
+              ),
+              const SizedBox(height: 8),
+              Text(
+                status.toUpperCase(),
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  color: LightcorePalette.mist.withValues(alpha: 0.68),
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 0,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _RelayStepDot extends StatelessWidget {
+  const _RelayStepDot({
+    required this.active,
+    required this.current,
+    required this.accent,
+  });
+
+  final bool active;
+  final bool current;
+  final Color accent;
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 180),
+      width: current ? 22 : 10,
+      height: 10,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(999),
+        color: active
+            ? (current ? LightcorePalette.layer2 : accent).withValues(
+                alpha: current ? 0.82 : 0.48,
+              )
+            : LightcorePalette.stroke.withValues(alpha: 0.3),
+        boxShadow: active
+            ? [
+                BoxShadow(
+                  color: (current ? LightcorePalette.layer2 : accent)
+                      .withValues(alpha: 0.24),
+                  blurRadius: 12,
+                  spreadRadius: 1,
+                ),
+              ]
+            : null,
+      ),
+    );
+  }
+}
+
+class _LoadingRelayPathPainter extends CustomPainter {
+  const _LoadingRelayPathPainter({
     required this.accent,
     required this.phase,
     required this.progress,
@@ -425,49 +547,105 @@ class _LoadingProgressTrack extends StatelessWidget {
   final double? progress;
 
   @override
-  Widget build(BuildContext context) {
-    final value = progress?.clamp(0.0, 1.0).toDouble();
+  void paint(Canvas canvas, Size size) {
+    final center = size.center(Offset.zero);
+    final radius = math.min(size.width, size.height) * 0.39;
+    final activeStage = progress == null
+        ? (phase * 6).floor().clamp(0, 5).toInt()
+        : (progress! * 6).floor().clamp(0, 5).toInt();
+    final completed = progress == null
+        ? 0
+        : (progress! * 6).ceil().clamp(0, 6).toInt();
+    final points = List<Offset>.generate(6, (index) {
+      final angle = -math.pi / 2 + (index * math.pi / 3);
+      return Offset(
+        center.dx + math.cos(angle) * radius,
+        center.dy + math.sin(angle) * radius,
+      );
+    });
 
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(999),
-      child: SizedBox(
-        height: 10,
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            DecoratedBox(
-              decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.24),
-              ),
-            ),
-            FractionallySizedBox(
-              alignment: Alignment.centerLeft,
-              widthFactor:
-                  value ?? (0.24 + (math.sin(phase * math.pi * 2) + 1) * 0.18),
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      accent.withValues(alpha: 0.22),
-                      LightcorePalette.layer2.withValues(alpha: 0.92),
-                      LightcorePalette.solar.withValues(alpha: 0.64),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-            Positioned.fill(
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  border: Border.all(color: accent.withValues(alpha: 0.22)),
-                  borderRadius: BorderRadius.circular(999),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
+    final shellPath = Path()..moveTo(points.first.dx, points.first.dy);
+    for (final point in points.skip(1)) {
+      shellPath.lineTo(point.dx, point.dy);
+    }
+    shellPath.close();
+
+    canvas.drawPath(
+      shellPath,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.4
+        ..color = LightcorePalette.stroke.withValues(alpha: 0.34),
     );
+
+    final spokePaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.2
+      ..color = LightcorePalette.stroke.withValues(alpha: 0.26);
+    for (final point in points) {
+      canvas.drawLine(center, point, spokePaint);
+    }
+
+    for (var index = 0; index < points.length; index += 1) {
+      final isActive = progress == null
+          ? index == activeStage
+          : index < completed;
+      final isCurrent = index == activeStage;
+      final nodeColor = isActive
+          ? (isCurrent ? LightcorePalette.layer2 : accent)
+          : LightcorePalette.mist.withValues(alpha: 0.28);
+      if (isActive) {
+        canvas.drawLine(
+          center,
+          points[index],
+          Paint()
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = isCurrent ? 2.2 : 1.7
+            ..color = nodeColor.withValues(alpha: isCurrent ? 0.72 : 0.42),
+        );
+      }
+      canvas.drawCircle(
+        points[index],
+        isCurrent ? 7.2 : 5.4,
+        Paint()..color = nodeColor.withValues(alpha: isActive ? 0.95 : 0.42),
+      );
+      canvas.drawCircle(
+        points[index],
+        isCurrent ? 12 : 8.5,
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = isCurrent ? 1.4 : 1
+          ..color = nodeColor.withValues(alpha: isActive ? 0.42 : 0.16),
+      );
+    }
+
+    canvas.drawCircle(
+      center,
+      14,
+      Paint()
+        ..shader = RadialGradient(
+          colors: [
+            LightcorePalette.layer2.withValues(alpha: 0.86),
+            accent.withValues(alpha: 0.3),
+            Colors.transparent,
+          ],
+        ).createShader(Rect.fromCircle(center: center, radius: 22)),
+    );
+    canvas.drawCircle(
+      center,
+      9,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.5
+        ..color = LightcorePalette.layer2.withValues(alpha: 0.8),
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _LoadingRelayPathPainter oldDelegate) {
+    return oldDelegate.accent != accent ||
+        oldDelegate.phase != phase ||
+        oldDelegate.progress != progress;
   }
 }
 
