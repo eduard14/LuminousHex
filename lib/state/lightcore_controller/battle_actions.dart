@@ -82,7 +82,10 @@ extension LightcoreControllerBattleActions on LightcoreController {
     if (index == -1) {
       return false;
     }
-    _pulses[index] = _pulses[index].copyWith(progress: 0.92);
+    _pulses[index] = _pulses[index].copyWith(
+      progress: 0,
+      inboundStartedAtElapsed: elapsed,
+    );
     if (_tutorialStep == LightcoreTutorialStep.tapSecondShellTower) {
       _tutorialSecondShellShotTapLearned = true;
     }

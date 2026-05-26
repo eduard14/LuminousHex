@@ -1314,6 +1314,7 @@ class EnergyPulseState {
     required this.minDamageMultiplier,
     required this.maxDamageMultiplier,
     required this.progress,
+    this.inboundStartedAtElapsed,
     this.criticalBoosted = false,
   });
 
@@ -1337,9 +1338,14 @@ class EnergyPulseState {
   final double minDamageMultiplier;
   final double maxDamageMultiplier;
   final double progress;
+  final double? inboundStartedAtElapsed;
   final bool criticalBoosted;
 
-  EnergyPulseState copyWith({double? progress, bool? criticalBoosted}) {
+  EnergyPulseState copyWith({
+    double? progress,
+    double? inboundStartedAtElapsed,
+    bool? criticalBoosted,
+  }) {
     return EnergyPulseState(
       id: id,
       sourceSlotIndex: sourceSlotIndex,
@@ -1361,6 +1367,8 @@ class EnergyPulseState {
       minDamageMultiplier: minDamageMultiplier,
       maxDamageMultiplier: maxDamageMultiplier,
       progress: progress ?? this.progress,
+      inboundStartedAtElapsed:
+          inboundStartedAtElapsed ?? this.inboundStartedAtElapsed,
       criticalBoosted: criticalBoosted ?? this.criticalBoosted,
     );
   }

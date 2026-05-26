@@ -307,7 +307,6 @@ class LightcoreBattleGame extends FlameGame with ScaleDetector {
         _renderPersistentShieldRings(canvas);
         _renderLinks(canvas);
       }
-      _renderPulses(canvas);
     }
     _renderShotFireBursts(canvas);
     _renderShots(canvas);
@@ -329,6 +328,9 @@ class LightcoreBattleGame extends FlameGame with ScaleDetector {
       _renderTutorialEnemyGuide(canvas);
     }
     _renderCore(canvas);
+    if (controller.outerRingRevealed) {
+      _renderPulses(canvas);
+    }
     canvas.restore();
   }
 
@@ -415,10 +417,6 @@ class LightcoreBattleGame extends FlameGame with ScaleDetector {
   }
 
   Vector2? _pulseInboundPosition(EnergyPulseState pulse) {
-    final anchor = _pulseSourceAnchor(pulse);
-    if (anchor == null) {
-      return null;
-    }
     final start = _pulseInboundStartPosition(pulse);
     if (start == null) {
       return null;
@@ -443,16 +441,11 @@ class LightcoreBattleGame extends FlameGame with ScaleDetector {
   }
 
   Vector2? _pulseInboundStartPosition(EnergyPulseState pulse) {
-    final anchor = _pulseSourceAnchor(pulse);
-    if (anchor == null) {
-      return null;
+    final startedAt = pulse.inboundStartedAtElapsed;
+    if (startedAt != null) {
+      return _pulseOrbitPosition(pulse, startedAt);
     }
-    final seed = pulse.id.hashCode.abs();
-    final rotation = ((seed % 360) * math.pi / 180);
-    final wide = pulse.sourceSlotIndex == null
-        ? _coreRadius * 1.18
-        : _slotRadius * 1.16;
-    return _rotatedAround(anchor, wide, 0, rotation);
+    return _pulseOrbitPosition(pulse, controller.elapsed);
   }
 
   Vector2 _rotatedAround(

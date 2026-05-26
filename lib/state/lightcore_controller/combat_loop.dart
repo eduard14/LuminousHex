@@ -527,7 +527,14 @@ extension LightcoreControllerCombatLoop on LightcoreController {
           nextPulses.add(pulse.copyWith(progress: 0.985));
         }
       } else {
-        nextPulses.add(pulse.copyWith(progress: progress));
+        nextPulses.add(
+          pulse.copyWith(
+            progress: progress,
+            inboundStartedAtElapsed: pulse.progress < 0 && progress >= 0
+                ? elapsed
+                : null,
+          ),
+        );
       }
     }
     _pulses
