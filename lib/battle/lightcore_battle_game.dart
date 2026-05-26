@@ -386,22 +386,87 @@ class LightcoreBattleGame extends FlameGame with ScaleDetector {
       return null;
     }
     if (pulse.progress < 0) {
-      final anchor = _pulseSourceAnchor(pulse);
-      if (anchor == null) {
-        return null;
-      }
-      final orbitRadius = pulse.sourceSlotIndex == null
-          ? _coreRadius * 0.82
-          : _slotRadius * 0.72;
-      final seed = pulse.id.hashCode.abs();
-      final angle =
-          ((seed % 360) * (math.pi / 180)) + (controller.elapsed * 1.45);
-      return Vector2(
-        anchor.x + (math.cos(angle) * orbitRadius),
-        anchor.y + (math.sin(angle) * orbitRadius),
-      );
+      return _pulseOrbitPosition(pulse, controller.elapsed);
     }
-    return start + ((_center - start) * pulse.progress);
+    return _pulseInboundPosition(pulse);
+  }
+
+  Vector2? _pulseOrbitPosition(EnergyPulseState pulse, double elapsed) {
+    final anchor = _pulseSourceAnchor(pulse);
+    if (anchor == null) {
+      return null;
+    }
+    final seed = pulse.id.hashCode.abs();
+    final rotation = ((seed % 360) * math.pi / 180);
+    final speed =
+        (pulse.sourceSlotIndex == null ? 2.25 : 2.65) +
+        ((seed % 7) * 0.11) +
+        (math.sin((elapsed * 1.7) + seed) * 0.28);
+    final theta = (elapsed * speed) + ((seed % 628) / 100);
+    final wide = pulse.sourceSlotIndex == null
+        ? _coreRadius * 1.18
+        : _slotRadius * 1.16;
+    final tall = pulse.sourceSlotIndex == null
+        ? _coreRadius * 0.58
+        : _slotRadius * 0.62;
+    final localX = math.sin(theta) * wide;
+    final localY = math.sin(theta * 2) * tall;
+    return _rotatedAround(anchor, localX, localY, rotation);
+  }
+
+  Vector2? _pulseInboundPosition(EnergyPulseState pulse) {
+    final anchor = _pulseSourceAnchor(pulse);
+    if (anchor == null) {
+      return null;
+    }
+    final start = _pulseInboundStartPosition(pulse);
+    if (start == null) {
+      return null;
+    }
+    final progress = pulse.progress.clamp(0.0, 1.0).toDouble();
+    final eased = progress * progress * (3 - (2 * progress));
+    final seed = pulse.id.hashCode.abs();
+    final missPhase = ((seed % 628) / 100);
+    final wobble =
+        math.sin((progress * math.pi * 2.75) + missPhase) *
+        (1 - eased) *
+        (pulse.sourceSlotIndex == null
+            ? _coreRadius * 0.38
+            : _slotRadius * 0.5);
+    final direction = _center - start;
+    final distance = direction.length;
+    if (distance <= 0) {
+      return _center.clone();
+    }
+    final normal = Vector2(-direction.y / distance, direction.x / distance);
+    return start + (direction * eased) + (normal * wobble);
+  }
+
+  Vector2? _pulseInboundStartPosition(EnergyPulseState pulse) {
+    final anchor = _pulseSourceAnchor(pulse);
+    if (anchor == null) {
+      return null;
+    }
+    final seed = pulse.id.hashCode.abs();
+    final rotation = ((seed % 360) * math.pi / 180);
+    final wide = pulse.sourceSlotIndex == null
+        ? _coreRadius * 1.18
+        : _slotRadius * 1.16;
+    return _rotatedAround(anchor, wide, 0, rotation);
+  }
+
+  Vector2 _rotatedAround(
+    Vector2 anchor,
+    double localX,
+    double localY,
+    double rotation,
+  ) {
+    final cosA = math.cos(rotation);
+    final sinA = math.sin(rotation);
+    return Vector2(
+      anchor.x + (localX * cosA) - (localY * sinA),
+      anchor.y + (localX * sinA) + (localY * cosA),
+    );
   }
 
   Vector2? _pulseSourceAnchor(EnergyPulseState pulse) {

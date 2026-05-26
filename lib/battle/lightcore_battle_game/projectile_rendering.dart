@@ -59,48 +59,89 @@ extension _LightcoreBattleGameProjectileRendering on LightcoreBattleGame {
       if (pulse.progress < 0) {
         final anchor = _pulseSourceAnchor(pulse);
         if (anchor != null) {
-          canvas.drawCircle(
-            Offset(anchor.x, anchor.y),
-            pulse.sourceSlotIndex == null
-                ? _coreRadius * 0.82
-                : _slotRadius * 0.72,
+          final orbitPath = _figureEightOrbitPath(pulse, anchor);
+          canvas.drawPath(
+            orbitPath,
             Paint()
               ..style = PaintingStyle.stroke
-              ..strokeWidth = 1.4
-              ..color = color.withValues(alpha: 0.24),
+              ..strokeWidth = 5.2
+              ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8)
+              ..color = color.withValues(alpha: 0.12),
+          );
+          canvas.drawPath(
+            orbitPath,
+            Paint()
+              ..style = PaintingStyle.stroke
+              ..strokeWidth = 1.7
+              ..color = color.withValues(alpha: 0.34),
+          );
+          canvas.drawCircle(
+            currentOffset,
+            _slotRadius * 0.28,
+            Paint()
+              ..style = PaintingStyle.stroke
+              ..strokeWidth = 1.5
+              ..color = LightcorePalette.mist.withValues(alpha: 0.48),
           );
         }
       } else {
-        final pulsePath = _curvedLinkPath(
-          startOffset,
-          currentOffset,
-          bend: 0.18,
-        );
+        final pulsePath = _pulseInboundPath(pulse, startOffset, currentOffset);
 
         canvas.drawPath(
           pulsePath,
           Paint()
-            ..color = color.withValues(alpha: 0.28)
-            ..strokeWidth = 3
+            ..color = color.withValues(alpha: 0.18)
+            ..strokeWidth = 8
+            ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 9)
+            ..style = PaintingStyle.stroke,
+        );
+        canvas.drawPath(
+          pulsePath,
+          Paint()
+            ..color = color.withValues(alpha: 0.42)
+            ..strokeWidth = 3.4
             ..style = PaintingStyle.stroke,
         );
       }
+      final shimmer =
+          0.5 + (math.sin((controller.elapsed * 8) + pulse.id.hashCode) * 0.5);
       canvas.drawCircle(
         currentOffset,
-        _slotRadius * (pulse.criticalBoosted ? 0.26 : 0.2),
+        _slotRadius * (pulse.criticalBoosted ? 0.34 : 0.28),
         Paint()
-          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10)
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 14)
           ..color = (pulse.criticalBoosted ? LightcorePalette.solar : color)
-              .withValues(alpha: 0.66),
+              .withValues(alpha: 0.52 + (shimmer * 0.18)),
       );
       canvas.drawCircle(
         currentOffset,
-        _slotRadius * 0.14,
-        Paint()..color = color,
+        _slotRadius * (0.18 + (shimmer * 0.035)),
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.8
+          ..color = LightcorePalette.mist.withValues(alpha: 0.5),
+      );
+      canvas.drawCircle(
+        currentOffset,
+        _slotRadius * 0.16,
+        Paint()
+          ..shader =
+              RadialGradient(
+                colors: [
+                  LightcorePalette.mist.withValues(alpha: 0.95),
+                  color.withValues(alpha: 0.94),
+                  color.withValues(alpha: 0.46),
+                ],
+              ).createShader(
+                Rect.fromCircle(
+                  center: currentOffset,
+                  radius: _slotRadius * 0.2,
+                ),
+              ),
       );
       if (pulse.criticalBoosted) {
         canvas.drawPath(
-          _hexPath(currentOffset, _slotRadius * 0.25),
+          _hexPath(currentOffset, _slotRadius * 0.32),
           Paint()
             ..style = PaintingStyle.stroke
             ..strokeWidth = 2.4
@@ -109,12 +150,55 @@ extension _LightcoreBattleGameProjectileRendering on LightcoreBattleGame {
       }
       if (pulse.secondaryAffinity != null) {
         canvas.drawCircle(
-          currentOffset.translate(_slotRadius * 0.06, -_slotRadius * 0.06),
-          _slotRadius * 0.06,
+          currentOffset.translate(_slotRadius * 0.08, -_slotRadius * 0.08),
+          _slotRadius * 0.07,
           Paint()..color = pulse.secondaryAffinity!.color,
         );
       }
     }
+  }
+
+  Path _figureEightOrbitPath(EnergyPulseState pulse, Vector2 anchor) {
+    final seed = pulse.id.hashCode.abs();
+    final rotation = ((seed % 360) * math.pi / 180);
+    final wide = pulse.sourceSlotIndex == null
+        ? _coreRadius * 1.18
+        : _slotRadius * 1.16;
+    final tall = pulse.sourceSlotIndex == null
+        ? _coreRadius * 0.58
+        : _slotRadius * 0.62;
+    final path = Path();
+    for (var step = 0; step <= 80; step += 1) {
+      final theta = (step / 80) * math.pi * 2;
+      final point = _rotatedAround(
+        anchor,
+        math.sin(theta) * wide,
+        math.sin(theta * 2) * tall,
+        rotation,
+      );
+      if (step == 0) {
+        path.moveTo(point.x, point.y);
+      } else {
+        path.lineTo(point.x, point.y);
+      }
+    }
+    return path;
+  }
+
+  Path _pulseInboundPath(
+    EnergyPulseState pulse,
+    Offset fallbackStart,
+    Offset current,
+  ) {
+    final startVector = _pulseInboundStartPosition(pulse);
+    final start = startVector == null
+        ? fallbackStart
+        : Offset(startVector.x, startVector.y);
+    final seed = pulse.id.hashCode.abs();
+    final bend =
+        ((seed.isEven ? 1 : -1) * 0.34) +
+        (math.sin((pulse.progress * math.pi * 2) + seed) * 0.16);
+    return _curvedLinkPath(start, current, bend: bend);
   }
 
   Vector2 _corePulseStart(EnergyPulseState pulse) {
