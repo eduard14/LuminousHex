@@ -533,7 +533,7 @@ extension LightcoreControllerTowerMath on LightcoreController {
     if (wantedRate <= 0) {
       return 0;
     }
-    return max(0.08, wantedRate * 0.38);
+    return max(0.14, wantedRate * 0.68);
   }
 
   double towerPayloadFeedRate(OuterTowerState tower) {
@@ -568,7 +568,7 @@ extension LightcoreControllerTowerMath on LightcoreController {
       _core.fireSpeedUpgradeLevel,
       projectileType: _coreProjectileType,
     );
-    return max(0.12, wantedRate * 0.28);
+    return max(0.32, wantedRate * 0.58);
   }
 
   double corePayloadFeedRate() {
@@ -743,9 +743,12 @@ extension LightcoreControllerTowerMath on LightcoreController {
     if (tower.charge < 1 || tower.cooldownRemaining > 0) {
       return false;
     }
-    final inFlightCapacity = max(coreQueueCapacity, coreQueueCapacity * 2);
-    return _pulses.length < inFlightCapacity;
+    return _floatingPulseCountForSource(tower.slotIndex) <
+        _maxFloatingPayloadsPerSource;
   }
+
+  int _floatingPulseCountForSource(int? sourceSlotIndex) =>
+      _pulses.where((pulse) => pulse.sourceSlotIndex == sourceSlotIndex).length;
 
   bool canManuallyActivateTower(OuterTowerState tower) {
     return false;

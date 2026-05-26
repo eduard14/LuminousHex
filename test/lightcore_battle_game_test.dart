@@ -87,7 +87,6 @@ void main() {
       controller.tick(0.05);
     }
 
-    expect(controller.pulses, isEmpty);
     expect(controller.queuedAmmoPackets, hasLength(1));
     expect(game.debugCoreQueueOrbitProjectileTypes, isEmpty);
   });

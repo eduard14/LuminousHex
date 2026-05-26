@@ -190,6 +190,24 @@ void main() {
     expect(controller.coreState.automationCooldownRemaining, greaterThan(0));
   });
 
+  test('default auto manager caps floating center payload pieces', () {
+    final controller = LightcoreController();
+    addTearDown(controller.dispose);
+
+    for (var step = 0; step < 60; step += 1) {
+      controller.tick(0.1);
+    }
+
+    final corePulses = controller.pulses.where(
+      (pulse) => pulse.sourceSlotIndex == null,
+    );
+    expect(corePulses, isNotEmpty);
+    expect(
+      corePulses.length,
+      lessThanOrEqualTo(LightcoreController.maxFloatingPayloadsPerSource),
+    );
+  });
+
   test('core managers improve center payload feed', () {
     final controller = LightcoreController();
     addTearDown(controller.dispose);
@@ -384,10 +402,8 @@ void main() {
     for (
       var step = 0;
       step < 80 &&
-          (controller.pulses.isNotEmpty ||
-              controller.queuedAmmoPackets.isNotEmpty ||
-              controller.shots.isNotEmpty);
-      step++
+          controller.enemies.any((enemy) => enemy.id == primaryEnemy!.id);
+      step += 1
     ) {
       controller.tick(0.05);
     }

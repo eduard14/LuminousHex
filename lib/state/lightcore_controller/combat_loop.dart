@@ -145,7 +145,7 @@ extension LightcoreControllerCombatLoop on LightcoreController {
     final interval = corePayloadFeedInterval();
     var feedCooldown = _core.automationCooldownRemaining - dt;
     if (feedCooldown <= 0 &&
-        (_ammoQueue.length + _pulses.length) < coreQueueCapacity) {
+        _floatingPulseCountForSource(null) < _maxFloatingPayloadsPerSource) {
       _queueCoreBasicAttack(showBanner: false);
       feedCooldown = interval;
     }
@@ -501,7 +501,7 @@ extension LightcoreControllerCombatLoop on LightcoreController {
         defensePenetration: towerDefensePenetration(tower),
         minDamageMultiplier: towerMinDamageMultiplier(tower),
         maxDamageMultiplier: towerMaxDamageMultiplier(tower),
-        progress: 0,
+        progress: _payloadOrbitStartProgress,
       ),
     );
     return tower.copyWith(

@@ -48,26 +48,46 @@ extension _LightcoreBattleGameProjectileRendering on LightcoreBattleGame {
 
   void _renderPulses(Canvas canvas) {
     for (final pulse in controller.pulses) {
-      final sourceSlotIndex = pulse.sourceSlotIndex;
-      final start = sourceSlotIndex == null
-          ? _corePulseStart(pulse)
-          : _slotPositions[sourceSlotIndex];
-      final current = start + ((_center - start) * pulse.progress);
+      final start = _pulseStartPosition(pulse);
+      final current = _pulsePosition(pulse);
+      if (start == null || current == null) {
+        continue;
+      }
       final color = _signatureColor(pulse.affinity, pulse.secondaryAffinity);
       final startOffset = Offset(start.x, start.y);
       final currentOffset = Offset(current.x, current.y);
-      final pulsePath = _curvedLinkPath(startOffset, currentOffset, bend: 0.18);
+      if (pulse.progress < 0) {
+        final anchor = _pulseSourceAnchor(pulse);
+        if (anchor != null) {
+          canvas.drawCircle(
+            Offset(anchor.x, anchor.y),
+            pulse.sourceSlotIndex == null
+                ? _coreRadius * 0.82
+                : _slotRadius * 0.72,
+            Paint()
+              ..style = PaintingStyle.stroke
+              ..strokeWidth = 1.4
+              ..color = color.withValues(alpha: 0.24),
+          );
+        }
+      } else {
+        final pulsePath = _curvedLinkPath(
+          startOffset,
+          currentOffset,
+          bend: 0.18,
+        );
 
-      canvas.drawPath(
-        pulsePath,
-        Paint()
-          ..color = color.withValues(alpha: 0.28)
-          ..strokeWidth = 3
-          ..style = PaintingStyle.stroke,
-      );
+        canvas.drawPath(
+          pulsePath,
+          Paint()
+            ..color = color.withValues(alpha: 0.28)
+            ..strokeWidth = 3
+            ..style = PaintingStyle.stroke,
+        );
+      }
       canvas.drawCircle(
         currentOffset,
-        _slotRadius * (pulse.criticalBoosted ? 0.17 : 0.12),
+        _slotRadius * (pulse.criticalBoosted ? 0.26 : 0.2),
         Paint()
           ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10)
           ..color = (pulse.criticalBoosted ? LightcorePalette.solar : color)
@@ -75,12 +95,12 @@ extension _LightcoreBattleGameProjectileRendering on LightcoreBattleGame {
       );
       canvas.drawCircle(
         currentOffset,
-        _slotRadius * 0.09,
+        _slotRadius * 0.14,
         Paint()..color = color,
       );
       if (pulse.criticalBoosted) {
         canvas.drawPath(
-          _hexPath(currentOffset, _slotRadius * 0.18),
+          _hexPath(currentOffset, _slotRadius * 0.25),
           Paint()
             ..style = PaintingStyle.stroke
             ..strokeWidth = 2.4
@@ -89,8 +109,8 @@ extension _LightcoreBattleGameProjectileRendering on LightcoreBattleGame {
       }
       if (pulse.secondaryAffinity != null) {
         canvas.drawCircle(
-          currentOffset.translate(_slotRadius * 0.04, -_slotRadius * 0.04),
-          _slotRadius * 0.045,
+          currentOffset.translate(_slotRadius * 0.06, -_slotRadius * 0.06),
+          _slotRadius * 0.06,
           Paint()..color = pulse.secondaryAffinity!.color,
         );
       }

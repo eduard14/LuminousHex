@@ -138,9 +138,9 @@ void main() {
     expect(pulse.affinity, PrototypeAffinity.neutral);
     expect(pulse.projectileType, ProjectileType.starBolt);
 
+    expect(controller.boostPulseToCore(pulse.id), isTrue);
     _tickUntil(controller, () => controller.queuedCorePackets == 1);
 
-    expect(controller.pulses, isEmpty);
     expect(controller.queuedCorePackets, 1);
     final packet = controller.queuedAmmoPackets.single;
     expect(packet.sourceSlotIndex, isNull);
@@ -296,6 +296,7 @@ void main() {
     expect(controller.queuedCorePackets, 0);
     expect(controller.shots, isEmpty);
 
+    expect(controller.boostPulseToCore(controller.pulses.single.id), isTrue);
     _tickUntil(controller, () => controller.shots.isNotEmpty);
 
     expect(controller.queuedCorePackets, 0);
@@ -327,6 +328,7 @@ void main() {
 
     controller.selectCenter();
     controller.handleBattleCenterTap();
+    expect(controller.boostPulseToCore(controller.pulses.single.id), isTrue);
     _tickUntil(controller, () => controller.shots.isNotEmpty);
     for (var step = 0; step < 20 && controller.shots.isNotEmpty; step++) {
       controller.tick(0.05);

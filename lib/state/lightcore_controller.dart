@@ -987,6 +987,10 @@ const double _spawnClusterRadiusJitter =
     LightcoreController._spawnClusterRadiusJitter;
 const double _relayImpactRadius = LightcoreController._relayImpactRadius;
 const double _pulseSpeed = LightcoreController._pulseSpeed;
+const double _payloadOrbitStartProgress =
+    LightcoreController._payloadOrbitStartProgress;
+const int _maxFloatingPayloadsPerSource =
+    LightcoreController._maxFloatingPayloadsPerSource;
 const double _shotSpeed = LightcoreController._shotSpeed;
 const double _impactSpeed = LightcoreController._impactSpeed;
 const double _coreBombSplashRadius = LightcoreController._coreBombSplashRadius;
@@ -1357,7 +1361,10 @@ class LightcoreController extends ChangeNotifier {
   static const double _spawnClusterAngleJitter = 0.012;
   static const double _spawnClusterRadiusJitter = 10;
   static const double _relayImpactRadius = 102;
-  static const double _pulseSpeed = 1.8;
+  static const double _pulseSpeed = 0.72;
+  static const double _payloadOrbitStartProgress = -0.62;
+  static const int _maxFloatingPayloadsPerSource = 2;
+  static const int maxFloatingPayloadsPerSource = _maxFloatingPayloadsPerSource;
   static const double _shotSpeed = 3.8;
   static const double _impactSpeed = 2.8;
   static const double _coreBombSplashRadius = 180;

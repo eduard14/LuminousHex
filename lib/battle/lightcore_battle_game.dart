@@ -372,7 +372,7 @@ class LightcoreBattleGame extends FlameGame with ScaleDetector {
       if (position == null) {
         continue;
       }
-      if (pointer.distanceTo(position) <= _slotRadius * 0.34) {
+      if (pointer.distanceTo(position) <= _slotRadius * 0.48) {
         return pulse.id;
       }
     }
@@ -383,16 +383,49 @@ class LightcoreBattleGame extends FlameGame with ScaleDetector {
     if (!_layoutReady) {
       return null;
     }
-    final sourceSlotIndex = pulse.sourceSlotIndex;
-    final start = sourceSlotIndex == null
-        ? _corePulseStart(pulse)
-        : sourceSlotIndex >= 0 && sourceSlotIndex < _slotPositions.length
-        ? _slotPositions[sourceSlotIndex]
-        : null;
+    final start = _pulseStartPosition(pulse);
     if (start == null) {
       return null;
     }
+    if (pulse.progress < 0) {
+      final anchor = _pulseSourceAnchor(pulse);
+      if (anchor == null) {
+        return null;
+      }
+      final orbitRadius = pulse.sourceSlotIndex == null
+          ? _coreRadius * 0.82
+          : _slotRadius * 0.72;
+      final seed = pulse.id.hashCode.abs();
+      final angle =
+          ((seed % 360) * (math.pi / 180)) + (controller.elapsed * 1.45);
+      return Vector2(
+        anchor.x + (math.cos(angle) * orbitRadius),
+        anchor.y + (math.sin(angle) * orbitRadius),
+      );
+    }
     return start + ((_center - start) * pulse.progress);
+  }
+
+  Vector2? _pulseSourceAnchor(EnergyPulseState pulse) {
+    final sourceSlotIndex = pulse.sourceSlotIndex;
+    if (sourceSlotIndex == null) {
+      return _center;
+    }
+    if (sourceSlotIndex >= 0 && sourceSlotIndex < _slotPositions.length) {
+      return _slotPositions[sourceSlotIndex];
+    }
+    return null;
+  }
+
+  Vector2? _pulseStartPosition(EnergyPulseState pulse) {
+    final sourceSlotIndex = pulse.sourceSlotIndex;
+    if (sourceSlotIndex == null) {
+      return _corePulseStart(pulse);
+    }
+    if (sourceSlotIndex >= 0 && sourceSlotIndex < _slotPositions.length) {
+      return _slotPositions[sourceSlotIndex];
+    }
+    return null;
   }
 
   bool _pulseDragCrossesSourceTower(String pulseId, Vector2 pointer) {

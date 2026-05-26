@@ -10,10 +10,10 @@ extension LightcoreControllerBattleActions on LightcoreController {
       }
       return false;
     }
-    if ((_ammoQueue.length + _pulses.length) >= coreQueueCapacity) {
+    if (_floatingPulseCountForSource(null) >= _maxFloatingPayloadsPerSource) {
       if (showBanner) {
         _showBanner(
-          'Core queue full. Wait for the Lightcore to fire or upgrade queue capacity.',
+          'Lightcore payloads are already floating. Catch one or let one enter the queue.',
         );
       }
       return false;
@@ -60,7 +60,7 @@ extension LightcoreControllerBattleActions on LightcoreController {
         defensePenetration: coreDefensePenetration,
         minDamageMultiplier: coreMinDamageMultiplier,
         maxDamageMultiplier: coreMaxDamageMultiplier,
-        progress: 0,
+        progress: _payloadOrbitStartProgress,
       ),
     );
     _tutorialCoreShotTapLearned = true;
