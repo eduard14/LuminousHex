@@ -190,6 +190,37 @@ void main() {
     expect(controller.coreState.automationCooldownRemaining, greaterThan(0));
   });
 
+  test('auto payload pieces orbit before drifting to the core', () {
+    final controller = LightcoreController();
+    addTearDown(controller.dispose);
+
+    controller.tick(0.1);
+
+    final pulse = controller.pulses.firstWhere(
+      (candidate) => candidate.sourceSlotIndex == null,
+    );
+    expect(pulse.progress, lessThanOrEqualTo(-3));
+
+    for (var step = 0; step < 25; step += 1) {
+      controller.tick(0.1);
+    }
+    expect(
+      controller.pulses
+          .firstWhere((candidate) => candidate.id == pulse.id)
+          .progress,
+      lessThan(0),
+    );
+
+    for (
+      var step = 0;
+      step < 90 && controller.queuedAmmoPackets.isEmpty;
+      step += 1
+    ) {
+      controller.tick(0.1);
+    }
+    expect(controller.queuedAmmoPackets, isNotEmpty);
+  });
+
   test('default auto manager caps floating center payload pieces', () {
     final controller = LightcoreController();
     addTearDown(controller.dispose);

@@ -30,9 +30,10 @@ extension LightcoreControllerBattleActions on LightcoreController {
     final sequence = _core.fireSequence;
     final projectileType = _coreProjectileTypeForSequence(sequence);
     final payloadType = _corePayloadTypeForSequence(sequence);
+    final pulseId = 'core_packet_${_pulseCounter++}';
     _pulses.add(
       EnergyPulseState(
-        id: 'core_packet_${_pulseCounter++}',
+        id: pulseId,
         sourceSlotIndex: null,
         affinity: _coreAffinityForProjectile(projectileType),
         secondaryAffinity: _coreSecondaryAffinityForPayload(payloadType),
@@ -60,7 +61,7 @@ extension LightcoreControllerBattleActions on LightcoreController {
         defensePenetration: coreDefensePenetration,
         minDamageMultiplier: coreMinDamageMultiplier,
         maxDamageMultiplier: coreMaxDamageMultiplier,
-        progress: _payloadOrbitStartProgress,
+        progress: _payloadOrbitStartProgressForId(pulseId),
       ),
     );
     _tutorialCoreShotTapLearned = true;
@@ -106,4 +107,12 @@ extension LightcoreControllerBattleActions on LightcoreController {
     }
     return boostPulseToCore(pulseId);
   }
+}
+
+double _payloadOrbitStartProgressForId(String id) {
+  final seed = id.hashCode.abs() % 1000;
+  final duration =
+      _payloadOrbitStartProgress -
+      (_payloadOrbitDurationVariance * (seed / 999));
+  return duration;
 }

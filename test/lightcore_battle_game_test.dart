@@ -82,7 +82,7 @@ void main() {
 
     for (
       var step = 0;
-      step < 80 && controller.queuedAmmoPackets.isEmpty;
+      step < 180 && controller.queuedAmmoPackets.isEmpty;
       step += 1
     ) {
       controller.tick(0.05);
