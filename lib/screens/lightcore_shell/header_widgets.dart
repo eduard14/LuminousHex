@@ -689,10 +689,7 @@ String? _towerArchiveLockMessage(LightcoreController controller) {
 }
 
 String? _managerLockMessage(LightcoreController controller) {
-  if (controller.managerAssignmentUnlocked) {
-    return null;
-  }
-  return 'Manager assignment unlocks when this Layer 1 shell has all ${LightcoreController.slotCount} outer towers online.';
+  return null;
 }
 
 String? _mentorshipLockMessage(LightcoreController controller) {

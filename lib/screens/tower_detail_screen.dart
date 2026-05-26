@@ -185,9 +185,7 @@ class _TowerDetailContent extends StatelessWidget {
       ),
       _TowerStatRowData(
         label: 'Shell Manager',
-        value: controller.managerAssignmentUnlocked
-            ? card?.name ?? 'Open'
-            : 'Locked until all ${LightcoreController.slotCount} outer towers are online',
+        value: card?.name ?? 'Default Auto Manager',
       ),
       _TowerStatRowData(
         label: 'Automation',
@@ -358,17 +356,15 @@ class _TowerDetailContent extends StatelessWidget {
           title: 'Shell Core Manager',
           subtitle: controller.managerAssignmentUnlocked
               ? card?.summary ??
-                    'Open the Managers tab to assign a Core Manager for payload feed on this shell.'
-              : 'Manager assignment unlocks when this Layer 1 shell has all ${LightcoreController.slotCount} outer towers online. Until then, catch payload pieces manually.',
+                    'Default Auto Manager is feeding payloads slowly. Open Managers to assign a forged Core Manager for stronger payload feed.'
+              : 'Default Auto Manager is active from the first built tower. Forged Core Manager assignment unlocks when this Layer 1 shell has all ${LightcoreController.slotCount} outer towers online.',
           tint: LightcorePalette.layer2,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _TowerInfoChip(
                 label: 'Manager',
-                value: controller.managerAssignmentUnlocked
-                    ? card?.name ?? 'Open'
-                    : 'Locked',
+                value: card?.name ?? 'Default Auto',
                 tint: LightcorePalette.layer2,
               ),
               if (controller.managerAssignmentUnlocked && card != null) ...[

@@ -147,9 +147,9 @@ class CardManagementScreen extends StatelessWidget {
                         ),
                   badgeIcon: Icons.hexagon_rounded,
                   semanticLabel:
-                      'Shell Core Manager, ${towerCoreManager?.name ?? 'empty'}',
+                      'Shell Core Manager, ${towerCoreManager?.name ?? 'Default Auto Manager'}',
                   label: 'Towers',
-                  value: towerCoreManager?.name ?? 'Open',
+                  value: towerCoreManager?.name ?? 'Default Auto',
                   selected: towerCoreManager != null,
                   onTap: towerCoreManager == null
                       ? null
@@ -197,8 +197,10 @@ class CardManagementScreen extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 10),
+            _DefaultAutoManagerPanel(controller: controller),
+            const SizedBox(height: 10),
             Text(
-              'Shell Manager: ${towerCoreManager?.name ?? 'Open'}  •  Region Director: ${regionThreatDirector?.name ?? 'Open'}',
+              'Shell Manager: ${towerCoreManager?.name ?? 'Default Auto'}  •  Region Director: ${regionThreatDirector?.name ?? 'Open'}',
               style: textTheme.bodySmall?.copyWith(
                 color: LightcorePalette.mist.withValues(alpha: 0.74),
                 fontWeight: FontWeight.w700,
@@ -255,17 +257,17 @@ class CardManagementScreen extends StatelessWidget {
               title: 'Core Managers',
               tint: LightcorePalette.violet,
               subtitle: !controller.managerAssignmentUnlocked
-                  ? 'Build all ${LightcoreController.slotCount} outer towers in this Layer 1 shell before Core Managers can be assigned.'
+                  ? 'Every built tower has a default auto manager from the start. Full Core Manager assignment unlocks when the Layer 1 shell is complete.'
                   : controller.cards.isEmpty
-                  ? 'No Core Managers in inventory yet. Locked roster previews are collapsed below.'
-                  : 'Assign one Core Manager to improve payload feed across the active shell.',
+                  ? 'The default auto manager keeps payloads moving. Forge Core Managers to improve that feed across the active shell.'
+                  : 'The default auto manager keeps payloads moving. Assign one forged Core Manager to improve payload feed across the active shell.',
             ),
             const SizedBox(height: 10),
             if (controller.cards.isEmpty) ...[
               _InlineSectionNotice(
                 message: controller.managersUnlocked
-                    ? 'Forge a Core Manager when you have enough Flux.'
-                    : 'No Core Managers in inventory. The foundry unlocks when a Layer 1 shell has all ${LightcoreController.slotCount} outer towers online.',
+                    ? 'Forge a Core Manager when you have enough Flux. Forged managers upgrade the default auto manager; they are not required for basic payload feed.'
+                    : 'Forged Core Managers unlock when a Layer 1 shell has all ${LightcoreController.slotCount} outer towers online. Until then, the default auto manager keeps built towers feeding payloads slowly.',
                 tint: LightcorePalette.violet,
               ),
               const SizedBox(height: 10),
@@ -624,6 +626,114 @@ class _InlineSectionNotice extends StatelessWidget {
         style: Theme.of(context).textTheme.bodySmall?.copyWith(
           color: LightcorePalette.mist.withValues(alpha: 0.82),
         ),
+      ),
+    );
+  }
+}
+
+class _DefaultAutoManagerPanel extends StatelessWidget {
+  const _DefaultAutoManagerPanel({required this.controller});
+
+  final LightcoreController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    final builtTowers = controller.slots
+        .where((slot) => slot.isBuilt && !slot.isFabricating)
+        .toList(growable: false);
+    final baselineRate = builtTowers.fold<double>(
+      0,
+      (sum, tower) => sum + controller.towerStarterPayloadFeedRate(tower),
+    );
+    final assignedManager = controller.towerCoreManager;
+    final activeLabel = assignedManager == null
+        ? 'Baseline active'
+        : 'Upgraded by ${assignedManager.name}';
+    final statusLabel = builtTowers.isEmpty
+        ? 'Build a tower to start'
+        : '${baselineRate.toStringAsFixed(2)}/s baseline across ${builtTowers.length} tower${builtTowers.length == 1 ? '' : 's'}';
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        color: LightcorePalette.violet.withValues(alpha: 0.1),
+        border: Border.all(
+          color: LightcorePalette.violet.withValues(alpha: 0.3),
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(14),
+              color: LightcorePalette.violet.withValues(alpha: 0.2),
+              border: Border.all(
+                color: LightcorePalette.violet.withValues(alpha: 0.35),
+              ),
+            ),
+            child: const Icon(
+              Icons.auto_mode_rounded,
+              color: LightcorePalette.violet,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        'Default Auto Manager',
+                        style: textTheme.titleSmall?.copyWith(
+                          color: LightcorePalette.mist,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    ),
+                    _Badge(label: activeLabel, tint: LightcorePalette.violet),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  'Every built tower slowly feeds payload pieces without assignment. Manual catches and drag-through crit routing are still stronger.',
+                  style: textTheme.bodySmall?.copyWith(
+                    color: LightcorePalette.mist.withValues(alpha: 0.78),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    _ResourceChip(
+                      icon: Icons.offline_bolt_rounded,
+                      label: statusLabel,
+                      tint: LightcorePalette.violet,
+                    ),
+                    _ResourceChip(
+                      icon: Icons.touch_app_rounded,
+                      label: 'Manual catch bonus',
+                      tint: LightcorePalette.solar,
+                    ),
+                    _ResourceChip(
+                      icon: Icons.auto_awesome_rounded,
+                      label: 'Drag-through crit',
+                      tint: LightcorePalette.warning,
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

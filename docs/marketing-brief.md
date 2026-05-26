@@ -68,6 +68,8 @@ shell, and keep climbing.
   directly.
 - Manual payload catches create an active idle-defense rhythm, while
   drag-through routing guarantees critical packets.
+- A visible Default Auto Manager keeps built towers feeding payloads slowly from
+  the start, so active play enhances progress instead of enabling it.
 - Core queue combat rewards smart timing, charge flow, and tower placement.
 - Output Efficiency pressure system replaces a simple health-loss fail state.
 - Lane disruption reduces rewards and charge flow when anomalies reach the ring.
@@ -89,8 +91,8 @@ shell, and keep climbing.
   Burst, Impact, Arc, Shield, Rayline, and Wave.
 - Towers roll trainable stat boards and special upgrade traits.
 - Core stats can be upgraded separately from perimeter towers.
-- Core Managers assign to a shell, improve payload feed, and raise passive
-  output.
+- Core Managers assign to a shell, upgrade the default payload feed, and raise
+  passive output.
 - Pattern bonuses reward certain tower arrangements and shell build choices.
 
 ### Shell Progression

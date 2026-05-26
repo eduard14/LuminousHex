@@ -18,6 +18,7 @@ import 'package:lightcore/models/lightcore_social_state.dart';
 import 'package:lightcore/models/lightcore_tournament.dart';
 import 'package:lightcore/models/lightcore_types.dart';
 import 'package:lightcore/screens/battle_screen.dart';
+import 'package:lightcore/screens/card_management_screen.dart';
 import 'package:lightcore/screens/daily_dungeons_screen.dart';
 import 'package:lightcore/screens/lightcore_shell.dart';
 import 'package:lightcore/screens/tournament_screen.dart';
@@ -1365,17 +1366,6 @@ void main() {
         findsNothing,
       );
 
-      await tester.tap(find.byTooltip('Managers').first);
-      await tester.pump();
-
-      expect(
-        controller.bannerMessage,
-        contains(
-          'Manager assignment unlocks when this Layer 1 shell has all ${LightcoreController.slotCount} outer towers online',
-        ),
-      );
-      expect(find.text('Main Manager', skipOffstage: false), findsNothing);
-
       await _openHeaderMenuDestination(tester, 'Daily Dungeons');
       expect(
         controller.bannerMessage,
@@ -1385,6 +1375,29 @@ void main() {
 
       expect(find.byTooltip('Advance'), findsNothing);
       expect(find.text('Advancement Path', skipOffstage: false), findsNothing);
+    },
+  );
+
+  testWidgets(
+    'manager screen shows default auto manager before foundry unlock',
+    (tester) async {
+      final controller = LightcoreController();
+      addTearDown(controller.dispose);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          debugShowCheckedModeBanner: false,
+          theme: buildLightcoreTheme(),
+          home: Scaffold(
+            body: CardManagementScreen(controller: controller, isActive: true),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      expect(find.text('Main Manager'), findsOneWidget);
+      expect(find.text('Default Auto Manager'), findsOneWidget);
+      expect(find.text('Build a tower to start'), findsOneWidget);
     },
   );
 

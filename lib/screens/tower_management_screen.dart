@@ -972,8 +972,8 @@ class _BuiltSlotCard extends StatelessWidget {
                 value: slot.isChildLayerNode
                     ? 'Inner Layer'
                     : controller.managerAssignmentUnlocked
-                    ? manager?.name ?? 'Open'
-                    : 'Locked',
+                    ? manager?.name ?? 'Default Auto'
+                    : 'Default Auto',
               ),
               if (!isProject && !isFabricating)
                 _MetricTile(
