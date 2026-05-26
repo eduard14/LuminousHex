@@ -345,9 +345,7 @@ class LightcoreBattleGame extends FlameGame with ScaleDetector {
       }
       return;
     }
-    final tappedPulseId = _hitTestPulse(pointer);
-    if (tappedPulseId != null) {
-      controller.boostPulseToCore(tappedPulseId);
+    if (_hitTestPulse(pointer) != null) {
       return;
     }
     final tappedEnemyId = _hitTestEnemy(pointer);

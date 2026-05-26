@@ -207,7 +207,7 @@ video hooks.
 
 | Pillar | Post Ideas |
 | --- | --- |
-| Gameplay hook | Short clips of tapping charged relays and the core firing queued packets. |
+| Gameplay hook | Short clips of dragging floating payload pieces into the Lightcore and the core firing queued packets. |
 | Progression | Before/after shell promotion, Root to Prism, Prism to Nexus, inheritance previews. |
 | Buildcraft | Color-family comparisons, pure builds versus blended projectile/payload builds. |
 | Anomaly pressure | Knowledge Card pulls, Apex Anomaly reveals, Focus Target saves, lane disruption moments. |

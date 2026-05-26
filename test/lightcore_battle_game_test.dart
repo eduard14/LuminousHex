@@ -71,8 +71,9 @@ void main() {
     addTearDown(controller.dispose);
     final game = buildGame(controller);
 
-    controller.selectCenter();
-    controller.handleBattleCenterTap();
+    for (var step = 0; step < 40 && controller.pulses.isEmpty; step += 1) {
+      controller.tick(0.05);
+    }
 
     expect(controller.pulses, hasLength(1));
     expect(controller.queuedAmmoPackets, isEmpty);

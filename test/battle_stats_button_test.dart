@@ -97,7 +97,7 @@ void main() {
     expect(controller.outerRingRevealed, isTrue);
   });
 
-  testWidgets('center tap generates core pulse and defers stats to wrench', (
+  testWidgets('center tap opens core controls without queuing a pulse', (
     tester,
   ) async {
     final controller = LightcoreController();
@@ -112,14 +112,11 @@ void main() {
 
     await _pumpBattleScreen(tester, controller);
 
+    final pulsesBeforeTap = controller.pulses.length;
     await tester.tapAt(_battleCenter(tester));
-    await tester.pump(const Duration(milliseconds: 50));
-
-    expect(controller.pulses, hasLength(1));
-    controller.tick(0.65);
     await tester.pump();
 
-    expect(controller.shots, hasLength(1));
+    expect(controller.pulses.length, pulsesBeforeTap);
     expect(find.text('Core Stats'), findsNothing);
     expect(
       find.byKey(const ValueKey<String>('battle-side-stats-button')),

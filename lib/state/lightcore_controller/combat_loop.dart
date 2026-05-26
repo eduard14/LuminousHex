@@ -75,9 +75,6 @@ extension LightcoreControllerCombatLoop on LightcoreController {
       }
       _advancePulses(battleDt);
       _advanceFocusTarget(battleDt);
-      if (foreground) {
-        _queueLocalhostCoreTap(battleDt);
-      }
       _advanceEnemies(battleDt);
       _advanceThreatRegionChallenge(battleDt);
       _advanceThreatRegionFarmValidation(battleDt);
@@ -150,27 +147,6 @@ extension LightcoreControllerCombatLoop on LightcoreController {
       feedCooldown = interval;
     }
     _core = _core.copyWith(automationCooldownRemaining: feedCooldown);
-  }
-
-  void _queueLocalhostCoreTap(double dt) {
-    if (!_localhostAutoTapperEnabled || !_outerRingRevealed) {
-      _localhostAutoTapperCoreCooldown = 0;
-      return;
-    }
-    _localhostAutoTapperCoreCooldown = max(
-      0.0,
-      _localhostAutoTapperCoreCooldown - dt,
-    );
-    if (_localhostAutoTapperCoreCooldown > 0 ||
-        _enemies.isEmpty ||
-        (_ammoQueue.length + _pulses.length) >= coreQueueCapacity) {
-      return;
-    }
-    if (_queueCoreBasicAttack(showBanner: false)) {
-      _swarmActivated = true;
-      _localhostAutoTapperCoreCooldown = _localhostAutoTapperCoreInterval;
-      _needsNotify = true;
-    }
   }
 
   double get _spawnInterval => _spawnIntervalForDeck(activeEnemyDeck);

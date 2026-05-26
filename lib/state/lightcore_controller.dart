@@ -388,18 +388,18 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
   ),
   LightcoreTutorialStep.tapBattleCore: LightcoreTutorialQuestDefinition(
     id: 'TUT-006',
-    title: 'Tap the Core',
+    title: 'Core Auto Feed',
     teachGoal:
-        'The Lightcore can create a basic shot directly. Learn that manual shot before adding tower pressure.',
+        'The Lightcore creates basic payload pieces automatically. Learn that drag play controls pacing before adding tower pressure.',
     trigger: 'The first shell opens',
-    primaryClickTarget: 'Battlefield > center Lightcore',
+    primaryClickTarget: 'Battlefield > center payload piece',
     coachCopy:
-        'Tap the glowing Lightcore once. The center can create a basic shot before tower queues take over.',
-    completionCondition: 'Generate one core shot',
+        'Wait for a payload piece near the Lightcore, then drag it toward the center when you want the queue filled.',
+    completionCondition: 'Observe one core payload piece',
     reward: 'Small Lumen grant',
     failureHelpState:
-        'Tap the highlighted center core before opening another hex.',
-    analyticsEvent: 'tutorial_core_shot_tap',
+        'The core feed is automatic; manual play is dragging payload pieces, not tapping them.',
+    analyticsEvent: 'tutorial_core_auto_feed',
   ),
   LightcoreTutorialStep.tapFirstTower: LightcoreTutorialQuestDefinition(
     id: 'TUT-007',
@@ -409,11 +409,11 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
     trigger: 'First tower exists',
     primaryClickTarget: 'Battlefield > floating payload piece',
     coachCopy:
-        'Tap a floating payload piece to send it to the Lightcore. Drag it through the producing tower center first to make that packet critical.',
-    completionCondition: 'Catch 3 payload pieces',
+        'Drag a floating payload piece to the Lightcore. Route it through the producing tower center first to make that packet critical.',
+    completionCondition: 'Drag 3 payload pieces',
     reward: 'Lumens and White Drift practice scan',
     failureHelpState:
-        'Wait for the tower to create a colored piece, then tap or drag that piece toward the Lightcore.',
+        'Wait for the tower to create a colored piece, then drag that piece toward the Lightcore.',
     analyticsEvent: 'tutorial_catch_payload',
   ),
   LightcoreTutorialStep.tapSecondShellTower: LightcoreTutorialQuestDefinition(
@@ -1091,8 +1091,6 @@ const double _baseBattleSpeedMultiplier =
     LightcoreController._baseBattleSpeedMultiplier;
 const double _manualOverdriveMaxMultiplier =
     LightcoreController._manualOverdriveMaxMultiplier;
-const double _localhostAutoTapperCoreInterval =
-    LightcoreController._localhostAutoTapperCoreInterval;
 const double _maxLumenHarvestSlowdown =
     LightcoreController._maxLumenHarvestSlowdown;
 const double _relayHitLumenHarvestDamageScale =
@@ -1540,7 +1538,6 @@ class LightcoreController extends ChangeNotifier {
   static const double _manualOverdriveDecayPerSecond = 0.45;
   static const double _baseBattleSpeedMultiplier = 0.75;
   static const double _manualOverdriveMaxMultiplier = 1.5;
-  static const double _localhostAutoTapperCoreInterval = 0.22;
   static const double _maxLumenHarvestSlowdown = 0.24;
   static const double _relayHitLumenHarvestDamageScale = 12;
   static const double _emptyLaneLumenHarvestDamageScale = 18;
@@ -1705,7 +1702,6 @@ class LightcoreController extends ChangeNotifier {
   bool _manualOverdriveHeld = false;
   double _manualOverdriveCharge = 0;
   bool _suppressRuntimeBanners = false;
-  double _localhostAutoTapperCoreCooldown = 0;
   bool _hasPermanentOverdrive = false;
   bool _hasPremiumMembership = false;
   double _tournamentExperienceMultiplier = 1.0;

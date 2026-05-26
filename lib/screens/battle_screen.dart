@@ -147,6 +147,7 @@ class _BattleScreenState extends State<BattleScreen> {
   Offset? _canvasTapStart;
   bool _canvasTapCanceled = false;
   bool _canvasPayloadDragActive = false;
+  bool _canvasPayloadDragMoved = false;
   late final AppLifecycleListener _appLifecycleListener;
 
   @override
@@ -409,6 +410,7 @@ class _BattleScreenState extends State<BattleScreen> {
     _canvasPayloadDragActive = _game.handleCanvasPointerDown(
       event.localPosition,
     );
+    _canvasPayloadDragMoved = false;
     _canvasTapCanceled = _canvasPayloadDragActive;
     _logBattle('pointer-down', <String, Object?>{
       'pointer': event.pointer,
@@ -426,7 +428,12 @@ class _BattleScreenState extends State<BattleScreen> {
       return;
     }
     if (_canvasPayloadDragActive) {
-      _game.handleCanvasPointerMove(event.localPosition);
+      if ((event.localPosition - start).distance > _canvasTapSlop) {
+        _canvasPayloadDragMoved = true;
+      }
+      if (_canvasPayloadDragMoved) {
+        _game.handleCanvasPointerMove(event.localPosition);
+      }
       _canvasTapCanceled = true;
       return;
     }
@@ -448,8 +455,12 @@ class _BattleScreenState extends State<BattleScreen> {
       'canceled': _canvasTapCanceled,
       'gameControllerCurrent': identical(_game.controller, widget.controller),
     });
-    if (event.pointer == _canvasTapPointer && _canvasPayloadDragActive) {
+    if (event.pointer == _canvasTapPointer &&
+        _canvasPayloadDragActive &&
+        _canvasPayloadDragMoved) {
       _game.handleCanvasPointerUp(event.localPosition);
+    } else if (event.pointer == _canvasTapPointer && _canvasPayloadDragActive) {
+      _game.cancelCanvasPayloadDrag();
     } else if (event.pointer == _canvasTapPointer && !_canvasTapCanceled) {
       _game.handleCanvasTap(event.localPosition);
     }
@@ -470,6 +481,7 @@ class _BattleScreenState extends State<BattleScreen> {
     _canvasTapStart = null;
     _canvasTapCanceled = false;
     _canvasPayloadDragActive = false;
+    _canvasPayloadDragMoved = false;
   }
 
   void _handleCenterTap() {

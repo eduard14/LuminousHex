@@ -414,10 +414,16 @@ void main() {
     expect(controller.tutorialHeadline, 'Catch a Payload');
     expect(
       controller.tutorialPrompt,
-      'Tap a floating payload piece to send it to the Lightcore. Drag it through the producing tower center first to make that packet critical.',
+      'Drag a floating payload piece to the Lightcore. Route it through the producing tower center first to make that packet critical.',
     );
     expect(controller.tutorialBattleSlotGuideLabel(0), 'CATCH PAYLOAD');
-    expect(controller.boostPulseToCore(controller.pulses.last.id), isTrue);
+    expect(
+      controller.releaseDraggedPulse(
+        controller.pulses.last.id,
+        crossedSourceTower: false,
+      ),
+      isTrue,
+    );
 
     expect(controller.tutorialStep, LightcoreTutorialStep.tapFirstTower);
   });
@@ -486,25 +492,17 @@ void main() {
     expect(controller.isOuterSlotUnlocked(0), isTrue);
   });
 
-  test('core shot tutorial appears immediately after the shell opens', () {
+  test('core auto feed tutorial advances without manual core tap', () {
     final controller = LightcoreController();
     addTearDown(controller.dispose);
 
     controller.selectCenter();
 
-    expect(controller.tutorialStep, LightcoreTutorialStep.tapBattleCore);
-    expect(controller.tutorialHighlightsBattleCore, isTrue);
-    expect(controller.tutorialBattleCoreGuideLabel, 'TAP CORE');
-    expect(
-      controller.tutorialPrompt,
-      'Tap the glowing Lightcore once. The center can create a basic shot before tower queues take over.',
-    );
-
-    controller.handleBattleCenterTap();
-
-    expect(controller.pulses, hasLength(1));
-    expect(controller.queuedCorePackets, 0);
     expect(controller.tutorialStep, LightcoreTutorialStep.waitForFirstHex);
+    expect(controller.tutorialHighlightsBattleCore, isFalse);
+    expect(controller.tutorialBattleCoreGuideLabel, isNull);
+    expect(controller.pulses, isEmpty);
+    expect(controller.queuedCorePackets, 0);
     expect(controller.tutorialHighlightsCoreStats, isFalse);
   });
 

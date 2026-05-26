@@ -2212,7 +2212,7 @@ void main() {
     );
     expect(
       find.text(
-        'Tap a floating payload piece to send it to the Lightcore. Drag it through the producing tower center first to make that packet critical.',
+        'Drag a floating payload piece to the Lightcore. Route it through the producing tower center first to make that packet critical.',
       ),
       findsWidgets,
     );

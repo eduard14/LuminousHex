@@ -315,7 +315,6 @@ extension LightcoreControllerStateAccessors on LightcoreController {
       return;
     }
     _localhostAutoTapperEnabled = enabled;
-    _localhostAutoTapperCoreCooldown = 0;
   }
 
   void markNewEquipmentNotificationsSeen() {
@@ -650,11 +649,9 @@ extension LightcoreControllerStateAccessors on LightcoreController {
       !_layer2.unlocked;
 
   bool get tutorialHighlightsBattleCore =>
-      _tutorialStep == LightcoreTutorialStep.unfoldShell ||
-      _tutorialStep == LightcoreTutorialStep.tapBattleCore;
+      _tutorialStep == LightcoreTutorialStep.unfoldShell;
 
-  String? get tutorialBattleCoreGuideLabel =>
-      _tutorialStep == LightcoreTutorialStep.tapBattleCore ? 'TAP CORE' : null;
+  String? get tutorialBattleCoreGuideLabel => null;
 
   bool get tutorialHighlightsCoreStats =>
       _tutorialStep == LightcoreTutorialStep.readEffectiveGain ||

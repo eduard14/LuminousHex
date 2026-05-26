@@ -419,29 +419,32 @@ void main() {
     expect(_healthForEnemy(controller, outsideEnemy.id), initialOutsideHealth);
   });
 
-  test('localhost auto tapper unfolds the shell and queues core taps', () {
-    final controller = LightcoreController();
-    addTearDown(controller.dispose);
-    controller.debugDisableTutorial();
-    controller.debugSpawnEnemyFromCard(
-      EnemyLibrary.basicWhite.id,
-      angle: 0,
-      radius: 220,
-    );
+  test(
+    'localhost auto tapper unfolds the shell and leaves core feed automatic',
+    () {
+      final controller = LightcoreController();
+      addTearDown(controller.dispose);
+      controller.debugDisableTutorial();
+      controller.debugSpawnEnemyFromCard(
+        EnemyLibrary.basicWhite.id,
+        angle: 0,
+        radius: 220,
+      );
 
-    expect(controller.outerRingRevealed, isFalse);
+      expect(controller.outerRingRevealed, isFalse);
 
-    controller.setLocalhostAutoTapperEnabled(true);
-    controller.tick(0.1);
+      controller.setLocalhostAutoTapperEnabled(true);
+      controller.tick(0.1);
 
-    expect(controller.outerRingRevealed, isTrue);
-    expect(
-      controller.queuedCorePackets +
-          controller.pulses.length +
-          controller.shots.length,
-      greaterThan(0),
-    );
-  });
+      expect(controller.outerRingRevealed, isTrue);
+      expect(
+        controller.queuedCorePackets +
+            controller.pulses.length +
+            controller.shots.length,
+        greaterThan(0),
+      );
+    },
+  );
 
   test('enemy leaks visibly lower core stability and output efficiency', () {
     final controller = LightcoreController();

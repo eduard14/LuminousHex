@@ -140,8 +140,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
     if (!_isOpeningStarterTower(tower.config)) {
       return false;
     }
-    return _tutorialCoreShotTapLearned &&
-        tower.fireSequence >= 3 &&
+    return tower.fireSequence >= 3 &&
         tower.level >= 4 &&
         _tutorialFirstTowerStatsOpened &&
         _tutorialStabilityPanelOpened &&
@@ -300,9 +299,6 @@ extension LightcoreControllerLayerTraits on LightcoreController {
     }
     if (!_outerRingRevealed && builtTowerCount == 0) {
       return LightcoreTutorialStep.unfoldShell;
-    }
-    if (!_tutorialCoreShotTapLearned) {
-      return LightcoreTutorialStep.tapBattleCore;
     }
     if (!isOuterSlotUnlocked(0)) {
       return LightcoreTutorialStep.waitForFirstHex;
@@ -645,7 +641,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
     LightcoreTutorialStep.inspectFirstTowerStats =>
       'Stats mapped. Use power, charge, cooldown, automation, and load to decide what to tune next.',
     LightcoreTutorialStep.tapBattleCore =>
-      'Emergency core shot fired. Use it when an anomaly reaches core range.',
+      'Core payload feed online. Drag payload pieces when pressure rises.',
     LightcoreTutorialStep.tapFirstTower =>
       'Payload lesson complete. Towers feed pieces; the core spends queued packets as shots.',
     LightcoreTutorialStep.upgradeFirstTowerToLevel3 =>
@@ -1441,7 +1437,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         LightcoreTutorialStep.selectFirstHex => 'Select Hex 1',
         LightcoreTutorialStep.buildFirstRedTower => 'Choose First Tower',
         LightcoreTutorialStep.inspectFirstTowerStats => 'Read Tower Stats',
-        LightcoreTutorialStep.tapBattleCore => 'Tap The Core To Fire',
+        LightcoreTutorialStep.tapBattleCore => 'Core Auto Feed',
         LightcoreTutorialStep.tapFirstTower => 'Catch A Payload',
         LightcoreTutorialStep.tapSecondShellTower => 'Catch Child Payloads',
         LightcoreTutorialStep.upgradeFirstTowerToLevel3 =>
@@ -1492,9 +1488,9 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         LightcoreTutorialStep.inspectFirstTowerStats =>
           'Open the first tower stats pop-out.',
         LightcoreTutorialStep.tapBattleCore =>
-          'Tap the glowing Lightcore on the battlefield to generate a shot.',
+          'Watch the Lightcore generate payload pieces automatically.',
         LightcoreTutorialStep.tapFirstTower =>
-          'Tap a floating payload piece to send it to the Lightcore, or drag it through its tower for a critical packet.',
+          'Drag a floating payload piece to the Lightcore, or route it through its tower for a critical packet.',
         LightcoreTutorialStep.tapSecondShellTower =>
           'Catch a floating child-shell payload piece to feed the Lightcore.',
         LightcoreTutorialStep.upgradeFirstTowerToLevel3 =>
@@ -1573,9 +1569,9 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         LightcoreTutorialStep.inspectFirstTowerStats =>
           'Tower stats show power, charge, cooldown, automation, and lane load before the tower starts feeding the core queue.',
         LightcoreTutorialStep.tapBattleCore =>
-          'The Lightcore can generate a basic packet for the queue. Tap it when an anomaly reaches core range so the queued shot has a target.',
+          'The Lightcore generates basic payload pieces automatically. Drag pieces when an anomaly reaches core range so queued shots stay ready.',
         LightcoreTutorialStep.tapFirstTower =>
-          'Towers create payload pieces on their own. Catch one to send it faster, or drag it through the tower center to make that packet critical.',
+          'Towers create payload pieces on their own. Drag one toward the Lightcore, or route it through the tower center to make that packet critical.',
         LightcoreTutorialStep.tapSecondShellTower =>
           'Second-shell lanes use the same payload-piece rule: catch the piece to feed the core faster, then the core converts that packet into a shot.',
         LightcoreTutorialStep.upgradeFirstTowerToLevel3 =>
@@ -1654,9 +1650,9 @@ extension LightcoreControllerLayerTraits on LightcoreController {
           LightcoreTutorialStep.inspectFirstTowerStats =>
             'The first prism report opens so the crew can label what each tower number means before combat speeds up.',
           LightcoreTutorialStep.tapBattleCore =>
-            'A hostile signature has crossed the core lens. One tap starts a core pulse for the queue.',
+            'A hostile signature has crossed the core lens. The core feed is automatic; manual play is dragging payloads into the queue.',
           LightcoreTutorialStep.tapFirstTower =>
-            'A payload piece is floating. Catch it, or route it through the tower center for a critical packet.',
+            'A payload piece is floating. Drag it toward the core, or route it through the tower center for a critical packet.',
           LightcoreTutorialStep.tapSecondShellTower =>
             'The next shell is awake. Catch one payload piece before Lumo hands you speed controls.',
           LightcoreTutorialStep.upgradeFirstTowerToLevel3 =>

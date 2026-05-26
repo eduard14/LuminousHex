@@ -103,6 +103,14 @@ void _tickUntil(
   }
 }
 
+EnergyPulseState _nextCorePulse(LightcoreController controller) {
+  _tickUntil(
+    controller,
+    () => controller.pulses.any((pulse) => pulse.sourceSlotIndex == null),
+  );
+  return controller.pulses.firstWhere((pulse) => pulse.sourceSlotIndex == null);
+}
+
 void _tickThroughCoreBombSweep(LightcoreController controller) {
   for (var step = 0; step < 20 && controller.shots.isNotEmpty; step++) {
     controller.tick(0.05);
@@ -128,12 +136,9 @@ void main() {
     expect(controller.coreState.projectileType, ProjectileType.starBolt);
     expect(controller.corePayloadLabel, 'No Payload');
 
-    controller.selectCenter();
-    controller.handleBattleCenterTap();
+    final pulse = _nextCorePulse(controller);
 
     expect(controller.queuedCorePackets, 0);
-    expect(controller.pulses, hasLength(1));
-    final pulse = controller.pulses.single;
     expect(pulse.sourceSlotIndex, isNull);
     expect(pulse.affinity, PrototypeAffinity.neutral);
     expect(pulse.projectileType, ProjectileType.starBolt);
@@ -162,7 +167,7 @@ void main() {
   });
 
   test(
-    'layer 1 center tap counts as queue occupancy while pulse is in flight',
+    'layer 1 auto core feed counts as queue occupancy while pulse is in flight',
     () {
       final controller = LightcoreController();
       addTearDown(controller.dispose);
@@ -173,8 +178,7 @@ void main() {
         '0/${controller.coreQueueCapacity}',
       );
 
-      controller.selectCenter();
-      controller.handleBattleCenterTap();
+      _nextCorePulse(controller);
 
       expect(controller.queuedCorePackets, 0);
       expect(controller.pulses, hasLength(1));
@@ -186,34 +190,18 @@ void main() {
     },
   );
 
-  test('layer 1 center tap waits for packet cooldown before another pulse', () {
+  test('layer 1 auto core feed caps floating payloads before queue', () {
     final controller = LightcoreController();
     addTearDown(controller.dispose);
 
-    controller.selectCenter();
-    controller.handleBattleCenterTap();
+    for (var step = 0; step < 60; step += 1) {
+      controller.tick(0.1);
+    }
 
-    final initialCooldown = controller.coreState.packetCooldownRemaining;
-    expect(initialCooldown, closeTo(controller.coreShotCooldown, 0.001));
-    expect(controller.coreQueueOccupancy, 1);
-
-    controller.handleBattleCenterTap();
-    expect(controller.coreQueueOccupancy, 1);
-
-    controller.tick(initialCooldown / 2);
-    controller.handleBattleCenterTap();
-    expect(controller.coreQueueOccupancy, 1);
-
-    _tickUntil(
-      controller,
-      () => controller.coreState.packetCooldownRemaining <= 0,
+    expect(
+      controller.pulses.where((pulse) => pulse.sourceSlotIndex == null).length,
+      lessThanOrEqualTo(LightcoreController.maxFloatingPayloadsPerSource),
     );
-    final occupancyBefore = controller.coreQueueOccupancy;
-
-    controller.handleBattleCenterTap();
-
-    expect(controller.coreQueueOccupancy, occupancyBefore + 1);
-    expect(controller.coreState.packetCooldownRemaining, greaterThan(0));
   });
 
   test('core queue upgrade raises queue capacity and spends lumens', () {
@@ -280,7 +268,7 @@ void main() {
     },
   );
 
-  test('core tap generates a basic packet before the core fires it', () {
+  test('core auto feed generates a basic packet before the core fires it', () {
     final controller = LightcoreController();
     addTearDown(controller.dispose);
 
@@ -289,14 +277,12 @@ void main() {
       angle: 0,
       radius: 220,
     );
-    controller.selectCenter();
-    controller.handleBattleCenterTap();
+    final pulse = _nextCorePulse(controller);
 
-    expect(controller.pulses, hasLength(1));
     expect(controller.queuedCorePackets, 0);
     expect(controller.shots, isEmpty);
 
-    expect(controller.boostPulseToCore(controller.pulses.single.id), isTrue);
+    expect(controller.boostPulseToCore(pulse.id), isTrue);
     _tickUntil(controller, () => controller.shots.isNotEmpty);
 
     expect(controller.queuedCorePackets, 0);
@@ -326,9 +312,8 @@ void main() {
     final initialFirstHealth = _healthForEnemy(controller, firstEnemy!.id);
     final initialSecondHealth = _healthForEnemy(controller, secondEnemy!.id);
 
-    controller.selectCenter();
-    controller.handleBattleCenterTap();
-    expect(controller.boostPulseToCore(controller.pulses.single.id), isTrue);
+    final pulse = _nextCorePulse(controller);
+    expect(controller.boostPulseToCore(pulse.id), isTrue);
     _tickUntil(controller, () => controller.shots.isNotEmpty);
     for (var step = 0; step < 20 && controller.shots.isNotEmpty; step++) {
       controller.tick(0.05);
