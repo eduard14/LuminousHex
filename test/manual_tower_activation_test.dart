@@ -43,7 +43,30 @@ double _healthForEnemy(LightcoreController controller, String enemyId) {
 }
 
 void main() {
-  test('battle slot taps activate built towers without opening stats', () {
+  test(
+    'battle slot taps select built towers while payloads feed separately',
+    () {
+      final controller = LightcoreController();
+      addTearDown(controller.dispose);
+      controller.debugDisableTutorial();
+
+      controller.lumens = 1000;
+      controller.kills = LightcoreController.unlockKillsForOuterSlot(0);
+      expect(controller.buildTowerAt(0, TowerLibrary.redPrism), isTrue);
+      controller.selectCenter();
+      expect(controller.selectedSlotIndex, isNull);
+      expect(controller.debugSetTowerCharge(0, charge: 1.2), isTrue);
+
+      controller.handleBattleSlotTap(0);
+
+      expect(controller.selectedSlotIndex, 0);
+      expect(controller.towerRangePreviewSlotIndex, 0);
+      expect(controller.pulses, isEmpty);
+      expect(controller.slots[0].charge, greaterThanOrEqualTo(1));
+    },
+  );
+
+  test('unmanaged towers auto-feed payload pieces at starter rate', () {
     final controller = LightcoreController();
     addTearDown(controller.dispose);
     controller.debugDisableTutorial();
@@ -51,90 +74,98 @@ void main() {
     controller.lumens = 1000;
     controller.kills = LightcoreController.unlockKillsForOuterSlot(0);
     expect(controller.buildTowerAt(0, TowerLibrary.redPrism), isTrue);
-    controller.selectCenter();
-    expect(controller.selectedSlotIndex, isNull);
     expect(controller.debugSetTowerCharge(0, charge: 1.2), isTrue);
 
-    controller.handleBattleSlotTap(0);
+    controller.tick(0.1);
 
-    expect(controller.selectedSlotIndex, isNull);
-    expect(controller.towerRangePreviewSlotIndex, 0);
     expect(controller.pulses, isNotEmpty);
     expect(controller.slots[0].charge, 0);
   });
 
-  test('unmanaged towers hold charge while managers automate ready taps', () {
+  test('core managers improve payload feed after shell coverage', () {
     final controller = LightcoreController();
     addTearDown(controller.dispose);
+    controller.debugDisableTutorial();
 
     controller.lumens = 1000;
     controller.kills = LightcoreController.unlockKillsForOuterSlot(0);
     expect(controller.buildTowerAt(0, TowerLibrary.redPrism), isTrue);
-
-    controller.tick(5);
-
-    expect(controller.slots[0].charge, greaterThanOrEqualTo(1));
-    expect(controller.pulses, isEmpty);
-    expect(controller.queuedCorePackets, 0);
+    final starterRate = controller.towerPayloadFeedRate(controller.slots[0]);
 
     _completeLayer1Coverage(controller, TowerLibrary.redPrism);
     controller.flux = LightcoreController.towerManagerFluxCost;
     expect(controller.forgeTowerManager(), isTrue);
     controller.equipCardToSlot(controller.cards.single.instanceId, 0);
 
-    controller.tick(0.1);
-
-    expect(controller.pulses, isNotEmpty);
-    expect(controller.slots[0].charge, 0);
+    final managedRate = controller.towerPayloadFeedRate(controller.slots[0]);
+    expect(managedRate, greaterThan(starterRate));
   });
 
-  test('manual tower taps are disabled once a manager automates the shell', () {
+  test('payload boost accelerates a floating piece toward the queue', () {
     final controller = LightcoreController();
     addTearDown(controller.dispose);
+    controller.debugDisableTutorial();
 
     controller.lumens = 1000;
     controller.kills = LightcoreController.unlockKillsForOuterSlot(0);
     expect(controller.buildTowerAt(0, TowerLibrary.redPrism), isTrue);
     expect(controller.debugSetTowerCharge(0, charge: 1.2), isTrue);
 
-    _completeLayer1Coverage(controller, TowerLibrary.redPrism);
-    controller.flux = LightcoreController.towerManagerFluxCost;
-    expect(controller.forgeTowerManager(), isTrue);
-    controller.equipCardToSlot(controller.cards.single.instanceId, 0);
-
-    expect(controller.canActivateTower(controller.slots[0]), isTrue);
-    expect(controller.canManuallyActivateTower(controller.slots[0]), isFalse);
-
-    controller.handleBattleSlotTap(0);
-
-    expect(controller.pulses, isEmpty);
-    expect(controller.slots[0].charge, greaterThanOrEqualTo(1));
-
     controller.tick(0.1);
 
     expect(controller.pulses, isNotEmpty);
-    expect(controller.slots[0].charge, 0);
+    final pulse = controller.pulses.single;
+    expect(controller.boostPulseToCore(pulse.id), isTrue);
+    expect(controller.pulses.single.progress, greaterThan(pulse.progress));
   });
 
-  test('core managers automate ready tower taps', () {
+  test('critical boosted payload packets guarantee critical shots', () {
     final controller = LightcoreController();
     addTearDown(controller.dispose);
+    controller.debugDisableTutorial();
 
-    _completeLayer1Coverage(controller, TowerLibrary.redPrism);
-    controller.flux = LightcoreController.towerManagerFluxCost;
-    expect(controller.forgeTowerManager(), isTrue);
-    controller.equipCardToCore(controller.cards.single.instanceId);
+    controller.lumens = 1000;
+    controller.kills = LightcoreController.unlockKillsForOuterSlot(0);
+    expect(controller.buildTowerAt(0, TowerLibrary.redPrism), isTrue);
     expect(controller.debugSetTowerCharge(0, charge: 1.2), isTrue);
 
-    expect(controller.pulses, isEmpty);
-
     controller.tick(0.1);
-
-    final towerPulses = controller.pulses.where(
-      (pulse) => pulse.sourceSlotIndex != null,
+    final pulse = controller.pulses.single;
+    expect(
+      controller.releaseDraggedPulse(pulse.id, crossedSourceTower: true),
+      isTrue,
     );
-    expect(towerPulses, isNotEmpty);
-    expect(controller.coreState.automationCooldownRemaining, 0);
+    for (
+      var step = 0;
+      step < 80 && controller.queuedAmmoPackets.isEmpty;
+      step += 1
+    ) {
+      controller.tick(0.05);
+    }
+
+    expect(
+      controller.queuedAmmoPackets.any((packet) => packet.criticalBoosted),
+      isTrue,
+    );
+    final enemy = controller.debugSpawnEnemyFromCard(
+      EnemyLibrary.basicWhite.id,
+      angle: 0,
+      radius: 180,
+      level: 1,
+    );
+    expect(enemy, isNotNull);
+    for (var step = 0; step < 80 && controller.shots.isEmpty; step += 1) {
+      controller.tick(0.05);
+    }
+    expect(controller.shots.any((shot) => shot.criticalBoosted), isTrue);
+    for (
+      var step = 0;
+      step < 80 && !controller.impacts.any((impact) => impact.critical);
+      step += 1
+    ) {
+      controller.tick(0.05);
+    }
+    expect(controller.impacts.any((impact) => impact.critical), isTrue);
   });
 
   test('core managers do not generate free core packets', () {
@@ -293,7 +324,7 @@ void main() {
     expect(controller.slots[0].charge, 0);
   });
 
-  test('red tower bomb damages nearby enemies through manual activation', () {
+  test('red tower bomb damages nearby enemies through payload feed', () {
     final controller = LightcoreController();
     addTearDown(controller.dispose);
 
@@ -327,7 +358,9 @@ void main() {
     final initialSplashHealth = _healthForEnemy(controller, splashEnemy!.id);
     final initialOutsideHealth = _healthForEnemy(controller, outsideEnemy!.id);
 
-    controller.handleBattleSlotTap(0);
+    controller.tick(0.1);
+    expect(controller.pulses, isNotEmpty);
+    controller.boostPulseToCore(controller.pulses.single.id);
     for (
       var step = 0;
       step < 80 &&
@@ -420,30 +453,32 @@ void main() {
     expect(controller.bannerMessage, contains('Core Stability'));
   });
 
-  test(
-    'promoted child tower taps generate packets instead of entering shell',
-    () {
-      final controller = LightcoreController();
-      addTearDown(controller.dispose);
+  test('promoted child slot taps select while payloads feed separately', () {
+    final controller = LightcoreController();
+    addTearDown(controller.dispose);
+    controller.debugDisableTutorial();
 
-      _maxOutCurrentShell(controller, TowerLibrary.redPrism);
-      controller.unlockLayer2Tower();
-      expect(controller.activeLayer.tier, 2);
+    _maxOutCurrentShell(controller, TowerLibrary.redPrism);
+    controller.unlockLayer2Tower();
+    expect(controller.activeLayer.tier, 2);
 
-      expect(controller.createChildLayer(0, PrototypeAffinity.aether), isTrue);
-      _maxOutCurrentShell(controller, TowerLibrary.bluePrism);
-      controller.unlockLayer2Tower();
+    expect(controller.createChildLayer(0, PrototypeAffinity.aether), isTrue);
+    _maxOutCurrentShell(controller, TowerLibrary.bluePrism);
+    controller.unlockLayer2Tower();
 
-      final parentLayerId = controller.activeLayer.id;
-      expect(controller.slots[0].isPromotedChildTower, isTrue);
-      expect(controller.debugSetTowerCharge(0, charge: 1.2), isTrue);
+    final parentLayerId = controller.activeLayer.id;
+    expect(controller.slots[0].isPromotedChildTower, isTrue);
+    expect(controller.debugSetTowerCharge(0, charge: 1.2), isTrue);
 
-      controller.handleBattleSlotTap(0);
+    controller.handleBattleSlotTap(0);
 
-      expect(controller.activeLayer.id, parentLayerId);
-      expect(controller.selectedSlotIndex, isNull);
-      expect(controller.pulses, isNotEmpty);
-      expect(controller.slots[0].charge, 0);
-    },
-  );
+    expect(controller.activeLayer.id, parentLayerId);
+    expect(controller.selectedSlotIndex, 0);
+    expect(controller.pulses, isEmpty);
+    expect(controller.slots[0].charge, greaterThanOrEqualTo(1));
+
+    controller.tick(0.1);
+    expect(controller.pulses, isNotEmpty);
+    expect(controller.slots[0].charge, 0);
+  });
 }

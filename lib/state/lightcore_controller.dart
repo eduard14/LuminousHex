@@ -403,33 +403,33 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
   ),
   LightcoreTutorialStep.tapFirstTower: LightcoreTutorialQuestDefinition(
     id: 'TUT-007',
-    title: 'Queue a Pulse',
+    title: 'Catch a Payload',
     teachGoal:
-        'Charged towers do not fire by themselves yet. Tapping one adds a packet to the core queue, then the core spends it as a shot.',
+        'Towers create floating payload pieces. Catch one to feed the Lightcore faster, or route it through the tower center for a critical packet.',
     trigger: 'First tower exists',
-    primaryClickTarget: 'Battlefield > charged first tower',
+    primaryClickTarget: 'Battlefield > floating payload piece',
     coachCopy:
-        'Tap the charged first tower to add pulses. More queued shots means faster kills, more Lumens, and earlier upgrades.',
-    completionCondition: 'Add 3 queue pulses',
+        'Tap a floating payload piece to send it to the Lightcore. Drag it through the producing tower center first to make that packet critical.',
+    completionCondition: 'Catch 3 payload pieces',
     reward: 'Lumens and White Drift practice scan',
     failureHelpState:
-        'If the cue says CHARGING or COOLDOWN, wait until it changes to ADD TO QUEUE.',
-    analyticsEvent: 'tutorial_queue_pulse',
+        'Wait for the tower to create a colored piece, then tap or drag that piece toward the Lightcore.',
+    analyticsEvent: 'tutorial_catch_payload',
   ),
   LightcoreTutorialStep.tapSecondShellTower: LightcoreTutorialQuestDefinition(
     id: 'TUT-008',
-    title: 'Queue From a Child Shell',
+    title: 'Catch Child Payloads',
     teachGoal:
-        'Child-shell towers use the same ready-tap rule before Overdrive appears.',
+        'Child-shell towers use the same payload-piece rule before Overdrive appears.',
     trigger: 'First child shell has a charged tower',
-    primaryClickTarget: 'Battlefield > charged child-shell tower',
+    primaryClickTarget: 'Battlefield > child-shell payload piece',
     coachCopy:
-        'Tap the charged tower in this child shell. It still feeds the core queue before the core fires.',
-    completionCondition: 'Add one child-shell queue pulse',
+        'Catch a floating payload piece in this child shell. It still feeds the core queue before the core fires.',
+    completionCondition: 'Catch one child-shell payload piece',
     reward: 'Small Lumen grant',
     failureHelpState:
-        'Wait for the highlighted child-shell tower to become ready.',
-    analyticsEvent: 'tutorial_second_shell_tap',
+        'Wait for the highlighted child-shell tower to create a payload piece.',
+    analyticsEvent: 'tutorial_second_shell_payload',
   ),
   LightcoreTutorialStep
       .upgradeFirstTowerToLevel3: LightcoreTutorialQuestDefinition(
@@ -495,11 +495,11 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
     id: 'TUT-012',
     title: 'Auto Queue Check',
     teachGoal:
-        'Managers automate the repeated tower taps so the queue keeps filling while you are idle.',
+        'Managers improve payload feed so the queue keeps filling while you are idle.',
     trigger: 'Manager assigned',
     primaryClickTarget: 'Core > Queue display',
     coachCopy:
-        'Watch the assigned manager generate queued pulses. You can still tap manually during active play.',
+        'Watch the assigned manager feed payloads. You can still catch pieces manually during active play for faster and critical packets.',
     completionCondition: 'Let manager generate 5 pulses',
     reward: 'Lumens and Threat Scan x1',
     failureHelpState:
@@ -685,7 +685,7 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
     trigger: 'Managers unlocked',
     primaryClickTarget: 'Bottom nav > Managers',
     coachCopy:
-        'Open Managers. Core Managers automate tower taps, while Threat Directors tune live spawns, enemy strength, and rewards.',
+        'Open Managers. Core Managers improve payload feed, while Threat Directors tune live spawns, enemy strength, and rewards.',
     completionCondition: 'Managers screen opened',
     reward: 'Flux',
     failureHelpState: 'Use the highlighted Managers button in the bottom nav.',
@@ -694,11 +694,11 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
   LightcoreTutorialStep.forgeTowerManager: LightcoreTutorialQuestDefinition(
     id: 'TUT-026',
     title: 'Forge a Core Manager',
-    teachGoal: 'Core Managers can automate ready taps across the active shell.',
+    teachGoal: 'Core Managers improve payload feed across the active shell.',
     trigger: 'Manager foundry opened with enough Flux',
     primaryClickTarget: 'Managers > Core Manager foundry > Forge',
     coachCopy:
-        'Forge one Core Manager. A manager can keep ready towers feeding the queue without manual taps.',
+        'Forge one Core Manager. A manager keeps payload pieces feeding the queue without manual catching.',
     completionCondition: 'Own one Core Manager',
     reward: 'Flux',
     failureHelpState: 'Use the highlighted Core Manager forge control.',
@@ -708,11 +708,11 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
     id: 'TUT-027',
     title: 'Assign a Core Manager',
     teachGoal:
-        'A Core Manager assigns to the shell and automates ready taps for every built tower.',
+        'A Core Manager assigns to the shell and improves payload feed for every built tower.',
     trigger: 'After Output Efficiency shown',
     primaryClickTarget: 'Managers > Core Manager > Assign to Shell',
     coachCopy:
-        'Assign the Core Manager to the shell. Managers tap charged towers automatically and add tower-wide bonuses.',
+        'Assign the Core Manager to the shell. Managers feed payloads automatically and add tower-wide bonuses.',
     completionCondition: 'Assign manager to core',
     reward: 'Starter manager',
     failureHelpState:

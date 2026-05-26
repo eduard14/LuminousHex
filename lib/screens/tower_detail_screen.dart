@@ -358,8 +358,8 @@ class _TowerDetailContent extends StatelessWidget {
           title: 'Shell Core Manager',
           subtitle: controller.managerAssignmentUnlocked
               ? card?.summary ??
-                    'Open the Managers tab to assign a Core Manager for ready tower taps on this shell.'
-              : 'Manager assignment unlocks when this Layer 1 shell has all ${LightcoreController.slotCount} outer towers online. Until then, tap ready towers manually.',
+                    'Open the Managers tab to assign a Core Manager for payload feed on this shell.'
+              : 'Manager assignment unlocks when this Layer 1 shell has all ${LightcoreController.slotCount} outer towers online. Until then, catch payload pieces manually.',
           tint: LightcorePalette.layer2,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,

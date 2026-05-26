@@ -30,8 +30,8 @@ extension LightcoreControllerStateAccessors on LightcoreController {
       return 'WAIT';
     }
     final tower = _slots[slotIndex];
-    if (canManuallyActivateTower(tower)) {
-      return 'ADD TO QUEUE';
+    if (_pulses.any((pulse) => pulse.sourceSlotIndex == slotIndex)) {
+      return 'CATCH PAYLOAD';
     }
     if (tower.cooldownRemaining > 0) {
       return 'COOLDOWN';

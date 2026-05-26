@@ -1314,6 +1314,7 @@ class EnergyPulseState {
     required this.minDamageMultiplier,
     required this.maxDamageMultiplier,
     required this.progress,
+    this.criticalBoosted = false,
   });
 
   final String id;
@@ -1336,8 +1337,9 @@ class EnergyPulseState {
   final double minDamageMultiplier;
   final double maxDamageMultiplier;
   final double progress;
+  final bool criticalBoosted;
 
-  EnergyPulseState copyWith({double? progress}) {
+  EnergyPulseState copyWith({double? progress, bool? criticalBoosted}) {
     return EnergyPulseState(
       id: id,
       sourceSlotIndex: sourceSlotIndex,
@@ -1359,6 +1361,7 @@ class EnergyPulseState {
       minDamageMultiplier: minDamageMultiplier,
       maxDamageMultiplier: maxDamageMultiplier,
       progress: progress ?? this.progress,
+      criticalBoosted: criticalBoosted ?? this.criticalBoosted,
     );
   }
 }
@@ -1383,6 +1386,7 @@ class AmmoPacket {
     required this.defensePenetration,
     required this.minDamageMultiplier,
     required this.maxDamageMultiplier,
+    this.criticalBoosted = false,
   });
 
   final String id;
@@ -1403,6 +1407,7 @@ class AmmoPacket {
   final double defensePenetration;
   final double minDamageMultiplier;
   final double maxDamageMultiplier;
+  final bool criticalBoosted;
 }
 
 class CoreShotState {
@@ -1426,6 +1431,7 @@ class CoreShotState {
     this.bossDamageMultiplier = 1,
     this.normalDamageMultiplier = 1,
     this.defensePenetration = 0,
+    this.criticalBoosted = false,
     this.hitEnemyIds = const <String>[],
   });
 
@@ -1448,6 +1454,7 @@ class CoreShotState {
   final double bossDamageMultiplier;
   final double normalDamageMultiplier;
   final double defensePenetration;
+  final bool criticalBoosted;
   final List<String> hitEnemyIds;
 
   CoreShotState copyWith({double? progress, List<String>? hitEnemyIds}) {
@@ -1471,6 +1478,7 @@ class CoreShotState {
       bossDamageMultiplier: bossDamageMultiplier,
       normalDamageMultiplier: normalDamageMultiplier,
       defensePenetration: defensePenetration,
+      criticalBoosted: criticalBoosted,
       hitEnemyIds: hitEnemyIds ?? this.hitEnemyIds,
     );
   }

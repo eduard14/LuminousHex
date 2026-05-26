@@ -43,6 +43,28 @@ void _unlockTutorialFirstHex(LightcoreController controller) {
   );
 }
 
+void _catchTutorialPayloads(LightcoreController controller, int count) {
+  final fabricationRemaining = controller.slots[0].fabricationRemainingSeconds;
+  if (fabricationRemaining > 0) {
+    controller.tick(fabricationRemaining + 0.1);
+  }
+  for (var catchIndex = 0; catchIndex < count; catchIndex += 1) {
+    final previousFireSequence = controller.slots[0].fireSequence;
+    expect(controller.debugSetTowerCharge(0, charge: 1), isTrue);
+    for (
+      var step = 0;
+      step < 600 && controller.slots[0].fireSequence <= previousFireSequence;
+      step += 1
+    ) {
+      controller.tick(0.05);
+    }
+    expect(controller.slots[0].fireSequence, greaterThan(previousFireSequence));
+    if (controller.pulses.isNotEmpty) {
+      expect(controller.boostPulseToCore(controller.pulses.last.id), isTrue);
+    }
+  }
+}
+
 Future<void> _pumpShell(
   WidgetTester tester,
   LightcoreController controller, {
@@ -1463,10 +1485,7 @@ void main() {
     controller.selectSlot(0);
     expect(controller.tutorialBuildTowerAt(0, TowerLibrary.redPrism), isTrue);
     controller.markTutorialFirstTowerStatsOpened();
-    for (var tap = 0; tap < 3; tap++) {
-      expect(controller.debugSetTowerCharge(0, charge: 1), isTrue);
-      expect(controller.activateTowerSlot(0, showBanner: false), isTrue);
-    }
+    _catchTutorialPayloads(controller, 3);
     controller.lumens = 1000;
     expect(controller.tutorialUpgradeTower(0), isTrue);
     controller.lumens = controller.upgradeCost(controller.slots[0]);
@@ -1588,9 +1607,7 @@ void main() {
     expect(find.text('TS 2.5k'), findsOneWidget);
   });
 
-  testWidgets('global chat opens from hamburger social entry', (
-    tester,
-  ) async {
+  testWidgets('global chat opens from hamburger social entry', (tester) async {
     tester.view.physicalSize = const Size(1200, 900);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -1605,7 +1622,10 @@ void main() {
     expect(find.text('Friends'), findsWidgets);
     expect(find.text('Global Chat'), findsOneWidget);
     expect(find.text('Space Room'), findsNothing);
-    expect(find.textContaining('global chat', findRichText: true), findsWidgets);
+    expect(
+      find.textContaining('global chat', findRichText: true),
+      findsWidgets,
+    );
   });
 
   testWidgets('battle keeps the resource rail while settings opens stats', (
@@ -2172,14 +2192,14 @@ void main() {
     );
     await _pumpTransition(tester);
 
-    expect(find.text('Queue a Pulse'), findsWidgets);
+    expect(find.text('Catch a Payload'), findsWidgets);
     expect(
       find.byKey(const ValueKey<String>('battle-quest-detail-card')),
       findsOneWidget,
     );
     expect(
       find.text(
-        'Tap the charged first tower to add pulses. More queued shots means faster kills, more Lumens, and earlier upgrades.',
+        'Tap a floating payload piece to send it to the Lightcore. Drag it through the producing tower center first to make that packet critical.',
       ),
       findsWidgets,
     );
@@ -2211,7 +2231,8 @@ void main() {
     expect(controller.tutorialBuildTowerAt(0, TowerLibrary.redPrism), isTrue);
     controller.markTutorialFirstTowerStatsOpened();
     expect(controller.debugSetTowerCharge(0, charge: 1), isTrue);
-    expect(controller.tutorialBattleSlotGuideLabel(0), 'ADD TO QUEUE');
+    controller.tick(0.1);
+    expect(controller.tutorialBattleSlotGuideLabel(0), 'CATCH PAYLOAD');
 
     await _pumpBattleScreen(tester, controller);
 
@@ -2260,10 +2281,7 @@ void main() {
     controller.selectSlot(0);
     expect(controller.tutorialBuildTowerAt(0, TowerLibrary.redPrism), isTrue);
     controller.markTutorialFirstTowerStatsOpened();
-    for (var tap = 0; tap < 3; tap++) {
-      expect(controller.debugSetTowerCharge(0, charge: 1), isTrue);
-      expect(controller.activateTowerSlot(0, showBanner: false), isTrue);
-    }
+    _catchTutorialPayloads(controller, 3);
     expect(
       controller.tutorialStep,
       LightcoreTutorialStep.upgradeFirstTowerToLevel3,

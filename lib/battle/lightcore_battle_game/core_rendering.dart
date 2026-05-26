@@ -2,17 +2,7 @@ part of '../lightcore_battle_game.dart';
 
 extension LightcoreBattleGameCoreRendering on LightcoreBattleGame {
   List<ProjectileType> get debugCoreQueueOrbitProjectileTypes =>
-      _coreQueueOrbitPackets()
-          .map((packet) => packet.projectileType)
-          .toList(growable: false);
-
-  List<({ProjectileType projectileType, double alpha})>
-  _coreQueueOrbitPackets() {
-    return <({ProjectileType projectileType, double alpha})>[
-      for (final packet in controller.queuedAmmoPackets)
-        (projectileType: packet.projectileType, alpha: 0.92),
-    ];
-  }
+      const <ProjectileType>[];
 
   void _renderHexChargeIndicator(
     Canvas canvas,
@@ -621,44 +611,6 @@ extension LightcoreBattleGameCoreRendering on LightcoreBattleGame {
         tint: LightcorePalette.quest,
         tapCueLabel: controller.tutorialBattleCoreGuideLabel,
       );
-    }
-
-    final queuePackets = _coreQueueOrbitPackets();
-    final packetCount = queuePackets.length.clamp(
-      0,
-      controller.coreQueueCapacity,
-    );
-    const packetsPerRing = 8;
-    var renderedPackets = 0;
-    var ringIndex = 0;
-    while (renderedPackets < packetCount) {
-      final packetsOnRing = math.min(
-        packetsPerRing,
-        packetCount - renderedPackets,
-      );
-      final orbitRadius = _coreRadius * (0.96 + (ringIndex * 0.16));
-      final markerRadius =
-          _coreRadius * math.max(0.058, 0.085 - (ringIndex * 0.012));
-      for (var packetIndex = 0; packetIndex < packetsOnRing; packetIndex++) {
-        final angle =
-            (((math.pi * 2) / packetsOnRing) * packetIndex) -
-            (math.pi / 2) +
-            (controller.elapsed * (1.9 - (ringIndex * 0.08)));
-        final orbit = Offset(
-          center.dx + math.cos(angle) * orbitRadius,
-          center.dy + math.sin(angle) * orbitRadius,
-        );
-        final packet = queuePackets[renderedPackets + packetIndex];
-        canvas.drawPath(
-          _hexPath(orbit, markerRadius),
-          Paint()
-            ..color = _queuePacketColor(
-              packet.projectileType,
-            ).withValues(alpha: packet.alpha),
-        );
-      }
-      renderedPackets += packetsOnRing;
-      ringIndex += 1;
     }
   }
 

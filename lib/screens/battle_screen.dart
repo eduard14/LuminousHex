@@ -146,6 +146,7 @@ class _BattleScreenState extends State<BattleScreen> {
   int? _canvasTapPointer;
   Offset? _canvasTapStart;
   bool _canvasTapCanceled = false;
+  bool _canvasPayloadDragActive = false;
   late final AppLifecycleListener _appLifecycleListener;
 
   @override
@@ -392,6 +393,10 @@ class _BattleScreenState extends State<BattleScreen> {
       return;
     }
     if (event.buttons != kPrimaryButton || _canvasTapPointer != null) {
+      if (_canvasPayloadDragActive) {
+        _game.cancelCanvasPayloadDrag();
+        _canvasPayloadDragActive = false;
+      }
       _canvasTapCanceled = true;
       _logBattle('pointer-down-canceled', <String, Object?>{
         'buttons': event.buttons,
@@ -401,7 +406,10 @@ class _BattleScreenState extends State<BattleScreen> {
     }
     _canvasTapPointer = event.pointer;
     _canvasTapStart = event.localPosition;
-    _canvasTapCanceled = false;
+    _canvasPayloadDragActive = _game.handleCanvasPointerDown(
+      event.localPosition,
+    );
+    _canvasTapCanceled = _canvasPayloadDragActive;
     _logBattle('pointer-down', <String, Object?>{
       'pointer': event.pointer,
       'x': event.localPosition.dx.toStringAsFixed(1),
@@ -415,6 +423,11 @@ class _BattleScreenState extends State<BattleScreen> {
     }
     final start = _canvasTapStart;
     if (event.pointer != _canvasTapPointer || start == null) {
+      return;
+    }
+    if (_canvasPayloadDragActive) {
+      _game.handleCanvasPointerMove(event.localPosition);
+      _canvasTapCanceled = true;
       return;
     }
     if ((event.localPosition - start).distance > _canvasTapSlop) {
@@ -435,7 +448,9 @@ class _BattleScreenState extends State<BattleScreen> {
       'canceled': _canvasTapCanceled,
       'gameControllerCurrent': identical(_game.controller, widget.controller),
     });
-    if (event.pointer == _canvasTapPointer && !_canvasTapCanceled) {
+    if (event.pointer == _canvasTapPointer && _canvasPayloadDragActive) {
+      _game.handleCanvasPointerUp(event.localPosition);
+    } else if (event.pointer == _canvasTapPointer && !_canvasTapCanceled) {
       _game.handleCanvasTap(event.localPosition);
     }
     _resetCanvasTap();
@@ -454,6 +469,7 @@ class _BattleScreenState extends State<BattleScreen> {
     _canvasTapPointer = null;
     _canvasTapStart = null;
     _canvasTapCanceled = false;
+    _canvasPayloadDragActive = false;
   }
 
   void _handleCenterTap() {
@@ -1183,6 +1199,12 @@ class _BattleScreenState extends State<BattleScreen> {
     return Stack(
       children: [
         Positioned.fill(child: _buildGameCanvas(compact ? 20 : 0)),
+        if (widget.showBattleHud)
+          Positioned(
+            right: inset,
+            top: topInset + (compact ? 54 : 66),
+            child: _CoreQueueRail(controller: controller, compact: compact),
+          ),
         if (widget.showBattleHud && collapseHud != null)
           Positioned(right: inset, top: topInset, child: collapseHud),
         if (widget.showBattleHud && selectionHud != null)
@@ -2332,6 +2354,86 @@ class _InlineStatList extends StatelessWidget {
           if (index < rows.length - 1) const SizedBox(height: 6),
         ],
       ],
+    );
+  }
+}
+
+class _CoreQueueRail extends StatelessWidget {
+  const _CoreQueueRail({required this.controller, required this.compact});
+
+  final LightcoreController controller;
+  final bool compact;
+
+  @override
+  Widget build(BuildContext context) {
+    final packets = controller.queuedAmmoPackets;
+    final visibleSlots = compact ? 5 : 7;
+    final cellSize = compact ? 24.0 : 28.0;
+    return Semantics(
+      label:
+          'Core queue ${controller.queuedCorePackets} of ${controller.coreQueueCapacity}',
+      child: Container(
+        width: cellSize + 12,
+        constraints: BoxConstraints(maxHeight: (cellSize + 6) * visibleSlots),
+        padding: const EdgeInsets.all(6),
+        decoration: BoxDecoration(
+          color: LightcorePalette.panel.withValues(alpha: 0.78),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: LightcorePalette.stroke.withValues(alpha: 0.5),
+          ),
+        ),
+        child: ListView.separated(
+          shrinkWrap: true,
+          reverse: true,
+          itemCount: controller.coreQueueCapacity,
+          separatorBuilder: (_, _) => const SizedBox(height: 6),
+          itemBuilder: (context, index) {
+            final packet = index < packets.length ? packets[index] : null;
+            final color = packet?.projectileType.affinity.color;
+            final payloadColor = packet?.payloadType.affinity?.color;
+            return Container(
+              width: cellSize,
+              height: cellSize,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(6),
+                color:
+                    color?.withValues(alpha: 0.82) ??
+                    LightcorePalette.night.withValues(alpha: 0.45),
+                border: Border.all(
+                  color: packet == null
+                      ? LightcorePalette.stroke.withValues(alpha: 0.42)
+                      : packet.criticalBoosted
+                      ? LightcorePalette.solar
+                      : LightcorePalette.mist.withValues(alpha: 0.55),
+                  width: packet?.criticalBoosted == true ? 2.2 : 1.1,
+                ),
+                boxShadow: packet?.criticalBoosted == true
+                    ? [
+                        BoxShadow(
+                          color: LightcorePalette.solar.withValues(alpha: 0.45),
+                          blurRadius: 8,
+                        ),
+                      ]
+                    : null,
+              ),
+              child: payloadColor == null
+                  ? null
+                  : Align(
+                      alignment: Alignment.bottomRight,
+                      child: Container(
+                        width: cellSize * 0.36,
+                        height: cellSize * 0.36,
+                        decoration: BoxDecoration(
+                          color: payloadColor,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ),
+            );
+          },
+        ),
+      ),
     );
   }
 }

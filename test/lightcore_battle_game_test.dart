@@ -89,10 +89,7 @@ void main() {
 
     expect(controller.pulses, isEmpty);
     expect(controller.queuedAmmoPackets, hasLength(1));
-    expect(
-      game.debugCoreQueueOrbitProjectileTypes,
-      equals(<ProjectileType>[ProjectileType.starBolt]),
-    );
+    expect(game.debugCoreQueueOrbitProjectileTypes, isEmpty);
   });
 
   test('single-finger gesture pans the battle view', () {
@@ -180,7 +177,9 @@ void main() {
     controller.kills = LightcoreController.unlockKillsForOuterSlot(0);
     expect(controller.buildTowerAt(0, TowerLibrary.purplePrism), isTrue);
     expect(controller.debugSetTowerCharge(0, charge: 1.2), isTrue);
-    expect(controller.activateTowerSlot(0, showBanner: false), isTrue);
+    controller.tick(0.1);
+    expect(controller.pulses, isNotEmpty);
+    expect(controller.boostPulseToCore(controller.pulses.last.id), isTrue);
     expect(
       controller.debugSpawnEnemyFromCard(
         EnemyLibrary.basicWhite.id,
@@ -220,7 +219,6 @@ void main() {
     controller.kills = LightcoreController.unlockKillsForOuterSlot(0);
     expect(controller.buildTowerAt(0, TowerLibrary.purplePrism), isTrue);
     expect(controller.debugSetTowerCharge(0, charge: 1.2), isTrue);
-    expect(controller.activateTowerSlot(0, showBanner: false), isTrue);
     final enemy = controller.debugSpawnEnemyFromCard(
       EnemyLibrary.basicWhite.id,
       angle: 0,
@@ -229,6 +227,9 @@ void main() {
     );
     expect(enemy, isNotNull);
     final enemyId = enemy!.id;
+    controller.tick(0.1);
+    expect(controller.pulses, isNotEmpty);
+    expect(controller.boostPulseToCore(controller.pulses.last.id), isTrue);
 
     game.update(0);
     for (

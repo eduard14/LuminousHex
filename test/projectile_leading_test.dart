@@ -16,6 +16,25 @@ void _tickUntil(
   }
 }
 
+void _feedTowerPayload(LightcoreController controller, int slotIndex) {
+  final previousFireSequence = controller.slots[slotIndex].fireSequence;
+  for (
+    var step = 0;
+    step < 600 &&
+        controller.slots[slotIndex].fireSequence <= previousFireSequence;
+    step += 1
+  ) {
+    controller.tick(0.05);
+  }
+  expect(
+    controller.slots[slotIndex].fireSequence,
+    greaterThan(previousFireSequence),
+  );
+  if (controller.pulses.isNotEmpty) {
+    expect(controller.boostPulseToCore(controller.pulses.last.id), isTrue);
+  }
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -27,7 +46,7 @@ void main() {
     controller.kills = LightcoreController.unlockKillsForOuterSlot(0);
     expect(controller.buildTowerAt(0, TowerLibrary.orangePrism), isTrue);
     expect(controller.debugSetTowerCharge(0, charge: 1.2), isTrue);
-    expect(controller.activateTowerSlot(0, showBanner: false), isTrue);
+    _feedTowerPayload(controller, 0);
 
     final fastSpiral = EnemyLibrary.byRarity[EnemyCardRarity.legendary]!
         .firstWhere((enemy) => enemy.affinity == PrototypeAffinity.flare);
@@ -83,7 +102,7 @@ void main() {
     controller.kills = LightcoreController.unlockKillsForOuterSlot(0);
     expect(controller.buildTowerAt(0, TowerLibrary.orangePrism), isTrue);
     expect(controller.debugSetTowerCharge(0, charge: 1.2), isTrue);
-    expect(controller.activateTowerSlot(0, showBanner: false), isTrue);
+    _feedTowerPayload(controller, 0);
     expect(
       controller.debugSpawnEnemyFromCard(
         EnemyLibrary.basicWhite.id,

@@ -67,16 +67,26 @@ extension _LightcoreBattleGameProjectileRendering on LightcoreBattleGame {
       );
       canvas.drawCircle(
         currentOffset,
-        _slotRadius * 0.12,
+        _slotRadius * (pulse.criticalBoosted ? 0.17 : 0.12),
         Paint()
           ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10)
-          ..color = color.withValues(alpha: 0.6),
+          ..color = (pulse.criticalBoosted ? LightcorePalette.solar : color)
+              .withValues(alpha: 0.66),
       );
       canvas.drawCircle(
         currentOffset,
         _slotRadius * 0.09,
         Paint()..color = color,
       );
+      if (pulse.criticalBoosted) {
+        canvas.drawPath(
+          _hexPath(currentOffset, _slotRadius * 0.18),
+          Paint()
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 2.4
+            ..color = LightcorePalette.solar.withValues(alpha: 0.92),
+        );
+      }
       if (pulse.secondaryAffinity != null) {
         canvas.drawCircle(
           currentOffset.translate(_slotRadius * 0.04, -_slotRadius * 0.04),

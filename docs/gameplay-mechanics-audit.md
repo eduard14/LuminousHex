@@ -39,7 +39,7 @@ cadence, enemy strength, and reward bonuses.
 ## Current Gameplay Loop
 
 1. Reveal the shell by tapping/selecting the center.
-2. Tap charged towers to feed packets to the core and generate kills until
+2. Catch floating payload pieces to feed packets to the core faster and generate kills until
    outer slots unlock.
 3. Build outer towers with Lumens.
 4. Upgrade all built towers to level 5.

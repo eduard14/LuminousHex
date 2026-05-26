@@ -22,6 +22,28 @@ void _unlockTutorialFirstHex(LightcoreController controller) {
   );
 }
 
+void _catchTutorialPayloads(LightcoreController controller, int count) {
+  final fabricationRemaining = controller.slots[0].fabricationRemainingSeconds;
+  if (fabricationRemaining > 0) {
+    controller.tick(fabricationRemaining + 0.1);
+  }
+  for (var catchIndex = 0; catchIndex < count; catchIndex += 1) {
+    final previousFireSequence = controller.slots[0].fireSequence;
+    expect(controller.debugSetTowerCharge(0, charge: 1), isTrue);
+    for (
+      var step = 0;
+      step < 600 && controller.slots[0].fireSequence <= previousFireSequence;
+      step += 1
+    ) {
+      controller.tick(0.05);
+    }
+    expect(controller.slots[0].fireSequence, greaterThan(previousFireSequence));
+    if (controller.pulses.isNotEmpty) {
+      expect(controller.boostPulseToCore(controller.pulses.last.id), isTrue);
+    }
+  }
+}
+
 void _promoteRootShell(LightcoreController controller) {
   controller.lumens = 100000;
   controller.kills = LightcoreController.unlockKillsForOuterSlot(
@@ -197,10 +219,7 @@ void main() {
     );
     controller.markTutorialFirstTowerStatsOpened();
     expect(controller.tutorialStep, LightcoreTutorialStep.tapFirstTower);
-    for (var tap = 0; tap < 3; tap++) {
-      expect(controller.debugSetTowerCharge(0, charge: 1), isTrue);
-      expect(controller.activateTowerSlot(0, showBanner: false), isTrue);
-    }
+    _catchTutorialPayloads(controller, 3);
 
     controller.lumens = 1000;
     expect(
@@ -284,10 +303,7 @@ void main() {
         isFalse,
       );
       controller.markTutorialFirstTowerStatsOpened();
-      for (var tap = 0; tap < 3; tap += 1) {
-        expect(controller.debugSetTowerCharge(0, charge: 1), isTrue);
-        expect(controller.activateTowerSlot(0, showBanner: false), isTrue);
-      }
+      _catchTutorialPayloads(controller, 3);
       controller.selectSlot(0);
       while (controller.slots[0].level < 3) {
         controller.lumens = controller.upgradeCost(controller.slots[0]);
@@ -393,14 +409,15 @@ void main() {
     expect(controller.tutorialStep, LightcoreTutorialStep.tapFirstTower);
     expect(controller.tutorialBattleSlotGuideLabel(0), 'CHARGING');
     expect(controller.debugSetTowerCharge(0, charge: 1), isTrue);
+    controller.tick(0.1);
     expect(controller.tutorialStep, LightcoreTutorialStep.tapFirstTower);
-    expect(controller.tutorialHeadline, 'Queue a Pulse');
+    expect(controller.tutorialHeadline, 'Catch a Payload');
     expect(
       controller.tutorialPrompt,
-      'Tap the charged first tower to add pulses. More queued shots means faster kills, more Lumens, and earlier upgrades.',
+      'Tap a floating payload piece to send it to the Lightcore. Drag it through the producing tower center first to make that packet critical.',
     );
-    expect(controller.tutorialBattleSlotGuideLabel(0), 'ADD TO QUEUE');
-    expect(controller.activateTowerSlot(0, showBanner: false), isTrue);
+    expect(controller.tutorialBattleSlotGuideLabel(0), 'CATCH PAYLOAD');
+    expect(controller.boostPulseToCore(controller.pulses.last.id), isTrue);
 
     expect(controller.tutorialStep, LightcoreTutorialStep.tapFirstTower);
   });
@@ -589,7 +606,9 @@ void main() {
     expect(controller.debugSetTowerCharge(0, charge: 1), isTrue);
     expect(controller.tutorialStep, LightcoreTutorialStep.tapSecondShellTower);
     expect(controller.tutorialHighlightsBattleSlot(0), isTrue);
-    expect(controller.activateTowerSlot(0, showBanner: false), isTrue);
+    controller.tick(0.1);
+    expect(controller.pulses, isNotEmpty);
+    expect(controller.boostPulseToCore(controller.pulses.last.id), isTrue);
     expect(controller.tutorialHighlightsBattleSlot(0), isFalse);
     expect(
       controller.tutorialStep,

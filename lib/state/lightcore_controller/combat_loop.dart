@@ -355,12 +355,12 @@ extension LightcoreControllerCombatLoop on LightcoreController {
       );
       var nextTower = liveTower.copyWith(charge: charge);
 
-      final automationInterval = towerAutomationInterval(nextTower);
-      if (automationInterval == null) {
+      final feedInterval = towerPayloadFeedInterval(nextTower);
+      if (feedInterval == null) {
         nextTower = nextTower.copyWith(automationCooldownRemaining: 0);
       } else {
-        var automationCooldown = nextTower.automationCooldownRemaining - dt;
-        if (automationCooldown <= 0) {
+        var feedCooldown = nextTower.automationCooldownRemaining - dt;
+        if (feedCooldown <= 0) {
           final activatedTower = _towerAfterActivation(nextTower);
           if (activatedTower != null) {
             nextTower = activatedTower;
@@ -369,10 +369,10 @@ extension LightcoreControllerCombatLoop on LightcoreController {
               _tutorialAutoQueuedPulses += 1;
             }
           }
-          automationCooldown = automationInterval;
+          feedCooldown = feedInterval;
         }
         nextTower = nextTower.copyWith(
-          automationCooldownRemaining: automationCooldown,
+          automationCooldownRemaining: feedCooldown,
         );
       }
 
@@ -527,8 +527,11 @@ extension LightcoreControllerCombatLoop on LightcoreController {
               defensePenetration: pulse.defensePenetration,
               minDamageMultiplier: pulse.minDamageMultiplier,
               maxDamageMultiplier: pulse.maxDamageMultiplier,
+              criticalBoosted: pulse.criticalBoosted,
             ),
           );
+        } else {
+          nextPulses.add(pulse.copyWith(progress: 0.985));
         }
       } else {
         nextPulses.add(pulse.copyWith(progress: progress));

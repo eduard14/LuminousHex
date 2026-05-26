@@ -167,16 +167,6 @@ extension LightcoreControllerBattleTowerActions on LightcoreController {
       return;
     }
     final tower = _slots[slotIndex];
-    if (_threatRegionChallenge != null) {
-      if (!tower.isBuilt ||
-          tower.isFabricating ||
-          tower.isLayerProject ||
-          activeLayerPassiveOnly) {
-        return;
-      }
-      activateTowerSlot(slotIndex, selectForStats: false);
-      return;
-    }
     if (isCompositeLayer && tower.isLayerProject) {
       enterChildLayer(slotIndex);
       return;
@@ -193,7 +183,7 @@ extension LightcoreControllerBattleTowerActions on LightcoreController {
       selectSlot(slotIndex);
       return;
     }
-    activateTowerSlot(slotIndex, selectForStats: false);
+    selectSlot(slotIndex);
   }
 
   bool activateTowerSlot(
@@ -1060,7 +1050,7 @@ extension LightcoreControllerBattleTowerActions on LightcoreController {
       _syncTutorialStep(showBanner: false);
     }
     _showBanner(
-      '${_cards[cardIndex].name} assigned to shell automation for ready tower taps.',
+      '${_cards[cardIndex].name} assigned to improve shell payload feed.',
     );
     _notifyNow();
   }

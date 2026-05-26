@@ -209,7 +209,8 @@ extension LightcoreControllerLayerTraits on LightcoreController {
       return null;
     }
     for (var index = 0; index < _slots.length; index++) {
-      if (canManuallyActivateTower(_slots[index])) {
+      if (_pulses.any((pulse) => pulse.sourceSlotIndex == index) ||
+          canActivateTower(_slots[index])) {
         return index;
       }
     }
@@ -646,7 +647,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
     LightcoreTutorialStep.tapBattleCore =>
       'Emergency core shot fired. Use it when an anomaly reaches core range.',
     LightcoreTutorialStep.tapFirstTower =>
-      'Queue lesson complete. Towers feed packets; the core spends packets as shots.',
+      'Payload lesson complete. Towers feed pieces; the core spends queued packets as shots.',
     LightcoreTutorialStep.upgradeFirstTowerToLevel3 =>
       'Anchor tower tuned. Higher tower levels make every queued packet hit harder.',
     LightcoreTutorialStep.raiseThreat =>
@@ -656,7 +657,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
     LightcoreTutorialStep.readEffectiveGain =>
       'Flow mapped. Better threats only matter when Output Efficiency stays healthy.',
     LightcoreTutorialStep.assignTowerManager =>
-      'Manager assigned. Ready tower taps can now happen automatically.',
+      'Manager assigned. Payload feed now runs with better automation.',
     LightcoreTutorialStep.autoQueueCheck =>
       'Automation verified. The queue keeps moving even when you stop tapping.',
     LightcoreTutorialStep.upgradeFirstTowerToLevel4 =>
@@ -1441,8 +1442,8 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         LightcoreTutorialStep.buildFirstRedTower => 'Choose First Tower',
         LightcoreTutorialStep.inspectFirstTowerStats => 'Read Tower Stats',
         LightcoreTutorialStep.tapBattleCore => 'Tap The Core To Fire',
-        LightcoreTutorialStep.tapFirstTower => 'Tap The Tower To Fire',
-        LightcoreTutorialStep.tapSecondShellTower => 'Tap To Fire Shots',
+        LightcoreTutorialStep.tapFirstTower => 'Catch A Payload',
+        LightcoreTutorialStep.tapSecondShellTower => 'Catch Child Payloads',
         LightcoreTutorialStep.upgradeFirstTowerToLevel3 =>
           'Tune The Main Tower',
         LightcoreTutorialStep.raiseThreat => 'Raise Threat',
@@ -1493,9 +1494,9 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         LightcoreTutorialStep.tapBattleCore =>
           'Tap the glowing Lightcore on the battlefield to generate a shot.',
         LightcoreTutorialStep.tapFirstTower =>
-          'Tap the glowing charged first tower on the battlefield to fire.',
+          'Tap a floating payload piece to send it to the Lightcore, or drag it through its tower for a critical packet.',
         LightcoreTutorialStep.tapSecondShellTower =>
-          'Tap the glowing charged tower on the battlefield to fire.',
+          'Catch a floating child-shell payload piece to feed the Lightcore.',
         LightcoreTutorialStep.upgradeFirstTowerToLevel3 =>
           'Click the first tower in Hex 1 and upgrade it to level 3.',
         LightcoreTutorialStep.raiseThreat =>
@@ -1574,9 +1575,9 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         LightcoreTutorialStep.tapBattleCore =>
           'The Lightcore can generate a basic packet for the queue. Tap it when an anomaly reaches core range so the queued shot has a target.',
         LightcoreTutorialStep.tapFirstTower =>
-          'Towers do not spend charge on their own. Manual taps fire ready packets until a manager is assigned to automate that tap.',
+          'Towers create payload pieces on their own. Catch one to send it faster, or drag it through the tower center to make that packet critical.',
         LightcoreTutorialStep.tapSecondShellTower =>
-          'Second-shell lanes use the same live rule: charged towers only feed the core after a tap, then the core converts that packet into a shot.',
+          'Second-shell lanes use the same payload-piece rule: catch the piece to feed the core faster, then the core converts that packet into a shot.',
         LightcoreTutorialStep.upgradeFirstTowerToLevel3 =>
           'Early upgrades beat overexpanding. One strong anchor tower produces better damage and charge flow than several weak ones.',
         LightcoreTutorialStep.raiseThreat =>
@@ -1586,7 +1587,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         LightcoreTutorialStep.readEffectiveGain =>
           'Output Efficiency turns threat pressure into a visible gain multiplier, so the best scan is the one your core can keep stable.',
         LightcoreTutorialStep.autoQueueCheck =>
-          'Automation proves an assigned manager can support the core by taking over ready taps after the full shell is online.',
+          'Automation proves an assigned manager can support the core by improving payload feed after the full shell is online.',
         LightcoreTutorialStep.upgradeFirstTowerToLevel4 =>
           'A level 4 anchor keeps the lane efficient before Lumens get split across multiple towers.',
         LightcoreTutorialStep.pullFirstRedEnemy =>
@@ -1614,9 +1615,9 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         LightcoreTutorialStep.openManagers =>
           'Managers are flux-forged modifiers. Core Managers assign to the shell, while Threat Directors attach to Threat Map regions.',
         LightcoreTutorialStep.forgeTowerManager =>
-          'Core Manager pulls cost Flux and advance the Core Manager Pass. Each roll can automate ready-taps across the active shell.',
+          'Core Manager pulls cost Flux and advance the Core Manager Pass. Each roll can improve payload feed across the active shell.',
         LightcoreTutorialStep.assignTowerManager =>
-          'Assigned Core Managers spend prism charge for you, turning manual taps into an automated firing rhythm.',
+          'Assigned Core Managers spend prism charge for you, turning payload feed into a steadier automated rhythm.',
         LightcoreTutorialStep.forgeEnemyManager =>
           'Threat Director pulls cost Flux and advance the Threat Director Pass. Their bonuses tune live spawns, enemy strength, and rewards.',
         LightcoreTutorialStep.assignEnemyManager =>
@@ -1655,9 +1656,9 @@ extension LightcoreControllerLayerTraits on LightcoreController {
           LightcoreTutorialStep.tapBattleCore =>
             'A hostile signature has crossed the core lens. One tap starts a core pulse for the queue.',
           LightcoreTutorialStep.tapFirstTower =>
-            'The prism hums at full charge, waiting for a pilot command instead of firing blind.',
+            'A payload piece is floating. Catch it, or route it through the tower center for a critical packet.',
           LightcoreTutorialStep.tapSecondShellTower =>
-            'The next shell is awake, but its firing rhythm still needs a direct pilot tap before Lumo hands you speed controls.',
+            'The next shell is awake. Catch one payload piece before Lumo hands you speed controls.',
           LightcoreTutorialStep.upgradeFirstTowerToLevel3 =>
             'Command is tuning the flagship lane before exposing more of the shell to hostile traffic.',
           LightcoreTutorialStep.raiseThreat =>

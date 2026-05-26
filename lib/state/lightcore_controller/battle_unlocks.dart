@@ -7,7 +7,7 @@ extension LightcoreControllerBattleUnlocks on LightcoreController {
     }
     final manager = cardForSlot(tower);
     if (manager != null) {
-      return '${manager.name} is already automating ready taps on this shell.';
+      return '${manager.name} is already improving payload feed on this shell.';
     }
     if (!_slotCountsTowardRing(tower)) {
       return tower.isLayerProject

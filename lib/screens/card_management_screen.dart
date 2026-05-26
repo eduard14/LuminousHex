@@ -66,7 +66,7 @@ class CardManagementScreen extends StatelessWidget {
                 LightcoreInfoButton(
                   title: 'Main Manager Help',
                   message: controller.managerAssignmentUnlocked
-                      ? 'Assign one Core Manager to the shell to automate ready tower taps. Threat Directors attach to revealed regions and tune the current spawn, enemy strength, and reward bonuses.'
+                      ? 'Assign one Core Manager to the shell to improve payload feed. Threat Directors attach to revealed regions and tune the current spawn, enemy strength, and reward bonuses.'
                       : 'Manager assignment unlocks when this Layer 1 shell has all ${LightcoreController.slotCount} outer towers online. Flux still banks now so the foundry is ready when it opens.',
                   tint: LightcorePalette.aether,
                 ),
@@ -117,7 +117,7 @@ class CardManagementScreen extends StatelessWidget {
               tint: LightcorePalette.aether,
               subtitle: !controller.managerAssignmentUnlocked
                   ? 'Build all ${LightcoreController.slotCount} outer towers in this Layer 1 shell before managers can be assigned.'
-                  : 'Core Managers automate charged towers on this shell. Threat Directors tune the selected region live and validate offline output after stabilization.',
+                  : 'Core Managers improve payload feed on this shell. Threat Directors tune the selected region live and validate offline output after stabilization.',
             ),
             const SizedBox(height: 10),
             Wrap(
@@ -258,7 +258,7 @@ class CardManagementScreen extends StatelessWidget {
                   ? 'Build all ${LightcoreController.slotCount} outer towers in this Layer 1 shell before Core Managers can be assigned.'
                   : controller.cards.isEmpty
                   ? 'No Core Managers in inventory yet. Locked roster previews are collapsed below.'
-                  : 'Assign one Core Manager to automate ready tower taps across the active shell.',
+                  : 'Assign one Core Manager to improve payload feed across the active shell.',
             ),
             const SizedBox(height: 10),
             if (controller.cards.isEmpty) ...[

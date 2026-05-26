@@ -528,6 +528,33 @@ extension LightcoreControllerTowerMath on LightcoreController {
         : managerPowerAdjustedRate(manager.automationRate);
   }
 
+  double towerStarterPayloadFeedRate(OuterTowerState tower) {
+    final wantedRate = towerWantedActivationRate(tower);
+    if (wantedRate <= 0) {
+      return 0;
+    }
+    return max(0.08, wantedRate * 0.38);
+  }
+
+  double towerPayloadFeedRate(OuterTowerState tower) {
+    final automationRate = towerAutomationRate(tower);
+    if (automationRate != null && automationRate > 0) {
+      return automationRate;
+    }
+    return towerStarterPayloadFeedRate(tower);
+  }
+
+  double? towerPayloadFeedInterval(OuterTowerState tower) {
+    if (!_slotCountsTowardRing(tower) || towerUsesPersistentShieldRing(tower)) {
+      return null;
+    }
+    final rate = towerPayloadFeedRate(tower);
+    if (rate <= 0) {
+      return null;
+    }
+    return 1 / rate;
+  }
+
   double? towerAutomationInterval(OuterTowerState tower) {
     final rate = towerAutomationRate(tower);
     if (rate == null || rate <= 0) {
@@ -680,11 +707,12 @@ extension LightcoreControllerTowerMath on LightcoreController {
 
   String towerAutomationLabel(OuterTowerState tower) {
     final automationRate = towerAutomationRate(tower);
-    if (automationRate == null) {
-      return 'Manual tap';
-    }
+    final feedRate = towerPayloadFeedRate(tower);
     final efficiency = towerAutomationEfficiency(tower) ?? 1;
-    return '${automationRate.toStringAsFixed(2)}/s • ${(efficiency * 100).round()}% efficient';
+    if (automationRate == null) {
+      return '${feedRate.toStringAsFixed(2)}/s starter feed';
+    }
+    return '${automationRate.toStringAsFixed(2)}/s payload feed • ${(efficiency * 100).round()}% efficient';
   }
 
   bool canActivateTower(OuterTowerState tower) {
@@ -697,17 +725,12 @@ extension LightcoreControllerTowerMath on LightcoreController {
     if (tower.charge < 1 || tower.cooldownRemaining > 0) {
       return false;
     }
-    return (_ammoQueue.length + _pulses.length) < coreQueueCapacity;
+    final inFlightCapacity = max(coreQueueCapacity, coreQueueCapacity * 2);
+    return _pulses.length < inFlightCapacity;
   }
 
   bool canManuallyActivateTower(OuterTowerState tower) {
-    if (activeLayerPassiveOnly) {
-      return false;
-    }
-    if (cardForSlot(tower) != null) {
-      return false;
-    }
-    return canActivateTower(tower);
+    return false;
   }
 
   double towerLiveCooldownForProjectile(

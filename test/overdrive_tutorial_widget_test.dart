@@ -48,7 +48,9 @@ void _reachOverdriveQuest(LightcoreController controller) {
   expect(controller.buildTowerAt(0, TowerLibrary.redPrism), isTrue);
   expect(controller.debugSetTowerCharge(0, charge: 1), isTrue);
   expect(controller.tutorialStep, LightcoreTutorialStep.tapSecondShellTower);
-  expect(controller.activateTowerSlot(0, showBanner: false), isTrue);
+  controller.tick(0.1);
+  expect(controller.pulses, isNotEmpty);
+  expect(controller.boostPulseToCore(controller.pulses.last.id), isTrue);
   expect(controller.tutorialStep, LightcoreTutorialStep.holdOverdrive);
 }
 

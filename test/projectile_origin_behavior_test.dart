@@ -16,6 +16,25 @@ double _radiusForEnemy(LightcoreController controller, String enemyId) {
   return controller.enemies.firstWhere((enemy) => enemy.id == enemyId).radius;
 }
 
+void _feedTowerPayload(LightcoreController controller, int slotIndex) {
+  final previousFireSequence = controller.slots[slotIndex].fireSequence;
+  for (
+    var step = 0;
+    step < 600 &&
+        controller.slots[slotIndex].fireSequence <= previousFireSequence;
+    step += 1
+  ) {
+    controller.tick(0.05);
+  }
+  expect(
+    controller.slots[slotIndex].fireSequence,
+    greaterThan(previousFireSequence),
+  );
+  if (controller.pulses.isNotEmpty) {
+    expect(controller.boostPulseToCore(controller.pulses.last.id), isTrue);
+  }
+}
+
 bool _enemyMissingOrDamaged(
   LightcoreController controller,
   String enemyId,
@@ -140,7 +159,7 @@ void main() {
       controller.kills = LightcoreController.unlockKillsForOuterSlot(0);
       expect(controller.buildTowerAt(0, TowerLibrary.purplePrism), isTrue);
       expect(controller.debugSetTowerCharge(0, charge: 1.2), isTrue);
-      expect(controller.activateTowerSlot(0, showBanner: false), isTrue);
+      _feedTowerPayload(controller, 0);
 
       final frontEnemy = controller.debugSpawnEnemyFromCard(
         EnemyLibrary.basicWhite.id,
@@ -508,7 +527,7 @@ void main() {
     controller.kills = LightcoreController.unlockKillsForOuterSlot(0);
     expect(controller.buildTowerAt(0, TowerLibrary.bluePrism), isTrue);
     expect(controller.debugSetTowerCharge(0, charge: 1.2), isTrue);
-    expect(controller.activateTowerSlot(0, showBanner: false), isTrue);
+    _feedTowerPayload(controller, 0);
 
     final frontEnemy = controller.debugSpawnEnemyFromCard(
       EnemyLibrary.basicWhite.id,
@@ -654,7 +673,7 @@ void main() {
     controller.kills = LightcoreController.unlockKillsForOuterSlot(0);
     expect(controller.buildTowerAt(0, TowerLibrary.yellowPrism), isTrue);
     expect(controller.debugSetTowerCharge(0, charge: 1.2), isTrue);
-    expect(controller.activateTowerSlot(0, showBanner: false), isTrue);
+    _feedTowerPayload(controller, 0);
 
     final target = controller.debugSpawnEnemyFromCard(
       EnemyLibrary.basicWhite.id,
@@ -693,7 +712,7 @@ void main() {
     controller.kills = LightcoreController.unlockKillsForOuterSlot(0);
     expect(controller.buildTowerAt(0, TowerLibrary.yellowPrism), isTrue);
     expect(controller.debugSetTowerCharge(0, charge: 1.2), isTrue);
-    expect(controller.activateTowerSlot(0, showBanner: false), isTrue);
+    _feedTowerPayload(controller, 0);
 
     final primaryTarget = controller.debugSpawnEnemyFromCard(
       EnemyLibrary.basicWhite.id,

@@ -256,6 +256,7 @@ extension LightcoreControllerCombatFiring on LightcoreController {
       double normalDamageMultiplier = 1.0;
       double defensePenetration = 0;
       double shotMaxRange;
+      var criticalBoosted = false;
       var advancesCoreSequence = false;
 
       if (_ammoQueue.isNotEmpty) {
@@ -303,6 +304,10 @@ extension LightcoreControllerCombatFiring on LightcoreController {
         defensePenetration = ammo.defensePenetration;
         critChance = ammo.critChance;
         critMultiplier = ammo.critMultiplier;
+        if (ammo.criticalBoosted) {
+          critChance = 1.0;
+          criticalBoosted = true;
+        }
         cooldownMultiplier =
             sourceTower != null && _slotCountsTowardRing(sourceTower)
             ? _slotCoreCooldownMultiplier(sourceTower)
@@ -398,6 +403,7 @@ extension LightcoreControllerCombatFiring on LightcoreController {
           bossDamageMultiplier: bossDamageMultiplier,
           normalDamageMultiplier: normalDamageMultiplier,
           defensePenetration: defensePenetration,
+          criticalBoosted: criticalBoosted,
         ),
       );
 

@@ -28,9 +28,9 @@ and promoting each completed shell into a deeper prism lattice.
 ## Short Description
 
 LumiHex is a mobile-first idle tower-defense game where the battlefield is a
-six-relay hex shell around a central Lightcore. Players tap charged towers,
-queue projectile packets, tune anomaly encounters, collect managers, and promote
-Root Shells into Prism, Nexus, and Ascendant structures.
+six-relay hex shell around a central Lightcore. Towers create floating payload
+pieces, queue projectile packets, tune anomaly encounters, collect managers,
+and promote Root Shells into Prism, Nexus, and Ascendant structures.
 
 ## Player Fantasy
 
@@ -47,7 +47,7 @@ shell, and keep climbing.
 
 1. Enter a hex shell built around the central Lightcore.
 2. Reveal and build six perimeter relay towers.
-3. Tap charged towers to send ammo packets into the core queue.
+3. Catch floating payload pieces to send ammo packets into the core queue faster.
 4. The core consumes queued packets and fires at incoming anomalies.
 5. Upgrade towers, core stats, and encounter capacity with earned resources.
 6. Roll Threat Scans into Knowledge Cards that make enemy families easier
@@ -66,7 +66,8 @@ shell, and keep climbing.
 - Real-time hex battlefield with one central Lightcore and six relay towers.
 - Relay towers charge and feed ammo packets to the core instead of firing
   directly.
-- Manual tapping creates an active idle-defense rhythm.
+- Manual payload catches create an active idle-defense rhythm, while
+  drag-through routing guarantees critical packets.
 - Core queue combat rewards smart timing, charge flow, and tower placement.
 - Output Efficiency pressure system replaces a simple health-loss fail state.
 - Lane disruption reduces rewards and charge flow when anomalies reach the ring.
@@ -88,8 +89,8 @@ shell, and keep climbing.
   Burst, Impact, Arc, Shield, Rayline, and Wave.
 - Towers roll trainable stat boards and special upgrade traits.
 - Core stats can be upgraded separately from perimeter towers.
-- Core Managers assign to a shell, automate ready tower taps, and improve
-  passive output.
+- Core Managers assign to a shell, improve payload feed, and raise passive
+  output.
 - Pattern bonuses reward certain tower arrangements and shell build choices.
 
 ### Shell Progression

@@ -241,42 +241,44 @@ void main() {
     expect(controller.lumens, initialLumens - upgradeCost);
   });
 
-  test('full queue blocks new packets until the queue limit is upgraded', () {
-    final controller = LightcoreController();
-    addTearDown(controller.dispose);
+  test(
+    'full queue holds payloads in flight until the queue limit is upgraded',
+    () {
+      final controller = LightcoreController();
+      addTearDown(controller.dispose);
 
-    _buildMaxedBluePrism(controller);
-    controller.rebootEncounter(showBanner: false);
+      _buildMaxedBluePrism(controller);
+      controller.rebootEncounter(showBanner: false);
 
-    final baseCapacity = controller.coreQueueCapacity;
-    _fillQueue(controller, baseCapacity);
-    expect(controller.debugSetTowerCharge(0, charge: 1.2), isTrue);
-    expect(controller.activateTowerSlot(0, showBanner: false), isFalse);
+      final baseCapacity = controller.coreQueueCapacity;
+      _fillQueue(controller, baseCapacity);
+      expect(controller.debugSetTowerCharge(0, charge: 1.2), isTrue);
 
-    controller.tick(0.7);
+      _tickUntil(controller, () => controller.pulses.isNotEmpty, steps: 600);
 
-    expect(controller.queuedCorePackets, baseCapacity);
-    expect(controller.pulses, isEmpty);
+      expect(controller.queuedCorePackets, baseCapacity);
+      expect(controller.pulses, isNotEmpty);
 
-    controller.lumens = 1000;
-    expect(controller.upgradeCoreQueueLimit(), isTrue);
-    controller.rebootEncounter(showBanner: false);
+      controller.lumens = 1000;
+      expect(controller.upgradeCoreQueueLimit(), isTrue);
+      controller.rebootEncounter(showBanner: false);
 
-    _fillQueue(controller, baseCapacity);
-    expect(controller.debugSetTowerCharge(0, charge: 1.2), isTrue);
-    expect(controller.activateTowerSlot(0, showBanner: false), isTrue);
+      _fillQueue(controller, baseCapacity);
+      expect(controller.debugSetTowerCharge(0, charge: 1.2), isTrue);
 
-    _tickUntil(
-      controller,
-      () => controller.queuedCorePackets == baseCapacity + 1,
-    );
+      _tickUntil(
+        controller,
+        () => controller.queuedCorePackets == baseCapacity + 1,
+        steps: 600,
+      );
 
-    expect(controller.queuedCorePackets, baseCapacity + 1);
-    expect(
-      controller.queuedCorePackets,
-      lessThanOrEqualTo(controller.coreQueueCapacity),
-    );
-  });
+      expect(controller.queuedCorePackets, baseCapacity + 1);
+      expect(
+        controller.queuedCorePackets,
+        lessThanOrEqualTo(controller.coreQueueCapacity),
+      );
+    },
+  );
 
   test('core tap generates a basic packet before the core fires it', () {
     final controller = LightcoreController();
