@@ -631,7 +631,6 @@ class _BattleScreenState extends State<BattleScreen> {
       });
       return;
     }
-    _collapseShell();
   }
 
   bool get _selectionOverlayIsOpen {

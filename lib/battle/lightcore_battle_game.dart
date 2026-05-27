@@ -54,6 +54,8 @@ class LightcoreBattleGame extends FlameGame with ScaleDetector {
   static const double _coreDamageShakeDuration = 0.34;
   static const double _payloadMaxOrbitCount = 4.0;
   static const double _payloadOrbitDurationSeconds = 8.0;
+  static const double _payloadTapRadiusScale = 1.05;
+  static const double _payloadNearMissRadiusScale = 1.55;
   static const double shellPromotionStatsDelay = 3.35;
   static const double _shellPromotionCollapseDuration = 1.15;
   static const double _shellPromotionWhiteoutDuration = 0.72;
@@ -124,6 +126,7 @@ class LightcoreBattleGame extends FlameGame with ScaleDetector {
       Map.unmodifiable(_enemyHitFaceRemaining);
   bool get isShellPromotionAnimating => _shellPromotion != null;
   double get debugShellPromotionElapsed => _shellPromotionElapsed;
+  Vector2? debugPulsePosition(String pulseId) => _pulsePositionForId(pulseId);
 
   bool get _lowPowerBattleEffects =>
       controller.graphicsQuality == LightcoreGraphicsQuality.lowPower;
@@ -363,6 +366,10 @@ class LightcoreBattleGame extends FlameGame with ScaleDetector {
       }
       return;
     }
+    if (_isNearPulse(pointer)) {
+      onBackgroundTap();
+      return;
+    }
     final tappedEnemyId = _hitTestEnemy(pointer);
     if (tappedEnemyId != null && controller.focusBattleEnemy(tappedEnemyId)) {
       return;
@@ -385,11 +392,26 @@ class LightcoreBattleGame extends FlameGame with ScaleDetector {
       if (position == null) {
         continue;
       }
-      if (pointer.distanceTo(position) <= _slotRadius * 0.62) {
+      if (pointer.distanceTo(position) <=
+          _slotRadius * _payloadTapRadiusScale) {
         return pulse.id;
       }
     }
     return null;
+  }
+
+  bool _isNearPulse(Vector2 pointer) {
+    for (final pulse in controller.pulses.reversed) {
+      final position = _pulsePosition(pulse);
+      if (position == null) {
+        continue;
+      }
+      if (pointer.distanceTo(position) <=
+          _slotRadius * _payloadNearMissRadiusScale) {
+        return true;
+      }
+    }
+    return false;
   }
 
   Vector2? _pulsePosition(EnergyPulseState pulse) {

@@ -92,6 +92,31 @@ void main() {
     expect(game.debugCoreQueueOrbitProjectileTypes, isEmpty);
   });
 
+  test('near-missed payload taps do not open tower placement', () {
+    final controller = LightcoreController();
+    addTearDown(controller.dispose);
+    var backgroundTaps = 0;
+    final game = LightcoreBattleGame(
+      controller: controller,
+      onCenterTap: () => fail('near-missed payload should not tap core'),
+      onSlotTap: (_) => fail('near-missed payload should not tap slots'),
+      onBackgroundTap: () => backgroundTaps += 1,
+    );
+    game.onGameResize(Vector2(900, 1100));
+    controller.toggleShellVisibility();
+
+    for (var step = 0; step < 40 && controller.pulses.isEmpty; step += 1) {
+      controller.tick(0.05);
+    }
+
+    final pulse = controller.pulses.single;
+    final position = game.debugPulsePosition(pulse.id);
+    expect(position, isNotNull);
+
+    game.handleCanvasTap(Offset(position!.x + 120, position.y));
+    expect(backgroundTaps, 1);
+  });
+
   test('single-finger gesture pans the battle view', () {
     final controller = LightcoreController();
     addTearDown(controller.dispose);
