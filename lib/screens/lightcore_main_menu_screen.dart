@@ -10,6 +10,7 @@ import '../app/lightcore_build_info.dart';
 import '../models/lightcore_guide.dart';
 import '../services/lightcore_web_refresh.dart';
 import '../theme/lightcore_palette.dart';
+import '../widgets/auth_provider_button.dart';
 import '../widgets/lightcore_guide_badge.dart';
 import '../widgets/tower_ring_icon.dart';
 
@@ -90,6 +91,7 @@ class _LightcoreMainMenuScreenState extends State<LightcoreMainMenuScreen>
   int _sequenceIndex = 0;
   bool _guideSheetOpen = false;
   bool _launchFlowOpen = false;
+  bool _guestSignInPromptShownThisSession = false;
   bool _isRefreshingWebVersion = false;
   String? _queuedWebRefreshVersion;
 
@@ -271,9 +273,11 @@ class _LightcoreMainMenuScreenState extends State<LightcoreMainMenuScreen>
           report != null &&
           report.profile.isAnonymous &&
           !widget.skipGuestSignInPrompt &&
+          !_guestSignInPromptShownThisSession &&
           (widget.onGoogleSignIn != null || widget.onEmailSignIn != null);
 
       if (shouldShowGuestPrompt) {
+        _guestSignInPromptShownThisSession = true;
         final result = await _presentGuestSignInPrompt(
           canUseGoogleSignIn: report.firebaseReady,
         );
@@ -344,8 +348,7 @@ class _LightcoreMainMenuScreenState extends State<LightcoreMainMenuScreen>
               backgroundColor: LightcorePalette.panel,
               surfaceTintColor: Colors.transparent,
               titlePadding: const EdgeInsets.fromLTRB(22, 22, 22, 0),
-              contentPadding: const EdgeInsets.fromLTRB(22, 12, 22, 8),
-              actionsPadding: const EdgeInsets.fromLTRB(18, 0, 18, 18),
+              contentPadding: const EdgeInsets.fromLTRB(22, 12, 22, 20),
               title: Row(
                 children: [
                   Container(
@@ -412,69 +415,71 @@ class _LightcoreMainMenuScreenState extends State<LightcoreMainMenuScreen>
                         ),
                       ),
                     ),
+                    const SizedBox(height: 12),
+                    AuthProviderButton(
+                      key: const ValueKey<String>(
+                        'guest-sign-in-google-button',
+                      ),
+                      kind: AuthProviderButtonKind.google,
+                      label: 'Sign In With Google',
+                      busy: widget.authBusy,
+                      onPressed: googleEnabled
+                          ? () {
+                              Navigator.of(context).pop(
+                                const _GuestSignInPromptResult(
+                                  action:
+                                      _GuestSignInPromptAction.signInWithGoogle,
+                                ),
+                              );
+                            }
+                          : null,
+                    ),
+                    const SizedBox(height: 10),
+                    AuthProviderButton(
+                      key: const ValueKey<String>('guest-sign-in-email-button'),
+                      kind: AuthProviderButtonKind.email,
+                      label: 'Sign In With Email',
+                      busy: widget.authBusy,
+                      onPressed: emailEnabled
+                          ? () {
+                              Navigator.of(context).pop(
+                                const _GuestSignInPromptResult(
+                                  action:
+                                      _GuestSignInPromptAction.signInWithEmail,
+                                ),
+                              );
+                            }
+                          : null,
+                    ),
+                    const SizedBox(height: 10),
+                    AuthProviderButton(
+                      key: const ValueKey<String>('guest-sign-in-apple-button'),
+                      kind: AuthProviderButtonKind.apple,
+                      label: 'Apple ID Soon',
+                      filled: false,
+                      onPressed: null,
+                    ),
+                    const SizedBox(height: 8),
+                    Align(
+                      alignment: Alignment.center,
+                      child: TextButton(
+                        key: const ValueKey<String>(
+                          'guest-sign-in-continue-button',
+                        ),
+                        onPressed: () {
+                          Navigator.of(context).pop(
+                            _GuestSignInPromptResult(
+                              action: _GuestSignInPromptAction.continueAsGuest,
+                              dontAskAgain: dontAskAgain,
+                            ),
+                          );
+                        },
+                        child: const Text('Continue As Guest'),
+                      ),
+                    ),
                   ],
                 ),
               ),
-              actions: [
-                TextButton(
-                  key: const ValueKey<String>('guest-sign-in-continue-button'),
-                  onPressed: () {
-                    Navigator.of(context).pop(
-                      _GuestSignInPromptResult(
-                        action: _GuestSignInPromptAction.continueAsGuest,
-                        dontAskAgain: dontAskAgain,
-                      ),
-                    );
-                  },
-                  child: const Text('Continue As Guest'),
-                ),
-                FilledButton.icon(
-                  key: const ValueKey<String>('guest-sign-in-google-button'),
-                  onPressed: googleEnabled
-                      ? () {
-                          Navigator.of(context).pop(
-                            const _GuestSignInPromptResult(
-                              action: _GuestSignInPromptAction.signInWithGoogle,
-                            ),
-                          );
-                        }
-                      : null,
-                  icon: widget.authBusy
-                      ? const SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(Icons.login_rounded),
-                  label: const Text('Sign In With Google'),
-                ),
-                FilledButton.icon(
-                  key: const ValueKey<String>('guest-sign-in-email-button'),
-                  onPressed: emailEnabled
-                      ? () {
-                          Navigator.of(context).pop(
-                            const _GuestSignInPromptResult(
-                              action: _GuestSignInPromptAction.signInWithEmail,
-                            ),
-                          );
-                        }
-                      : null,
-                  icon: widget.authBusy
-                      ? const SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(Icons.mark_email_read_rounded),
-                  label: const Text('Sign In With Email'),
-                ),
-                OutlinedButton.icon(
-                  key: const ValueKey<String>('guest-sign-in-apple-button'),
-                  onPressed: null,
-                  icon: const Icon(Icons.apple_rounded),
-                  label: const Text('Apple ID Soon'),
-                ),
-              ],
             );
           },
         );

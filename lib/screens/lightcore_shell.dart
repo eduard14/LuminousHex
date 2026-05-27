@@ -19,6 +19,7 @@ import '../services/lightcore_rewarded_ads.dart';
 import '../state/lightcore_controller.dart';
 import '../theme/lightcore_icons.dart';
 import '../theme/lightcore_palette.dart';
+import '../widgets/auth_provider_button.dart';
 import '../widgets/aurora_panel.dart';
 import '../widgets/cosmic_guide_avatar.dart';
 import '../widgets/guided_focus_frame.dart';
@@ -1438,35 +1439,51 @@ class _LightcoreShellState extends State<LightcoreShell> {
             runSpacing: 10,
             children: [
               if (!linked)
-                FilledButton.icon(
-                  key: const ValueKey<String>('settings-google-sign-in-button'),
-                  onPressed: canLinkGoogle
-                      ? () {
-                          widget.onGoogleSignIn!.call();
-                        }
-                      : null,
-                  icon: const Icon(Icons.login_rounded),
-                  label: const Text('Sign In With Google'),
-                ),
-              if (!linked)
-                FilledButton.icon(
-                  key: const ValueKey<String>('settings-email-sign-in-button'),
-                  onPressed: canLinkEmail
-                      ? () {
-                          widget.onEmailSignIn!.call();
-                        }
-                      : null,
-                  icon: const Icon(Icons.mark_email_read_rounded),
-                  label: const Text('Link Email Save'),
-                ),
-              if (!linked)
-                OutlinedButton.icon(
-                  key: const ValueKey<String>(
-                    'settings-apple-placeholder-button',
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 260),
+                  child: AuthProviderButton(
+                    key: const ValueKey<String>(
+                      'settings-google-sign-in-button',
+                    ),
+                    kind: AuthProviderButtonKind.google,
+                    label: 'Sign In With Google',
+                    busy: widget.authBusy,
+                    onPressed: canLinkGoogle
+                        ? () {
+                            widget.onGoogleSignIn!.call();
+                          }
+                        : null,
                   ),
-                  onPressed: null,
-                  icon: const Icon(Icons.apple_rounded),
-                  label: const Text('Apple ID Soon'),
+                ),
+              if (!linked)
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 260),
+                  child: AuthProviderButton(
+                    key: const ValueKey<String>(
+                      'settings-email-sign-in-button',
+                    ),
+                    kind: AuthProviderButtonKind.email,
+                    label: 'Link Email Save',
+                    busy: widget.authBusy,
+                    onPressed: canLinkEmail
+                        ? () {
+                            widget.onEmailSignIn!.call();
+                          }
+                        : null,
+                  ),
+                ),
+              if (!linked)
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 260),
+                  child: AuthProviderButton(
+                    key: const ValueKey<String>(
+                      'settings-apple-placeholder-button',
+                    ),
+                    kind: AuthProviderButtonKind.apple,
+                    label: 'Apple ID Soon',
+                    filled: false,
+                    onPressed: null,
+                  ),
                 ),
               if (linked && widget.onSignOut != null)
                 TextButton.icon(

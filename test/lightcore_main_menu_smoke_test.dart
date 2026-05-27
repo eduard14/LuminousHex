@@ -358,6 +358,46 @@ void main() {
     await tester.pump();
   });
 
+  testWidgets('guest sign-in prompt is shown once per menu session', (
+    tester,
+  ) async {
+    var entered = false;
+    final report = buildReport(
+      clientVersion: '1.0.18',
+      clientBuildNumber: '19',
+      recommendedVersion: '1.0.18',
+      recommendedBuildNumber: '19',
+    );
+
+    await tester.pumpWidget(
+      buildMenu(
+        report: report,
+        onEnterGame: () => entered = true,
+        onGoogleSignIn: () async => true,
+      ),
+    );
+
+    await tester.tap(find.text('PLAY'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 250));
+    expect(find.text('Save Recovery'), findsOneWidget);
+
+    await tester.tapAt(const Offset(8, 8));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 250));
+    expect(find.text('Save Recovery'), findsNothing);
+
+    await tester.tap(find.text('PLAY'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 250));
+
+    expect(find.text('Save Recovery'), findsNothing);
+    expect(entered, isTrue);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump();
+  });
+
   testWidgets('signed-in play bypasses guest sign-in prompt', (tester) async {
     var entered = false;
     var googleSignInCalls = 0;
