@@ -70,6 +70,30 @@ extension _LightcoreBattleGameProjectileRendering on LightcoreBattleGame {
       } else {
         final travelProgress = pulse.progress.clamp(0.0, 1.0).toDouble();
         final streakAlpha = (1 - travelProgress).clamp(0.0, 1.0).toDouble();
+        final inboundStart = _pulseInboundStartPosition(pulse);
+        if (inboundStart != null && travelProgress < 0.22) {
+          final clickProgress = (travelProgress / 0.22).clamp(0.0, 1.0);
+          final clickCenter = Offset(inboundStart.x, inboundStart.y);
+          canvas.drawCircle(
+            clickCenter,
+            _slotRadius * (0.34 + (clickProgress * 0.5)),
+            Paint()
+              ..style = PaintingStyle.stroke
+              ..strokeWidth = 2.4
+              ..color = LightcorePalette.mist.withValues(
+                alpha: (0.72 * (1 - clickProgress) * _battleEffectAlphaScale),
+              ),
+          );
+          canvas.drawPath(
+            _hexPath(clickCenter, _slotRadius * (0.32 + clickProgress * 0.38)),
+            Paint()
+              ..style = PaintingStyle.stroke
+              ..strokeWidth = 2.0
+              ..color = color.withValues(
+                alpha: (0.82 * (1 - clickProgress) * _battleEffectAlphaScale),
+              ),
+          );
+        }
         _drawGlowLine(
           canvas,
           currentOffset,

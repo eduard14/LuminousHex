@@ -95,6 +95,7 @@ class LightcoreBattleGame extends FlameGame with ScaleDetector {
   int _gesturePointerCount = 0;
   String? _draggedPulseId;
   bool _draggedPulseCrossedSourceTower = false;
+  final Map<String, Vector2> _pulseInboundStartPositions = <String, Vector2>{};
 
   Vector2 _center = Vector2.zero();
   List<Vector2> _slotPositions = <Vector2>[];
@@ -153,6 +154,7 @@ class LightcoreBattleGame extends FlameGame with ScaleDetector {
     _lastGestureScaleSignal = 1.0;
     _draggedPulseId = null;
     _draggedPulseCrossedSourceTower = false;
+    _pulseInboundStartPositions.clear();
   }
 
   void handleCanvasTap(Offset localPosition) {
@@ -201,6 +203,10 @@ class LightcoreBattleGame extends FlameGame with ScaleDetector {
           pulseId,
           Vector2(localPosition.dx, localPosition.dy),
         );
+    final clickedPosition = _pulsePositionForId(pulseId);
+    if (clickedPosition != null) {
+      _pulseInboundStartPositions[pulseId] = clickedPosition;
+    }
     controller.releaseDraggedPulse(pulseId, crossedSourceTower: crossed);
     _draggedPulseId = null;
     _draggedPulseCrossedSourceTower = false;
@@ -280,11 +286,19 @@ class LightcoreBattleGame extends FlameGame with ScaleDetector {
       safety += 1;
     }
     _syncCombatAudio();
+    _retainLivePulseVisualState();
     _updateSlotVisuals(clamped);
     _updateCoreVisuals(clamped);
     _updateEnemyFaceVisuals(clamped);
     _updateShotFireBursts(clamped);
     _updateScreenShake(clamped);
+  }
+
+  void _retainLivePulseVisualState() {
+    final livePulseIds = controller.pulses.map((pulse) => pulse.id).toSet();
+    _pulseInboundStartPositions.removeWhere(
+      (pulseId, _) => !livePulseIds.contains(pulseId),
+    );
   }
 
   @override
@@ -399,23 +413,28 @@ class LightcoreBattleGame extends FlameGame with ScaleDetector {
     }
     final seed = pulse.id.hashCode.abs();
     final rotation = ((seed % 360) * math.pi / 180);
-    final orbitProgress = pulse.progress < 0
-        ? ((pulse.progress + _payloadOrbitDurationSeconds) /
-                      _payloadOrbitDurationSeconds)
-                  .clamp(0.0, 1.0)
-                  .toDouble() *
-              _payloadMaxOrbitCount
-        : elapsed * 0.12;
+    final orbitProgress = _pulseOrbitProgress(pulse, elapsed);
     final theta = (orbitProgress * math.pi * 2) + ((seed % 628) / 100);
     final wide = pulse.sourceSlotIndex == null
-        ? _coreRadius * 1.72
-        : _slotRadius * 1.78;
+        ? _coreRadius * 2.05
+        : _slotRadius * 2.28;
     final tall = pulse.sourceSlotIndex == null
-        ? _coreRadius * 0.9
-        : _slotRadius * 0.96;
+        ? _coreRadius * 1.08
+        : _slotRadius * 1.22;
     final localX = math.sin(theta) * wide;
     final localY = math.sin(theta * 2) * tall;
     return _rotatedAround(anchor, localX, localY, rotation);
+  }
+
+  double _pulseOrbitProgress(EnergyPulseState pulse, double elapsed) {
+    if (pulse.progress < 0) {
+      return ((pulse.progress + _payloadOrbitDurationSeconds) /
+                  _payloadOrbitDurationSeconds)
+              .clamp(0.0, 1.0)
+              .toDouble() *
+          _payloadMaxOrbitCount;
+    }
+    return _payloadMaxOrbitCount + (elapsed * 0.12);
   }
 
   Vector2? _pulseInboundPosition(EnergyPulseState pulse) {
@@ -443,6 +462,10 @@ class LightcoreBattleGame extends FlameGame with ScaleDetector {
   }
 
   Vector2? _pulseInboundStartPosition(EnergyPulseState pulse) {
+    final retainedStart = _pulseInboundStartPositions[pulse.id];
+    if (retainedStart != null) {
+      return retainedStart;
+    }
     final startedAt = pulse.inboundStartedAtElapsed;
     if (startedAt != null) {
       return _pulseOrbitPosition(pulse, startedAt);
@@ -502,6 +525,15 @@ class LightcoreBattleGame extends FlameGame with ScaleDetector {
     }
     return pointer.distanceTo(_slotPositions[sourceSlotIndex]) <=
         _slotRadius * 0.72;
+  }
+
+  Vector2? _pulsePositionForId(String pulseId) {
+    for (final pulse in controller.pulses) {
+      if (pulse.id == pulseId) {
+        return _pulsePosition(pulse);
+      }
+    }
+    return null;
   }
 
   @override
