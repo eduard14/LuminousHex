@@ -1362,7 +1362,7 @@ class LightcoreController extends ChangeNotifier {
   static const double _spawnClusterRadiusJitter = 10;
   static const double _relayImpactRadius = 102;
   static const double _pulseSpeed = 2.1;
-  static const double _payloadOrbitStartProgress = -4;
+  static const double _payloadOrbitStartProgress = -8;
   static const double _payloadOrbitDurationVariance = 0;
   static const int _maxFloatingPayloadsPerSource = 3;
   static const int maxFloatingPayloadsPerSource = _maxFloatingPayloadsPerSource;

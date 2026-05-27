@@ -77,12 +77,12 @@ void main() {
 
     expect(controller.pulses, hasLength(1));
     expect(controller.queuedAmmoPackets, isEmpty);
-    expect(controller.coreQueueOccupancy, 1);
+    expect(controller.coreQueueOccupancy, 0);
     expect(game.debugCoreQueueOrbitProjectileTypes, isEmpty);
 
     for (
       var step = 0;
-      step < 180 && controller.queuedAmmoPackets.isEmpty;
+      step < 260 && controller.queuedAmmoPackets.isEmpty;
       step += 1
     ) {
       controller.tick(0.05);

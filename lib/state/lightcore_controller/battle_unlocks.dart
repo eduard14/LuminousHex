@@ -14,7 +14,7 @@ extension LightcoreControllerBattleUnlocks on LightcoreController {
           ? 'Open this child shell and build it before it can generate packets.'
           : 'Anchor this hex before it can fire.';
     }
-    if ((_ammoQueue.length + _pulses.length) >= coreQueueCapacity) {
+    if (_ammoQueue.length >= coreQueueCapacity) {
       return 'Core queue full. Tap the Lightcore or upgrade queue capacity.';
     }
     if (tower.cooldownRemaining > 0) {

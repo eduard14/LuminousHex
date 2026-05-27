@@ -167,7 +167,7 @@ void main() {
   });
 
   test(
-    'layer 1 auto core feed counts as queue occupancy while pulse is in flight',
+    'layer 1 auto core feed does not count as queue occupancy while pulse is in flight',
     () {
       final controller = LightcoreController();
       addTearDown(controller.dispose);
@@ -182,10 +182,10 @@ void main() {
 
       expect(controller.queuedCorePackets, 0);
       expect(controller.pulses, hasLength(1));
-      expect(controller.coreQueueOccupancy, 1);
+      expect(controller.coreQueueOccupancy, 0);
       expect(
         controller.coreQueueLoadLabel,
-        '1/${controller.coreQueueCapacity}',
+        '0/${controller.coreQueueCapacity}',
       );
     },
   );

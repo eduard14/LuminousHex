@@ -971,8 +971,7 @@ extension LightcoreControllerStateAccessors on LightcoreController {
 
   int get queuedCorePackets => _ammoQueue.length;
 
-  int get coreQueueOccupancy =>
-      min(coreQueueCapacity, _ammoQueue.length + _pulses.length);
+  int get coreQueueOccupancy => min(coreQueueCapacity, _ammoQueue.length);
 
   List<AmmoPacket> get queuedAmmoPackets =>
       List<AmmoPacket>.unmodifiable(_ammoQueue);

@@ -53,6 +53,7 @@ class LightcoreBattleGame extends FlameGame with ScaleDetector {
   static const double _enemySpawnRevealDuration = 5.0;
   static const double _coreDamageShakeDuration = 0.34;
   static const double _payloadMaxOrbitCount = 4.0;
+  static const double _payloadOrbitDurationSeconds = 8.0;
   static const double shellPromotionStatsDelay = 3.35;
   static const double _shellPromotionCollapseDuration = 1.15;
   static const double _shellPromotionWhiteoutDuration = 0.72;
@@ -399,8 +400,12 @@ class LightcoreBattleGame extends FlameGame with ScaleDetector {
     final seed = pulse.id.hashCode.abs();
     final rotation = ((seed % 360) * math.pi / 180);
     final orbitProgress = pulse.progress < 0
-        ? (_payloadMaxOrbitCount + pulse.progress).abs()
-        : elapsed * 0.24;
+        ? ((pulse.progress + _payloadOrbitDurationSeconds) /
+                      _payloadOrbitDurationSeconds)
+                  .clamp(0.0, 1.0)
+                  .toDouble() *
+              _payloadMaxOrbitCount
+        : elapsed * 0.12;
     final theta = (orbitProgress * math.pi * 2) + ((seed % 628) / 100);
     final wide = pulse.sourceSlotIndex == null
         ? _coreRadius * 1.72
