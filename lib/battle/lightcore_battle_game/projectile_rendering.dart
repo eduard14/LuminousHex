@@ -67,6 +67,48 @@ extension _LightcoreBattleGameProjectileRendering on LightcoreBattleGame {
               ..color = LightcorePalette.mist.withValues(alpha: 0.48),
           );
         }
+      } else {
+        final travelProgress = pulse.progress.clamp(0.0, 1.0).toDouble();
+        final streakAlpha = (1 - travelProgress).clamp(0.0, 1.0).toDouble();
+        _drawGlowLine(
+          canvas,
+          currentOffset,
+          Offset(_center.x, _center.y),
+          color,
+          width: math.max(2.0, _slotRadius * 0.045),
+          alpha: 0.2 * streakAlpha * _battleEffectAlphaScale,
+        );
+        if (travelProgress > 0.74) {
+          final burstProgress = ((travelProgress - 0.74) / 0.26)
+              .clamp(0.0, 1.0)
+              .toDouble();
+          final burstFade = (1 - burstProgress) * _battleEffectAlphaScale;
+          final burstCenter = Offset(_center.x, _center.y);
+          canvas.drawCircle(
+            burstCenter,
+            _coreRadius * (0.26 + (burstProgress * 0.58)),
+            Paint()
+              ..shader =
+                  RadialGradient(
+                    colors: [
+                      color.withValues(alpha: 0.2 * burstFade),
+                      Colors.transparent,
+                    ],
+                  ).createShader(
+                    Rect.fromCircle(
+                      center: burstCenter,
+                      radius: _coreRadius * 0.9,
+                    ),
+                  ),
+          );
+          canvas.drawPath(
+            _hexPath(burstCenter, _coreRadius * (0.34 + burstProgress * 0.44)),
+            Paint()
+              ..style = PaintingStyle.stroke
+              ..strokeWidth = 2.2
+              ..color = color.withValues(alpha: 0.72 * burstFade),
+          );
+        }
       }
       final shimmer =
           0.5 +

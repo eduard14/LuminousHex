@@ -66,8 +66,9 @@ shell, and keep climbing.
 - Real-time hex battlefield with one central Lightcore and six relay towers.
 - Relay towers charge and feed ammo packets to the core instead of firing
   directly.
-- Manual payload catches create an active idle-defense rhythm, while
-  drag-through routing guarantees critical packets.
+- Manual payload catches are forgiving: large-orbit payloads can be tapped or
+  dragged into the Lightcore, while drag-through routing guarantees critical
+  packets.
 - A visible Default Auto Manager keeps the Lightcore and built towers feeding
   payloads slowly from the start, so active play enhances progress instead of
   enabling it.

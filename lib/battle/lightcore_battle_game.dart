@@ -52,6 +52,7 @@ class LightcoreBattleGame extends FlameGame with ScaleDetector {
   static const double _enemyHitFaceDuration = 0.28;
   static const double _enemySpawnRevealDuration = 5.0;
   static const double _coreDamageShakeDuration = 0.34;
+  static const double _payloadMaxOrbitCount = 4.0;
   static const double shellPromotionStatsDelay = 3.35;
   static const double _shellPromotionCollapseDuration = 1.15;
   static const double _shellPromotionWhiteoutDuration = 0.72;
@@ -347,9 +348,6 @@ class LightcoreBattleGame extends FlameGame with ScaleDetector {
       }
       return;
     }
-    if (_hitTestPulse(pointer) != null) {
-      return;
-    }
     final tappedEnemyId = _hitTestEnemy(pointer);
     if (tappedEnemyId != null && controller.focusBattleEnemy(tappedEnemyId)) {
       return;
@@ -372,7 +370,7 @@ class LightcoreBattleGame extends FlameGame with ScaleDetector {
       if (position == null) {
         continue;
       }
-      if (pointer.distanceTo(position) <= _slotRadius * 0.48) {
+      if (pointer.distanceTo(position) <= _slotRadius * 0.62) {
         return pulse.id;
       }
     }
@@ -400,17 +398,16 @@ class LightcoreBattleGame extends FlameGame with ScaleDetector {
     }
     final seed = pulse.id.hashCode.abs();
     final rotation = ((seed % 360) * math.pi / 180);
-    final speed =
-        (pulse.sourceSlotIndex == null ? 0.18 : 0.22) +
-        ((seed % 7) * 0.009) +
-        (math.sin((elapsed * 0.42) + seed) * 0.02);
-    final theta = (elapsed * speed) + ((seed % 628) / 100);
+    final orbitProgress = pulse.progress < 0
+        ? (_payloadMaxOrbitCount + pulse.progress).abs()
+        : elapsed * 0.24;
+    final theta = (orbitProgress * math.pi * 2) + ((seed % 628) / 100);
     final wide = pulse.sourceSlotIndex == null
-        ? _coreRadius * 1.18
-        : _slotRadius * 1.16;
+        ? _coreRadius * 1.72
+        : _slotRadius * 1.78;
     final tall = pulse.sourceSlotIndex == null
-        ? _coreRadius * 0.58
-        : _slotRadius * 0.62;
+        ? _coreRadius * 0.9
+        : _slotRadius * 0.96;
     final localX = math.sin(theta) * wide;
     final localY = math.sin(theta * 2) * tall;
     return _rotatedAround(anchor, localX, localY, rotation);

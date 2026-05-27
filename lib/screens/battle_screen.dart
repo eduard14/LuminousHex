@@ -407,9 +407,9 @@ class _BattleScreenState extends State<BattleScreen> {
     }
     _canvasTapPointer = event.pointer;
     _canvasTapStart = event.localPosition;
-    _canvasPayloadDragActive = _game.handleCanvasPointerDown(
-      event.localPosition,
-    );
+    _canvasPayloadDragActive =
+        !_selectionOverlayIsOpen &&
+        _game.handleCanvasPointerDown(event.localPosition);
     _canvasPayloadDragMoved = false;
     _canvasTapCanceled = _canvasPayloadDragActive;
     _logBattle('pointer-down', <String, Object?>{
@@ -460,7 +460,7 @@ class _BattleScreenState extends State<BattleScreen> {
         _canvasPayloadDragMoved) {
       _game.handleCanvasPointerUp(event.localPosition);
     } else if (event.pointer == _canvasTapPointer && _canvasPayloadDragActive) {
-      _game.cancelCanvasPayloadDrag();
+      _game.handleCanvasPointerUp(event.localPosition);
     } else if (event.pointer == _canvasTapPointer && !_canvasTapCanceled) {
       _game.handleCanvasTap(event.localPosition);
     }
@@ -546,7 +546,15 @@ class _BattleScreenState extends State<BattleScreen> {
         (!slot.isBuilt ||
             slot.isFabricating ||
             controller.activeLayerPassiveOnly);
-    controller.handleBattleSlotTap(slotIndex);
+    final defersControls =
+        slot != null &&
+        slot.isBuilt &&
+        !slot.isFabricating &&
+        !slot.isLayerProject &&
+        !controller.activeLayerPassiveOnly;
+    if (!defersControls) {
+      controller.handleBattleSlotTap(slotIndex);
+    }
     if (controller.activeThreatRegionChallenge != null) {
       setState(() {
         _statsTarget = null;
