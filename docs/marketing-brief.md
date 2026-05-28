@@ -69,8 +69,8 @@ shell, and keep climbing.
 - Manual payload catches are forgiving: large-orbit payloads travel toward the
   Lightcore but only count as queued packets once loaded; players can tap or
   drag them inward, while drag-through routing guarantees critical packets.
-- Shell collapse is an explicit HUD button action, keeping missed payload taps
-  from folding the active battlefield or opening tower placement.
+- Shell visibility is an explicit HUD toggle, keeping missed payload taps from
+  folding the active battlefield or opening tower placement.
 - A visible Default Auto Manager keeps the Lightcore and built towers feeding
   payloads slowly from the start, so active play enhances progress instead of
   enabling it.

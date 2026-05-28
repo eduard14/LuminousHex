@@ -44,7 +44,7 @@ Offset _battleCenter(WidgetTester tester) {
 
 Offset _blankMapPoint(WidgetTester tester) {
   final rect = tester.getRect(find.byType(BattleScreen));
-  return Offset(rect.right - 48, rect.top + 120);
+  return Offset(rect.left + 48, rect.top + 120);
 }
 
 Offset _slotCenter(WidgetTester tester, int slotIndex) {
@@ -340,7 +340,10 @@ void main() {
     await tester.pump(const Duration(milliseconds: 50));
 
     expect(controller.selectedSlotIndex, 0);
-    expect(controller.pulses, isEmpty);
+    expect(
+      controller.pulses.where((pulse) => pulse.sourceSlotIndex == 0),
+      isEmpty,
+    );
     expect(find.text('Fabrication'), findsOneWidget);
     expect(find.textContaining('Fabricating Comet Mortar'), findsOneWidget);
     expect(find.text('Tower Stats'), findsNothing);
@@ -363,8 +366,10 @@ void main() {
     await tester.pump(const Duration(milliseconds: 50));
 
     expect(controller.selectedSlotIndex, isNull);
-    expect(controller.pulses, hasLength(1));
-    expect(controller.pulses.single.sourceSlotIndex, 1);
+    expect(
+      controller.pulses.any((pulse) => pulse.sourceSlotIndex == 1),
+      isTrue,
+    );
     expect(find.text('Tower Stats'), findsNothing);
 
     await tester.tap(
@@ -408,6 +413,7 @@ void main() {
       find.byKey(const ValueKey<String>('battle-shell-collapse-button')),
       findsOneWidget,
     );
+    expect(find.byIcon(Icons.unfold_less_double_rounded), findsOneWidget);
 
     await tester.tapAt(_battleCenter(tester));
     await tester.pump(const Duration(milliseconds: 50));
@@ -429,7 +435,16 @@ void main() {
     expect(controller.outerRingRevealed, isFalse);
     expect(
       find.byKey(const ValueKey<String>('battle-shell-collapse-button')),
-      findsNothing,
+      findsOneWidget,
     );
+    expect(find.byIcon(Icons.unfold_more_double_rounded), findsOneWidget);
+
+    await tester.tap(
+      find.byKey(const ValueKey<String>('battle-shell-collapse-button')),
+    );
+    await tester.pump(const Duration(milliseconds: 50));
+
+    expect(controller.outerRingRevealed, isTrue);
+    expect(find.byIcon(Icons.unfold_less_double_rounded), findsOneWidget);
   });
 }

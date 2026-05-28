@@ -641,8 +641,8 @@ class _BattleScreenState extends State<BattleScreen> {
         widget.controller.selectedSlotOrNull != null;
   }
 
-  void _collapseShell() {
-    if (!widget.enableBattlefieldTaps || !widget.controller.outerRingRevealed) {
+  void _toggleShellVisibility() {
+    if (!widget.enableBattlefieldTaps) {
       return;
     }
     LightcoreAudio.instance.playSfx(LightcoreSfx.uiCancel);
@@ -1003,14 +1003,18 @@ class _BattleScreenState extends State<BattleScreen> {
     return _ManualOverdriveHud(controller: widget.controller);
   }
 
-  Widget? _buildCollapseHud({
+  Widget? _buildShellVisibilityHud({
     required LightcoreController controller,
     required bool compact,
   }) {
-    if (!controller.outerRingRevealed || _activePromotionSequence != null) {
+    if (!widget.enableBattlefieldTaps || _activePromotionSequence != null) {
       return null;
     }
-    return _BattleShellCollapseHud(compact: compact, onPressed: _collapseShell);
+    return _BattleShellVisibilityHud(
+      compact: compact,
+      expanded: controller.outerRingRevealed,
+      onPressed: _toggleShellVisibility,
+    );
   }
 
   Widget? _buildSelectionHud({
@@ -1210,7 +1214,7 @@ class _BattleScreenState extends State<BattleScreen> {
       controller,
       compact: compact,
     );
-    final collapseHud = _buildCollapseHud(
+    final shellVisibilityHud = _buildShellVisibilityHud(
       controller: controller,
       compact: compact,
     );
@@ -1224,8 +1228,8 @@ class _BattleScreenState extends State<BattleScreen> {
             top: topInset + (compact ? 54 : 66),
             child: _CoreQueueRail(controller: controller, compact: compact),
           ),
-        if (widget.showBattleHud && collapseHud != null)
-          Positioned(right: inset, top: topInset, child: collapseHud),
+        if (widget.showBattleHud && shellVisibilityHud != null)
+          Positioned(right: inset, top: topInset, child: shellVisibilityHud),
         if (widget.showBattleHud && selectionHud != null)
           Positioned(left: inset, bottom: bottomInset, child: selectionHud),
         if (widget.showBattleHud)
@@ -1987,23 +1991,29 @@ class _EmptySlotPanel extends StatelessWidget {
   }
 }
 
-class _BattleShellCollapseHud extends StatelessWidget {
-  const _BattleShellCollapseHud({
+class _BattleShellVisibilityHud extends StatelessWidget {
+  const _BattleShellVisibilityHud({
     required this.compact,
+    required this.expanded,
     required this.onPressed,
   });
 
   final bool compact;
+  final bool expanded;
   final VoidCallback onPressed;
 
   @override
   Widget build(BuildContext context) {
     final size = compact ? 42.0 : 46.0;
+    final label = expanded ? 'Collapse shell' : 'Expand shell';
+    final icon = expanded
+        ? Icons.unfold_less_double_rounded
+        : Icons.unfold_more_double_rounded;
     return Tooltip(
-      message: 'Collapse shell',
+      message: label,
       child: Semantics(
         button: true,
-        label: 'Collapse shell',
+        label: label,
         child: Material(
           color: Colors.transparent,
           child: InkWell(
@@ -2029,7 +2039,7 @@ class _BattleShellCollapseHud extends StatelessWidget {
                 ],
               ),
               child: Icon(
-                Icons.unfold_less_double_rounded,
+                icon,
                 color: LightcorePalette.mist.withValues(alpha: 0.84),
                 size: compact ? 22 : 24,
               ),
