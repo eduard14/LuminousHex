@@ -138,7 +138,7 @@ class CardManagementScreen extends StatelessWidget {
                           tint: LightcorePalette.aether,
                           icon: _towerManagerIcon(towerCoreManager),
                           family: ManagerPortraitFamily.core,
-                          assetPath: towerCoreManager.config.portraitAssetPath,
+                          assetPath: towerCoreManager.portraitAssetPath,
                         ),
                   centerOverride: towerCoreManager == null
                       ? null
@@ -1249,7 +1249,7 @@ class _ManagerForgeRevealPull {
       name: manager.name,
       portraitSeed: manager.config.id,
       portraitName: manager.config.name,
-      assetPath: manager.config.portraitAssetPath,
+      assetPath: manager.portraitAssetPath,
       roleLabel: manager.roleLabel,
       rarity: manager.rarity,
       icon: _towerManagerIcon(manager),
@@ -1288,7 +1288,7 @@ class _ManagerForgeRevealPull {
   final String name;
   final String portraitSeed;
   final String portraitName;
-  final String assetPath;
+  final String? assetPath;
   final String roleLabel;
   final ManagerRarity rarity;
   final IconData icon;
@@ -1950,7 +1950,7 @@ Widget _managerTileArtBackground({
   required Color tint,
   required IconData icon,
   required ManagerPortraitFamily family,
-  required String assetPath,
+  required String? assetPath,
 }) {
   return ManagerPortrait(
     seed: seed,
@@ -2070,7 +2070,7 @@ class _TowerManagerGlyphTile extends StatelessWidget {
           tint: LightcorePalette.aether,
           icon: _towerManagerIcon(manager),
           family: ManagerPortraitFamily.core,
-          assetPath: manager.config.portraitAssetPath,
+          assetPath: manager.portraitAssetPath,
         ),
         topLeading: SymbolGridPips(
           count: _managerRarityScore(manager.rarity) + 1,
@@ -2677,7 +2677,7 @@ class _TowerManagerDetailSheet extends StatelessWidget {
             tint: LightcorePalette.aether,
             icon: _towerManagerIcon(manager),
             family: ManagerPortraitFamily.core,
-            assetPath: manager.config.portraitAssetPath,
+            assetPath: manager.portraitAssetPath,
             size: 132,
           ),
           name: manager.name,

@@ -96,7 +96,8 @@ shell, and keep climbing.
 - Towers roll trainable stat boards and special upgrade traits.
 - Core stats can be upgraded separately from perimeter towers.
 - Core Managers assign to a shell, upgrade the default payload feed, and raise
-  passive output.
+  passive output. Common Core Manager cards use identity tiles instead of
+  generated-style portrait art.
 - Pattern bonuses reward certain tower arrangements and shell build choices.
 
 ### Shell Progression

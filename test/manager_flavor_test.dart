@@ -3,6 +3,8 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lightcore/data/card_configs.dart';
 import 'package:lightcore/data/enemy_manager_configs.dart';
+import 'package:lightcore/models/lightcore_state.dart';
+import 'package:lightcore/models/lightcore_types.dart';
 
 void main() {
   test('core manager templates all have portrait seeds and bios', () {
@@ -45,6 +47,42 @@ void main() {
     expect(
       EnemyManagerLibrary.byId('swarm_broker')?.id,
       'emg_003_splinter_stella',
+    );
+  });
+
+  test('common core managers do not request generated portrait art', () {
+    final commonYella = InventoryCard(
+      instanceId: 'test_common_yella',
+      config: CardLibrary.yellaNova,
+      rarity: ManagerRarity.common,
+      forgeCost: 100,
+      powerMultiplier: 1,
+      chargeMultiplier: 1,
+      cooldownMultiplier: 1,
+      advantageMultiplier: 1,
+      automationRate: 1,
+      primaryTraitLabel: 'test',
+      secondaryTraitLabel: 'test',
+    );
+    final uncommonYella = InventoryCard(
+      instanceId: 'test_uncommon_yella',
+      config: CardLibrary.yellaNova,
+      rarity: ManagerRarity.uncommon,
+      forgeCost: 100,
+      powerMultiplier: 1,
+      chargeMultiplier: 1,
+      cooldownMultiplier: 1,
+      advantageMultiplier: 1,
+      automationRate: 1,
+      primaryTraitLabel: 'test',
+      secondaryTraitLabel: 'test',
+    );
+
+    expect(commonYella.name, 'Common Yella Nova');
+    expect(commonYella.portraitAssetPath, isNull);
+    expect(
+      uncommonYella.portraitAssetPath,
+      CardLibrary.yellaNova.portraitAssetPath,
     );
   });
 }

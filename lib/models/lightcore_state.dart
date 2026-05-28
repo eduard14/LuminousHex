@@ -697,6 +697,9 @@ class InventoryCard {
 
   String get roleLabel => config.roleLabel;
 
+  String? get portraitAssetPath =>
+      rarity == ManagerRarity.common ? null : config.portraitAssetPath;
+
   int get dismantleFlux => forgeCost ~/ 10;
 
   String get summary {
