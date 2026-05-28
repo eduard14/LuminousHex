@@ -757,7 +757,7 @@ extension LightcoreControllerTowerMath on LightcoreController {
       _pulses.where((pulse) => pulse.sourceSlotIndex == sourceSlotIndex).length;
 
   bool canManuallyActivateTower(OuterTowerState tower) {
-    return false;
+    return canActivateTower(tower);
   }
 
   double towerLiveCooldownForProjectile(

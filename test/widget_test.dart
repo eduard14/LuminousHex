@@ -49,16 +49,28 @@ void _catchTutorialPayloads(LightcoreController controller, int count) {
   if (fabricationRemaining > 0) {
     controller.tick(fabricationRemaining + 0.1);
   }
+  if (controller.tutorialStep == LightcoreTutorialStep.tapBattleCore) {
+    controller.handleBattleCenterTap();
+    final enemy = controller.debugSpawnEnemyFromCard(
+      EnemyLibrary.basicWhite.id,
+      angle: 0,
+      radius: 180,
+      level: 1,
+    );
+    expect(enemy, isNotNull);
+    expect(controller.fireQueuedCorePacketAtEnemy(enemy!.id), isTrue);
+  }
   for (var catchIndex = 0; catchIndex < count; catchIndex += 1) {
     final previousFireSequence = controller.slots[0].fireSequence;
-    expect(controller.debugSetTowerCharge(0, charge: 1), isTrue);
-    for (
-      var step = 0;
-      step < 600 && controller.slots[0].fireSequence <= previousFireSequence;
-      step += 1
-    ) {
-      controller.tick(0.05);
+    final cooldown = controller.slots[0].cooldownRemaining;
+    if (cooldown > 0) {
+      controller.tick(cooldown + 0.05);
     }
+    expect(controller.debugSetTowerCharge(0, charge: 1), isTrue);
+    expect(
+      controller.activateTowerSlot(0, showBanner: false, selectForStats: false),
+      isTrue,
+    );
     expect(controller.slots[0].fireSequence, greaterThan(previousFireSequence));
     if (controller.pulses.isNotEmpty) {
       expect(controller.boostPulseToCore(controller.pulses.last.id), isTrue);
@@ -1378,28 +1390,27 @@ void main() {
     },
   );
 
-  testWidgets(
-    'manager screen shows default auto manager before foundry unlock',
-    (tester) async {
-      final controller = LightcoreController();
-      addTearDown(controller.dispose);
+  testWidgets('manager screen shows manual command before foundry unlock', (
+    tester,
+  ) async {
+    final controller = LightcoreController();
+    addTearDown(controller.dispose);
 
-      await tester.pumpWidget(
-        MaterialApp(
-          debugShowCheckedModeBanner: false,
-          theme: buildLightcoreTheme(),
-          home: Scaffold(
-            body: CardManagementScreen(controller: controller, isActive: true),
-          ),
+    await tester.pumpWidget(
+      MaterialApp(
+        debugShowCheckedModeBanner: false,
+        theme: buildLightcoreTheme(),
+        home: Scaffold(
+          body: CardManagementScreen(controller: controller, isActive: true),
         ),
-      );
-      await tester.pump();
+      ),
+    );
+    await tester.pump();
 
-      expect(find.text('Main Manager'), findsOneWidget);
-      expect(find.text('Default Auto Manager'), findsOneWidget);
-      expect(find.text('Build a tower to start'), findsOneWidget);
-    },
-  );
+    expect(find.text('Main Manager'), findsOneWidget);
+    expect(find.text('Manual Command'), findsOneWidget);
+    expect(find.text('Build a tower to start'), findsOneWidget);
+  });
 
   testWidgets('bottom map action opens the dedicated threat map screen', (
     tester,
@@ -2190,7 +2201,7 @@ void main() {
     controller.selectSlot(0);
     expect(controller.tutorialBuildTowerAt(0, TowerLibrary.redPrism), isTrue);
     controller.markTutorialFirstTowerStatsOpened();
-    expect(controller.debugSetTowerCharge(0, charge: 1), isTrue);
+    controller.handleBattleCenterTap();
     expect(controller.tutorialStep, LightcoreTutorialStep.tapFirstTower);
 
     await _pumpBattleScreen(tester, controller);
@@ -2205,14 +2216,14 @@ void main() {
     );
     await _pumpTransition(tester);
 
-    expect(find.text('Catch a Payload'), findsWidgets);
+    expect(find.text('Aim and Fire'), findsWidgets);
     expect(
       find.byKey(const ValueKey<String>('battle-quest-detail-card')),
       findsOneWidget,
     );
     expect(
       find.text(
-        'Drag a floating payload piece to the Lightcore. Route it through the producing tower center first to make that packet critical.',
+        'Tap an anomaly to fire the queued packet at that direction. Managers will unlock auto-generation and auto-fire later.',
       ),
       findsWidgets,
     );
@@ -2243,9 +2254,9 @@ void main() {
     controller.selectSlot(0);
     expect(controller.tutorialBuildTowerAt(0, TowerLibrary.redPrism), isTrue);
     controller.markTutorialFirstTowerStatsOpened();
-    expect(controller.debugSetTowerCharge(0, charge: 1), isTrue);
-    controller.tick(0.1);
-    expect(controller.tutorialBattleSlotGuideLabel(0), 'CATCH PAYLOAD');
+    controller.handleBattleCenterTap();
+    expect(controller.tutorialBattleCoreGuideLabel, isNull);
+    expect(controller.tutorialStep, LightcoreTutorialStep.tapFirstTower);
 
     await _pumpBattleScreen(tester, controller);
 

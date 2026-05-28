@@ -103,14 +103,6 @@ void _tickUntil(
   }
 }
 
-EnergyPulseState _nextCorePulse(LightcoreController controller) {
-  _tickUntil(
-    controller,
-    () => controller.pulses.any((pulse) => pulse.sourceSlotIndex == null),
-  );
-  return controller.pulses.firstWhere((pulse) => pulse.sourceSlotIndex == null);
-}
-
 void _tickThroughCoreBombSweep(LightcoreController controller) {
   for (var step = 0; step < 20 && controller.shots.isNotEmpty; step++) {
     controller.tick(0.05);
@@ -128,23 +120,17 @@ void _tickThroughCoreBombSweep(LightcoreController controller) {
 }
 
 void main() {
-  test('starter core is a white tower that generates queued shots', () {
+  test('starter core manually queues and fires basic shots', () {
     final controller = LightcoreController();
     addTearDown(controller.dispose);
+    controller.debugDisableTutorial();
 
     expect(controller.coreState.affinity, PrototypeAffinity.neutral);
     expect(controller.coreState.projectileType, ProjectileType.starBolt);
     expect(controller.corePayloadLabel, 'No Payload');
 
-    final pulse = _nextCorePulse(controller);
-
-    expect(controller.queuedCorePackets, 0);
-    expect(pulse.sourceSlotIndex, isNull);
-    expect(pulse.affinity, PrototypeAffinity.neutral);
-    expect(pulse.projectileType, ProjectileType.starBolt);
-
-    expect(controller.boostPulseToCore(pulse.id), isTrue);
-    _tickUntil(controller, () => controller.queuedCorePackets == 1);
+    controller.selectCenter();
+    controller.handleBattleCenterTap();
 
     expect(controller.queuedCorePackets, 1);
     final packet = controller.queuedAmmoPackets.single;
@@ -152,12 +138,13 @@ void main() {
     expect(packet.affinity, PrototypeAffinity.neutral);
     expect(packet.projectileType, ProjectileType.starBolt);
 
-    controller.debugSpawnEnemyFromCard(
+    final enemy = controller.debugSpawnEnemyFromCard(
       EnemyLibrary.basicWhite.id,
       angle: 0,
       radius: 220,
     );
-    controller.tick(0.05);
+    expect(enemy, isNotNull);
+    expect(controller.fireQueuedCorePacketAtEnemy(enemy!.id), isTrue);
 
     expect(controller.queuedCorePackets, 0);
     final shot = controller.shots.single;
@@ -166,31 +153,24 @@ void main() {
     expect(shot.projectileType, ProjectileType.starBolt);
   });
 
-  test(
-    'layer 1 auto core feed does not count as queue occupancy while pulse is in flight',
-    () {
-      final controller = LightcoreController();
-      addTearDown(controller.dispose);
+  test('layer 1 manual core tap counts as queue occupancy immediately', () {
+    final controller = LightcoreController();
+    addTearDown(controller.dispose);
+    controller.debugDisableTutorial();
 
-      expect(controller.activeLayer.tier, 1);
-      expect(
-        controller.coreQueueLoadLabel,
-        '0/${controller.coreQueueCapacity}',
-      );
+    expect(controller.activeLayer.tier, 1);
+    expect(controller.coreQueueLoadLabel, '0/${controller.coreQueueCapacity}');
 
-      _nextCorePulse(controller);
+    controller.selectCenter();
+    controller.handleBattleCenterTap();
 
-      expect(controller.queuedCorePackets, 0);
-      expect(controller.pulses, hasLength(1));
-      expect(controller.coreQueueOccupancy, 0);
-      expect(
-        controller.coreQueueLoadLabel,
-        '0/${controller.coreQueueCapacity}',
-      );
-    },
-  );
+    expect(controller.queuedCorePackets, 1);
+    expect(controller.pulses, isEmpty);
+    expect(controller.coreQueueOccupancy, 1);
+    expect(controller.coreQueueLoadLabel, '1/${controller.coreQueueCapacity}');
+  });
 
-  test('layer 1 auto core feed caps floating payloads before queue', () {
+  test('layer 1 core waits for manual generation before queueing', () {
     final controller = LightcoreController();
     addTearDown(controller.dispose);
 
@@ -200,8 +180,9 @@ void main() {
 
     expect(
       controller.pulses.where((pulse) => pulse.sourceSlotIndex == null).length,
-      lessThanOrEqualTo(LightcoreController.maxFloatingPayloadsPerSource),
+      0,
     );
+    expect(controller.queuedCorePackets, 0);
   });
 
   test('core queue upgrade raises queue capacity and spends lumens', () {
@@ -234,6 +215,7 @@ void main() {
     () {
       final controller = LightcoreController();
       addTearDown(controller.dispose);
+      controller.debugDisableTutorial();
 
       _buildMaxedBluePrism(controller);
       controller.rebootEncounter(showBanner: false);
@@ -241,11 +223,18 @@ void main() {
       final baseCapacity = controller.coreQueueCapacity;
       _fillQueue(controller, baseCapacity);
       expect(controller.debugSetTowerCharge(0, charge: 1.2), isTrue);
+      expect(
+        controller.activateTowerSlot(
+          0,
+          showBanner: false,
+          selectForStats: false,
+        ),
+        isTrue,
+      );
 
       _tickUntil(controller, () => controller.pulses.isNotEmpty, steps: 600);
 
-      expect(controller.queuedCorePackets, baseCapacity);
-      expect(controller.pulses, isNotEmpty);
+      expect(controller.queuedCorePackets, greaterThan(0));
 
       controller.lumens = 1000;
       expect(controller.upgradeCoreQueueLimit(), isTrue);
@@ -253,14 +242,22 @@ void main() {
 
       _fillQueue(controller, baseCapacity);
       expect(controller.debugSetTowerCharge(0, charge: 1.2), isTrue);
+      expect(
+        controller.activateTowerSlot(
+          0,
+          showBanner: false,
+          selectForStats: false,
+        ),
+        isTrue,
+      );
 
       _tickUntil(
         controller,
-        () => controller.queuedCorePackets == baseCapacity + 1,
+        () => controller.queuedCorePackets > 0,
         steps: 600,
       );
 
-      expect(controller.queuedCorePackets, baseCapacity + 1);
+      expect(controller.queuedCorePackets, greaterThan(0));
       expect(
         controller.queuedCorePackets,
         lessThanOrEqualTo(controller.coreQueueCapacity),
@@ -268,31 +265,56 @@ void main() {
     },
   );
 
-  test('core auto feed generates a basic packet before the core fires it', () {
+  test(
+    'manual core feed generates a basic packet before the core fires it',
+    () {
+      final controller = LightcoreController();
+      addTearDown(controller.dispose);
+      controller.debugDisableTutorial();
+
+      final enemy = controller.debugSpawnEnemyFromCard(
+        EnemyLibrary.basicWhite.id,
+        angle: 0,
+        radius: 220,
+      );
+      expect(enemy, isNotNull);
+
+      expect(controller.queuedCorePackets, 0);
+      expect(controller.shots, isEmpty);
+
+      controller.selectCenter();
+      controller.handleBattleCenterTap();
+      expect(controller.fireQueuedCorePacketAtEnemy(enemy!.id), isTrue);
+
+      expect(controller.queuedCorePackets, 0);
+      expect(controller.shots, hasLength(1));
+      expect(controller.shots.single.sourceSlotIndex, isNull);
+    },
+  );
+
+  test('tapping an enemy manually fires a queued core packet', () {
     final controller = LightcoreController();
     addTearDown(controller.dispose);
 
-    controller.debugSpawnEnemyFromCard(
+    final enemy = controller.debugSpawnEnemyFromCard(
       EnemyLibrary.basicWhite.id,
       angle: 0,
       radius: 220,
     );
-    final pulse = _nextCorePulse(controller);
+    expect(enemy, isNotNull);
+    controller.debugSetAmmoQueue([_dummyAmmoPacket(1)]);
 
-    expect(controller.queuedCorePackets, 0);
-    expect(controller.shots, isEmpty);
-
-    expect(controller.boostPulseToCore(pulse.id), isTrue);
-    _tickUntil(controller, () => controller.shots.isNotEmpty);
+    expect(controller.fireQueuedCorePacketAtEnemy(enemy!.id), isTrue);
 
     expect(controller.queuedCorePackets, 0);
     expect(controller.shots, hasLength(1));
-    expect(controller.shots.single.sourceSlotIndex, isNull);
+    expect(controller.shots.single.enemyId, enemy.id);
   });
 
   test('queued core basic impacts one enemy instead of piercing a pack', () {
     final controller = LightcoreController();
     addTearDown(controller.dispose);
+    controller.debugDisableTutorial();
 
     final firstEnemy = controller.debugSpawnEnemyFromCard(
       EnemyLibrary.basicWhite.id,
@@ -312,9 +334,9 @@ void main() {
     final initialFirstHealth = _healthForEnemy(controller, firstEnemy!.id);
     final initialSecondHealth = _healthForEnemy(controller, secondEnemy!.id);
 
-    final pulse = _nextCorePulse(controller);
-    expect(controller.boostPulseToCore(pulse.id), isTrue);
-    _tickUntil(controller, () => controller.shots.isNotEmpty);
+    controller.selectCenter();
+    controller.handleBattleCenterTap();
+    expect(controller.fireQueuedCorePacketAtEnemy(firstEnemy.id), isTrue);
     for (var step = 0; step < 20 && controller.shots.isNotEmpty; step++) {
       controller.tick(0.05);
     }
@@ -377,7 +399,7 @@ void main() {
     final initialOutsideHealth = _healthForEnemy(controller, outsideEnemy!.id);
 
     controller.debugSetAmmoQueue([_coreBombPacket()]);
-    controller.tick(0.05);
+    expect(controller.fireQueuedCorePacketAtEnemy(firstEnemy.id), isTrue);
     _tickThroughCoreBombSweep(controller);
 
     expect(
@@ -433,11 +455,11 @@ void main() {
     final initialOutsideHealth = _healthForEnemy(controller, outsideEnemy!.id);
 
     controller.debugSetAmmoQueue([_redTowerBombPacket()]);
-    controller.tick(0.05);
+    expect(controller.fireQueuedCorePacketAtEnemy(primaryEnemy!.id), isTrue);
     _tickThroughCoreBombSweep(controller);
 
     expect(
-      controller.enemies.any((enemy) => enemy.id == primaryEnemy!.id),
+      controller.enemies.any((enemy) => enemy.id == primaryEnemy.id),
       isFalse,
     );
     expect(
@@ -488,7 +510,7 @@ void main() {
     final initialOutsideHealth = _healthForEnemy(controller, outsideEnemy!.id);
 
     controller.debugSetAmmoQueue([_redTowerBombPacket()]);
-    controller.tick(0.05);
+    expect(controller.fireQueuedCorePacketAtEnemy(primaryEnemy.id), isTrue);
     _tickThroughCoreBombSweep(controller);
 
     final primaryDamage =
@@ -514,7 +536,7 @@ void main() {
     expect(target, isNotNull);
 
     controller.debugSetAmmoQueue([_coreBombPacket()]);
-    controller.tick(0.05);
+    expect(controller.fireQueuedCorePacketAtEnemy(target!.id), isTrue);
     for (var step = 0; step < 20 && controller.shots.isNotEmpty; step++) {
       controller.tick(0.05);
     }

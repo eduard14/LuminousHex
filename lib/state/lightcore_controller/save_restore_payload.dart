@@ -339,6 +339,10 @@ extension LightcoreControllerSaveRestorePayload on LightcoreController {
       tutorialData['coreShotTapLearned'],
       fallback: _tutorialEarlyQuestChainCompleted,
     );
+    _tutorialManualAimFireLearned = _boolValue(
+      tutorialData['manualAimFireLearned'],
+      fallback: _tutorialEarlyQuestChainCompleted,
+    );
     _tutorialSecondShellShotTapLearned = _boolValue(
       tutorialData['secondShellShotTapLearned'],
     );
@@ -558,6 +562,9 @@ extension LightcoreControllerSaveRestorePayload on LightcoreController {
     if (!hasCoreShotTapLearned &&
         (hasDurableEarlyProgress || _core.fireSequence > 0)) {
       _tutorialCoreShotTapLearned = true;
+    }
+    if (hasDurableEarlyProgress) {
+      _tutorialManualAimFireLearned = true;
     }
   }
 

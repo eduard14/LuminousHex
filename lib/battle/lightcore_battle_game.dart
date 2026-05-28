@@ -377,6 +377,11 @@ class LightcoreBattleGame extends FlameGame with ScaleDetector {
       return;
     }
     final tappedEnemyId = _hitTestEnemy(pointer);
+    if (tappedEnemyId != null &&
+        controller.fireQueuedCorePacketAtEnemy(tappedEnemyId)) {
+      LightcoreAudio.instance.playSfx(LightcoreSfx.coreFire);
+      return;
+    }
     if (tappedEnemyId != null && controller.focusBattleEnemy(tappedEnemyId)) {
       return;
     }

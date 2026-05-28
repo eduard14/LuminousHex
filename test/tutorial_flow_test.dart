@@ -29,19 +29,34 @@ void _catchTutorialPayloads(LightcoreController controller, int count) {
   }
   for (var catchIndex = 0; catchIndex < count; catchIndex += 1) {
     final previousFireSequence = controller.slots[0].fireSequence;
-    expect(controller.debugSetTowerCharge(0, charge: 1), isTrue);
-    for (
-      var step = 0;
-      step < 600 && controller.slots[0].fireSequence <= previousFireSequence;
-      step += 1
-    ) {
-      controller.tick(0.05);
+    final cooldown = controller.slots[0].cooldownRemaining;
+    if (cooldown > 0) {
+      controller.tick(cooldown + 0.05);
     }
+    expect(controller.debugSetTowerCharge(0, charge: 1), isTrue);
+    expect(
+      controller.activateTowerSlot(0, showBanner: false, selectForStats: false),
+      isTrue,
+    );
     expect(controller.slots[0].fireSequence, greaterThan(previousFireSequence));
     if (controller.pulses.isNotEmpty) {
       expect(controller.boostPulseToCore(controller.pulses.last.id), isTrue);
     }
   }
+}
+
+void _completeManualAimLesson(LightcoreController controller) {
+  expect(controller.tutorialStep, LightcoreTutorialStep.tapBattleCore);
+  controller.handleBattleCenterTap();
+  expect(controller.tutorialStep, LightcoreTutorialStep.tapFirstTower);
+  final enemy = controller.debugSpawnEnemyFromCard(
+    EnemyLibrary.basicWhite.id,
+    angle: 0,
+    radius: 180,
+    level: 1,
+  );
+  expect(enemy, isNotNull);
+  expect(controller.fireQueuedCorePacketAtEnemy(enemy!.id), isTrue);
 }
 
 void _promoteRootShell(LightcoreController controller) {
@@ -218,7 +233,7 @@ void main() {
       LightcoreTutorialStep.inspectFirstTowerStats,
     );
     controller.markTutorialFirstTowerStatsOpened();
-    expect(controller.tutorialStep, LightcoreTutorialStep.tapFirstTower);
+    _completeManualAimLesson(controller);
     _catchTutorialPayloads(controller, 3);
 
     controller.lumens = 1000;
@@ -303,6 +318,7 @@ void main() {
         isFalse,
       );
       controller.markTutorialFirstTowerStatsOpened();
+      _completeManualAimLesson(controller);
       _catchTutorialPayloads(controller, 3);
       controller.selectSlot(0);
       while (controller.slots[0].level < 3) {
@@ -406,26 +422,24 @@ void main() {
       LightcoreTutorialStep.inspectFirstTowerStats,
     );
     controller.markTutorialFirstTowerStatsOpened();
+    expect(controller.tutorialStep, LightcoreTutorialStep.tapBattleCore);
+    controller.handleBattleCenterTap();
     expect(controller.tutorialStep, LightcoreTutorialStep.tapFirstTower);
-    expect(controller.tutorialBattleSlotGuideLabel(0), 'CHARGING');
-    expect(controller.debugSetTowerCharge(0, charge: 1), isTrue);
-    controller.tick(0.1);
-    expect(controller.tutorialStep, LightcoreTutorialStep.tapFirstTower);
-    expect(controller.tutorialHeadline, 'Catch a Payload');
+    expect(controller.tutorialHeadline, 'Aim and Fire');
     expect(
       controller.tutorialPrompt,
-      'Tap a floating payload piece to load it. For a stronger packet, drag it through the producing tower center before releasing.',
+      'Tap an anomaly to fire the queued packet at that direction. Managers will unlock auto-generation and auto-fire later.',
     );
-    expect(controller.tutorialBattleSlotGuideLabel(0), 'CATCH PAYLOAD');
-    expect(
-      controller.releaseDraggedPulse(
-        controller.pulses.last.id,
-        crossedSourceTower: false,
-      ),
-      isTrue,
+    final enemy = controller.debugSpawnEnemyFromCard(
+      EnemyLibrary.basicWhite.id,
+      angle: 0,
+      radius: 180,
+      level: 1,
     );
+    expect(enemy, isNotNull);
+    expect(controller.fireQueuedCorePacketAtEnemy(enemy!.id), isTrue);
 
-    expect(controller.tutorialStep, LightcoreTutorialStep.tapFirstTower);
+    expect(controller.tutorialStep, isNot(LightcoreTutorialStep.tapFirstTower));
   });
 
   test(
@@ -466,7 +480,7 @@ void main() {
       );
 
       controller.markTutorialFirstTowerStatsOpened();
-      expect(controller.tutorialStep, LightcoreTutorialStep.tapFirstTower);
+      expect(controller.tutorialStep, LightcoreTutorialStep.tapBattleCore);
     },
   );
 
@@ -492,7 +506,7 @@ void main() {
     expect(controller.isOuterSlotUnlocked(0), isTrue);
   });
 
-  test('core auto feed tutorial advances without manual core tap', () {
+  test('core manual generation waits for a Lightcore tap', () {
     final controller = LightcoreController();
     addTearDown(controller.dispose);
 
@@ -601,12 +615,23 @@ void main() {
 
     expect(controller.tutorialStep, LightcoreTutorialStep.none);
     expect(controller.buildTowerAt(0, TowerLibrary.redPrism), isTrue);
+    final childFabrication = controller.slots[0].fabricationRemainingSeconds;
+    if (childFabrication > 0) {
+      controller.tick(childFabrication + 0.1);
+    }
     expect(controller.debugSetTowerCharge(0, charge: 1), isTrue);
     expect(controller.tutorialStep, LightcoreTutorialStep.tapSecondShellTower);
     expect(controller.tutorialHighlightsBattleSlot(0), isTrue);
-    controller.tick(0.1);
-    expect(controller.pulses, isNotEmpty);
-    expect(controller.boostPulseToCore(controller.pulses.last.id), isTrue);
+    for (var step = 0; step < 2000 && controller.pulses.isEmpty; step += 1) {
+      controller.tick(0.05);
+    }
+    if (controller.pulses.isEmpty) {
+      controller.handleBattleCenterTap();
+      expect(controller.queuedCorePackets, greaterThan(0));
+    } else {
+      expect(controller.boostPulseToCore(controller.pulses.last.id), isTrue);
+    }
+    controller.tick(0);
     expect(controller.tutorialHighlightsBattleSlot(0), isFalse);
     expect(
       controller.tutorialStep,

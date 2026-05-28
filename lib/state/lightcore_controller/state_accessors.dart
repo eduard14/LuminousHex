@@ -473,7 +473,9 @@ extension LightcoreControllerStateAccessors on LightcoreController {
 
   bool get coreAutoGenerationUnlocked => managerAssignmentUnlocked;
 
-  bool get coreAutoFireUnlocked => _towerCoreManagerForLayer(activeLayer) != null;
+  bool get coreAutoFireUnlocked =>
+      _tutorialManualAimFireLearned ||
+      _towerCoreManagerForLayer(activeLayer) != null;
 
   bool get isOuterRingComplete => builtTowerCount == slotCount;
 
@@ -653,9 +655,11 @@ extension LightcoreControllerStateAccessors on LightcoreController {
       !_layer2.unlocked;
 
   bool get tutorialHighlightsBattleCore =>
-      _tutorialStep == LightcoreTutorialStep.unfoldShell;
+      _tutorialStep == LightcoreTutorialStep.unfoldShell ||
+      _tutorialStep == LightcoreTutorialStep.tapBattleCore;
 
-  String? get tutorialBattleCoreGuideLabel => null;
+  String? get tutorialBattleCoreGuideLabel =>
+      _tutorialStep == LightcoreTutorialStep.tapBattleCore ? 'GENERATE' : null;
 
   bool get tutorialHighlightsCoreStats =>
       _tutorialStep == LightcoreTutorialStep.readEffectiveGain ||
@@ -668,7 +672,6 @@ extension LightcoreControllerStateAccessors on LightcoreController {
   bool tutorialHighlightsBattleSlot(int slotIndex) {
     if (slotIndex == 0 &&
         (_tutorialStep == LightcoreTutorialStep.selectFirstHex ||
-            _tutorialStep == LightcoreTutorialStep.tapFirstTower ||
             (_tutorialStep == LightcoreTutorialStep.inspectFirstTowerStats &&
                 selectedSlotIndex != 0) ||
             ((_tutorialStep == LightcoreTutorialStep.buildFirstRedTower ||
@@ -694,7 +697,6 @@ extension LightcoreControllerStateAccessors on LightcoreController {
       LightcoreTutorialStep.inspectFirstTowerStats => 'OPEN STATS',
       LightcoreTutorialStep.upgradeFirstTowerToLevel3 ||
       LightcoreTutorialStep.upgradeFirstTowerToLevel4 => 'UPGRADE',
-      LightcoreTutorialStep.tapFirstTower ||
       LightcoreTutorialStep.tapSecondShellTower => _tutorialTowerShotGuideLabel(
         slotIndex,
       ),
@@ -789,8 +791,13 @@ extension LightcoreControllerStateAccessors on LightcoreController {
       _tutorialStep == LightcoreTutorialStep.defeatFirstBoss &&
       _tutorialTrackedBossEnemyId != null;
 
-  String? get tutorialHighlightedEnemyId =>
-      tutorialHighlightsBattleBoss ? _tutorialTrackedBossEnemyId : null;
+  String? get tutorialHighlightedEnemyId {
+    if (_tutorialStep == LightcoreTutorialStep.tapFirstTower &&
+        _enemies.isNotEmpty) {
+      return _enemies.first.id;
+    }
+    return tutorialHighlightsBattleBoss ? _tutorialTrackedBossEnemyId : null;
+  }
 
   LightcoreTutorialPulseTarget? get tutorialShowcaseTarget =>
       switch (_tutorialStep) {

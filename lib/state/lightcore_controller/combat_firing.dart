@@ -178,6 +178,109 @@ extension LightcoreControllerCombatFiring on LightcoreController {
     return true;
   }
 
+  bool fireQueuedCorePacketAtEnemy(String enemyId) {
+    if (activeLayerPassiveOnly ||
+        _core.fireCooldownRemaining > 0 ||
+        _ammoQueue.isEmpty) {
+      return false;
+    }
+    final target = _enemyById(enemyId);
+    if (target == null) {
+      return false;
+    }
+    var ammoIndex = _ammoQueue.indexWhere((packet) {
+      final coreRoutedRange = coreEffectiveRangeForUpgradeLevel(
+        _core.rangeUpgradeLevel,
+        projectileType: packet.projectileType,
+      );
+      return target.radius <= max(packet.range, coreRoutedRange);
+    });
+    if (ammoIndex == -1) {
+      ammoIndex = 0;
+    }
+    final ammo = _ammoQueue.removeAt(ammoIndex);
+    final coreRoutedRange = coreEffectiveRangeForUpgradeLevel(
+      _core.rangeUpgradeLevel,
+      projectileType: ammo.projectileType,
+    );
+    final shotMaxRange = max(ammo.range, coreRoutedRange);
+    final sourceTower = ammo.sourceSlotIndex == null
+        ? null
+        : _slots[ammo.sourceSlotIndex!];
+    var critChance = ammo.critChance;
+    var criticalBoosted = false;
+    if (ammo.criticalBoosted) {
+      critChance = 1.0;
+      criticalBoosted = true;
+    }
+    final cooldownMultiplier =
+        sourceTower != null && _slotCountsTowardRing(sourceTower)
+        ? _slotCoreCooldownMultiplier(sourceTower)
+        : 1.0;
+    var shotPower =
+        ammo.power *
+        ammo.finalDamageMultiplier *
+        _sampleDamageRangeMultiplier(
+          ammo.minDamageMultiplier,
+          ammo.maxDamageMultiplier,
+        ) *
+        _projectileDamageMultiplier(ammo.projectileType) *
+        _coreEnergyOutputMultiplier;
+    if (_ammoUsesBlueFocusLaser(ammo)) {
+      shotPower *= _blueFocusLaserDamageMultiplier;
+      _blueFocusTargetEnemyIdBySlot[ammo.sourceSlotIndex ??
+              _coreBlueFocusTargetKey] =
+          target.id;
+    }
+    final aimAngle = target.angle;
+    _shots.add(
+      CoreShotState(
+        id: 'shot_${_shotCounter++}',
+        enemyId: target.id,
+        affinity: ammo.affinity,
+        secondaryAffinity: ammo.secondaryAffinity,
+        power: shotPower,
+        projectileType: ammo.projectileType,
+        payloadType: ammo.payloadType,
+        progress: 0,
+        layer2: false,
+        critChance: critChance,
+        critMultiplier: ammo.critMultiplier,
+        critical: false,
+        aimAngle: aimAngle,
+        travelRadius: _shotTravelRadiusForProjectile(
+          ammo.projectileType,
+          targetRadius: min(target.radius, shotMaxRange),
+          maxRange: shotMaxRange,
+          basicImpact: _shotUsesCoreBasicImpact(
+            layer2: false,
+            projectileType: ammo.projectileType,
+            sourceSlotIndex: ammo.sourceSlotIndex,
+          ),
+        ),
+        sourceSlotIndex: ammo.sourceSlotIndex,
+        advantageMultiplier: ammo.advantageMultiplier,
+        bossDamageMultiplier: ammo.bossDamageMultiplier,
+        normalDamageMultiplier: ammo.normalDamageMultiplier,
+        defensePenetration: ammo.defensePenetration,
+        criticalBoosted: criticalBoosted,
+      ),
+    );
+    _core = _core.copyWith(
+      fireCooldownRemaining:
+          coreShotCooldownForUpgradeLevel(
+            _core.fireSpeedUpgradeLevel,
+            projectileType: ammo.projectileType,
+          ) *
+          cooldownMultiplier,
+    );
+    _spendCoreEnergy(3 + (ammo.payloadType == PayloadType.none ? 0 : 1));
+    _tutorialManualAimFireLearned = true;
+    _needsNotify = true;
+    _notifyNow();
+    return true;
+  }
+
   double _prismRiftAimAngle({required double aimDx, required double aimDy}) {
     final magnitude = sqrt((aimDx * aimDx) + (aimDy * aimDy));
     if (magnitude <= 0.001) {

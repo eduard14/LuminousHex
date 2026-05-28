@@ -66,15 +66,16 @@ shell, and keep climbing.
 - Real-time hex battlefield with one central Lightcore and six relay towers.
 - Relay towers charge and feed ammo packets to the core instead of firing
   directly.
-- Manual payload catches are forgiving: large-orbit payloads travel toward the
-  Lightcore but only count as queued packets once loaded; players can tap or
-  drag them inward, while drag-through routing remains the optional skill move
-  that guarantees critical packets.
+- Manual packet play is explicit in the opening: tap the Lightcore to generate
+  a queued packet, then tap an anomaly to aim and fire that packet immediately.
+- Relay payload catches stay as an optional skill layer once towers are active:
+  players can tap or drag payloads inward, while drag-through routing guarantees
+  critical packets.
 - Shell visibility is an explicit HUD toggle, keeping missed payload taps from
   folding the active battlefield or opening tower placement.
-- A visible Default Auto Manager keeps the Lightcore and built towers feeding
-  payloads slowly from the start, so active play enhances progress instead of
-  enabling it.
+- Manager automation is split into two unlock beats: manager generation starts
+  feeding packets after the opening shell is established, and assigned Core
+  Managers later add auto-fire.
 - Core queue combat rewards smart timing, charge flow, and tower placement.
 - Output Efficiency pressure system replaces a simple health-loss fail state.
 - Lane disruption reduces rewards and charge flow when anomalies reach the ring.
@@ -212,7 +213,7 @@ video hooks.
 
 | Pillar | Post Ideas |
 | --- | --- |
-| Gameplay hook | Short clips of dragging floating payload pieces into the Lightcore and the core firing queued packets. |
+| Gameplay hook | Short clips of tapping floating payload pieces into the Lightcore, tapping anomalies to fire queued packets, and drag-routing for critical packets. |
 | Progression | Before/after shell promotion, Root to Prism, Prism to Nexus, inheritance previews. |
 | Buildcraft | Color-family comparisons, pure builds versus blended projectile/payload builds. |
 | Anomaly pressure | Knowledge Card pulls, Apex Anomaly reveals, Focus Target saves, lane disruption moments. |

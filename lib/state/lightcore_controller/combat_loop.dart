@@ -350,7 +350,9 @@ extension LightcoreControllerCombatLoop on LightcoreController {
       );
       var nextTower = liveTower.copyWith(charge: charge);
 
-      final feedInterval = towerPayloadFeedInterval(nextTower);
+      final feedInterval = coreAutoGenerationUnlocked
+          ? towerPayloadFeedInterval(nextTower)
+          : null;
       if (feedInterval == null) {
         nextTower = nextTower.copyWith(automationCooldownRemaining: 0);
       } else {

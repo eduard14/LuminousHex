@@ -1648,6 +1648,7 @@ extension LightcoreControllerProgressionLayers on LightcoreController {
     _tutorialMenteesOpened = true;
     _tutorialMentorsOpened = true;
     _tutorialCoreShotTapLearned = true;
+    _tutorialManualAimFireLearned = true;
     _tutorialSecondShellShotTapLearned = true;
     _tutorialOverdriveLearned = true;
     _tutorialIntroBossPending = false;
@@ -1866,6 +1867,7 @@ extension LightcoreControllerProgressionLayers on LightcoreController {
     _tutorialSafeScanDefeats = 5;
     _tutorialFirstTowerStatsOpened = true;
     _tutorialStabilityPanelOpened = false;
+    _tutorialManualAimFireLearned = true;
     _tutorialAutoQueuedPulses = 0;
     _syncTutorialStep(showBanner: false);
     _notifyNow();

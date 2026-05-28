@@ -91,7 +91,7 @@ const List<_HelpSectionData> _baseHelpSections = <_HelpSectionData>[
     title: 'Shell Defense Basics',
     summary: 'How the core, relay prisms, and anomalies interact.',
     body:
-        'The center tower is the Lightcore. It generates its own payload pieces for the core queue automatically; the Lightcore fires queued packets when a target is in range and its cooldown is ready. The six surrounding towers are relay prisms. They build charge, then create payload pieces for the core queue through starter automation or manager automation.\n\n'
+        'The center tower is the Lightcore. Early on, tap it to generate packets for the core queue, then tap an anomaly to aim and fire. Manager generation unlocks later, and assigned Core Managers add auto-fire. The six surrounding towers are relay prisms. They build charge, then create payload pieces for the core queue through manual commands or manager automation.\n\n'
         'Anomalies spiral inward from beyond the shell. They do not destroy the core directly. Instead they jam the edge hex they hit, slow relay output, and reduce how efficiently the shell harvests Lumens.',
   ),
   _HelpSectionData(

@@ -141,7 +141,16 @@ extension LightcoreControllerBattleTowerActions on LightcoreController {
     _swarmActivated = true;
     selectedSlotIndex = null;
     _towerRangePreviewSlotIndex = null;
-    if (_queueCoreBasicAttack(showBanner: true)) {
+    final canManualGenerateCorePacket =
+        _earlyTutorialComplete ||
+        _tutorialFirstTowerStatsOpened ||
+        _tutorialStep == LightcoreTutorialStep.tapBattleCore ||
+        _tutorialStep == LightcoreTutorialStep.tapSecondShellTower;
+    if (canManualGenerateCorePacket &&
+        _queueCoreBasicAttack(showBanner: true)) {
+      if (_tutorialStep == LightcoreTutorialStep.tapSecondShellTower) {
+        _tutorialSecondShellShotTapLearned = true;
+      }
       _syncTutorialStep(showBanner: false);
       _notifyNow();
       return;

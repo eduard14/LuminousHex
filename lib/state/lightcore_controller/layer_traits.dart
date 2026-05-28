@@ -140,7 +140,8 @@ extension LightcoreControllerLayerTraits on LightcoreController {
     if (!_isOpeningStarterTower(tower.config)) {
       return false;
     }
-    return tower.fireSequence >= 3 &&
+    return _tutorialCoreShotTapLearned &&
+        _tutorialManualAimFireLearned &&
         tower.level >= 4 &&
         _tutorialFirstTowerStatsOpened &&
         _tutorialStabilityPanelOpened &&
@@ -234,10 +235,9 @@ extension LightcoreControllerLayerTraits on LightcoreController {
       LightcoreTutorialStep.inspectFirstTowerStats =>
         _tutorialFirstTowerStatsOpened,
       LightcoreTutorialStep.tapBattleCore => _tutorialCoreShotTapLearned,
-      LightcoreTutorialStep.tapFirstTower =>
-        firstTower != null && firstTower.fireSequence >= 3,
+      LightcoreTutorialStep.tapFirstTower => _tutorialManualAimFireLearned,
       LightcoreTutorialStep.tapSecondShellTower =>
-        _tutorialSecondShellShotTapLearned,
+        _tutorialSecondShellShotTapLearned || _ammoQueue.isNotEmpty,
       LightcoreTutorialStep.upgradeFirstTowerToLevel3 =>
         firstTower != null && firstTower.level >= 3,
       LightcoreTutorialStep.raiseThreat => _firstThreatChallengeStarted,
@@ -320,7 +320,10 @@ extension LightcoreControllerLayerTraits on LightcoreController {
     if (!_tutorialFirstTowerStatsOpened) {
       return LightcoreTutorialStep.inspectFirstTowerStats;
     }
-    if (firstTower.fireSequence < 3) {
+    if (!_tutorialCoreShotTapLearned) {
+      return LightcoreTutorialStep.tapBattleCore;
+    }
+    if (!_tutorialManualAimFireLearned) {
       return LightcoreTutorialStep.tapFirstTower;
     }
     final firstTowerUpgradeCost = upgradeCost(firstTower);
@@ -641,9 +644,9 @@ extension LightcoreControllerLayerTraits on LightcoreController {
     LightcoreTutorialStep.inspectFirstTowerStats =>
       'Stats mapped. Use power, charge, cooldown, automation, and load to decide what to tune next.',
     LightcoreTutorialStep.tapBattleCore =>
-      'Core payload feed online. Drag payload pieces when pressure rises.',
+      'Packet generated. The core queue now waits for your shot command.',
     LightcoreTutorialStep.tapFirstTower =>
-      'Payload lesson complete. Towers feed pieces; the core spends queued packets as shots.',
+      'Manual fire learned. Managers later take over generation first, then firing.',
     LightcoreTutorialStep.upgradeFirstTowerToLevel3 =>
       'Anchor tower tuned. Higher tower levels make every queued packet hit harder.',
     LightcoreTutorialStep.raiseThreat =>
@@ -1437,8 +1440,8 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         LightcoreTutorialStep.selectFirstHex => 'Select Hex 1',
         LightcoreTutorialStep.buildFirstRedTower => 'Choose First Tower',
         LightcoreTutorialStep.inspectFirstTowerStats => 'Read Tower Stats',
-        LightcoreTutorialStep.tapBattleCore => 'Core Auto Feed',
-        LightcoreTutorialStep.tapFirstTower => 'Catch A Payload',
+        LightcoreTutorialStep.tapBattleCore => 'Generate A Packet',
+        LightcoreTutorialStep.tapFirstTower => 'Aim And Fire',
         LightcoreTutorialStep.tapSecondShellTower => 'Catch Child Payloads',
         LightcoreTutorialStep.upgradeFirstTowerToLevel3 =>
           'Tune The Main Tower',
@@ -1488,9 +1491,9 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         LightcoreTutorialStep.inspectFirstTowerStats =>
           'Open the first tower stats pop-out.',
         LightcoreTutorialStep.tapBattleCore =>
-          'Watch the Lightcore generate payload pieces automatically.',
+          'Tap the Lightcore to generate a queued packet.',
         LightcoreTutorialStep.tapFirstTower =>
-          'Tap a floating payload piece to load it, or drag it through its tower for a critical packet.',
+          'Tap an anomaly to manually fire the queued packet.',
         LightcoreTutorialStep.tapSecondShellTower =>
           'Catch a floating child-shell payload piece to feed the Lightcore.',
         LightcoreTutorialStep.upgradeFirstTowerToLevel3 =>
@@ -1569,9 +1572,9 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         LightcoreTutorialStep.inspectFirstTowerStats =>
           'Tower stats show power, charge, cooldown, automation, and lane load before the tower starts feeding the core queue.',
         LightcoreTutorialStep.tapBattleCore =>
-          'The Lightcore generates basic payload pieces automatically. Drag pieces when an anomaly reaches core range so queued shots stay ready.',
+          'The opening Lightcore is manual. Generate a packet first so the queue has something to fire.',
         LightcoreTutorialStep.tapFirstTower =>
-          'Towers create payload pieces on their own. Drag one toward the Lightcore, or route it through the tower center to make that packet critical.',
+          'Manual aim teaches target choice before managers unlock auto-generation and auto-fire.',
         LightcoreTutorialStep.tapSecondShellTower =>
           'Second-shell lanes use the same payload-piece rule: catch the piece to feed the core faster, then the core converts that packet into a shot.',
         LightcoreTutorialStep.upgradeFirstTowerToLevel3 =>
@@ -1650,9 +1653,9 @@ extension LightcoreControllerLayerTraits on LightcoreController {
           LightcoreTutorialStep.inspectFirstTowerStats =>
             'The first prism report opens so the crew can label what each tower number means before combat speeds up.',
           LightcoreTutorialStep.tapBattleCore =>
-            'A hostile signature has crossed the core lens. Tap orbiting payloads to queue shots; dragging is the precision move.',
+            'A hostile signature has crossed the core lens. Tap the Lightcore to load the first manual packet.',
           LightcoreTutorialStep.tapFirstTower =>
-            'A payload piece is floating. Tap it for a quick queue, or drag it through the tower center for a critical packet.',
+            'The packet is loaded. Aim at a visible anomaly and fire before automation takes over later.',
           LightcoreTutorialStep.tapSecondShellTower =>
             'The next shell is awake. Catch one payload piece before Lumo hands you speed controls.',
           LightcoreTutorialStep.upgradeFirstTowerToLevel3 =>

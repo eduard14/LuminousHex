@@ -147,9 +147,9 @@ class CardManagementScreen extends StatelessWidget {
                         ),
                   badgeIcon: Icons.hexagon_rounded,
                   semanticLabel:
-                      'Shell Core Manager, ${towerCoreManager?.name ?? 'Default Auto Manager'}',
+                      'Shell Core Manager, ${towerCoreManager?.name ?? 'Manual Command'}',
                   label: 'Towers',
-                  value: towerCoreManager?.name ?? 'Default Auto',
+                  value: towerCoreManager?.name ?? 'Manual',
                   selected: towerCoreManager != null,
                   onTap: towerCoreManager == null
                       ? null
@@ -257,17 +257,17 @@ class CardManagementScreen extends StatelessWidget {
               title: 'Core Managers',
               tint: LightcorePalette.violet,
               subtitle: !controller.managerAssignmentUnlocked
-                  ? 'Every built tower has a default auto manager from the start. Full Core Manager assignment unlocks when the Layer 1 shell is complete.'
+                  ? 'Early shells use manual packet generation and aimed fire. Manager generation unlocks when the Layer 1 shell is complete.'
                   : controller.cards.isEmpty
-                  ? 'The default auto manager keeps payloads moving. Forge Core Managers to improve that feed across the active shell.'
-                  : 'The default auto manager keeps payloads moving. Assign one forged Core Manager to improve payload feed across the active shell.',
+                  ? 'Manager generation is online. Forge a Core Manager to add auto-fire across the active shell.'
+                  : 'Manager generation is online. Assign one forged Core Manager to add auto-fire across the active shell.',
             ),
             const SizedBox(height: 10),
             if (controller.cards.isEmpty) ...[
               _InlineSectionNotice(
                 message: controller.managersUnlocked
-                    ? 'Forge a Core Manager when you have enough Flux. Forged managers upgrade the default auto manager; they are not required for basic payload feed.'
-                    : 'Forged Core Managers unlock when a Layer 1 shell has all ${LightcoreController.slotCount} outer towers online. Until then, the default auto manager keeps built towers feeding payloads slowly.',
+                    ? 'Forge a Core Manager when you have enough Flux. Forged managers add auto-fire after manager generation is online.'
+                    : 'Forged Core Managers unlock when a Layer 1 shell has all ${LightcoreController.slotCount} outer towers online. Until then, players generate and fire packets manually.',
                 tint: LightcorePalette.violet,
               ),
               const SizedBox(height: 10),
@@ -691,7 +691,7 @@ class _DefaultAutoManagerPanel extends StatelessWidget {
                   children: [
                     Expanded(
                       child: Text(
-                        'Default Auto Manager',
+                        'Manual Command',
                         style: textTheme.titleSmall?.copyWith(
                           color: LightcorePalette.mist,
                           fontWeight: FontWeight.w900,
@@ -703,7 +703,7 @@ class _DefaultAutoManagerPanel extends StatelessWidget {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  'Every built tower slowly feeds payload pieces without assignment. Manual catches and drag-through crit routing are still stronger.',
+                  'No starter manager is assigned. Tap the Lightcore to generate packets, then aim at anomalies until manager generation and auto-fire unlock.',
                   style: textTheme.bodySmall?.copyWith(
                     color: LightcorePalette.mist.withValues(alpha: 0.78),
                   ),

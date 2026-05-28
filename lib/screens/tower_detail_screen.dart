@@ -185,7 +185,7 @@ class _TowerDetailContent extends StatelessWidget {
       ),
       _TowerStatRowData(
         label: 'Shell Manager',
-        value: card?.name ?? 'Default Auto Manager',
+        value: card?.name ?? 'Manual Command',
       ),
       _TowerStatRowData(
         label: 'Automation',
@@ -356,8 +356,8 @@ class _TowerDetailContent extends StatelessWidget {
           title: 'Shell Core Manager',
           subtitle: controller.managerAssignmentUnlocked
               ? card?.summary ??
-                    'Default Auto Manager is feeding payloads slowly. Open Managers to assign a forged Core Manager for stronger payload feed.'
-              : 'Default Auto Manager is active from the first built tower. Forged Core Manager assignment unlocks when this Layer 1 shell has all ${LightcoreController.slotCount} outer towers online.',
+                    'Manager generation is feeding payloads. Open Managers to assign a forged Core Manager for auto-fire.'
+              : 'No starter manager is assigned. Manual generation and aimed fire stay active until this Layer 1 shell has all ${LightcoreController.slotCount} outer towers online.',
           tint: LightcorePalette.layer2,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,

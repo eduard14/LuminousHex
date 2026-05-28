@@ -42,7 +42,8 @@ cadence, enemy strength, and reward bonuses.
 2. Tap floating payload pieces to feed packets to the core faster, or drag them
    through the source tower for critical packets, and generate kills until outer
    slots unlock.
-3. Build outer towers with Lumens.
+3. Tap anomalies to spend queued core packets immediately, then build outer
+   towers with Lumens.
 4. Upgrade all built towers to level 5.
 5. Tune the encounter by changing the active anomaly deck and target count.
 6. Promote the finished shell.
@@ -54,13 +55,16 @@ cadence, enemy strength, and reward bonuses.
 
 ### Battle topology
 
-- The center core is the only direct attacker.
+- The center core is the only direct attacker. Early play is manual: tap the
+  Lightcore to generate an `AmmoPacket`, then tap an anomaly to aim and fire it.
 - Outer towers generate `EnergyPulseState` objects when tapped or when an
   assigned manager automates that ready tap. Players can tap those pulses for a
   quick queue load, or drag them through the source tower for a critical packet.
   Loaded pulses become `AmmoPacket` entries in the core queue.
-- The core consumes the best ammo packet available, picks a target, and fires.
-- If no queued ammo exists, the core still fires a weak default shot.
+- Tapping an anomaly while the core has a queued packet fires that packet at the
+  tapped target, making early combat playable before auto-fire is unlocked.
+- Auto-fire stays locked until a Core Manager is assigned. Once unlocked, the
+  core consumes the best ammo packet available, picks a target, and fires.
 - Enemies do not destroy the core in the prototype. Reaching the relay ring
   causes lane disruption instead of a fail state.
 
