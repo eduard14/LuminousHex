@@ -42,7 +42,9 @@ extension LightcoreControllerCombatLoop on LightcoreController {
           _core.packetCooldownRemaining - battleDt,
         ),
       );
-      _advanceCorePayloadFeed(battleDt);
+      if (coreAutoGenerationUnlocked) {
+        _advanceCorePayloadFeed(battleDt);
+      }
       if (_layer2.unlocked) {
         _layer2 = _layer2.copyWith(
           fireCooldownRemaining: max(
@@ -78,7 +80,9 @@ extension LightcoreControllerCombatLoop on LightcoreController {
       _advanceEnemies(battleDt);
       _advanceThreatRegionChallenge(battleDt);
       _advanceThreatRegionFarmValidation(battleDt);
-      _fireCoreIfPossible(allowDefaultShot: false);
+      if (coreAutoFireUnlocked) {
+        _fireCoreIfPossible(allowDefaultShot: false);
+      }
       _fireLayer2IfPossible();
       _updateFlowEfficiency();
       if (foreground) {

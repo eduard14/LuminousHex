@@ -541,6 +541,9 @@ extension LightcoreControllerTowerMath on LightcoreController {
     if (automationRate != null && automationRate > 0) {
       return automationRate;
     }
+    if (!coreAutoGenerationUnlocked) {
+      return 0;
+    }
     return towerStarterPayloadFeedRate(tower);
   }
 
@@ -576,10 +579,13 @@ extension LightcoreControllerTowerMath on LightcoreController {
     final managedRate = manager == null
         ? 0.0
         : managerPowerAdjustedRate(manager.automationRate);
+    if (!coreAutoGenerationUnlocked) {
+      return 0;
+    }
     return max(coreStarterPayloadFeedRate(), managedRate);
   }
 
-  double corePayloadFeedInterval() => 1 / corePayloadFeedRate();
+  double corePayloadFeedInterval() => 1 / max(0.01, corePayloadFeedRate());
 
   double towerWantedActivationRate(OuterTowerState tower) {
     if (!_slotCountsTowardRing(tower)) {

@@ -92,7 +92,7 @@ void main() {
     expect(game.debugCoreQueueOrbitProjectileTypes, isEmpty);
   });
 
-  test('near-missed payload taps do not open tower placement', () {
+  test('payload taps quick-load without opening tower placement', () {
     final controller = LightcoreController();
     addTearDown(controller.dispose);
     var backgroundTaps = 0;
@@ -113,8 +113,10 @@ void main() {
     final position = game.debugPulsePosition(pulse.id);
     expect(position, isNotNull);
 
-    game.handleCanvasTap(Offset(position!.x + 120, position.y));
-    expect(backgroundTaps, 1);
+    game.handleCanvasTap(Offset(position!.x, position.y));
+
+    expect(backgroundTaps, 0);
+    expect(controller.pulses.single.progress, 0);
   });
 
   test('single-finger gesture pans the battle view', () {

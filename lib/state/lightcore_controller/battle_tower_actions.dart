@@ -141,6 +141,11 @@ extension LightcoreControllerBattleTowerActions on LightcoreController {
     _swarmActivated = true;
     selectedSlotIndex = null;
     _towerRangePreviewSlotIndex = null;
+    if (_queueCoreBasicAttack(showBanner: true)) {
+      _syncTutorialStep(showBanner: false);
+      _notifyNow();
+      return;
+    }
     if (_threatRegionChallenge != null) {
       _syncTutorialStep(showBanner: false);
       _notifyNow();

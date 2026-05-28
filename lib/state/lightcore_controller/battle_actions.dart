@@ -10,10 +10,10 @@ extension LightcoreControllerBattleActions on LightcoreController {
       }
       return false;
     }
-    if (_floatingPulseCountForSource(null) >= _maxFloatingPayloadsPerSource) {
+    if (_ammoQueue.length >= coreQueueCapacity) {
       if (showBanner) {
         _showBanner(
-          'Lightcore payloads are already floating. Catch one or let one enter the queue.',
+          'Core queue is full. Aim at an anomaly and fire before generating more.',
         );
       }
       return false;
@@ -30,10 +30,9 @@ extension LightcoreControllerBattleActions on LightcoreController {
     final sequence = _core.fireSequence;
     final projectileType = _coreProjectileTypeForSequence(sequence);
     final payloadType = _corePayloadTypeForSequence(sequence);
-    final pulseId = 'core_packet_${_pulseCounter++}';
-    _pulses.add(
-      EnergyPulseState(
-        id: pulseId,
+    _ammoQueue.add(
+      AmmoPacket(
+        id: 'core_packet_${_pulseCounter++}',
         sourceSlotIndex: null,
         affinity: _coreAffinityForProjectile(projectileType),
         secondaryAffinity: _coreSecondaryAffinityForPayload(payloadType),
@@ -49,10 +48,6 @@ extension LightcoreControllerBattleActions on LightcoreController {
           _core.rangeUpgradeLevel,
           projectileType: projectileType,
         ),
-        generationSpeed: coreShotsPerSecondForUpgradeLevel(
-          _core.fireSpeedUpgradeLevel,
-          projectileType: projectileType,
-        ),
         critChance: coreCritChance,
         critMultiplier: coreCritMultiplier,
         finalDamageMultiplier: coreFinalDamageMultiplier,
@@ -61,7 +56,6 @@ extension LightcoreControllerBattleActions on LightcoreController {
         defensePenetration: coreDefensePenetration,
         minDamageMultiplier: coreMinDamageMultiplier,
         maxDamageMultiplier: coreMaxDamageMultiplier,
-        progress: _payloadOrbitStartProgressForId(pulseId),
       ),
     );
     _tutorialCoreShotTapLearned = true;

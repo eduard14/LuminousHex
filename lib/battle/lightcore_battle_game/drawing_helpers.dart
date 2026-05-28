@@ -203,7 +203,10 @@ extension LightcoreBattleGameDrawingHelpers on LightcoreBattleGame {
 
   int? _hitTestSlot(Vector2 pointer) {
     for (var index = 0; index < _slotPositions.length; index++) {
-      if (pointer.distanceTo(_slotPositions[index]) <= _slotRadius * 1.05) {
+      final hitScale = controller.tutorialHighlightsBattleSlot(index)
+          ? 1.55
+          : 1.05;
+      if (pointer.distanceTo(_slotPositions[index]) <= _slotRadius * hitScale) {
         return index;
       }
     }

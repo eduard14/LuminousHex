@@ -471,6 +471,10 @@ extension LightcoreControllerStateAccessors on LightcoreController {
   bool get managerAssignmentUnlocked =>
       _managerAssignmentUnlockedForLayer(activeLayer);
 
+  bool get coreAutoGenerationUnlocked => managerAssignmentUnlocked;
+
+  bool get coreAutoFireUnlocked => _towerCoreManagerForLayer(activeLayer) != null;
+
   bool get isOuterRingComplete => builtTowerCount == slotCount;
 
   int get progressionExperience => max(experience, kills);
@@ -685,6 +689,11 @@ extension LightcoreControllerStateAccessors on LightcoreController {
       return null;
     }
     return switch (_tutorialStep) {
+      LightcoreTutorialStep.selectFirstHex => 'BUILD HERE',
+      LightcoreTutorialStep.buildFirstRedTower => 'CHOOSE TOWER',
+      LightcoreTutorialStep.inspectFirstTowerStats => 'OPEN STATS',
+      LightcoreTutorialStep.upgradeFirstTowerToLevel3 ||
+      LightcoreTutorialStep.upgradeFirstTowerToLevel4 => 'UPGRADE',
       LightcoreTutorialStep.tapFirstTower ||
       LightcoreTutorialStep.tapSecondShellTower => _tutorialTowerShotGuideLabel(
         slotIndex,

@@ -1490,7 +1490,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         LightcoreTutorialStep.tapBattleCore =>
           'Watch the Lightcore generate payload pieces automatically.',
         LightcoreTutorialStep.tapFirstTower =>
-          'Drag a floating payload piece to the Lightcore, or route it through its tower for a critical packet.',
+          'Tap a floating payload piece to load it, or drag it through its tower for a critical packet.',
         LightcoreTutorialStep.tapSecondShellTower =>
           'Catch a floating child-shell payload piece to feed the Lightcore.',
         LightcoreTutorialStep.upgradeFirstTowerToLevel3 =>
@@ -1650,9 +1650,9 @@ extension LightcoreControllerLayerTraits on LightcoreController {
           LightcoreTutorialStep.inspectFirstTowerStats =>
             'The first prism report opens so the crew can label what each tower number means before combat speeds up.',
           LightcoreTutorialStep.tapBattleCore =>
-            'A hostile signature has crossed the core lens. The core feed is automatic; manual play is dragging payloads into the queue.',
+            'A hostile signature has crossed the core lens. Tap orbiting payloads to queue shots; dragging is the precision move.',
           LightcoreTutorialStep.tapFirstTower =>
-            'A payload piece is floating. Drag it toward the core, or route it through the tower center for a critical packet.',
+            'A payload piece is floating. Tap it for a quick queue, or drag it through the tower center for a critical packet.',
           LightcoreTutorialStep.tapSecondShellTower =>
             'The next shell is awake. Catch one payload piece before Lumo hands you speed controls.',
           LightcoreTutorialStep.upgradeFirstTowerToLevel3 =>

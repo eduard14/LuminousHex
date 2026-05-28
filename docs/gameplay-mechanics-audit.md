@@ -39,8 +39,9 @@ cadence, enemy strength, and reward bonuses.
 ## Current Gameplay Loop
 
 1. Reveal the shell by tapping/selecting the center.
-2. Catch floating payload pieces to feed packets to the core faster and generate kills until
-   outer slots unlock.
+2. Tap floating payload pieces to feed packets to the core faster, or drag them
+   through the source tower for critical packets, and generate kills until outer
+   slots unlock.
 3. Build outer towers with Lumens.
 4. Upgrade all built towers to level 5.
 5. Tune the encounter by changing the active anomaly deck and target count.
@@ -55,8 +56,9 @@ cadence, enemy strength, and reward bonuses.
 
 - The center core is the only direct attacker.
 - Outer towers generate `EnergyPulseState` objects when tapped or when an
-  assigned manager automates that ready tap. Those pulses become `AmmoPacket`
-  entries in the core queue.
+  assigned manager automates that ready tap. Players can tap those pulses for a
+  quick queue load, or drag them through the source tower for a critical packet.
+  Loaded pulses become `AmmoPacket` entries in the core queue.
 - The core consumes the best ammo packet available, picks a target, and fires.
 - If no queued ammo exists, the core still fires a weak default shot.
 - Enemies do not destroy the core in the prototype. Reaching the relay ring

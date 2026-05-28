@@ -200,7 +200,7 @@ void main() {
 
     expect(controller.tutorialStep, LightcoreTutorialStep.unfoldShell);
     controller.selectCenter();
-    expect(controller.tutorialStep, LightcoreTutorialStep.tapBattleCore);
+    expect(controller.tutorialStep, LightcoreTutorialStep.waitForFirstHex);
     controller.handleBattleCenterTap();
     expect(controller.tutorialStep, LightcoreTutorialStep.waitForFirstHex);
     expect(controller.isOuterSlotUnlocked(0), isFalse);
@@ -414,7 +414,7 @@ void main() {
     expect(controller.tutorialHeadline, 'Catch a Payload');
     expect(
       controller.tutorialPrompt,
-      'Drag a floating payload piece to the Lightcore. Route it through the producing tower center first to make that packet critical.',
+      'Tap a floating payload piece to load it. For a stronger packet, drag it through the producing tower center before releasing.',
     );
     expect(controller.tutorialBattleSlotGuideLabel(0), 'CATCH PAYLOAD');
     expect(
@@ -479,7 +479,7 @@ void main() {
     controller.selectCenter();
 
     expect(controller.isOuterSlotUnlocked(0), isFalse);
-    expect(controller.tutorialStep, LightcoreTutorialStep.tapBattleCore);
+    expect(controller.tutorialStep, LightcoreTutorialStep.waitForFirstHex);
 
     controller.handleBattleCenterTap();
 

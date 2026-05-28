@@ -54,8 +54,8 @@ class LightcoreBattleGame extends FlameGame with ScaleDetector {
   static const double _coreDamageShakeDuration = 0.34;
   static const double _payloadMaxOrbitCount = 4.0;
   static const double _payloadOrbitDurationSeconds = 8.0;
-  static const double _payloadTapRadiusScale = 1.05;
-  static const double _payloadNearMissRadiusScale = 1.55;
+  static const double _payloadTapRadiusScale = 1.32;
+  static const double _tutorialPayloadTapRadiusScale = 1.72;
   static const double shellPromotionStatsDelay = 3.35;
   static const double _shellPromotionCollapseDuration = 1.15;
   static const double _shellPromotionWhiteoutDuration = 0.72;
@@ -366,8 +366,14 @@ class LightcoreBattleGame extends FlameGame with ScaleDetector {
       }
       return;
     }
-    if (_isNearPulse(pointer)) {
-      onBackgroundTap();
+    final tappedPulseId = _hitTestPulse(pointer);
+    if (tappedPulseId != null) {
+      final pulsePosition = _pulsePositionForId(tappedPulseId);
+      if (pulsePosition != null) {
+        _pulseInboundStartPositions[tappedPulseId] = pulsePosition;
+      }
+      controller.releaseDraggedPulse(tappedPulseId, crossedSourceTower: false);
+      LightcoreAudio.instance.playSfx(LightcoreSfx.relayCharge);
       return;
     }
     final tappedEnemyId = _hitTestEnemy(pointer);
@@ -392,26 +398,14 @@ class LightcoreBattleGame extends FlameGame with ScaleDetector {
       if (position == null) {
         continue;
       }
-      if (pointer.distanceTo(position) <=
-          _slotRadius * _payloadTapRadiusScale) {
+      final scale = controller.hasActiveTutorial
+          ? _tutorialPayloadTapRadiusScale
+          : _payloadTapRadiusScale;
+      if (pointer.distanceTo(position) <= _slotRadius * scale) {
         return pulse.id;
       }
     }
     return null;
-  }
-
-  bool _isNearPulse(Vector2 pointer) {
-    for (final pulse in controller.pulses.reversed) {
-      final position = _pulsePosition(pulse);
-      if (position == null) {
-        continue;
-      }
-      if (pointer.distanceTo(position) <=
-          _slotRadius * _payloadNearMissRadiusScale) {
-        return true;
-      }
-    }
-    return false;
   }
 
   Vector2? _pulsePosition(EnergyPulseState pulse) {

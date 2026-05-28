@@ -388,33 +388,33 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
   ),
   LightcoreTutorialStep.tapBattleCore: LightcoreTutorialQuestDefinition(
     id: 'TUT-006',
-    title: 'Core Auto Feed',
+    title: 'Generate a Packet',
     teachGoal:
-        'The Lightcore creates basic payload pieces automatically. Learn that drag play controls pacing before adding tower pressure.',
+        'The opening loop starts manual: tap the Lightcore to create a queued packet before automation exists.',
     trigger: 'The first shell opens',
-    primaryClickTarget: 'Battlefield > center payload piece',
+    primaryClickTarget: 'Battlefield > Lightcore',
     coachCopy:
-        'Wait for a payload piece near the Lightcore, then drag it toward the center when you want the queue filled.',
-    completionCondition: 'Observe one core payload piece',
+        'Tap the center Lightcore to generate a packet. It will wait in the queue until you aim and fire.',
+    completionCondition: 'Generate one core packet',
     reward: 'Small Lumen grant',
     failureHelpState:
-        'The core feed is automatic; manual play is dragging payload pieces, not tapping them.',
-    analyticsEvent: 'tutorial_core_auto_feed',
+        'Tap the center Lightcore. The queue markers around it show stored packets.',
+    analyticsEvent: 'tutorial_core_manual_generate',
   ),
   LightcoreTutorialStep.tapFirstTower: LightcoreTutorialQuestDefinition(
     id: 'TUT-007',
-    title: 'Catch a Payload',
+    title: 'Aim and Fire',
     teachGoal:
-        'Towers create floating payload pieces. Catch one to feed the Lightcore faster, or route it through the tower center for a critical packet.',
+        'The player manually chooses where the opening packet fires before manager automation takes over.',
     trigger: 'First tower exists',
-    primaryClickTarget: 'Battlefield > floating payload piece',
+    primaryClickTarget: 'Battlefield > anomaly target',
     coachCopy:
-        'Drag a floating payload piece to the Lightcore. Route it through the producing tower center first to make that packet critical.',
-    completionCondition: 'Drag 3 payload pieces',
+        'Tap an anomaly to fire the queued packet at that direction. Managers will unlock auto-generation and auto-fire later.',
+    completionCondition: 'Fire one manually aimed packet',
     reward: 'Lumens and White Drift practice scan',
     failureHelpState:
-        'Wait for the tower to create a colored piece, then drag that piece toward the Lightcore.',
-    analyticsEvent: 'tutorial_catch_payload',
+        'Generate a packet at the Lightcore first, then tap a visible anomaly to shoot it.',
+    analyticsEvent: 'tutorial_manual_aim_fire',
   ),
   LightcoreTutorialStep.tapSecondShellTower: LightcoreTutorialQuestDefinition(
     id: 'TUT-008',
@@ -1744,6 +1744,7 @@ class LightcoreController extends ChangeNotifier {
   bool _tutorialMenteesOpened = false;
   bool _tutorialMentorsOpened = false;
   bool _tutorialCoreShotTapLearned = false;
+  bool _tutorialManualAimFireLearned = false;
   bool _tutorialSecondShellShotTapLearned = false;
   bool _tutorialOverdriveLearned = false;
   bool _tutorialIntroBossPending = false;

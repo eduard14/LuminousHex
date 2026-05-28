@@ -1,6 +1,6 @@
 # LumiHex Marketing Brief
 
-Last updated: 2026-05-24
+Last updated: 2026-05-28
 
 This is the source-of-truth marketing handoff for LumiHex. Update it whenever
 player-facing features, naming, story, monetization, screenshots, or asset needs
@@ -68,7 +68,8 @@ shell, and keep climbing.
   directly.
 - Manual payload catches are forgiving: large-orbit payloads travel toward the
   Lightcore but only count as queued packets once loaded; players can tap or
-  drag them inward, while drag-through routing guarantees critical packets.
+  drag them inward, while drag-through routing remains the optional skill move
+  that guarantees critical packets.
 - Shell visibility is an explicit HUD toggle, keeping missed payload taps from
   folding the active battlefield or opening tower placement.
 - A visible Default Auto Manager keeps the Lightcore and built towers feeding
@@ -80,9 +81,9 @@ shell, and keep climbing.
 - Manual Overdrive accelerates the live shell battle.
 - Focus Target lets players briefly prioritize a dangerous anomaly during active
   challenges and live farming.
-- First-session guidance stays lightweight: collapsed guide flags, target cues,
-  transient top notifications, and bottom action prompts keep the battlefield
-  visible during early taps.
+- First-session guidance stays lightweight: collapsed guide flags, explicit
+  target labels, transient top notifications, and bottom action prompts keep the
+  battlefield visible during early taps.
 - Lumo/Luma guide callouts appear on loading interstitials with strategic tips
   such as balancing growth, flow, and Output Efficiency.
 - Startup, shell-linking, event-run loading, and major shell area transitions use
