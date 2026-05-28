@@ -22,6 +22,24 @@ extension LightcoreControllerCombatFiring on LightcoreController {
     return true;
   }
 
+  bool selectBattleEnemyForManualAim(String enemyId) {
+    if (activeLayerPassiveOnly) {
+      return false;
+    }
+    final enemy = _enemyById(enemyId);
+    if (enemy == null) {
+      return false;
+    }
+    _focusedEnemyId = enemy.id;
+    _focusTargetRemainingSeconds = focusTargetDurationSeconds;
+    _showBanner(
+      '${enemy.config.name} targeted.',
+      category: LightcoreNotificationCategory.battle,
+    );
+    _notifyNow();
+    return true;
+  }
+
   void _advanceFocusTarget(double dt) {
     _focusTargetCooldownRemaining = max(0, _focusTargetCooldownRemaining - dt);
     final focusedId = _focusedEnemyId;

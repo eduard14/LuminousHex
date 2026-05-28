@@ -293,6 +293,8 @@ void main() {
       controller.enterSourceLayer();
       expect(controller.activeLayer.id, rootLayerId);
       expect(controller.activeLayerPassiveOnly, isTrue);
+      controller.handleBattleCenterTap();
+      expect(controller.queuedCorePackets, 0);
 
       controller.handleBattleSlotTap(0);
       expect(controller.selectedSlotIndex, 0);

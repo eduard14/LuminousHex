@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:lightcore/data/enemy_configs.dart';
@@ -196,6 +198,20 @@ void main() {
     expect(controller.coreState.packetCooldownRemaining, greaterThan(0));
   });
 
+  test('manual core tap queues after shell reveal before tutorial gates', () {
+    final controller = LightcoreController();
+    addTearDown(controller.dispose);
+
+    controller.handleBattleCenterTap();
+    expect(controller.outerRingRevealed, isTrue);
+    expect(controller.queuedCorePackets, 0);
+
+    controller.handleBattleCenterTap();
+
+    expect(controller.queuedCorePackets, 1);
+    expect(controller.coreState.packetCooldownRemaining, greaterThan(0));
+  });
+
   test('queued center packet waits for manual aimed fire before managers', () {
     final controller = LightcoreController();
     addTearDown(controller.dispose);
@@ -217,6 +233,34 @@ void main() {
     expect(controller.fireQueuedCorePacketAtEnemy(enemy!.id), isTrue);
     expect(controller.queuedCorePackets, 0);
     expect(controller.shots, isNotEmpty);
+  });
+
+  test('manual enemy aim selection swaps without focus cooldown', () {
+    final controller = LightcoreController();
+    addTearDown(controller.dispose);
+
+    final firstEnemy = controller.debugSpawnEnemyFromCard(
+      EnemyLibrary.basicWhite.id,
+      angle: 0,
+      radius: 180,
+      level: 1,
+    );
+    final secondEnemy = controller.debugSpawnEnemyFromCard(
+      EnemyLibrary.basicWhite.id,
+      angle: pi,
+      radius: 180,
+      level: 1,
+    );
+    expect(firstEnemy, isNotNull);
+    expect(secondEnemy, isNotNull);
+
+    expect(controller.selectBattleEnemyForManualAim(firstEnemy!.id), isTrue);
+    expect(controller.focusedEnemyId, firstEnemy.id);
+    expect(controller.focusTargetCooldownRemaining, 0);
+
+    expect(controller.selectBattleEnemyForManualAim(secondEnemy!.id), isTrue);
+    expect(controller.focusedEnemyId, secondEnemy.id);
+    expect(controller.focusTargetCooldownRemaining, 0);
   });
 
   test('manager generation fills the center queue after shell coverage', () {

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
@@ -821,6 +822,119 @@ void main() {
     await tester.pump();
 
     expect(controller.outerRingRevealed, isTrue);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('battle screen center tap queues a core packet', (tester) async {
+    addTearDown(() async {
+      await tester.binding.setSurfaceSize(null);
+    });
+    await tester.binding.setSurfaceSize(const Size(430, 780));
+    final controller = LightcoreController();
+    addTearDown(controller.dispose);
+    controller.debugDisableTutorial();
+    controller.handleBattleCenterTap();
+
+    await _pumpBattleScreen(tester, controller);
+    await tester.pump(const Duration(milliseconds: 100));
+
+    final gameFinder = find.byType(GameWidget<LightcoreBattleGame>);
+    expect(gameFinder, findsOneWidget);
+
+    await tester.tapAt(tester.getCenter(gameFinder));
+    await tester.pump();
+
+    expect(controller.queuedCorePackets, 1);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('battle screen enemy tap fires a queued packet', (tester) async {
+    addTearDown(() async {
+      await tester.binding.setSurfaceSize(null);
+    });
+    await tester.binding.setSurfaceSize(const Size(430, 780));
+    final controller = LightcoreController();
+    addTearDown(controller.dispose);
+    controller.debugDisableTutorial();
+    controller.handleBattleCenterTap();
+    final enemy = controller.debugSpawnEnemyFromCard(
+      EnemyLibrary.basicWhite.id,
+      angle: 0,
+      radius: 140,
+      level: 1,
+    );
+    expect(enemy, isNotNull);
+
+    await _pumpBattleScreen(tester, controller);
+    await tester.pump(const Duration(milliseconds: 100));
+
+    final gameFinder = find.byType(GameWidget<LightcoreBattleGame>);
+    final game = tester
+        .widget<GameWidget<LightcoreBattleGame>>(gameFinder)
+        .game!;
+    await tester.tapAt(tester.getCenter(gameFinder));
+    await tester.pump();
+    expect(controller.queuedCorePackets, 1);
+
+    final enemyPosition = game.debugEnemyPosition(enemy!.id);
+    expect(enemyPosition, isNotNull);
+    await tester.tapAt(tester.getTopLeft(gameFinder) + enemyPosition!);
+    await tester.pump();
+
+    expect(controller.queuedCorePackets, 0);
+    expect(controller.shots, hasLength(1));
+    expect(controller.shots.single.enemyId, enemy.id);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('battle screen enemy taps swap manual aim without cooldown', (
+    tester,
+  ) async {
+    addTearDown(() async {
+      await tester.binding.setSurfaceSize(null);
+    });
+    await tester.binding.setSurfaceSize(const Size(430, 780));
+    final controller = LightcoreController();
+    addTearDown(controller.dispose);
+    controller.debugDisableTutorial();
+    controller.handleBattleCenterTap();
+    final firstEnemy = controller.debugSpawnEnemyFromCard(
+      EnemyLibrary.basicWhite.id,
+      angle: 0,
+      radius: 150,
+      level: 1,
+    );
+    final secondEnemy = controller.debugSpawnEnemyFromCard(
+      EnemyLibrary.basicWhite.id,
+      angle: pi,
+      radius: 150,
+      level: 1,
+    );
+    expect(firstEnemy, isNotNull);
+    expect(secondEnemy, isNotNull);
+
+    await _pumpBattleScreen(tester, controller);
+    await tester.pump(const Duration(milliseconds: 100));
+
+    final gameFinder = find.byType(GameWidget<LightcoreBattleGame>);
+    final game = tester
+        .widget<GameWidget<LightcoreBattleGame>>(gameFinder)
+        .game!;
+    final gameOrigin = tester.getTopLeft(gameFinder);
+    final firstPosition = game.debugEnemyPosition(firstEnemy!.id);
+    final secondPosition = game.debugEnemyPosition(secondEnemy!.id);
+    expect(firstPosition, isNotNull);
+    expect(secondPosition, isNotNull);
+
+    await tester.tapAt(gameOrigin + firstPosition!);
+    await tester.pump();
+    expect(controller.focusedEnemyId, firstEnemy.id);
+    expect(controller.focusTargetCooldownRemaining, 0);
+
+    await tester.tapAt(gameOrigin + secondPosition!);
+    await tester.pump();
+    expect(controller.focusedEnemyId, secondEnemy.id);
+    expect(controller.focusTargetCooldownRemaining, 0);
     expect(tester.takeException(), isNull);
   });
 

@@ -127,6 +127,12 @@ class LightcoreBattleGame extends FlameGame with ScaleDetector {
   bool get isShellPromotionAnimating => _shellPromotion != null;
   double get debugShellPromotionElapsed => _shellPromotionElapsed;
   Vector2? debugPulsePosition(String pulseId) => _pulsePositionForId(pulseId);
+  Offset? debugEnemyPosition(String enemyId) {
+    final enemy = controller.enemies
+        .where((candidate) => candidate.id == enemyId)
+        .firstOrNull;
+    return enemy == null ? null : _enemyPosition(enemy);
+  }
 
   bool get _lowPowerBattleEffects =>
       controller.graphicsQuality == LightcoreGraphicsQuality.lowPower;
@@ -382,7 +388,8 @@ class LightcoreBattleGame extends FlameGame with ScaleDetector {
       LightcoreAudio.instance.playSfx(LightcoreSfx.coreFire);
       return;
     }
-    if (tappedEnemyId != null && controller.focusBattleEnemy(tappedEnemyId)) {
+    if (tappedEnemyId != null &&
+        controller.selectBattleEnemyForManualAim(tappedEnemyId)) {
       return;
     }
     final tappedIndex = _hitTestSlot(pointer);

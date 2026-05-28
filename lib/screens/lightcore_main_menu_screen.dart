@@ -286,8 +286,7 @@ class _LightcoreMainMenuScreenState extends State<LightcoreMainMenuScreen>
           (widget.onGoogleSignIn != null || widget.onEmailSignIn != null);
 
       if (shouldShowGuestPrompt) {
-        _guestSignInPromptShownThisSession = true;
-        widget.onGuestSignInPromptShownChanged?.call(true);
+        _markGuestSignInPromptShownThisSession();
         final result = await _presentGuestSignInPrompt(
           canUseGoogleSignIn: report.firebaseReady,
         );
@@ -323,6 +322,13 @@ class _LightcoreMainMenuScreenState extends State<LightcoreMainMenuScreen>
     } finally {
       _launchFlowOpen = false;
     }
+  }
+
+  void _markGuestSignInPromptShownThisSession() {
+    if (!_guestSignInPromptShownThisSession) {
+      _guestSignInPromptShownThisSession = true;
+    }
+    widget.onGuestSignInPromptShownChanged?.call(true);
   }
 
   void _continueIntoGame() {
