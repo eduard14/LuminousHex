@@ -794,6 +794,36 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('battle canvas accepts browser tap starts without button flags', (
+    tester,
+  ) async {
+    addTearDown(() async {
+      await tester.binding.setSurfaceSize(null);
+    });
+    await tester.binding.setSurfaceSize(const Size(430, 780));
+    final controller = LightcoreController();
+    addTearDown(controller.dispose);
+    controller.debugDisableTutorial();
+
+    await _pumpBattleScreen(tester, controller);
+    await tester.pump(const Duration(milliseconds: 100));
+
+    final gameFinder = find.byType(GameWidget<LightcoreBattleGame>);
+    expect(gameFinder, findsOneWidget);
+    final center = tester.getCenter(gameFinder);
+
+    tester.binding.handlePointerEvent(
+      PointerDownEvent(pointer: 7, position: center),
+    );
+    tester.binding.handlePointerEvent(
+      PointerUpEvent(pointer: 7, position: center),
+    );
+    await tester.pump();
+
+    expect(controller.outerRingRevealed, isTrue);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('enter game restores shell without a second bootstrap', (
     tester,
   ) async {

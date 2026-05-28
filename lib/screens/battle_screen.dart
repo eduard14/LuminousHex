@@ -393,7 +393,9 @@ class _BattleScreenState extends State<BattleScreen> {
     if (!widget.enableBattlefieldTaps) {
       return;
     }
-    if (event.buttons != kPrimaryButton || _canvasTapPointer != null) {
+    final primaryTapStart =
+        event.buttons == 0 || (event.buttons & kPrimaryButton) != 0;
+    if (!primaryTapStart || _canvasTapPointer != null) {
       if (_canvasPayloadDragActive) {
         _game.cancelCanvasPayloadDrag();
         _canvasPayloadDragActive = false;
