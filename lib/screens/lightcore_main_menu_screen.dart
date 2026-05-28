@@ -33,8 +33,10 @@ class LightcoreMainMenuScreen extends StatefulWidget {
     this.authBusy = false,
     this.sessionNotice,
     this.skipGuestSignInPrompt = false,
+    this.guestSignInPromptShownThisSession = false,
     this.onGoogleSignIn,
     this.onEmailSignIn,
+    this.onGuestSignInPromptShownChanged,
     this.onSkipGuestSignInPromptChanged,
   });
 
@@ -48,8 +50,10 @@ class LightcoreMainMenuScreen extends StatefulWidget {
   final bool authBusy;
   final String? sessionNotice;
   final bool skipGuestSignInPrompt;
+  final bool guestSignInPromptShownThisSession;
   final Future<bool> Function()? onGoogleSignIn;
   final Future<bool> Function()? onEmailSignIn;
+  final ValueChanged<bool>? onGuestSignInPromptShownChanged;
   final ValueChanged<bool>? onSkipGuestSignInPromptChanged;
 
   @override
@@ -120,6 +124,10 @@ class _LightcoreMainMenuScreenState extends State<LightcoreMainMenuScreen>
     if (oldWidget.bootstrapReport != widget.bootstrapReport ||
         oldWidget.isLoading != widget.isLoading) {
       _maybeRefreshWebApp();
+    }
+    if (widget.guestSignInPromptShownThisSession &&
+        !_guestSignInPromptShownThisSession) {
+      _guestSignInPromptShownThisSession = true;
     }
   }
 
@@ -273,11 +281,13 @@ class _LightcoreMainMenuScreenState extends State<LightcoreMainMenuScreen>
           report != null &&
           report.profile.isAnonymous &&
           !widget.skipGuestSignInPrompt &&
+          !widget.guestSignInPromptShownThisSession &&
           !_guestSignInPromptShownThisSession &&
           (widget.onGoogleSignIn != null || widget.onEmailSignIn != null);
 
       if (shouldShowGuestPrompt) {
         _guestSignInPromptShownThisSession = true;
+        widget.onGuestSignInPromptShownChanged?.call(true);
         final result = await _presentGuestSignInPrompt(
           canUseGoogleSignIn: report.firebaseReady,
         );

@@ -18,11 +18,13 @@ void main() {
     LightcoreGuideProfile? guideProfile = LightcoreGuideProfile.lumo,
     bool isLoading = false,
     bool skipGuestSignInPrompt = false,
+    bool guestSignInPromptShownThisSession = false,
     String? sessionNotice,
     VoidCallback? onEnterGame,
     VoidCallback? onRetryBootstrap,
     Future<bool> Function()? onGoogleSignIn,
     Future<bool> Function()? onEmailSignIn,
+    ValueChanged<bool>? onGuestSignInPromptShownChanged,
     ValueChanged<bool>? onSkipGuestSignInPromptChanged,
   }) {
     return MaterialApp(
@@ -37,8 +39,10 @@ void main() {
         onRetryBootstrap: onRetryBootstrap ?? () {},
         sessionNotice: sessionNotice,
         skipGuestSignInPrompt: skipGuestSignInPrompt,
+        guestSignInPromptShownThisSession: guestSignInPromptShownThisSession,
         onGoogleSignIn: onGoogleSignIn,
         onEmailSignIn: onEmailSignIn,
+        onGuestSignInPromptShownChanged: onGuestSignInPromptShownChanged,
         onSkipGuestSignInPromptChanged: onSkipGuestSignInPromptChanged,
       ),
     );
@@ -386,6 +390,58 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 250));
     expect(find.text('Save Recovery'), findsNothing);
+
+    await tester.tap(find.text('PLAY'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 250));
+
+    expect(find.text('Save Recovery'), findsNothing);
+    expect(entered, isTrue);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump();
+  });
+
+  testWidgets('guest sign-in prompt stays dismissed after menu remount', (
+    tester,
+  ) async {
+    var entered = false;
+    var promptShown = false;
+    final report = buildReport(
+      clientVersion: '1.0.18',
+      clientBuildNumber: '19',
+      recommendedVersion: '1.0.18',
+      recommendedBuildNumber: '19',
+    );
+
+    await tester.pumpWidget(
+      buildMenu(
+        report: report,
+        onEnterGame: () => entered = true,
+        onGoogleSignIn: () async => true,
+        onGuestSignInPromptShownChanged: (shown) => promptShown = shown,
+      ),
+    );
+
+    await tester.tap(find.text('PLAY'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 250));
+    expect(find.text('Save Recovery'), findsOneWidget);
+    expect(promptShown, isTrue);
+
+    await tester.tapAt(const Offset(8, 8));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 250));
+
+    await tester.pumpWidget(
+      buildMenu(
+        report: report,
+        guestSignInPromptShownThisSession: promptShown,
+        onEnterGame: () => entered = true,
+        onGoogleSignIn: () async => true,
+      ),
+    );
+    await tester.pump();
 
     await tester.tap(find.text('PLAY'));
     await tester.pump();

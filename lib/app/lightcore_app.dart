@@ -91,6 +91,7 @@ class _LightcoreAppState extends State<LightcoreApp>
   bool _socialOverviewSyncInFlight = false;
   bool _serverSyncPending = false;
   bool _serverSyncPendingForceSave = false;
+  bool _guestSignInPromptShownThisSession = false;
   bool _skipGuestSignInPrompt = false;
   bool _musicEnabled = true;
   bool _soundEffectsEnabled = true;
@@ -547,6 +548,13 @@ class _LightcoreAppState extends State<LightcoreApp>
     }
     setState(() => _skipGuestSignInPrompt = skipPrompt);
     unawaited(_sessionStore.writeSkipGuestSignInPrompt(skipPrompt));
+  }
+
+  void _setGuestSignInPromptShownThisSession(bool shown) {
+    if (_guestSignInPromptShownThisSession == shown) {
+      return;
+    }
+    setState(() => _guestSignInPromptShownThisSession = shown);
   }
 
   void _setMusicEnabled(bool enabled) {
@@ -1765,8 +1773,12 @@ class _LightcoreAppState extends State<LightcoreApp>
               authBusy: _authBusy,
               sessionNotice: _sessionNotice,
               skipGuestSignInPrompt: _skipGuestSignInPrompt,
+              guestSignInPromptShownThisSession:
+                  _guestSignInPromptShownThisSession,
               onGoogleSignIn: _signInWithGoogle,
               onEmailSignIn: _signInWithEmail,
+              onGuestSignInPromptShownChanged:
+                  _setGuestSignInPromptShownThisSession,
               onSkipGuestSignInPromptChanged: _setSkipGuestSignInPrompt,
             ),
             LightcoreLoadingScreen(
@@ -1838,8 +1850,11 @@ class _LightcoreAppState extends State<LightcoreApp>
           authBusy: _authBusy,
           sessionNotice: _sessionNotice,
           skipGuestSignInPrompt: _skipGuestSignInPrompt,
+          guestSignInPromptShownThisSession: _guestSignInPromptShownThisSession,
           onGoogleSignIn: _signInWithGoogle,
           onEmailSignIn: _signInWithEmail,
+          onGuestSignInPromptShownChanged:
+              _setGuestSignInPromptShownThisSession,
           onSkipGuestSignInPromptChanged: _setSkipGuestSignInPrompt,
         ),
       );
