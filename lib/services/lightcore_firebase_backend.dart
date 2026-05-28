@@ -62,6 +62,8 @@ class LightcoreGoogleAccountCollisionException implements Exception {
 class FirebaseLightcoreBackend {
   FirebaseLightcoreBackend({required this.runtimeConfig});
 
+  static const Duration _bootstrapStepTimeout = Duration(seconds: 18);
+
   final LightcoreFirebaseRuntimeConfig runtimeConfig;
   LightcoreCloudSaveEnvelope? _cachedCloudSave;
   String? _activeSessionId;
@@ -173,7 +175,7 @@ class FirebaseLightcoreBackend {
     }
 
     try {
-      await _ensureFirebaseInitialized();
+      await _bootstrapStep('firebase-init', _ensureFirebaseInitialized());
       firebaseReady = true;
     } catch (error) {
       warnings.add('Firebase init failed: $error');
@@ -201,7 +203,7 @@ class FirebaseLightcoreBackend {
     }
 
     try {
-      appCheckActive = await _activateAppCheck();
+      appCheckActive = await _bootstrapStep('app-check', _activateAppCheck());
       if (!appCheckActive) {
         warnings.add('App Check is not active on this client.');
       }
@@ -213,7 +215,10 @@ class FirebaseLightcoreBackend {
       final existingUser = FirebaseAuth.instance.currentUser;
       final user =
           existingUser ??
-          (await FirebaseAuth.instance.signInAnonymously()).user;
+          (await _bootstrapStep(
+            'anonymous-auth',
+            FirebaseAuth.instance.signInAnonymously(),
+          )).user;
       profile = _buildAuthBackedProfileSummary(
         user: user,
         fallbackPlayerId: guestSession.playerId,
@@ -223,18 +228,24 @@ class FirebaseLightcoreBackend {
     }
 
     try {
-      manifest = await _fetchRemoteManifest(defaultManifest: manifest);
+      manifest = await _bootstrapStep(
+        'remote-config',
+        _fetchRemoteManifest(defaultManifest: manifest),
+      );
     } catch (error) {
       warnings.add('Remote Config fetch failed: $error');
     }
 
     if (FirebaseAuth.instance.currentUser != null) {
       try {
-        final result = await _callBootstrapClient(
-          guestSession: guestSession,
-          clientVersion: clientVersion,
-          clientBuildNumber: clientBuildNumber,
-          defaultManifest: manifest,
+        final result = await _bootstrapStep(
+          'bootstrap-client',
+          _callBootstrapClient(
+            guestSession: guestSession,
+            clientVersion: clientVersion,
+            clientBuildNumber: clientBuildNumber,
+            defaultManifest: manifest,
+          ),
         );
         manifest = result.manifest;
         profile = result.profile;
@@ -306,6 +317,42 @@ class FirebaseLightcoreBackend {
       warnings: warnings,
     );
   }
+
+  Future<T> _bootstrapStep<T>(String label, Future<T> future) async {
+    _logBackend('bootstrap-step-start', <String, Object?>{'step': label});
+    try {
+      final result = await future.timeout(_bootstrapStepTimeout);
+      _logBackend('bootstrap-step-complete', <String, Object?>{'step': label});
+      return result;
+    } catch (error) {
+      _logBackend('bootstrap-step-error', <String, Object?>{
+        'step': label,
+        'error': error,
+      });
+      rethrow;
+    }
+  }
+
+  void _logBackend(String event, [Map<String, Object?> values = const {}]) {
+    if (!_backendDebugLoggingEnabled) {
+      return;
+    }
+    final details = values.entries
+        .where((entry) => entry.value != null)
+        .map((entry) => '${entry.key}=${entry.value}')
+        .join(' ');
+    debugPrint(
+      details.isEmpty
+          ? '[LightcoreBackend] $event'
+          : '[LightcoreBackend] $event $details',
+    );
+  }
+
+  static bool get _backendDebugLoggingEnabled =>
+      kDebugMode ||
+      const bool.fromEnvironment('LIGHTCORE_SESSION_DEBUG') ||
+      Uri.base.queryParameters['sessionDebug'] == '1' ||
+      Uri.base.queryParameters['debugErrors'] == '1';
 
   Future<LightcoreServerSyncResult> syncOfflineSnapshot(
     LightcoreOfflineProgressSnapshot snapshot, {
