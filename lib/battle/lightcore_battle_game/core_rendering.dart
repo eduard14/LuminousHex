@@ -470,20 +470,7 @@ extension LightcoreBattleGameCoreRendering on LightcoreBattleGame {
                   LightcoreBattleGame._hexChargePopDuration,
             );
           }
-          if (!projectShell) {
-            _paintTowerTraitBadge(
-              canvas,
-              childCenter,
-              slot,
-              tint: childColor,
-              size: childHexRadius * 1.32,
-              showLevelEdges: false,
-              coreFacingAngle: math.atan2(
-                center.dy - childCenter.dy,
-                center.dx - childCenter.dx,
-              ),
-            );
-          } else {
+          if (projectShell) {
             _paintBadge(
               canvas,
               childCenter,
@@ -579,6 +566,7 @@ extension LightcoreBattleGameCoreRendering on LightcoreBattleGame {
       center,
       tint: coreColor,
       size: _coreRadius * 1.14,
+      showLevelLabel: false,
     );
 
     if (controller.layer2State.unlocked) {

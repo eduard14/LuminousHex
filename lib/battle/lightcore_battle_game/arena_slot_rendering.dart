@@ -695,19 +695,7 @@ extension LightcoreBattleGameArenaSlotRendering on LightcoreBattleGame {
               ..color = slotColor.withValues(alpha: 0.92),
           );
         }
-        if (!slot.isFabricating && !projectShell && !persistentShield) {
-          _paintTowerTraitBadge(
-            canvas,
-            center,
-            slot,
-            tint: slotColor,
-            size: _slotRadius * 1.04,
-            coreFacingAngle: math.atan2(
-              _center.y - center.dy,
-              _center.x - center.dx,
-            ),
-          );
-        } else if (slot.isFabricating) {
+        if (slot.isFabricating) {
           _renderFabricationCoreGlyph(
             canvas,
             center,
