@@ -97,12 +97,12 @@ void main() {
 
   testWidgets('main menu pumps without throwing', (tester) async {
     final report = buildReport(
-      clientVersion: '1.0.18',
-      clientBuildNumber: '19',
-      minimumSupportedVersion: '1.0.18',
-      minimumSupportedBuildNumber: '19',
-      recommendedVersion: '1.0.18',
-      recommendedBuildNumber: '19',
+      clientVersion: '1.0.19',
+      clientBuildNumber: '20',
+      minimumSupportedVersion: '1.0.19',
+      minimumSupportedBuildNumber: '20',
+      recommendedVersion: '1.0.19',
+      recommendedBuildNumber: '20',
     );
 
     await tester.pumpWidget(buildMenu(report: report));
@@ -111,7 +111,7 @@ void main() {
     expect(find.text('LumiHex'), findsOneWidget);
     expect(find.text('BETA'), findsOneWidget);
     expect(find.text('Authentication ID'), findsOneWidget);
-    expect(find.text('V1.0.18+19'), findsOneWidget);
+    expect(find.text('V1.0.19+20'), findsOneWidget);
     expect(find.text('LIVE'), findsOneWidget);
     expect(find.text('CACHE RESTORED'), findsOneWidget);
     expect(find.text('VERSION BLOCKED'), findsNothing);
