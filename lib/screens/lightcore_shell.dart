@@ -865,9 +865,9 @@ class _LightcoreShellState extends State<LightcoreShell> {
     return LightcoreLoadingScreen(
       title: 'Opening ${destination.label}',
       subtitle: destination.loadingSubtitle,
-      statusLabel: 'Area Link',
+      statusLabel: 'Opening',
       accent: destination.tint,
-      signalLabels: const ['SYNC', 'MAP', 'READY'],
+      signalLabels: const ['OPEN', 'LOAD', 'SHOW'],
       guide: LightcoreGuideProfile.lumo,
       tips: destination.loadingTips,
     );

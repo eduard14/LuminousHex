@@ -84,7 +84,7 @@ class _HexagonPlayButton extends StatelessWidget {
         ? LightcorePalette.solar
         : (isLoading ? LightcorePalette.violet : LightcorePalette.stroke);
     final scale = enabled ? 1.0 + (pulse * 0.024) : 1.0;
-    final primaryLabel = enabled ? 'PLAY' : (isLoading ? 'SYNC' : 'LOCKED');
+    final primaryLabel = enabled ? 'PLAY' : (isLoading ? 'WAIT' : 'LOCKED');
 
     return GestureDetector(
       onTap: onTap,

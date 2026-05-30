@@ -74,7 +74,7 @@ class _LightcoreRunLoadingState extends State<LightcoreRunLoading> {
       subtitle: widget.subtitle,
       statusLabel: 'Loading',
       accent: widget.tint,
-      signalLabels: const ['SYNC', 'LOAD', 'READY'],
+      signalLabels: const ['OPEN', 'LOAD', 'SHOW'],
       tips: activeTip == null ? const <String>[] : <String>[activeTip],
       guide: LightcoreGuideProfile.lumo,
     );

@@ -82,13 +82,7 @@ class _LightcoreMainMenuScreenState extends State<LightcoreMainMenuScreen>
   static const _menuBackgroundAsset = 'lib/Menu_Background.png';
   static const _pulseCycleDuration = Duration(milliseconds: 7200);
   static const _loadingStageDuration = Duration(milliseconds: 1800);
-  static const List<String> _loadingStages = [
-    'Wake',
-    'Link',
-    'Verify',
-    'Save',
-    'Resolve',
-  ];
+  static const List<String> _loadingStages = ['Load'];
 
   late final AnimationController _pulseController;
   Timer? _sequenceTimer;
@@ -878,7 +872,7 @@ class _LightcoreMainMenuScreenState extends State<LightcoreMainMenuScreen>
     required LightcoreBootstrapReport? report,
   }) {
     if (widget.isLoading) {
-      return 'running live check';
+      return 'opening menu';
     }
     if (widget.sessionNotice?.trim().isNotEmpty == true) {
       return 'reconnect to claim progress';

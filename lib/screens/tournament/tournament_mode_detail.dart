@@ -1681,8 +1681,8 @@ class _TournamentModeDetailScreenState
     return LightcoreRunLoading(
       title: 'Loading ${widget.modeState.mode.label}',
       subtitle: widget.modeState.joined || _joinedForLaunch
-          ? 'Preparing the event rules, visuals, and run state.'
-          : 'Joining the event and preparing your first run.',
+          ? 'Opening the event run.'
+          : 'Opening the event.',
       tint: tint,
       icon: _modeIcon(widget.modeState.mode),
       tips: _modeLoadingTips(widget.modeState.mode),

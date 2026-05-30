@@ -18,12 +18,12 @@ class LightcoreLoadingScreen extends StatefulWidget {
   const LightcoreLoadingScreen({
     super.key,
     this.title = 'Loading',
-    this.subtitle = 'Aligning the lightcore relay.',
+    this.subtitle = 'Preparing the next screen.',
     this.statusLabel = 'STAND BY',
     this.accent = LightcorePalette.aether,
     this.progress,
     this.compact,
-    this.signalLabels = const ['BOOT', 'LINK', 'FLOW'],
+    this.signalLabels = const ['OPEN', 'LOAD', 'SHOW'],
     this.tips = _defaultLoadingTips,
     this.guide = LightcoreGuideProfile.lumo,
   });
@@ -161,7 +161,7 @@ class _LightcoreLoadingScreenState extends State<LightcoreLoadingScreen>
                             phase: phase,
                             compact: compact,
                             signalLabels: widget.signalLabels.isEmpty
-                                ? const ['BOOT', 'LINK', 'FLOW']
+                                ? const ['OPEN', 'LOAD', 'SHOW']
                                 : widget.signalLabels,
                             activeTip: _activeTip,
                             guide: widget.guide,
@@ -533,8 +533,8 @@ class _LoadingRelayPath extends StatelessWidget {
         ? (phase * 6).floor().clamp(0, 5).toInt()
         : (value * 6).floor().clamp(0, 5).toInt();
     final status = value == null
-        ? 'Relay alignment'
-        : 'Relay alignment ${(value * 100).round()}%';
+        ? 'Loading'
+        : 'Loading ${(value * 100).round()}%';
 
     return Semantics(
       label: status,

@@ -15,9 +15,9 @@ void main() {
         theme: buildLightcoreTheme(),
         home: const LightcoreLoadingScreen(
           title: 'Opening Shell',
-          subtitle: 'Routing command through the tower lattice.',
-          statusLabel: 'Screen Link',
-          signalLabels: ['SYNC', 'LINK', 'ARM'],
+          subtitle: 'Preparing the shell view.',
+          statusLabel: 'Opening',
+          signalLabels: ['OPEN', 'LOAD', 'SHOW'],
           tips: ['Auto entry starts when the first event run begins.'],
           guide: LightcoreGuideProfile.luma,
         ),
@@ -25,15 +25,12 @@ void main() {
     );
 
     expect(find.text('Opening Shell'), findsOneWidget);
-    expect(
-      find.text('Routing command through the tower lattice.'),
-      findsOneWidget,
-    );
-    expect(find.text('SCREEN LINK'), findsOneWidget);
-    expect(find.text('SYNC'), findsOneWidget);
-    expect(find.text('LINK'), findsOneWidget);
-    expect(find.text('ARM'), findsOneWidget);
-    expect(find.text('RELAY ALIGNMENT'), findsOneWidget);
+    expect(find.text('Preparing the shell view.'), findsOneWidget);
+    expect(find.text('OPENING'), findsOneWidget);
+    expect(find.text('OPEN'), findsOneWidget);
+    expect(find.text('LOAD'), findsOneWidget);
+    expect(find.text('SHOW'), findsOneWidget);
+    expect(find.text('LOADING'), findsAtLeastNWidgets(1));
     expect(
       find.text('Auto entry starts when the first event run begins.'),
       findsOneWidget,

@@ -1762,10 +1762,10 @@ class _LightcoreAppState extends State<LightcoreApp>
         key: const ValueKey<String>('lightcore-screen-link'),
         child: LightcoreLoadingScreen(
           title: 'Opening Shell',
-          subtitle: 'Routing command through the tower lattice.',
-          statusLabel: 'Screen Link',
+          subtitle: 'Preparing the shell view.',
+          statusLabel: 'Opening',
           accent: LightcorePalette.aether,
-          signalLabels: ['SYNC', 'LINK', 'ARM'],
+          signalLabels: ['OPEN', 'LOAD', 'SHOW'],
           guide: _guideProfile ?? LightcoreGuideProfile.lumo,
           tips: const [
             'The optimal growth strategy may not be 100% flow.',

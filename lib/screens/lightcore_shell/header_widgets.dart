@@ -564,29 +564,18 @@ extension on _ShellOverlayDestination {
 
   String get loadingSubtitle => switch (this) {
     _ShellOverlayDestination.battle =>
-      'Returning command to the active Lightcore shell.',
-    _ShellOverlayDestination.towers =>
-      'Opening tower build data and relay stat boards.',
-    _ShellOverlayDestination.managers =>
-      'Loading manager decks and automation assignments.',
-    _ShellOverlayDestination.threatMap =>
-      'Routing to the next stabilized threat region.',
-    _ShellOverlayDestination.spaceRoom =>
-      'Connecting channel chat and social relay state.',
-    _ShellOverlayDestination.friends =>
-      'Checking friend links and daily gift state.',
-    _ShellOverlayDestination.mentees =>
-      'Loading mentorship branches and mentee progress.',
-    _ShellOverlayDestination.mentors =>
-      'Loading mentor records and branch context.',
-    _ShellOverlayDestination.enemies =>
-      'Opening Knowledge Cards, Apex loadout, and threat directors.',
-    _ShellOverlayDestination.dungeons =>
-      'Preparing dungeon routes and current event progress.',
-    _ShellOverlayDestination.tournaments =>
-      'Fetching tournament modes and leaderboard snapshots.',
-    _ShellOverlayDestination.prestige =>
-      'Aligning shell promotion and layer advancement data.',
+      'Returning to the active Lightcore shell.',
+    _ShellOverlayDestination.towers => 'Opening tower controls.',
+    _ShellOverlayDestination.managers => 'Opening manager controls.',
+    _ShellOverlayDestination.threatMap => 'Opening the Threat Map.',
+    _ShellOverlayDestination.spaceRoom => 'Opening Space Room.',
+    _ShellOverlayDestination.friends => 'Opening Friends.',
+    _ShellOverlayDestination.mentees => 'Opening Mentees.',
+    _ShellOverlayDestination.mentors => 'Opening Mentors.',
+    _ShellOverlayDestination.enemies => 'Opening Knowledge Cards.',
+    _ShellOverlayDestination.dungeons => 'Opening Daily Dungeons.',
+    _ShellOverlayDestination.tournaments => 'Opening Tournaments.',
+    _ShellOverlayDestination.prestige => 'Opening Layer Advance.',
   };
 
   List<String> get loadingTips => switch (this) {

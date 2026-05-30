@@ -786,8 +786,7 @@ class _DailyDungeonsScreenState extends State<DailyDungeonsScreen> {
         fullscreenDialog: true,
         builder: (_) => _DungeonRunLaunchScreen(
           title: 'Loading Prism Rift',
-          subtitle:
-              'Syncing today\'s rift pattern and opening the shared battle arena.',
+          subtitle: 'Opening the Prism Rift run.',
           tint: LightcorePalette.violet,
           icon: Icons.terrain_rounded,
           builder: (_) => _DailyDungeonBattleRunScreen(
