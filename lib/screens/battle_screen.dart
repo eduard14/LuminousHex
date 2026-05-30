@@ -1040,7 +1040,7 @@ class _BattleScreenState extends State<BattleScreen> {
     return LightcoreQuestCard(
       controller: controller,
       compact: compact,
-      initiallyExpanded: controller.tutorialUsesBattlefieldClickPiece,
+      initiallyExpanded: false,
       instructionOverride: instructionOverride,
     );
   }

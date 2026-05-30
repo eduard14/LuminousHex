@@ -111,9 +111,11 @@ class _LightcoreQuestCardState extends State<LightcoreQuestCard> {
     final detailsWidth = availableDetailsWidth
         .clamp(widget.compact ? 220.0 : 300.0, maxDetailsWidth)
         .toDouble();
-    final contentWidth = _detailsOpen
-        ? triggerSize + detailGap + detailsWidth
-        : triggerSize;
+    final summaryWidth = availableDetailsWidth
+        .clamp(widget.compact ? 204.0 : 260.0, widget.compact ? 280.0 : 340.0)
+        .toDouble();
+    final contentWidth =
+        triggerSize + detailGap + (_detailsOpen ? detailsWidth : summaryWidth);
 
     final tracker = Tooltip(
       message: _detailsOpen
@@ -145,6 +147,86 @@ class _LightcoreQuestCardState extends State<LightcoreQuestCard> {
                 ),
               ),
             ),
+          ),
+        ),
+      ),
+    );
+
+    final summaryCard = SizedBox(
+      width: summaryWidth,
+      child: AuroraPanel(
+        key: const ValueKey<String>('battle-quest-summary-card'),
+        tint: tint,
+        radius: widget.compact ? 16 : 18,
+        padding: EdgeInsets.fromLTRB(
+          widget.compact ? 12 : 14,
+          widget.compact ? 10 : 12,
+          widget.compact ? 12 : 14,
+          widget.compact ? 10 : 12,
+        ),
+        onTap: _toggleDetails,
+        child: Semantics(
+          button: true,
+          label: 'Open guide details for $headline',
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(promptIcon, size: 18, color: tint),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Row(
+                      children: [
+                        if (questId != null) ...[
+                          Text(
+                            questId,
+                            style: Theme.of(context).textTheme.labelSmall
+                                ?.copyWith(
+                                  color: tint,
+                                  fontWeight: FontWeight.w900,
+                                ),
+                          ),
+                          const SizedBox(width: 8),
+                        ],
+                        Expanded(
+                          child: Text(
+                            headline,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: Theme.of(context).textTheme.labelLarge
+                                ?.copyWith(
+                                  color: LightcorePalette.mist,
+                                  fontWeight: FontWeight.w900,
+                                  height: 1.05,
+                                ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 5),
+                    Text(
+                      instruction,
+                      maxLines: widget.compact ? 2 : 3,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: LightcorePalette.mist.withValues(alpha: 0.86),
+                        fontWeight: FontWeight.w700,
+                        height: 1.18,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 6),
+              Icon(
+                Icons.keyboard_arrow_right_rounded,
+                size: 20,
+                color: LightcorePalette.mist.withValues(alpha: 0.72),
+              ),
+            ],
           ),
         ),
       ),
@@ -283,16 +365,15 @@ class _LightcoreQuestCardState extends State<LightcoreQuestCard> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           tracker,
-          if (_detailsOpen)
-            Padding(
-              key: const ValueKey<String>('battle-quest-details-open'),
-              padding: EdgeInsets.only(left: detailGap),
-              child: detailsCard,
-            )
-          else
-            const SizedBox.shrink(
-              key: ValueKey<String>('battle-quest-card-collapsed'),
+          Padding(
+            key: ValueKey<String>(
+              _detailsOpen
+                  ? 'battle-quest-details-open'
+                  : 'battle-quest-card-collapsed',
             ),
+            padding: EdgeInsets.only(left: detailGap),
+            child: _detailsOpen ? detailsCard : summaryCard,
+          ),
         ],
       ),
     );

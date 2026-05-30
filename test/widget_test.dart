@@ -2234,7 +2234,7 @@ void main() {
       findsNothing,
     );
     expect(
-      find.byKey(const ValueKey<String>('battle-quest-detail-card')),
+      find.byKey(const ValueKey<String>('battle-quest-summary-card')),
       findsOneWidget,
     );
 
@@ -2286,7 +2286,7 @@ void main() {
     );
   });
 
-  testWidgets('tracked quest starts expanded and can collapse on demand', (
+  testWidgets('tracked quest starts compact and can open details on demand', (
     tester,
   ) async {
     final controller = LightcoreController();
@@ -2301,8 +2301,12 @@ void main() {
       findsOneWidget,
     );
     expect(
-      find.byKey(const ValueKey<String>('battle-quest-detail-card')),
+      find.byKey(const ValueKey<String>('battle-quest-summary-card')),
       findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey<String>('battle-quest-detail-card')),
+      findsNothing,
     );
     expect(
       find.byKey(const ValueKey<String>('battle-tutorial-banner')),
@@ -2310,13 +2314,13 @@ void main() {
     );
 
     await tester.tap(
-      find.byKey(const ValueKey<String>('battle-quest-collapse-button')),
+      find.byKey(const ValueKey<String>('battle-quest-summary-card')),
     );
     await _pumpTransition(tester);
 
     expect(
       find.byKey(const ValueKey<String>('battle-quest-detail-card')),
-      findsNothing,
+      findsOneWidget,
     );
   });
 
@@ -2346,11 +2350,21 @@ void main() {
     await _pumpBattleScreen(tester, controller);
 
     expect(
-      find.byKey(const ValueKey<String>('battle-quest-detail-card')),
+      find.byKey(const ValueKey<String>('battle-quest-summary-card')),
       findsOneWidget,
     );
 
     expect(find.text('Focus Fire'), findsWidgets);
+    expect(
+      find.byKey(const ValueKey<String>('battle-quest-detail-card')),
+      findsNothing,
+    );
+
+    await tester.tap(
+      find.byKey(const ValueKey<String>('battle-quest-summary-card')),
+    );
+    await _pumpTransition(tester);
+
     expect(
       find.byKey(const ValueKey<String>('battle-quest-detail-card')),
       findsOneWidget,
@@ -2363,7 +2377,7 @@ void main() {
     );
   });
 
-  testWidgets('battlefield tap quests start expanded on wide layouts', (
+  testWidgets('battlefield tap quests keep action summary visible', (
     tester,
   ) async {
     addTearDown(() async => tester.binding.setSurfaceSize(null));
@@ -2395,18 +2409,22 @@ void main() {
     await _pumpBattleScreen(tester, controller);
 
     expect(
-      find.byKey(const ValueKey<String>('battle-quest-detail-card')),
+      find.byKey(const ValueKey<String>('battle-quest-summary-card')),
       findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey<String>('battle-quest-detail-card')),
+      findsNothing,
     );
 
     await tester.tap(
-      find.byKey(const ValueKey<String>('battle-quest-trigger-button')),
+      find.byKey(const ValueKey<String>('battle-quest-summary-card')),
     );
     await _pumpTransition(tester);
 
     expect(
       find.byKey(const ValueKey<String>('battle-quest-detail-card')),
-      findsNothing,
+      findsOneWidget,
     );
   });
 
@@ -2464,7 +2482,7 @@ void main() {
     expect(find.text('Upgrade Board'), findsOneWidget);
     expect(find.textContaining('Tower Level •'), findsOneWidget);
     expect(
-      find.byKey(const ValueKey<String>('battle-quest-detail-card')),
+      find.byKey(const ValueKey<String>('battle-quest-summary-card')),
       findsOneWidget,
     );
   });
@@ -2487,7 +2505,7 @@ void main() {
 
     expect(controller.tutorialStep, LightcoreTutorialStep.buildFirstRedTower);
     expect(
-      find.byKey(const ValueKey<String>('battle-quest-detail-card')),
+      find.byKey(const ValueKey<String>('battle-quest-summary-card')),
       findsOneWidget,
     );
   });
