@@ -27,7 +27,6 @@ class LightcoreQuestCard extends StatefulWidget {
 class _LightcoreQuestCardState extends State<LightcoreQuestCard> {
   static const Duration _stuckHintDelay = Duration(seconds: 10);
 
-  late bool _detailsOpen;
   late LightcoreTutorialStep _trackedStep;
   Timer? _stuckHintTimer;
   bool _stuckHintVisible = false;
@@ -35,7 +34,6 @@ class _LightcoreQuestCardState extends State<LightcoreQuestCard> {
   @override
   void initState() {
     super.initState();
-    _detailsOpen = widget.initiallyExpanded;
     _trackedStep = widget.controller.tutorialStep;
     _scheduleStuckHint();
   }
@@ -44,14 +42,10 @@ class _LightcoreQuestCardState extends State<LightcoreQuestCard> {
   void didUpdateWidget(covariant LightcoreQuestCard oldWidget) {
     super.didUpdateWidget(oldWidget);
     final nextStep = widget.controller.tutorialStep;
-    if (oldWidget.initiallyExpanded != widget.initiallyExpanded) {
-      _detailsOpen = widget.initiallyExpanded;
-    }
     if (nextStep == _trackedStep) {
       return;
     }
     _trackedStep = nextStep;
-    _detailsOpen = widget.initiallyExpanded;
     _stuckHintVisible = false;
     _scheduleStuckHint();
   }
@@ -79,9 +73,66 @@ class _LightcoreQuestCardState extends State<LightcoreQuestCard> {
   }
 
   void _toggleDetails() {
-    setState(() {
-      _detailsOpen = !_detailsOpen;
-    });
+    _showDetailsSheet();
+  }
+
+  void _showDetailsSheet() {
+    final controller = widget.controller;
+    final headline = controller.tutorialHeadline;
+    final instruction = widget.instructionOverride ?? controller.tutorialPrompt;
+    if (headline == null || instruction == null) {
+      return;
+    }
+
+    final step = controller.tutorialStep;
+    final tint = LightcorePalette.quest;
+    final promptIcon = _questPromptIcon(step);
+    final mechanicHint = controller.tutorialMechanicHint;
+    final storyBeat = controller.tutorialStoryBeat;
+    final questId = controller.tutorialQuestId;
+    final clickTarget = controller.tutorialPrimaryClickTarget;
+    final completion = controller.tutorialCompletionCondition;
+    final reward = controller.tutorialLearningReward;
+    final stuckHelp = controller.tutorialFailureHelp;
+    final stuckHintVisible = _stuckHintVisible;
+
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      barrierColor: LightcorePalette.night.withValues(alpha: 0.36),
+      isScrollControlled: true,
+      builder: (sheetContext) {
+        final width = MediaQuery.sizeOf(
+          sheetContext,
+        ).width.clamp(280.0, 430.0).toDouble();
+        return SafeArea(
+          child: Align(
+            alignment: Alignment.bottomCenter,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(14, 14, 14, 18),
+              child: SizedBox(
+                width: width,
+                child: _QuestDetailsCard(
+                  headline: headline,
+                  instruction: instruction,
+                  questId: questId,
+                  promptIcon: promptIcon,
+                  mechanicHint: mechanicHint,
+                  storyBeat: storyBeat,
+                  clickTarget: clickTarget,
+                  completion: completion,
+                  reward: reward,
+                  stuckHelp: stuckHintVisible ? stuckHelp : null,
+                  tint: tint,
+                  compact: widget.compact,
+                  onClose: () => Navigator.of(sheetContext).pop(),
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -96,134 +147,51 @@ class _LightcoreQuestCardState extends State<LightcoreQuestCard> {
     final step = controller.tutorialStep;
     final tint = LightcorePalette.quest;
     final promptIcon = _questPromptIcon(step);
-    final mechanicHint = controller.tutorialMechanicHint;
-    final storyBeat = controller.tutorialStoryBeat;
     final questId = controller.tutorialQuestId;
-    final clickTarget = controller.tutorialPrimaryClickTarget;
-    final completion = controller.tutorialCompletionCondition;
-    final reward = controller.tutorialLearningReward;
-    final stuckHelp = controller.tutorialFailureHelp;
-    final triggerSize = widget.compact ? 52.0 : 58.0;
-    final detailGap = widget.compact ? 8.0 : 10.0;
-    final maxDetailsWidth = widget.compact ? 318.0 : 380.0;
-    final availableDetailsWidth =
-        MediaQuery.sizeOf(context).width - triggerSize - detailGap - 32;
-    final detailsWidth = availableDetailsWidth
-        .clamp(widget.compact ? 220.0 : 300.0, maxDetailsWidth)
+    final availableWidth = MediaQuery.sizeOf(context).width - 32;
+    final notificationWidth = availableWidth
+        .clamp(widget.compact ? 156.0 : 176.0, widget.compact ? 214.0 : 246.0)
         .toDouble();
-    final summaryWidth = availableDetailsWidth
-        .clamp(widget.compact ? 204.0 : 260.0, widget.compact ? 280.0 : 340.0)
-        .toDouble();
-    final contentWidth =
-        triggerSize + detailGap + (_detailsOpen ? detailsWidth : summaryWidth);
 
     final tracker = Tooltip(
-      message: _detailsOpen
-          ? 'Hide detailed quest steps'
-          : 'Open detailed quest steps',
-      child: SizedBox(
-        key: const ValueKey<String>('battle-quest-card'),
-        width: triggerSize,
-        height: triggerSize,
-        child: AuroraPanel(
-          key: const ValueKey<String>('battle-quest-trigger-button'),
-          tint: tint,
-          radius: widget.compact ? 18 : 20,
-          padding: EdgeInsets.zero,
-          onTap: _toggleDetails,
-          child: Semantics(
-            button: true,
-            label: 'Guide quest, $headline',
-            child: Center(
-              child: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 160),
-                child: Icon(
-                  _detailsOpen
-                      ? Icons.keyboard_arrow_left_rounded
-                      : Icons.flag_rounded,
-                  key: ValueKey<bool>(_detailsOpen),
-                  size: widget.compact ? 25 : 28,
-                  color: tint,
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-
-    final summaryCard = SizedBox(
-      width: summaryWidth,
+      message: 'Open guide details',
       child: AuroraPanel(
-        key: const ValueKey<String>('battle-quest-summary-card'),
+        key: const ValueKey<String>('battle-quest-trigger-button'),
         tint: tint,
-        radius: widget.compact ? 16 : 18,
-        padding: EdgeInsets.fromLTRB(
-          widget.compact ? 12 : 14,
-          widget.compact ? 10 : 12,
-          widget.compact ? 12 : 14,
-          widget.compact ? 10 : 12,
+        radius: 999,
+        padding: EdgeInsets.symmetric(
+          horizontal: widget.compact ? 10 : 12,
+          vertical: widget.compact ? 8 : 9,
         ),
         onTap: _toggleDetails,
         child: Semantics(
+          key: const ValueKey<String>('battle-quest-summary-card'),
           button: true,
           label: 'Open guide details for $headline',
           child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(promptIcon, size: 18, color: tint),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Row(
-                      children: [
-                        if (questId != null) ...[
-                          Text(
-                            questId,
-                            style: Theme.of(context).textTheme.labelSmall
-                                ?.copyWith(
-                                  color: tint,
-                                  fontWeight: FontWeight.w900,
-                                ),
-                          ),
-                          const SizedBox(width: 8),
-                        ],
-                        Expanded(
-                          child: Text(
-                            headline,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: Theme.of(context).textTheme.labelLarge
-                                ?.copyWith(
-                                  color: LightcorePalette.mist,
-                                  fontWeight: FontWeight.w900,
-                                  height: 1.05,
-                                ),
-                          ),
-                        ),
-                      ],
+              Icon(promptIcon, size: widget.compact ? 16 : 18, color: tint),
+              SizedBox(width: widget.compact ? 6 : 8),
+              Flexible(
+                child: SizedBox(
+                  width: notificationWidth - (widget.compact ? 66 : 76),
+                  child: Text(
+                    questId == null ? headline : '$questId  $headline',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                      color: LightcorePalette.mist,
+                      fontWeight: FontWeight.w900,
+                      height: 1.05,
                     ),
-                    const SizedBox(height: 5),
-                    Text(
-                      instruction,
-                      maxLines: widget.compact ? 2 : 3,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: LightcorePalette.mist.withValues(alpha: 0.86),
-                        fontWeight: FontWeight.w700,
-                        height: 1.18,
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
               ),
-              const SizedBox(width: 6),
+              SizedBox(width: widget.compact ? 4 : 6),
               Icon(
-                Icons.keyboard_arrow_right_rounded,
-                size: 20,
+                Icons.expand_less_rounded,
+                size: widget.compact ? 18 : 20,
                 color: LightcorePalette.mist.withValues(alpha: 0.72),
               ),
             ],
@@ -232,18 +200,58 @@ class _LightcoreQuestCardState extends State<LightcoreQuestCard> {
       ),
     );
 
-    final detailsCard = SizedBox(
-      width: detailsWidth,
-      child: AuroraPanel(
-        key: const ValueKey<String>('battle-quest-detail-card'),
-        tint: tint,
-        radius: widget.compact ? 18 : 20,
-        padding: EdgeInsets.fromLTRB(
-          widget.compact ? 14 : 16,
-          widget.compact ? 12 : 14,
-          widget.compact ? 14 : 16,
-          widget.compact ? 14 : 16,
-        ),
+    return SizedBox(
+      key: const ValueKey<String>('battle-quest-card'),
+      width: notificationWidth,
+      child: tracker,
+    );
+  }
+}
+
+class _QuestDetailsCard extends StatelessWidget {
+  const _QuestDetailsCard({
+    required this.headline,
+    required this.instruction,
+    required this.questId,
+    required this.promptIcon,
+    required this.mechanicHint,
+    required this.storyBeat,
+    required this.clickTarget,
+    required this.completion,
+    required this.reward,
+    required this.stuckHelp,
+    required this.tint,
+    required this.compact,
+    required this.onClose,
+  });
+
+  final String headline;
+  final String instruction;
+  final String? questId;
+  final IconData promptIcon;
+  final String? mechanicHint;
+  final String? storyBeat;
+  final String? clickTarget;
+  final String? completion;
+  final String? reward;
+  final String? stuckHelp;
+  final Color tint;
+  final bool compact;
+  final VoidCallback onClose;
+
+  @override
+  Widget build(BuildContext context) {
+    return AuroraPanel(
+      key: const ValueKey<String>('battle-quest-detail-card'),
+      tint: tint,
+      radius: compact ? 18 : 20,
+      padding: EdgeInsets.fromLTRB(
+        compact ? 14 : 16,
+        compact ? 12 : 14,
+        compact ? 14 : 16,
+        compact ? 14 : 16,
+      ),
+      child: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
@@ -259,7 +267,7 @@ class _LightcoreQuestCardState extends State<LightcoreQuestCard> {
                     children: [
                       if (questId != null) ...[
                         Text(
-                          questId,
+                          questId!,
                           style: Theme.of(context).textTheme.labelSmall
                               ?.copyWith(
                                 color: tint,
@@ -282,14 +290,14 @@ class _LightcoreQuestCardState extends State<LightcoreQuestCard> {
                 ),
                 IconButton(
                   key: const ValueKey<String>('battle-quest-collapse-button'),
-                  tooltip: 'Hide detailed quest steps',
+                  tooltip: 'Close guide details',
                   visualDensity: VisualDensity.compact,
                   style: IconButton.styleFrom(
                     minimumSize: const Size(32, 32),
                     maximumSize: const Size(32, 32),
                     padding: EdgeInsets.zero,
                   ),
-                  onPressed: _toggleDetails,
+                  onPressed: onClose,
                   icon: const Icon(Icons.close_rounded, size: 18),
                 ),
               ],
@@ -299,7 +307,7 @@ class _LightcoreQuestCardState extends State<LightcoreQuestCard> {
               _QuestDetailText(
                 icon: Icons.flag_rounded,
                 title: 'Goal',
-                text: completion,
+                text: completion!,
                 tint: LightcorePalette.warning,
               ),
             ],
@@ -308,7 +316,7 @@ class _LightcoreQuestCardState extends State<LightcoreQuestCard> {
               _QuestDetailText(
                 icon: Icons.lightbulb_rounded,
                 title: 'Why',
-                text: mechanicHint,
+                text: mechanicHint!,
                 tint: tint,
               ),
             ],
@@ -316,23 +324,23 @@ class _LightcoreQuestCardState extends State<LightcoreQuestCard> {
             _QuestActionBlock(
               instruction: instruction,
               tint: tint,
-              compact: widget.compact,
+              compact: compact,
             ),
             if (clickTarget != null) ...[
               const SizedBox(height: 12),
               _QuestDetailText(
                 icon: Icons.route_rounded,
                 title: 'Target',
-                text: clickTarget,
+                text: clickTarget!,
                 tint: tint,
               ),
             ],
-            if (_stuckHintVisible && stuckHelp != null) ...[
+            if (stuckHelp != null) ...[
               const SizedBox(height: 10),
               _QuestDetailText(
                 icon: Icons.help_outline_rounded,
                 title: 'Hint',
-                text: stuckHelp,
+                text: stuckHelp!,
                 tint: LightcorePalette.warning,
               ),
             ],
@@ -341,7 +349,7 @@ class _LightcoreQuestCardState extends State<LightcoreQuestCard> {
               _QuestDetailText(
                 icon: Icons.redeem_rounded,
                 title: 'Result',
-                text: reward,
+                text: reward!,
                 tint: LightcorePalette.success,
               ),
             ],
@@ -350,31 +358,12 @@ class _LightcoreQuestCardState extends State<LightcoreQuestCard> {
               _QuestDetailText(
                 icon: Icons.auto_stories_rounded,
                 title: 'Guide note',
-                text: storyBeat,
+                text: storyBeat!,
                 tint: LightcorePalette.aether,
               ),
             ],
           ],
         ),
-      ),
-    );
-
-    return SizedBox(
-      width: contentWidth,
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          tracker,
-          Padding(
-            key: ValueKey<String>(
-              _detailsOpen
-                  ? 'battle-quest-details-open'
-                  : 'battle-quest-card-collapsed',
-            ),
-            padding: EdgeInsets.only(left: detailGap),
-            child: _detailsOpen ? detailsCard : summaryCard,
-          ),
-        ],
       ),
     );
   }

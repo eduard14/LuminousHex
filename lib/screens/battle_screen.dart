@@ -2266,6 +2266,7 @@ class _BuildButton extends StatelessWidget {
       child: GuidedFocusFrame(
         active: highlighted,
         tint: LightcorePalette.quest,
+        tapCueLabel: highlighted ? 'CLICK' : null,
         child: FilledButton(
           style: FilledButton.styleFrom(
             backgroundColor: config.affinity.color.withValues(alpha: 0.92),

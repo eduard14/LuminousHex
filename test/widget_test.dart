@@ -2242,9 +2242,21 @@ void main() {
       find.text(
         'Tap the center Lightcore to wake the first shell and reveal where towers will go.',
       ),
+      findsNothing,
+    );
+
+    await tester.tap(
+      find.byKey(const ValueKey<String>('battle-quest-summary-card')),
+    );
+    await _pumpTransition(tester);
+
+    expect(
+      find.text(
+        'Tap the center Lightcore to wake the first shell and reveal where towers will go.',
+      ),
       findsWidgets,
     );
-    expect(find.byIcon(Icons.touch_app_rounded), findsOneWidget);
+    expect(find.byIcon(Icons.touch_app_rounded), findsWidgets);
   });
 
   testWidgets('quest card stays off overlay screens without blocking chrome', (
@@ -2354,7 +2366,6 @@ void main() {
       findsOneWidget,
     );
 
-    expect(find.text('Focus Fire'), findsWidgets);
     expect(
       find.byKey(const ValueKey<String>('battle-quest-detail-card')),
       findsNothing,
@@ -2369,6 +2380,7 @@ void main() {
       find.byKey(const ValueKey<String>('battle-quest-detail-card')),
       findsOneWidget,
     );
+    expect(find.text('Focus Fire'), findsWidgets);
     expect(
       find.text(
         'Tap the highlighted anomaly to focus fire. If the queue is still charging, the shot fires as soon as a packet is ready.',
