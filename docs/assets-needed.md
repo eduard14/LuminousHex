@@ -83,7 +83,7 @@ store, passes, and reward flows.
 | Main menu hero backdrop | 1 | 2160 x 3840 | `assets/images/backgrounds/main_menu_hero.webp` | Portrait-first atmosphere behind the landing/menu CTA stack. |
 | Main menu emblem overlay | 1 | 1024 x 1024 | `assets/images/backgrounds/main_menu_emblem.png` | Optional center motif behind the main buttons. |
 | Battle arena backdrop | 1 | 2048 x 2048 | `assets/images/backgrounds/battle_arena.webp` | Square field under the Flame battle canvas. |
-| Loading backdrop | 1 | 2160 x 3840 | `assets/images/backgrounds/loading_backdrop.webp` | Used while Firebase/bootstrap/game state initializes. |
+| Loading backdrop | 1 | 864 x 1821 current / 2160 x 3840 final | `assets/Images/lumo_luma_loading_background.png` | Current Lumo/Luma loading backdrop for screen transitions and event-run loading. App startup does not use a loading backdrop. |
 | Core sprite set | 4 | 512 x 512 each | `assets/sprites/core/` | `idle`, `charged`, `overdrive`, `hit`. |
 | Relay tower prism states | 7 families x 3 | 512 x 512 each | `assets/sprites/towers/` | White, Red, Yellow, Green, Purple, Orange, Blue. States: `idle`, `charging`, `ready`. |
 | Projectile sprites | 10 | 512 x 512 each | `assets/vfx/projectiles/` | Starbolt, basic, fast, burst, chain, split, lance, explosion, ring, nova. |

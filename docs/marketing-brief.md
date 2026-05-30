@@ -90,8 +90,8 @@ shell, and keep climbing.
   such as balancing growth, flow, and Output Efficiency.
 - Screen transitions, event-run loading, and major shell area transitions use the
   same fullscreen branded Lightcore loading interstitial with generic loading
-  status, core animation, and Lumo/Luma guide tips. App startup shows only the
-  Lemon Goose Games Inc. splash before revealing the LumiHex main menu.
+  status, Lumo/Luma background art, and Lumo/Luma guide tips. App startup shows
+  only the Lemon Goose Games Inc. splash before revealing the LumiHex main menu.
 
 ### Towers And Builds
 
