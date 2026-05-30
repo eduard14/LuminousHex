@@ -31,7 +31,10 @@ void _feedTowerPayload(LightcoreController controller, int slotIndex) {
     greaterThan(previousFireSequence),
   );
   if (controller.pulses.isNotEmpty) {
-    expect(controller.boostPulseToCore(controller.pulses.last.id), isTrue);
+    expect(
+      controller.debugAdvancePulseToCore(controller.pulses.last.id),
+      isTrue,
+    );
   }
 }
 
@@ -158,8 +161,6 @@ void main() {
       controller.lumens = 1000;
       controller.kills = LightcoreController.unlockKillsForOuterSlot(0);
       expect(controller.buildTowerAt(0, TowerLibrary.purplePrism), isTrue);
-      expect(controller.debugSetTowerCharge(0, charge: 1.2), isTrue);
-      _feedTowerPayload(controller, 0);
 
       final frontEnemy = controller.debugSpawnEnemyFromCard(
         EnemyLibrary.basicWhite.id,
@@ -177,6 +178,28 @@ void main() {
 
       final initialFrontHealth = _healthForEnemy(controller, frontEnemy!.id);
       final initialFlankHealth = _healthForEnemy(controller, flankEnemy!.id);
+      controller.debugSetAmmoQueue(const [
+        AmmoPacket(
+          id: 'test_tower_pulse_ring_origin',
+          sourceSlotIndex: 0,
+          affinity: PrototypeAffinity.violet,
+          power: 18,
+          advantageMultiplier: 1,
+          projectileType: ProjectileType.pulseRing,
+          payloadType: PayloadType.none,
+          targetPriority: TargetPriority.close,
+          range: 320,
+          critChance: 0,
+          critMultiplier: 1,
+          finalDamageMultiplier: 1,
+          bossDamageMultiplier: 1,
+          normalDamageMultiplier: 1,
+          defensePenetration: 0,
+          minDamageMultiplier: 1,
+          maxDamageMultiplier: 1,
+        ),
+      ]);
+      expect(controller.focusBattleEnemy(frontEnemy.id), isTrue);
 
       _tickUntil(controller, () => controller.shots.isNotEmpty);
       expect(controller.shots, isNotEmpty);
@@ -230,6 +253,7 @@ void main() {
     final initialFirstHealth = _healthForEnemy(controller, firstEnemy!.id);
     final initialSecondHealth = _healthForEnemy(controller, secondEnemy!.id);
     traitRandom.reset();
+    expect(controller.focusBattleEnemy(firstEnemy.id), isTrue);
 
     controller.debugSetAmmoQueue(const [
       AmmoPacket(
@@ -306,17 +330,30 @@ void main() {
 
     final initialFrontHealth = _healthForEnemy(controller, frontEnemy!.id);
     final initialFlankHealth = _healthForEnemy(controller, flankEnemy!.id);
+    expect(controller.focusBattleEnemy(frontEnemy.id), isTrue);
 
-    controller.handleBattleCenterTap();
-    _tickUntil(
-      controller,
-      () => controller.shots.any(
-        (shot) =>
-            shot.sourceSlotIndex == null &&
-            shot.projectileType == ProjectileType.pulseRing,
+    controller.debugSetAmmoQueue(const [
+      AmmoPacket(
+        id: 'test_child_core_pulse_ring',
+        sourceSlotIndex: null,
+        affinity: PrototypeAffinity.violet,
+        power: 18,
+        advantageMultiplier: 1,
+        projectileType: ProjectileType.pulseRing,
+        payloadType: PayloadType.none,
+        targetPriority: TargetPriority.close,
+        range: 320,
+        critChance: 0,
+        critMultiplier: 1,
+        finalDamageMultiplier: 1,
+        bossDamageMultiplier: 1,
+        normalDamageMultiplier: 1,
+        defensePenetration: 0,
+        minDamageMultiplier: 1,
+        maxDamageMultiplier: 1,
       ),
-      steps: 80,
-    );
+    ]);
+    expect(controller.fireQueuedCorePacketAtEnemy(frontEnemy.id), isTrue);
     expect(
       controller.shots.any(
         (shot) =>
@@ -392,11 +429,12 @@ void main() {
         maxDamageMultiplier: 1,
       ),
     ]);
+    expect(controller.focusBattleEnemy(towerCloserEnemy!.id), isTrue);
 
     controller.tick(0.05);
 
     expect(controller.shots, hasLength(1));
-    expect(controller.shots.single.enemyId, towerCloserEnemy!.id);
+    expect(controller.shots.single.enemyId, towerCloserEnemy.id);
     expect(controller.shots.single.enemyId, isNot(pathCloserEnemy!.id));
   });
 
@@ -483,7 +521,6 @@ void main() {
     expect(singleDamage, greaterThan(0));
     expect(_damageTaken(single, farEnemy.id, initialFarHealth), 0);
     expect(single.pulses, isEmpty);
-    expect(single.queuedAmmoPackets, isEmpty);
     expect(single.shots, isEmpty);
 
     final stacked = LightcoreController(traitRandom: Random(3));
@@ -515,7 +552,6 @@ void main() {
     );
     expect(stackedDamage, greaterThan(singleDamage * 1.35));
     expect(stacked.pulses, isEmpty);
-    expect(stacked.queuedAmmoPackets, isEmpty);
     expect(stacked.shots, isEmpty);
   });
 
@@ -545,11 +581,18 @@ void main() {
 
     final initialFrontHealth = _healthForEnemy(controller, frontEnemy!.id);
     final initialFlankHealth = _healthForEnemy(controller, flankEnemy!.id);
+    expect(controller.focusBattleEnemy(frontEnemy.id), isTrue);
 
     _tickUntil(controller, () => controller.shots.isNotEmpty, steps: 80);
     expect(controller.shots, isNotEmpty);
 
-    controller.tick(0.01);
+    _tickUntil(
+      controller,
+      () =>
+          _enemyMissingOrDamaged(controller, frontEnemy.id, initialFrontHealth),
+      steps: 80,
+      dt: 0.01,
+    );
 
     expect(
       _enemyMissingOrDamaged(controller, frontEnemy.id, initialFrontHealth),
@@ -580,6 +623,7 @@ void main() {
 
     final initialFrontHealth = _healthForEnemy(controller, frontEnemy!.id);
     final initialFlankHealth = _healthForEnemy(controller, flankEnemy!.id);
+    expect(controller.focusBattleEnemy(frontEnemy.id), isTrue);
 
     controller.debugSetAmmoQueue([
       _corePacket(
@@ -641,12 +685,13 @@ void main() {
           payloadType: payloadCase.payload,
         ),
       ]);
+      expect(controller.focusBattleEnemy(target!.id), isTrue);
 
       _tickUntil(
         controller,
         () {
           final enemies = controller.enemies.where(
-            (enemy) => enemy.id == target!.id,
+            (enemy) => enemy.id == target.id,
           );
           return enemies.isNotEmpty && payloadCase.matched(enemies.single);
         },
@@ -655,7 +700,7 @@ void main() {
       );
 
       final resolved = controller.enemies.firstWhere(
-        (enemy) => enemy.id == target!.id,
+        (enemy) => enemy.id == target.id,
       );
       expect(
         payloadCase.matched(resolved),
@@ -683,8 +728,9 @@ void main() {
     );
 
     expect(target, isNotNull);
+    expect(controller.focusBattleEnemy(target!.id), isTrue);
 
-    var radiusBeforeZap = _radiusForEnemy(controller, target!.id);
+    var radiusBeforeZap = _radiusForEnemy(controller, target.id);
     var zappedRadius = radiusBeforeZap;
     var shockRemaining = 0.0;
     var slowRemaining = 0.0;
@@ -738,8 +784,9 @@ void main() {
     expect(primaryTarget, isNotNull);
     expect(centerCloserButFartherFromPrimary, isNotNull);
     expect(fartherFromCenterButCloserToPrimary, isNotNull);
+    expect(controller.focusBattleEnemy(primaryTarget!.id), isTrue);
 
-    final initialPrimaryHealth = _healthForEnemy(controller, primaryTarget!.id);
+    final initialPrimaryHealth = _healthForEnemy(controller, primaryTarget.id);
     final initialCenterCloserHealth = _healthForEnemy(
       controller,
       centerCloserButFartherFromPrimary!.id,
@@ -881,13 +928,12 @@ void main() {
           maxDamageMultiplier: 1,
         ),
       ]);
+      expect(controller.focusBattleEnemy(primaryTarget!.id), isTrue);
 
       _tickUntil(
         controller,
         () =>
-            controller.enemies.every(
-              (enemy) => enemy.id != primaryTarget!.id,
-            ) &&
+            controller.enemies.every((enemy) => enemy.id != primaryTarget.id) &&
             _enemyMissingOrDamaged(
               controller,
               fartherFromCenterButCloserToPrimary.id,
@@ -897,7 +943,7 @@ void main() {
       );
 
       expect(
-        controller.enemies.every((enemy) => enemy.id != primaryTarget!.id),
+        controller.enemies.every((enemy) => enemy.id != primaryTarget.id),
         isTrue,
       );
       expect(

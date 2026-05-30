@@ -71,7 +71,7 @@ extension LightcoreControllerBattleActions on LightcoreController {
     return true;
   }
 
-  bool boostPulseToCore(String pulseId) {
+  bool debugAdvancePulseToCore(String pulseId) {
     final index = _pulses.indexWhere((pulse) => pulse.id == pulseId);
     if (index == -1) {
       return false;
@@ -86,23 +86,6 @@ extension LightcoreControllerBattleActions on LightcoreController {
     _syncTutorialStep(showBanner: false);
     _notifyNow();
     return true;
-  }
-
-  bool markPulseCriticalBoosted(String pulseId) {
-    final index = _pulses.indexWhere((pulse) => pulse.id == pulseId);
-    if (index == -1) {
-      return false;
-    }
-    _pulses[index] = _pulses[index].copyWith(criticalBoosted: true);
-    _notifyNow();
-    return true;
-  }
-
-  bool releaseDraggedPulse(String pulseId, {required bool crossedSourceTower}) {
-    if (crossedSourceTower) {
-      markPulseCriticalBoosted(pulseId);
-    }
-    return boostPulseToCore(pulseId);
   }
 }
 

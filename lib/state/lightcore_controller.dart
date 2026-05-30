@@ -388,47 +388,47 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
   ),
   LightcoreTutorialStep.tapBattleCore: LightcoreTutorialQuestDefinition(
     id: 'TUT-006',
-    title: 'Generate a Packet',
+    title: 'Watch Auto-Charge',
     teachGoal:
-        'The opening loop starts manual: tap the Lightcore to create a queued packet before automation exists.',
+        'Packets generate automatically after the core wakes. The player watches the queue fill instead of tapping the core repeatedly.',
     trigger: 'The first shell opens',
-    primaryClickTarget: 'Battlefield > Lightcore',
+    primaryClickTarget: 'Battlefield > Lightcore queue',
     coachCopy:
-        'Tap the center Lightcore to generate a packet. It will wait in the queue until you aim and fire.',
-    completionCondition: 'Generate one core packet',
+        'Watch the Lightcore auto-charge a packet. No tapping is needed; the next job is choosing what to shoot.',
+    completionCondition: 'One packet auto-generates',
     reward: 'Small Lumen grant',
     failureHelpState:
-        'Tap the center Lightcore. The queue markers around it show stored packets.',
-    analyticsEvent: 'tutorial_core_manual_generate',
+        'Keep the battle field open. The queue markers around the Lightcore show stored packets.',
+    analyticsEvent: 'tutorial_core_auto_generate',
   ),
   LightcoreTutorialStep.tapFirstTower: LightcoreTutorialQuestDefinition(
     id: 'TUT-007',
-    title: 'Aim and Fire',
+    title: 'Focus Fire',
     teachGoal:
-        'The player manually chooses anomaly targets before manager automation takes over. Tower clicks stay reserved for tower controls.',
+        'Enemy clicks set the tactical target. Tower clicks stay reserved for tower controls, upgrades, stats, and targeting tools.',
     trigger: 'First tower exists',
     primaryClickTarget: 'Battlefield > anomaly target',
     coachCopy:
-        'Tap a visible anomaly to fire the queued packet. Tapping a tower opens tower controls instead; managers will automate firing later.',
-    completionCondition: 'Fire one manually aimed packet',
+        'Tap the highlighted anomaly to focus fire. If the queue is still charging, the shot fires as soon as a packet is ready.',
+    completionCondition: 'Focus and fire one packet at an anomaly',
     reward: 'Lumens and White Drift practice scan',
     failureHelpState:
-        'Generate a packet at the Lightcore first, then tap a visible anomaly, not a tower, to shoot it.',
+        'Tap the highlighted anomaly, not a tower. Towers open tower controls; enemies set focus fire.',
     analyticsEvent: 'tutorial_manual_aim_fire',
   ),
   LightcoreTutorialStep.tapSecondShellTower: LightcoreTutorialQuestDefinition(
     id: 'TUT-008',
     title: 'Fire Child Tower',
     teachGoal:
-        'Child-shell towers keep the same tap-to-control rule: tap the charged tower to send its packet flow into the queue.',
+        'Child-shell towers keep the same tap-to-control rule: tower taps are for tower controls while packet flow stays automatic.',
     trigger: 'First child shell has a charged tower',
     primaryClickTarget: 'Battlefield > charged child-shell tower',
     coachCopy:
-        'Tap the highlighted child-shell tower once it is charged. Do not chase floating payload visuals.',
-    completionCondition: 'Tap one charged child-shell tower',
+        'Tap the highlighted child-shell tower to inspect its controls. Do not chase floating packet visuals.',
+    completionCondition: 'Inspect one charged child-shell tower',
     reward: 'Small Lumen grant',
     failureHelpState:
-        'Wait for the highlighted child-shell tower to charge, then tap the tower body.',
+        'Wait for the highlighted child-shell tower to charge, then tap the tower body to open controls.',
     analyticsEvent: 'tutorial_second_shell_tower_fire',
   ),
   LightcoreTutorialStep
@@ -493,17 +493,17 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
   ),
   LightcoreTutorialStep.autoQueueCheck: LightcoreTutorialQuestDefinition(
     id: 'TUT-012',
-    title: 'Auto Queue Check',
+    title: 'Manager Auto-Aim',
     teachGoal:
-        'Managers improve payload feed so the queue keeps filling while you are idle.',
+        'Core Managers convert the auto-filled queue into hands-off firing when the player wants automation.',
     trigger: 'Manager assigned',
     primaryClickTarget: 'Core > Queue display',
     coachCopy:
-        'Watch the assigned manager feed payloads. You can still catch pieces manually during active play for faster and critical packets.',
-    completionCondition: 'Let manager generate 5 pulses',
+        'Watch the assigned manager spend queued packets automatically. You can still tap enemies to override focus.',
+    completionCondition: 'Let the manager route 5 queued pulses',
     reward: 'Lumens and Threat Scan x1',
     failureHelpState:
-        'Keep the managed tower in view and show generated pulse count.',
+        'Keep the managed shell in view and watch the queue spend through automation.',
     analyticsEvent: 'tutorial_auto_queue_check',
   ),
   LightcoreTutorialStep
@@ -698,7 +698,7 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
     trigger: 'Manager foundry opened with enough Flux',
     primaryClickTarget: 'Managers > Core Manager foundry > Forge',
     coachCopy:
-        'Forge one Core Manager. A manager keeps relay packets feeding the queue without repeated tower commands.',
+        'Forge one Core Manager. A manager keeps relay packets feeding the queue through automation.',
     completionCondition: 'Own one Core Manager',
     reward: 'Flux',
     failureHelpState: 'Use the highlighted Core Manager forge control.',

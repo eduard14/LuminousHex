@@ -140,8 +140,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
     if (!_isOpeningStarterTower(tower.config)) {
       return false;
     }
-    return _tutorialCoreShotTapLearned &&
-        _tutorialManualAimFireLearned &&
+    return _tutorialManualAimFireLearned &&
         tower.level >= 4 &&
         _tutorialFirstTowerStatsOpened &&
         _tutorialStabilityPanelOpened &&
@@ -640,13 +639,13 @@ extension LightcoreControllerLayerTraits on LightcoreController {
     LightcoreTutorialStep.unfoldShell =>
       'Core online. The shell can now open lanes and start earning.',
     LightcoreTutorialStep.buildFirstRedTower =>
-      'First tower online. It will charge, then feed packets into the core queue.',
+      'First tower online. It will charge and feed auto-generated packets into the core queue.',
     LightcoreTutorialStep.inspectFirstTowerStats =>
       'Stats mapped. Use power, charge, cooldown, automation, and load to decide what to tune next.',
     LightcoreTutorialStep.tapBattleCore =>
-      'Packet generated. The core queue now waits for your shot command.',
+      'Auto-charge verified. The queue fills without repeated core taps.',
     LightcoreTutorialStep.tapFirstTower =>
-      'Manual fire learned. Managers later take over generation first, then firing.',
+      'Focus fire learned. Managers later take over firing when you want automation.',
     LightcoreTutorialStep.upgradeFirstTowerToLevel3 =>
       'Anchor tower tuned. Higher tower levels make every queued packet hit harder.',
     LightcoreTutorialStep.raiseThreat =>
@@ -658,7 +657,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
     LightcoreTutorialStep.assignTowerManager =>
       'Manager assigned. Payload feed now runs with better automation.',
     LightcoreTutorialStep.autoQueueCheck =>
-      'Automation verified. The queue keeps moving even when you stop tapping.',
+      'Automation verified. The queue keeps moving while you focus on targets.',
     LightcoreTutorialStep.upgradeFirstTowerToLevel4 =>
       'Opening lane reinforced. Strong anchors handle denser pressure better.',
     LightcoreTutorialStep.pullFirstRedEnemy =>
@@ -1440,8 +1439,8 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         LightcoreTutorialStep.selectFirstHex => 'Select Hex 1',
         LightcoreTutorialStep.buildFirstRedTower => 'Choose First Tower',
         LightcoreTutorialStep.inspectFirstTowerStats => 'Read Tower Stats',
-        LightcoreTutorialStep.tapBattleCore => 'Generate A Packet',
-        LightcoreTutorialStep.tapFirstTower => 'Aim And Fire',
+        LightcoreTutorialStep.tapBattleCore => 'Watch Auto-Charge',
+        LightcoreTutorialStep.tapFirstTower => 'Focus Fire',
         LightcoreTutorialStep.tapSecondShellTower => 'Fire Child Tower',
         LightcoreTutorialStep.upgradeFirstTowerToLevel3 =>
           'Tune The Main Tower',
@@ -1491,9 +1490,9 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         LightcoreTutorialStep.inspectFirstTowerStats =>
           'Open the first tower stats pop-out.',
         LightcoreTutorialStep.tapBattleCore =>
-          'Tap the Lightcore to generate a queued packet.',
+          'Watch the Lightcore auto-generate a queued packet.',
         LightcoreTutorialStep.tapFirstTower =>
-          'Tap a visible anomaly to fire. Tower taps open tower controls.',
+          'Tap a visible anomaly to focus fire. Tower taps open tower controls.',
         LightcoreTutorialStep.tapSecondShellTower =>
           'Tap the charged child-shell tower to feed the Lightcore.',
         LightcoreTutorialStep.upgradeFirstTowerToLevel3 =>
@@ -1505,7 +1504,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         LightcoreTutorialStep.readEffectiveGain =>
           'Tap Output Efficiency to inspect Effective Gain.',
         LightcoreTutorialStep.autoQueueCheck =>
-          'Watch your manager generate 5 queued pulses.',
+          'Watch your manager spend 5 queued pulses automatically.',
         LightcoreTutorialStep.upgradeFirstTowerToLevel4 =>
           'Click the first tower in Hex 1 and upgrade it again.',
         LightcoreTutorialStep.pullFirstRedEnemy =>
@@ -1572,11 +1571,11 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         LightcoreTutorialStep.inspectFirstTowerStats =>
           'Tower stats show power, charge, cooldown, automation, and lane load before the tower starts feeding the core queue.',
         LightcoreTutorialStep.tapBattleCore =>
-          'The opening Lightcore is manual. Generate a packet first so the queue has something to fire.',
+          'The Lightcore auto-charges packets after the shell wakes, so the player is never asked to repeat-tap the core.',
         LightcoreTutorialStep.tapFirstTower =>
-          'Manual aim teaches target choice before managers unlock auto-generation and auto-fire. Tower clicks remain tower controls.',
+          'Enemy focus teaches target choice before managers unlock auto-fire. Tower clicks remain tower controls.',
         LightcoreTutorialStep.tapSecondShellTower =>
-          'Second-shell lanes use the same tower-tap rule: tap the charged tower body, then the core converts that packet into a shot.',
+          'Second-shell lanes use the same tower-tap rule: tower bodies open tower controls while packet flow stays automatic.',
         LightcoreTutorialStep.upgradeFirstTowerToLevel3 =>
           'Early upgrades beat overexpanding. One strong anchor tower produces better damage and charge flow than several weak ones.',
         LightcoreTutorialStep.raiseThreat =>
@@ -1586,7 +1585,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         LightcoreTutorialStep.readEffectiveGain =>
           'Output Efficiency turns threat pressure into a visible gain multiplier, so the best scan is the one your core can keep stable.',
         LightcoreTutorialStep.autoQueueCheck =>
-          'Automation proves an assigned manager can support the core by improving payload feed after the full shell is online.',
+          'Automation proves an assigned manager can route queued packets without taking enemy focus control away from the player.',
         LightcoreTutorialStep.upgradeFirstTowerToLevel4 =>
           'A level 4 anchor keeps the lane efficient before Lumens get split across multiple towers.',
         LightcoreTutorialStep.pullFirstRedEnemy =>
@@ -1653,7 +1652,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
           LightcoreTutorialStep.inspectFirstTowerStats =>
             'The first prism report opens so the crew can label what each tower number means before combat speeds up.',
           LightcoreTutorialStep.tapBattleCore =>
-            'A hostile signature has crossed the core lens. Tap the Lightcore to load the first manual packet.',
+            'A hostile signature crosses the core lens while the Lightcore charges its first packet automatically.',
           LightcoreTutorialStep.tapFirstTower =>
             'The packet is loaded. Aim at a visible anomaly; tap towers only when you want tower controls.',
           LightcoreTutorialStep.tapSecondShellTower =>
@@ -1667,7 +1666,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
           LightcoreTutorialStep.readEffectiveGain =>
             'The crew pins the real-gain formula beside the output dial before opening harder scans.',
           LightcoreTutorialStep.autoQueueCheck =>
-            'The assigned Core Manager takes the relay chair and begins feeding the core without a manual command.',
+            'The assigned Core Manager takes the relay chair and starts spending queued packets without a manual command.',
           LightcoreTutorialStep.upgradeFirstTowerToLevel4 =>
             'The shell is absorbing denser traffic now, so the first lane needs one more tune pass before expansion.',
           LightcoreTutorialStep.pullFirstRedEnemy =>

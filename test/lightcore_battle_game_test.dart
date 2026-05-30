@@ -87,7 +87,7 @@ void main() {
     expect(backgroundTaps, 0);
   });
 
-  test('manual Lightcore tap queues a packet without an orbiting pulse', () {
+  test('core auto-feed queues a packet without an orbiting pulse', () {
     final controller = LightcoreController();
     addTearDown(controller.dispose);
     controller.debugDisableTutorial();
@@ -95,6 +95,13 @@ void main() {
 
     controller.selectCenter();
     controller.handleBattleCenterTap();
+    for (
+      var step = 0;
+      step < 80 && controller.queuedAmmoPackets.isEmpty;
+      step++
+    ) {
+      controller.tick(0.1);
+    }
 
     expect(controller.pulses, isEmpty);
     expect(controller.queuedAmmoPackets, hasLength(1));
@@ -102,7 +109,7 @@ void main() {
     expect(game.debugCoreQueueOrbitProjectileTypes, isEmpty);
   });
 
-  test('payload visuals are not tap targets', () {
+  test('floating packet visuals are not tap targets', () {
     final controller = LightcoreController();
     addTearDown(controller.dispose);
     controller.debugDisableTutorial();
@@ -110,7 +117,7 @@ void main() {
     var slotTaps = 0;
     final game = LightcoreBattleGame(
       controller: controller,
-      onCenterTap: () => fail('payload visual should not tap core'),
+      onCenterTap: () => fail('floating packet visual should not tap core'),
       onSlotTap: (_) => slotTaps += 1,
       onBackgroundTap: () => backgroundTaps += 1,
     );

@@ -354,6 +354,7 @@ extension LightcoreControllerCombatFiring on LightcoreController {
     var nextFireSequence = _core.fireSequence;
     var cooldownAfterVolley = 0.0;
     var firedShots = 0;
+    var firedFocusedQueuedShot = false;
     final volleyTargetIds = <String>{};
 
     for (var shotIndex = 0; shotIndex < volleyCount; shotIndex++) {
@@ -380,7 +381,8 @@ extension LightcoreControllerCombatFiring on LightcoreController {
       var criticalBoosted = false;
       var advancesCoreSequence = false;
 
-      if (_ammoQueue.isNotEmpty) {
+      final firedQueuedPacket = _ammoQueue.isNotEmpty;
+      if (firedQueuedPacket) {
         final ammoIndex = _bestAmmoIndex(excludedTargetIds: volleyTargetIds);
         if (ammoIndex == null) {
           break;
@@ -539,6 +541,9 @@ extension LightcoreControllerCombatFiring on LightcoreController {
         nextFireSequence += 1;
       }
       _spendCoreEnergy(energySpend);
+      if (firedQueuedPacket && target.id == _focusedEnemyId) {
+        firedFocusedQueuedShot = true;
+      }
       volleyTargetIds.add(target.id);
       firedShots += 1;
     }
@@ -551,6 +556,9 @@ extension LightcoreControllerCombatFiring on LightcoreController {
       fireCooldownRemaining: cooldownAfterVolley,
       fireSequence: nextFireSequence,
     );
+    if (firedFocusedQueuedShot) {
+      _tutorialManualAimFireLearned = true;
+    }
     return true;
   }
 

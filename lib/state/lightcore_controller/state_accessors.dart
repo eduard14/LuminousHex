@@ -471,10 +471,10 @@ extension LightcoreControllerStateAccessors on LightcoreController {
   bool get managerAssignmentUnlocked =>
       _managerAssignmentUnlockedForLayer(activeLayer);
 
-  bool get coreAutoGenerationUnlocked => managerAssignmentUnlocked;
+  bool get coreAutoGenerationUnlocked =>
+      _outerRingRevealed && !activeLayerPassiveOnly;
 
   bool get coreAutoFireUnlocked =>
-      _tutorialManualAimFireLearned ||
       _towerCoreManagerForLayer(activeLayer) != null;
 
   bool get isOuterRingComplete => builtTowerCount == slotCount;
@@ -639,6 +639,17 @@ extension LightcoreControllerStateAccessors on LightcoreController {
 
   bool get hasActiveTutorial => _tutorialStep != LightcoreTutorialStep.none;
 
+  bool get tutorialUsesBattlefieldClickPiece =>
+      _tutorialStep == LightcoreTutorialStep.unfoldShell ||
+      _tutorialStep == LightcoreTutorialStep.selectFirstHex ||
+      _tutorialStep == LightcoreTutorialStep.buildFirstRedTower ||
+      _tutorialStep == LightcoreTutorialStep.inspectFirstTowerStats ||
+      _tutorialStep == LightcoreTutorialStep.tapBattleCore ||
+      _tutorialStep == LightcoreTutorialStep.tapFirstTower ||
+      _tutorialStep == LightcoreTutorialStep.tapSecondShellTower ||
+      _tutorialStep == LightcoreTutorialStep.upgradeFirstTowerToLevel3 ||
+      _tutorialStep == LightcoreTutorialStep.upgradeFirstTowerToLevel4;
+
   bool get tutorialNeedsTowerPaletteGate {
     if (_earlyTutorialComplete || _currentLayerEarlyTutorialComplete) {
       return false;
@@ -659,7 +670,7 @@ extension LightcoreControllerStateAccessors on LightcoreController {
       _tutorialStep == LightcoreTutorialStep.tapBattleCore;
 
   String? get tutorialBattleCoreGuideLabel =>
-      _tutorialStep == LightcoreTutorialStep.tapBattleCore ? 'GENERATE' : null;
+      _tutorialStep == LightcoreTutorialStep.tapBattleCore ? 'AUTO' : null;
 
   bool get tutorialHighlightsCoreStats =>
       _tutorialStep == LightcoreTutorialStep.readEffectiveGain ||

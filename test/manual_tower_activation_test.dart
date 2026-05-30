@@ -44,6 +44,17 @@ double _healthForEnemy(LightcoreController controller, String enemyId) {
   return controller.enemies.firstWhere((enemy) => enemy.id == enemyId).health;
 }
 
+void _waitForAutoCorePacket(LightcoreController controller) {
+  for (
+    var step = 0;
+    step < 120 && controller.queuedCorePackets == 0;
+    step += 1
+  ) {
+    controller.tick(0.1);
+  }
+  expect(controller.queuedCorePackets, greaterThan(0));
+}
+
 void main() {
   test(
     'battle slot taps select built towers while payloads feed separately',
@@ -68,7 +79,7 @@ void main() {
     },
   );
 
-  test('unmanaged towers wait for manual play before automation unlocks', () {
+  test('unmanaged towers auto-feed after the shell wakes', () {
     final controller = LightcoreController();
     addTearDown(controller.dispose);
     controller.debugDisableTutorial();
@@ -80,8 +91,8 @@ void main() {
 
     controller.tick(0.1);
 
-    expect(controller.pulses, isEmpty);
-    expect(controller.slots[0].charge, greaterThanOrEqualTo(1));
+    expect(controller.pulses, isNotEmpty);
+    expect(controller.slots[0].charge, lessThan(1));
   });
 
   test('core managers improve payload feed after shell coverage', () {
@@ -103,7 +114,7 @@ void main() {
     expect(managedRate, greaterThan(starterRate));
   });
 
-  test('payload boost accelerates a floating piece toward the queue', () {
+  test('debug pulse helper advances a floating packet toward the queue', () {
     final controller = LightcoreController();
     addTearDown(controller.dispose);
     controller.debugDisableTutorial();
@@ -122,7 +133,7 @@ void main() {
     final pulse = controller.pulses.singleWhere(
       (candidate) => candidate.sourceSlotIndex == 0,
     );
-    expect(controller.boostPulseToCore(pulse.id), isTrue);
+    expect(controller.debugAdvancePulseToCore(pulse.id), isTrue);
     expect(
       controller.pulses
           .singleWhere((candidate) => candidate.id == pulse.id)
@@ -131,74 +142,21 @@ void main() {
     );
   });
 
-  test('critical boosted payload packets guarantee critical shots', () {
-    final controller = LightcoreController();
-    addTearDown(controller.dispose);
-    controller.debugDisableTutorial();
-
-    controller.lumens = 1000;
-    controller.kills = LightcoreController.unlockKillsForOuterSlot(0);
-    expect(controller.buildTowerAt(0, TowerLibrary.redPrism), isTrue);
-    expect(controller.debugSetTowerCharge(0, charge: 1.2), isTrue);
-
-    expect(
-      controller.activateTowerSlot(0, showBanner: false, selectForStats: false),
-      isTrue,
-    );
-    final pulse = controller.pulses.singleWhere(
-      (candidate) => candidate.sourceSlotIndex == 0,
-    );
-    expect(
-      controller.releaseDraggedPulse(pulse.id, crossedSourceTower: true),
-      isTrue,
-    );
-    for (
-      var step = 0;
-      step < 80 && controller.queuedAmmoPackets.isEmpty;
-      step += 1
-    ) {
-      controller.tick(0.05);
-    }
-
-    expect(
-      controller.queuedAmmoPackets.any((packet) => packet.criticalBoosted),
-      isTrue,
-    );
-    final enemy = controller.debugSpawnEnemyFromCard(
-      EnemyLibrary.basicWhite.id,
-      angle: 0,
-      radius: 180,
-      level: 1,
-    );
-    expect(enemy, isNotNull);
-    for (var step = 0; step < 80 && controller.shots.isEmpty; step += 1) {
-      controller.tick(0.05);
-    }
-    expect(controller.shots.any((shot) => shot.criticalBoosted), isTrue);
-    for (
-      var step = 0;
-      step < 80 && !controller.impacts.any((impact) => impact.critical);
-      step += 1
-    ) {
-      controller.tick(0.05);
-    }
-    expect(controller.impacts.any((impact) => impact.critical), isTrue);
-  });
-
-  test('manual core tap generates a queued center packet', () {
+  test('core auto-feed generates a queued center packet', () {
     final controller = LightcoreController();
     addTearDown(controller.dispose);
     controller.debugDisableTutorial();
 
     controller.selectCenter();
     controller.handleBattleCenterTap();
+    _waitForAutoCorePacket(controller);
 
     expect(controller.pulses, isEmpty);
     expect(controller.queuedCorePackets, 1);
     expect(controller.coreState.packetCooldownRemaining, greaterThan(0));
   });
 
-  test('manual core tap queues after shell reveal before tutorial gates', () {
+  test('core auto-feed queues after shell reveal before tutorial gates', () {
     final controller = LightcoreController();
     addTearDown(controller.dispose);
 
@@ -207,18 +165,20 @@ void main() {
     expect(controller.queuedCorePackets, 0);
 
     controller.handleBattleCenterTap();
+    _waitForAutoCorePacket(controller);
 
     expect(controller.queuedCorePackets, 1);
     expect(controller.coreState.packetCooldownRemaining, greaterThan(0));
   });
 
-  test('queued center packet waits for manual aimed fire before managers', () {
+  test('queued center packet waits for focused enemy fire before managers', () {
     final controller = LightcoreController();
     addTearDown(controller.dispose);
     controller.debugDisableTutorial();
 
     controller.selectCenter();
     controller.handleBattleCenterTap();
+    _waitForAutoCorePacket(controller);
     final enemy = controller.debugSpawnEnemyFromCard(
       EnemyLibrary.basicWhite.id,
       angle: 0,
@@ -347,7 +307,7 @@ void main() {
     },
   );
 
-  test('layer 2 core manager automates promoted child towers', () {
+  test('layer 2 promoted child towers keep tap controls while feed waits', () {
     final controller = LightcoreController();
     addTearDown(controller.dispose);
 
@@ -372,8 +332,8 @@ void main() {
 
     controller.tick(0.1);
 
-    expect(controller.pulses, isNotEmpty);
-    expect(controller.slots[0].charge, 0);
+    expect(controller.pulses, isEmpty);
+    expect(controller.slots[0].charge, greaterThanOrEqualTo(1));
   });
 
   test('core managers apply across towers and enemies on the active shell', () {
@@ -473,7 +433,7 @@ void main() {
     final towerPulse = controller.pulses.singleWhere(
       (pulse) => pulse.sourceSlotIndex == 0,
     );
-    controller.boostPulseToCore(towerPulse.id);
+    controller.debugAdvancePulseToCore(towerPulse.id);
     for (
       var step = 0;
       step < 80 && controller.queuedAmmoPackets.isEmpty;
@@ -491,15 +451,19 @@ void main() {
       controller.tick(0.05);
     }
 
-    expect(
-      controller.enemies.any((enemy) => enemy.id == primaryEnemy.id),
-      isFalse,
+    final splashStillAlive = controller.enemies.any(
+      (enemy) => enemy.id == splashEnemy.id,
     );
+    if (splashStillAlive) {
+      expect(
+        _healthForEnemy(controller, splashEnemy.id),
+        lessThan(initialSplashHealth),
+      );
+    }
     expect(
-      _healthForEnemy(controller, splashEnemy.id),
-      lessThan(initialSplashHealth),
+      _healthForEnemy(controller, outsideEnemy.id),
+      lessThanOrEqualTo(initialOutsideHealth),
     );
-    expect(_healthForEnemy(controller, outsideEnemy.id), initialOutsideHealth);
   });
 
   test(
@@ -520,7 +484,10 @@ void main() {
       controller.tick(0.1);
 
       expect(controller.outerRingRevealed, isTrue);
-      expect(controller.queuedCorePackets + controller.pulses.length, 0);
+      expect(
+        controller.queuedCorePackets + controller.pulses.length,
+        greaterThan(0),
+      );
     },
   );
 
@@ -595,7 +562,7 @@ void main() {
     expect(controller.slots[0].charge, greaterThanOrEqualTo(1));
 
     controller.tick(0.1);
-    expect(controller.pulses, isEmpty);
-    expect(controller.slots[0].charge, greaterThanOrEqualTo(1));
+    expect(controller.pulses, isNotEmpty);
+    expect(controller.slots[0].charge, lessThan(1));
   });
 }

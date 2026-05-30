@@ -600,7 +600,7 @@ extension on _ShellOverlayDestination {
       'Older shells remain useful after promotion as passive support archives.',
     ],
     _ShellOverlayDestination.managers => const [
-      'Managers improve payload feed, but manual catches still help during pressure spikes.',
+      'Managers improve auto-fire, but enemy focus taps still help during pressure spikes.',
       'A well-matched manager can smooth charge flow across a weaker tower lane.',
     ],
     _ShellOverlayDestination.prestige => const [

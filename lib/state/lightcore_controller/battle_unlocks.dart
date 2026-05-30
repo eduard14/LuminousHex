@@ -15,7 +15,7 @@ extension LightcoreControllerBattleUnlocks on LightcoreController {
           : 'Anchor this hex before it can fire.';
     }
     if (_ammoQueue.length >= coreQueueCapacity) {
-      return 'Core queue full. Tap the Lightcore or upgrade queue capacity.';
+      return 'Core queue full. Tap an anomaly to focus fire or upgrade queue capacity.';
     }
     if (tower.cooldownRemaining > 0) {
       return '${towerDisplayName(tower)} is cycling for ${tower.cooldownRemaining.toStringAsFixed(1)}s.';

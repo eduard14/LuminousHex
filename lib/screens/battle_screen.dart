@@ -1040,7 +1040,7 @@ class _BattleScreenState extends State<BattleScreen> {
     return LightcoreQuestCard(
       controller: controller,
       compact: compact,
-      initiallyExpanded: false,
+      initiallyExpanded: controller.tutorialUsesBattlefieldClickPiece,
       instructionOverride: instructionOverride,
     );
   }
@@ -1134,11 +1134,11 @@ class _BattleScreenState extends State<BattleScreen> {
         }
       case LightcoreTutorialStep.tapBattleCore:
         if (_tutorialOpenPanelBlocksCurrentStep(controller)) {
-          return 'Close the open battle controls, then tap the glowing Lightcore on the battlefield.';
+          return 'Close the open battle controls and watch the Lightcore queue auto-charge.';
         }
       case LightcoreTutorialStep.tapFirstTower:
         if (_tutorialOpenPanelBlocksCurrentStep(controller)) {
-          return 'Close the open tower controls, then tap a visible anomaly to fire the queued packet. Tower taps reopen tower controls.';
+          return 'Close the open tower controls, then tap a visible anomaly to focus fire. Tower taps reopen tower controls.';
         }
       case LightcoreTutorialStep.tapSecondShellTower:
         if (_tutorialOpenPanelBlocksCurrentStep(controller)) {

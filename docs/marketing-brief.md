@@ -47,8 +47,8 @@ shell, and keep climbing.
 
 1. Enter a hex shell built around the central Lightcore.
 2. Reveal and build six perimeter relay towers.
-3. Tap charged relay towers to send ammo packets into the core queue.
-4. The core consumes queued packets and fires at incoming anomalies.
+3. Watch the core and relay towers auto-feed ammo packets into the core queue.
+4. Tap anomalies to focus fire while tower taps stay reserved for tower controls.
 5. Upgrade towers, core stats, and encounter capacity with earned resources.
 6. Roll Threat Scans into Knowledge Cards that make enemy families easier
    to understand and farm.
@@ -66,17 +66,17 @@ shell, and keep climbing.
 - Real-time hex battlefield with one central Lightcore and six relay towers.
 - Relay towers charge and feed ammo packets to the core instead of firing
   directly.
-- Manual packet play is explicit in the opening: tap the Lightcore to generate
-  a queued packet, then tap an anomaly to aim and fire that packet immediately.
-- Tower body taps are reserved for tower controls and packet flow, keeping
-  build/stat actions distinct from anomaly aiming during the first session.
-- Manual payload tap and drag catches are not part of the current player
-  control scheme; floating payload visuals are feedback for automated flow.
+- Opening combat is low-friction: packets auto-generate after the Lightcore
+  wakes, then the player taps anomalies to aim and focus fire.
+- Tower body taps are reserved for tower controls, upgrades, stats, and
+  targeting tools, keeping build/stat actions distinct from anomaly aiming.
+- Floating packet visuals are feedback for automated flow, not separate
+  player pickup targets.
 - Shell visibility is an explicit HUD toggle, keeping battlefield taps from
   folding the active battlefield or opening tower placement.
-- Manager automation is split into two unlock beats: manager generation starts
-  feeding packets after the opening shell is established, and assigned Core
-  Managers later add auto-fire.
+- Manager automation upgrades the auto-generated queue into hands-off
+  target routing while still letting active players override focus by tapping
+  anomalies.
 - Core queue combat rewards smart timing, charge flow, and tower placement.
 - Output Efficiency pressure system replaces a simple health-loss fail state.
 - Lane disruption reduces rewards and charge flow when anomalies reach the ring.
@@ -200,7 +200,7 @@ Secondary players:
 Use these as starting points for App Store copy, landing sections, or short
 video hooks.
 
-- Tap relays. Charge the core. Hold the hex.
+- Auto-charge the core. Focus the anomaly. Hold the hex.
 - Your towers do not just shoot; they power the Lightcore.
 - Build a Root Shell, promote it, and forge a deeper prism lattice.
 - Research anomaly families with Threat Scans, then push forward on the fixed
@@ -216,7 +216,7 @@ video hooks.
 
 | Pillar | Post Ideas |
 | --- | --- |
-| Gameplay hook | Short clips of tapping charged relay towers, watching packets feed the Lightcore, and tapping anomalies to fire queued packets. |
+| Gameplay hook | Short clips of packets auto-feeding the Lightcore, tower controls opening cleanly, and anomaly taps focusing fire. |
 | Progression | Before/after shell promotion, Root to Prism, Prism to Nexus, inheritance previews. |
 | Buildcraft | Color-family comparisons, pure builds versus blended projectile/payload builds. |
 | Anomaly pressure | Knowledge Card pulls, Apex Anomaly reveals, Focus Target saves, lane disruption moments. |
@@ -239,7 +239,7 @@ Suggested first release order:
 
 1. Lemon Goose Games Inc. splash.
 2. Fractured Lightcore premise in one short text card.
-3. Relay towers charge, player taps, core fires.
+3. Relay towers charge, packets auto-feed, player taps anomalies to focus fire.
 4. Anomalies spiral inward and disrupt lanes.
 5. Threat Scan pull reveals a new Knowledge Card.
 6. Region challenge and Farm Validation pressure.

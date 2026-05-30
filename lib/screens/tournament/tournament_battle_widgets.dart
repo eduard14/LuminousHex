@@ -311,7 +311,7 @@ List<String> _modeLoadingTips(LightcoreTournamentModeId mode) => switch (mode) {
   LightcoreTournamentModeId.enemyBlitz => const <String>[
     'Tip: Start with three drafted anomalies; upgrades matter more after the first wave stabilizes.',
     'Tip: Enemy Blitz keeps running on a weekend-length clock after the session starts.',
-    'Tip: Tap the core often early so your economy reaches the first tower unlock quickly.',
+    'Tip: Focus early anomalies so auto-charged packets stabilize the first tower unlock quickly.',
   ],
   LightcoreTournamentModeId.hexGauntlet => const <String>[
     'Tip: Merge matching towers before the lane pressure spikes.',

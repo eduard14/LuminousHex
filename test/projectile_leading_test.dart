@@ -31,7 +31,10 @@ void _feedTowerPayload(LightcoreController controller, int slotIndex) {
     greaterThan(previousFireSequence),
   );
   if (controller.pulses.isNotEmpty) {
-    expect(controller.boostPulseToCore(controller.pulses.last.id), isTrue);
+    expect(
+      controller.debugAdvancePulseToCore(controller.pulses.last.id),
+      isTrue,
+    );
   }
 }
 
@@ -58,6 +61,7 @@ void main() {
 
     expect(target, isNotNull);
     final initialHealth = target!.health;
+    expect(controller.focusBattleEnemy(target.id), isTrue);
 
     _tickUntil(
       controller,
@@ -111,6 +115,7 @@ void main() {
       ),
       isNotNull,
     );
+    expect(controller.focusBattleEnemy(controller.enemies.single.id), isTrue);
 
     _tickUntil(
       controller,

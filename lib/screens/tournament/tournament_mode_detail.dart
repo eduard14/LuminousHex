@@ -733,7 +733,7 @@ class _TournamentModeDetailScreenState
           _blitzSupplyProgress = 0;
           _lastBlitzScoredKills = 0;
           _hint =
-              'Weekend-length manual shell live. Tap the core, unlock one or two weekend towers, and cash faster clears before the session timer ends.';
+              'Weekend-length shell live. Let the core auto-charge, focus anomalies, unlock one or two weekend towers, and cash faster clears before the session timer ends.';
           break;
         case LightcoreTournamentModeId.hexGauntlet:
           _hexRun.start(seedPowerIndex: _eventSeed);
@@ -1773,7 +1773,7 @@ class _TournamentModeDetailScreenState
         MeterBar(value: _blitzShield, color: tint),
         const SizedBox(height: 6),
         Text(
-          'Shell integrity ${(100 * _blitzShield).round()}% • manual catches only',
+          'Shell integrity ${(100 * _blitzShield).round()}% • focus taps only',
           style: Theme.of(context).textTheme.bodySmall,
         ),
         const SizedBox(height: 12),

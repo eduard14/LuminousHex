@@ -103,6 +103,16 @@ void _tickUntil(
   }
 }
 
+void _waitForAutoCorePacket(LightcoreController controller, {int count = 1}) {
+  _tickUntil(
+    controller,
+    () => controller.queuedCorePackets >= count,
+    steps: 120,
+    dt: 0.1,
+  );
+  expect(controller.queuedCorePackets, greaterThanOrEqualTo(count));
+}
+
 void _tickThroughCoreBombSweep(LightcoreController controller) {
   for (var step = 0; step < 20 && controller.shots.isNotEmpty; step++) {
     controller.tick(0.05);
@@ -120,7 +130,7 @@ void _tickThroughCoreBombSweep(LightcoreController controller) {
 }
 
 void main() {
-  test('starter core manually queues and fires basic shots', () {
+  test('starter core auto-queues and fires focused shots', () {
     final controller = LightcoreController();
     addTearDown(controller.dispose);
     controller.debugDisableTutorial();
@@ -131,6 +141,7 @@ void main() {
 
     controller.selectCenter();
     controller.handleBattleCenterTap();
+    _waitForAutoCorePacket(controller);
 
     expect(controller.queuedCorePackets, 1);
     final packet = controller.queuedAmmoPackets.single;
@@ -153,7 +164,7 @@ void main() {
     expect(shot.projectileType, ProjectileType.starBolt);
   });
 
-  test('layer 1 manual core tap counts as queue occupancy immediately', () {
+  test('layer 1 core auto-feed counts as queue occupancy immediately', () {
     final controller = LightcoreController();
     addTearDown(controller.dispose);
     controller.debugDisableTutorial();
@@ -163,6 +174,7 @@ void main() {
 
     controller.selectCenter();
     controller.handleBattleCenterTap();
+    _waitForAutoCorePacket(controller);
 
     expect(controller.queuedCorePackets, 1);
     expect(controller.pulses, isEmpty);
@@ -170,7 +182,7 @@ void main() {
     expect(controller.coreQueueLoadLabel, '1/${controller.coreQueueCapacity}');
   });
 
-  test('layer 1 core waits for manual generation before queueing', () {
+  test('layer 1 core waits for shell wake before auto queueing', () {
     final controller = LightcoreController();
     addTearDown(controller.dispose);
 
@@ -265,34 +277,32 @@ void main() {
     },
   );
 
-  test(
-    'manual core feed generates a basic packet before the core fires it',
-    () {
-      final controller = LightcoreController();
-      addTearDown(controller.dispose);
-      controller.debugDisableTutorial();
+  test('auto core feed generates a basic packet before the core fires it', () {
+    final controller = LightcoreController();
+    addTearDown(controller.dispose);
+    controller.debugDisableTutorial();
 
-      final enemy = controller.debugSpawnEnemyFromCard(
-        EnemyLibrary.basicWhite.id,
-        angle: 0,
-        radius: 220,
-      );
-      expect(enemy, isNotNull);
+    final enemy = controller.debugSpawnEnemyFromCard(
+      EnemyLibrary.basicWhite.id,
+      angle: 0,
+      radius: 220,
+    );
+    expect(enemy, isNotNull);
 
-      expect(controller.queuedCorePackets, 0);
-      expect(controller.shots, isEmpty);
+    expect(controller.queuedCorePackets, 0);
+    expect(controller.shots, isEmpty);
 
-      controller.selectCenter();
-      controller.handleBattleCenterTap();
-      expect(controller.fireQueuedCorePacketAtEnemy(enemy!.id), isTrue);
+    controller.selectCenter();
+    controller.handleBattleCenterTap();
+    _waitForAutoCorePacket(controller);
+    expect(controller.fireQueuedCorePacketAtEnemy(enemy!.id), isTrue);
 
-      expect(controller.queuedCorePackets, 0);
-      expect(controller.shots, hasLength(1));
-      expect(controller.shots.single.sourceSlotIndex, isNull);
-    },
-  );
+    expect(controller.queuedCorePackets, 0);
+    expect(controller.shots, hasLength(1));
+    expect(controller.shots.single.sourceSlotIndex, isNull);
+  });
 
-  test('tapping an enemy manually fires a queued core packet', () {
+  test('tapping an enemy fires a queued core packet', () {
     final controller = LightcoreController();
     addTearDown(controller.dispose);
 
@@ -336,6 +346,7 @@ void main() {
 
     controller.selectCenter();
     controller.handleBattleCenterTap();
+    _waitForAutoCorePacket(controller);
     expect(controller.fireQueuedCorePacketAtEnemy(firstEnemy.id), isTrue);
     for (var step = 0; step < 20 && controller.shots.isNotEmpty; step++) {
       controller.tick(0.05);

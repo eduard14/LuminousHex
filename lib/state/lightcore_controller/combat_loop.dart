@@ -45,6 +45,10 @@ extension LightcoreControllerCombatLoop on LightcoreController {
       if (coreAutoGenerationUnlocked) {
         _advanceCorePayloadFeed(battleDt);
       }
+      if (_tutorialStep == LightcoreTutorialStep.tapBattleCore &&
+          (_ammoQueue.isNotEmpty || _pulses.isNotEmpty)) {
+        _tutorialCoreShotTapLearned = true;
+      }
       if (_layer2.unlocked) {
         _layer2 = _layer2.copyWith(
           fireCooldownRemaining: max(
@@ -80,7 +84,7 @@ extension LightcoreControllerCombatLoop on LightcoreController {
       _advanceEnemies(battleDt);
       _advanceThreatRegionChallenge(battleDt);
       _advanceThreatRegionFarmValidation(battleDt);
-      if (coreAutoFireUnlocked) {
+      if (_focusedEnemyId != null || coreAutoFireUnlocked) {
         _fireCoreIfPossible(allowDefaultShot: false);
       }
       _fireLayer2IfPossible();

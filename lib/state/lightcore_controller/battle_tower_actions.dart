@@ -141,14 +141,10 @@ extension LightcoreControllerBattleTowerActions on LightcoreController {
     _swarmActivated = true;
     selectedSlotIndex = null;
     _towerRangePreviewSlotIndex = null;
-    if (_queueCoreBasicAttack(showBanner: true)) {
-      if (_tutorialStep == LightcoreTutorialStep.tapSecondShellTower) {
-        _tutorialSecondShellShotTapLearned = true;
-      }
-      _syncTutorialStep(showBanner: false);
-      _notifyNow();
-      return;
-    }
+    _showBanner(
+      'Lightcore selected. Packets auto-charge; tap anomalies to focus fire.',
+      category: LightcoreNotificationCategory.battle,
+    );
     _syncTutorialStep(showBanner: false);
     _notifyNow();
   }

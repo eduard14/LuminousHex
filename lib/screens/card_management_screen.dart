@@ -257,17 +257,17 @@ class CardManagementScreen extends StatelessWidget {
               title: 'Core Managers',
               tint: LightcorePalette.violet,
               subtitle: !controller.managerAssignmentUnlocked
-                  ? 'Early shells use manual packet generation and aimed fire. Manager generation unlocks when the Layer 1 shell is complete.'
+                  ? 'Early shells auto-charge packets while the player focuses targets. Manager auto-fire unlocks when the Layer 1 shell is complete.'
                   : controller.cards.isEmpty
-                  ? 'Manager generation is online. Forge a Core Manager to add auto-fire across the active shell.'
-                  : 'Manager generation is online. Assign one forged Core Manager to add auto-fire across the active shell.',
+                  ? 'Manager auto-fire is online. Forge a Core Manager to automate shots across the active shell.'
+                  : 'Manager auto-fire is online. Assign one forged Core Manager to automate shots across the active shell.',
             ),
             const SizedBox(height: 10),
             if (controller.cards.isEmpty) ...[
               _InlineSectionNotice(
                 message: controller.managersUnlocked
-                    ? 'Forge a Core Manager when you have enough Flux. Forged managers add auto-fire after manager generation is online.'
-                    : 'Forged Core Managers unlock when a Layer 1 shell has all ${LightcoreController.slotCount} outer towers online. Until then, players generate and fire packets manually.',
+                    ? 'Forge a Core Manager when you have enough Flux. Forged managers add auto-fire after manager automation is online.'
+                    : 'Forged Core Managers unlock when a Layer 1 shell has all ${LightcoreController.slotCount} outer towers online. Until then, packets auto-charge and enemy taps focus fire.',
                 tint: LightcorePalette.violet,
               ),
               const SizedBox(height: 10),
@@ -703,7 +703,7 @@ class _DefaultAutoManagerPanel extends StatelessWidget {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  'No starter manager is assigned. Tap the Lightcore to generate packets, then aim at anomalies until manager generation and auto-fire unlock.',
+                  'No starter manager is assigned. Packets auto-generate; tap anomalies to focus fire until manager auto-fire unlocks.',
                   style: textTheme.bodySmall?.copyWith(
                     color: LightcorePalette.mist.withValues(alpha: 0.78),
                   ),
@@ -720,12 +720,12 @@ class _DefaultAutoManagerPanel extends StatelessWidget {
                     ),
                     _ResourceChip(
                       icon: Icons.touch_app_rounded,
-                      label: 'Manual catch bonus',
+                      label: 'Focus tap override',
                       tint: LightcorePalette.solar,
                     ),
                     _ResourceChip(
                       icon: Icons.auto_awesome_rounded,
-                      label: 'Drag-through crit',
+                      label: 'Auto-route crit',
                       tint: LightcorePalette.warning,
                     ),
                   ],

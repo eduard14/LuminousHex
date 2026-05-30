@@ -39,10 +39,10 @@ cadence, enemy strength, and reward bonuses.
 ## Current Gameplay Loop
 
 1. Reveal the shell by tapping/selecting the center.
-2. Tap ready relay towers to feed packets to the core queue, and generate kills
-   until outer slots unlock.
-3. Tap anomalies to spend queued core packets immediately, then build outer
-   towers with Lumens.
+2. Watch the Lightcore and ready relays auto-feed packets into the core queue,
+   generating kills until outer slots unlock.
+3. Tap anomalies to focus queued fire immediately, then build outer towers with
+   Lumens.
 4. Upgrade all built towers to level 5.
 5. Tune the encounter by changing the active anomaly deck and target count.
 6. Promote the finished shell.
@@ -54,14 +54,15 @@ cadence, enemy strength, and reward bonuses.
 
 ### Battle topology
 
-- The center core is the only direct attacker. Early play is manual: tap the
-  Lightcore to generate an `AmmoPacket`, then tap an anomaly to aim and fire it.
-- Outer towers generate `EnergyPulseState` objects when tapped or when an
-  assigned manager automates that ready tap. Players can tap those pulses for a
-  quick queue load, or drag them through the source tower for a critical packet.
-  Loaded pulses become `AmmoPacket` entries in the core queue.
-- Tapping an anomaly while the core has a queued packet fires that packet at the
-  tapped target, making early combat playable before auto-fire is unlocked.
+- The center core is the only direct attacker. Early play auto-generates
+  `AmmoPacket` entries after the Lightcore wakes, then anomaly taps aim/focus
+  fire without making the player tap the core to queue shots.
+- Outer towers generate `EnergyPulseState` objects through starter auto-feed or
+  manager automation. Floating pulse visuals are feedback, not player tap/drag
+  targets.
+- Tapping an anomaly focuses fire immediately. If the queue is still charging,
+  the focused target receives the next available queued packet before manager
+  auto-fire is unlocked.
 - Auto-fire stays locked until a Core Manager is assigned. Once unlocked, the
   core consumes the best ammo packet available, picks a target, and fires.
 - Enemies do not destroy the core in the prototype. Reaching the relay ring
@@ -98,8 +99,8 @@ cadence, enemy strength, and reward bonuses.
   and cores.
 - Core Managers and Threat Directors unlock at Core Lv 3 or Account Radiance
   Lv 10.
-- Towers hold charge until manually tapped or manager-automated. Tapping a built
-  tower fires its current generated packet instead of opening stats.
+- Towers auto-feed after the shell wakes. Tapping a built tower opens tower
+  controls, stats, upgrades, and targeting tools instead of firing a packet.
 - Higher shell classes inherit projectile and payload arsenals from the child shells
   beneath them instead of collapsing to one dominant shot type.
 - Source Tower and Root Shell Core max level is 5.

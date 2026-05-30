@@ -91,7 +91,7 @@ const List<_HelpSectionData> _baseHelpSections = <_HelpSectionData>[
     title: 'Shell Defense Basics',
     summary: 'How the core, relay prisms, and anomalies interact.',
     body:
-        'The center tower is the Lightcore. Early on, tap it to generate packets for the core queue, then tap an anomaly to aim and fire. Manager generation unlocks later, and assigned Core Managers add auto-fire. The six surrounding towers are relay prisms. They build charge, then feed the core queue through tower commands or manager automation.\n\n'
+        'The center tower is the Lightcore. Early packets auto-charge into the core queue after the shell wakes, then anomaly taps focus where the next shot should go. Core Managers later add auto-fire. The six surrounding towers are relay prisms. They build charge automatically, while tower taps stay reserved for controls, stats, upgrades, and targeting tools.\n\n'
         'Anomalies spiral inward from beyond the shell. They do not destroy the core directly. Instead they jam the edge hex they hit, slow relay output, and reduce how efficiently the shell harvests Lumens.',
   ),
   _HelpSectionData(
@@ -167,7 +167,7 @@ const List<_HelpSectionData> _baseHelpSections = <_HelpSectionData>[
     title: 'Targeting and Foundries',
     summary: 'How child towers bias shots and how managers modify behavior.',
     body:
-        'Targeting priorities such as Close, Strong, and Weak tell a relay what kind of anomaly packet it should ask the core to focus when that tower contributes charge. This matters most once promoted child towers are online.\n\n'
+        'Targeting priorities such as Close, Strong, and Weak tell a relay what kind of anomaly packet it should ask the core to focus when that tower contributes charge. Direct anomaly taps can still override focus during active play.\n\n'
         'Core Managers assign to a shell and improve payload feed. Each one has an automation rate: if towers create payloads faster than the manager can feed them, the shell loses efficiency while they wait. Threat Directors attach to Threat Map regions and immediately tune spawn cadence, enemy strength, reward bonuses, EXP, and stability risk; stabilization validates that setup for offline output. Both manager families unlock after Layer 1 shell coverage.',
   ),
 ];

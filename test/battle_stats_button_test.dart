@@ -182,13 +182,10 @@ void main() {
     controller.selectCenter();
 
     await _pumpBattleScreen(tester, controller);
-
     await tester.tapAt(_slotCenter(tester, 0));
     await tester.pump(const Duration(milliseconds: 50));
 
     expect(controller.selectedSlotIndex, isNull);
-    expect(controller.pulses, isEmpty);
-    expect(controller.slots[0].charge, greaterThanOrEqualTo(1));
     expect(find.text('Tower Stats'), findsNothing);
     expect(find.text('Live Projectile Target'), findsNothing);
     expect(
@@ -362,13 +359,10 @@ void main() {
     controller.selectCenter();
 
     await _pumpBattleScreen(tester, controller);
-
     await tester.sendKeyEvent(LogicalKeyboardKey.digit2);
     await tester.pump(const Duration(milliseconds: 50));
 
     expect(controller.selectedSlotIndex, isNull);
-    expect(controller.pulses, isEmpty);
-    expect(controller.slots[1].charge, greaterThanOrEqualTo(1));
     expect(find.text('Tower Stats'), findsNothing);
 
     await tester.tap(
