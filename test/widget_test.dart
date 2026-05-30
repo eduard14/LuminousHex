@@ -2367,7 +2367,7 @@ void main() {
     );
     expect(
       find.text(
-        'Tap an anomaly to fire the queued packet at that direction. Managers will unlock auto-generation and auto-fire later.',
+        'Tap a visible anomaly to fire the queued packet. Tapping a tower opens tower controls instead; managers will automate firing later.',
       ),
       findsWidgets,
     );

@@ -140,29 +140,37 @@ class _LightcoreLoadingScreenState extends State<LightcoreLoadingScreen>
                               constraints.maxHeight < 680);
                       final phase = _controller.value;
 
-                      return Center(
-                        child: SingleChildScrollView(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: compact ? 20 : 32,
-                            vertical: compact ? 24 : 32,
+                      return SingleChildScrollView(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: compact ? 22 : 44,
+                          vertical: compact ? 24 : 40,
+                        ),
+                        child: ConstrainedBox(
+                          constraints: BoxConstraints(
+                            minHeight:
+                                constraints.maxHeight -
+                                MediaQuery.paddingOf(context).vertical -
+                                (compact ? 48 : 80),
                           ),
-                          child: ConstrainedBox(
-                            constraints: BoxConstraints(
-                              maxWidth: compact ? 390 : 500,
-                            ),
-                            child: _LoadingCard(
-                              title: widget.title,
-                              subtitle: widget.subtitle,
-                              statusLabel: widget.statusLabel,
-                              accent: widget.accent,
-                              progress: widget.progress,
-                              phase: phase,
-                              compact: compact,
-                              signalLabels: widget.signalLabels.isEmpty
-                                  ? const ['BOOT', 'LINK', 'FLOW']
-                                  : widget.signalLabels,
-                              activeTip: _activeTip,
-                              guide: widget.guide,
+                          child: Center(
+                            child: ConstrainedBox(
+                              constraints: BoxConstraints(
+                                maxWidth: compact ? 430 : 860,
+                              ),
+                              child: _LoadingStage(
+                                title: widget.title,
+                                subtitle: widget.subtitle,
+                                statusLabel: widget.statusLabel,
+                                accent: widget.accent,
+                                progress: widget.progress,
+                                phase: phase,
+                                compact: compact,
+                                signalLabels: widget.signalLabels.isEmpty
+                                    ? const ['BOOT', 'LINK', 'FLOW']
+                                    : widget.signalLabels,
+                                activeTip: _activeTip,
+                                guide: widget.guide,
+                              ),
                             ),
                           ),
                         ),
@@ -179,8 +187,8 @@ class _LightcoreLoadingScreenState extends State<LightcoreLoadingScreen>
   }
 }
 
-class _LoadingCard extends StatelessWidget {
-  const _LoadingCard({
+class _LoadingStage extends StatelessWidget {
+  const _LoadingStage({
     required this.title,
     required this.subtitle,
     required this.statusLabel,
@@ -213,132 +221,230 @@ class _LoadingCard extends StatelessWidget {
         .clamp(0, signalLabels.length - 1)
         .toInt();
 
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(compact ? 30 : 38),
-        border: Border.all(color: accent.withValues(alpha: 0.26)),
-        gradient: LinearGradient(
-          colors: [
-            accent.withValues(alpha: 0.08 + (pulse * 0.03)),
-            LightcorePalette.panel.withValues(alpha: 0.9),
-            LightcorePalette.panelRaised.withValues(alpha: 0.76),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        _LoadingStatusRail(
+          statusLabel: statusLabel,
+          signalLabels: signalLabels,
+          activeSignal: activeSignal,
+          accent: accent,
+          compact: compact,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: accent.withValues(alpha: 0.18 + (pulse * 0.06)),
-            blurRadius: 48,
-            spreadRadius: -18,
-          ),
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.3),
-            blurRadius: 30,
-            spreadRadius: -10,
-          ),
-        ],
-      ),
-      child: Padding(
-        padding: EdgeInsets.all(compact ? 22 : 30),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            SizedBox(
-              width: compact ? 132 : 164,
-              height: compact ? 132 : 164,
-              child: CustomPaint(
-                painter: _LoadingCorePainter(phase: phase, accent: accent),
-                child: Center(
-                  child: Container(
-                    width: compact ? 72 : 88,
-                    height: compact ? 72 : 88,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      gradient: RadialGradient(
-                        colors: [
-                          LightcorePalette.layer2.withValues(alpha: 0.2),
-                          accent.withValues(alpha: 0.1),
-                          Colors.transparent,
+        Padding(
+          padding: EdgeInsets.symmetric(vertical: compact ? 26 : 44),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SizedBox(
+                width: compact ? 182 : 260,
+                height: compact ? 182 : 260,
+                child: CustomPaint(
+                  painter: _LoadingCorePainter(phase: phase, accent: accent),
+                  child: Center(
+                    child: Container(
+                      width: compact ? 92 : 124,
+                      height: compact ? 92 : 124,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: RadialGradient(
+                          colors: [
+                            LightcorePalette.layer2.withValues(
+                              alpha: 0.24 + pulse * 0.08,
+                            ),
+                            accent.withValues(alpha: 0.14),
+                            Colors.transparent,
+                          ],
+                        ),
+                        border: Border.all(
+                          color: accent.withValues(alpha: 0.44),
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: accent.withValues(alpha: 0.32),
+                            blurRadius: 42,
+                            spreadRadius: -12,
+                          ),
                         ],
                       ),
-                      border: Border.all(color: accent.withValues(alpha: 0.34)),
-                    ),
-                    child: TowerRingIcon(
-                      size: compact ? 34 : 42,
-                      color: LightcorePalette.layer2,
+                      child: TowerRingIcon(
+                        size: compact ? 42 : 56,
+                        color: LightcorePalette.layer2,
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
-            SizedBox(height: compact ? 18 : 24),
-            Text(
-              title,
-              textAlign: TextAlign.center,
-              style: textTheme.headlineMedium?.copyWith(
-                color: LightcorePalette.layer2,
-                fontWeight: FontWeight.w900,
-                letterSpacing: 0,
+              SizedBox(height: compact ? 24 : 32),
+              Text(
+                title,
+                textAlign: TextAlign.center,
+                style:
+                    (compact ? textTheme.headlineSmall : textTheme.displaySmall)
+                        ?.copyWith(
+                          color: LightcorePalette.layer2,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 0,
+                        ),
               ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              subtitle,
-              textAlign: TextAlign.center,
-              style: textTheme.bodyMedium?.copyWith(
-                color: LightcorePalette.mist.withValues(alpha: 0.76),
-              ),
-            ),
-            SizedBox(height: compact ? 20 : 24),
-            _LoadingRelayPath(
-              accent: accent,
-              phase: phase,
-              progress: progress,
-              compact: compact,
-            ),
-            SizedBox(height: compact ? 16 : 18),
-            Wrap(
-              alignment: WrapAlignment.center,
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                for (var index = 0; index < signalLabels.length; index += 1)
-                  _LoadingSignalPill(
-                    label: signalLabels[index],
-                    active: index == activeSignal,
-                    accent: accent,
-                    compact: compact,
+              const SizedBox(height: 10),
+              ConstrainedBox(
+                constraints: BoxConstraints(maxWidth: compact ? 350 : 560),
+                child: Text(
+                  subtitle,
+                  textAlign: TextAlign.center,
+                  style: textTheme.bodyMedium?.copyWith(
+                    color: LightcorePalette.mist.withValues(alpha: 0.78),
+                    height: 1.35,
                   ),
-              ],
-            ),
-            SizedBox(height: compact ? 18 : 22),
-            Text(
-              statusLabel.toUpperCase(),
-              textAlign: TextAlign.center,
-              style: textTheme.labelLarge?.copyWith(
-                color: accent.withValues(alpha: 0.92),
-                letterSpacing: 0,
-                fontWeight: FontWeight.w900,
+                ),
               ),
-            ),
-            if (activeTip != null) ...[
-              SizedBox(height: compact ? 14 : 16),
-              AnimatedSwitcher(
-                duration: const Duration(milliseconds: 260),
-                child: _GuideTipCallout(
-                  key: ValueKey<String>(activeTip!),
-                  guide: guide,
-                  tip: activeTip!,
+              SizedBox(height: compact ? 24 : 34),
+              ConstrainedBox(
+                constraints: BoxConstraints(maxWidth: compact ? 360 : 620),
+                child: _LoadingRelayPath(
                   accent: accent,
-                  compact: compact,
                   phase: phase,
+                  progress: progress,
+                  compact: compact,
                 ),
               ),
             ],
+          ),
+        ),
+        if (activeTip != null)
+          ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: compact ? 390 : 680),
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 260),
+              child: _GuideTipCallout(
+                key: ValueKey<String>(activeTip!),
+                guide: guide,
+                tip: activeTip!,
+                accent: accent,
+                compact: compact,
+                phase: phase,
+              ),
+            ),
+          )
+        else
+          const SizedBox.shrink(),
+      ],
+    );
+  }
+}
+
+class _LoadingStatusRail extends StatelessWidget {
+  const _LoadingStatusRail({
+    required this.statusLabel,
+    required this.signalLabels,
+    required this.activeSignal,
+    required this.accent,
+    required this.compact,
+  });
+
+  final String statusLabel;
+  final List<String> signalLabels;
+  final int activeSignal;
+  final Color accent;
+  final bool compact;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        border: Border(
+          bottom: BorderSide(color: accent.withValues(alpha: 0.22)),
+        ),
+        gradient: LinearGradient(
+          colors: [
+            accent.withValues(alpha: 0.1),
+            Colors.black.withValues(alpha: 0.04),
+            LightcorePalette.violet.withValues(alpha: 0.08),
           ],
         ),
       ),
+      child: Padding(
+        padding: EdgeInsets.symmetric(
+          horizontal: compact ? 0 : 4,
+          vertical: compact ? 12 : 14,
+        ),
+        child: compact
+            ? Column(
+                children: [
+                  Text(
+                    statusLabel.toUpperCase(),
+                    textAlign: TextAlign.center,
+                    style: textTheme.labelLarge?.copyWith(
+                      color: accent.withValues(alpha: 0.95),
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 0,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  _LoadingSignalRow(
+                    signalLabels: signalLabels,
+                    activeSignal: activeSignal,
+                    accent: accent,
+                    compact: compact,
+                  ),
+                ],
+              )
+            : Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      statusLabel.toUpperCase(),
+                      style: textTheme.labelLarge?.copyWith(
+                        color: accent.withValues(alpha: 0.95),
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 0,
+                      ),
+                    ),
+                  ),
+                  _LoadingSignalRow(
+                    signalLabels: signalLabels,
+                    activeSignal: activeSignal,
+                    accent: accent,
+                    compact: compact,
+                  ),
+                ],
+              ),
+      ),
+    );
+  }
+}
+
+class _LoadingSignalRow extends StatelessWidget {
+  const _LoadingSignalRow({
+    required this.signalLabels,
+    required this.activeSignal,
+    required this.accent,
+    required this.compact,
+  });
+
+  final List<String> signalLabels;
+  final int activeSignal;
+  final Color accent;
+  final bool compact;
+
+  @override
+  Widget build(BuildContext context) {
+    return Wrap(
+      alignment: WrapAlignment.center,
+      spacing: 8,
+      runSpacing: 8,
+      children: [
+        for (var index = 0; index < signalLabels.length; index += 1)
+          _LoadingSignalPill(
+            label: signalLabels[index],
+            active: index == activeSignal,
+            accent: accent,
+            compact: compact,
+          ),
+      ],
     );
   }
 }

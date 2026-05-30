@@ -405,15 +405,15 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
     id: 'TUT-007',
     title: 'Aim and Fire',
     teachGoal:
-        'The player manually chooses where the opening packet fires before manager automation takes over.',
+        'The player manually chooses anomaly targets before manager automation takes over. Tower clicks stay reserved for tower controls.',
     trigger: 'First tower exists',
     primaryClickTarget: 'Battlefield > anomaly target',
     coachCopy:
-        'Tap an anomaly to fire the queued packet at that direction. Managers will unlock auto-generation and auto-fire later.',
+        'Tap a visible anomaly to fire the queued packet. Tapping a tower opens tower controls instead; managers will automate firing later.',
     completionCondition: 'Fire one manually aimed packet',
     reward: 'Lumens and White Drift practice scan',
     failureHelpState:
-        'Generate a packet at the Lightcore first, then tap a visible anomaly to shoot it.',
+        'Generate a packet at the Lightcore first, then tap a visible anomaly, not a tower, to shoot it.',
     analyticsEvent: 'tutorial_manual_aim_fire',
   ),
   LightcoreTutorialStep.tapSecondShellTower: LightcoreTutorialQuestDefinition(

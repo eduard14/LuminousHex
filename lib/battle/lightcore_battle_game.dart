@@ -170,6 +170,14 @@ class LightcoreBattleGame extends FlameGame with ScaleDetector {
     _handleTap(Vector2(localPosition.dx, localPosition.dy));
   }
 
+  bool isTowerHitAt(Offset localPosition) {
+    if (!_layoutReady || !enableBattlefieldTaps || _shellPromotion != null) {
+      return false;
+    }
+    return _hitTestSlotBody(Vector2(localPosition.dx, localPosition.dy)) !=
+        null;
+  }
+
   bool handleCanvasPointerDown(Offset localPosition) {
     if (!_layoutReady || !enableBattlefieldTaps || _shellPromotion != null) {
       return false;
@@ -372,14 +380,19 @@ class LightcoreBattleGame extends FlameGame with ScaleDetector {
       }
       return;
     }
+    final directlyTappedPulseId = _hitTestPulse(pointer, radiusScale: 0.42);
+    if (directlyTappedPulseId != null) {
+      _releaseTappedPulse(directlyTappedPulseId);
+      return;
+    }
+    final tappedIndex = _hitTestSlotBody(pointer);
+    if (tappedIndex != null) {
+      onSlotTap(tappedIndex);
+      return;
+    }
     final tappedPulseId = _hitTestPulse(pointer);
     if (tappedPulseId != null) {
-      final pulsePosition = _pulsePositionForId(tappedPulseId);
-      if (pulsePosition != null) {
-        _pulseInboundStartPositions[tappedPulseId] = pulsePosition;
-      }
-      controller.releaseDraggedPulse(tappedPulseId, crossedSourceTower: false);
-      LightcoreAudio.instance.playSfx(LightcoreSfx.relayCharge);
+      _releaseTappedPulse(tappedPulseId);
       return;
     }
     final tappedEnemyId = _hitTestEnemy(pointer);
@@ -392,9 +405,9 @@ class LightcoreBattleGame extends FlameGame with ScaleDetector {
         controller.selectBattleEnemyForManualAim(tappedEnemyId)) {
       return;
     }
-    final tappedIndex = _hitTestSlot(pointer);
-    if (tappedIndex != null) {
-      onSlotTap(tappedIndex);
+    final tappedSlotIndex = _hitTestSlot(pointer);
+    if (tappedSlotIndex != null) {
+      onSlotTap(tappedSlotIndex);
       return;
     }
     if (pointer.distanceTo(_center) <= _coreRadius * 1.15) {
@@ -404,15 +417,26 @@ class LightcoreBattleGame extends FlameGame with ScaleDetector {
     }
   }
 
-  String? _hitTestPulse(Vector2 pointer) {
+  void _releaseTappedPulse(String pulseId) {
+    final pulsePosition = _pulsePositionForId(pulseId);
+    if (pulsePosition != null) {
+      _pulseInboundStartPositions[pulseId] = pulsePosition;
+    }
+    controller.releaseDraggedPulse(pulseId, crossedSourceTower: false);
+    LightcoreAudio.instance.playSfx(LightcoreSfx.relayCharge);
+  }
+
+  String? _hitTestPulse(Vector2 pointer, {double? radiusScale}) {
     for (final pulse in controller.pulses.reversed) {
       final position = _pulsePosition(pulse);
       if (position == null) {
         continue;
       }
-      final scale = controller.hasActiveTutorial
-          ? _tutorialPayloadTapRadiusScale
-          : _payloadTapRadiusScale;
+      final scale =
+          radiusScale ??
+          (controller.hasActiveTutorial
+              ? _tutorialPayloadTapRadiusScale
+              : _payloadTapRadiusScale);
       if (pointer.distanceTo(position) <= _slotRadius * scale) {
         return pulse.id;
       }

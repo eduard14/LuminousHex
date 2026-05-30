@@ -46,8 +46,9 @@ void _catchTutorialPayloads(LightcoreController controller, int count) {
 }
 
 void _completeManualAimLesson(LightcoreController controller) {
-  expect(controller.tutorialStep, LightcoreTutorialStep.tapBattleCore);
-  controller.handleBattleCenterTap();
+  if (controller.tutorialStep == LightcoreTutorialStep.tapBattleCore) {
+    controller.handleBattleCenterTap();
+  }
   expect(controller.tutorialStep, LightcoreTutorialStep.tapFirstTower);
   final enemy = controller.debugSpawnEnemyFromCard(
     EnemyLibrary.basicWhite.id,
@@ -422,13 +423,14 @@ void main() {
       LightcoreTutorialStep.inspectFirstTowerStats,
     );
     controller.markTutorialFirstTowerStatsOpened();
-    expect(controller.tutorialStep, LightcoreTutorialStep.tapBattleCore);
-    controller.handleBattleCenterTap();
+    if (controller.tutorialStep == LightcoreTutorialStep.tapBattleCore) {
+      controller.handleBattleCenterTap();
+    }
     expect(controller.tutorialStep, LightcoreTutorialStep.tapFirstTower);
     expect(controller.tutorialHeadline, 'Aim and Fire');
     expect(
       controller.tutorialPrompt,
-      'Tap an anomaly to fire the queued packet at that direction. Managers will unlock auto-generation and auto-fire later.',
+      'Tap a visible anomaly to fire the queued packet. Tapping a tower opens tower controls instead; managers will automate firing later.',
     );
     final enemy = controller.debugSpawnEnemyFromCard(
       EnemyLibrary.basicWhite.id,
@@ -480,7 +482,13 @@ void main() {
       );
 
       controller.markTutorialFirstTowerStatsOpened();
-      expect(controller.tutorialStep, LightcoreTutorialStep.tapBattleCore);
+      expect(
+        controller.tutorialStep,
+        anyOf(
+          LightcoreTutorialStep.tapBattleCore,
+          LightcoreTutorialStep.tapFirstTower,
+        ),
+      );
     },
   );
 

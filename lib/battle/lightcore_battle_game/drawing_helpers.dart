@@ -213,6 +213,15 @@ extension LightcoreBattleGameDrawingHelpers on LightcoreBattleGame {
     return null;
   }
 
+  int? _hitTestSlotBody(Vector2 pointer) {
+    for (var index = 0; index < _slotPositions.length; index++) {
+      if (pointer.distanceTo(_slotPositions[index]) <= _slotRadius * 0.82) {
+        return index;
+      }
+    }
+    return null;
+  }
+
   String? _hitTestEnemy(Vector2 pointer) {
     for (final enemy in controller.enemies.toList().reversed) {
       if (_enemyRevealProgress(enemy) <= 0) {

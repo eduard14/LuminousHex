@@ -1493,7 +1493,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         LightcoreTutorialStep.tapBattleCore =>
           'Tap the Lightcore to generate a queued packet.',
         LightcoreTutorialStep.tapFirstTower =>
-          'Tap an anomaly to manually fire the queued packet.',
+          'Tap a visible anomaly to fire. Tower taps open tower controls.',
         LightcoreTutorialStep.tapSecondShellTower =>
           'Catch a floating child-shell payload piece to feed the Lightcore.',
         LightcoreTutorialStep.upgradeFirstTowerToLevel3 =>
@@ -1574,7 +1574,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         LightcoreTutorialStep.tapBattleCore =>
           'The opening Lightcore is manual. Generate a packet first so the queue has something to fire.',
         LightcoreTutorialStep.tapFirstTower =>
-          'Manual aim teaches target choice before managers unlock auto-generation and auto-fire.',
+          'Manual aim teaches target choice before managers unlock auto-generation and auto-fire. Tower clicks remain tower controls.',
         LightcoreTutorialStep.tapSecondShellTower =>
           'Second-shell lanes use the same payload-piece rule: catch the piece to feed the core faster, then the core converts that packet into a shot.',
         LightcoreTutorialStep.upgradeFirstTowerToLevel3 =>
@@ -1655,7 +1655,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
           LightcoreTutorialStep.tapBattleCore =>
             'A hostile signature has crossed the core lens. Tap the Lightcore to load the first manual packet.',
           LightcoreTutorialStep.tapFirstTower =>
-            'The packet is loaded. Aim at a visible anomaly and fire before automation takes over later.',
+            'The packet is loaded. Aim at a visible anomaly; tap towers only when you want tower controls.',
           LightcoreTutorialStep.tapSecondShellTower =>
             'The next shell is awake. Catch one payload piece before Lumo hands you speed controls.',
           LightcoreTutorialStep.upgradeFirstTowerToLevel3 =>

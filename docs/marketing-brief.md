@@ -1,6 +1,6 @@
 # LumiHex Marketing Brief
 
-Last updated: 2026-05-28
+Last updated: 2026-05-30
 
 This is the source-of-truth marketing handoff for LumiHex. Update it whenever
 player-facing features, naming, story, monetization, screenshots, or asset needs
@@ -68,6 +68,8 @@ shell, and keep climbing.
   directly.
 - Manual packet play is explicit in the opening: tap the Lightcore to generate
   a queued packet, then tap an anomaly to aim and fire that packet immediately.
+- Tower body taps are reserved for tower controls, keeping build/stat actions
+  distinct from anomaly aiming and payload catches during the first session.
 - Relay payload catches stay as an optional skill layer once towers are active:
   players can tap or drag payloads inward, while drag-through routing guarantees
   critical packets.
@@ -88,7 +90,8 @@ shell, and keep climbing.
 - Lumo/Luma guide callouts appear on loading interstitials with strategic tips
   such as balancing growth, flow, and Output Efficiency.
 - Startup, shell-linking, event-run loading, and major shell area transitions use
-  the same branded Lightcore loading interstitial.
+  the same fullscreen branded Lightcore loading interstitial with relay status,
+  core animation, and Lumo/Luma guide tips.
 
 ### Towers And Builds
 

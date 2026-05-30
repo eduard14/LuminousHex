@@ -141,6 +141,39 @@ void main() {
     expect(controller.pulses.single.progress, 0);
   });
 
+  test('tower hit areas take priority over payload and aim taps', () {
+    final controller = LightcoreController();
+    addTearDown(controller.dispose);
+    controller.debugDisableTutorial();
+    var slotTaps = 0;
+    final game = LightcoreBattleGame(
+      controller: controller,
+      onCenterTap: () => fail('tower hit should not tap core'),
+      onSlotTap: (_) => slotTaps += 1,
+      onBackgroundTap: () => fail('tower hit should not tap background'),
+    );
+    game.onGameResize(Vector2(900, 1100));
+    controller.toggleShellVisibility();
+    controller.lumens = 1000;
+    controller.kills = LightcoreController.unlockKillsForOuterSlot(0);
+    expect(controller.buildTowerAt(0, TowerLibrary.redPrism), isTrue);
+    final remainingFabrication =
+        controller.slots[0].fabricationRemainingSeconds;
+    if (remainingFabrication > 0) {
+      controller.tick(remainingFabrication + 0.1);
+    }
+    expect(controller.debugSetTowerCharge(0, charge: 1.2), isTrue);
+
+    const slotCenter = Offset(618.0, 506.0);
+    expect(game.isTowerHitAt(slotCenter), isTrue);
+    expect(game.handleCanvasPointerDown(slotCenter), isFalse);
+    game.handleCanvasTap(slotCenter);
+
+    expect(slotTaps, 1);
+    expect(controller.pulses, isEmpty);
+    expect(controller.slots[0].charge, greaterThanOrEqualTo(1));
+  });
+
   test('single-finger gesture pans the battle view', () {
     final controller = LightcoreController();
     addTearDown(controller.dispose);

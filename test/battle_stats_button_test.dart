@@ -169,7 +169,7 @@ void main() {
     expect(find.byType(Scrollbar), findsNothing);
   });
 
-  testWidgets('tower tap fires packet and defers tower controls', (
+  testWidgets('tower tap reserves tower controls instead of firing payloads', (
     tester,
   ) async {
     final controller = LightcoreController();
@@ -187,7 +187,8 @@ void main() {
     await tester.pump(const Duration(milliseconds: 50));
 
     expect(controller.selectedSlotIndex, isNull);
-    expect(controller.pulses, isNotEmpty);
+    expect(controller.pulses, isEmpty);
+    expect(controller.slots[0].charge, greaterThanOrEqualTo(1));
     expect(find.text('Tower Stats'), findsNothing);
     expect(find.text('Live Projectile Target'), findsNothing);
     expect(
@@ -366,10 +367,8 @@ void main() {
     await tester.pump(const Duration(milliseconds: 50));
 
     expect(controller.selectedSlotIndex, isNull);
-    expect(
-      controller.pulses.any((pulse) => pulse.sourceSlotIndex == 1),
-      isTrue,
-    );
+    expect(controller.pulses, isEmpty);
+    expect(controller.slots[1].charge, greaterThanOrEqualTo(1));
     expect(find.text('Tower Stats'), findsNothing);
 
     await tester.tap(

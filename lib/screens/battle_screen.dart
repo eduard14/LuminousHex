@@ -409,8 +409,10 @@ class _BattleScreenState extends State<BattleScreen> {
     }
     _canvasTapPointer = event.pointer;
     _canvasTapStart = event.localPosition;
+    final towerHit = _game.isTowerHitAt(event.localPosition);
     _canvasPayloadDragActive =
         !_selectionOverlayIsOpen &&
+        !towerHit &&
         _game.handleCanvasPointerDown(event.localPosition);
     _canvasPayloadDragMoved = false;
     _canvasTapCanceled = _canvasPayloadDragActive;
@@ -1167,7 +1169,7 @@ class _BattleScreenState extends State<BattleScreen> {
         }
       case LightcoreTutorialStep.tapFirstTower:
         if (_tutorialOpenPanelBlocksCurrentStep(controller)) {
-          return 'Close the open tower controls, then tap the charged first tower on the battlefield.';
+          return 'Close the open tower controls, then tap a visible anomaly to fire the queued packet. Tower taps reopen tower controls.';
         }
       case LightcoreTutorialStep.tapSecondShellTower:
         if (_tutorialOpenPanelBlocksCurrentStep(controller)) {
