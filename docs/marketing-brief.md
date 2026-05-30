@@ -28,9 +28,9 @@ and promoting each completed shell into a deeper prism lattice.
 ## Short Description
 
 LumiHex is a mobile-first idle tower-defense game where the battlefield is a
-six-relay hex shell around a central Lightcore. Towers create floating payload
-pieces, queue projectile packets, tune anomaly encounters, collect managers,
-and promote Root Shells into Prism, Nexus, and Ascendant structures.
+six-relay hex shell around a central Lightcore. Towers charge packet flow,
+queue projectile packets, tune anomaly encounters, collect managers, and
+promote Root Shells into Prism, Nexus, and Ascendant structures.
 
 ## Player Fantasy
 
@@ -47,7 +47,7 @@ shell, and keep climbing.
 
 1. Enter a hex shell built around the central Lightcore.
 2. Reveal and build six perimeter relay towers.
-3. Catch floating payload pieces to send ammo packets into the core queue faster.
+3. Tap charged relay towers to send ammo packets into the core queue.
 4. The core consumes queued packets and fires at incoming anomalies.
 5. Upgrade towers, core stats, and encounter capacity with earned resources.
 6. Roll Threat Scans into Knowledge Cards that make enemy families easier
@@ -68,12 +68,11 @@ shell, and keep climbing.
   directly.
 - Manual packet play is explicit in the opening: tap the Lightcore to generate
   a queued packet, then tap an anomaly to aim and fire that packet immediately.
-- Tower body taps are reserved for tower controls, keeping build/stat actions
-  distinct from anomaly aiming and payload catches during the first session.
-- Relay payload catches stay as an optional skill layer once towers are active:
-  players can tap or drag payloads inward, while drag-through routing guarantees
-  critical packets.
-- Shell visibility is an explicit HUD toggle, keeping missed payload taps from
+- Tower body taps are reserved for tower controls and packet flow, keeping
+  build/stat actions distinct from anomaly aiming during the first session.
+- Manual payload tap and drag catches are not part of the current player
+  control scheme; floating payload visuals are feedback for automated flow.
+- Shell visibility is an explicit HUD toggle, keeping battlefield taps from
   folding the active battlefield or opening tower placement.
 - Manager automation is split into two unlock beats: manager generation starts
   feeding packets after the opening shell is established, and assigned Core
@@ -217,7 +216,7 @@ video hooks.
 
 | Pillar | Post Ideas |
 | --- | --- |
-| Gameplay hook | Short clips of tapping floating payload pieces into the Lightcore, tapping anomalies to fire queued packets, and drag-routing for critical packets. |
+| Gameplay hook | Short clips of tapping charged relay towers, watching packets feed the Lightcore, and tapping anomalies to fire queued packets. |
 | Progression | Before/after shell promotion, Root to Prism, Prism to Nexus, inheritance previews. |
 | Buildcraft | Color-family comparisons, pure builds versus blended projectile/payload builds. |
 | Anomaly pressure | Knowledge Card pulls, Apex Anomaly reveals, Focus Target saves, lane disruption moments. |

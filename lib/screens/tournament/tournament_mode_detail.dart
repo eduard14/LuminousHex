@@ -854,7 +854,7 @@ class _TournamentModeDetailScreenState
         nextScore += max(0, towerOutput - (enemyPressure * 0.3)) * dt;
         if (_blitzShield <= 0.08) {
           nextHint =
-              'Shell integrity is critical. Manual payload catches and weekend tower upgrades are carrying this Blitz run.';
+              'Shell integrity is critical. Core timing and weekend tower upgrades are carrying this Blitz run.';
         }
         break;
       case LightcoreTournamentModeId.hexGauntlet:

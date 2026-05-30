@@ -418,18 +418,18 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
   ),
   LightcoreTutorialStep.tapSecondShellTower: LightcoreTutorialQuestDefinition(
     id: 'TUT-008',
-    title: 'Catch Child Payloads',
+    title: 'Fire Child Tower',
     teachGoal:
-        'Child-shell towers use the same payload-piece rule before Overdrive appears.',
+        'Child-shell towers keep the same tap-to-control rule: tap the charged tower to send its packet flow into the queue.',
     trigger: 'First child shell has a charged tower',
-    primaryClickTarget: 'Battlefield > child-shell payload piece',
+    primaryClickTarget: 'Battlefield > charged child-shell tower',
     coachCopy:
-        'Catch a floating payload piece in this child shell. It still feeds the core queue before the core fires.',
-    completionCondition: 'Catch one child-shell payload piece',
+        'Tap the highlighted child-shell tower once it is charged. Do not chase floating payload visuals.',
+    completionCondition: 'Tap one charged child-shell tower',
     reward: 'Small Lumen grant',
     failureHelpState:
-        'Wait for the highlighted child-shell tower to create a payload piece.',
-    analyticsEvent: 'tutorial_second_shell_payload',
+        'Wait for the highlighted child-shell tower to charge, then tap the tower body.',
+    analyticsEvent: 'tutorial_second_shell_tower_fire',
   ),
   LightcoreTutorialStep
       .upgradeFirstTowerToLevel3: LightcoreTutorialQuestDefinition(
@@ -698,7 +698,7 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
     trigger: 'Manager foundry opened with enough Flux',
     primaryClickTarget: 'Managers > Core Manager foundry > Forge',
     coachCopy:
-        'Forge one Core Manager. A manager keeps payload pieces feeding the queue without manual catching.',
+        'Forge one Core Manager. A manager keeps relay packets feeding the queue without repeated tower commands.',
     completionCondition: 'Own one Core Manager',
     reward: 'Flux',
     failureHelpState: 'Use the highlighted Core Manager forge control.',

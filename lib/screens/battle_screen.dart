@@ -146,8 +146,6 @@ class _BattleScreenState extends State<BattleScreen> {
   int? _canvasTapPointer;
   Offset? _canvasTapStart;
   bool _canvasTapCanceled = false;
-  bool _canvasPayloadDragActive = false;
-  bool _canvasPayloadDragMoved = false;
   late final AppLifecycleListener _appLifecycleListener;
 
   @override
@@ -396,10 +394,6 @@ class _BattleScreenState extends State<BattleScreen> {
     final primaryTapStart =
         event.buttons == 0 || (event.buttons & kPrimaryButton) != 0;
     if (!primaryTapStart || _canvasTapPointer != null) {
-      if (_canvasPayloadDragActive) {
-        _game.cancelCanvasPayloadDrag();
-        _canvasPayloadDragActive = false;
-      }
       _canvasTapCanceled = true;
       _logBattle('pointer-down-canceled', <String, Object?>{
         'buttons': event.buttons,
@@ -409,13 +403,6 @@ class _BattleScreenState extends State<BattleScreen> {
     }
     _canvasTapPointer = event.pointer;
     _canvasTapStart = event.localPosition;
-    final towerHit = _game.isTowerHitAt(event.localPosition);
-    _canvasPayloadDragActive =
-        !_selectionOverlayIsOpen &&
-        !towerHit &&
-        _game.handleCanvasPointerDown(event.localPosition);
-    _canvasPayloadDragMoved = false;
-    _canvasTapCanceled = _canvasPayloadDragActive;
     _logBattle('pointer-down', <String, Object?>{
       'pointer': event.pointer,
       'x': event.localPosition.dx.toStringAsFixed(1),
@@ -429,16 +416,6 @@ class _BattleScreenState extends State<BattleScreen> {
     }
     final start = _canvasTapStart;
     if (event.pointer != _canvasTapPointer || start == null) {
-      return;
-    }
-    if (_canvasPayloadDragActive) {
-      if ((event.localPosition - start).distance > _canvasTapSlop) {
-        _canvasPayloadDragMoved = true;
-      }
-      if (_canvasPayloadDragMoved) {
-        _game.handleCanvasPointerMove(event.localPosition);
-      }
-      _canvasTapCanceled = true;
       return;
     }
     if ((event.localPosition - start).distance > _canvasTapSlop) {
@@ -459,13 +436,7 @@ class _BattleScreenState extends State<BattleScreen> {
       'canceled': _canvasTapCanceled,
       'gameControllerCurrent': identical(_game.controller, widget.controller),
     });
-    if (event.pointer == _canvasTapPointer &&
-        _canvasPayloadDragActive &&
-        _canvasPayloadDragMoved) {
-      _game.handleCanvasPointerUp(event.localPosition);
-    } else if (event.pointer == _canvasTapPointer && _canvasPayloadDragActive) {
-      _game.handleCanvasPointerUp(event.localPosition);
-    } else if (event.pointer == _canvasTapPointer && !_canvasTapCanceled) {
+    if (event.pointer == _canvasTapPointer && !_canvasTapCanceled) {
       _game.handleCanvasTap(event.localPosition);
     }
     _resetCanvasTap();
@@ -484,8 +455,6 @@ class _BattleScreenState extends State<BattleScreen> {
     _canvasTapPointer = null;
     _canvasTapStart = null;
     _canvasTapCanceled = false;
-    _canvasPayloadDragActive = false;
-    _canvasPayloadDragMoved = false;
   }
 
   void _handleCenterTap() {

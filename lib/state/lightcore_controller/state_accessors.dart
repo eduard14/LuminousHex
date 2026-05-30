@@ -31,7 +31,7 @@ extension LightcoreControllerStateAccessors on LightcoreController {
     }
     final tower = _slots[slotIndex];
     if (_pulses.any((pulse) => pulse.sourceSlotIndex == slotIndex)) {
-      return 'CATCH PAYLOAD';
+      return 'TAP TOWER';
     }
     if (tower.cooldownRemaining > 0) {
       return 'COOLDOWN';

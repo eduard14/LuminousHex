@@ -630,15 +630,10 @@ void main() {
     expect(controller.debugSetTowerCharge(0, charge: 1), isTrue);
     expect(controller.tutorialStep, LightcoreTutorialStep.tapSecondShellTower);
     expect(controller.tutorialHighlightsBattleSlot(0), isTrue);
-    for (var step = 0; step < 2000 && controller.pulses.isEmpty; step += 1) {
-      controller.tick(0.05);
-    }
-    if (controller.pulses.isEmpty) {
-      controller.handleBattleCenterTap();
-      expect(controller.queuedCorePackets, greaterThan(0));
-    } else {
-      expect(controller.boostPulseToCore(controller.pulses.last.id), isTrue);
-    }
+    expect(
+      controller.activateTowerSlot(0, showBanner: false, selectForStats: false),
+      isTrue,
+    );
     controller.tick(0);
     expect(controller.tutorialHighlightsBattleSlot(0), isFalse);
     expect(

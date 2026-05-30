@@ -39,9 +39,8 @@ cadence, enemy strength, and reward bonuses.
 ## Current Gameplay Loop
 
 1. Reveal the shell by tapping/selecting the center.
-2. Tap floating payload pieces to feed packets to the core faster, or drag them
-   through the source tower for critical packets, and generate kills until outer
-   slots unlock.
+2. Tap ready relay towers to feed packets to the core queue, and generate kills
+   until outer slots unlock.
 3. Tap anomalies to spend queued core packets immediately, then build outer
    towers with Lumens.
 4. Upgrade all built towers to level 5.

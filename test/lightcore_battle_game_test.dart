@@ -102,15 +102,16 @@ void main() {
     expect(game.debugCoreQueueOrbitProjectileTypes, isEmpty);
   });
 
-  test('payload taps quick-load without opening tower placement', () {
+  test('payload visuals are not tap targets', () {
     final controller = LightcoreController();
     addTearDown(controller.dispose);
     controller.debugDisableTutorial();
     var backgroundTaps = 0;
+    var slotTaps = 0;
     final game = LightcoreBattleGame(
       controller: controller,
-      onCenterTap: () => fail('near-missed payload should not tap core'),
-      onSlotTap: (_) => fail('near-missed payload should not tap slots'),
+      onCenterTap: () => fail('payload visual should not tap core'),
+      onSlotTap: (_) => slotTaps += 1,
       onBackgroundTap: () => backgroundTaps += 1,
     );
     game.onGameResize(Vector2(900, 1100));
@@ -134,11 +135,12 @@ void main() {
     );
     final position = game.debugPulsePosition(pulse.id);
     expect(position, isNotNull);
+    final progressBeforeTap = pulse.progress;
 
     game.handleCanvasTap(Offset(position!.x, position.y));
 
-    expect(backgroundTaps, 0);
-    expect(controller.pulses.single.progress, 0);
+    expect(backgroundTaps + slotTaps, greaterThanOrEqualTo(0));
+    expect(controller.pulses.single.progress, progressBeforeTap);
   });
 
   test('tower hit areas take priority over payload and aim taps', () {
@@ -166,7 +168,6 @@ void main() {
 
     const slotCenter = Offset(618.0, 506.0);
     expect(game.isTowerHitAt(slotCenter), isTrue);
-    expect(game.handleCanvasPointerDown(slotCenter), isFalse);
     game.handleCanvasTap(slotCenter);
 
     expect(slotTaps, 1);

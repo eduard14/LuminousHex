@@ -1442,7 +1442,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         LightcoreTutorialStep.inspectFirstTowerStats => 'Read Tower Stats',
         LightcoreTutorialStep.tapBattleCore => 'Generate A Packet',
         LightcoreTutorialStep.tapFirstTower => 'Aim And Fire',
-        LightcoreTutorialStep.tapSecondShellTower => 'Catch Child Payloads',
+        LightcoreTutorialStep.tapSecondShellTower => 'Fire Child Tower',
         LightcoreTutorialStep.upgradeFirstTowerToLevel3 =>
           'Tune The Main Tower',
         LightcoreTutorialStep.raiseThreat => 'Raise Threat',
@@ -1495,7 +1495,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         LightcoreTutorialStep.tapFirstTower =>
           'Tap a visible anomaly to fire. Tower taps open tower controls.',
         LightcoreTutorialStep.tapSecondShellTower =>
-          'Catch a floating child-shell payload piece to feed the Lightcore.',
+          'Tap the charged child-shell tower to feed the Lightcore.',
         LightcoreTutorialStep.upgradeFirstTowerToLevel3 =>
           'Click the first tower in Hex 1 and upgrade it to level 3.',
         LightcoreTutorialStep.raiseThreat =>
@@ -1576,7 +1576,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         LightcoreTutorialStep.tapFirstTower =>
           'Manual aim teaches target choice before managers unlock auto-generation and auto-fire. Tower clicks remain tower controls.',
         LightcoreTutorialStep.tapSecondShellTower =>
-          'Second-shell lanes use the same payload-piece rule: catch the piece to feed the core faster, then the core converts that packet into a shot.',
+          'Second-shell lanes use the same tower-tap rule: tap the charged tower body, then the core converts that packet into a shot.',
         LightcoreTutorialStep.upgradeFirstTowerToLevel3 =>
           'Early upgrades beat overexpanding. One strong anchor tower produces better damage and charge flow than several weak ones.',
         LightcoreTutorialStep.raiseThreat =>
@@ -1657,7 +1657,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
           LightcoreTutorialStep.tapFirstTower =>
             'The packet is loaded. Aim at a visible anomaly; tap towers only when you want tower controls.',
           LightcoreTutorialStep.tapSecondShellTower =>
-            'The next shell is awake. Catch one payload piece before Lumo hands you speed controls.',
+            'The next shell is awake. Tap the charged tower body before Lumo hands you speed controls.',
           LightcoreTutorialStep.upgradeFirstTowerToLevel3 =>
             'Command is tuning the flagship lane before exposing more of the shell to hostile traffic.',
           LightcoreTutorialStep.raiseThreat =>

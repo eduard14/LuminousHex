@@ -54,8 +54,6 @@ class LightcoreBattleGame extends FlameGame with ScaleDetector {
   static const double _coreDamageShakeDuration = 0.34;
   static const double _payloadMaxOrbitCount = 4.0;
   static const double _payloadOrbitDurationSeconds = 8.0;
-  static const double _payloadTapRadiusScale = 1.32;
-  static const double _tutorialPayloadTapRadiusScale = 1.72;
   static const double shellPromotionStatsDelay = 3.35;
   static const double _shellPromotionCollapseDuration = 1.15;
   static const double _shellPromotionWhiteoutDuration = 0.72;
@@ -95,8 +93,6 @@ class LightcoreBattleGame extends FlameGame with ScaleDetector {
   Vector2? _lastGestureFocalPoint;
   double _lastGestureScaleSignal = 1.0;
   int _gesturePointerCount = 0;
-  String? _draggedPulseId;
-  bool _draggedPulseCrossedSourceTower = false;
   final Map<String, Vector2> _pulseInboundStartPositions = <String, Vector2>{};
 
   Vector2 _center = Vector2.zero();
@@ -161,8 +157,6 @@ class LightcoreBattleGame extends FlameGame with ScaleDetector {
     _gesturePointerCount = 0;
     _lastGestureFocalPoint = null;
     _lastGestureScaleSignal = 1.0;
-    _draggedPulseId = null;
-    _draggedPulseCrossedSourceTower = false;
     _pulseInboundStartPositions.clear();
   }
 
@@ -176,63 +170,6 @@ class LightcoreBattleGame extends FlameGame with ScaleDetector {
     }
     return _hitTestSlotBody(Vector2(localPosition.dx, localPosition.dy)) !=
         null;
-  }
-
-  bool handleCanvasPointerDown(Offset localPosition) {
-    if (!_layoutReady || !enableBattlefieldTaps || _shellPromotion != null) {
-      return false;
-    }
-    final pulseId = _hitTestPulse(Vector2(localPosition.dx, localPosition.dy));
-    if (pulseId == null) {
-      return false;
-    }
-    _draggedPulseId = pulseId;
-    _draggedPulseCrossedSourceTower = _pulseDragCrossesSourceTower(
-      pulseId,
-      Vector2(localPosition.dx, localPosition.dy),
-    );
-    return true;
-  }
-
-  bool handleCanvasPointerMove(Offset localPosition) {
-    final pulseId = _draggedPulseId;
-    if (pulseId == null) {
-      return false;
-    }
-    if (_pulseDragCrossesSourceTower(
-      pulseId,
-      Vector2(localPosition.dx, localPosition.dy),
-    )) {
-      _draggedPulseCrossedSourceTower = true;
-      controller.markPulseCriticalBoosted(pulseId);
-    }
-    return true;
-  }
-
-  bool handleCanvasPointerUp(Offset localPosition) {
-    final pulseId = _draggedPulseId;
-    if (pulseId == null) {
-      return false;
-    }
-    final crossed =
-        _draggedPulseCrossedSourceTower ||
-        _pulseDragCrossesSourceTower(
-          pulseId,
-          Vector2(localPosition.dx, localPosition.dy),
-        );
-    final clickedPosition = _pulsePositionForId(pulseId);
-    if (clickedPosition != null) {
-      _pulseInboundStartPositions[pulseId] = clickedPosition;
-    }
-    controller.releaseDraggedPulse(pulseId, crossedSourceTower: crossed);
-    _draggedPulseId = null;
-    _draggedPulseCrossedSourceTower = false;
-    return true;
-  }
-
-  void cancelCanvasPayloadDrag() {
-    _draggedPulseId = null;
-    _draggedPulseCrossedSourceTower = false;
   }
 
   void playShellPromotion(ShellPromotionPresentation presentation) {
@@ -380,19 +317,9 @@ class LightcoreBattleGame extends FlameGame with ScaleDetector {
       }
       return;
     }
-    final directlyTappedPulseId = _hitTestPulse(pointer, radiusScale: 0.42);
-    if (directlyTappedPulseId != null) {
-      _releaseTappedPulse(directlyTappedPulseId);
-      return;
-    }
     final tappedIndex = _hitTestSlotBody(pointer);
     if (tappedIndex != null) {
       onSlotTap(tappedIndex);
-      return;
-    }
-    final tappedPulseId = _hitTestPulse(pointer);
-    if (tappedPulseId != null) {
-      _releaseTappedPulse(tappedPulseId);
       return;
     }
     final tappedEnemyId = _hitTestEnemy(pointer);
@@ -415,33 +342,6 @@ class LightcoreBattleGame extends FlameGame with ScaleDetector {
     } else {
       onBackgroundTap();
     }
-  }
-
-  void _releaseTappedPulse(String pulseId) {
-    final pulsePosition = _pulsePositionForId(pulseId);
-    if (pulsePosition != null) {
-      _pulseInboundStartPositions[pulseId] = pulsePosition;
-    }
-    controller.releaseDraggedPulse(pulseId, crossedSourceTower: false);
-    LightcoreAudio.instance.playSfx(LightcoreSfx.relayCharge);
-  }
-
-  String? _hitTestPulse(Vector2 pointer, {double? radiusScale}) {
-    for (final pulse in controller.pulses.reversed) {
-      final position = _pulsePosition(pulse);
-      if (position == null) {
-        continue;
-      }
-      final scale =
-          radiusScale ??
-          (controller.hasActiveTutorial
-              ? _tutorialPayloadTapRadiusScale
-              : _payloadTapRadiusScale);
-      if (pointer.distanceTo(position) <= _slotRadius * scale) {
-        return pulse.id;
-      }
-    }
-    return null;
   }
 
   Vector2? _pulsePosition(EnergyPulseState pulse) {
@@ -559,24 +459,6 @@ class LightcoreBattleGame extends FlameGame with ScaleDetector {
       return _slotPositions[sourceSlotIndex];
     }
     return null;
-  }
-
-  bool _pulseDragCrossesSourceTower(String pulseId, Vector2 pointer) {
-    EnergyPulseState? pulse;
-    for (final candidate in controller.pulses) {
-      if (candidate.id == pulseId) {
-        pulse = candidate;
-        break;
-      }
-    }
-    final sourceSlotIndex = pulse?.sourceSlotIndex;
-    if (sourceSlotIndex == null ||
-        sourceSlotIndex < 0 ||
-        sourceSlotIndex >= _slotPositions.length) {
-      return false;
-    }
-    return pointer.distanceTo(_slotPositions[sourceSlotIndex]) <=
-        _slotRadius * 0.72;
   }
 
   Vector2? _pulsePositionForId(String pulseId) {
