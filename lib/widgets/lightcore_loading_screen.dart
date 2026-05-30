@@ -137,7 +137,7 @@ class _LightcoreLoadingScreenState extends State<LightcoreLoadingScreen>
                       final compact =
                           widget.compact ??
                           (constraints.maxWidth < 560 ||
-                              constraints.maxHeight < 680);
+                              constraints.maxHeight < 760);
                       final phase = _controller.value;
 
                       return SingleChildScrollView(
@@ -152,26 +152,19 @@ class _LightcoreLoadingScreenState extends State<LightcoreLoadingScreen>
                                 MediaQuery.paddingOf(context).vertical -
                                 (compact ? 48 : 80),
                           ),
-                          child: Center(
-                            child: ConstrainedBox(
-                              constraints: BoxConstraints(
-                                maxWidth: compact ? 430 : 860,
-                              ),
-                              child: _LoadingStage(
-                                title: widget.title,
-                                subtitle: widget.subtitle,
-                                statusLabel: widget.statusLabel,
-                                accent: widget.accent,
-                                progress: widget.progress,
-                                phase: phase,
-                                compact: compact,
-                                signalLabels: widget.signalLabels.isEmpty
-                                    ? const ['BOOT', 'LINK', 'FLOW']
-                                    : widget.signalLabels,
-                                activeTip: _activeTip,
-                                guide: widget.guide,
-                              ),
-                            ),
+                          child: _LoadingStage(
+                            title: widget.title,
+                            subtitle: widget.subtitle,
+                            statusLabel: widget.statusLabel,
+                            accent: widget.accent,
+                            progress: widget.progress,
+                            phase: phase,
+                            compact: compact,
+                            signalLabels: widget.signalLabels.isEmpty
+                                ? const ['BOOT', 'LINK', 'FLOW']
+                                : widget.signalLabels,
+                            activeTip: _activeTip,
+                            guide: widget.guide,
                           ),
                         ),
                       );
