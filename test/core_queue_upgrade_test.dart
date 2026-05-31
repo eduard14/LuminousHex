@@ -164,7 +164,7 @@ void main() {
     expect(shot.projectileType, ProjectileType.starBolt);
   });
 
-  test('layer 1 core auto-feed counts as queue occupancy immediately', () {
+  test('layer 1 core auto-charge counts as shot occupancy immediately', () {
     final controller = LightcoreController();
     addTearDown(controller.dispose);
     controller.debugDisableTutorial();
@@ -197,7 +197,7 @@ void main() {
     expect(controller.queuedCorePackets, 0);
   });
 
-  test('core queue upgrade raises queue capacity and spends lumens', () {
+  test('core shot upgrade raises shot capacity and spends lumens', () {
     final controller = LightcoreController();
     addTearDown(controller.dispose);
 

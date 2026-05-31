@@ -1458,7 +1458,7 @@ class _CoreStatsPanel extends StatelessWidget {
           label: 'Stability',
           value: controller.coreStabilityLabel,
         ),
-        _InlineStatEntry(label: 'Queue', value: controller.coreQueueLoadLabel),
+        _InlineStatEntry(label: 'Shots', value: controller.coreQueueLoadLabel),
         _InlineStatEntry(
           label: 'Ready',
           value:
@@ -1554,7 +1554,7 @@ class _CoreStatsPanel extends StatelessWidget {
         ],
         const SizedBox(height: 10),
         Text(
-          'Core upgrades: Range $rangePreview  •  Fire Speed $fireSpeedPreview  •  Queue $queuePreview  •  Multi-Shot $multiShotPreview  •  Cooldown ${controller.coreCooldownLabel}',
+          'Core upgrades: Range $rangePreview  •  Fire Speed $fireSpeedPreview  •  Shots $queuePreview  •  Multi-Shot $multiShotPreview  •  Cooldown ${controller.coreCooldownLabel}',
           style: textTheme.bodyMedium?.copyWith(
             color: LightcorePalette.solar,
             fontWeight: FontWeight.w600,
@@ -1624,8 +1624,8 @@ class _CoreStatsPanel extends StatelessWidget {
               icon: const Icon(Icons.all_inbox_rounded),
               label: Text(
                 controller.canUpgradeCoreQueueLimit
-                    ? 'Queue • ${controller.coreQueueUpgradeCost}L'
-                    : 'Queue Maxed',
+                    ? 'Shots • ${controller.coreQueueUpgradeCost}L'
+                    : 'Shots Maxed',
               ),
             ),
             FilledButton.icon(

@@ -372,27 +372,27 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
   LightcoreTutorialStep
       .inspectFirstTowerStats: LightcoreTutorialQuestDefinition(
     id: 'TUT-005',
-    title: 'Read Tower Stats',
+    title: 'Open Tower Controls',
     teachGoal:
-        'Stats explain why a tower is worth upgrading: power hits harder, charge readies faster, and cooldown controls repeat fire.',
+        'Tower controls keep upgrades, stats, and targeting separate from enemy focus clicks.',
     trigger: 'First focus-fire action complete',
     primaryClickTarget: 'Lower-left prism control > Tower Stats pop-out',
     coachCopy:
-        'Open Tower Stats now that the first shot landed. The numbers show why this tower is worth upgrading.',
-    completionCondition: 'Open the first tower stats pop-out',
-    reward: 'Tower stat labels unlocked',
+        'Open the first tower controls. This is where upgrades live; enemy taps stay for focus fire.',
+    completionCondition: 'Open the first tower controls',
+    reward: 'Upgrade controls unlocked',
     failureHelpState:
         'Tap the lower-left prism control if the stats panel is hidden.',
     analyticsEvent: 'tutorial_read_tower_stats',
   ),
   LightcoreTutorialStep.tapBattleCore: LightcoreTutorialQuestDefinition(
     id: 'TUT-006',
-    title: 'Auto-Feed Ready',
+    title: 'Auto-Charge Ready',
     teachGoal:
         'Shots charge automatically after the core wakes. The player learns this through the focus-fire action instead of waiting.',
     trigger: 'Legacy save is still parked on the old auto-charge watch step',
     primaryClickTarget: 'Battlefield > anomaly target',
-    coachCopy: 'Auto-feed is running. Tap an anomaly to focus the next shot.',
+    coachCopy: 'Shots are charging. Tap an anomaly to focus the next shot.',
     completionCondition: 'Focus one anomaly',
     reward: 'Small Lumen grant',
     failureHelpState:
@@ -683,7 +683,7 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
     trigger: 'Managers unlocked',
     primaryClickTarget: 'Bottom nav > Managers',
     coachCopy:
-        'Open Managers. Core Managers improve payload feed, while Threat Directors tune live spawns, enemy strength, and rewards.',
+        'Open Managers. Core Managers add auto-fire, while Threat Directors tune live spawns, enemy strength, and rewards.',
     completionCondition: 'Managers screen opened',
     reward: 'Flux',
     failureHelpState: 'Use the highlighted Managers button in the bottom nav.',
@@ -692,7 +692,7 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
   LightcoreTutorialStep.forgeTowerManager: LightcoreTutorialQuestDefinition(
     id: 'TUT-026',
     title: 'Forge a Core Manager',
-    teachGoal: 'Core Managers improve payload feed across the active shell.',
+    teachGoal: 'Core Managers automate charged shots across the active shell.',
     trigger: 'Manager foundry opened with enough Flux',
     primaryClickTarget: 'Managers > Core Manager foundry > Forge',
     coachCopy:
@@ -706,11 +706,11 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
     id: 'TUT-027',
     title: 'Assign a Core Manager',
     teachGoal:
-        'A Core Manager assigns to the shell and improves payload feed for every built tower.',
+        'A Core Manager assigns to the shell and turns charged shots into steady auto-fire.',
     trigger: 'After Output Efficiency shown',
     primaryClickTarget: 'Managers > Core Manager > Assign to Shell',
     coachCopy:
-        'Assign the Core Manager to the shell. Managers feed payloads automatically and add tower-wide bonuses.',
+        'Assign the Core Manager to the shell. Managers fire charged shots automatically and add tower-wide bonuses.',
     completionCondition: 'Assign manager to core',
     reward: 'Starter manager',
     failureHelpState:

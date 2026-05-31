@@ -3,19 +3,19 @@ part of '../lightcore_controller.dart';
 extension LightcoreControllerBattleUnlocks on LightcoreController {
   String _towerActivationBlockedLabel(OuterTowerState tower) {
     if (towerUsesPersistentShieldRing(tower)) {
-      return '${towerDisplayName(tower)} is a persistent shield and does not generate packets.';
+      return '${towerDisplayName(tower)} is a persistent shield and already fires as a guard ring.';
     }
     final manager = cardForSlot(tower);
     if (manager != null) {
-      return '${manager.name} is already improving payload feed on this shell.';
+      return '${manager.name} is already automating charged shots on this shell.';
     }
     if (!_slotCountsTowardRing(tower)) {
       return tower.isLayerProject
-          ? 'Open this child shell and build it before it can generate packets.'
+          ? 'Open this child shell and build it before it can add charged shots.'
           : 'Anchor this hex before it can fire.';
     }
     if (_ammoQueue.length >= coreQueueCapacity) {
-      return 'Core queue full. Tap an anomaly to focus fire or upgrade queue capacity.';
+      return 'Charged shots full. Tap an anomaly to focus fire or upgrade shot capacity.';
     }
     if (tower.cooldownRemaining > 0) {
       return '${towerDisplayName(tower)} is cycling for ${tower.cooldownRemaining.toStringAsFixed(1)}s.';

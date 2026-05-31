@@ -87,7 +87,7 @@ void main() {
     expect(backgroundTaps, 0);
   });
 
-  test('core auto-feed queues a packet without an orbiting pulse', () {
+  test('core auto-charge readies a shot without an orbiting pulse', () {
     final controller = LightcoreController();
     addTearDown(controller.dispose);
     controller.debugDisableTutorial();

@@ -66,7 +66,7 @@ class CardManagementScreen extends StatelessWidget {
                 LightcoreInfoButton(
                   title: 'Main Manager Help',
                   message: controller.managerAssignmentUnlocked
-                      ? 'Assign one Core Manager to the shell to improve payload feed. Threat Directors attach to revealed regions and tune the current spawn, enemy strength, and reward bonuses.'
+                      ? 'Assign one Core Manager to the shell to automate charged shots. Threat Directors attach to revealed regions and tune the current spawn, enemy strength, and reward bonuses.'
                       : 'Manager assignment unlocks when this Layer 1 shell has all ${LightcoreController.slotCount} outer towers online. Flux still banks now so the foundry is ready when it opens.',
                   tint: LightcorePalette.aether,
                 ),
@@ -117,7 +117,7 @@ class CardManagementScreen extends StatelessWidget {
               tint: LightcorePalette.aether,
               subtitle: !controller.managerAssignmentUnlocked
                   ? 'Build all ${LightcoreController.slotCount} outer towers in this Layer 1 shell before managers can be assigned.'
-                  : 'Core Managers improve payload feed on this shell. Threat Directors tune the selected region live and validate offline output after stabilization.',
+                  : 'Core Managers add auto-fire on this shell. Threat Directors tune the selected region live and validate offline output after stabilization.',
             ),
             const SizedBox(height: 10),
             Wrap(
@@ -257,7 +257,7 @@ class CardManagementScreen extends StatelessWidget {
               title: 'Core Managers',
               tint: LightcorePalette.violet,
               subtitle: !controller.managerAssignmentUnlocked
-                  ? 'Early shells auto-charge packets while the player focuses targets. Manager auto-fire unlocks when the Layer 1 shell is complete.'
+                  ? 'Early shells auto-charge shots while the player focuses targets. Manager auto-fire unlocks when the Layer 1 shell is complete.'
                   : controller.cards.isEmpty
                   ? 'Manager auto-fire is online. Forge a Core Manager to automate shots across the active shell.'
                   : 'Manager auto-fire is online. Assign one forged Core Manager to automate shots across the active shell.',
@@ -267,7 +267,7 @@ class CardManagementScreen extends StatelessWidget {
               _InlineSectionNotice(
                 message: controller.managersUnlocked
                     ? 'Forge a Core Manager when you have enough Flux. Forged managers add auto-fire after manager automation is online.'
-                    : 'Forged Core Managers unlock when a Layer 1 shell has all ${LightcoreController.slotCount} outer towers online. Until then, packets auto-charge and enemy taps focus fire.',
+                    : 'Forged Core Managers unlock when a Layer 1 shell has all ${LightcoreController.slotCount} outer towers online. Until then, shots auto-charge and enemy taps focus fire.',
                 tint: LightcorePalette.violet,
               ),
               const SizedBox(height: 10),
@@ -703,7 +703,7 @@ class _DefaultAutoManagerPanel extends StatelessWidget {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  'No starter manager is assigned. Packets auto-generate; tap anomalies to focus fire until manager auto-fire unlocks.',
+                  'No starter manager is assigned. Shots auto-charge; tap anomalies to focus fire until manager auto-fire unlocks.',
                   style: textTheme.bodySmall?.copyWith(
                     color: LightcorePalette.mist.withValues(alpha: 0.78),
                   ),

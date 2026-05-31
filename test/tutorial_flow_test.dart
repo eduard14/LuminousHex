@@ -214,7 +214,7 @@ void main() {
     );
     expect(
       LightcoreController.tutorialQuestHelpBody,
-      contains('TUT-005 Read Tower Stats'),
+      contains('TUT-005 Open Tower Controls'),
     );
     expect(
       LightcoreController.tutorialQuestHelpBody,

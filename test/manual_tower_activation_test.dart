@@ -79,7 +79,7 @@ void main() {
     },
   );
 
-  test('unmanaged towers auto-feed after the shell wakes', () {
+  test('unmanaged towers auto-charge after the shell wakes', () {
     final controller = LightcoreController();
     addTearDown(controller.dispose);
     controller.debugDisableTutorial();
@@ -95,7 +95,7 @@ void main() {
     expect(controller.slots[0].charge, lessThan(1));
   });
 
-  test('core managers improve payload feed after shell coverage', () {
+  test('core managers improve auto-fire after shell coverage', () {
     final controller = LightcoreController();
     addTearDown(controller.dispose);
     controller.debugDisableTutorial();
@@ -142,7 +142,7 @@ void main() {
     );
   });
 
-  test('core auto-feed generates a queued center packet', () {
+  test('core auto-charge readies a center shot', () {
     final controller = LightcoreController();
     addTearDown(controller.dispose);
     controller.debugDisableTutorial();
@@ -156,7 +156,7 @@ void main() {
     expect(controller.coreState.packetCooldownRemaining, greaterThan(0));
   });
 
-  test('core auto-feed queues after shell reveal before tutorial gates', () {
+  test('core auto-charge starts after shell reveal before tutorial gates', () {
     final controller = LightcoreController();
     addTearDown(controller.dispose);
 
@@ -239,7 +239,7 @@ void main() {
     );
   });
 
-  test('core managers improve center payload feed', () {
+  test('core managers improve center auto-fire', () {
     final controller = LightcoreController();
     addTearDown(controller.dispose);
 
@@ -391,7 +391,7 @@ void main() {
     expect(controller.slots[0].charge, 0);
   });
 
-  test('red tower bomb damages nearby enemies through payload feed', () {
+  test('red tower bomb damages nearby enemies through auto-charge', () {
     final controller = LightcoreController();
     addTearDown(controller.dispose);
 

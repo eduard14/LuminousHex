@@ -356,8 +356,8 @@ class _TowerDetailContent extends StatelessWidget {
           title: 'Shell Core Manager',
           subtitle: controller.managerAssignmentUnlocked
               ? card?.summary ??
-                    'Manager generation is feeding payloads. Open Managers to assign a forged Core Manager for auto-fire.'
-              : 'No starter manager is assigned. Manual generation and aimed fire stay active until this Layer 1 shell has all ${LightcoreController.slotCount} outer towers online.',
+                    'Manager auto-fire is ready. Open Managers to assign a forged Core Manager.'
+              : 'No starter manager is assigned. Auto-charge and focus fire stay active until this Layer 1 shell has all ${LightcoreController.slotCount} outer towers online.',
           tint: LightcorePalette.layer2,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,

@@ -632,7 +632,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
     LightcoreTutorialStep.unfoldShell =>
       'Core online. The shell can now open lanes and start earning.',
     LightcoreTutorialStep.buildFirstRedTower =>
-      'First tower online. It will charge and feed auto-generated shots into the core.',
+      'First tower online. It will charge shots and support focus fire.',
     LightcoreTutorialStep.inspectFirstTowerStats =>
       'Stats mapped. Use power, charge, cooldown, automation, and load to decide what to tune next.',
     LightcoreTutorialStep.tapBattleCore =>
@@ -648,7 +648,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
     LightcoreTutorialStep.readEffectiveGain =>
       'Flow mapped. Better threats only matter when Output Efficiency stays healthy.',
     LightcoreTutorialStep.assignTowerManager =>
-      'Manager assigned. Payload feed now runs with better automation.',
+      'Manager assigned. Charged shots now fire with better automation.',
     LightcoreTutorialStep.autoQueueCheck =>
       'Automation verified. Charged shots keep firing while you focus on targets.',
     LightcoreTutorialStep.upgradeFirstTowerToLevel4 =>
@@ -1431,8 +1431,8 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         LightcoreTutorialStep.waitForFirstHex => 'Hex 1 Ready',
         LightcoreTutorialStep.selectFirstHex => 'Select Hex 1',
         LightcoreTutorialStep.buildFirstRedTower => 'Choose First Tower',
-        LightcoreTutorialStep.inspectFirstTowerStats => 'Read Tower Stats',
-        LightcoreTutorialStep.tapBattleCore => 'Auto-Feed Ready',
+        LightcoreTutorialStep.inspectFirstTowerStats => 'Open Tower Controls',
+        LightcoreTutorialStep.tapBattleCore => 'Auto-Charge Ready',
         LightcoreTutorialStep.tapFirstTower => 'Focus Fire',
         LightcoreTutorialStep.tapSecondShellTower => 'Fire Child Tower',
         LightcoreTutorialStep.upgradeFirstTowerToLevel3 =>
@@ -1480,9 +1480,9 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         LightcoreTutorialStep.buildFirstRedTower =>
           'Click Hex 1 and choose Comet Mortar or Rayline Spire.',
         LightcoreTutorialStep.inspectFirstTowerStats =>
-          'Open the first tower stats pop-out.',
+          'Open the first tower controls.',
         LightcoreTutorialStep.tapBattleCore =>
-          'Tap a visible anomaly. Auto-feed will supply the next shot.',
+          'Tap a visible anomaly. Auto-charge will supply the next shot.',
         LightcoreTutorialStep.tapFirstTower =>
           'Tap a visible anomaly to focus fire. Tower taps open tower controls.',
         LightcoreTutorialStep.tapSecondShellTower =>
@@ -1561,7 +1561,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         LightcoreTutorialStep.buildFirstRedTower =>
           'Tower projectile families matter. Comet Mortar opens with area pressure, while Rayline Spire opens with steady single-target pressure.',
         LightcoreTutorialStep.inspectFirstTowerStats =>
-          'Tower stats show power, charge, cooldown, automation, and lane load before the tower starts feeding the core.',
+          'Tower controls hold upgrades, stats, and targeting so tower clicks never compete with enemy focus clicks.',
         LightcoreTutorialStep.tapBattleCore =>
           'The Lightcore auto-charges shots after the shell wakes, so the player can focus on choosing targets.',
         LightcoreTutorialStep.tapFirstTower =>
@@ -1605,9 +1605,9 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         LightcoreTutorialStep.openManagers =>
           'Managers are flux-forged modifiers. Core Managers assign to the shell, while Threat Directors attach to Threat Map regions.',
         LightcoreTutorialStep.forgeTowerManager =>
-          'Core Manager pulls cost Flux and advance the Core Manager Pass. Each roll can improve payload feed across the active shell.',
+          'Core Manager pulls cost Flux and advance the Core Manager Pass. Each roll can improve auto-fire across the active shell.',
         LightcoreTutorialStep.assignTowerManager =>
-          'Assigned Core Managers spend prism charge for you, turning payload feed into a steadier automated rhythm.',
+          'Assigned Core Managers fire charged shots for you, turning focus fire into a steadier automated rhythm.',
         LightcoreTutorialStep.forgeEnemyManager =>
           'Threat Director pulls cost Flux and advance the Threat Director Pass. Their bonuses tune live spawns, enemy strength, and rewards.',
         LightcoreTutorialStep.assignEnemyManager =>
@@ -1644,7 +1644,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
           LightcoreTutorialStep.inspectFirstTowerStats =>
             'The first prism report opens so the crew can label what each tower number means before combat speeds up.',
           LightcoreTutorialStep.tapBattleCore =>
-            'A hostile signature crosses the core lens while auto-feed readies the next shot.',
+            'A hostile signature crosses the core lens while auto-charge readies the next shot.',
           LightcoreTutorialStep.tapFirstTower =>
             'The shot is loaded. Aim at a visible anomaly; tap towers only when you want tower controls.',
           LightcoreTutorialStep.tapSecondShellTower =>

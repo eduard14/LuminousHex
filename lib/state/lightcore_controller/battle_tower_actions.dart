@@ -142,7 +142,7 @@ extension LightcoreControllerBattleTowerActions on LightcoreController {
     selectedSlotIndex = null;
     _towerRangePreviewSlotIndex = null;
     _showBanner(
-      'Lightcore selected. Packets auto-charge; tap anomalies to focus fire.',
+      'Lightcore selected. Shots auto-charge; tap anomalies to focus fire.',
       category: LightcoreNotificationCategory.battle,
     );
     _syncTutorialStep(showBanner: false);
@@ -803,7 +803,7 @@ extension LightcoreControllerBattleTowerActions on LightcoreController {
     _core = _core.copyWith(queueLimitUpgradeLevel: nextLevel);
     _storeActiveLayer();
     _showBanner(
-      'Core queue expanded to ${coreQueueCapacityForUpgradeLevel(nextLevel)} packets.',
+      'Charged-shot capacity expanded to ${coreQueueCapacityForUpgradeLevel(nextLevel)}.',
     );
     _notifyNow();
     return true;
@@ -1039,9 +1039,7 @@ extension LightcoreControllerBattleTowerActions on LightcoreController {
       _tutorialTowerManagerAssigned = true;
       _syncTutorialStep(showBanner: false);
     }
-    _showBanner(
-      '${_cards[cardIndex].name} assigned to improve shell payload feed.',
-    );
+    _showBanner('${_cards[cardIndex].name} assigned for shell auto-fire.');
     _notifyNow();
   }
 

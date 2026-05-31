@@ -734,9 +734,9 @@ extension LightcoreControllerTowerMath on LightcoreController {
     final feedRate = towerPayloadFeedRate(tower);
     final efficiency = towerAutomationEfficiency(tower) ?? 1;
     if (automationRate == null) {
-      return '${feedRate.toStringAsFixed(2)}/s starter feed';
+      return '${feedRate.toStringAsFixed(2)}/s starter charge';
     }
-    return '${automationRate.toStringAsFixed(2)}/s payload feed • ${(efficiency * 100).round()}% efficient';
+    return '${automationRate.toStringAsFixed(2)}/s auto-fire • ${(efficiency * 100).round()}% efficient';
   }
 
   bool canActivateTower(OuterTowerState tower) {

@@ -168,7 +168,7 @@ const List<_HelpSectionData> _baseHelpSections = <_HelpSectionData>[
     summary: 'How child towers bias shots and how managers modify behavior.',
     body:
         'Targeting priorities such as Close, Strong, and Weak tell a relay what kind of anomaly it should prefer when that tower contributes charge. Direct anomaly taps can still override focus during active play.\n\n'
-        'Core Managers assign to a shell and improve payload feed. Each one has an automation rate: if towers create payloads faster than the manager can feed them, the shell loses efficiency while they wait. Threat Directors attach to Threat Map regions and immediately tune spawn cadence, enemy strength, reward bonuses, EXP, and stability risk; stabilization validates that setup for offline output. Both manager families unlock after Layer 1 shell coverage.',
+        'Core Managers assign to a shell and add auto-fire. Each one has an automation rate: if towers charge faster than the manager can fire, the shell loses efficiency while shots wait. Threat Directors attach to Threat Map regions and immediately tune spawn cadence, enemy strength, reward bonuses, EXP, and stability risk; stabilization validates that setup for offline output. Both manager families unlock after Layer 1 shell coverage.',
   ),
 ];
 

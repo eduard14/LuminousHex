@@ -13,7 +13,7 @@ extension LightcoreControllerBattleActions on LightcoreController {
     if (_ammoQueue.length >= coreQueueCapacity) {
       if (showBanner) {
         _showBanner(
-          'Core queue is full. Aim at an anomaly and fire before generating more.',
+          'Charged shots are full. Focus an anomaly to fire before charging more.',
         );
       }
       return false;
@@ -21,7 +21,7 @@ extension LightcoreControllerBattleActions on LightcoreController {
     if (activeLayer.tier == 1 && _core.packetCooldownRemaining > 0) {
       if (showBanner) {
         _showBanner(
-          'Lightcore packet charging for ${_core.packetCooldownRemaining.toStringAsFixed(1)}s.',
+          'Lightcore shot charging for ${_core.packetCooldownRemaining.toStringAsFixed(1)}s.',
         );
       }
       return false;
@@ -77,7 +77,7 @@ extension LightcoreControllerBattleActions on LightcoreController {
       return false;
     }
     _pulses[index] = _pulses[index].copyWith(
-      progress: 0,
+      progress: max(_pulses[index].progress, 0.985),
       inboundStartedAtElapsed: elapsed,
     );
     if (_tutorialStep == LightcoreTutorialStep.tapSecondShellTower) {
