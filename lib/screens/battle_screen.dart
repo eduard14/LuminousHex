@@ -1428,6 +1428,14 @@ class _CoreStatsPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
+    final coreHasPayload =
+        controller.coreState.payloadType != PayloadType.none ||
+        controller.corePayloadArsenal.any(
+          (payload) => payload != PayloadType.none,
+        );
+    final coreTraitLabel = coreHasPayload
+        ? 'Core ${controller.coreAffinitySignatureLabel}  •  ${controller.coreProjectileArsenalLabel}  •  ${controller.corePayloadArsenalLabel}  •  ${controller.bossSpawnStatusLabel}'
+        : 'Core ${controller.coreAffinitySignatureLabel}  •  ${controller.coreProjectileArsenalLabel}  •  ${controller.bossSpawnStatusLabel}';
     final coreStats = [
       [
         _InlineStatEntry(
@@ -1715,10 +1723,7 @@ class _CoreStatsPanel extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 12),
-        Text(
-          'Core ${controller.coreAffinitySignatureLabel}  •  ${controller.coreProjectileArsenalLabel}  •  ${controller.corePayloadArsenalLabel}  •  ${controller.bossSpawnStatusLabel}',
-          style: textTheme.bodyMedium,
-        ),
+        Text(coreTraitLabel, style: textTheme.bodyMedium),
       ],
     );
   }
@@ -1813,6 +1818,7 @@ class _TowerFabricationPanel extends StatelessWidget {
     final tint = tower.config?.affinity.color ?? LightcorePalette.solar;
     final progress = tower.fabricationProgress.clamp(0.0, 1.0).toDouble();
     final refund = (tower.investedLumens * 0.7).round();
+    final payloadType = controller.towerPayloadType(tower);
     final fabricationRows = [
       [
         _InlineStatEntry(label: 'Build', value: 'Growing'),
@@ -1826,10 +1832,11 @@ class _TowerFabricationPanel extends StatelessWidget {
           label: 'Projectile',
           value: controller.towerProjectileLabel(tower),
         ),
-        _InlineStatEntry(
-          label: 'Payload',
-          value: controller.towerPayloadLabel(tower),
-        ),
+        if (payloadType != PayloadType.none)
+          _InlineStatEntry(
+            label: 'Payload',
+            value: controller.towerPayloadLabel(tower),
+          ),
       ],
       [
         _InlineStatEntry(label: 'Hex', value: '${tower.slotIndex + 1}'),
@@ -2442,7 +2449,6 @@ class _ReadyShotPip extends StatelessWidget {
     final color = packet.criticalBoosted
         ? LightcorePalette.solar
         : packet.projectileType.affinity.color;
-    final payloadColor = packet.payloadType.affinity?.color;
     return Container(
       width: size,
       height: size,
@@ -2462,19 +2468,6 @@ class _ReadyShotPip extends StatelessWidget {
               ]
             : null,
       ),
-      child: payloadColor == null
-          ? null
-          : Align(
-              alignment: Alignment.bottomRight,
-              child: Container(
-                width: size * 0.42,
-                height: size * 0.42,
-                decoration: BoxDecoration(
-                  color: payloadColor,
-                  shape: BoxShape.circle,
-                ),
-              ),
-            ),
     );
   }
 }

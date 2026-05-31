@@ -85,6 +85,9 @@ shell, and keep climbing.
 - Tower badges use projectile color and hex-edge level progress only; payload
   tinting is kept out of the first-session visual language until payload traits
   are explicitly taught later.
+- First-session battle HUD panels hide empty payload rows and payload sub-pips,
+  keeping the early combat read focused on projectile choice, ready shots, and
+  anomaly focus.
 - Tutorial guidance appears as a compact battlefield notification with the next
   action visible; players expand it only when they want more detail.
 - Tower body taps are reserved for tower controls, upgrades, stats, and

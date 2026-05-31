@@ -388,6 +388,8 @@ void main() {
     );
     expect(find.text('Fabrication'), findsOneWidget);
     expect(find.textContaining('Fabricating Comet Mortar'), findsOneWidget);
+    expect(find.text('Payload'), findsNothing);
+    expect(find.text('No Payload'), findsNothing);
     expect(find.text('Tower Stats'), findsNothing);
     expect(find.widgetWithText(OutlinedButton, 'Stats'), findsNothing);
   });
