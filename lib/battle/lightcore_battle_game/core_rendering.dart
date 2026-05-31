@@ -471,12 +471,19 @@ extension LightcoreBattleGameCoreRendering on LightcoreBattleGame {
             );
           }
           if (projectShell) {
-            _paintBadge(
-              canvas,
-              childCenter,
-              '${slot.childBuiltCount}',
-              color: LightcorePalette.mist,
-              size: childHexRadius * 0.7,
+            final projectProgress =
+                (slot.childBuiltCount / LightcoreController.slotCount)
+                    .clamp(0, 1)
+                    .toDouble();
+            canvas.drawPath(
+              _hexPath(
+                childCenter,
+                childHexRadius * (0.22 + projectProgress * 0.48),
+              ),
+              Paint()
+                ..style = PaintingStyle.stroke
+                ..strokeWidth = 1.6
+                ..color = childColor.withValues(alpha: 0.72),
             );
           }
         }

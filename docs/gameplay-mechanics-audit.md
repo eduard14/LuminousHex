@@ -56,6 +56,9 @@ cadence, enemy strength, and reward bonuses.
 - The center core is the only direct attacker. Early play auto-generates
   `AmmoPacket` entries after the Lightcore wakes, then anomaly taps aim/focus
   fire without making the player tap the core to queue shots.
+- The active tutorial stays as a compact, tap-to-expand quest notification on
+  the battlefield. The collapsed notification names the next action while the
+  battlefield highlight and click gesture point at the target.
 - Outer towers generate `EnergyPulseState` objects through starter auto-feed or
   manager automation, but waiting packets do not orbit as field objects. Only
   brief tower-to-core handoff effects are shown so players do not chase

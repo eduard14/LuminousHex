@@ -713,13 +713,6 @@ extension LightcoreBattleGameArenaSlotRendering on LightcoreBattleGame {
             progress: projectProgress.toDouble(),
             phase: controller.elapsed,
           );
-          _paintBadge(
-            canvas,
-            center,
-            '${slot.childBuiltCount}',
-            color: LightcorePalette.mist,
-            size: 11,
-          );
         } else {
           final coreGlyph = _hexPath(center, _slotRadius * 0.21);
           canvas.drawPath(coreGlyph, Paint()..color = slotColor);

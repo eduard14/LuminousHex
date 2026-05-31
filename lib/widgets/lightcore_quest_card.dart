@@ -150,7 +150,7 @@ class _LightcoreQuestCardState extends State<LightcoreQuestCard> {
     final questId = controller.tutorialQuestId;
     final availableWidth = MediaQuery.sizeOf(context).width - 32;
     final notificationWidth = availableWidth
-        .clamp(widget.compact ? 156.0 : 176.0, widget.compact ? 214.0 : 246.0)
+        .clamp(widget.compact ? 228.0 : 252.0, widget.compact ? 286.0 : 320.0)
         .toDouble();
 
     final tracker = Tooltip(
@@ -161,38 +161,66 @@ class _LightcoreQuestCardState extends State<LightcoreQuestCard> {
         radius: 999,
         padding: EdgeInsets.symmetric(
           horizontal: widget.compact ? 10 : 12,
-          vertical: widget.compact ? 8 : 9,
+          vertical: widget.compact ? 8 : 10,
         ),
         onTap: _toggleDetails,
         child: Semantics(
           key: const ValueKey<String>('battle-quest-summary-card'),
           button: true,
-          label: 'Open guide details for $headline',
+          label: 'Open guide details for $headline. $instruction',
           child: Row(
             mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(promptIcon, size: widget.compact ? 16 : 18, color: tint),
+              Padding(
+                padding: const EdgeInsets.only(top: 1),
+                child: Icon(
+                  promptIcon,
+                  size: widget.compact ? 16 : 18,
+                  color: tint,
+                ),
+              ),
               SizedBox(width: widget.compact ? 6 : 8),
-              Flexible(
-                child: SizedBox(
-                  width: notificationWidth - (widget.compact ? 66 : 76),
-                  child: Text(
-                    questId == null ? headline : '$questId  $headline',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                      color: LightcorePalette.mist,
-                      fontWeight: FontWeight.w900,
-                      height: 1.05,
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      questId == null ? headline : '$questId  $headline',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                        color: LightcorePalette.mist,
+                        fontWeight: FontWeight.w900,
+                        height: 1.05,
+                      ),
                     ),
-                  ),
+                    const SizedBox(height: 2),
+                    Text(
+                      instruction,
+                      key: const ValueKey<String>(
+                        'battle-quest-summary-instruction',
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: LightcorePalette.mist.withValues(alpha: 0.74),
+                        fontWeight: FontWeight.w700,
+                        height: 1.12,
+                      ),
+                    ),
+                  ],
                 ),
               ),
               SizedBox(width: widget.compact ? 4 : 6),
-              Icon(
-                Icons.expand_less_rounded,
-                size: widget.compact ? 18 : 20,
-                color: LightcorePalette.mist.withValues(alpha: 0.72),
+              Padding(
+                padding: const EdgeInsets.only(top: 1),
+                child: Icon(
+                  Icons.expand_more_rounded,
+                  size: widget.compact ? 18 : 20,
+                  color: LightcorePalette.mist.withValues(alpha: 0.72),
+                ),
               ),
             ],
           ),

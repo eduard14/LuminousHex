@@ -2250,7 +2250,7 @@ void main() {
       find.text(
         'Tap the center Lightcore to wake the first shell and reveal where towers will go.',
       ),
-      findsNothing,
+      findsOneWidget,
     );
 
     await tester.tap(
@@ -2323,6 +2323,16 @@ void main() {
     expect(
       find.byKey(const ValueKey<String>('battle-quest-summary-card')),
       findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey<String>('battle-quest-summary-instruction')),
+      findsOneWidget,
+    );
+    expect(
+      find.text(
+        'Tap the center Lightcore to wake the first shell and reveal where towers will go.',
+      ),
+      findsWidgets,
     );
     expect(
       find.byKey(const ValueKey<String>('battle-quest-detail-card')),

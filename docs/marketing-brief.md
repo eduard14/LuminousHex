@@ -73,6 +73,8 @@ shell, and keep climbing.
   and focus fire.
 - The first focus-fire lesson guarantees a visible starter anomaly so the
   player can act immediately after the first relay comes online.
+- Tutorial guidance appears as a compact battlefield notification with the next
+  action visible; players expand it only when they want more detail.
 - Tower body taps are reserved for tower controls, upgrades, stats, and
   targeting tools, keeping build/stat actions distinct from anomaly aiming.
 - Waiting packets do not orbit as collectible-looking field objects; only brief
