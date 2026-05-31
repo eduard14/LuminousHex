@@ -55,84 +55,70 @@ extension _LightcoreBattleGameProjectileRendering on LightcoreBattleGame {
       }
       final color = _signatureColor(pulse.affinity, pulse.secondaryAffinity);
       final currentOffset = Offset(current.x, current.y);
-      if (pulse.progress < 0) {
-        final anchor = _pulseSourceAnchor(pulse);
-        if (anchor != null) {
-          canvas.drawCircle(
-            currentOffset,
-            _slotRadius * 0.28,
-            Paint()
-              ..style = PaintingStyle.stroke
-              ..strokeWidth = 1.5
-              ..color = LightcorePalette.mist.withValues(alpha: 0.48),
-          );
-        }
-      } else {
-        final travelProgress = pulse.progress.clamp(0.0, 1.0).toDouble();
-        final streakAlpha = (1 - travelProgress).clamp(0.0, 1.0).toDouble();
-        final inboundStart = _pulseInboundStartPosition(pulse);
-        if (inboundStart != null && travelProgress < 0.22) {
-          final clickProgress = (travelProgress / 0.22).clamp(0.0, 1.0);
-          final clickCenter = Offset(inboundStart.x, inboundStart.y);
-          canvas.drawCircle(
-            clickCenter,
-            _slotRadius * (0.34 + (clickProgress * 0.5)),
-            Paint()
-              ..style = PaintingStyle.stroke
-              ..strokeWidth = 2.4
-              ..color = LightcorePalette.mist.withValues(
-                alpha: (0.72 * (1 - clickProgress) * _battleEffectAlphaScale),
-              ),
-          );
-          canvas.drawPath(
-            _hexPath(clickCenter, _slotRadius * (0.32 + clickProgress * 0.38)),
-            Paint()
-              ..style = PaintingStyle.stroke
-              ..strokeWidth = 2.0
-              ..color = color.withValues(
-                alpha: (0.82 * (1 - clickProgress) * _battleEffectAlphaScale),
-              ),
-          );
-        }
-        _drawGlowLine(
-          canvas,
-          currentOffset,
-          Offset(_center.x, _center.y),
-          color,
-          width: math.max(2.0, _slotRadius * 0.045),
-          alpha: 0.2 * streakAlpha * _battleEffectAlphaScale,
+      final travelProgress = pulse.progress.clamp(0.0, 1.0).toDouble();
+      final streakAlpha = (1 - travelProgress).clamp(0.0, 1.0).toDouble();
+      final inboundStart = _pulseInboundStartPosition(pulse);
+      if (inboundStart != null && travelProgress < 0.22) {
+        final clickProgress = (travelProgress / 0.22).clamp(0.0, 1.0);
+        final clickCenter = Offset(inboundStart.x, inboundStart.y);
+        canvas.drawCircle(
+          clickCenter,
+          _slotRadius * (0.34 + (clickProgress * 0.5)),
+          Paint()
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 2.4
+            ..color = LightcorePalette.mist.withValues(
+              alpha: (0.72 * (1 - clickProgress) * _battleEffectAlphaScale),
+            ),
         );
-        if (travelProgress > 0.74) {
-          final burstProgress = ((travelProgress - 0.74) / 0.26)
-              .clamp(0.0, 1.0)
-              .toDouble();
-          final burstFade = (1 - burstProgress) * _battleEffectAlphaScale;
-          final burstCenter = Offset(_center.x, _center.y);
-          canvas.drawCircle(
-            burstCenter,
-            _coreRadius * (0.26 + (burstProgress * 0.58)),
-            Paint()
-              ..shader =
-                  RadialGradient(
-                    colors: [
-                      color.withValues(alpha: 0.2 * burstFade),
-                      Colors.transparent,
-                    ],
-                  ).createShader(
-                    Rect.fromCircle(
-                      center: burstCenter,
-                      radius: _coreRadius * 0.9,
-                    ),
+        canvas.drawPath(
+          _hexPath(clickCenter, _slotRadius * (0.32 + clickProgress * 0.38)),
+          Paint()
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 2.0
+            ..color = color.withValues(
+              alpha: (0.82 * (1 - clickProgress) * _battleEffectAlphaScale),
+            ),
+        );
+      }
+      _drawGlowLine(
+        canvas,
+        currentOffset,
+        Offset(_center.x, _center.y),
+        color,
+        width: math.max(2.0, _slotRadius * 0.045),
+        alpha: 0.2 * streakAlpha * _battleEffectAlphaScale,
+      );
+      if (travelProgress > 0.74) {
+        final burstProgress = ((travelProgress - 0.74) / 0.26)
+            .clamp(0.0, 1.0)
+            .toDouble();
+        final burstFade = (1 - burstProgress) * _battleEffectAlphaScale;
+        final burstCenter = Offset(_center.x, _center.y);
+        canvas.drawCircle(
+          burstCenter,
+          _coreRadius * (0.26 + (burstProgress * 0.58)),
+          Paint()
+            ..shader =
+                RadialGradient(
+                  colors: [
+                    color.withValues(alpha: 0.2 * burstFade),
+                    Colors.transparent,
+                  ],
+                ).createShader(
+                  Rect.fromCircle(
+                    center: burstCenter,
+                    radius: _coreRadius * 0.9,
                   ),
-          );
-          canvas.drawPath(
-            _hexPath(burstCenter, _coreRadius * (0.34 + burstProgress * 0.44)),
-            Paint()
-              ..style = PaintingStyle.stroke
-              ..strokeWidth = 2.2
-              ..color = color.withValues(alpha: 0.72 * burstFade),
-          );
-        }
+                ),
+        );
+        canvas.drawPath(
+          _hexPath(burstCenter, _coreRadius * (0.34 + burstProgress * 0.44)),
+          Paint()
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 2.2
+            ..color = color.withValues(alpha: 0.72 * burstFade),
+        );
       }
       final shimmer =
           0.5 +

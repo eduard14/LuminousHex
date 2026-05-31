@@ -70,8 +70,8 @@ shell, and keep climbing.
   wakes, then the player taps anomalies to aim and focus fire.
 - Tower body taps are reserved for tower controls, upgrades, stats, and
   targeting tools, keeping build/stat actions distinct from anomaly aiming.
-- Floating packet visuals are feedback for automated flow, not separate
-  player pickup targets.
+- Waiting packets do not orbit as collectible-looking field objects; only brief
+  handoff effects appear when a relay feeds the core.
 - Shell visibility is an explicit HUD toggle, keeping battlefield taps from
   folding the active battlefield or opening tower placement.
 - Manager automation upgrades the auto-generated queue into hands-off
@@ -216,7 +216,7 @@ video hooks.
 
 | Pillar | Post Ideas |
 | --- | --- |
-| Gameplay hook | Short clips of packets auto-feeding the Lightcore, tower controls opening cleanly, and anomaly taps focusing fire. |
+| Gameplay hook | Short clips of tower charge feeding the Lightcore, tower controls opening cleanly, and anomaly taps focusing fire. |
 | Progression | Before/after shell promotion, Root to Prism, Prism to Nexus, inheritance previews. |
 | Buildcraft | Color-family comparisons, pure builds versus blended projectile/payload builds. |
 | Anomaly pressure | Knowledge Card pulls, Apex Anomaly reveals, Focus Target saves, lane disruption moments. |

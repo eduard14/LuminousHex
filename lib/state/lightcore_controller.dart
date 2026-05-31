@@ -424,7 +424,7 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
     trigger: 'First child shell has a charged tower',
     primaryClickTarget: 'Battlefield > charged child-shell tower',
     coachCopy:
-        'Tap the highlighted child-shell tower to inspect its controls. Do not chase floating packet visuals.',
+        'Tap the highlighted child-shell tower to inspect its controls. Packet flow stays automatic.',
     completionCondition: 'Inspect one charged child-shell tower',
     reward: 'Small Lumen grant',
     failureHelpState:

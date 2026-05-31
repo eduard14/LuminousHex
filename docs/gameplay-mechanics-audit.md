@@ -58,8 +58,9 @@ cadence, enemy strength, and reward bonuses.
   `AmmoPacket` entries after the Lightcore wakes, then anomaly taps aim/focus
   fire without making the player tap the core to queue shots.
 - Outer towers generate `EnergyPulseState` objects through starter auto-feed or
-  manager automation. Floating pulse visuals are feedback, not player tap/drag
-  targets.
+  manager automation, but waiting packets do not orbit as field objects. Only
+  brief tower-to-core handoff effects are shown so players do not chase
+  non-interactive packet visuals.
 - Tapping an anomaly focuses fire immediately. If the queue is still charging,
   the focused target receives the next available queued packet before manager
   auto-fire is unlocked.

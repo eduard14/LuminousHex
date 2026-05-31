@@ -52,8 +52,6 @@ class LightcoreBattleGame extends FlameGame with ScaleDetector {
   static const double _enemyHitFaceDuration = 0.28;
   static const double _enemySpawnRevealDuration = 5.0;
   static const double _coreDamageShakeDuration = 0.34;
-  static const double _payloadMaxOrbitCount = 4.0;
-  static const double _payloadOrbitDurationSeconds = 8.0;
   static const double shellPromotionStatsDelay = 3.35;
   static const double _shellPromotionCollapseDuration = 1.15;
   static const double _shellPromotionWhiteoutDuration = 0.72;
@@ -353,40 +351,9 @@ class LightcoreBattleGame extends FlameGame with ScaleDetector {
       return null;
     }
     if (pulse.progress < 0) {
-      return _pulseOrbitPosition(pulse, controller.elapsed);
-    }
-    return _pulseInboundPosition(pulse);
-  }
-
-  Vector2? _pulseOrbitPosition(EnergyPulseState pulse, double elapsed) {
-    final anchor = _pulseSourceAnchor(pulse);
-    if (anchor == null) {
       return null;
     }
-    final seed = pulse.id.hashCode.abs();
-    final rotation = ((seed % 360) * math.pi / 180);
-    final orbitProgress = _pulseOrbitProgress(pulse, elapsed);
-    final theta = (orbitProgress * math.pi * 2) + ((seed % 628) / 100);
-    final wide = pulse.sourceSlotIndex == null
-        ? _coreRadius * 2.05
-        : _slotRadius * 2.28;
-    final tall = pulse.sourceSlotIndex == null
-        ? _coreRadius * 1.08
-        : _slotRadius * 1.22;
-    final localX = math.sin(theta) * wide;
-    final localY = math.sin(theta * 2) * tall;
-    return _rotatedAround(anchor, localX, localY, rotation);
-  }
-
-  double _pulseOrbitProgress(EnergyPulseState pulse, double elapsed) {
-    if (pulse.progress < 0) {
-      return ((pulse.progress + _payloadOrbitDurationSeconds) /
-                  _payloadOrbitDurationSeconds)
-              .clamp(0.0, 1.0)
-              .toDouble() *
-          _payloadMaxOrbitCount;
-    }
-    return _payloadMaxOrbitCount + (elapsed * 0.12);
+    return _pulseInboundPosition(pulse);
   }
 
   Vector2? _pulseInboundPosition(EnergyPulseState pulse) {
@@ -420,23 +387,9 @@ class LightcoreBattleGame extends FlameGame with ScaleDetector {
     }
     final startedAt = pulse.inboundStartedAtElapsed;
     if (startedAt != null) {
-      return _pulseOrbitPosition(pulse, startedAt);
+      return _pulseSourceAnchor(pulse);
     }
-    return _pulseOrbitPosition(pulse, controller.elapsed);
-  }
-
-  Vector2 _rotatedAround(
-    Vector2 anchor,
-    double localX,
-    double localY,
-    double rotation,
-  ) {
-    final cosA = math.cos(rotation);
-    final sinA = math.sin(rotation);
-    return Vector2(
-      anchor.x + (localX * cosA) - (localY * sinA),
-      anchor.y + (localX * sinA) + (localY * cosA),
-    );
+    return _pulseSourceAnchor(pulse);
   }
 
   Vector2? _pulseSourceAnchor(EnergyPulseState pulse) {

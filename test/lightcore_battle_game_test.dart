@@ -109,46 +109,48 @@ void main() {
     expect(game.debugCoreQueueOrbitProjectileTypes, isEmpty);
   });
 
-  test('floating packet visuals are not tap targets', () {
-    final controller = LightcoreController();
-    addTearDown(controller.dispose);
-    controller.debugDisableTutorial();
-    var backgroundTaps = 0;
-    var slotTaps = 0;
-    final game = LightcoreBattleGame(
-      controller: controller,
-      onCenterTap: () => fail('floating packet visual should not tap core'),
-      onSlotTap: (_) => slotTaps += 1,
-      onBackgroundTap: () => backgroundTaps += 1,
-    );
-    game.onGameResize(Vector2(900, 1100));
-    controller.toggleShellVisibility();
-    controller.lumens = 1000;
-    controller.kills = LightcoreController.unlockKillsForOuterSlot(0);
-    expect(controller.buildTowerAt(0, TowerLibrary.redPrism), isTrue);
-    final remainingFabrication =
-        controller.slots[0].fabricationRemainingSeconds;
-    if (remainingFabrication > 0) {
-      controller.tick(remainingFabrication + 0.1);
-    }
-    expect(controller.debugSetTowerCharge(0, charge: 1.2), isTrue);
-    expect(
-      controller.activateTowerSlot(0, showBanner: false, selectForStats: false),
-      isTrue,
-    );
+  test(
+    'waiting packet visuals stay hidden instead of becoming tap targets',
+    () {
+      final controller = LightcoreController();
+      addTearDown(controller.dispose);
+      controller.debugDisableTutorial();
+      var backgroundTaps = 0;
+      var slotTaps = 0;
+      final game = LightcoreBattleGame(
+        controller: controller,
+        onCenterTap: () => fail('floating packet visual should not tap core'),
+        onSlotTap: (_) => slotTaps += 1,
+        onBackgroundTap: () => backgroundTaps += 1,
+      );
+      game.onGameResize(Vector2(900, 1100));
+      controller.toggleShellVisibility();
+      controller.lumens = 1000;
+      controller.kills = LightcoreController.unlockKillsForOuterSlot(0);
+      expect(controller.buildTowerAt(0, TowerLibrary.redPrism), isTrue);
+      final remainingFabrication =
+          controller.slots[0].fabricationRemainingSeconds;
+      if (remainingFabrication > 0) {
+        controller.tick(remainingFabrication + 0.1);
+      }
+      expect(controller.debugSetTowerCharge(0, charge: 1.2), isTrue);
+      expect(
+        controller.activateTowerSlot(
+          0,
+          showBanner: false,
+          selectForStats: false,
+        ),
+        isTrue,
+      );
 
-    final pulse = controller.pulses.singleWhere(
-      (candidate) => candidate.sourceSlotIndex == 0,
-    );
-    final position = game.debugPulsePosition(pulse.id);
-    expect(position, isNotNull);
-    final progressBeforeTap = pulse.progress;
-
-    game.handleCanvasTap(Offset(position!.x, position.y));
-
-    expect(backgroundTaps + slotTaps, greaterThanOrEqualTo(0));
-    expect(controller.pulses.single.progress, progressBeforeTap);
-  });
+      final pulse = controller.pulses.singleWhere(
+        (candidate) => candidate.sourceSlotIndex == 0,
+      );
+      expect(game.debugPulsePosition(pulse.id), isNull);
+      expect(backgroundTaps, 0);
+      expect(slotTaps, 0);
+    },
+  );
 
   test('tower hit areas take priority over payload and aim taps', () {
     final controller = LightcoreController();
