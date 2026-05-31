@@ -217,7 +217,6 @@ extension LightcoreControllerBattleResetActions on LightcoreController {
     _tutorialFriendsOpened = false;
     _tutorialMenteesOpened = false;
     _tutorialMentorsOpened = false;
-    _tutorialCoreShotTapLearned = false;
     _tutorialManualAimFireLearned = false;
     _tutorialSecondShellShotTapLearned = false;
     _tutorialOverdriveLearned = false;

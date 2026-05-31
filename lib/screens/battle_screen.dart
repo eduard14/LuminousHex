@@ -1051,7 +1051,6 @@ class _BattleScreenState extends State<BattleScreen> {
       return false;
     }
     return switch (controller.tutorialStep) {
-      LightcoreTutorialStep.tapBattleCore ||
       LightcoreTutorialStep.tapFirstTower ||
       LightcoreTutorialStep.tapSecondShellTower ||
       LightcoreTutorialStep.pullFirstWhiteEnemy ||
@@ -1102,10 +1101,6 @@ class _BattleScreenState extends State<BattleScreen> {
       case LightcoreTutorialStep.upgradeFirstTowerToLevel4:
         if (selectedSlotIndex == 0 && selected?.isBuilt == true) {
           return 'Use the Tower Level button in the open Hex 1 controls one more time before expanding.';
-        }
-      case LightcoreTutorialStep.tapBattleCore:
-        if (_tutorialOpenPanelBlocksCurrentStep(controller)) {
-          return 'Close the open battle controls and watch the Lightcore auto-charge its next shot.';
         }
       case LightcoreTutorialStep.tapFirstTower:
         if (_tutorialOpenPanelBlocksCurrentStep(controller)) {

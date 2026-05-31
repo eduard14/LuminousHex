@@ -642,7 +642,6 @@ extension LightcoreControllerStateAccessors on LightcoreController {
       _tutorialStep == LightcoreTutorialStep.unfoldShell ||
       _tutorialStep == LightcoreTutorialStep.selectFirstHex ||
       _tutorialStep == LightcoreTutorialStep.buildFirstRedTower ||
-      _tutorialStep == LightcoreTutorialStep.tapBattleCore ||
       _tutorialStep == LightcoreTutorialStep.tapFirstTower ||
       _tutorialStep == LightcoreTutorialStep.tapSecondShellTower ||
       _tutorialStep == LightcoreTutorialStep.upgradeFirstTowerToLevel3 ||
@@ -664,11 +663,9 @@ extension LightcoreControllerStateAccessors on LightcoreController {
       !_layer2.unlocked;
 
   bool get tutorialHighlightsBattleCore =>
-      _tutorialStep == LightcoreTutorialStep.unfoldShell ||
-      _tutorialStep == LightcoreTutorialStep.tapBattleCore;
+      _tutorialStep == LightcoreTutorialStep.unfoldShell;
 
-  String? get tutorialBattleCoreGuideLabel =>
-      _tutorialStep == LightcoreTutorialStep.tapBattleCore ? 'AUTO' : null;
+  String? get tutorialBattleCoreGuideLabel => null;
 
   bool get tutorialHighlightsCoreStats =>
       _tutorialStep == LightcoreTutorialStep.readEffectiveGain ||

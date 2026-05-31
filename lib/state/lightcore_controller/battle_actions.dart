@@ -58,7 +58,6 @@ extension LightcoreControllerBattleActions on LightcoreController {
         maxDamageMultiplier: coreMaxDamageMultiplier,
       ),
     );
-    _tutorialCoreShotTapLearned = true;
     _core = _core.copyWith(
       fireSequence: sequence + 1,
       packetCooldownRemaining: activeLayer.tier == 1

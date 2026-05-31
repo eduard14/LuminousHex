@@ -64,7 +64,6 @@ enum LightcoreTutorialStep {
   waitForFirstHex,
   selectFirstHex,
   buildFirstRedTower,
-  tapBattleCore,
   tapFirstTower,
   tapSecondShellTower,
   upgradeFirstTowerToLevel3,
@@ -367,20 +366,6 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
     failureHelpState:
         'Open the first hex controls, then choose one of the highlighted starter build buttons.',
     analyticsEvent: 'tutorial_fabricate_first_light',
-  ),
-  LightcoreTutorialStep.tapBattleCore: LightcoreTutorialQuestDefinition(
-    id: 'TUT-006',
-    title: 'Auto-Charge Ready',
-    teachGoal:
-        'Shots charge automatically after the core wakes. The player learns this through the focus-fire action instead of waiting.',
-    trigger: 'Legacy save is still parked on the old auto-charge watch step',
-    primaryClickTarget: 'Battlefield > anomaly target',
-    coachCopy: 'Shots are charging. Tap an anomaly to focus the next shot.',
-    completionCondition: 'Focus one anomaly',
-    reward: 'Small Lumen grant',
-    failureHelpState:
-        'Tap a visible anomaly. The next shot will fire when ready.',
-    analyticsEvent: 'tutorial_core_auto_generate',
   ),
   LightcoreTutorialStep.tapFirstTower: LightcoreTutorialQuestDefinition(
     id: 'TUT-007',
@@ -1719,7 +1704,6 @@ class LightcoreController extends ChangeNotifier {
   bool _tutorialFriendsOpened = false;
   bool _tutorialMenteesOpened = false;
   bool _tutorialMentorsOpened = false;
-  bool _tutorialCoreShotTapLearned = false;
   bool _tutorialManualAimFireLearned = false;
   bool _tutorialSecondShellShotTapLearned = false;
   bool _tutorialOverdriveLearned = false;

@@ -290,9 +290,6 @@ extension LightcoreControllerSaveRestorePayload on LightcoreController {
     final hasRestoredStabilityPanelOpened = tutorialData.containsKey(
       'stabilityPanelOpened',
     );
-    final hasRestoredCoreShotTapLearned = tutorialData.containsKey(
-      'coreShotTapLearned',
-    );
     final hasRestoredAutoQueuedPulses = tutorialData.containsKey(
       'autoQueuedPulses',
     );
@@ -329,10 +326,6 @@ extension LightcoreControllerSaveRestorePayload on LightcoreController {
     _tutorialFriendsOpened = _boolValue(tutorialData['friendsOpened']);
     _tutorialMenteesOpened = _boolValue(tutorialData['menteesOpened']);
     _tutorialMentorsOpened = _boolValue(tutorialData['mentorsOpened']);
-    _tutorialCoreShotTapLearned = _boolValue(
-      tutorialData['coreShotTapLearned'],
-      fallback: _tutorialEarlyQuestChainCompleted,
-    );
     _tutorialManualAimFireLearned = _boolValue(
       tutorialData['manualAimFireLearned'],
       fallback: _tutorialEarlyQuestChainCompleted,
@@ -378,7 +371,6 @@ extension LightcoreControllerSaveRestorePayload on LightcoreController {
     _normalizeEquippedProfileMedal();
     _migrateRestoredTutorialState(
       hasStabilityPanelOpened: hasRestoredStabilityPanelOpened,
-      hasCoreShotTapLearned: hasRestoredCoreShotTapLearned,
       hasAutoQueuedPulses: hasRestoredAutoQueuedPulses,
     );
     _armStarterBossForOpening();
@@ -520,7 +512,6 @@ extension LightcoreControllerSaveRestorePayload on LightcoreController {
 
   void _migrateRestoredTutorialState({
     required bool hasStabilityPanelOpened,
-    required bool hasCoreShotTapLearned,
     required bool hasAutoQueuedPulses,
   }) {
     final hasDurableEarlyProgress =
@@ -543,10 +534,6 @@ extension LightcoreControllerSaveRestorePayload on LightcoreController {
     }
     if (!hasAutoQueuedPulses && hasDurableEarlyProgress) {
       _tutorialAutoQueuedPulses = max(_tutorialAutoQueuedPulses, 5);
-    }
-    if (!hasCoreShotTapLearned &&
-        (hasDurableEarlyProgress || _core.fireSequence > 0)) {
-      _tutorialCoreShotTapLearned = true;
     }
     if (hasDurableEarlyProgress) {
       _tutorialManualAimFireLearned = true;

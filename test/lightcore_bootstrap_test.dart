@@ -418,7 +418,6 @@ void main() {
     firstSlot['fireSequence'] = 3;
     tutorial['earlyQuestChainCompleted'] = false;
     tutorial.remove('stabilityPanelOpened');
-    tutorial.remove('coreShotTapLearned');
     tutorial.remove('autoQueuedPulses');
     tutorial.remove('rewardedSteps');
 
@@ -429,7 +428,6 @@ void main() {
         restored.buildCloudSavePayload()['tutorial'] as Map<String, dynamic>;
     expect(restoredTutorial['earlyQuestChainCompleted'], isTrue);
     expect(restoredTutorial['stabilityPanelOpened'], isTrue);
-    expect(restoredTutorial['coreShotTapLearned'], isTrue);
     expect(restoredTutorial['autoQueuedPulses'], greaterThanOrEqualTo(5));
     expect(restored.managerAssignmentUnlocked, isFalse);
     expect(restored.tutorialStep, LightcoreTutorialStep.openStore);

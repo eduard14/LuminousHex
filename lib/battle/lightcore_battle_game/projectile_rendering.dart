@@ -48,129 +48,94 @@ extension _LightcoreBattleGameProjectileRendering on LightcoreBattleGame {
 
   void _renderPulses(Canvas canvas) {
     for (final pulse in controller.pulses) {
-      final start = _pulseStartPosition(pulse);
-      final current = _pulsePosition(pulse);
-      if (start == null || current == null) {
+      final start = _pulseSourceAnchor(pulse);
+      if (start == null) {
         continue;
       }
       final color = _signatureColor(pulse.affinity, pulse.secondaryAffinity);
-      final currentOffset = Offset(current.x, current.y);
       final travelProgress = pulse.progress.clamp(0.0, 1.0).toDouble();
-      final streakAlpha = (1 - travelProgress).clamp(0.0, 1.0).toDouble();
-      final inboundStart = _pulseInboundStartPosition(pulse);
-      if (inboundStart != null && travelProgress < 0.22) {
-        final clickProgress = (travelProgress / 0.22).clamp(0.0, 1.0);
-        final clickCenter = Offset(inboundStart.x, inboundStart.y);
-        canvas.drawCircle(
-          clickCenter,
-          _slotRadius * (0.34 + (clickProgress * 0.5)),
-          Paint()
-            ..style = PaintingStyle.stroke
-            ..strokeWidth = 2.4
-            ..color = LightcorePalette.mist.withValues(
-              alpha: (0.72 * (1 - clickProgress) * _battleEffectAlphaScale),
-            ),
+      final sourceOffset = Offset(start.x, start.y);
+      final coreOffset = Offset(_center.x, _center.y);
+      final chargeAlpha =
+          (math.sin(travelProgress * math.pi) * _battleEffectAlphaScale)
+              .clamp(0.0, 1.0)
+              .toDouble();
+
+      if (pulse.sourceSlotIndex != null) {
+        _drawGlowLine(
+          canvas,
+          sourceOffset,
+          coreOffset,
+          color,
+          width: math.max(1.5, _slotRadius * 0.026),
+          alpha: 0.12 * chargeAlpha,
         );
-        canvas.drawPath(
-          _hexPath(clickCenter, _slotRadius * (0.32 + clickProgress * 0.38)),
-          Paint()
-            ..style = PaintingStyle.stroke
-            ..strokeWidth = 2.0
-            ..color = color.withValues(
-              alpha: (0.82 * (1 - clickProgress) * _battleEffectAlphaScale),
-            ),
-        );
+        final sourceSparkProgress = (travelProgress / 0.28)
+            .clamp(0.0, 1.0)
+            .toDouble();
+        if (sourceSparkProgress < 1) {
+          final sourceFade =
+              (1 - sourceSparkProgress) * _battleEffectAlphaScale;
+          canvas.drawCircle(
+            sourceOffset,
+            _slotRadius * (0.13 + (sourceSparkProgress * 0.24)),
+            Paint()
+              ..style = PaintingStyle.stroke
+              ..strokeWidth = 1.4
+              ..color = color.withValues(alpha: 0.34 * sourceFade),
+          );
+        }
       }
-      _drawGlowLine(
-        canvas,
-        currentOffset,
-        Offset(_center.x, _center.y),
-        color,
-        width: math.max(2.0, _slotRadius * 0.045),
-        alpha: 0.2 * streakAlpha * _battleEffectAlphaScale,
-      );
+
       if (travelProgress > 0.74) {
         final burstProgress = ((travelProgress - 0.74) / 0.26)
             .clamp(0.0, 1.0)
             .toDouble();
         final burstFade = (1 - burstProgress) * _battleEffectAlphaScale;
-        final burstCenter = Offset(_center.x, _center.y);
         canvas.drawCircle(
-          burstCenter,
-          _coreRadius * (0.26 + (burstProgress * 0.58)),
+          coreOffset,
+          _coreRadius * (0.16 + (burstProgress * 0.28)),
           Paint()
             ..shader =
                 RadialGradient(
                   colors: [
-                    color.withValues(alpha: 0.2 * burstFade),
+                    color.withValues(alpha: 0.12 * burstFade),
                     Colors.transparent,
                   ],
                 ).createShader(
                   Rect.fromCircle(
-                    center: burstCenter,
-                    radius: _coreRadius * 0.9,
+                    center: coreOffset,
+                    radius: _coreRadius * 0.48,
                   ),
                 ),
         );
         canvas.drawPath(
-          _hexPath(burstCenter, _coreRadius * (0.34 + burstProgress * 0.44)),
+          _hexPath(coreOffset, _coreRadius * (0.26 + burstProgress * 0.22)),
           Paint()
             ..style = PaintingStyle.stroke
-            ..strokeWidth = 2.2
-            ..color = color.withValues(alpha: 0.72 * burstFade),
+            ..strokeWidth = 1.5
+            ..color = color.withValues(alpha: 0.36 * burstFade),
         );
       }
-      final shimmer =
-          0.5 +
-          (math.sin((controller.elapsed * 3.2) + pulse.id.hashCode) * 0.5);
-      canvas.drawCircle(
-        currentOffset,
-        _slotRadius * (pulse.criticalBoosted ? 0.34 : 0.28),
-        Paint()
-          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 14)
-          ..color = (pulse.criticalBoosted ? LightcorePalette.solar : color)
-              .withValues(alpha: 0.52 + (shimmer * 0.18)),
-      );
-      canvas.drawCircle(
-        currentOffset,
-        _slotRadius * (0.18 + (shimmer * 0.035)),
-        Paint()
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 1.8
-          ..color = LightcorePalette.mist.withValues(alpha: 0.5),
-      );
-      canvas.drawCircle(
-        currentOffset,
-        _slotRadius * 0.16,
-        Paint()
-          ..shader =
-              RadialGradient(
-                colors: [
-                  LightcorePalette.mist.withValues(alpha: 0.95),
-                  color.withValues(alpha: 0.94),
-                  color.withValues(alpha: 0.46),
-                ],
-              ).createShader(
-                Rect.fromCircle(
-                  center: currentOffset,
-                  radius: _slotRadius * 0.2,
-                ),
-              ),
-      );
       if (pulse.criticalBoosted) {
         canvas.drawPath(
-          _hexPath(currentOffset, _slotRadius * 0.32),
+          _hexPath(coreOffset, _coreRadius * (0.34 + (0.08 * chargeAlpha))),
           Paint()
             ..style = PaintingStyle.stroke
-            ..strokeWidth = 2.4
-            ..color = LightcorePalette.solar.withValues(alpha: 0.92),
+            ..strokeWidth = 1.7
+            ..color = LightcorePalette.solar.withValues(
+              alpha: 0.36 * chargeAlpha,
+            ),
         );
       }
       if (pulse.secondaryAffinity != null) {
         canvas.drawCircle(
-          currentOffset.translate(_slotRadius * 0.08, -_slotRadius * 0.08),
-          _slotRadius * 0.07,
-          Paint()..color = pulse.secondaryAffinity!.color,
+          coreOffset.translate(_coreRadius * 0.18, -_coreRadius * 0.18),
+          _coreRadius * 0.035,
+          Paint()
+            ..color = pulse.secondaryAffinity!.color.withValues(
+              alpha: 0.42 * chargeAlpha,
+            ),
         );
       }
     }

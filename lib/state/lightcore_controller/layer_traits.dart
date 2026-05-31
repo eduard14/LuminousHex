@@ -226,7 +226,6 @@ extension LightcoreControllerLayerTraits on LightcoreController {
       LightcoreTutorialStep.buildFirstRedTower =>
         _isOpeningStarterTower(firstTower?.config) &&
             firstTower?.isFabricating == false,
-      LightcoreTutorialStep.tapBattleCore => _tutorialCoreShotTapLearned,
       LightcoreTutorialStep.tapFirstTower => _tutorialManualAimFireLearned,
       LightcoreTutorialStep.tapSecondShellTower =>
         _tutorialSecondShellShotTapLearned || _ammoQueue.isNotEmpty,
@@ -546,7 +545,6 @@ extension LightcoreControllerLayerTraits on LightcoreController {
       LightcoreTutorialStep.waitForFirstHex => 12,
       LightcoreTutorialStep.selectFirstHex => 0,
       LightcoreTutorialStep.buildFirstRedTower => 0,
-      LightcoreTutorialStep.tapBattleCore => 36,
       LightcoreTutorialStep.tapFirstTower => 48,
       LightcoreTutorialStep.tapSecondShellTower => 42,
       LightcoreTutorialStep.upgradeFirstTowerToLevel3 => 48,
@@ -627,8 +625,6 @@ extension LightcoreControllerLayerTraits on LightcoreController {
       'Core online. The shell can now open lanes and start earning.',
     LightcoreTutorialStep.buildFirstRedTower =>
       'First tower online. It will charge shots and support focus fire.',
-    LightcoreTutorialStep.tapBattleCore =>
-      'Auto-charge verified. Shots ready without repeated core taps.',
     LightcoreTutorialStep.tapFirstTower =>
       'Focus fire learned. Managers later take over firing when you want automation.',
     LightcoreTutorialStep.upgradeFirstTowerToLevel3 =>
@@ -763,7 +759,6 @@ extension LightcoreControllerLayerTraits on LightcoreController {
       LightcoreTutorialStep.waitForFirstHex ||
       LightcoreTutorialStep.selectFirstHex ||
       LightcoreTutorialStep.buildFirstRedTower ||
-      LightcoreTutorialStep.tapBattleCore ||
       LightcoreTutorialStep.tapFirstTower ||
       LightcoreTutorialStep.tapSecondShellTower ||
       LightcoreTutorialStep.upgradeFirstTowerToLevel3 ||
@@ -1422,7 +1417,6 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         LightcoreTutorialStep.waitForFirstHex => 'Hex 1 Ready',
         LightcoreTutorialStep.selectFirstHex => 'Select Hex 1',
         LightcoreTutorialStep.buildFirstRedTower => 'Choose First Tower',
-        LightcoreTutorialStep.tapBattleCore => 'Auto-Charge Ready',
         LightcoreTutorialStep.tapFirstTower => 'Focus Fire',
         LightcoreTutorialStep.tapSecondShellTower => 'Fire Child Tower',
         LightcoreTutorialStep.upgradeFirstTowerToLevel3 =>
@@ -1469,8 +1463,6 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         LightcoreTutorialStep.selectFirstHex => 'Click Hex 1.',
         LightcoreTutorialStep.buildFirstRedTower =>
           'Click Hex 1 and choose Comet Mortar or Rayline Spire.',
-        LightcoreTutorialStep.tapBattleCore =>
-          'Tap a visible anomaly. Auto-charge will supply the next shot.',
         LightcoreTutorialStep.tapFirstTower =>
           'Tap a visible anomaly to focus fire. Tower taps open tower controls.',
         LightcoreTutorialStep.tapSecondShellTower =>
@@ -1548,8 +1540,6 @@ extension LightcoreControllerLayerTraits on LightcoreController {
           'Command opens the shell one lane at a time so flow stays stable while the relay network comes online.',
         LightcoreTutorialStep.buildFirstRedTower =>
           'Tower projectile families matter. Comet Mortar opens with area pressure, while Rayline Spire opens with steady single-target pressure.',
-        LightcoreTutorialStep.tapBattleCore =>
-          'The Lightcore auto-charges shots after the shell wakes, so the player can focus on choosing targets.',
         LightcoreTutorialStep.tapFirstTower =>
           'Enemy focus teaches target choice before managers unlock auto-fire. Tower clicks remain tower controls.',
         LightcoreTutorialStep.tapSecondShellTower =>
@@ -1627,8 +1617,6 @@ extension LightcoreControllerLayerTraits on LightcoreController {
             'Hex 1 is the safest breach point, so command uses it as the anchor lane for the opening defense grid.',
           LightcoreTutorialStep.buildFirstRedTower =>
             'Lumo wants the first prism online before the shell fans wider, so the relay net has a stable firing spine.',
-          LightcoreTutorialStep.tapBattleCore =>
-            'A hostile signature crosses the core lens while auto-charge readies the next shot.',
           LightcoreTutorialStep.tapFirstTower =>
             'The shot is loaded. Aim at a visible anomaly; tap towers only when you want tower controls.',
           LightcoreTutorialStep.tapSecondShellTower =>

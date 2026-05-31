@@ -1646,7 +1646,6 @@ extension LightcoreControllerProgressionLayers on LightcoreController {
     _tutorialFriendsOpened = true;
     _tutorialMenteesOpened = true;
     _tutorialMentorsOpened = true;
-    _tutorialCoreShotTapLearned = true;
     _tutorialManualAimFireLearned = true;
     _tutorialSecondShellShotTapLearned = true;
     _tutorialOverdriveLearned = true;
