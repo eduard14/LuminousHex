@@ -82,6 +82,9 @@ shell, and keep climbing.
   has earned instead of a low-threat warning or menu hunt.
 - Active challenge HUD now shows the Lumen reward preview beside the wave
   timer so the first pressure run has a visible payoff while it is underway.
+- Completing Challenge Lv 1 satisfies the opening Output Efficiency lesson,
+  keeping the player in the fight-and-upgrade loop instead of forcing a stats
+  panel detour.
 - Tower badges use projectile color and hex-edge level progress only; payload
   tinting is kept out of the first-session visual language until payload traits
   are explicitly taught later.

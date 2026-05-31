@@ -275,10 +275,8 @@ void main() {
       controller.completeThreatRegionChallenge(endingStabilityPercent: 100),
       isTrue,
     );
-    expect(controller.tutorialStep, LightcoreTutorialStep.readEffectiveGain);
 
     controller.lumens = controller.upgradeCost(controller.slots[0]);
-    controller.markTutorialStabilityPanelOpened();
     expect(
       controller.tutorialStep,
       LightcoreTutorialStep.upgradeFirstTowerToLevel4,

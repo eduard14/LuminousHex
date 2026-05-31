@@ -131,7 +131,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
     }
     return _tutorialManualAimFireLearned &&
         tower.level >= 3 &&
-        _tutorialStabilityPanelOpened &&
+        (_tutorialStabilityPanelOpened || _firstThreatChallengeCompleted) &&
         (totalRadianceStatPointsSpent > 0 ||
             _core.rangeUpgradeLevel > 0 ||
             !hasUnspentRadianceStatPoints);
@@ -319,7 +319,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
     if (_firstThreatChallengeActive) {
       return LightcoreTutorialStep.none;
     }
-    if (!_tutorialStabilityPanelOpened) {
+    if (!_tutorialStabilityPanelOpened && !_firstThreatChallengeCompleted) {
       return LightcoreTutorialStep.readEffectiveGain;
     }
     final nextFirstTowerUpgradeCost = upgradeCost(firstTower);
@@ -1474,7 +1474,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         LightcoreTutorialStep.pullFirstWhiteEnemy =>
           'Click Map and run 1 threat scan.',
         LightcoreTutorialStep.readEffectiveGain =>
-          'Tap Output Efficiency to inspect Effective Gain.',
+          'Tap Output Efficiency when you want to inspect Effective Gain.',
         LightcoreTutorialStep.managerAutoAim =>
           'Watch your manager fire 5 ready shots.',
         LightcoreTutorialStep.upgradeFirstTowerToLevel4 =>

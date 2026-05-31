@@ -443,17 +443,16 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
   ),
   LightcoreTutorialStep.readEffectiveGain: LightcoreTutorialQuestDefinition(
     id: 'TUT-011',
-    title: 'Read Flow and Gain',
+    title: 'Check Flow',
     teachGoal:
         'Output Efficiency is the real farming limiter. Bigger threats only help when your shell stays stable enough to cash them in.',
     trigger: 'After first research scan',
     primaryClickTarget: 'Left stat stack > Output Efficiency %',
     coachCopy:
-        'Open Output Efficiency to see the income formula: Base Gain x Threat Reward x Output Efficiency.',
+        'Open Output Efficiency when you want the income formula: Base Gain x Threat Reward x Output Efficiency.',
     completionCondition: 'Open stability panel',
     reward: 'Small Lumen boost',
-    failureHelpState:
-        'Pulse the Output Efficiency stat and show the formula again.',
+    failureHelpState: 'Tap Output Efficiency to show the formula again.',
     analyticsEvent: 'tutorial_read_effective_gain',
   ),
   LightcoreTutorialStep.managerAutoAim: LightcoreTutorialQuestDefinition(
