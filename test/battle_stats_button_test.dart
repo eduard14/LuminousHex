@@ -207,6 +207,7 @@ void main() {
         ),
         findsOneWidget,
       );
+      expect(find.text('x${controller.coreQueueCapacity}'), findsOneWidget);
       expect(find.byType(Scrollable), findsNothing);
       expect(find.byType(Scrollbar), findsNothing);
     },

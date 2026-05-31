@@ -116,6 +116,8 @@ shell, and keep climbing.
   promotion moments, not orbiting marker dots around the active core.
 - Ready-shot UI is a compact availability indicator, not an empty queue rail
   that asks the player to manage ammo slots.
+- The ready-shot HUD uses one bolt count instead of projectile-colored pips, so
+  it reads as availability rather than collectible payload objects.
 - Shell visibility is an explicit HUD toggle, keeping battlefield taps from
   folding the active battlefield or opening tower placement.
 - Manager automation upgrades ready shots into hands-off target routing while

@@ -2381,19 +2381,15 @@ class _ReadyShotIndicator extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final packets = controller.queuedAmmoPackets;
-    final visibleShots = compact ? 3 : 4;
-    final shownPackets = packets.take(visibleShots).toList(growable: false);
-    final overflow = packets.length - shownPackets.length;
-    final pipSize = compact ? 8.0 : 10.0;
     final iconSize = compact ? 24.0 : 28.0;
+    final count = controller.queuedCorePackets;
     return Semantics(
       key: const ValueKey<String>('battle-ready-shot-indicator'),
       label:
-          'Ready shots ${controller.queuedCorePackets} of ${controller.coreQueueCapacity}',
+          'Ready shot count $count of ${controller.coreQueueCapacity}. Tap an anomaly to focus fire.',
       child: Container(
         padding: EdgeInsets.symmetric(
-          horizontal: compact ? 9 : 10,
+          horizontal: compact ? 10 : 12,
           vertical: compact ? 8 : 9,
         ),
         decoration: BoxDecoration(
@@ -2418,65 +2414,17 @@ class _ReadyShotIndicator extends StatelessWidget {
               size: iconSize,
               color: LightcorePalette.layer2,
             ),
-            SizedBox(width: compact ? 5 : 6),
-            Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                for (final packet in shownPackets) ...[
-                  _ReadyShotPip(packet: packet, size: pipSize),
-                  if (packet != shownPackets.last)
-                    SizedBox(height: compact ? 3 : 4),
-                ],
-                if (overflow > 0) ...[
-                  if (shownPackets.isNotEmpty)
-                    SizedBox(height: compact ? 3 : 4),
-                  Text(
-                    '+$overflow',
-                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      color: LightcorePalette.mist,
-                      fontWeight: FontWeight.w900,
-                      height: 1,
-                    ),
-                  ),
-                ],
-              ],
+            SizedBox(width: compact ? 4 : 5),
+            Text(
+              'x$count',
+              style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                color: LightcorePalette.mist,
+                fontWeight: FontWeight.w900,
+                height: 1,
+              ),
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _ReadyShotPip extends StatelessWidget {
-  const _ReadyShotPip({required this.packet, required this.size});
-
-  final AmmoPacket packet;
-  final double size;
-
-  @override
-  Widget build(BuildContext context) {
-    final color = packet.criticalBoosted
-        ? LightcorePalette.solar
-        : packet.projectileType.affinity.color;
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.92),
-        shape: BoxShape.circle,
-        border: Border.all(
-          color: LightcorePalette.mist.withValues(alpha: 0.62),
-          width: packet.criticalBoosted ? 1.6 : 1.0,
-        ),
-        boxShadow: packet.criticalBoosted
-            ? [
-                BoxShadow(
-                  color: LightcorePalette.solar.withValues(alpha: 0.5),
-                  blurRadius: 8,
-                ),
-              ]
-            : null,
       ),
     );
   }
