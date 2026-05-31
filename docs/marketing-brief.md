@@ -85,6 +85,8 @@ shell, and keep climbing.
 - Completing Challenge Lv 1 satisfies the opening Output Efficiency lesson,
   keeping the player in the fight-and-upgrade loop instead of forcing a stats
   panel detour.
+- Unspent Radiance points stay available in Profile without blocking the first
+  tower-upgrade-to-second-tower expansion loop.
 - Tower badges use projectile color and hex-edge level progress only; payload
   tinting is kept out of the first-session visual language until payload traits
   are explicitly taught later.

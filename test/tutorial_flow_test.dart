@@ -287,13 +287,8 @@ void main() {
 
     controller.experience = LightcoreController.experienceForOverallLevel(2);
     controller.tick(0);
-    expect(controller.tutorialStep, LightcoreTutorialStep.upgradeCoreRange);
+    expect(controller.tutorialStep, LightcoreTutorialStep.none);
     expect(controller.hasUnspentRadianceStatPoints, isTrue);
-    expect(controller.upgradeRadianceStat(LightcoreRadianceStat.might), isTrue);
-    expect(
-      controller.tutorialStep,
-      isNot(LightcoreTutorialStep.upgradeCoreRange),
-    );
     expect(controller.tutorialTowerChoices, const [
       TowerLibrary.cyanPrism,
       TowerLibrary.greenPrism,
@@ -340,17 +335,11 @@ void main() {
         isFalse,
       );
 
-      controller.markTutorialStabilityPanelOpened();
-      while (controller.slots[0].level < 4) {
-        controller.lumens = controller.upgradeCost(controller.slots[0]);
-        expect(controller.tutorialUpgradeTower(0), isTrue);
-      }
-      if (controller.hasUnspentRadianceStatPoints) {
-        expect(
-          controller.upgradeRadianceStat(LightcoreRadianceStat.might),
-          isTrue,
-        );
-      }
+      expect(controller.startFirstThreatChallenge(), isTrue);
+      expect(
+        controller.completeThreatRegionChallenge(endingStabilityPercent: 100),
+        isTrue,
+      );
 
       expect(controller.tutorialTowerChoices, const [
         TowerLibrary.cyanPrism,

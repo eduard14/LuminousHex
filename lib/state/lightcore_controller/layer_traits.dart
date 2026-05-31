@@ -131,10 +131,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
     }
     return _tutorialManualAimFireLearned &&
         tower.level >= 3 &&
-        (_tutorialStabilityPanelOpened || _firstThreatChallengeCompleted) &&
-        (totalRadianceStatPointsSpent > 0 ||
-            _core.rangeUpgradeLevel > 0 ||
-            !hasUnspentRadianceStatPoints);
+        _firstThreatChallengeCompleted;
   }
 
   bool get _earlyTutorialComplete =>
@@ -329,11 +326,6 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         lumens >= nextFirstTowerUpgradeCost) {
       return LightcoreTutorialStep.upgradeFirstTowerToLevel4;
     }
-    if (totalRadianceStatPointsSpent == 0) {
-      return hasUnspentRadianceStatPoints
-          ? LightcoreTutorialStep.upgradeCoreRange
-          : LightcoreTutorialStep.none;
-    }
     return null;
   }
 
@@ -368,10 +360,15 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         completedShellLibraryUnlocked) {
       return LightcoreTutorialStep.openTowerMatrix;
     }
-    if (totalRadianceStatPointsSpent == 0 && hasUnspentRadianceStatPoints) {
+    if (_earlyTutorialComplete &&
+        (builtTowerCount >= 2 || _hasCreatedFirstChildShell) &&
+        totalRadianceStatPointsSpent == 0 &&
+        hasUnspentRadianceStatPoints) {
       return LightcoreTutorialStep.upgradeCoreRange;
     }
-    if (!_tutorialStoreOpened && _earlyTutorialComplete) {
+    if (!_tutorialStoreOpened &&
+        _earlyTutorialComplete &&
+        (builtTowerCount >= 2 || _hasCreatedFirstChildShell)) {
       return LightcoreTutorialStep.openStore;
     }
     if (!_tutorialBattlePassRewardClaimed &&
