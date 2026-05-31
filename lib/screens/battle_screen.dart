@@ -1685,7 +1685,7 @@ class _CoreStatsPanel extends StatelessWidget {
             tint: LightcorePalette.quest,
             label:
                 controller.tutorialStep == LightcoreTutorialStep.autoQueueCheck
-                ? 'QUEUE'
+                ? 'AUTO'
                 : 'OUTPUT',
             child: _InlineStatList(rows: coreStats),
           ),

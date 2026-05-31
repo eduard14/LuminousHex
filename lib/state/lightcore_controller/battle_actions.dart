@@ -13,7 +13,7 @@ extension LightcoreControllerBattleActions on LightcoreController {
     if (_ammoQueue.length >= coreQueueCapacity) {
       if (showBanner) {
         _showBanner(
-          'Charged shots are full. Focus an anomaly to fire before charging more.',
+          'Ready shots are full. Focus an anomaly to fire before charging more.',
         );
       }
       return false;

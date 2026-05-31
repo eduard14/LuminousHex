@@ -1012,9 +1012,6 @@ extension LightcoreControllerProgressionLayers on LightcoreController {
   String get flowSummary =>
       'Output Efficiency is the visible multiplier from hidden Core Stability. Effective Gain = Base Gain x Threat Reward x Output Efficiency.';
 
-  String get queueSummary =>
-      'The charged-shot markers inherit projectile colors and show which relay shots are ready to fire. Capacity is $coreQueueCapacity, so full buffers make edge towers hold charge.';
-
   int boostedExperienceRewardFor(int baseExperience) =>
       _boostedExperienceReward(baseExperience);
 
