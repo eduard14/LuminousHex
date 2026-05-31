@@ -426,7 +426,9 @@ void main() {
     );
     final enemyId = controller.tutorialHighlightedEnemyId;
     expect(enemyId, isNotNull);
+    controller.bannerMessage = '';
     expect(controller.selectBattleEnemyForManualAim(enemyId!), isTrue);
+    expect(controller.bannerMessage, contains('Next ready shot fires there'));
     _waitForManualAimLessonToFire(controller);
 
     controller.lumens = controller.upgradeCost(controller.slots[0]);

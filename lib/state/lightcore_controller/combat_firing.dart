@@ -14,10 +14,7 @@ extension LightcoreControllerCombatFiring on LightcoreController {
     _focusedEnemyId = enemy.id;
     _focusTargetRemainingSeconds = focusTargetDurationSeconds;
     _focusTargetCooldownRemaining = focusTargetCooldownSeconds;
-    _showBanner(
-      '${enemy.config.name} focused.',
-      category: LightcoreNotificationCategory.battle,
-    );
+    _showBanner('${enemy.config.name} focused. Ready shots steer there.');
     _notifyNow();
     return true;
   }
@@ -33,8 +30,7 @@ extension LightcoreControllerCombatFiring on LightcoreController {
     _focusedEnemyId = enemy.id;
     _focusTargetRemainingSeconds = focusTargetDurationSeconds;
     _showBanner(
-      '${enemy.config.name} targeted.',
-      category: LightcoreNotificationCategory.battle,
+      'Focus locked on ${enemy.config.name}. Next ready shot fires there.',
     );
     _notifyNow();
     return true;

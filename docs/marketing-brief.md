@@ -98,6 +98,8 @@ shell, and keep climbing.
   targeting tools, keeping build/stat actions distinct from anomaly aiming.
 - Ready shots do not orbit as collectible-looking field objects; only brief
   handoff effects appear when a relay charges the core.
+- Payload-colored orbit dots are kept out of shot, relay, and fire-burst
+  visuals so early combat does not imply there are floating payloads to manage.
 - Ready-shot UI is a compact availability indicator, not an empty queue rail
   that asks the player to manage ammo slots.
 - Shell visibility is an explicit HUD toggle, keeping battlefield taps from

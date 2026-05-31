@@ -110,7 +110,7 @@ void main() {
   });
 
   test(
-    'relay handoff starts at the tower instead of orbiting as a tap target',
+    'relay handoff uses effects instead of orbiting payload-like tap targets',
     () {
       final controller = LightcoreController();
       addTearDown(controller.dispose);

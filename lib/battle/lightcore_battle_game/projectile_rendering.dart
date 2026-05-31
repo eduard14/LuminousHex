@@ -26,19 +26,6 @@ extension _LightcoreBattleGameProjectileRendering on LightcoreBattleGame {
         unit: _coreRadius,
         seed: _fireBurstSeed(burst),
       );
-      if (!burst.layer2 && burst.secondaryAffinity != null) {
-        LightcoreProjectileFx.drawEnergyOrb(
-          canvas,
-          origin +
-              LightcoreProjectileFx.angleOffset(
-                burst.aimAngle,
-                _coreRadius * 0.32,
-              ),
-          burst.secondaryAffinity!.color,
-          _coreRadius * 0.05,
-          alpha: 0.62 * _battleEffectAlphaScale,
-        );
-      }
     }
   }
 
@@ -128,16 +115,6 @@ extension _LightcoreBattleGameProjectileRendering on LightcoreBattleGame {
             ),
         );
       }
-      if (pulse.secondaryAffinity != null) {
-        canvas.drawCircle(
-          coreOffset.translate(_coreRadius * 0.18, -_coreRadius * 0.18),
-          _coreRadius * 0.035,
-          Paint()
-            ..color = pulse.secondaryAffinity!.color.withValues(
-              alpha: 0.42 * chargeAlpha,
-            ),
-        );
-      }
     }
   }
 
@@ -195,15 +172,6 @@ extension _LightcoreBattleGameProjectileRendering on LightcoreBattleGame {
         progress: shot.progress,
       );
 
-      if (!shot.layer2 && shot.secondaryAffinity != null) {
-        LightcoreProjectileFx.drawEnergyOrb(
-          canvas,
-          current.translate(_coreRadius * 0.05, -_coreRadius * 0.05),
-          shot.secondaryAffinity!.color,
-          _coreRadius * 0.04,
-          alpha: 0.72 * _battleEffectAlphaScale,
-        );
-      }
       if (shot.critical) {
         canvas.drawPath(
           _hexPath(current, _coreRadius * 0.14),
