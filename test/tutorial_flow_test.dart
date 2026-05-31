@@ -435,7 +435,7 @@ void main() {
     );
   });
 
-  test('first tower fire and upgrade lessons wait for fabrication', () {
+  test('guided first tower comes online immediately for focus fire', () {
     final controller = LightcoreController();
     addTearDown(controller.dispose);
 
@@ -449,15 +449,12 @@ void main() {
       controller.tutorialStartTowerFabricationAt(0, TowerLibrary.redPrism),
       isTrue,
     );
-    expect(controller.slots[0].isFabricating, isTrue);
-    expect(controller.tutorialStep, isNot(LightcoreTutorialStep.tapFirstTower));
+    expect(controller.slots[0].isFabricating, isFalse);
+    expect(controller.tutorialStep, LightcoreTutorialStep.tapFirstTower);
+    expect(controller.tutorialHighlightedEnemyId, isNotNull);
 
     expect(controller.activateTowerSlot(0, showBanner: false), isFalse);
     expect(controller.tutorialUpgradeTower(0), isFalse);
-
-    controller.tick(controller.slots[0].fabricationRemainingSeconds + 0.1);
-    expect(controller.slots[0].isFabricating, isFalse);
-    expect(controller.tutorialStep, LightcoreTutorialStep.tapFirstTower);
   });
 
   test('first hex is selectable as soon as the core wakes', () {

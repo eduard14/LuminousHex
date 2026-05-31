@@ -99,6 +99,8 @@ shell, and keep climbing.
   Command, and core stats separate ready-shot capacity from ring completion.
 - The first tower timer is presented as Building and Online instead of
   fabrication jargon, keeping the opening loop action-oriented.
+- The guided first tower comes online immediately after selection, so the
+  opening flow moves straight from tower choice into focus fire.
 - Tutorial guidance appears as a compact battlefield notification with the next
   action visible; players expand it only when they want more detail.
 - Collapsed tutorial notifications stay lightweight: they show the quest title

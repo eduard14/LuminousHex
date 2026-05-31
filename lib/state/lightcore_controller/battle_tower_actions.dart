@@ -355,7 +355,18 @@ extension LightcoreControllerBattleTowerActions on LightcoreController {
     if (!_prepareTutorialTowerBuild(slotIndex, config)) {
       return false;
     }
+    if (_shouldInstantBuildFirstTutorialTower(slotIndex)) {
+      return buildTowerAt(slotIndex, config);
+    }
     return startTowerFabricationAt(slotIndex, config);
+  }
+
+  bool _shouldInstantBuildFirstTutorialTower(int slotIndex) {
+    return !_earlyTutorialComplete &&
+        activeLayer.tier == 1 &&
+        activeLayer.parentLayerId == null &&
+        builtTowerCount == 0 &&
+        slotIndex == 0;
   }
 
   bool tutorialUpgradeSelectedTower() {
