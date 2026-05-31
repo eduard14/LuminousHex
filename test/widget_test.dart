@@ -2336,6 +2336,7 @@ void main() {
       ),
       findsWidgets,
     );
+    expect(find.textContaining('TUT-'), findsNothing);
     expect(
       find.byKey(const ValueKey<String>('battle-quest-detail-card')),
       findsNothing,
@@ -2354,6 +2355,12 @@ void main() {
       find.byKey(const ValueKey<String>('battle-quest-detail-card')),
       findsOneWidget,
     );
+    expect(find.textContaining('TUT-'), findsNothing);
+    expect(find.text('Do this'), findsOneWidget);
+    expect(find.text('Goal'), findsNothing);
+    expect(find.text('Target'), findsNothing);
+    expect(find.text('Result'), findsNothing);
+    expect(find.text('Guide note'), findsNothing);
   });
 
   testWidgets('focus quest opens details with beginner copy', (tester) async {

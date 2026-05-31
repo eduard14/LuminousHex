@@ -88,11 +88,6 @@ class _LightcoreQuestCardState extends State<LightcoreQuestCard> {
     final tint = LightcorePalette.quest;
     final promptIcon = _questPromptIcon(step);
     final mechanicHint = controller.tutorialMechanicHint;
-    final storyBeat = controller.tutorialStoryBeat;
-    final questId = controller.tutorialQuestId;
-    final clickTarget = controller.tutorialPrimaryClickTarget;
-    final completion = controller.tutorialCompletionCondition;
-    final reward = controller.tutorialLearningReward;
     final stuckHelp = controller.tutorialFailureHelp;
     final stuckHintVisible = _stuckHintVisible;
 
@@ -115,13 +110,8 @@ class _LightcoreQuestCardState extends State<LightcoreQuestCard> {
                 child: _QuestDetailsCard(
                   headline: headline,
                   instruction: instruction,
-                  questId: questId,
                   promptIcon: promptIcon,
                   mechanicHint: mechanicHint,
-                  storyBeat: storyBeat,
-                  clickTarget: clickTarget,
-                  completion: completion,
-                  reward: reward,
                   stuckHelp: stuckHintVisible ? stuckHelp : null,
                   tint: tint,
                   compact: widget.compact,
@@ -147,7 +137,6 @@ class _LightcoreQuestCardState extends State<LightcoreQuestCard> {
     final step = controller.tutorialStep;
     final tint = LightcorePalette.quest;
     final promptIcon = _questPromptIcon(step);
-    final questId = controller.tutorialQuestId;
     final availableWidth = MediaQuery.sizeOf(context).width - 32;
     final notificationWidth = availableWidth
         .clamp(widget.compact ? 228.0 : 252.0, widget.compact ? 286.0 : 320.0)
@@ -187,7 +176,7 @@ class _LightcoreQuestCardState extends State<LightcoreQuestCard> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      questId == null ? headline : '$questId  $headline',
+                      headline,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: Theme.of(context).textTheme.labelLarge?.copyWith(
@@ -240,13 +229,8 @@ class _QuestDetailsCard extends StatelessWidget {
   const _QuestDetailsCard({
     required this.headline,
     required this.instruction,
-    required this.questId,
     required this.promptIcon,
     required this.mechanicHint,
-    required this.storyBeat,
-    required this.clickTarget,
-    required this.completion,
-    required this.reward,
     required this.stuckHelp,
     required this.tint,
     required this.compact,
@@ -255,13 +239,8 @@ class _QuestDetailsCard extends StatelessWidget {
 
   final String headline;
   final String instruction;
-  final String? questId;
   final IconData promptIcon;
   final String? mechanicHint;
-  final String? storyBeat;
-  final String? clickTarget;
-  final String? completion;
-  final String? reward;
   final String? stuckHelp;
   final Color tint;
   final bool compact;
@@ -293,17 +272,6 @@ class _QuestDetailsCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      if (questId != null) ...[
-                        Text(
-                          questId!,
-                          style: Theme.of(context).textTheme.labelSmall
-                              ?.copyWith(
-                                color: tint,
-                                fontWeight: FontWeight.w900,
-                              ),
-                        ),
-                        const SizedBox(height: 2),
-                      ],
                       Text(
                         headline,
                         style: Theme.of(context).textTheme.titleMedium
@@ -330,36 +298,18 @@ class _QuestDetailsCard extends StatelessWidget {
                 ),
               ],
             ),
-            if (completion != null) ...[
-              const SizedBox(height: 10),
-              _QuestDetailText(
-                icon: Icons.flag_rounded,
-                title: 'Goal',
-                text: completion!,
-                tint: LightcorePalette.warning,
-              ),
-            ],
-            if (mechanicHint != null) ...[
-              const SizedBox(height: 10),
-              _QuestDetailText(
-                icon: Icons.lightbulb_rounded,
-                title: 'Why',
-                text: mechanicHint!,
-                tint: tint,
-              ),
-            ],
             const SizedBox(height: 12),
             _QuestActionBlock(
               instruction: instruction,
               tint: tint,
               compact: compact,
             ),
-            if (clickTarget != null) ...[
-              const SizedBox(height: 12),
+            if (mechanicHint != null) ...[
+              const SizedBox(height: 10),
               _QuestDetailText(
-                icon: Icons.route_rounded,
-                title: 'Target',
-                text: clickTarget!,
+                icon: Icons.lightbulb_rounded,
+                title: 'Why',
+                text: mechanicHint!,
                 tint: tint,
               ),
             ],
@@ -370,24 +320,6 @@ class _QuestDetailsCard extends StatelessWidget {
                 title: 'Hint',
                 text: stuckHelp!,
                 tint: LightcorePalette.warning,
-              ),
-            ],
-            if (reward != null) ...[
-              const SizedBox(height: 10),
-              _QuestDetailText(
-                icon: Icons.redeem_rounded,
-                title: 'Result',
-                text: reward!,
-                tint: LightcorePalette.success,
-              ),
-            ],
-            if (storyBeat != null) ...[
-              const SizedBox(height: 10),
-              _QuestDetailText(
-                icon: Icons.auto_stories_rounded,
-                title: 'Guide note',
-                text: storyBeat!,
-                tint: LightcorePalette.aether,
               ),
             ],
           ],
