@@ -650,7 +650,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
     LightcoreTutorialStep.assignTowerManager =>
       'Manager assigned. Payload feed now runs with better automation.',
     LightcoreTutorialStep.autoQueueCheck =>
-      'Automation verified. The queue keeps moving while you focus on targets.',
+      'Automation verified. Charged shots keep firing while you focus on targets.',
     LightcoreTutorialStep.upgradeFirstTowerToLevel4 =>
       'Opening lane reinforced. Strong anchors handle denser pressure better.',
     LightcoreTutorialStep.pullFirstRedEnemy =>
@@ -1440,7 +1440,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         LightcoreTutorialStep.raiseThreat => 'Raise Threat',
         LightcoreTutorialStep.pullFirstWhiteEnemy => 'Open Knowledge Cards',
         LightcoreTutorialStep.readEffectiveGain => 'Read Effective Gain',
-        LightcoreTutorialStep.autoQueueCheck => 'Auto Queue Check',
+        LightcoreTutorialStep.autoQueueCheck => 'Manager Auto-Fire',
         LightcoreTutorialStep.upgradeFirstTowerToLevel4 =>
           'Reinforce The Anchor',
         LightcoreTutorialStep.pullFirstRedEnemy => 'Teach Color Counters',

@@ -91,16 +91,16 @@ const List<_HelpSectionData> _baseHelpSections = <_HelpSectionData>[
     title: 'Shell Defense Basics',
     summary: 'How the core, relay prisms, and anomalies interact.',
     body:
-        'The center tower is the Lightcore. Early packets auto-charge into the core queue after the shell wakes, then anomaly taps focus where the next shot should go. Core Managers later add auto-fire. The six surrounding towers are relay prisms. They build charge automatically, while tower taps stay reserved for controls, stats, upgrades, and targeting tools.\n\n'
+        'The center tower is the Lightcore. After the shell wakes, shots charge automatically and anomaly taps focus where the next shot should go. Core Managers later add auto-fire. The six surrounding towers are relay prisms. They build charge automatically, while tower taps stay reserved for controls, stats, upgrades, and targeting tools.\n\n'
         'Anomalies spiral inward from beyond the shell. They do not destroy the core directly. Instead they jam the edge hex they hit, slow relay output, and reduce how efficiently the shell harvests Lumens.',
   ),
   _HelpSectionData(
     id: 'flow-queue-lanes',
-    title: 'Output, Queue, and Lanes',
-    summary: 'What the packet markers mean and how pressure strains the core.',
+    title: 'Output, Shots, and Lanes',
+    summary: 'How charged shots and lane pressure strain the core.',
     body:
         'Core Stability is the hidden pressure value from 0 to 100. Output Efficiency is the visible multiplier derived from that stability, and Effective Gain is Base Gain x Threat Reward x Output Efficiency.\n\n'
-        'Queue is the Lightcore buffer for generated shots. Compact core markers show queue capacity, and short handoff flashes show relay prisms feeding the next shot. A full queue makes ready prisms wait until the core spends packets.\n\n'
+        'Charged shots are the Lightcore buffer for generated attacks. The shot rail only appears when shots are ready or when manager auto-fire needs attention. A full buffer makes ready prisms wait until the core fires again.\n\n'
         'A lane is the approach corridor tied to each outer hex. When anomalies break through a corridor, they jam that lane and slow the prism assigned to it. Repeated lane hits shake Core Stability, and Output Efficiency recovers over time through recovery stats and stable builds.',
   ),
   _HelpSectionData(
@@ -167,7 +167,7 @@ const List<_HelpSectionData> _baseHelpSections = <_HelpSectionData>[
     title: 'Targeting and Foundries',
     summary: 'How child towers bias shots and how managers modify behavior.',
     body:
-        'Targeting priorities such as Close, Strong, and Weak tell a relay what kind of anomaly packet it should ask the core to focus when that tower contributes charge. Direct anomaly taps can still override focus during active play.\n\n'
+        'Targeting priorities such as Close, Strong, and Weak tell a relay what kind of anomaly it should prefer when that tower contributes charge. Direct anomaly taps can still override focus during active play.\n\n'
         'Core Managers assign to a shell and improve payload feed. Each one has an automation rate: if towers create payloads faster than the manager can feed them, the shell loses efficiency while they wait. Threat Directors attach to Threat Map regions and immediately tune spawn cadence, enemy strength, reward bonuses, EXP, and stability risk; stabilization validates that setup for offline output. Both manager families unlock after Layer 1 shell coverage.',
   ),
 ];

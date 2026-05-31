@@ -422,7 +422,7 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
     trigger: 'First child shell has a charged tower',
     primaryClickTarget: 'Battlefield > charged child-shell tower',
     coachCopy:
-        'Tap the highlighted child-shell tower to inspect its controls. Packet flow stays automatic.',
+        'Tap the highlighted child-shell tower to inspect its controls. Firing stays automatic.',
     completionCondition: 'Inspect one charged child-shell tower',
     reward: 'Small Lumen grant',
     failureHelpState:
@@ -660,7 +660,7 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
     completionCondition: 'White Warden defeated',
     reward: 'Apex progression unlock',
     failureHelpState:
-        'Use the highlighted back button, then keep queueing shots.',
+        'Use the highlighted back button, then keep focusing visible threats.',
     analyticsEvent: 'tutorial_defeat_first_boss',
   ),
   LightcoreTutorialStep.openEquipment: LightcoreTutorialQuestDefinition(
@@ -696,7 +696,7 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
     trigger: 'Manager foundry opened with enough Flux',
     primaryClickTarget: 'Managers > Core Manager foundry > Forge',
     coachCopy:
-        'Forge one Core Manager. A manager keeps relay packets feeding the queue through automation.',
+        'Forge one Core Manager. A manager keeps charged shots firing through automation.',
     completionCondition: 'Own one Core Manager',
     reward: 'Flux',
     failureHelpState: 'Use the highlighted Core Manager forge control.',
