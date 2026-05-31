@@ -62,6 +62,24 @@ extension LightcoreControllerCombatFiring on LightcoreController {
     _focusTargetRemainingSeconds = 0;
   }
 
+  void _primeThreatChallengeFocusTarget() {
+    final challenge = _threatRegionChallenge;
+    if (challenge == null ||
+        coreAutoFireUnlocked ||
+        _focusedEnemyId != null ||
+        _enemies.isEmpty ||
+        _threatChallengeAutoFocusedWaveIndex == challenge.waveIndex) {
+      return;
+    }
+    final target = _enemies.reduce(
+      (closest, enemy) => enemy.radius < closest.radius ? enemy : closest,
+    );
+    _focusedEnemyId = target.id;
+    _focusTargetRemainingSeconds = focusTargetDurationSeconds;
+    _threatChallengeAutoFocusedWaveIndex = challenge.waveIndex;
+    _needsNotify = true;
+  }
+
   EnemyState? _focusedEnemyTarget({
     double? maxRadius,
     Set<String> excludedEnemyIds = const <String>{},

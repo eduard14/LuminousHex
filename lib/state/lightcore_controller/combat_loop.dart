@@ -72,6 +72,7 @@ extension LightcoreControllerCombatLoop on LightcoreController {
           _spawnTimer += _spawnInterval;
         }
       }
+      _primeThreatChallengeFocusTarget();
 
       final fabricationAdvanced = _advanceTowerFabrication(dt);
       _advanceTowers(battleDt);

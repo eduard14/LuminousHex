@@ -1211,6 +1211,7 @@ class LightcoreController extends ChangeNotifier {
     _validatedFarmKillsPerHour = 0;
     _validatedFarmLumensPerHour = 0;
     _threatRegionChallenge = null;
+    _threatChallengeAutoFocusedWaveIndex = -1;
     _threatRegionFarmValidation = null;
     _activeBossEnemyCardId = BossEnemyLibrary.starterWhiteWarden.id;
     _seedStarterEnemyCards();
@@ -1671,6 +1672,7 @@ class LightcoreController extends ChangeNotifier {
   String? _focusedEnemyId;
   double _focusTargetRemainingSeconds = 0;
   double _focusTargetCooldownRemaining = 0;
+  int _threatChallengeAutoFocusedWaveIndex = -1;
 
   double _spawnTimer = 1.35;
   double _bannerTimer = 0;

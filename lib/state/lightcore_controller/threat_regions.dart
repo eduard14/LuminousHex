@@ -498,6 +498,7 @@ extension LightcoreControllerThreatRegions on LightcoreController {
     _impacts.clear();
     _blueFocusTargetEnemyIdBySlot.clear();
     _clearFocusTarget();
+    _threatChallengeAutoFocusedWaveIndex = -1;
     _swarmActivated = true;
     _spawnTimer = min(_spawnTimer, 0.01);
     _threatRegionDefeatedBossIds.clear();
@@ -564,6 +565,7 @@ extension LightcoreControllerThreatRegions on LightcoreController {
         ? _revealNextSpiralRegionAfter(config)
         : null;
     _threatRegionChallenge = null;
+    _threatChallengeAutoFocusedWaveIndex = -1;
     _threatRegionDefeatedBossIds.clear();
     _applyFarmSwarmPressure();
     if (challenge.finalLayer) {
@@ -628,6 +630,7 @@ extension LightcoreControllerThreatRegions on LightcoreController {
     }
     final config = threatRegionConfigById(challenge.regionId);
     _threatRegionChallenge = null;
+    _threatChallengeAutoFocusedWaveIndex = -1;
     _applyFarmSwarmPressure();
     _showBanner(
       '${config?.name ?? 'Region'} challenge failed. Stabilization unchanged.',
@@ -832,6 +835,7 @@ extension LightcoreControllerThreatRegions on LightcoreController {
     _impacts.clear();
     _blueFocusTargetEnemyIdBySlot.clear();
     _clearFocusTarget();
+    _threatChallengeAutoFocusedWaveIndex = -1;
     _spawnTimer = 0.01;
   }
 
