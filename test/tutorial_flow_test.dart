@@ -263,7 +263,6 @@ void main() {
     expect(controller.canStartFirstThreatChallenge, isTrue);
     final baselineStats = controller.activeThreatAssignmentGroupStats;
     final baselineTargetCount = controller.enemyTargetCount;
-    controller.experience = LightcoreController.experienceForOverallLevel(2);
     controller.tick(0);
     expect(controller.tutorialStep, LightcoreTutorialStep.raiseThreat);
     expect(controller.startFirstThreatChallenge(), isTrue);
@@ -281,6 +280,11 @@ void main() {
       controller.completeThreatRegionChallenge(endingStabilityPercent: 100),
       isTrue,
     );
+    expect(controller.isOuterSlotUnlocked(1), isTrue);
+    expect(
+      controller.experience,
+      greaterThanOrEqualTo(LightcoreController.experienceForOverallLevel(2)),
+    );
 
     expect(
       controller.lumens,
@@ -293,7 +297,6 @@ void main() {
     expect(controller.tutorialUpgradeTower(0), isTrue);
     expect(controller.slots[0].level, 3);
 
-    controller.experience = LightcoreController.experienceForOverallLevel(2);
     controller.tick(0);
     expect(controller.tutorialStep, LightcoreTutorialStep.none);
     expect(controller.hasUnspentRadianceStatPoints, isTrue);

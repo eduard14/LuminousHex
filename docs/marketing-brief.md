@@ -114,6 +114,8 @@ shell, and keep climbing.
 - Clearing starter Challenge Lv 1 pays enough Lumens for the next anchor-tower
   upgrade, so the first combat loop chains directly into a stronger lane
   instead of asking for a grind pause.
+- The same starter challenge grants enough opening EXP/Kills to unlock Hex 2,
+  keeping the next build decision connected to the first challenge clear.
 - Tower body taps are reserved for tower controls, upgrades, stats, and
   targeting tools, keeping build/stat actions distinct from anomaly aiming.
 - Enemy focus taps automatically close open battle control panels so aiming

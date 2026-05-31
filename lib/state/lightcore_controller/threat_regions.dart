@@ -599,9 +599,14 @@ extension LightcoreControllerThreatRegions on LightcoreController {
           baseLumenReward: baseLumenReward,
         );
     lumens += lumenReward;
+    final openingProgressReward = _grantOpeningChallengeHex2Progress(challenge);
     _syncTutorialStep(showBanner: false);
     final rewardParts = <String>[
       LightcoreCurrencyLabels.rewardLumens(lumenReward),
+      if (openingProgressReward.experienceGranted > 0)
+        '+${openingProgressReward.experienceGranted} EXP',
+      if (openingProgressReward.killsGranted > 0)
+        '+${openingProgressReward.killsGranted} Kills',
     ];
     final revealText = revealedNext == null
         ? ''
@@ -666,6 +671,31 @@ extension LightcoreControllerThreatRegions on LightcoreController {
       return 0;
     }
     return max(0, nextUpgradeCost - (lumens + baseLumenReward));
+  }
+
+  ({int experienceGranted, int killsGranted})
+  _grantOpeningChallengeHex2Progress(ThreatRegionChallengeState challenge) {
+    if (_earlyTutorialComplete ||
+        challenge.regionId != ThreatRegionLibrary.all.first.id ||
+        challenge.targetStabilizationLevel != 1) {
+      return (experienceGranted: 0, killsGranted: 0);
+    }
+    final firstTower = _firstTutorialTower;
+    if (firstTower == null ||
+        !_isOpeningStarterTower(firstTower.config) ||
+        firstTower.level != 2) {
+      return (experienceGranted: 0, killsGranted: 0);
+    }
+    final targetProgress = unlockKillsForOuterSlot(1);
+    final experienceGranted = max(0, targetProgress - experience);
+    final killsGranted = max(0, targetProgress - kills);
+    if (experienceGranted > 0) {
+      experience += experienceGranted;
+    }
+    if (killsGranted > 0) {
+      kills += killsGranted;
+    }
+    return (experienceGranted: experienceGranted, killsGranted: killsGranted);
   }
 
   bool failThreatRegionChallenge() {
