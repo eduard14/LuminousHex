@@ -90,6 +90,8 @@ shell, and keep climbing.
 - Tower badges use projectile color and hex-edge level progress only; payload
   tinting is kept out of the first-session visual language until payload traits
   are explicitly taught later.
+- Red tower badges use a comet-shaped projectile glyph, not a circular marker
+  that can read as a numeric level.
 - First-session battle HUD panels hide empty payload rows and payload sub-pips,
   keeping the early combat read focused on projectile choice, ready shots, and
   anomaly focus.
@@ -105,6 +107,8 @@ shell, and keep climbing.
   handoff effects appear when a relay charges the core.
 - Payload-colored orbit dots are kept out of shot, relay, and fire-burst
   visuals so early combat does not imply there are floating payloads to manage.
+- Child-shell presence is shown through hex bodies, range language, and
+  promotion moments, not orbiting marker dots around the active core.
 - Ready-shot UI is a compact availability indicator, not an empty queue rail
   that asks the player to manage ammo slots.
 - Shell visibility is an explicit HUD toggle, keeping battlefield taps from

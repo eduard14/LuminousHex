@@ -336,18 +336,25 @@ extension LightcoreBattleGameCoreRendering on LightcoreBattleGame {
         );
         canvas.drawCircle(center, radius * 0.44, paint);
       case ProjectileBehaviorProfile.explosion:
-        canvas.drawCircle(center, radius * 0.26, fill);
-        for (var index = 0; index < 5; index += 1) {
-          final angle = (math.pi * 2 / 5) * index - math.pi / 2;
-          canvas.drawCircle(
-            center.translate(
-              math.cos(angle) * radius * 0.66,
-              math.sin(angle) * radius * 0.66,
-            ),
-            radius * 0.12,
-            fill,
-          );
-        }
+        final cometPath = Path()
+          ..moveTo(center.dx + radius * 0.78, center.dy - radius * 0.12)
+          ..lineTo(center.dx + radius * 0.22, center.dy + radius * 0.46)
+          ..lineTo(center.dx - radius * 0.52, center.dy + radius * 0.72)
+          ..lineTo(center.dx - radius * 0.22, center.dy)
+          ..lineTo(center.dx - radius * 0.64, center.dy - radius * 0.66)
+          ..lineTo(center.dx + radius * 0.16, center.dy - radius * 0.38)
+          ..close();
+        canvas.drawPath(cometPath, fill);
+        canvas.drawLine(
+          center.translate(-radius * 0.86, radius * 0.62),
+          center.translate(-radius * 0.28, radius * 0.1),
+          paint..strokeWidth = math.max(1.1, size * 0.08),
+        );
+        canvas.drawLine(
+          center.translate(-radius * 0.76, -radius * 0.58),
+          center.translate(-radius * 0.2, -radius * 0.16),
+          paint,
+        );
       case ProjectileBehaviorProfile.wave:
         for (var index = 0; index < 3; index += 1) {
           final arcRadius = radius * (0.32 + (index * 0.24));
@@ -698,31 +705,6 @@ extension LightcoreBattleGameCoreRendering on LightcoreBattleGame {
       size: _coreRadius * 1.14,
       showLevelLabel: false,
     );
-
-    if (controller.layer2State.unlocked) {
-      canvas.drawCircle(
-        center,
-        _coreRadius * 1.72,
-        Paint()
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 2
-          ..color = LightcorePalette.layer2.withValues(alpha: 0.7),
-      );
-
-      for (var index = 0; index < 6; index += 1) {
-        final angle = (math.pi * 2 / 6) * index;
-        final marker = Offset(
-          center.dx + math.cos(angle) * (_coreRadius * 1.72),
-          center.dy + math.sin(angle) * (_coreRadius * 1.72),
-        );
-        canvas.drawPath(
-          _hexPath(marker, _coreRadius * 0.09),
-          Paint()
-            ..style = PaintingStyle.fill
-            ..color = LightcorePalette.layer2.withValues(alpha: 0.5),
-        );
-      }
-    }
 
     if (showTutorialGuides && controller.tutorialHighlightsBattleCore) {
       _renderGuidePulse(
