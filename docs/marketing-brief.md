@@ -88,6 +88,8 @@ shell, and keep climbing.
 - First-session battle HUD panels hide empty payload rows and payload sub-pips,
   keeping the early combat read focused on projectile choice, ready shots, and
   anomaly focus.
+- Manager-less shells now call the opening state Focus Fire instead of Manual
+  Command, and core stats separate ready-shot capacity from ring completion.
 - Tutorial guidance appears as a compact battlefield notification with the next
   action visible; players expand it only when they want more detail.
 - Tower body taps are reserved for tower controls, upgrades, stats, and

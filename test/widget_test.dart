@@ -1591,7 +1591,7 @@ void main() {
     },
   );
 
-  testWidgets('manager screen shows manual command before foundry unlock', (
+  testWidgets('manager screen shows focus fire before foundry unlock', (
     tester,
   ) async {
     final controller = LightcoreController();
@@ -1609,7 +1609,7 @@ void main() {
     await tester.pump();
 
     expect(find.text('Main Manager'), findsOneWidget);
-    expect(find.text('Manual Command'), findsOneWidget);
+    expect(find.text('Focus Fire'), findsWidgets);
     expect(find.text('Build a tower to start'), findsOneWidget);
   });
 

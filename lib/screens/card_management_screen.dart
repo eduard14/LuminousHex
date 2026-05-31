@@ -147,9 +147,9 @@ class CardManagementScreen extends StatelessWidget {
                         ),
                   badgeIcon: Icons.hexagon_rounded,
                   semanticLabel:
-                      'Shell Core Manager, ${towerCoreManager?.name ?? 'Manual Command'}',
+                      'Shell Core Manager, ${towerCoreManager?.name ?? 'Focus Fire'}',
                   label: 'Towers',
-                  value: towerCoreManager?.name ?? 'Manual',
+                  value: towerCoreManager?.name ?? 'Focus',
                   selected: towerCoreManager != null,
                   onTap: towerCoreManager == null
                       ? null
@@ -200,7 +200,7 @@ class CardManagementScreen extends StatelessWidget {
             _DefaultAutoManagerPanel(controller: controller),
             const SizedBox(height: 10),
             Text(
-              'Shell Manager: ${towerCoreManager?.name ?? 'Default Auto'}  •  Region Director: ${regionThreatDirector?.name ?? 'Open'}',
+              'Shell Manager: ${towerCoreManager?.name ?? 'Focus Fire'}  •  Region Director: ${regionThreatDirector?.name ?? 'Open'}',
               style: textTheme.bodySmall?.copyWith(
                 color: LightcorePalette.mist.withValues(alpha: 0.74),
                 fontWeight: FontWeight.w700,
@@ -691,7 +691,7 @@ class _DefaultAutoManagerPanel extends StatelessWidget {
                   children: [
                     Expanded(
                       child: Text(
-                        'Manual Command',
+                        'Focus Fire',
                         style: textTheme.titleSmall?.copyWith(
                           color: LightcorePalette.mist,
                           fontWeight: FontWeight.w900,
@@ -703,7 +703,7 @@ class _DefaultAutoManagerPanel extends StatelessWidget {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  'No starter manager is assigned. Shots auto-charge; tap anomalies to focus fire until manager auto-fire unlocks.',
+                  'No Core Manager is assigned. Shots auto-charge; tap anomalies to steer fire until manager auto-fire unlocks.',
                   style: textTheme.bodySmall?.copyWith(
                     color: LightcorePalette.mist.withValues(alpha: 0.78),
                   ),

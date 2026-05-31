@@ -185,7 +185,7 @@ class _TowerDetailContent extends StatelessWidget {
       ),
       _TowerStatRowData(
         label: 'Shell Manager',
-        value: card?.name ?? 'Manual Command',
+        value: card?.name ?? 'Focus Fire',
       ),
       _TowerStatRowData(
         label: 'Automation',
@@ -357,14 +357,14 @@ class _TowerDetailContent extends StatelessWidget {
           subtitle: controller.managerAssignmentUnlocked
               ? card?.summary ??
                     'Manager auto-fire is ready. Open Managers to assign a forged Core Manager.'
-              : 'No starter manager is assigned. Auto-charge and focus fire stay active until this Layer 1 shell has all ${LightcoreController.slotCount} outer towers online.',
+              : 'No Core Manager is assigned. Auto-charge and focus fire stay active until this Layer 1 shell has all ${LightcoreController.slotCount} outer towers online.',
           tint: LightcorePalette.layer2,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _TowerInfoChip(
                 label: 'Manager',
-                value: card?.name ?? 'Default Auto',
+                value: card?.name ?? 'Focus Fire',
                 tint: LightcorePalette.layer2,
               ),
               if (controller.managerAssignmentUnlocked && card != null) ...[

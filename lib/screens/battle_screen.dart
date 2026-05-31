@@ -1459,7 +1459,7 @@ class _CoreStatsPanel extends StatelessWidget {
         ),
         _InlineStatEntry(label: 'Ready', value: controller.coreQueueLoadLabel),
         _InlineStatEntry(
-          label: 'Ready',
+          label: 'Ring',
           value:
               '${controller.promotionReadyTowerCount}/${LightcoreController.slotCount}',
         ),
