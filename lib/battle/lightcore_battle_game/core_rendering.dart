@@ -205,10 +205,10 @@ extension LightcoreBattleGameCoreRendering on LightcoreBattleGame {
         ..strokeWidth = math.max(1.0, size * 0.025)
         ..color = payloadColor.withValues(alpha: 0.72 * resolvedOpacity),
     );
-    _paintIconGlyph(
+    _paintProjectileGlyph(
       canvas,
       center,
-      towerProjectileIcon(projectileType),
+      projectileType,
       size: size * 0.28,
       color: projectileColor.withValues(alpha: resolvedOpacity),
     );
@@ -252,6 +252,140 @@ extension LightcoreBattleGameCoreRendering on LightcoreBattleGame {
         size: size,
         opacity: resolvedOpacity,
       );
+    }
+  }
+
+  void _paintProjectileGlyph(
+    Canvas canvas,
+    Offset center,
+    ProjectileType projectileType, {
+    required double size,
+    required Color color,
+  }) {
+    final paint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = math.max(1.4, size * 0.12)
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round
+      ..color = color;
+    final fill = Paint()
+      ..style = PaintingStyle.fill
+      ..color = color;
+    final radius = size * 0.5;
+
+    if (projectileType == ProjectileType.shieldHalo) {
+      canvas.drawPath(_hexPath(center, radius * 0.72), paint);
+      canvas.drawCircle(center, radius * 0.16, fill);
+      return;
+    }
+
+    switch (projectileType.behaviorProfile) {
+      case ProjectileBehaviorProfile.thread:
+        canvas.drawLine(
+          center.translate(-radius * 0.8, radius * 0.42),
+          center.translate(radius * 0.8, -radius * 0.42),
+          paint,
+        );
+        canvas.drawLine(
+          center.translate(-radius * 0.72, -radius * 0.16),
+          center.translate(radius * 0.36, -radius * 0.16),
+          paint..strokeWidth = math.max(1.1, size * 0.08),
+        );
+      case ProjectileBehaviorProfile.pulse:
+        final bolt = Path()
+          ..moveTo(center.dx + radius * 0.16, center.dy - radius * 0.86)
+          ..lineTo(center.dx - radius * 0.42, center.dy + radius * 0.08)
+          ..lineTo(center.dx + radius * 0.1, center.dy + radius * 0.08)
+          ..lineTo(center.dx - radius * 0.16, center.dy + radius * 0.86)
+          ..lineTo(center.dx + radius * 0.5, center.dy - radius * 0.16)
+          ..lineTo(center.dx, center.dy - radius * 0.16)
+          ..close();
+        canvas.drawPath(bolt, fill);
+      case ProjectileBehaviorProfile.burst:
+        for (var index = 0; index < 6; index += 1) {
+          final angle = (math.pi * 2 / 6) * index;
+          canvas.drawLine(
+            center,
+            center.translate(
+              math.cos(angle) * radius,
+              math.sin(angle) * radius,
+            ),
+            paint,
+          );
+        }
+        canvas.drawCircle(center, radius * 0.18, fill);
+      case ProjectileBehaviorProfile.chain:
+        final left = center.translate(-radius * 0.58, radius * 0.2);
+        final right = center.translate(radius * 0.58, -radius * 0.2);
+        canvas.drawCircle(left, radius * 0.22, paint);
+        canvas.drawCircle(right, radius * 0.22, paint);
+        canvas.drawLine(left, right, paint);
+      case ProjectileBehaviorProfile.split:
+        final stem = center.translate(-radius * 0.72, radius * 0.52);
+        final fork = center.translate(-radius * 0.04, -radius * 0.04);
+        canvas.drawLine(stem, fork, paint);
+        canvas.drawLine(
+          fork,
+          center.translate(radius * 0.72, -radius * 0.52),
+          paint,
+        );
+        canvas.drawLine(
+          fork,
+          center.translate(radius * 0.74, radius * 0.34),
+          paint,
+        );
+      case ProjectileBehaviorProfile.lance:
+        canvas.drawLine(
+          center.translate(-radius * 0.86, 0),
+          center.translate(radius * 0.86, 0),
+          paint,
+        );
+        canvas.drawLine(
+          center.translate(0, -radius * 0.86),
+          center.translate(0, radius * 0.86),
+          paint,
+        );
+        canvas.drawCircle(center, radius * 0.44, paint);
+      case ProjectileBehaviorProfile.explosion:
+        canvas.drawCircle(center, radius * 0.26, fill);
+        for (var index = 0; index < 5; index += 1) {
+          final angle = (math.pi * 2 / 5) * index - math.pi / 2;
+          canvas.drawCircle(
+            center.translate(
+              math.cos(angle) * radius * 0.66,
+              math.sin(angle) * radius * 0.66,
+            ),
+            radius * 0.12,
+            fill,
+          );
+        }
+      case ProjectileBehaviorProfile.wave:
+        for (var index = 0; index < 3; index += 1) {
+          final arcRadius = radius * (0.32 + (index * 0.24));
+          canvas.drawArc(
+            Rect.fromCircle(
+              center: center.translate(-radius * 0.18, 0),
+              radius: arcRadius,
+            ),
+            -math.pi / 3,
+            math.pi * 2 / 3,
+            false,
+            paint,
+          );
+        }
+      case ProjectileBehaviorProfile.nova:
+        canvas.drawCircle(center, radius * 0.2, fill);
+        for (var index = 0; index < 6; index += 1) {
+          final angle = (math.pi * 2 / 6) * index;
+          canvas.drawCircle(
+            center.translate(
+              math.cos(angle) * radius * 0.72,
+              math.sin(angle) * radius * 0.72,
+            ),
+            radius * 0.1,
+            fill,
+          );
+        }
     }
   }
 
