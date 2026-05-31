@@ -30,6 +30,7 @@ import 'package:lightcore/state/lightcore_controller.dart';
 import 'package:lightcore/theme/lightcore_theme.dart';
 import 'package:lightcore/widgets/guided_focus_frame.dart';
 import 'package:lightcore/widgets/meta_progression_sheet.dart';
+import 'package:lightcore/widgets/tower_level_hex_badge.dart';
 
 void _unlockTutorialFirstHex(LightcoreController controller) {
   controller.applyOfflineClaim(
@@ -307,6 +308,33 @@ Future<void> _openSettingsCollisionDialog(WidgetTester tester) async {
 }
 
 void main() {
+  testWidgets('tower level badge describes projectile and level only', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: TowerLevelHexBadge(
+            level: 2,
+            maxLevel: LightcoreController.maxTowerLevel,
+            projectileType: ProjectileType.coreBomb,
+            tint: Colors.red,
+            complete: false,
+          ),
+        ),
+      ),
+    );
+
+    expect(
+      find.bySemanticsLabel('Core Bomb tower level 2 of 5'),
+      findsOneWidget,
+    );
+    expect(
+      find.bySemanticsLabel(RegExp('payload', caseSensitive: false)),
+      findsNothing,
+    );
+  });
+
   testWidgets('renders the LumiHex main menu', (tester) async {
     await tester.pumpWidget(const LightcoreApp());
     await tester.pump();
@@ -1663,6 +1691,7 @@ void main() {
     expect(find.textContaining('First Stabilizer'), findsWidgets);
     expect(find.textContaining('Wave 1/3'), findsOneWidget);
     expect(find.textContaining('Pressure run'), findsOneWidget);
+    expect(find.textContaining('Reward +40 Lumens'), findsOneWidget);
     expect(
       find.byKey(const ValueKey<String>('battle-resource-rail')),
       findsNothing,

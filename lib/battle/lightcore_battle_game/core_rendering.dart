@@ -78,7 +78,6 @@ extension LightcoreBattleGameCoreRendering on LightcoreBattleGame {
       level: level,
       maxLevel: LightcoreController.maxTowerLevel,
       projectileType: controller.towerProjectileType(slot),
-      payloadType: controller.towerPayloadType(slot),
       tint: tint,
       size: size,
       opacity: opacity,
@@ -102,7 +101,6 @@ extension LightcoreBattleGameCoreRendering on LightcoreBattleGame {
       level: controller.coreState.level,
       maxLevel: LightcoreController.maxTowerLevel,
       projectileType: _coreProjectileTypeForBadge,
-      payloadType: _corePayloadTypeForBadge,
       tint: tint,
       size: size,
       opacity: 1,
@@ -120,21 +118,12 @@ extension LightcoreBattleGameCoreRendering on LightcoreBattleGame {
     return loadout[controller.coreState.fireSequence % loadout.length];
   }
 
-  PayloadType get _corePayloadTypeForBadge {
-    final loadout = controller.corePayloadArsenal;
-    if (loadout.isEmpty) {
-      return controller.coreState.payloadType;
-    }
-    return loadout[controller.coreState.fireSequence % loadout.length];
-  }
-
   void _paintTraitBadge(
     Canvas canvas,
     Offset center, {
     required int level,
     required int maxLevel,
     required ProjectileType projectileType,
-    required PayloadType payloadType,
     required Color tint,
     required double size,
     required double opacity,
@@ -145,9 +134,6 @@ extension LightcoreBattleGameCoreRendering on LightcoreBattleGame {
   }) {
     final resolvedOpacity = opacity.clamp(0.0, 1.0).toDouble();
     final projectileColor = projectileType.affinity.color;
-    final payloadColor = payloadType == PayloadType.none
-        ? projectileColor
-        : payloadType.affinity?.color ?? projectileColor;
     final badgeRadius = size * 0.42;
     final vertices = _towerAlignedHexVertices(
       center,
@@ -197,7 +183,8 @@ extension LightcoreBattleGameCoreRendering on LightcoreBattleGame {
     canvas.drawCircle(
       center,
       size * 0.24,
-      Paint()..color = payloadColor.withValues(alpha: 0.24 * resolvedOpacity),
+      Paint()
+        ..color = projectileColor.withValues(alpha: 0.22 * resolvedOpacity),
     );
     canvas.drawCircle(
       center,
@@ -205,7 +192,7 @@ extension LightcoreBattleGameCoreRendering on LightcoreBattleGame {
       Paint()
         ..style = PaintingStyle.stroke
         ..strokeWidth = math.max(1.0, size * 0.025)
-        ..color = payloadColor.withValues(alpha: 0.72 * resolvedOpacity),
+        ..color = projectileColor.withValues(alpha: 0.66 * resolvedOpacity),
     );
     _paintProjectileGlyph(
       canvas,

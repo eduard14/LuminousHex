@@ -146,6 +146,23 @@ extension LightcoreControllerThreatRegions on LightcoreController {
     );
   }
 
+  String get activeThreatRegionChallengeRewardLabel {
+    final challenge = _threatRegionChallenge;
+    if (challenge == null) {
+      return '';
+    }
+    final config = threatRegionConfigById(challenge.regionId);
+    if (config == null) {
+      return '';
+    }
+    return LightcoreCurrencyLabels.rewardLumens(
+      _threatRegionChallengeLumenReward(
+        config,
+        challenge.targetStabilizationLevel,
+      ),
+    );
+  }
+
   int get activeThreatRegionRequiredBossCount {
     final challenge = _threatRegionChallenge;
     if (challenge == null || !challenge.finalLayer) {

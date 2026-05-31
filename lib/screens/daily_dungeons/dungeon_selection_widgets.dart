@@ -361,7 +361,6 @@ class _TargetTowerBattlePreview extends StatelessWidget {
               level: towerProfile.effectiveDisplayLevel,
               maxLevel: LightcoreController.maxTowerLevel,
               projectileType: towerProfile.projectileType,
-              payloadType: towerProfile.payloadType,
               tint: tint,
               complete: cleared,
               size: 96,

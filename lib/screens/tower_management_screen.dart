@@ -865,7 +865,6 @@ class _BuiltSlotCard extends StatelessWidget {
                   level: slot.level,
                   maxLevel: LightcoreController.maxTowerLevel,
                   projectileType: controller.towerProjectileType(slot),
-                  payloadType: controller.towerPayloadType(slot),
                   tint: tint,
                   complete: controller.isTowerComplete(slot),
                   semanticLabel:

@@ -11,7 +11,6 @@ class TowerLevelHexBadge extends StatelessWidget {
     required this.level,
     required this.maxLevel,
     required this.projectileType,
-    required this.payloadType,
     required this.tint,
     required this.complete,
     this.size = 54,
@@ -21,7 +20,6 @@ class TowerLevelHexBadge extends StatelessWidget {
   final int level;
   final int maxLevel;
   final ProjectileType projectileType;
-  final PayloadType payloadType;
   final Color tint;
   final bool complete;
   final double size;
@@ -30,17 +28,11 @@ class TowerLevelHexBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final projectileColor = projectileType.affinity.color;
-    final payloadColor = payloadType == PayloadType.none
-        ? projectileColor
-        : payloadType.affinity?.color ?? projectileColor;
-    final payloadPhrase = payloadType == PayloadType.none
-        ? ''
-        : ', ${payloadType.label} payload';
 
     return Semantics(
       label:
           semanticLabel ??
-          '${projectileType.label} tower level $level of $maxLevel$payloadPhrase${complete ? ', complete' : ''}',
+          '${projectileType.label} tower level $level of $maxLevel${complete ? ', complete' : ''}',
       child: SizedBox.square(
         dimension: size,
         child: Stack(
@@ -52,7 +44,6 @@ class TowerLevelHexBadge extends StatelessWidget {
                 level: level,
                 maxLevel: maxLevel,
                 tint: tint,
-                payloadColor: payloadColor,
                 complete: complete,
               ),
             ),
@@ -61,9 +52,9 @@ class TowerLevelHexBadge extends StatelessWidget {
               height: size * 0.48,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: payloadColor.withValues(alpha: 0.24),
+                color: projectileColor.withValues(alpha: 0.22),
                 border: Border.all(
-                  color: payloadColor.withValues(alpha: 0.72),
+                  color: projectileColor.withValues(alpha: 0.66),
                   width: math.max(1.0, size * 0.025),
                 ),
               ),
@@ -107,14 +98,12 @@ class _TowerLevelHexBadgePainter extends CustomPainter {
     required this.level,
     required this.maxLevel,
     required this.tint,
-    required this.payloadColor,
     required this.complete,
   });
 
   final int level;
   final int maxLevel;
   final Color tint;
-  final Color payloadColor;
   final bool complete;
 
   @override
@@ -162,7 +151,6 @@ class _TowerLevelHexBadgePainter extends CustomPainter {
     return oldDelegate.level != level ||
         oldDelegate.maxLevel != maxLevel ||
         oldDelegate.tint != tint ||
-        oldDelegate.payloadColor != payloadColor ||
         oldDelegate.complete != complete;
   }
 

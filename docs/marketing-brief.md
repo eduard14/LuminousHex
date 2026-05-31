@@ -80,6 +80,11 @@ shell, and keep climbing.
 - The post-upgrade threat prompt explains the payoff and highlights the
   Challenge button directly, turning pressure raising into the next obvious
   action instead of a menu hunt.
+- Active challenge HUD now shows the Lumen reward preview beside the wave
+  timer so the first pressure run has a visible payoff while it is underway.
+- Tower badges use projectile color and hex-edge level progress only; payload
+  tinting is kept out of the first-session visual language until payload traits
+  are explicitly taught later.
 - Tutorial guidance appears as a compact battlefield notification with the next
   action visible; players expand it only when they want more detail.
 - Tower body taps are reserved for tower controls, upgrades, stats, and
