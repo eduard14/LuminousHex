@@ -71,6 +71,54 @@ void main() {
     expect(restored.enemyCount, 0);
   });
 
+  test(
+    'cloud restore migrates legacy orbit node projectiles to shield halo',
+    () {
+      final source = LightcoreController();
+      addTearDown(source.dispose);
+      source.debugDisableTutorial();
+      source.lumens = 1000;
+      expect(source.buildTowerAt(0, TowerLibrary.greenPrism), isTrue);
+
+      final payload = source.buildCloudSavePayload();
+      final layers = payload['layers'] as Map<String, dynamic>;
+      final firstLayer =
+          (layers['items'] as List<dynamic>).first as Map<String, dynamic>;
+      final core = firstLayer['core'] as Map<String, dynamic>;
+      final slots = firstLayer['slots'] as List<dynamic>;
+      final greenSlot = slots.first as Map<String, dynamic>;
+      core
+        ..['projectileType'] = ProjectileType.orbitNode.name
+        ..['projectileLoadout'] = <String>[ProjectileType.orbitNode.name];
+      greenSlot
+        ..['projectileType'] = ProjectileType.orbitNode.name
+        ..['childProjectileType'] = ProjectileType.orbitNode.name
+        ..['childProjectileLoadout'] = <String>[ProjectileType.orbitNode.name]
+        ..['projectileTargetPriorities'] = <String, String>{
+          ProjectileType.orbitNode.name: TargetPriority.strong.name,
+        };
+
+      final restored = LightcoreController.fromCloudSavePayload(payload);
+      addTearDown(restored.dispose);
+
+      expect(restored.coreState.projectileType, ProjectileType.shieldHalo);
+      expect(restored.coreState.projectileLoadout, [ProjectileType.shieldHalo]);
+      expect(restored.slots.first.projectileType, ProjectileType.shieldHalo);
+      expect(
+        restored.slots.first.childProjectileType,
+        ProjectileType.shieldHalo,
+      );
+      expect(restored.slots.first.childProjectileLoadout, [
+        ProjectileType.shieldHalo,
+      ]);
+      expect(
+        restored.slots.first.projectileTargetPriorities[ProjectileType
+            .shieldHalo],
+        TargetPriority.strong,
+      );
+    },
+  );
+
   test('threat assignment presets save anomaly deck and apex per core', () {
     final source = LightcoreController();
     addTearDown(source.dispose);

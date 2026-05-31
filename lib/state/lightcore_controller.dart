@@ -314,7 +314,7 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
     id: 'TUT-001',
     title: 'Wake the Core',
     teachGoal:
-        'Grow the shell by keeping the core active. The core turns queued pulses into shots that earn Lumens.',
+        'Grow the shell by keeping the core active. The core auto-charges shots that earn Lumens.',
     trigger: 'New account',
     primaryClickTarget: 'Core Map > tap central core',
     coachCopy:
@@ -362,7 +362,7 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
     primaryClickTarget:
         'Hex 1 controls > Comet Mortar or Rayline Spire > Fabricate',
     coachCopy:
-        'Choose Comet Mortar or Rayline Spire in Hex 1 so the shell has its first reliable source of queued pulses.',
+        'Choose Comet Mortar or Rayline Spire in Hex 1 so the shell has its first reliable attack style.',
     completionCondition: 'Start or finish first Fabrication',
     reward: 'Instant first tower',
     failureHelpState:
@@ -378,7 +378,7 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
     trigger: 'First focus-fire action complete',
     primaryClickTarget: 'Lower-left prism control > Tower Stats pop-out',
     coachCopy:
-        'Open Tower Stats now that the first shot landed. The numbers show what this tower contributes to the core queue.',
+        'Open Tower Stats now that the first shot landed. The numbers show why this tower is worth upgrading.',
     completionCondition: 'Open the first tower stats pop-out',
     reward: 'Tower stat labels unlocked',
     failureHelpState:
@@ -389,14 +389,14 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
     id: 'TUT-006',
     title: 'Auto-Feed Ready',
     teachGoal:
-        'Packets generate automatically after the core wakes. The player learns this through the focus-fire action instead of waiting on the queue.',
+        'Shots charge automatically after the core wakes. The player learns this through the focus-fire action instead of waiting.',
     trigger: 'Legacy save is still parked on the old auto-charge watch step',
-    primaryClickTarget: 'Battlefield > Lightcore queue',
-    coachCopy: 'Auto-feed is running. Tap an anomaly to focus the next packet.',
+    primaryClickTarget: 'Battlefield > anomaly target',
+    coachCopy: 'Auto-feed is running. Tap an anomaly to focus the next shot.',
     completionCondition: 'Focus one anomaly',
     reward: 'Small Lumen grant',
     failureHelpState:
-        'Tap a visible anomaly. The next packet will fire when ready.',
+        'Tap a visible anomaly. The next shot will fire when ready.',
     analyticsEvent: 'tutorial_core_auto_generate',
   ),
   LightcoreTutorialStep.tapFirstTower: LightcoreTutorialQuestDefinition(
@@ -407,8 +407,8 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
     trigger: 'First tower exists',
     primaryClickTarget: 'Battlefield > anomaly target',
     coachCopy:
-        'Tap the highlighted anomaly to focus fire. If the queue is still charging, the shot fires as soon as a packet is ready.',
-    completionCondition: 'Focus and fire one packet at an anomaly',
+        'Tap the highlighted anomaly to focus fire. If the core is still charging, the shot fires as soon as it is ready.',
+    completionCondition: 'Focus and fire one shot at an anomaly',
     reward: 'Lumens and White Drift practice scan',
     failureHelpState:
         'Tap the highlighted anomaly, not a tower. Towers open tower controls; enemies set focus fire.',
@@ -418,7 +418,7 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
     id: 'TUT-008',
     title: 'Fire Child Tower',
     teachGoal:
-        'Child-shell towers keep the same tap-to-control rule: tower taps are for tower controls while packet flow stays automatic.',
+        'Child-shell towers keep the same tap-to-control rule: tower taps are for tower controls while firing stays automatic.',
     trigger: 'First child shell has a charged tower',
     primaryClickTarget: 'Battlefield > charged child-shell tower',
     coachCopy:
@@ -438,7 +438,7 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
     trigger: 'First tower can be upgraded',
     primaryClickTarget: 'Tower Stats pop-out > Upgrade',
     coachCopy:
-        'Upgrade the first tower once before expanding. A stronger anchor makes each queued packet matter more.',
+        'Upgrade the first tower once before expanding. A stronger anchor makes every auto-shot matter more.',
     completionCondition: 'First tower reaches level 2',
     reward: 'Small Lumen grant',
     failureHelpState:
@@ -465,7 +465,7 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
     title: 'Open Knowledge Cards',
     teachGoal:
         'Threat Scans resolve Knowledge Cards that make enemy families easier to fight.',
-    trigger: 'Queue tutorial done',
+    trigger: 'Opening combat lesson done',
     primaryClickTarget: 'Anomalies > Research',
     coachCopy:
         'Resolve one Threat Scan into a Knowledge Card. Map regions open through the linear stabilization route.',
@@ -493,15 +493,15 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
     id: 'TUT-012',
     title: 'Manager Auto-Aim',
     teachGoal:
-        'Core Managers convert the auto-filled queue into hands-off firing when the player wants automation.',
+        'Core Managers convert auto-charged shots into hands-off firing when the player wants automation.',
     trigger: 'Manager assigned',
-    primaryClickTarget: 'Core > Queue display',
+    primaryClickTarget: 'Battlefield > manager firing lane',
     coachCopy:
-        'Watch the assigned manager spend queued packets automatically. You can still tap enemies to override focus.',
-    completionCondition: 'Let the manager route 5 queued pulses',
+        'Watch the assigned manager fire charged shots automatically. You can still tap enemies to override focus.',
+    completionCondition: 'Let the manager fire 5 charged shots',
     reward: 'Lumens and Threat Scan x1',
     failureHelpState:
-        'Keep the managed shell in view and watch the queue spend through automation.',
+        'Keep the managed shell in view and watch automation fire for you.',
     analyticsEvent: 'tutorial_auto_queue_check',
   ),
   LightcoreTutorialStep

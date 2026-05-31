@@ -2402,7 +2402,7 @@ void main() {
     expect(find.text('Focus Fire'), findsWidgets);
     expect(
       find.text(
-        'Tap the highlighted anomaly to focus fire. If the queue is still charging, the shot fires as soon as a packet is ready.',
+        'Tap the highlighted anomaly to focus fire. If the core is still charging, the shot fires as soon as it is ready.',
       ),
       findsWidgets,
     );

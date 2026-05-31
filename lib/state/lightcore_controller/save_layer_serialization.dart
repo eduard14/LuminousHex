@@ -302,13 +302,12 @@ extension LightcoreControllerSaveLayerSerialization on LightcoreController {
         for (final entry in _coerceMap(
           data['projectileTargetPriorities'],
         ).entries)
-          if (_enumByName(ProjectileType.values, entry.key) != null &&
+          if (_restoreOptionalActiveProjectileType(_stringOrNull(entry.key)) !=
+                  null &&
               _enumByName(TargetPriority.values, _stringOrNull(entry.value)) !=
                   null)
-            _enumByName(ProjectileType.values, entry.key)!: _enumByName(
-              TargetPriority.values,
-              _stringOrNull(entry.value),
-            )!,
+            _restoreOptionalActiveProjectileType(_stringOrNull(entry.key))!:
+                _enumByName(TargetPriority.values, _stringOrNull(entry.value))!,
       },
       fireSequence: _intValue(data['fireSequence']),
       investedLumens: _intValue(data['investedLumens']),
@@ -354,7 +353,7 @@ extension LightcoreControllerSaveLayerSerialization on LightcoreController {
       childProjectileLoadout: _coerceList(data['childProjectileLoadout'])
           .map(_stringOrNull)
           .whereType<String>()
-          .map((value) => _enumByName(ProjectileType.values, value))
+          .map(_restoreOptionalActiveProjectileType)
           .whereType<ProjectileType>()
           .toList(growable: false),
       childPayloadLoadout: _coerceList(data['childPayloadLoadout'])
@@ -363,8 +362,7 @@ extension LightcoreControllerSaveLayerSerialization on LightcoreController {
           .map((value) => _enumByName(PayloadType.values, value))
           .whereType<PayloadType>()
           .toList(growable: false),
-      childProjectileType: _enumByName(
-        ProjectileType.values,
+      childProjectileType: _restoreOptionalActiveProjectileType(
         _stringOrNull(data['childProjectileType']),
       ),
       childPayloadType: _enumByName(
@@ -469,8 +467,34 @@ extension LightcoreControllerSaveLayerSerialization on LightcoreController {
       ProjectileType.values,
       projectileTypeName,
     );
-    if (config?.id == TowerLibrary.greenPrism.id &&
-        projectileType == ProjectileType.orbitNode) {
+    if (projectileType == ProjectileType.orbitNode) {
+      return ProjectileType.shieldHalo;
+    }
+    return projectileType;
+  }
+
+  ProjectileType _restoreActiveProjectileType(
+    String? projectileTypeName, {
+    required ProjectileType fallback,
+  }) {
+    final projectileType = _enumByName(
+      ProjectileType.values,
+      projectileTypeName,
+    );
+    if (projectileType == ProjectileType.orbitNode) {
+      return ProjectileType.shieldHalo;
+    }
+    return projectileType ?? fallback;
+  }
+
+  ProjectileType? _restoreOptionalActiveProjectileType(
+    String? projectileTypeName,
+  ) {
+    final projectileType = _enumByName(
+      ProjectileType.values,
+      projectileTypeName,
+    );
+    if (projectileType == ProjectileType.orbitNode) {
       return ProjectileType.shieldHalo;
     }
     return projectileType;
@@ -567,12 +591,10 @@ extension LightcoreControllerSaveLayerSerialization on LightcoreController {
       data['coreEnergy'],
       fallback: coreEnergyCapacity,
     ).clamp(0.0, coreEnergyCapacity);
-    final projectileType =
-        _enumByName(
-          ProjectileType.values,
-          _stringOrNull(data['projectileType']),
-        ) ??
-        ProjectileType.starBolt;
+    final projectileType = _restoreActiveProjectileType(
+      _stringOrNull(data['projectileType']),
+      fallback: ProjectileType.starBolt,
+    );
     final payloadType =
         _enumByName(PayloadType.values, _stringOrNull(data['payloadType'])) ??
         PayloadType.none;
@@ -605,7 +627,7 @@ extension LightcoreControllerSaveLayerSerialization on LightcoreController {
       projectileLoadout: _coerceList(data['projectileLoadout'])
           .map(_stringOrNull)
           .whereType<String>()
-          .map((value) => _enumByName(ProjectileType.values, value))
+          .map(_restoreOptionalActiveProjectileType)
           .whereType<ProjectileType>()
           .toList(growable: false),
       payloadLoadout: _coerceList(data['payloadLoadout'])
@@ -646,12 +668,10 @@ extension LightcoreControllerSaveLayerSerialization on LightcoreController {
       unlocked: _boolValue(data['unlocked']),
       count: _intValue(data['count']),
       fireCooldownRemaining: _doubleValue(data['fireCooldownRemaining']),
-      projectileType:
-          _enumByName(
-            ProjectileType.values,
-            _stringOrNull(data['projectileType']),
-          ) ??
-          ProjectileType.threadBeam,
+      projectileType: _restoreActiveProjectileType(
+        _stringOrNull(data['projectileType']),
+        fallback: ProjectileType.threadBeam,
+      ),
       payloadType:
           _enumByName(PayloadType.values, _stringOrNull(data['payloadType'])) ??
           PayloadType.none,

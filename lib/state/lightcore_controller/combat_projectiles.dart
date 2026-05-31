@@ -8,12 +8,6 @@ extension LightcoreControllerCombatProjectiles on LightcoreController {
       final progress = min(1.0, shot.progress + (dt * _shotSpeedForShot(shot)));
       final nextShot = _shotUsesShieldHalo(shot)
           ? _resolveShieldHaloShotAdvance(shot, progress: progress)
-          : _shotUsesOrbitNode(shot)
-          ? _resolveOrbitShotAdvance(
-              shot,
-              previousProgress: previousProgress,
-              progress: progress,
-            )
           : _shotUsesBlueFocusLaser(shot)
           ? _resolveBlueFocusLaserShotAdvance(shot, progress: progress)
           : _coreShotUsesBasicImpact(shot)
@@ -48,9 +42,6 @@ extension LightcoreControllerCombatProjectiles on LightcoreController {
       ..addAll(nextShots);
   }
 
-  bool _shotUsesOrbitNode(CoreShotState shot) =>
-      !shot.layer2 && shot.projectileType == ProjectileType.orbitNode;
-
   bool _shotUsesShieldHalo(CoreShotState shot) =>
       !shot.layer2 && shot.projectileType == ProjectileType.shieldHalo;
 
@@ -84,9 +75,6 @@ extension LightcoreControllerCombatProjectiles on LightcoreController {
     required PrototypeAffinity affinity,
     int? sourceSlotIndex,
   }) {
-    if (!layer2 && projectileType == ProjectileType.orbitNode) {
-      return 1.12;
-    }
     if (!layer2 && projectileType == ProjectileType.shieldHalo) {
       return 0.9;
     }
@@ -111,77 +99,11 @@ extension LightcoreControllerCombatProjectiles on LightcoreController {
     sourceSlotIndex: shot.sourceSlotIndex,
   );
 
-  double _orbitNodeAngleForProgress(CoreShotState shot, double progress) =>
-      shot.aimAngle + (progress * pi * 2);
-
-  double _orbitNodeTravelRadiusForMaxRange(double maxRange) =>
-      min(maxRange, max(120.0, maxRange * 0.72));
-
-  double _orbitNodeRadiusForShot(CoreShotState shot) => shot.travelRadius;
-
-  double _orbitNodeHitRadiusForShot(CoreShotState shot) =>
-      max(18.0, shot.travelRadius * 0.075);
-
   double _shieldHaloTravelRadiusForMaxRange(double maxRange) =>
       _shieldHaloGuardRadiusForMaxRange(maxRange);
 
   double _shieldHaloBandHalfWidthForShot(CoreShotState shot) =>
       _shieldHaloGuardBandHalfWidth;
-
-  List<double> _sampleAnglesAlongMotion(
-    double startAngle,
-    double endAngle, {
-    double maxStep = pi / 22,
-  }) {
-    final steps = max(1, ((endAngle - startAngle).abs() / maxStep).ceil());
-    return List<double>.generate(
-      steps + 1,
-      (index) => startAngle + ((endAngle - startAngle) * (index / steps)),
-      growable: false,
-    );
-  }
-
-  CoreShotState _resolveOrbitShotAdvance(
-    CoreShotState shot, {
-    required double previousProgress,
-    required double progress,
-  }) {
-    final hitEnemyIds = shot.hitEnemyIds.toSet();
-    final orbitRadius = _orbitNodeRadiusForShot(shot);
-    final hitRadius = _orbitNodeHitRadiusForShot(shot);
-    final sampledAngles = _sampleAnglesAlongMotion(
-      _orbitNodeAngleForProgress(shot, previousProgress),
-      _orbitNodeAngleForProgress(shot, progress),
-    );
-    final newlyHit = _enemies.where((enemy) {
-      if (hitEnemyIds.contains(enemy.id)) {
-        return false;
-      }
-      final collisionRadius = _enemyCollisionRadius(enemy) + hitRadius;
-      for (final angle in sampledAngles) {
-        if (_polarDistanceToEnemy(enemy, angle: angle, radius: orbitRadius) <=
-            collisionRadius) {
-          return true;
-        }
-      }
-      return false;
-    }).toList();
-
-    for (final enemy in newlyHit) {
-      _applyShotDamageToEnemy(
-        shot,
-        enemy,
-        damageMultiplier: 0.92,
-        applyProjectileFollowUp: false,
-      );
-      hitEnemyIds.add(enemy.id);
-    }
-
-    return shot.copyWith(
-      progress: progress,
-      hitEnemyIds: hitEnemyIds.toList(growable: false),
-    );
-  }
 
   CoreShotState _resolveShieldHaloShotAdvance(
     CoreShotState shot, {
@@ -346,9 +268,6 @@ extension LightcoreControllerCombatProjectiles on LightcoreController {
     required double maxRange,
     bool basicImpact = false,
   }) {
-    if (!basicImpact && projectileType == ProjectileType.orbitNode) {
-      return min(targetRadius, _orbitNodeTravelRadiusForMaxRange(maxRange));
-    }
     if (!basicImpact && projectileType == ProjectileType.shieldHalo) {
       return min(targetRadius, _shieldHaloTravelRadiusForMaxRange(maxRange));
     }
@@ -372,9 +291,7 @@ extension LightcoreControllerCombatProjectiles on LightcoreController {
       projectileType: projectileType,
       sourceSlotIndex: sourceSlotIndex,
     );
-    if (!basicImpact &&
-        (projectileType.usesRadialWave ||
-            (!layer2 && projectileType == ProjectileType.orbitNode))) {
+    if (!basicImpact && projectileType.usesRadialWave) {
       return 0;
     }
 

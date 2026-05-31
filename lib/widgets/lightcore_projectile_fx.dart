@@ -336,20 +336,6 @@ class LightcoreProjectileFx {
       );
       return;
     }
-    if (projectileType == ProjectileType.orbitNode) {
-      _drawOrbitNodeShot(
-        canvas,
-        start: start,
-        end: end,
-        color: color,
-        width: width,
-        progress: progress,
-        alpha: alpha,
-        unit: unit,
-      );
-      return;
-    }
-
     switch (projectileType.behaviorProfile) {
       case ProjectileBehaviorProfile.thread:
         if (projectileType == ProjectileType.heavyShot) {
@@ -551,42 +537,6 @@ class LightcoreProjectileFx {
         ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10)
         ..color = color.withValues(alpha: 0.28 * alpha),
     );
-  }
-
-  static void _drawOrbitNodeShot(
-    Canvas canvas, {
-    required Offset start,
-    required Offset end,
-    required Color color,
-    required double width,
-    required double progress,
-    required double alpha,
-    required double unit,
-  }) {
-    final orbitCenter = Offset.lerp(start, end, progress.clamp(0.0, 1.0))!;
-    final orbitRadius = unit * 0.22;
-    final orbitAngle = progress * math.pi * 2;
-    final orbitNode = orbitCenter.translate(
-      math.cos(orbitAngle) * orbitRadius,
-      math.sin(orbitAngle) * orbitRadius,
-    );
-    canvas.drawCircle(
-      orbitCenter,
-      orbitRadius,
-      Paint()
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = math.max(1.4, width * 0.72)
-        ..color = color.withValues(alpha: 0.14 * alpha),
-    );
-    drawGlowLine(
-      canvas,
-      start,
-      orbitCenter,
-      color,
-      width: width * 0.74,
-      alpha: 0.44 * alpha,
-    );
-    drawEnergyOrb(canvas, orbitNode, color, unit * 0.092, alpha: alpha);
   }
 
   static void _drawShieldHaloShot(

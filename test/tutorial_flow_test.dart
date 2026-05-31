@@ -446,7 +446,7 @@ void main() {
     expect(controller.tutorialHeadline, 'Focus Fire');
     expect(
       controller.tutorialPrompt,
-      'Tap the highlighted anomaly to focus fire. If the queue is still charging, the shot fires as soon as a packet is ready.',
+      'Tap the highlighted anomaly to focus fire. If the core is still charging, the shot fires as soon as it is ready.',
     );
     final enemyId = controller.tutorialHighlightedEnemyId;
     expect(enemyId, isNotNull);
