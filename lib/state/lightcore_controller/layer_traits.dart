@@ -141,12 +141,19 @@ extension LightcoreControllerLayerTraits on LightcoreController {
   bool get _earlyTutorialComplete =>
       _tutorialEarlyQuestChainCompleted || _currentLayerEarlyTutorialComplete;
 
-  bool get _firstThreatChallengeStarted {
+  bool get _firstThreatChallengeActive {
+    final starterId = ThreatRegionLibrary.all.first.id;
+    return _threatRegionChallenge?.regionId == starterId;
+  }
+
+  bool get _firstThreatChallengeCompleted {
     final starterId = ThreatRegionLibrary.all.first.id;
     final starterState = threatRegionStateById(starterId);
-    return _threatRegionChallenge?.regionId == starterId ||
-        (starterState?.stabilizedLevel ?? 0) > 0;
+    return (starterState?.stabilizedLevel ?? 0) > 0;
   }
+
+  bool get _firstThreatChallengeStarted =>
+      _firstThreatChallengeActive || _firstThreatChallengeCompleted;
 
   bool get _openingThreatEscalationReady {
     final firstTower = _firstTutorialTower;
@@ -315,6 +322,9 @@ extension LightcoreControllerLayerTraits on LightcoreController {
     }
     if (_openingThreatEscalationReady) {
       return LightcoreTutorialStep.raiseThreat;
+    }
+    if (_firstThreatChallengeActive) {
+      return LightcoreTutorialStep.none;
     }
     if (!_tutorialStabilityPanelOpened) {
       return LightcoreTutorialStep.readEffectiveGain;
