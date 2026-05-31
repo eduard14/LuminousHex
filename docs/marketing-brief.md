@@ -81,6 +81,8 @@ shell, and keep climbing.
   targeting tools, keeping build/stat actions distinct from anomaly aiming.
 - Ready shots do not orbit as collectible-looking field objects; only brief
   handoff effects appear when a relay charges the core.
+- Ready-shot UI is a compact availability indicator, not an empty queue rail
+  that asks the player to manage ammo slots.
 - Shell visibility is an explicit HUD toggle, keeping battlefield taps from
   folding the active battlefield or opening tower placement.
 - Manager automation upgrades charged shots into hands-off target routing while

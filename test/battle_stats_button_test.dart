@@ -181,7 +181,7 @@ void main() {
     );
   });
 
-  testWidgets('charged shot rail drag-scrolls without rendering a scrollbar', (
+  testWidgets('charged shot indicator shows ready shots without empty slots', (
     tester,
   ) async {
     final controller = LightcoreController();
@@ -197,18 +197,14 @@ void main() {
       find.byKey(const ValueKey<String>('battle-charge-rail')),
       findsOneWidget,
     );
-    final queueScrollable = find.byType(Scrollable);
-    expect(queueScrollable, findsOneWidget);
-    expect(find.byType(Scrollbar), findsNothing);
-
-    final position = tester.state<ScrollableState>(queueScrollable).position;
-    expect(position.maxScrollExtent, greaterThan(0));
-    final before = position.pixels;
-
-    await tester.drag(queueScrollable, const Offset(0, 80));
-    await tester.pump(const Duration(milliseconds: 120));
-
-    expect(position.pixels, isNot(before));
+    expect(
+      find.descendant(
+        of: find.byKey(const ValueKey<String>('battle-charge-rail')),
+        matching: find.byIcon(Icons.bolt_rounded),
+      ),
+      findsOneWidget,
+    );
+    expect(find.byType(Scrollable), findsNothing);
     expect(find.byType(Scrollbar), findsNothing);
   });
 
