@@ -8,6 +8,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:lightcore/battle/lightcore_battle_game.dart';
 import 'package:lightcore/data/enemy_configs.dart';
 import 'package:lightcore/data/tower_configs.dart';
+import 'package:lightcore/models/lightcore_state.dart';
 import 'package:lightcore/models/lightcore_types.dart';
 import 'package:lightcore/screens/battle_screen.dart';
 import 'package:lightcore/state/lightcore_controller.dart';
@@ -64,6 +65,28 @@ Offset _slotCenter(WidgetTester tester, int slotIndex) {
   final x = hexRadius * math.sqrt(3) * (coord.$1 + (coord.$2 / 2));
   final y = hexRadius * 1.5 * coord.$2;
   return Offset(center.dx + x, center.dy + y);
+}
+
+AmmoPacket _testAmmoPacket(int id) {
+  return AmmoPacket(
+    id: 'battle_stats_packet_$id',
+    sourceSlotIndex: null,
+    affinity: PrototypeAffinity.neutral,
+    power: 12,
+    advantageMultiplier: 1,
+    projectileType: ProjectileType.starBolt,
+    payloadType: PayloadType.none,
+    targetPriority: TargetPriority.close,
+    range: 300,
+    critChance: 0.05,
+    critMultiplier: 1.5,
+    finalDamageMultiplier: 1,
+    bossDamageMultiplier: 1,
+    normalDamageMultiplier: 1,
+    defensePenetration: 0,
+    minDamageMultiplier: 1,
+    maxDamageMultiplier: 1,
+  );
 }
 
 void main() {
@@ -145,15 +168,35 @@ void main() {
     expect(find.text('Core Stats'), findsOneWidget);
   });
 
-  testWidgets('core queue rail drag-scrolls without rendering a scrollbar', (
-    tester,
-  ) async {
+  testWidgets('charged shot rail stays hidden while empty', (tester) async {
     final controller = LightcoreController();
     addTearDown(controller.dispose);
     controller.debugDisableTutorial();
 
     await _pumpBattleScreen(tester, controller);
 
+    expect(
+      find.byKey(const ValueKey<String>('battle-charge-rail')),
+      findsNothing,
+    );
+  });
+
+  testWidgets('charged shot rail drag-scrolls without rendering a scrollbar', (
+    tester,
+  ) async {
+    final controller = LightcoreController();
+    addTearDown(controller.dispose);
+    controller.debugDisableTutorial();
+    controller.debugSetAmmoQueue(
+      List<AmmoPacket>.generate(controller.coreQueueCapacity, _testAmmoPacket),
+    );
+
+    await _pumpBattleScreen(tester, controller);
+
+    expect(
+      find.byKey(const ValueKey<String>('battle-charge-rail')),
+      findsOneWidget,
+    );
     final queueScrollable = find.byType(Scrollable);
     expect(queueScrollable, findsOneWidget);
     expect(find.byType(Scrollbar), findsNothing);

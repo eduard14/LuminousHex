@@ -1134,7 +1134,7 @@ class _BattleScreenState extends State<BattleScreen> {
         }
       case LightcoreTutorialStep.tapBattleCore:
         if (_tutorialOpenPanelBlocksCurrentStep(controller)) {
-          return 'Close the open battle controls and watch the Lightcore queue auto-charge.';
+          return 'Close the open battle controls and watch the Lightcore auto-charge its next shot.';
         }
       case LightcoreTutorialStep.tapFirstTower:
         if (_tutorialOpenPanelBlocksCurrentStep(controller)) {
@@ -1191,11 +1191,15 @@ class _BattleScreenState extends State<BattleScreen> {
       controller: controller,
       compact: compact,
     );
+    final showChargeRail =
+        widget.showBattleHud &&
+        (controller.queuedCorePackets > 0 ||
+            controller.tutorialStep == LightcoreTutorialStep.autoQueueCheck);
 
     return Stack(
       children: [
         Positioned.fill(child: _buildGameCanvas(compact ? 20 : 0)),
-        if (widget.showBattleHud)
+        if (showChargeRail)
           Positioned(
             right: inset,
             top: topInset + (compact ? 54 : 66),
@@ -2373,8 +2377,9 @@ class _CoreQueueRail extends StatelessWidget {
     final visibleSlots = compact ? 5 : 7;
     final cellSize = compact ? 24.0 : 28.0;
     return Semantics(
+      key: const ValueKey<String>('battle-charge-rail'),
       label:
-          'Core queue ${controller.queuedCorePackets} of ${controller.coreQueueCapacity}',
+          'Charged shots ${controller.queuedCorePackets} of ${controller.coreQueueCapacity}',
       child: Container(
         width: cellSize + 12,
         constraints: BoxConstraints(maxHeight: (cellSize + 6) * visibleSlots),
