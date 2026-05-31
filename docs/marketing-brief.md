@@ -116,6 +116,9 @@ shell, and keep climbing.
   instead of asking for a grind pause.
 - The same starter challenge grants enough opening EXP/Kills to unlock Hex 2,
   keeping the next build decision connected to the first challenge clear.
+- The first Hex 2 starter choice is also funded and brought online instantly,
+  letting the opening loop move from first challenge payoff into a second tower
+  decision without a 45-second fabrication wait.
 - Tower body taps are reserved for tower controls, upgrades, stats, and
   targeting tools, keeping build/stat actions distinct from anomaly aiming.
 - Enemy focus taps automatically close open battle control panels so aiming

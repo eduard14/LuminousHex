@@ -304,6 +304,15 @@ void main() {
       TowerLibrary.cyanPrism,
       TowerLibrary.greenPrism,
     ]);
+    controller.selectSlot(1);
+    controller.lumens = 0;
+    expect(
+      controller.tutorialStartTowerFabricationAt(1, TowerLibrary.greenPrism),
+      isTrue,
+    );
+    expect(controller.slots[1].isFabricating, isFalse);
+    expect(controller.slots[1].config?.id, TowerLibrary.greenPrism.id);
+    expect(controller.tutorialTowerChoices.length, TowerLibrary.all.length);
   });
 
   test(

@@ -34,6 +34,12 @@ extension LightcoreControllerBattleTowerActions on LightcoreController {
       _notifyNow();
       return false;
     }
+    if (tutorialShowsStarterProjectileChoices && slotIndex == 1) {
+      final buildCost = buildCostForConfig(config);
+      if (lumens < buildCost) {
+        lumens = buildCost;
+      }
+    }
     if (_tutorialStep == LightcoreTutorialStep.buildFirstRedTower &&
         slotIndex == 0 &&
         _isOpeningStarterTower(config)) {
@@ -355,7 +361,8 @@ extension LightcoreControllerBattleTowerActions on LightcoreController {
     if (!_prepareTutorialTowerBuild(slotIndex, config)) {
       return false;
     }
-    if (_shouldInstantBuildFirstTutorialTower(slotIndex)) {
+    if (_shouldInstantBuildFirstTutorialTower(slotIndex) ||
+        _shouldInstantBuildStarterFollowupTower(slotIndex)) {
       return buildTowerAt(slotIndex, config);
     }
     return startTowerFabricationAt(slotIndex, config);
@@ -367,6 +374,14 @@ extension LightcoreControllerBattleTowerActions on LightcoreController {
         activeLayer.parentLayerId == null &&
         builtTowerCount == 0 &&
         slotIndex == 0;
+  }
+
+  bool _shouldInstantBuildStarterFollowupTower(int slotIndex) {
+    return tutorialShowsStarterProjectileChoices &&
+        activeLayer.tier == 1 &&
+        activeLayer.parentLayerId == null &&
+        builtTowerCount == 1 &&
+        slotIndex == 1;
   }
 
   bool tutorialUpgradeSelectedTower() {
