@@ -773,7 +773,7 @@ class _BattleScreenState extends State<BattleScreen> {
       return 'Build Hex ${selected.slotIndex + 1}';
     }
     if (selected.isFabricating) {
-      return '${controller.towerDisplayName(selected)} fabrication';
+      return '${controller.towerDisplayName(selected)} building';
     }
     return '${controller.towerDisplayName(selected)} controls';
   }
@@ -827,7 +827,7 @@ class _BattleScreenState extends State<BattleScreen> {
           return null;
         }
         if (slot.isFabricating) {
-          return '${controller.towerDisplayName(slot)} fabrication';
+          return '${controller.towerDisplayName(slot)} building';
         }
         return '${controller.towerDisplayName(slot)} controls';
     }
@@ -1091,7 +1091,7 @@ class _BattleScreenState extends State<BattleScreen> {
     switch (controller.tutorialStep) {
       case LightcoreTutorialStep.buildFirstRedTower:
         if (selectedSlotIndex == 0 && selected?.isBuilt == false) {
-          return 'Hex 1 build controls are already open. Choose Comet Mortar or Rayline Spire to start the first fabrication.';
+          return 'Hex 1 build controls are open. Choose Comet Mortar or Rayline Spire to bring the first tower online.';
         }
       case LightcoreTutorialStep.upgradeFirstTowerToLevel3:
         if (selectedSlotIndex == 0 && selected?.isBuilt == true) {
@@ -1840,7 +1840,7 @@ class _TowerFabricationPanel extends StatelessWidget {
       ],
       [
         _InlineStatEntry(label: 'Hex', value: '${tower.slotIndex + 1}'),
-        const _InlineStatEntry(label: 'Status', value: 'Fabricating'),
+        const _InlineStatEntry(label: 'Status', value: 'Building'),
       ],
     ];
 
@@ -1860,10 +1860,7 @@ class _TowerFabricationPanel extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 4),
-        Text(
-          'Fabrication',
-          style: textTheme.titleMedium?.copyWith(color: tint),
-        ),
+        Text('Building', style: textTheme.titleMedium?.copyWith(color: tint)),
         const SizedBox(height: 6),
         Text(
           controller.towerFabricationProgressLabel(tower),

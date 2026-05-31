@@ -357,11 +357,10 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
     teachGoal:
         'The first tower sets your opening projectile style. Comet Mortar gives slow area hits; Rayline Spire gives steady beam pressure.',
     trigger: 'First hex selected',
-    primaryClickTarget:
-        'Hex 1 controls > Comet Mortar or Rayline Spire > Fabricate',
+    primaryClickTarget: 'Hex 1 controls > Comet Mortar or Rayline Spire',
     coachCopy:
         'Choose Comet Mortar or Rayline Spire in Hex 1 so the shell has its first reliable attack style.',
-    completionCondition: 'Start or finish first Fabrication',
+    completionCondition: 'Start or finish first tower build',
     reward: 'Starter Lumen boost',
     failureHelpState:
         'Open the first hex controls, then choose one of the highlighted starter build buttons.',

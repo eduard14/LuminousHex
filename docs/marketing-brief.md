@@ -90,6 +90,8 @@ shell, and keep climbing.
   anomaly focus.
 - Manager-less shells now call the opening state Focus Fire instead of Manual
   Command, and core stats separate ready-shot capacity from ring completion.
+- The first tower timer is presented as Building and Online instead of
+  fabrication jargon, keeping the opening loop action-oriented.
 - Tutorial guidance appears as a compact battlefield notification with the next
   action visible; players expand it only when they want more detail.
 - Tower body taps are reserved for tower controls, upgrades, stats, and

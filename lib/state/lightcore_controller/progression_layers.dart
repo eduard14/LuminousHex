@@ -1061,9 +1061,9 @@ extension LightcoreControllerProgressionLayers on LightcoreController {
 
   String towerFabricationProgressLabel(OuterTowerState tower) {
     if (!tower.isFabricating) {
-      return 'Fabrication complete';
+      return 'Tower online';
     }
-    return 'Fabricating ${towerDisplayName(tower)} • ${towerFabricationRemainingLabel(tower)} remaining';
+    return 'Building ${towerDisplayName(tower)} • online in ${towerFabricationRemainingLabel(tower)}';
   }
 
   int get currentTraitRefreshCost =>

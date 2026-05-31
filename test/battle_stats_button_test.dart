@@ -316,7 +316,7 @@ void main() {
 
     expect(controller.slots[0].isFabricating, isTrue);
     expect(find.text('Tower Stats'), findsNothing);
-    expect(find.text('Fabrication'), findsNothing);
+    expect(find.text('Building'), findsNothing);
 
     final wrenchButton = find.byKey(
       const ValueKey<String>('battle-tower-selection-button'),
@@ -326,7 +326,7 @@ void main() {
     await tester.tap(wrenchButton);
     await tester.pump(const Duration(milliseconds: 180));
 
-    expect(find.text('Fabrication'), findsOneWidget);
+    expect(find.text('Building'), findsOneWidget);
     expect(find.text('Tower Stats'), findsNothing);
   });
 
@@ -362,7 +362,7 @@ void main() {
     );
   });
 
-  testWidgets('fabricating tower shows fabrication panel instead of stats', (
+  testWidgets('building tower shows build panel instead of stats', (
     tester,
   ) async {
     final controller = LightcoreController();
@@ -386,8 +386,8 @@ void main() {
       controller.pulses.where((pulse) => pulse.sourceSlotIndex == 0),
       isEmpty,
     );
-    expect(find.text('Fabrication'), findsOneWidget);
-    expect(find.textContaining('Fabricating Comet Mortar'), findsOneWidget);
+    expect(find.text('Building'), findsOneWidget);
+    expect(find.textContaining('Building Comet Mortar'), findsOneWidget);
     expect(find.text('Payload'), findsNothing);
     expect(find.text('No Payload'), findsNothing);
     expect(find.text('Tower Stats'), findsNothing);

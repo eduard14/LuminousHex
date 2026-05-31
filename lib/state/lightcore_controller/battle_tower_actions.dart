@@ -433,7 +433,7 @@ extension LightcoreControllerBattleTowerActions on LightcoreController {
     selectedSlotIndex = slotIndex;
     _towerRangePreviewSlotIndex = null;
     _showBanner(
-      '${config.name} fabrication started on hex ${slotIndex + 1}. ${duration.ceil()}s until the relay comes online.',
+      '${config.name} building on Hex ${slotIndex + 1}. Online in ${duration.ceil()}s.',
     );
     _syncTutorialStep(showBanner: false);
     _notifyNow();
