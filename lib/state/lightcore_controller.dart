@@ -442,7 +442,7 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
     completionCondition: 'First tower reaches level 2',
     reward: 'Small Lumen grant',
     failureHelpState:
-        'Open Hex 1 stats and use the highlighted Upgrade button when Lumens are available.',
+        'Open Hex 1 controls and use the highlighted Upgrade button when Lumens are available.',
     analyticsEvent: 'tutorial_upgrade_first_tower_l3',
   ),
   LightcoreTutorialStep.raiseThreat: LightcoreTutorialQuestDefinition(

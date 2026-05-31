@@ -1126,7 +1126,7 @@ class _BattleScreenState extends State<BattleScreen> {
         }
       case LightcoreTutorialStep.upgradeFirstTowerToLevel3:
         if (selectedSlotIndex == 0 && selected?.isBuilt == true) {
-          return 'Use the Tower Level button in the open Hex 1 controls until it reaches level 3.';
+          return 'Use the Upgrade button in the open Hex 1 controls once.';
         }
       case LightcoreTutorialStep.upgradeFirstTowerToLevel4:
         if (selectedSlotIndex == 0 && selected?.isBuilt == true) {

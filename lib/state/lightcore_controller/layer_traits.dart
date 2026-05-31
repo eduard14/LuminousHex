@@ -131,7 +131,6 @@ extension LightcoreControllerLayerTraits on LightcoreController {
     }
     return _tutorialManualAimFireLearned &&
         tower.level >= 3 &&
-        _tutorialFirstTowerStatsOpened &&
         _tutorialStabilityPanelOpened &&
         (totalRadianceStatPointsSpent > 0 ||
             _core.rangeUpgradeLevel > 0 ||
@@ -310,9 +309,6 @@ extension LightcoreControllerLayerTraits on LightcoreController {
     }
     if (!_tutorialManualAimFireLearned) {
       return LightcoreTutorialStep.tapFirstTower;
-    }
-    if (!_tutorialFirstTowerStatsOpened) {
-      return LightcoreTutorialStep.inspectFirstTowerStats;
     }
     final firstTowerUpgradeCost = upgradeCost(firstTower);
     if (firstTower.level < 2 &&

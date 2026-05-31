@@ -28,8 +28,8 @@ and promoting each completed shell into a deeper prism lattice.
 ## Short Description
 
 LumiHex is a mobile-first idle tower-defense game where the battlefield is a
-six-relay hex shell around a central Lightcore. Towers charge packet flow,
-queue projectile packets, tune anomaly encounters, collect managers, and
+six-relay hex shell around a central Lightcore. Towers auto-charge shots,
+focus anomaly encounters, collect managers, and
 promote Root Shells into Prism, Nexus, and Ascendant structures.
 
 ## Player Fantasy
@@ -48,9 +48,9 @@ shell, and keep climbing.
 1. Enter a hex shell built around the central Lightcore.
 2. Reveal the first perimeter hex immediately and build the opening relay.
 3. Tap a highlighted starter anomaly to focus fire while the core and relay
-   towers auto-feed ammo packets into the core queue.
-4. Inspect tower stats after the first shot lands, then upgrade from the same
-   tower-control surface.
+   towers auto-charge shots.
+4. Upgrade the first tower from its controls as the next action, keeping stats
+   optional instead of a required tutorial stop.
 5. Build the remaining perimeter relay towers while tower taps stay reserved for
    tower controls.
 6. Upgrade towers, core stats, and encounter capacity with earned resources.
@@ -68,25 +68,24 @@ shell, and keep climbing.
 ### Battle And Defense
 
 - Real-time hex battlefield with one central Lightcore and six relay towers.
-- Relay towers charge and feed ammo packets to the core instead of firing
-  directly.
-- Opening combat is low-friction: packets auto-generate after the Lightcore
-  wakes, Hex 1 is immediately selectable, then the player taps anomalies to aim
-  and focus fire.
+- Relay towers charge shots into the Lightcore instead of asking the player to
+  tap or drag ammo.
+- Opening combat is low-friction: shots auto-charge after the Lightcore wakes,
+  Hex 1 is immediately selectable, then the player taps anomalies to aim and
+  focus fire.
 - The first focus-fire lesson guarantees a visible starter anomaly so the
   player can act immediately after the first relay comes online.
 - Tutorial guidance appears as a compact battlefield notification with the next
   action visible; players expand it only when they want more detail.
 - Tower body taps are reserved for tower controls, upgrades, stats, and
   targeting tools, keeping build/stat actions distinct from anomaly aiming.
-- Waiting packets do not orbit as collectible-looking field objects; only brief
-  handoff effects appear when a relay feeds the core.
+- Ready shots do not orbit as collectible-looking field objects; only brief
+  handoff effects appear when a relay charges the core.
 - Shell visibility is an explicit HUD toggle, keeping battlefield taps from
   folding the active battlefield or opening tower placement.
-- Manager automation upgrades the auto-generated queue into hands-off
-  target routing while still letting active players override focus by tapping
-  anomalies.
-- Core queue combat rewards smart timing, charge flow, and tower placement.
+- Manager automation upgrades charged shots into hands-off target routing while
+  still letting active players override focus by tapping anomalies.
+- Charged-shot combat rewards smart timing, charge flow, and tower placement.
 - Output Efficiency pressure system replaces a simple health-loss fail state.
 - Lane disruption reduces rewards and charge flow when anomalies reach the ring.
 - Manual Overdrive accelerates the live shell battle.
@@ -109,8 +108,8 @@ shell, and keep climbing.
   Burst, Impact, Arc, Shield, Rayline, and Wave.
 - Towers roll trainable stat boards and special upgrade traits.
 - Core stats can be upgraded separately from perimeter towers.
-- Core Managers assign to a shell, upgrade the default payload feed, and raise
-  passive output. Common Core Manager cards use identity tiles instead of
+- Core Managers assign to a shell, upgrade auto-fire, and raise passive output.
+  Common Core Manager cards use identity tiles instead of
   generated-style portrait art.
 - Pattern bonuses reward certain tower arrangements and shell build choices.
 
@@ -248,7 +247,7 @@ Suggested first release order:
 
 1. Lemon Goose Games Inc. splash.
 2. Fractured Lightcore premise in one short text card.
-3. First relay comes online, packets auto-feed, player taps anomalies to focus
+3. First relay comes online, shots auto-charge, player taps anomalies to focus
    fire.
 4. Anomalies spiral inward and disrupt lanes.
 5. Threat Scan pull reveals a new Knowledge Card.
