@@ -144,8 +144,10 @@ extension LightcoreBattleGameCoreRendering on LightcoreBattleGame {
     double? coreFacingAngle,
   }) {
     final resolvedOpacity = opacity.clamp(0.0, 1.0).toDouble();
-    final payloadColor = payloadType.affinity?.color ?? LightcorePalette.layer2;
     final projectileColor = projectileType.affinity.color;
+    final payloadColor = payloadType == PayloadType.none
+        ? projectileColor
+        : payloadType.affinity?.color ?? projectileColor;
     final badgeRadius = size * 0.42;
     final vertices = _towerAlignedHexVertices(
       center,
@@ -162,7 +164,7 @@ extension LightcoreBattleGameCoreRendering on LightcoreBattleGame {
       path,
       Paint()
         ..style = PaintingStyle.fill
-        ..color = payloadColor.withValues(alpha: 0.1 * resolvedOpacity),
+        ..color = projectileColor.withValues(alpha: 0.09 * resolvedOpacity),
     );
 
     final backgroundPaint = Paint()

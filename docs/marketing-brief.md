@@ -85,9 +85,9 @@ shell, and keep climbing.
   that asks the player to manage ammo slots.
 - Shell visibility is an explicit HUD toggle, keeping battlefield taps from
   folding the active battlefield or opening tower placement.
-- Manager automation upgrades charged shots into hands-off target routing while
+- Manager automation upgrades ready shots into hands-off target routing while
   still letting active players override focus by tapping anomalies.
-- Charged-shot combat rewards smart timing, charge flow, and tower placement.
+- Ready-shot combat rewards smart timing, charge flow, and tower placement.
 - Output Efficiency pressure system replaces a simple health-loss fail state.
 - Lane disruption reduces rewards and charge flow when anomalies reach the ring.
 - Manual Overdrive accelerates the live shell battle.

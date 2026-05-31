@@ -181,113 +181,118 @@ void main() {
     );
   });
 
-  testWidgets('charged shot indicator shows ready shots without empty slots', (
-    tester,
-  ) async {
-    final controller = LightcoreController();
-    addTearDown(controller.dispose);
-    controller.debugDisableTutorial();
-    controller.debugSetAmmoQueue(
-      List<AmmoPacket>.generate(controller.coreQueueCapacity, _testAmmoPacket),
-    );
+  testWidgets(
+    'ready shot indicator shows available shots without empty slots',
+    (tester) async {
+      final controller = LightcoreController();
+      addTearDown(controller.dispose);
+      controller.debugDisableTutorial();
+      controller.debugSetAmmoQueue(
+        List<AmmoPacket>.generate(
+          controller.coreQueueCapacity,
+          _testAmmoPacket,
+        ),
+      );
 
-    await _pumpBattleScreen(tester, controller);
+      await _pumpBattleScreen(tester, controller);
 
-    expect(
-      find.byKey(const ValueKey<String>('battle-ready-shot-indicator')),
-      findsOneWidget,
-    );
-    expect(
-      find.descendant(
-        of: find.byKey(const ValueKey<String>('battle-ready-shot-indicator')),
-        matching: find.byIcon(Icons.bolt_rounded),
-      ),
-      findsOneWidget,
-    );
-    expect(find.byType(Scrollable), findsNothing);
-    expect(find.byType(Scrollbar), findsNothing);
-  });
+      expect(
+        find.byKey(const ValueKey<String>('battle-ready-shot-indicator')),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: find.byKey(const ValueKey<String>('battle-ready-shot-indicator')),
+          matching: find.byIcon(Icons.bolt_rounded),
+        ),
+        findsOneWidget,
+      );
+      expect(find.byType(Scrollable), findsNothing);
+      expect(find.byType(Scrollbar), findsNothing);
+    },
+  );
 
-  testWidgets('tower tap reserves tower controls instead of firing payloads', (
-    tester,
-  ) async {
-    final controller = LightcoreController();
-    addTearDown(controller.dispose);
-    controller.debugDisableTutorial();
-    controller.lumens = 1000;
-    controller.kills = LightcoreController.unlockKillsForOuterSlot(0);
-    expect(controller.buildTowerAt(0, TowerLibrary.redPrism), isTrue);
-    expect(controller.debugSetTowerCharge(0, charge: 1.2), isTrue);
-    controller.selectCenter();
+  testWidgets(
+    'tower tap reserves tower controls instead of firing ready shots',
+    (tester) async {
+      final controller = LightcoreController();
+      addTearDown(controller.dispose);
+      controller.debugDisableTutorial();
+      controller.lumens = 1000;
+      controller.kills = LightcoreController.unlockKillsForOuterSlot(0);
+      expect(controller.buildTowerAt(0, TowerLibrary.redPrism), isTrue);
+      expect(controller.debugSetTowerCharge(0, charge: 1.2), isTrue);
+      controller.selectCenter();
 
-    await _pumpBattleScreen(tester, controller);
-    await tester.tapAt(_slotCenter(tester, 0));
-    await tester.pump(const Duration(milliseconds: 50));
+      await _pumpBattleScreen(tester, controller);
+      await tester.tapAt(_slotCenter(tester, 0));
+      await tester.pump(const Duration(milliseconds: 50));
 
-    expect(controller.selectedSlotIndex, isNull);
-    expect(find.text('Tower Stats'), findsNothing);
-    expect(find.text('Live Projectile Target'), findsNothing);
-    expect(
-      controller.towerTargetPriority(controller.slots[0]),
-      TargetPriority.close,
-    );
-    expect(
-      find.byKey(const ValueKey<String>('battle-side-stats-button')),
-      findsNothing,
-    );
+      expect(controller.selectedSlotIndex, isNull);
+      expect(find.text('Tower Stats'), findsNothing);
+      expect(find.text('Live Projectile Target'), findsNothing);
+      expect(
+        controller.towerTargetPriority(controller.slots[0]),
+        TargetPriority.close,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('battle-side-stats-button')),
+        findsNothing,
+      );
 
-    final wrenchButton = find.byKey(
-      const ValueKey<String>('battle-tower-selection-button'),
-    );
-    expect(wrenchButton, findsOneWidget);
-    expect(
-      tester.getRect(wrenchButton).left,
-      lessThan(tester.getRect(find.byType(BattleScreen)).center.dx),
-    );
+      final wrenchButton = find.byKey(
+        const ValueKey<String>('battle-tower-selection-button'),
+      );
+      expect(wrenchButton, findsOneWidget);
+      expect(
+        tester.getRect(wrenchButton).left,
+        lessThan(tester.getRect(find.byType(BattleScreen)).center.dx),
+      );
 
-    final selectionButton = find.byKey(
-      const ValueKey<String>('battle-tower-selection-button'),
-    );
-    final overdriveButton = find.byKey(
-      const ValueKey<String>('battle-overdrive-button'),
-    );
-    expect(selectionButton, findsOneWidget);
-    expect(overdriveButton, findsOneWidget);
+      final selectionButton = find.byKey(
+        const ValueKey<String>('battle-tower-selection-button'),
+      );
+      final overdriveButton = find.byKey(
+        const ValueKey<String>('battle-overdrive-button'),
+      );
+      expect(selectionButton, findsOneWidget);
+      expect(overdriveButton, findsOneWidget);
 
-    final screenRect = tester.getRect(find.byType(BattleScreen));
-    expect(
-      tester.getRect(selectionButton).center.dx,
-      lessThan(screenRect.center.dx),
-    );
-    expect(
-      tester.getRect(overdriveButton).center.dx,
-      greaterThan(screenRect.center.dx),
-    );
+      final screenRect = tester.getRect(find.byType(BattleScreen));
+      expect(
+        tester.getRect(selectionButton).center.dx,
+        lessThan(screenRect.center.dx),
+      );
+      expect(
+        tester.getRect(overdriveButton).center.dx,
+        greaterThan(screenRect.center.dx),
+      );
 
-    await tester.tap(selectionButton);
-    await tester.pump(const Duration(milliseconds: 180));
+      await tester.tap(selectionButton);
+      await tester.pump(const Duration(milliseconds: 180));
 
-    expect(controller.selectedSlotIndex, 0);
-    expect(find.text('Tower Detail'), findsOneWidget);
-    expect(find.text('Projectile Targeting'), findsOneWidget);
-    expect(
-      tester.getTopLeft(find.text('Projectile Targeting')).dy,
-      lessThan(tester.getTopLeft(find.text('HEX 1')).dy),
-    );
+      expect(controller.selectedSlotIndex, 0);
+      expect(find.text('Tower Detail'), findsOneWidget);
+      expect(find.text('Projectile Targeting'), findsOneWidget);
+      expect(
+        tester.getTopLeft(find.text('Projectile Targeting')).dy,
+        lessThan(tester.getTopLeft(find.text('HEX 1')).dy),
+      );
 
-    final strongTargetChip = find.widgetWithText(ChoiceChip, 'Strong');
-    await tester.tap(strongTargetChip);
-    await tester.pump();
-    expect(
-      controller.towerTargetPriority(controller.slots[0]),
-      TargetPriority.strong,
-    );
+      final strongTargetChip = find.widgetWithText(ChoiceChip, 'Strong');
+      await tester.tap(strongTargetChip);
+      await tester.pump();
+      expect(
+        controller.towerTargetPriority(controller.slots[0]),
+        TargetPriority.strong,
+      );
 
-    await tester.tap(find.byIcon(Icons.close_rounded));
-    await tester.pump(const Duration(milliseconds: 180));
+      await tester.tap(find.byIcon(Icons.close_rounded));
+      await tester.pump(const Duration(milliseconds: 180));
 
-    expect(find.text('Tower Detail'), findsNothing);
-  });
+      expect(find.text('Tower Detail'), findsNothing);
+    },
+  );
 
   testWidgets('building a tower closes controls until the wrench is tapped', (
     tester,

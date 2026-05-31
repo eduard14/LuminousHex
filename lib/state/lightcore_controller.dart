@@ -461,12 +461,12 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
     id: 'TUT-012',
     title: 'Manager Auto-Aim',
     teachGoal:
-        'Core Managers convert auto-charged shots into hands-off firing when the player wants automation.',
+        'Core Managers convert ready shots into hands-off firing when the player wants automation.',
     trigger: 'Manager assigned',
     primaryClickTarget: 'Battlefield > manager firing lane',
     coachCopy:
-        'Watch the assigned manager fire charged shots automatically. You can still tap enemies to override focus.',
-    completionCondition: 'Let the manager fire 5 charged shots',
+        'Watch the assigned manager fire ready shots automatically. You can still tap enemies to override focus.',
+    completionCondition: 'Let the manager fire 5 ready shots',
     reward: 'Lumens and Threat Scan x1',
     failureHelpState:
         'Keep the managed shell in view and watch automation fire for you.',
@@ -660,11 +660,11 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
   LightcoreTutorialStep.forgeTowerManager: LightcoreTutorialQuestDefinition(
     id: 'TUT-026',
     title: 'Forge a Core Manager',
-    teachGoal: 'Core Managers automate charged shots across the active shell.',
+    teachGoal: 'Core Managers automate ready shots across the active shell.',
     trigger: 'Manager foundry opened with enough Flux',
     primaryClickTarget: 'Managers > Core Manager foundry > Forge',
     coachCopy:
-        'Forge one Core Manager. A manager keeps charged shots firing through automation.',
+        'Forge one Core Manager. A manager keeps ready shots firing through automation.',
     completionCondition: 'Own one Core Manager',
     reward: 'Flux',
     failureHelpState: 'Use the highlighted Core Manager forge control.',
@@ -674,11 +674,11 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
     id: 'TUT-027',
     title: 'Assign a Core Manager',
     teachGoal:
-        'A Core Manager assigns to the shell and turns charged shots into steady auto-fire.',
+        'A Core Manager assigns to the shell and turns ready shots into steady auto-fire.',
     trigger: 'After Output Efficiency shown',
     primaryClickTarget: 'Managers > Core Manager > Assign to Shell',
     coachCopy:
-        'Assign the Core Manager to the shell. Managers fire charged shots automatically and add tower-wide bonuses.',
+        'Assign the Core Manager to the shell. Managers fire ready shots automatically and add tower-wide bonuses.',
     completionCondition: 'Assign manager to core',
     reward: 'Starter manager',
     failureHelpState:

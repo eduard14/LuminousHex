@@ -29,13 +29,18 @@ class TowerLevelHexBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final payloadColor = payloadType.affinity?.color ?? LightcorePalette.layer2;
     final projectileColor = projectileType.affinity.color;
+    final payloadColor = payloadType == PayloadType.none
+        ? projectileColor
+        : payloadType.affinity?.color ?? projectileColor;
+    final payloadPhrase = payloadType == PayloadType.none
+        ? ''
+        : ', ${payloadType.label} payload';
 
     return Semantics(
       label:
           semanticLabel ??
-          '${projectileType.label} tower level $level of $maxLevel, ${payloadType.label} payload${complete ? ', complete' : ''}',
+          '${projectileType.label} tower level $level of $maxLevel$payloadPhrase${complete ? ', complete' : ''}',
       child: SizedBox.square(
         dimension: size,
         child: Stack(
@@ -127,7 +132,7 @@ class _TowerLevelHexBadgePainter extends CustomPainter {
       path,
       Paint()
         ..style = PaintingStyle.fill
-        ..color = payloadColor.withValues(alpha: 0.10),
+        ..color = tint.withValues(alpha: 0.10),
     );
 
     final backgroundPaint = Paint()

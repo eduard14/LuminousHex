@@ -7,11 +7,11 @@ extension LightcoreControllerBattleUnlocks on LightcoreController {
     }
     final manager = cardForSlot(tower);
     if (manager != null) {
-      return '${manager.name} is already automating charged shots on this shell.';
+      return '${manager.name} is already automating ready shots on this shell.';
     }
     if (!_slotCountsTowardRing(tower)) {
       return tower.isLayerProject
-          ? 'Open this child shell and build it before it can add charged shots.'
+          ? 'Open this child shell and build it before it can add ready shots.'
           : 'Anchor this hex before it can fire.';
     }
     if (_ammoQueue.length >= coreQueueCapacity) {

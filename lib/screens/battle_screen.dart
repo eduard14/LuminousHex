@@ -1351,7 +1351,7 @@ class _BattleControlPanel extends StatelessWidget {
     final fireSpeedPreview = controller.canUpgradeCoreFireSpeed
         ? '${controller.coreFireSpeedLabel} -> ${controller.nextCoreFireSpeedLabel}'
         : '${controller.coreFireSpeedLabel} max';
-    final queuePreview = controller.canUpgradeCoreQueueLimit
+    final readyShotPreview = controller.canUpgradeCoreQueueLimit
         ? '${controller.coreQueueCapacityLabel} -> ${controller.nextCoreQueueCapacityLabel}'
         : '${controller.coreQueueCapacityLabel} max';
     final multiShotPreview = controller.canUpgradeCoreMultiShot
@@ -1365,7 +1365,7 @@ class _BattleControlPanel extends StatelessWidget {
         controller: controller,
         rangePreview: rangePreview,
         fireSpeedPreview: fireSpeedPreview,
-        queuePreview: queuePreview,
+        readyShotPreview: readyShotPreview,
         multiShotPreview: multiShotPreview,
       );
     }
@@ -1391,14 +1391,14 @@ class _CoreStatsPanel extends StatelessWidget {
     required this.controller,
     required this.rangePreview,
     required this.fireSpeedPreview,
-    required this.queuePreview,
+    required this.readyShotPreview,
     required this.multiShotPreview,
   });
 
   final LightcoreController controller;
   final String rangePreview;
   final String fireSpeedPreview;
-  final String queuePreview;
+  final String readyShotPreview;
   final String multiShotPreview;
 
   @override
@@ -1425,7 +1425,7 @@ class _CoreStatsPanel extends StatelessWidget {
           label: 'Stability',
           value: controller.coreStabilityLabel,
         ),
-        _InlineStatEntry(label: 'Shots', value: controller.coreQueueLoadLabel),
+        _InlineStatEntry(label: 'Ready', value: controller.coreQueueLoadLabel),
         _InlineStatEntry(
           label: 'Ready',
           value:
@@ -1521,7 +1521,7 @@ class _CoreStatsPanel extends StatelessWidget {
         ],
         const SizedBox(height: 10),
         Text(
-          'Core upgrades: Range $rangePreview  •  Fire Speed $fireSpeedPreview  •  Shots $queuePreview  •  Multi-Shot $multiShotPreview  •  Cooldown ${controller.coreCooldownLabel}',
+          'Core upgrades: Range $rangePreview  •  Fire Speed $fireSpeedPreview  •  Ready Shots $readyShotPreview  •  Multi-Shot $multiShotPreview  •  Cooldown ${controller.coreCooldownLabel}',
           style: textTheme.bodyMedium?.copyWith(
             color: LightcorePalette.solar,
             fontWeight: FontWeight.w600,
@@ -1591,8 +1591,8 @@ class _CoreStatsPanel extends StatelessWidget {
               icon: const Icon(Icons.all_inbox_rounded),
               label: Text(
                 controller.canUpgradeCoreQueueLimit
-                    ? 'Shots • ${controller.coreQueueUpgradeCost}L'
-                    : 'Shots Maxed',
+                    ? 'Ready Shots • ${controller.coreQueueUpgradeCost}L'
+                    : 'Ready Shots Maxed',
               ),
             ),
             FilledButton.icon(
@@ -2349,7 +2349,7 @@ class _ReadyShotIndicator extends StatelessWidget {
     return Semantics(
       key: const ValueKey<String>('battle-ready-shot-indicator'),
       label:
-          'Charged shots ${controller.queuedCorePackets} of ${controller.coreQueueCapacity}',
+          'Ready shots ${controller.queuedCorePackets} of ${controller.coreQueueCapacity}',
       child: Container(
         padding: EdgeInsets.symmetric(
           horizontal: compact ? 9 : 10,

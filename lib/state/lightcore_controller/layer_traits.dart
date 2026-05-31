@@ -636,9 +636,9 @@ extension LightcoreControllerLayerTraits on LightcoreController {
     LightcoreTutorialStep.readEffectiveGain =>
       'Flow mapped. Better threats only matter when Output Efficiency stays healthy.',
     LightcoreTutorialStep.assignTowerManager =>
-      'Manager assigned. Charged shots now fire with better automation.',
+      'Manager assigned. Ready shots now fire with better automation.',
     LightcoreTutorialStep.autoQueueCheck =>
-      'Automation verified. Charged shots keep firing while you focus on targets.',
+      'Automation verified. Ready shots keep firing while you focus on targets.',
     LightcoreTutorialStep.upgradeFirstTowerToLevel4 =>
       'Opening lane reinforced. Strong anchors handle denser pressure better.',
     LightcoreTutorialStep.pullFirstRedEnemy =>
@@ -1476,7 +1476,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         LightcoreTutorialStep.readEffectiveGain =>
           'Tap Output Efficiency to inspect Effective Gain.',
         LightcoreTutorialStep.autoQueueCheck =>
-          'Watch your manager fire 5 auto-charged shots.',
+          'Watch your manager fire 5 ready shots.',
         LightcoreTutorialStep.upgradeFirstTowerToLevel4 =>
           'Click the first tower in Hex 1 and upgrade it to level 3.',
         LightcoreTutorialStep.pullFirstRedEnemy =>
@@ -1553,7 +1553,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         LightcoreTutorialStep.readEffectiveGain =>
           'Output Efficiency turns threat pressure into a visible gain multiplier, so the best scan is the one your core can keep stable.',
         LightcoreTutorialStep.autoQueueCheck =>
-          'Automation proves an assigned manager can fire charged shots without taking enemy focus control away from the player.',
+          'Automation proves an assigned manager can fire ready shots without taking enemy focus control away from the player.',
         LightcoreTutorialStep.upgradeFirstTowerToLevel4 =>
           'A level 3 anchor keeps the lane efficient before Lumens get split across multiple towers.',
         LightcoreTutorialStep.pullFirstRedEnemy =>
@@ -1583,7 +1583,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         LightcoreTutorialStep.forgeTowerManager =>
           'Core Manager pulls cost Flux and advance the Core Manager Pass. Each roll can improve auto-fire across the active shell.',
         LightcoreTutorialStep.assignTowerManager =>
-          'Assigned Core Managers fire charged shots for you, turning focus fire into a steadier automated rhythm.',
+          'Assigned Core Managers fire ready shots for you, turning focus fire into a steadier automated rhythm.',
         LightcoreTutorialStep.forgeEnemyManager =>
           'Threat Director pulls cost Flux and advance the Threat Director Pass. Their bonuses tune live spawns, enemy strength, and rewards.',
         LightcoreTutorialStep.assignEnemyManager =>
@@ -1630,7 +1630,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
           LightcoreTutorialStep.readEffectiveGain =>
             'The crew pins the real-gain formula beside the output dial before opening harder scans.',
           LightcoreTutorialStep.autoQueueCheck =>
-            'The assigned Core Manager takes the relay chair and starts firing charged shots without a manual command.',
+            'The assigned Core Manager takes the relay chair and starts firing ready shots without a manual command.',
           LightcoreTutorialStep.upgradeFirstTowerToLevel4 =>
             'The shell is absorbing denser traffic now, so the first lane needs one more tune pass before expansion.',
           LightcoreTutorialStep.pullFirstRedEnemy =>
