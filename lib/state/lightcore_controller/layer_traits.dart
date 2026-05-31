@@ -519,6 +519,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
       nextStep = _deriveTutorialStep();
     }
     _tutorialStep = nextStep;
+    _ensureTutorialFocusEnemy();
     final prompt = tutorialPrompt;
     if (completionMessage != null) {
       _showBanner(completionMessage, duration: 3.4);

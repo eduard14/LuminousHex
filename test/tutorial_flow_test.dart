@@ -76,14 +76,9 @@ void _completeManualAimLesson(LightcoreController controller) {
     _waitForAutoQueuedPackets(controller, 1);
   }
   expect(controller.tutorialStep, LightcoreTutorialStep.tapFirstTower);
-  final enemy = controller.debugSpawnEnemyFromCard(
-    EnemyLibrary.basicWhite.id,
-    angle: 0,
-    radius: 180,
-    level: 1,
-  );
-  expect(enemy, isNotNull);
-  expect(controller.selectBattleEnemyForManualAim(enemy!.id), isTrue);
+  final enemyId = controller.tutorialHighlightedEnemyId;
+  expect(enemyId, isNotNull);
+  expect(controller.selectBattleEnemyForManualAim(enemyId!), isTrue);
   _waitForManualAimLessonToFire(controller);
 }
 
@@ -451,19 +446,15 @@ void main() {
       _waitForAutoQueuedPackets(controller, 1);
     }
     expect(controller.tutorialStep, LightcoreTutorialStep.tapFirstTower);
+    expect(controller.tutorialHighlightedEnemyId, isNotNull);
     expect(controller.tutorialHeadline, 'Focus Fire');
     expect(
       controller.tutorialPrompt,
       'Tap the highlighted anomaly to focus fire. If the queue is still charging, the shot fires as soon as a packet is ready.',
     );
-    final enemy = controller.debugSpawnEnemyFromCard(
-      EnemyLibrary.basicWhite.id,
-      angle: 0,
-      radius: 180,
-      level: 1,
-    );
-    expect(enemy, isNotNull);
-    expect(controller.selectBattleEnemyForManualAim(enemy!.id), isTrue);
+    final enemyId = controller.tutorialHighlightedEnemyId;
+    expect(enemyId, isNotNull);
+    expect(controller.selectBattleEnemyForManualAim(enemyId!), isTrue);
     _waitForManualAimLessonToFire(controller);
 
     expect(controller.tutorialStep, isNot(LightcoreTutorialStep.tapFirstTower));

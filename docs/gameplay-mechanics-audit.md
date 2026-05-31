@@ -40,8 +40,8 @@ cadence, enemy strength, and reward bonuses.
 
 1. Reveal the shell by tapping/selecting the center.
 2. Select Hex 1 immediately and build the first relay tower.
-3. Tap anomalies to focus queued fire while the Lightcore and ready relays
-   auto-feed packets into the core queue.
+3. Tap the highlighted starter anomaly to focus queued fire while the Lightcore
+   and ready relays auto-feed packets into the core queue.
 4. Upgrade all built towers to level 5.
 5. Tune the encounter by changing the active anomaly deck and target count.
 6. Promote the finished shell.
@@ -63,6 +63,8 @@ cadence, enemy strength, and reward bonuses.
 - Tapping an anomaly focuses fire immediately. If the queue is still charging,
   the focused target receives the next available queued packet before manager
   auto-fire is unlocked.
+- The Focus Fire tutorial guarantees a visible starter anomaly when the lesson
+  begins, so the player has a target instead of waiting for a spawn.
 - Auto-fire stays locked until a Core Manager is assigned. Once unlocked, the
   core consumes the best ammo packet available, picks a target, and fires.
 - Enemies do not destroy the core in the prototype. Reaching the relay ring

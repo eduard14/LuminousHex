@@ -47,8 +47,8 @@ shell, and keep climbing.
 
 1. Enter a hex shell built around the central Lightcore.
 2. Reveal the first perimeter hex immediately and build the opening relay.
-3. Tap anomalies to focus fire while the core and relay towers auto-feed ammo
-   packets into the core queue.
+3. Tap a highlighted starter anomaly to focus fire while the core and relay
+   towers auto-feed ammo packets into the core queue.
 4. Build the remaining perimeter relay towers while tower taps stay reserved for
    tower controls.
 5. Upgrade towers, core stats, and encounter capacity with earned resources.
@@ -71,6 +71,8 @@ shell, and keep climbing.
 - Opening combat is low-friction: packets auto-generate after the Lightcore
   wakes, Hex 1 is immediately selectable, then the player taps anomalies to aim
   and focus fire.
+- The first focus-fire lesson guarantees a visible starter anomaly so the
+  player can act immediately after the first relay comes online.
 - Tower body taps are reserved for tower controls, upgrades, stats, and
   targeting tools, keeping build/stat actions distinct from anomaly aiming.
 - Waiting packets do not orbit as collectible-looking field objects; only brief

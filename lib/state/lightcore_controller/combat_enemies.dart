@@ -9,6 +9,28 @@ typedef _Layer3TrialSpawn = ({
 });
 
 extension LightcoreControllerCombatEnemies on LightcoreController {
+  void _ensureTutorialFocusEnemy() {
+    if (_tutorialStep != LightcoreTutorialStep.tapFirstTower ||
+        _tutorialManualAimFireLearned ||
+        activeLayerPassiveOnly ||
+        _enemies.isNotEmpty ||
+        _enemies.length >= enemyTargetCount) {
+      return;
+    }
+    final source = activeEnemyDeck.isNotEmpty
+        ? activeEnemyDeck.first
+        : _enemyCards.firstWhere(
+            (card) => card.config.id == EnemyLibrary.basicWhite.id,
+          );
+    final radius = max(_relayImpactRadius + 70, _minimumSpawnRadius * 0.28);
+    _enemies.add(
+      _buildEnemyFromCard(source.copyWith(level: 1), angle: 0, radius: radius),
+    );
+    _spawnSequence += 1;
+    _spawnTimer = min(_spawnTimer, 0.9);
+    _needsNotify = true;
+  }
+
   bool canManuallySpawnBattleEnemy({
     required String cardId,
     bool boss = false,
