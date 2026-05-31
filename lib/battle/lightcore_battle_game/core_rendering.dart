@@ -579,16 +579,19 @@ extension LightcoreBattleGameCoreRendering on LightcoreBattleGame {
           ..color = LightcorePalette.layer2.withValues(alpha: 0.7),
       );
 
-      final orbitAngle = controller.elapsed * 1.65;
-      final orbitOffset = Offset(
-        center.dx + math.cos(orbitAngle) * (_coreRadius * 1.72),
-        center.dy + math.sin(orbitAngle) * (_coreRadius * 1.72),
-      );
-      canvas.drawCircle(
-        orbitOffset,
-        _coreRadius * 0.15,
-        Paint()..color = LightcorePalette.layer2,
-      );
+      for (var index = 0; index < 6; index += 1) {
+        final angle = (math.pi * 2 / 6) * index;
+        final marker = Offset(
+          center.dx + math.cos(angle) * (_coreRadius * 1.72),
+          center.dy + math.sin(angle) * (_coreRadius * 1.72),
+        );
+        canvas.drawPath(
+          _hexPath(marker, _coreRadius * 0.09),
+          Paint()
+            ..style = PaintingStyle.fill
+            ..color = LightcorePalette.layer2.withValues(alpha: 0.5),
+        );
+      }
     }
 
     if (showTutorialGuides && controller.tutorialHighlightsBattleCore) {

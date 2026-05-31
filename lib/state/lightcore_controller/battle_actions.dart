@@ -88,11 +88,3 @@ extension LightcoreControllerBattleActions on LightcoreController {
     return true;
   }
 }
-
-double _payloadOrbitStartProgressForId(String id) {
-  final seed = id.hashCode.abs() % 1000;
-  final duration =
-      _payloadOrbitStartProgress -
-      (_payloadOrbitDurationVariance * (seed / 999));
-  return duration;
-}

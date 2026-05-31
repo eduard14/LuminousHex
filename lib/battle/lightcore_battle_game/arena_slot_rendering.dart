@@ -759,12 +759,6 @@ extension LightcoreBattleGameArenaSlotRendering on LightcoreBattleGame {
             Paint()..color = LightcorePalette.solar,
           );
         }
-      } else {
-        canvas.drawCircle(
-          center,
-          _slotRadius * 0.18,
-          Paint()..color = LightcorePalette.stroke.withValues(alpha: 0.6),
-        );
       }
     }
   }

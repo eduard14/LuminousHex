@@ -350,9 +350,6 @@ class LightcoreBattleGame extends FlameGame with ScaleDetector {
     if (start == null) {
       return null;
     }
-    if (pulse.progress < 0) {
-      return null;
-    }
     return _pulseInboundPosition(pulse);
   }
 

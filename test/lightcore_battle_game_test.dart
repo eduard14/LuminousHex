@@ -110,7 +110,7 @@ void main() {
   });
 
   test(
-    'waiting packet visuals stay hidden instead of becoming tap targets',
+    'relay handoff starts at the tower instead of orbiting as a tap target',
     () {
       final controller = LightcoreController();
       addTearDown(controller.dispose);
@@ -146,7 +146,8 @@ void main() {
       final pulse = controller.pulses.singleWhere(
         (candidate) => candidate.sourceSlotIndex == 0,
       );
-      expect(game.debugPulsePosition(pulse.id), isNull);
+      expect(pulse.progress, 0);
+      expect(game.debugPulsePosition(pulse.id), isNotNull);
       expect(backgroundTaps, 0);
       expect(slotTaps, 0);
     },

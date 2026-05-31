@@ -488,7 +488,7 @@ extension LightcoreControllerCombatLoop on LightcoreController {
         defensePenetration: towerDefensePenetration(tower),
         minDamageMultiplier: towerMinDamageMultiplier(tower),
         maxDamageMultiplier: towerMaxDamageMultiplier(tower),
-        progress: _payloadOrbitStartProgressForId(pulseId),
+        progress: 0,
       ),
     );
     return tower.copyWith(
@@ -501,13 +501,13 @@ extension LightcoreControllerCombatLoop on LightcoreController {
   void _advancePulses(double dt) {
     final nextPulses = <EnergyPulseState>[];
     for (final pulse in _pulses) {
-      final progress = pulse.progress < 0
-          ? pulse.progress + dt
-          : pulse.progress +
-                (dt *
-                    _pulseSpeed *
-                    pulse.generationSpeed *
-                    _projectilePulseSpeedMultiplier(pulse.projectileType));
+      final startingProgress = max(0.0, pulse.progress);
+      final progress =
+          startingProgress +
+          (dt *
+              _pulseSpeed *
+              pulse.generationSpeed *
+              _projectilePulseSpeedMultiplier(pulse.projectileType));
       if (progress >= 1) {
         if (_ammoQueue.length < coreQueueCapacity) {
           _ammoQueue.add(
@@ -540,9 +540,7 @@ extension LightcoreControllerCombatLoop on LightcoreController {
         nextPulses.add(
           pulse.copyWith(
             progress: progress,
-            inboundStartedAtElapsed: pulse.progress < 0 && progress >= 0
-                ? elapsed
-                : null,
+            inboundStartedAtElapsed: pulse.inboundStartedAtElapsed,
           ),
         );
       }
