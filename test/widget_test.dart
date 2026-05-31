@@ -2279,15 +2279,16 @@ void main() {
       findsOneWidget,
     );
 
+    expect(find.text('Tap for next step'), findsOneWidget);
     expect(
       find.text(
         'Tap the center Lightcore to wake the first shell and reveal where towers will go.',
       ),
-      findsOneWidget,
+      findsNothing,
     );
 
     await tester.tap(
-      find.byKey(const ValueKey<String>('battle-quest-summary-card')),
+      find.byKey(const ValueKey<String>('battle-quest-trigger-button')),
     );
     await _pumpTransition(tester);
 
@@ -2361,11 +2362,12 @@ void main() {
       find.byKey(const ValueKey<String>('battle-quest-summary-instruction')),
       findsOneWidget,
     );
+    expect(find.text('Tap for next step'), findsOneWidget);
     expect(
       find.text(
         'Tap the center Lightcore to wake the first shell and reveal where towers will go.',
       ),
-      findsWidgets,
+      findsNothing,
     );
     expect(find.textContaining('TUT-'), findsNothing);
     expect(
@@ -2378,7 +2380,7 @@ void main() {
     );
 
     await tester.tap(
-      find.byKey(const ValueKey<String>('battle-quest-summary-card')),
+      find.byKey(const ValueKey<String>('battle-quest-trigger-button')),
     );
     await _pumpTransition(tester);
 
@@ -2429,7 +2431,7 @@ void main() {
     );
 
     await tester.tap(
-      find.byKey(const ValueKey<String>('battle-quest-summary-card')),
+      find.byKey(const ValueKey<String>('battle-quest-trigger-button')),
     );
     await _pumpTransition(tester);
 
@@ -2486,7 +2488,7 @@ void main() {
     );
 
     await tester.tap(
-      find.byKey(const ValueKey<String>('battle-quest-summary-card')),
+      find.byKey(const ValueKey<String>('battle-quest-trigger-button')),
     );
     await _pumpTransition(tester);
 

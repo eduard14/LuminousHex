@@ -228,6 +228,7 @@ class _BattleScreenState extends State<BattleScreen> {
       onCenterTap: _handleCenterTap,
       onSlotTap: _handleSlotTap,
       onBackgroundTap: _handleBackgroundTap,
+      onEnemyTargeted: _handleEnemyTargeted,
       enableBattlefieldTaps: widget.enableBattlefieldTaps,
       showTutorialGuides: widget.showBattleGuides,
       showArenaSlots: widget.showArenaSlots,
@@ -603,6 +604,18 @@ class _BattleScreenState extends State<BattleScreen> {
         _selectionControlsVisible = false;
       });
       return;
+    }
+  }
+
+  void _handleEnemyTargeted() {
+    if (_selectionControlsVisible ||
+        _statsTarget != null ||
+        _panelFocus != _BattlePanelFocus.none) {
+      setState(() {
+        _statsTarget = null;
+        _panelFocus = _BattlePanelFocus.none;
+        _selectionControlsVisible = false;
+      });
     }
   }
 

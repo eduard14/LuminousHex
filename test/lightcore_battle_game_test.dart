@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'dart:ui' as ui;
 
 import 'package:flame/game.dart';
@@ -183,6 +184,36 @@ void main() {
     expect(slotTaps, 1);
     expect(controller.pulses, isEmpty);
     expect(controller.slots[0].charge, greaterThanOrEqualTo(1));
+  });
+
+  test('enemy aim taps notify the shell to dismiss competing controls', () {
+    final controller = LightcoreController();
+    addTearDown(controller.dispose);
+    controller.debugDisableTutorial();
+    var targeted = 0;
+    final game = LightcoreBattleGame(
+      controller: controller,
+      onCenterTap: () {},
+      onSlotTap: (_) {},
+      onBackgroundTap: () {},
+      onEnemyTargeted: () => targeted += 1,
+    );
+    game.onGameResize(Vector2(900, 1100));
+    controller.handleBattleCenterTap();
+    final enemy = controller.debugSpawnEnemyFromCard(
+      EnemyLibrary.basicWhite.id,
+      angle: math.pi / 6,
+      radius: controller.relayImpactRadius,
+      level: 1,
+    );
+    expect(enemy, isNotNull);
+
+    final enemyPosition = game.debugEnemyPosition(enemy!.id);
+    expect(enemyPosition, isNotNull);
+    game.handleCanvasTap(enemyPosition!);
+
+    expect(targeted, 1);
+    expect(controller.focusedEnemyId, enemy.id);
   });
 
   test('single-finger gesture pans the battle view', () {

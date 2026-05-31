@@ -101,8 +101,13 @@ shell, and keep climbing.
   fabrication jargon, keeping the opening loop action-oriented.
 - Tutorial guidance appears as a compact battlefield notification with the next
   action visible; players expand it only when they want more detail.
+- Collapsed tutorial notifications stay lightweight: they show the quest title
+  and a tap-to-expand affordance, while the detailed instruction lives in the
+  optional guide sheet.
 - Tower body taps are reserved for tower controls, upgrades, stats, and
   targeting tools, keeping build/stat actions distinct from anomaly aiming.
+- Enemy focus taps automatically close open battle control panels so aiming
+  returns the player to combat instead of leaving controls competing on screen.
 - Ready shots do not orbit as collectible-looking field objects; only brief
   handoff effects appear when a relay charges the core.
 - Payload-colored orbit dots are kept out of shot, relay, and fire-burst

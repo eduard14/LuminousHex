@@ -184,18 +184,31 @@ class _LightcoreQuestCardState extends State<LightcoreQuestCard> {
                       ),
                     ),
                     const SizedBox(height: 2),
-                    Text(
-                      instruction,
+                    Row(
                       key: const ValueKey<String>(
-                        'battle-quest-summary-instruction',
+                        'battle-quest-summary-action-row',
                       ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: LightcorePalette.mist.withValues(alpha: 0.74),
-                        fontWeight: FontWeight.w700,
-                        height: 1.12,
-                      ),
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Flexible(
+                          child: Text(
+                            'Tap for next step',
+                            key: const ValueKey<String>(
+                              'battle-quest-summary-instruction',
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(
+                                  color: LightcorePalette.mist.withValues(
+                                    alpha: 0.74,
+                                  ),
+                                  fontWeight: FontWeight.w800,
+                                  height: 1.08,
+                                ),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),

@@ -28,6 +28,7 @@ class LightcoreBattleGame extends FlameGame with ScaleDetector {
     required this.onCenterTap,
     required this.onSlotTap,
     required this.onBackgroundTap,
+    this.onEnemyTargeted,
     this.enableBattlefieldTaps = true,
     this.showTutorialGuides = true,
     this.showArenaSlots = true,
@@ -38,6 +39,7 @@ class LightcoreBattleGame extends FlameGame with ScaleDetector {
   final VoidCallback onCenterTap;
   final ValueChanged<int> onSlotTap;
   final VoidCallback onBackgroundTap;
+  final VoidCallback? onEnemyTargeted;
   final bool enableBattlefieldTaps;
   final bool showTutorialGuides;
   final bool showArenaSlots;
@@ -323,10 +325,12 @@ class LightcoreBattleGame extends FlameGame with ScaleDetector {
     if (tappedEnemyId != null &&
         controller.fireQueuedCorePacketAtEnemy(tappedEnemyId)) {
       LightcoreAudio.instance.playSfx(LightcoreSfx.coreFire);
+      onEnemyTargeted?.call();
       return;
     }
     if (tappedEnemyId != null &&
         controller.selectBattleEnemyForManualAim(tappedEnemyId)) {
+      onEnemyTargeted?.call();
       return;
     }
     final tappedSlotIndex = _hitTestSlot(pointer);
