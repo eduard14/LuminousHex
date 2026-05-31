@@ -107,6 +107,8 @@ shell, and keep climbing.
 - Collapsed tutorial notifications stay lightweight: they show the quest title
   and a view-guide affordance, while the detailed instruction lives in the
   optional guide sheet.
+- Opening battle tutorial steps no longer raise transient prompt banners; the
+  battlefield highlight, click cue, and compact guide own that instruction lane.
 - The starter Challenge prompt lives above the overdrive HUD, keeping the main
   combat action clear instead of making bottom-corner controls compete.
 - Clearing starter Challenge Lv 1 pays enough Lumens for the next anchor-tower

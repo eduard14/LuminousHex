@@ -525,10 +525,29 @@ extension LightcoreControllerLayerTraits on LightcoreController {
       _showBanner(completionMessage, duration: 3.4);
     } else if (showBanner &&
         _tutorialPromptsEnabled &&
+        _tutorialStepAllowsPromptBanner(nextStep) &&
         prompt != null &&
         prompt.isNotEmpty) {
       _showBanner(prompt, duration: 4.2);
     }
+  }
+
+  bool _tutorialStepAllowsPromptBanner(LightcoreTutorialStep step) {
+    if (step == LightcoreTutorialStep.none) {
+      return false;
+    }
+    return switch (step) {
+      LightcoreTutorialStep.unfoldShell ||
+      LightcoreTutorialStep.waitForFirstHex ||
+      LightcoreTutorialStep.selectFirstHex ||
+      LightcoreTutorialStep.buildFirstRedTower ||
+      LightcoreTutorialStep.tapFirstTower ||
+      LightcoreTutorialStep.upgradeFirstTowerToLevel3 ||
+      LightcoreTutorialStep.raiseThreat ||
+      LightcoreTutorialStep.readEffectiveGain ||
+      LightcoreTutorialStep.upgradeFirstTowerToLevel4 => false,
+      _ => true,
+    };
   }
 
   String? _grantTutorialCompletionReward(LightcoreTutorialStep step) {
