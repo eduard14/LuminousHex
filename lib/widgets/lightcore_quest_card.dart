@@ -11,13 +11,11 @@ class LightcoreQuestCard extends StatefulWidget {
     super.key,
     required this.controller,
     required this.compact,
-    this.initiallyExpanded = false,
     this.instructionOverride,
   });
 
   final LightcoreController controller;
   final bool compact;
-  final bool initiallyExpanded;
   final String? instructionOverride;
 
   @override
@@ -435,7 +433,7 @@ IconData _questPromptIcon(LightcoreTutorialStep step) => switch (step) {
   LightcoreTutorialStep.waitForFirstHex => Icons.hexagon_rounded,
   LightcoreTutorialStep.raiseThreat => Icons.flag_rounded,
   LightcoreTutorialStep.readEffectiveGain => Icons.blur_circular_rounded,
-  LightcoreTutorialStep.autoQueueCheck => Icons.all_inclusive_rounded,
+  LightcoreTutorialStep.managerAutoAim => Icons.all_inclusive_rounded,
   LightcoreTutorialStep.holdOverdrive => Icons.pan_tool_alt_rounded,
   _ => Icons.touch_app_rounded,
 };

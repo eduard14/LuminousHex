@@ -1648,7 +1648,7 @@ extension LightcoreControllerProgressionLayers on LightcoreController {
     _tutorialOverdriveLearned = true;
     _tutorialIntroBossPending = false;
     _tutorialSafeScanDefeats = 5;
-    _tutorialAutoQueuedPulses = 0;
+    _tutorialManagerAutoAimShots = 0;
     _tutorialTrackedBossEnemyId = null;
     if (_activeBossEnemyCardId == BossEnemyLibrary.starterWhiteWarden.id &&
         activeLayer.bossReady &&
@@ -1862,7 +1862,7 @@ extension LightcoreControllerProgressionLayers on LightcoreController {
     _tutorialSafeScanDefeats = 5;
     _tutorialStabilityPanelOpened = false;
     _tutorialManualAimFireLearned = true;
-    _tutorialAutoQueuedPulses = 0;
+    _tutorialManagerAutoAimShots = 0;
     _syncTutorialStep(showBanner: false);
     _notifyNow();
   }

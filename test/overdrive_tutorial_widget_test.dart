@@ -71,8 +71,12 @@ void main() {
     await _pumpBattleScreen(tester, controller);
 
     expect(
-      find.byKey(const ValueKey<String>('battle-quest-show-button')),
-      findsNothing,
+      find.byKey(const ValueKey<String>('battle-quest-card')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey<String>('battle-quest-summary-card')),
+      findsOneWidget,
     );
     expect(
       find.byKey(const ValueKey<String>('battle-overdrive-frame')),
@@ -81,7 +85,7 @@ void main() {
     expect(find.byIcon(Icons.touch_app_rounded), findsOneWidget);
 
     expect(
-      find.byKey(const ValueKey<String>('battle-quest-show-button')),
+      find.byKey(const ValueKey<String>('battle-quest-detail-card')),
       findsNothing,
     );
     expect(tester.takeException(), isNull);

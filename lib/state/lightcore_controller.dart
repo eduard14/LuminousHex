@@ -70,7 +70,7 @@ enum LightcoreTutorialStep {
   raiseThreat,
   pullFirstWhiteEnemy,
   readEffectiveGain,
-  autoQueueCheck,
+  managerAutoAim,
   upgradeFirstTowerToLevel4,
   pullFirstRedEnemy,
   setFirstEnemyTarget,
@@ -457,7 +457,7 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
         'Pulse the Output Efficiency stat and show the formula again.',
     analyticsEvent: 'tutorial_read_effective_gain',
   ),
-  LightcoreTutorialStep.autoQueueCheck: LightcoreTutorialQuestDefinition(
+  LightcoreTutorialStep.managerAutoAim: LightcoreTutorialQuestDefinition(
     id: 'TUT-012',
     title: 'Manager Auto-Aim',
     teachGoal:
@@ -470,7 +470,7 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
     reward: 'Lumens and Threat Scan x1',
     failureHelpState:
         'Keep the managed shell in view and watch automation fire for you.',
-    analyticsEvent: 'tutorial_auto_queue_check',
+    analyticsEvent: 'tutorial_manager_auto_aim',
   ),
   LightcoreTutorialStep
       .upgradeFirstTowerToLevel4: LightcoreTutorialQuestDefinition(
@@ -1709,7 +1709,7 @@ class LightcoreController extends ChangeNotifier {
   bool _tutorialOverdriveLearned = false;
   bool _tutorialIntroBossPending = false;
   int _tutorialSafeScanDefeats = 0;
-  int _tutorialAutoQueuedPulses = 0;
+  int _tutorialManagerAutoAimShots = 0;
   String? _tutorialTrackedBossEnemyId;
   LightcoreTutorialPulseTarget? _tutorialPulseTarget;
   int _tutorialPulseSignal = 0;

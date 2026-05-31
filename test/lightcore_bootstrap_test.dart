@@ -418,7 +418,7 @@ void main() {
     firstSlot['fireSequence'] = 3;
     tutorial['earlyQuestChainCompleted'] = false;
     tutorial.remove('stabilityPanelOpened');
-    tutorial.remove('autoQueuedPulses');
+    tutorial.remove('managerAutoAimShots');
     tutorial.remove('rewardedSteps');
 
     final restored = LightcoreController.fromCloudSavePayload(payload);
@@ -428,9 +428,32 @@ void main() {
         restored.buildCloudSavePayload()['tutorial'] as Map<String, dynamic>;
     expect(restoredTutorial['earlyQuestChainCompleted'], isTrue);
     expect(restoredTutorial['stabilityPanelOpened'], isTrue);
-    expect(restoredTutorial['autoQueuedPulses'], greaterThanOrEqualTo(5));
+    expect(restoredTutorial['managerAutoAimShots'], greaterThanOrEqualTo(5));
     expect(restored.managerAssignmentUnlocked, isFalse);
     expect(restored.tutorialStep, LightcoreTutorialStep.openStore);
+  });
+
+  test('restore accepts legacy auto queue tutorial save fields', () {
+    final controller = LightcoreController();
+    addTearDown(controller.dispose);
+
+    final payload = controller.buildCloudSavePayload();
+    final tutorial = payload['tutorial'] as Map<String, dynamic>;
+    tutorial.remove('managerAutoAimShots');
+    tutorial['autoQueuedPulses'] = 5;
+    tutorial['rewardedSteps'] = <String>['autoQueueCheck'];
+
+    final restored = LightcoreController.fromCloudSavePayload(payload);
+    addTearDown(restored.dispose);
+
+    final restoredTutorial =
+        restored.buildCloudSavePayload()['tutorial'] as Map<String, dynamic>;
+    expect(restoredTutorial['managerAutoAimShots'], 5);
+    expect(restoredTutorial.containsKey('autoQueuedPulses'), isFalse);
+    expect(
+      restoredTutorial['rewardedSteps'],
+      contains(LightcoreTutorialStep.managerAutoAim.name),
+    );
   });
 
   test('outer slots unlock from cumulative kill milestones', () {

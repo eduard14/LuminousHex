@@ -1015,7 +1015,6 @@ class _BattleScreenState extends State<BattleScreen> {
     return LightcoreQuestCard(
       controller: controller,
       compact: compact,
-      initiallyExpanded: false,
       instructionOverride: instructionOverride,
     );
   }
@@ -1684,7 +1683,7 @@ class _CoreStatsPanel extends StatelessWidget {
             active: controller.tutorialHighlightsCoreStats,
             tint: LightcorePalette.quest,
             label:
-                controller.tutorialStep == LightcoreTutorialStep.autoQueueCheck
+                controller.tutorialStep == LightcoreTutorialStep.managerAutoAim
                 ? 'AUTO'
                 : 'OUTPUT',
             child: _InlineStatList(rows: coreStats),

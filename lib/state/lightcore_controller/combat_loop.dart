@@ -362,9 +362,9 @@ extension LightcoreControllerCombatLoop on LightcoreController {
           final activatedTower = _towerAfterActivation(nextTower);
           if (activatedTower != null) {
             nextTower = activatedTower;
-            if (_tutorialStep == LightcoreTutorialStep.autoQueueCheck &&
-                _tutorialAutoQueuedPulses < 5) {
-              _tutorialAutoQueuedPulses += 1;
+            if (_tutorialStep == LightcoreTutorialStep.managerAutoAim &&
+                _tutorialManagerAutoAimShots < 5) {
+              _tutorialManagerAutoAimShots += 1;
             }
           }
           feedCooldown = feedInterval;

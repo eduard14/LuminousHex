@@ -45,7 +45,7 @@ void _unlockTutorialFirstHex(LightcoreController controller) {
   );
 }
 
-void _waitForAutoQueuedPackets(LightcoreController controller, int count) {
+void _waitForReadyShotPackets(LightcoreController controller, int count) {
   for (
     var step = 0;
     step < 160 && controller.queuedCorePackets < count;
@@ -900,7 +900,7 @@ void main() {
           .game!;
       await tester.tapAt(tester.getCenter(gameFinder));
       await tester.pump();
-      _waitForAutoQueuedPackets(controller, 1);
+      _waitForReadyShotPackets(controller, 1);
 
       final enemyPosition = game.debugEnemyPosition(enemy!.id);
       expect(enemyPosition, isNotNull);
@@ -2380,7 +2380,7 @@ void main() {
     );
     controller.selectSlot(0);
     expect(controller.tutorialBuildTowerAt(0, TowerLibrary.redPrism), isTrue);
-    _waitForAutoQueuedPackets(controller, 1);
+    _waitForReadyShotPackets(controller, 1);
     expect(controller.tutorialStep, LightcoreTutorialStep.tapFirstTower);
 
     await _pumpBattleScreen(tester, controller);
@@ -2437,7 +2437,7 @@ void main() {
     );
     controller.selectSlot(0);
     expect(controller.tutorialBuildTowerAt(0, TowerLibrary.redPrism), isTrue);
-    _waitForAutoQueuedPackets(controller, 1);
+    _waitForReadyShotPackets(controller, 1);
     expect(controller.tutorialBattleCoreGuideLabel, isNull);
     expect(controller.tutorialStep, LightcoreTutorialStep.tapFirstTower);
 

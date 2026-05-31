@@ -872,7 +872,7 @@ extension LightcoreControllerSaveTournamentCloud on LightcoreController {
         'overdriveLearned': _tutorialOverdriveLearned,
         'introBossPending': _tutorialIntroBossPending,
         'safeScanDefeats': _tutorialSafeScanDefeats,
-        'autoQueuedPulses': _tutorialAutoQueuedPulses,
+        'managerAutoAimShots': _tutorialManagerAutoAimShots,
         'trackedBossEnemyId': _tutorialTrackedBossEnemyId,
         'reviewedTournamentModes': _reviewedTournamentTutorialModes
             .map((mode) => mode.name)

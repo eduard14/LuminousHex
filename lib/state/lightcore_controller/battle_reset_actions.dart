@@ -223,7 +223,7 @@ extension LightcoreControllerBattleResetActions on LightcoreController {
     _tutorialStep = LightcoreTutorialStep.none;
     _tutorialIntroBossPending = true;
     _tutorialSafeScanDefeats = 0;
-    _tutorialAutoQueuedPulses = 0;
+    _tutorialManagerAutoAimShots = 0;
     _tutorialTrackedBossEnemyId = null;
     _tutorialPulseTarget = null;
     _tutorialPulseSignal = 0;

@@ -234,7 +234,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
       LightcoreTutorialStep.raiseThreat => _firstThreatChallengeStarted,
       LightcoreTutorialStep.pullFirstWhiteEnemy => enemyPullCount >= 1,
       LightcoreTutorialStep.readEffectiveGain => _tutorialStabilityPanelOpened,
-      LightcoreTutorialStep.autoQueueCheck => _tutorialAutoQueuedPulses >= 5,
+      LightcoreTutorialStep.managerAutoAim => _tutorialManagerAutoAimShots >= 5,
       LightcoreTutorialStep.upgradeFirstTowerToLevel4 =>
         firstTower != null && firstTower.level >= 3,
       LightcoreTutorialStep.pullFirstRedEnemy => enemyPullCount >= 2,
@@ -550,7 +550,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
       LightcoreTutorialStep.upgradeFirstTowerToLevel3 => 48,
       LightcoreTutorialStep.raiseThreat => 0,
       LightcoreTutorialStep.readEffectiveGain => 40,
-      LightcoreTutorialStep.autoQueueCheck => 120,
+      LightcoreTutorialStep.managerAutoAim => 120,
       LightcoreTutorialStep.upgradeFirstTowerToLevel4 => 64,
       LightcoreTutorialStep.setFirstEnemyTarget => 45,
       LightcoreTutorialStep.adjustEnemyCount => 55,
@@ -589,7 +589,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
       LightcoreTutorialStep.openTowerMatrix => 1,
       LightcoreTutorialStep.raiseThreat => 1,
       LightcoreTutorialStep.openStore => 1,
-      LightcoreTutorialStep.autoQueueCheck => 1,
+      LightcoreTutorialStep.managerAutoAim => 1,
       LightcoreTutorialStep.assignEnemyManager => 2,
       LightcoreTutorialStep.openFriends => 1,
       LightcoreTutorialStep.openMentees => 1,
@@ -637,7 +637,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
       'Flow mapped. Better threats only matter when Output Efficiency stays healthy.',
     LightcoreTutorialStep.assignTowerManager =>
       'Manager assigned. Ready shots now fire with better automation.',
-    LightcoreTutorialStep.autoQueueCheck =>
+    LightcoreTutorialStep.managerAutoAim =>
       'Automation verified. Ready shots keep firing while you focus on targets.',
     LightcoreTutorialStep.upgradeFirstTowerToLevel4 =>
       'Opening lane reinforced. Strong anchors handle denser pressure better.',
@@ -765,7 +765,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
       LightcoreTutorialStep.raiseThreat ||
       LightcoreTutorialStep.pullFirstWhiteEnemy ||
       LightcoreTutorialStep.readEffectiveGain ||
-      LightcoreTutorialStep.autoQueueCheck ||
+      LightcoreTutorialStep.managerAutoAim ||
       LightcoreTutorialStep.upgradeFirstTowerToLevel4 ||
       LightcoreTutorialStep.pullFirstRedEnemy ||
       LightcoreTutorialStep.setFirstEnemyTarget ||
@@ -1424,7 +1424,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         LightcoreTutorialStep.raiseThreat => 'Raise Threat',
         LightcoreTutorialStep.pullFirstWhiteEnemy => 'Open Knowledge Cards',
         LightcoreTutorialStep.readEffectiveGain => 'Read Effective Gain',
-        LightcoreTutorialStep.autoQueueCheck => 'Manager Auto-Fire',
+        LightcoreTutorialStep.managerAutoAim => 'Manager Auto-Fire',
         LightcoreTutorialStep.upgradeFirstTowerToLevel4 =>
           'Reinforce The Anchor',
         LightcoreTutorialStep.pullFirstRedEnemy => 'Teach Color Counters',
@@ -1475,7 +1475,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
           'Click Map and run 1 threat scan.',
         LightcoreTutorialStep.readEffectiveGain =>
           'Tap Output Efficiency to inspect Effective Gain.',
-        LightcoreTutorialStep.autoQueueCheck =>
+        LightcoreTutorialStep.managerAutoAim =>
           'Watch your manager fire 5 ready shots.',
         LightcoreTutorialStep.upgradeFirstTowerToLevel4 =>
           'Click the first tower in Hex 1 and upgrade it to level 3.',
@@ -1552,7 +1552,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
           'Threat scans add real anomalies to the live deck. White anomalies establish the neutral baseline before color counters appear.',
         LightcoreTutorialStep.readEffectiveGain =>
           'Output Efficiency turns threat pressure into a visible gain multiplier, so the best scan is the one your core can keep stable.',
-        LightcoreTutorialStep.autoQueueCheck =>
+        LightcoreTutorialStep.managerAutoAim =>
           'Automation proves an assigned manager can fire ready shots without taking enemy focus control away from the player.',
         LightcoreTutorialStep.upgradeFirstTowerToLevel4 =>
           'A level 3 anchor keeps the lane efficient before Lumens get split across multiple towers.',
@@ -1629,7 +1629,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
             'The starter driftling was only training noise. This is your first proper hostile signature.',
           LightcoreTutorialStep.readEffectiveGain =>
             'The crew pins the real-gain formula beside the output dial before opening harder scans.',
-          LightcoreTutorialStep.autoQueueCheck =>
+          LightcoreTutorialStep.managerAutoAim =>
             'The assigned Core Manager takes the relay chair and starts firing ready shots without a manual command.',
           LightcoreTutorialStep.upgradeFirstTowerToLevel4 =>
             'The shell is absorbing denser traffic now, so the first lane needs one more tune pass before expansion.',

@@ -669,7 +669,7 @@ extension LightcoreControllerStateAccessors on LightcoreController {
 
   bool get tutorialHighlightsCoreStats =>
       _tutorialStep == LightcoreTutorialStep.readEffectiveGain ||
-      _tutorialStep == LightcoreTutorialStep.autoQueueCheck;
+      _tutorialStep == LightcoreTutorialStep.managerAutoAim;
 
   bool tutorialHighlightsBattleSlot(int slotIndex) {
     if (slotIndex == 0 &&

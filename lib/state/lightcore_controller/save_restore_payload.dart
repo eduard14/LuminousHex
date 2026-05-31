@@ -290,9 +290,9 @@ extension LightcoreControllerSaveRestorePayload on LightcoreController {
     final hasRestoredStabilityPanelOpened = tutorialData.containsKey(
       'stabilityPanelOpened',
     );
-    final hasRestoredAutoQueuedPulses = tutorialData.containsKey(
-      'autoQueuedPulses',
-    );
+    final hasRestoredManagerAutoAimShots =
+        tutorialData.containsKey('managerAutoAimShots') ||
+        tutorialData.containsKey('autoQueuedPulses');
     _tutorialEarlyQuestChainCompleted = _boolValue(
       tutorialData['earlyQuestChainCompleted'],
     );
@@ -336,7 +336,9 @@ extension LightcoreControllerSaveRestorePayload on LightcoreController {
     _tutorialOverdriveLearned = _boolValue(tutorialData['overdriveLearned']);
     _tutorialIntroBossPending = _boolValue(tutorialData['introBossPending']);
     _tutorialSafeScanDefeats = _intValue(tutorialData['safeScanDefeats']);
-    _tutorialAutoQueuedPulses = _intValue(tutorialData['autoQueuedPulses']);
+    _tutorialManagerAutoAimShots = _intValue(
+      tutorialData['managerAutoAimShots'] ?? tutorialData['autoQueuedPulses'],
+    );
     _tutorialTrackedBossEnemyId = _stringOrNull(
       tutorialData['trackedBossEnemyId'],
     );
@@ -357,7 +359,7 @@ extension LightcoreControllerSaveRestorePayload on LightcoreController {
         _coerceList(tutorialData['rewardedSteps'])
             .map(_stringOrNull)
             .whereType<String>()
-            .map((value) => _enumByName(LightcoreTutorialStep.values, value))
+            .map(_restoreTutorialStepName)
             .whereType<LightcoreTutorialStep>(),
       );
 
@@ -371,7 +373,7 @@ extension LightcoreControllerSaveRestorePayload on LightcoreController {
     _normalizeEquippedProfileMedal();
     _migrateRestoredTutorialState(
       hasStabilityPanelOpened: hasRestoredStabilityPanelOpened,
-      hasAutoQueuedPulses: hasRestoredAutoQueuedPulses,
+      hasManagerAutoAimShots: hasRestoredManagerAutoAimShots,
     );
     _armStarterBossForOpening();
     _tutorialStep = LightcoreTutorialStep.none;
@@ -512,7 +514,7 @@ extension LightcoreControllerSaveRestorePayload on LightcoreController {
 
   void _migrateRestoredTutorialState({
     required bool hasStabilityPanelOpened,
-    required bool hasAutoQueuedPulses,
+    required bool hasManagerAutoAimShots,
   }) {
     final hasDurableEarlyProgress =
         _tutorialEarlyQuestChainCompleted ||
@@ -529,11 +531,11 @@ extension LightcoreControllerSaveRestorePayload on LightcoreController {
     if (!hasStabilityPanelOpened &&
         (hasDurableEarlyProgress ||
             _tutorialTowerManagerAssigned ||
-            _tutorialAutoQueuedPulses > 0)) {
+            _tutorialManagerAutoAimShots > 0)) {
       _tutorialStabilityPanelOpened = true;
     }
-    if (!hasAutoQueuedPulses && hasDurableEarlyProgress) {
-      _tutorialAutoQueuedPulses = max(_tutorialAutoQueuedPulses, 5);
+    if (!hasManagerAutoAimShots && hasDurableEarlyProgress) {
+      _tutorialManagerAutoAimShots = max(_tutorialManagerAutoAimShots, 5);
     }
     if (hasDurableEarlyProgress) {
       _tutorialManualAimFireLearned = true;
@@ -563,5 +565,12 @@ extension LightcoreControllerSaveRestorePayload on LightcoreController {
       ..addEntries(
         LightcoreRadianceStat.values.map((stat) => MapEntry(stat, 0)),
       );
+  }
+
+  LightcoreTutorialStep? _restoreTutorialStepName(String value) {
+    if (value == 'autoQueueCheck') {
+      return LightcoreTutorialStep.managerAutoAim;
+    }
+    return _enumByName(LightcoreTutorialStep.values, value);
   }
 }
