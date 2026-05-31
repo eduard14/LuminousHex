@@ -77,6 +77,9 @@ shell, and keep climbing.
   player can act immediately after the first relay comes online.
 - The first tower/focus/upgrade loop grants enough starter Lumens to move from
   build to focus fire to the first upgrade without idle grinding.
+- The post-upgrade threat prompt explains the payoff and highlights the
+  Challenge button directly, turning pressure raising into the next obvious
+  action instead of a menu hunt.
 - Tutorial guidance appears as a compact battlefield notification with the next
   action visible; players expand it only when they want more detail.
 - Tower body taps are reserved for tower controls, upgrades, stats, and

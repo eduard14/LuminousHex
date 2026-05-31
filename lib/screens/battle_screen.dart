@@ -1256,7 +1256,7 @@ class _RaiseThreatPrompt extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
-    final width = compact ? 330.0 : 360.0;
+    final width = compact ? 350.0 : 390.0;
     return LayoutBuilder(
       builder: (context, constraints) {
         final resolvedWidth = constraints.maxWidth.isFinite
@@ -1285,10 +1285,11 @@ class _RaiseThreatPrompt extends StatelessWidget {
               padding: EdgeInsets.fromLTRB(
                 compact ? 10 : 12,
                 compact ? 8 : 10,
-                compact ? 8 : 10,
-                compact ? 8 : 10,
+                compact ? 9 : 11,
+                compact ? 9 : 11,
               ),
               child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Icon(
                     Icons.flag_rounded,
@@ -1297,25 +1298,49 @@ class _RaiseThreatPrompt extends StatelessWidget {
                   ),
                   const SizedBox(width: 8),
                   Expanded(
-                    child: Text(
-                      'Threat too low',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: textTheme.labelLarge?.copyWith(
-                        color: LightcorePalette.layer2,
-                        fontWeight: FontWeight.w800,
-                      ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'Threat too low',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: textTheme.labelLarge?.copyWith(
+                            color: LightcorePalette.layer2,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                        Text(
+                          'Start a tougher wave for better rewards.',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: textTheme.labelSmall?.copyWith(
+                            color: LightcorePalette.mist.withValues(
+                              alpha: 0.76,
+                            ),
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                   const SizedBox(width: 8),
                   Flexible(
-                    child: FilledButton.icon(
-                      onPressed: enabled ? onPressed : null,
-                      icon: const Icon(Icons.play_arrow_rounded),
-                      label: Text(
-                        label,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                    child: GuidedFocusFrame(
+                      active: enabled,
+                      tint: LightcorePalette.quest,
+                      radius: 999,
+                      padding: const EdgeInsets.all(3),
+                      tapCueLabel: 'Start',
+                      child: FilledButton.icon(
+                        onPressed: enabled ? onPressed : null,
+                        icon: const Icon(Icons.play_arrow_rounded),
+                        label: Text(
+                          label,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
                     ),
                   ),

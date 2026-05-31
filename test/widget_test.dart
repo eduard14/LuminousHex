@@ -1698,15 +1698,19 @@ void main() {
     expect(prompt, findsOneWidget);
     expect(find.text('Threat too low'), findsOneWidget);
     expect(
+      find.text('Start a tougher wave for better rewards.'),
+      findsOneWidget,
+    );
+    expect(
       find.descendant(of: prompt, matching: find.byType(GuidedFocusFrame)),
-      findsNothing,
+      findsOneWidget,
     );
     expect(
       find.descendant(
         of: prompt,
         matching: find.byIcon(Icons.touch_app_rounded),
       ),
-      findsNothing,
+      findsOneWidget,
     );
     expect(
       tester.getRect(prompt).center.dy,
