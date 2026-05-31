@@ -42,11 +42,12 @@ cadence, enemy strength, and reward bonuses.
 2. Select Hex 1 immediately and build the first relay tower.
 3. Tap the highlighted starter anomaly to focus queued fire while the Lightcore
    and ready relays auto-feed packets into the core queue.
-4. Upgrade all built towers to level 5.
-5. Tune the encounter by changing the active anomaly deck and target count.
-6. Promote the finished shell.
-7. Re-enter child shells and repeat until higher-tier parent slots are forged.
-8. Spend Flux on managers once Core Lv 3 or Account Radiance Lv 10 unlocks the
+4. Inspect the first tower's stats after the first shot lands, then upgrade it.
+5. Upgrade all built towers to level 5.
+6. Tune the encounter by changing the active anomaly deck and target count.
+7. Promote the finished shell.
+8. Re-enter child shells and repeat until higher-tier parent slots are forged.
+9. Spend Flux on managers once Core Lv 3 or Account Radiance Lv 10 unlocks the
    foundry.
 
 ## Rules That Matter

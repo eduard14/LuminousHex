@@ -301,11 +301,11 @@ extension LightcoreControllerLayerTraits on LightcoreController {
     if (!_isOpeningStarterTower(firstTower.config)) {
       return null;
     }
-    if (!_tutorialFirstTowerStatsOpened) {
-      return LightcoreTutorialStep.inspectFirstTowerStats;
-    }
     if (!_tutorialManualAimFireLearned) {
       return LightcoreTutorialStep.tapFirstTower;
+    }
+    if (!_tutorialFirstTowerStatsOpened) {
+      return LightcoreTutorialStep.inspectFirstTowerStats;
     }
     final firstTowerUpgradeCost = upgradeCost(firstTower);
     if (firstTower.level < 3 &&

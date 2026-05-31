@@ -375,10 +375,10 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
     title: 'Read Tower Stats',
     teachGoal:
         'Stats explain why a tower is worth upgrading: power hits harder, charge readies faster, and cooldown controls repeat fire.',
-    trigger: 'First tower exists',
+    trigger: 'First focus-fire action complete',
     primaryClickTarget: 'Lower-left prism control > Tower Stats pop-out',
     coachCopy:
-        'Open Tower Stats before combat speeds up. The numbers show what this tower contributes to the core queue.',
+        'Open Tower Stats now that the first shot landed. The numbers show what this tower contributes to the core queue.',
     completionCondition: 'Open the first tower stats pop-out',
     reward: 'Tower stat labels unlocked',
     failureHelpState:

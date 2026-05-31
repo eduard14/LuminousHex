@@ -49,17 +49,19 @@ shell, and keep climbing.
 2. Reveal the first perimeter hex immediately and build the opening relay.
 3. Tap a highlighted starter anomaly to focus fire while the core and relay
    towers auto-feed ammo packets into the core queue.
-4. Build the remaining perimeter relay towers while tower taps stay reserved for
+4. Inspect tower stats after the first shot lands, then upgrade from the same
+   tower-control surface.
+5. Build the remaining perimeter relay towers while tower taps stay reserved for
    tower controls.
-5. Upgrade towers, core stats, and encounter capacity with earned resources.
-6. Roll Threat Scans into Knowledge Cards that make enemy families easier
+6. Upgrade towers, core stats, and encounter capacity with earned resources.
+7. Roll Threat Scans into Knowledge Cards that make enemy families easier
    to understand and farm.
-7. Follow the fixed Threat Map route, fully stabilize each region to unlock the
+8. Follow the fixed Threat Map route, fully stabilize each region to unlock the
    next one, then validate harder farm pressure for offline rewards.
-8. Defeat normal anomalies to prime Apex Anomaly encounters.
-9. Promote completed shells into higher classes and inherited child towers.
-10. Return to older shells as passive support archives while the live shell grows.
-11. Expand into managers, daily dungeons, tournaments, and social play.
+9. Defeat normal anomalies to prime Apex Anomaly encounters.
+10. Promote completed shells into higher classes and inherited child towers.
+11. Return to older shells as passive support archives while the live shell grows.
+12. Expand into managers, daily dungeons, tournaments, and social play.
 
 ## Feature Inventory
 
