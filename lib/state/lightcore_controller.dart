@@ -327,16 +327,15 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
   ),
   LightcoreTutorialStep.waitForFirstHex: LightcoreTutorialQuestDefinition(
     id: 'TUT-002',
-    title: 'Wait for Hex 1',
+    title: 'Hex 1 Ready',
     teachGoal:
-        'Battle progress opens build lanes. The first short hold should keep the battlefield visible until Hex 1 comes online.',
-    trigger: 'Shell is awake before the first lane unlocks',
+        'The first lane opens as soon as the shell wakes, so the player can move directly into building.',
+    trigger: 'Legacy save is still parked on the old first-lane wait step',
     primaryClickTarget: 'Battlefield > Hex 1',
-    coachCopy:
-        'Keep the shell open. Hex 1 will light up as soon as the starter field feeds enough EXP.',
-    completionCondition: 'Hex 1 unlocks',
+    coachCopy: 'Hex 1 is ready. Tap the highlighted lane to build.',
+    completionCondition: 'Hex 1 selected',
     reward: 'Small Lumen grant',
-    failureHelpState: 'Leave the battle view active until the first hex opens.',
+    failureHelpState: 'Tap the highlighted first hex.',
     analyticsEvent: 'tutorial_wait_first_hex',
   ),
   LightcoreTutorialStep.selectFirstHex: LightcoreTutorialQuestDefinition(
@@ -388,17 +387,16 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
   ),
   LightcoreTutorialStep.tapBattleCore: LightcoreTutorialQuestDefinition(
     id: 'TUT-006',
-    title: 'Watch Auto-Charge',
+    title: 'Auto-Feed Ready',
     teachGoal:
-        'Packets generate automatically after the core wakes. The player watches the queue fill instead of tapping the core repeatedly.',
-    trigger: 'The first shell opens',
+        'Packets generate automatically after the core wakes. The player learns this through the focus-fire action instead of waiting on the queue.',
+    trigger: 'Legacy save is still parked on the old auto-charge watch step',
     primaryClickTarget: 'Battlefield > Lightcore queue',
-    coachCopy:
-        'Watch the Lightcore auto-charge a packet. No tapping is needed; the next job is choosing what to shoot.',
-    completionCondition: 'One packet auto-generates',
+    coachCopy: 'Auto-feed is running. Tap an anomaly to focus the next packet.',
+    completionCondition: 'Focus one anomaly',
     reward: 'Small Lumen grant',
     failureHelpState:
-        'Keep the battle field open. The queue markers around the Lightcore show stored packets.',
+        'Tap a visible anomaly. The next packet will fire when ready.',
     analyticsEvent: 'tutorial_core_auto_generate',
   ),
   LightcoreTutorialStep.tapFirstTower: LightcoreTutorialQuestDefinition(

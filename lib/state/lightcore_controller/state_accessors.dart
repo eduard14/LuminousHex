@@ -603,8 +603,7 @@ extension LightcoreControllerStateAccessors on LightcoreController {
           .clamp(0.0, 1.0);
 
   int get unlockedOuterSlotCount {
-    final unlocked = unlockedOuterSlotCountForExperience(progressionExperience);
-    return _tutorialFirstHexTemporarilyLocked ? 0 : unlocked;
+    return unlockedOuterSlotCountForExperience(progressionExperience);
   }
 
   int get bossKillsIntoCycle => activeLayer.bossReady

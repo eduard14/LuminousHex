@@ -39,10 +39,9 @@ cadence, enemy strength, and reward bonuses.
 ## Current Gameplay Loop
 
 1. Reveal the shell by tapping/selecting the center.
-2. Watch the Lightcore and ready relays auto-feed packets into the core queue,
-   generating kills until outer slots unlock.
-3. Tap anomalies to focus queued fire immediately, then build outer towers with
-   Lumens.
+2. Select Hex 1 immediately and build the first relay tower.
+3. Tap anomalies to focus queued fire while the Lightcore and ready relays
+   auto-feed packets into the core queue.
 4. Upgrade all built towers to level 5.
 5. Tune the encounter by changing the active anomaly deck and target count.
 6. Promote the finished shell.

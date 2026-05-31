@@ -46,9 +46,11 @@ shell, and keep climbing.
 ## Core Gameplay Loop
 
 1. Enter a hex shell built around the central Lightcore.
-2. Reveal and build six perimeter relay towers.
-3. Watch the core and relay towers auto-feed ammo packets into the core queue.
-4. Tap anomalies to focus fire while tower taps stay reserved for tower controls.
+2. Reveal the first perimeter hex immediately and build the opening relay.
+3. Tap anomalies to focus fire while the core and relay towers auto-feed ammo
+   packets into the core queue.
+4. Build the remaining perimeter relay towers while tower taps stay reserved for
+   tower controls.
 5. Upgrade towers, core stats, and encounter capacity with earned resources.
 6. Roll Threat Scans into Knowledge Cards that make enemy families easier
    to understand and farm.
@@ -67,7 +69,8 @@ shell, and keep climbing.
 - Relay towers charge and feed ammo packets to the core instead of firing
   directly.
 - Opening combat is low-friction: packets auto-generate after the Lightcore
-  wakes, then the player taps anomalies to aim and focus fire.
+  wakes, Hex 1 is immediately selectable, then the player taps anomalies to aim
+  and focus fire.
 - Tower body taps are reserved for tower controls, upgrades, stats, and
   targeting tools, keeping build/stat actions distinct from anomaly aiming.
 - Waiting packets do not orbit as collectible-looking field objects; only brief
@@ -239,7 +242,8 @@ Suggested first release order:
 
 1. Lemon Goose Games Inc. splash.
 2. Fractured Lightcore premise in one short text card.
-3. Relay towers charge, packets auto-feed, player taps anomalies to focus fire.
+3. First relay comes online, packets auto-feed, player taps anomalies to focus
+   fire.
 4. Anomalies spiral inward and disrupt lanes.
 5. Threat Scan pull reveals a new Knowledge Card.
 6. Region challenge and Farm Validation pressure.

@@ -114,18 +114,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
       (config.id == TowerLibrary.redPrism.id ||
           config.id == TowerLibrary.cyanPrism.id);
 
-  bool get _tutorialFirstHexTemporarilyLocked =>
-      !_earlyTutorialComplete &&
-      _outerRingRevealed &&
-      builtTowerCount == 0 &&
-      !_slots[0].isBuilt &&
-      progressionExperience <
-          LightcoreController.tutorialFirstHexUnlockExperience;
-
   int _outerSlotUnlockExperienceForProgression(int slotIndex) {
-    if (slotIndex == 0 && _tutorialFirstHexTemporarilyLocked) {
-      return LightcoreController.tutorialFirstHexUnlockExperience;
-    }
     return unlockExperienceForOuterSlot(slotIndex);
   }
 
@@ -299,10 +288,6 @@ extension LightcoreControllerLayerTraits on LightcoreController {
     if (!_outerRingRevealed && builtTowerCount == 0) {
       return LightcoreTutorialStep.unfoldShell;
     }
-    if (!isOuterSlotUnlocked(0)) {
-      return LightcoreTutorialStep.waitForFirstHex;
-    }
-
     final firstTower = _slots[0];
     if (!firstTower.isBuilt) {
       if (selectedSlotIndex != 0) {
@@ -318,9 +303,6 @@ extension LightcoreControllerLayerTraits on LightcoreController {
     }
     if (!_tutorialFirstTowerStatsOpened) {
       return LightcoreTutorialStep.inspectFirstTowerStats;
-    }
-    if (!_tutorialCoreShotTapLearned) {
-      return LightcoreTutorialStep.tapBattleCore;
     }
     if (!_tutorialManualAimFireLearned) {
       return LightcoreTutorialStep.tapFirstTower;
@@ -1435,11 +1417,11 @@ extension LightcoreControllerLayerTraits on LightcoreController {
       switch (_tutorialStep) {
         LightcoreTutorialStep.none => null,
         LightcoreTutorialStep.unfoldShell => 'Unfold The Shell',
-        LightcoreTutorialStep.waitForFirstHex => 'Hold The Lane',
+        LightcoreTutorialStep.waitForFirstHex => 'Hex 1 Ready',
         LightcoreTutorialStep.selectFirstHex => 'Select Hex 1',
         LightcoreTutorialStep.buildFirstRedTower => 'Choose First Tower',
         LightcoreTutorialStep.inspectFirstTowerStats => 'Read Tower Stats',
-        LightcoreTutorialStep.tapBattleCore => 'Watch Auto-Charge',
+        LightcoreTutorialStep.tapBattleCore => 'Auto-Feed Ready',
         LightcoreTutorialStep.tapFirstTower => 'Focus Fire',
         LightcoreTutorialStep.tapSecondShellTower => 'Fire Child Tower',
         LightcoreTutorialStep.upgradeFirstTowerToLevel3 =>
@@ -1482,15 +1464,14 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         LightcoreTutorialStep.none => null,
         LightcoreTutorialStep.unfoldShell =>
           'Click the center core to wake the shell.',
-        LightcoreTutorialStep.waitForFirstHex =>
-          'Keep the shell open while Hex 1 stabilizes.',
+        LightcoreTutorialStep.waitForFirstHex => 'Click Hex 1.',
         LightcoreTutorialStep.selectFirstHex => 'Click Hex 1.',
         LightcoreTutorialStep.buildFirstRedTower =>
           'Click Hex 1 and choose Comet Mortar or Rayline Spire.',
         LightcoreTutorialStep.inspectFirstTowerStats =>
           'Open the first tower stats pop-out.',
         LightcoreTutorialStep.tapBattleCore =>
-          'Watch the Lightcore auto-generate a queued packet.',
+          'Tap a visible anomaly. Auto-feed will supply the next packet.',
         LightcoreTutorialStep.tapFirstTower =>
           'Tap a visible anomaly to focus fire. Tower taps open tower controls.',
         LightcoreTutorialStep.tapSecondShellTower =>
@@ -1563,7 +1544,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         LightcoreTutorialStep.unfoldShell =>
           'The shell stays folded until the core wakes up, so lanes and combat systems remain locked while it sleeps.',
         LightcoreTutorialStep.waitForFirstHex =>
-          'Starter driftlings feed total EXP automatically. Hex 1 is held briefly so the player sees the shell wake before build controls appear.',
+          'Hex 1 opens with the shell now, so the first lesson moves straight into selecting a lane and building.',
         LightcoreTutorialStep.selectFirstHex =>
           'Command opens the shell one lane at a time so flow stays stable while the relay network comes online.',
         LightcoreTutorialStep.buildFirstRedTower =>
@@ -1571,7 +1552,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         LightcoreTutorialStep.inspectFirstTowerStats =>
           'Tower stats show power, charge, cooldown, automation, and lane load before the tower starts feeding the core queue.',
         LightcoreTutorialStep.tapBattleCore =>
-          'The Lightcore auto-charges packets after the shell wakes, so the player is never asked to repeat-tap the core.',
+          'The Lightcore auto-charges packets after the shell wakes, so the player can focus on choosing targets.',
         LightcoreTutorialStep.tapFirstTower =>
           'Enemy focus teaches target choice before managers unlock auto-fire. Tower clicks remain tower controls.',
         LightcoreTutorialStep.tapSecondShellTower =>
@@ -1644,7 +1625,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
           LightcoreTutorialStep.unfoldShell =>
             'This relay shell has been drifting in standby. Waking it exposes the battle lattice and alerts nearby anomalies.',
           LightcoreTutorialStep.waitForFirstHex =>
-            'The first contacts are weak drift signatures scraping the perimeter while the shell powers up.',
+            'Hex 1 is already lit, giving the shell a clean first anchor lane.',
           LightcoreTutorialStep.selectFirstHex =>
             'Hex 1 is the safest breach point, so command uses it as the anchor lane for the opening defense grid.',
           LightcoreTutorialStep.buildFirstRedTower =>
@@ -1652,7 +1633,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
           LightcoreTutorialStep.inspectFirstTowerStats =>
             'The first prism report opens so the crew can label what each tower number means before combat speeds up.',
           LightcoreTutorialStep.tapBattleCore =>
-            'A hostile signature crosses the core lens while the Lightcore charges its first packet automatically.',
+            'A hostile signature crosses the core lens while auto-feed readies the next packet.',
           LightcoreTutorialStep.tapFirstTower =>
             'The packet is loaded. Aim at a visible anomaly; tap towers only when you want tower controls.',
           LightcoreTutorialStep.tapSecondShellTower =>
