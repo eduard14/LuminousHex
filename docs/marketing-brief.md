@@ -78,8 +78,8 @@ shell, and keep climbing.
 - The first tower/focus/upgrade loop grants enough starter Lumens to move from
   build to focus fire to the first upgrade without idle grinding.
 - The post-upgrade threat prompt explains the payoff and highlights the
-  Challenge button directly, turning pressure raising into the next obvious
-  action instead of a menu hunt.
+  Challenge button directly, framing the next step as a reward wave the player
+  has earned instead of a low-threat warning or menu hunt.
 - Active challenge HUD now shows the Lumen reward preview beside the wave
   timer so the first pressure run has a visible payoff while it is underway.
 - Tower badges use projectile color and hex-edge level progress only; payload

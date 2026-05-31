@@ -628,7 +628,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
     LightcoreTutorialStep.tapFirstTower =>
       'Focus fire learned. You have enough Lumens to upgrade the first tower.',
     LightcoreTutorialStep.upgradeFirstTowerToLevel3 =>
-      'Anchor tower tuned. Challenge Lv 1 is ready when the field feels too quiet.',
+      'Anchor tower tuned. Start Challenge Lv 1 for denser waves and better rewards.',
     LightcoreTutorialStep.raiseThreat =>
       'Threat raised. The starter region is now testing that upgraded tower.',
     LightcoreTutorialStep.pullFirstWhiteEnemy =>
@@ -1421,7 +1421,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         LightcoreTutorialStep.tapSecondShellTower => 'Fire Child Tower',
         LightcoreTutorialStep.upgradeFirstTowerToLevel3 =>
           'Tune The Main Tower',
-        LightcoreTutorialStep.raiseThreat => 'Raise Threat',
+        LightcoreTutorialStep.raiseThreat => 'Start Challenge',
         LightcoreTutorialStep.pullFirstWhiteEnemy => 'Open Knowledge Cards',
         LightcoreTutorialStep.readEffectiveGain => 'Read Effective Gain',
         LightcoreTutorialStep.managerAutoAim => 'Manager Auto-Fire',
@@ -1470,7 +1470,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         LightcoreTutorialStep.upgradeFirstTowerToLevel3 =>
           'Click the first tower in Hex 1 and upgrade it once.',
         LightcoreTutorialStep.raiseThreat =>
-          'Click Challenge Lv 1 on the battlefield to raise anomaly pressure.',
+          'Click Challenge Lv 1 on the battlefield to start a tougher reward wave.',
         LightcoreTutorialStep.pullFirstWhiteEnemy =>
           'Click Map and run 1 threat scan.',
         LightcoreTutorialStep.readEffectiveGain =>
@@ -1547,7 +1547,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         LightcoreTutorialStep.upgradeFirstTowerToLevel3 =>
           'The first upgrade proves the loop quickly: aim, earn, tune, then raise pressure.',
         LightcoreTutorialStep.raiseThreat =>
-          'The upgraded tower is overmatching the starter field. Raise the starter-region challenge so stronger pressure turns back into better rewards.',
+          'The upgraded tower is ready for more pressure. Start the starter-region challenge so stronger waves turn into better rewards.',
         LightcoreTutorialStep.pullFirstWhiteEnemy =>
           'Threat scans add real anomalies to the live deck. White anomalies establish the neutral baseline before color counters appear.',
         LightcoreTutorialStep.readEffectiveGain =>
@@ -1624,7 +1624,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
           LightcoreTutorialStep.upgradeFirstTowerToLevel3 =>
             'Command is tuning the flagship lane before exposing more of the shell to hostile traffic.',
           LightcoreTutorialStep.raiseThreat =>
-            'Command marks the field as too quiet and opens Challenge Lv 1 directly from battle.',
+            'Command opens Challenge Lv 1 directly from battle so the tuned tower gets a real wave to break.',
           LightcoreTutorialStep.pullFirstWhiteEnemy =>
             'The starter driftling was only training noise. This is your first proper hostile signature.',
           LightcoreTutorialStep.readEffectiveGain =>

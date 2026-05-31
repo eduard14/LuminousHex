@@ -249,6 +249,11 @@ void main() {
     expect(controller.tutorialUpgradeTower(0), isTrue);
     expect(controller.slots[0].level, 2);
     expect(controller.tutorialStep, LightcoreTutorialStep.raiseThreat);
+    expect(controller.tutorialHeadline, 'Start Challenge');
+    expect(
+      controller.tutorialPrompt,
+      'Start Challenge Lv 1 from the battlefield. It adds denser waves and better rewards for the upgraded tower to handle.',
+    );
     expect(controller.canStartFirstThreatChallenge, isTrue);
     final baselineStats = controller.activeThreatAssignmentGroupStats;
     final baselineTargetCount = controller.enemyTargetCount;
@@ -435,6 +440,11 @@ void main() {
     expect(
       controller.tutorialStep,
       LightcoreTutorialStep.upgradeFirstTowerToLevel3,
+    );
+    expect(controller.tutorialHeadline, 'Tune the Main Tower');
+    expect(
+      controller.tutorialPrompt,
+      'Upgrade the first tower once before expanding. A stronger anchor makes every ready shot matter more.',
     );
   });
 

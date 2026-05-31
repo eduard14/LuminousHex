@@ -1699,7 +1699,7 @@ void main() {
     expect(find.byTooltip('Open Store'), findsNothing);
   });
 
-  testWidgets('raise threat prompt stays static without tap-pulse chrome', (
+  testWidgets('challenge ready prompt stays static without tap-pulse chrome', (
     tester,
   ) async {
     final controller = LightcoreController();
@@ -1725,9 +1725,9 @@ void main() {
       const ValueKey<String>('battle-raise-threat-prompt'),
     );
     expect(prompt, findsOneWidget);
-    expect(find.text('Threat too low'), findsOneWidget);
+    expect(find.text('Challenge ready'), findsOneWidget);
     expect(
-      find.text('Start a tougher wave for better rewards.'),
+      find.text('Start a tougher wave. Earn better rewards.'),
       findsOneWidget,
     );
     expect(

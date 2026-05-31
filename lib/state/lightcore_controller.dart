@@ -414,13 +414,13 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
   ),
   LightcoreTutorialStep.raiseThreat: LightcoreTutorialQuestDefinition(
     id: 'TUT-010A',
-    title: 'Raise Threat',
+    title: 'Start Challenge',
     teachGoal:
-        'When the first tower is overmatching the starter field, push the next stabilization level instead of idling on weak anomalies.',
+        'When the first tower is tuned, start the next stabilization challenge so the battlefield gets busier and rewards climb.',
     trigger: 'First upgraded tower is clearing safely',
-    primaryClickTarget: 'Battlefield > Threat too low prompt > Challenge Lv 1',
+    primaryClickTarget: 'Battlefield > Challenge ready prompt > Challenge Lv 1',
     coachCopy:
-        'The current anomaly field is too weak for the upgraded tower. Start Challenge Lv 1 to raise pressure and rewards.',
+        'Start Challenge Lv 1 from the battlefield. It adds denser waves and better rewards for the upgraded tower to handle.',
     completionCondition: 'Starter-region challenge started',
     reward: 'Threat Scan x1',
     failureHelpState:

@@ -1303,7 +1303,7 @@ class _RaiseThreatPrompt extends StatelessWidget {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          'Threat too low',
+                          'Challenge ready',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: textTheme.labelLarge?.copyWith(
@@ -1312,7 +1312,7 @@ class _RaiseThreatPrompt extends StatelessWidget {
                           ),
                         ),
                         Text(
-                          'Start a tougher wave for better rewards.',
+                          'Start a tougher wave. Earn better rewards.',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: textTheme.labelSmall?.copyWith(
