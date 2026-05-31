@@ -64,7 +64,6 @@ enum LightcoreTutorialStep {
   waitForFirstHex,
   selectFirstHex,
   buildFirstRedTower,
-  inspectFirstTowerStats,
   tapBattleCore,
   tapFirstTower,
   tapSecondShellTower,
@@ -368,22 +367,6 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
     failureHelpState:
         'Open the first hex controls, then choose one of the highlighted starter build buttons.',
     analyticsEvent: 'tutorial_fabricate_first_light',
-  ),
-  LightcoreTutorialStep
-      .inspectFirstTowerStats: LightcoreTutorialQuestDefinition(
-    id: 'TUT-005',
-    title: 'Open Tower Controls',
-    teachGoal:
-        'Tower controls keep upgrades, stats, and targeting separate from enemy focus clicks.',
-    trigger: 'First focus-fire action complete',
-    primaryClickTarget: 'Lower-left prism control > Tower Stats pop-out',
-    coachCopy:
-        'Open the first tower controls. This is where upgrades live; enemy taps stay for focus fire.',
-    completionCondition: 'Open the first tower controls',
-    reward: 'Upgrade controls unlocked',
-    failureHelpState:
-        'Tap the lower-left prism control if the stats panel is hidden.',
-    analyticsEvent: 'tutorial_read_tower_stats',
   ),
   LightcoreTutorialStep.tapBattleCore: LightcoreTutorialQuestDefinition(
     id: 'TUT-006',
@@ -1727,7 +1710,6 @@ class LightcoreController extends ChangeNotifier {
   bool _tutorialFirstManagersOpened = false;
   bool _tutorialFirstEnemyTargetSet = false;
   bool _tutorialEnemyCountAdjusted = false;
-  bool _tutorialFirstTowerStatsOpened = false;
   bool _tutorialStabilityPanelOpened = false;
   bool _tutorialTowerMatrixOpened = false;
   bool _tutorialStoreOpened = false;

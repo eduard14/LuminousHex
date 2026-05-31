@@ -858,7 +858,6 @@ extension LightcoreControllerSaveTournamentCloud on LightcoreController {
         'firstManagersOpened': _tutorialFirstManagersOpened,
         'firstEnemyTargetSet': _tutorialFirstEnemyTargetSet,
         'enemyCountAdjusted': _tutorialEnemyCountAdjusted,
-        'firstTowerStatsOpened': _tutorialFirstTowerStatsOpened,
         'stabilityPanelOpened': _tutorialStabilityPanelOpened,
         'towerMatrixOpened': _tutorialTowerMatrixOpened,
         'storeOpened': _tutorialStoreOpened,

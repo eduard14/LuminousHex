@@ -687,19 +687,6 @@ class _BattleScreenState extends State<BattleScreen> {
     }
   }
 
-  bool _completeTowerStatsTutorialFor(_BattleStatsTarget target) {
-    if (target.kind != _BattleStatsTargetKind.slot) {
-      return false;
-    }
-    final slotIndex = target.slotIndex;
-    if (slotIndex == null ||
-        !widget.controller.tutorialHighlightsTowerStatsButton(slotIndex)) {
-      return false;
-    }
-    widget.controller.markTutorialFirstTowerStatsOpened();
-    return true;
-  }
-
   bool _opensTowerDetailOverlay(_BattleStatsTarget target) {
     if (target.kind != _BattleStatsTargetKind.slot) {
       return false;
@@ -725,7 +712,6 @@ class _BattleScreenState extends State<BattleScreen> {
       return;
     }
     widget.controller.selectSlot(slotIndex);
-    _completeTowerStatsTutorialFor(target);
     setState(() {
       _statsTarget = target;
       _panelFocus = _BattlePanelFocus.none;
@@ -748,13 +734,6 @@ class _BattleScreenState extends State<BattleScreen> {
     }
     if (!_isStatsTargetOpen(target)) {
       _openStatsTarget(target);
-      _completeTowerStatsTutorialFor(target);
-      return;
-    }
-    if (_completeTowerStatsTutorialFor(target)) {
-      setState(() {
-        _selectionControlsVisible = false;
-      });
       return;
     }
     setState(() {
@@ -885,8 +864,7 @@ class _BattleScreenState extends State<BattleScreen> {
       case _BattleStatsTargetKind.slot:
         final slotIndex = target.slotIndex;
         return slotIndex != null &&
-            (controller.tutorialHighlightsUpgradeButton(slotIndex) ||
-                controller.tutorialHighlightsTowerStatsButton(slotIndex));
+            controller.tutorialHighlightsUpgradeButton(slotIndex);
     }
   }
 
@@ -909,9 +887,6 @@ class _BattleScreenState extends State<BattleScreen> {
         final slotIndex = target.slotIndex;
         if (slotIndex == null) {
           return null;
-        }
-        if (controller.tutorialHighlightsTowerStatsButton(slotIndex)) {
-          return targetOpen ? 'Done' : 'Open stats';
         }
         if (controller.tutorialHighlightsUpgradeButton(slotIndex)) {
           return targetOpen ? 'Upgrade' : 'Open upgrades';
@@ -1119,10 +1094,6 @@ class _BattleScreenState extends State<BattleScreen> {
       case LightcoreTutorialStep.buildFirstRedTower:
         if (selectedSlotIndex == 0 && selected?.isBuilt == false) {
           return 'Hex 1 build controls are already open. Choose Comet Mortar or Rayline Spire to start the first fabrication.';
-        }
-      case LightcoreTutorialStep.inspectFirstTowerStats:
-        if (selectedSlotIndex == 0 && selected?.isBuilt == true) {
-          return 'Tower Stats are already open. Read power, charge, cooldown, and the projectile type, then tap the highlighted tower-control button when done.';
         }
       case LightcoreTutorialStep.upgradeFirstTowerToLevel3:
         if (selectedSlotIndex == 0 && selected?.isBuilt == true) {

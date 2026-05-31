@@ -142,18 +142,6 @@ extension LightcoreControllerBattleEnemyActions on LightcoreController {
     _notifyNow();
   }
 
-  void markTutorialFirstTowerStatsOpened() {
-    if (_tutorialFirstTowerStatsOpened) {
-      return;
-    }
-    if (_firstTutorialTower == null || _slots[0].isFabricating) {
-      return;
-    }
-    _tutorialFirstTowerStatsOpened = true;
-    _syncTutorialStep(showBanner: false);
-    _notifyNow();
-  }
-
   void markTutorialStabilityPanelOpened() {
     if (_tutorialStabilityPanelOpened) {
       return;

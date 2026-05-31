@@ -642,7 +642,6 @@ extension LightcoreControllerStateAccessors on LightcoreController {
       _tutorialStep == LightcoreTutorialStep.unfoldShell ||
       _tutorialStep == LightcoreTutorialStep.selectFirstHex ||
       _tutorialStep == LightcoreTutorialStep.buildFirstRedTower ||
-      _tutorialStep == LightcoreTutorialStep.inspectFirstTowerStats ||
       _tutorialStep == LightcoreTutorialStep.tapBattleCore ||
       _tutorialStep == LightcoreTutorialStep.tapFirstTower ||
       _tutorialStep == LightcoreTutorialStep.tapSecondShellTower ||
@@ -675,15 +674,9 @@ extension LightcoreControllerStateAccessors on LightcoreController {
       _tutorialStep == LightcoreTutorialStep.readEffectiveGain ||
       _tutorialStep == LightcoreTutorialStep.autoQueueCheck;
 
-  bool tutorialHighlightsTowerStatsButton(int slotIndex) =>
-      _tutorialStep == LightcoreTutorialStep.inspectFirstTowerStats &&
-      slotIndex == 0;
-
   bool tutorialHighlightsBattleSlot(int slotIndex) {
     if (slotIndex == 0 &&
         (_tutorialStep == LightcoreTutorialStep.selectFirstHex ||
-            (_tutorialStep == LightcoreTutorialStep.inspectFirstTowerStats &&
-                selectedSlotIndex != 0) ||
             ((_tutorialStep == LightcoreTutorialStep.buildFirstRedTower ||
                     _tutorialStep ==
                         LightcoreTutorialStep.upgradeFirstTowerToLevel3 ||
@@ -704,7 +697,6 @@ extension LightcoreControllerStateAccessors on LightcoreController {
     return switch (_tutorialStep) {
       LightcoreTutorialStep.selectFirstHex => 'BUILD HERE',
       LightcoreTutorialStep.buildFirstRedTower => 'CHOOSE TOWER',
-      LightcoreTutorialStep.inspectFirstTowerStats => 'OPEN STATS',
       LightcoreTutorialStep.upgradeFirstTowerToLevel3 ||
       LightcoreTutorialStep.upgradeFirstTowerToLevel4 => 'UPGRADE',
       LightcoreTutorialStep.tapSecondShellTower => _tutorialTowerShotGuideLabel(

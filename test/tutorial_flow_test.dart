@@ -214,7 +214,7 @@ void main() {
     );
     expect(
       LightcoreController.tutorialQuestHelpBody,
-      contains('TUT-005 Open Tower Controls'),
+      contains('TUT-006 Auto-Charge Ready'),
     );
     expect(
       LightcoreController.tutorialQuestHelpBody,
@@ -465,21 +465,13 @@ void main() {
       isTrue,
     );
     expect(controller.slots[0].isFabricating, isTrue);
-    expect(
-      controller.tutorialStep,
-      isNot(LightcoreTutorialStep.inspectFirstTowerStats),
-    );
-
-    controller.markTutorialFirstTowerStatsOpened();
     expect(controller.tutorialStep, isNot(LightcoreTutorialStep.tapFirstTower));
+
     expect(controller.activateTowerSlot(0, showBanner: false), isFalse);
     expect(controller.tutorialUpgradeTower(0), isFalse);
 
     controller.tick(controller.slots[0].fabricationRemainingSeconds + 0.1);
     expect(controller.slots[0].isFabricating, isFalse);
-    expect(controller.tutorialStep, LightcoreTutorialStep.tapFirstTower);
-
-    controller.markTutorialFirstTowerStatsOpened();
     expect(controller.tutorialStep, LightcoreTutorialStep.tapFirstTower);
   });
 

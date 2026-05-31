@@ -208,7 +208,6 @@ extension LightcoreControllerBattleResetActions on LightcoreController {
     _tutorialFirstManagersOpened = false;
     _tutorialFirstEnemyTargetSet = false;
     _tutorialEnemyCountAdjusted = false;
-    _tutorialFirstTowerStatsOpened = false;
     _tutorialStabilityPanelOpened = false;
     _tutorialTowerMatrixOpened = false;
     _tutorialStoreOpened = false;

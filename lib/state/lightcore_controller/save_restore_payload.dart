@@ -290,9 +290,6 @@ extension LightcoreControllerSaveRestorePayload on LightcoreController {
     final hasRestoredStabilityPanelOpened = tutorialData.containsKey(
       'stabilityPanelOpened',
     );
-    final hasRestoredFirstTowerStatsOpened = tutorialData.containsKey(
-      'firstTowerStatsOpened',
-    );
     final hasRestoredCoreShotTapLearned = tutorialData.containsKey(
       'coreShotTapLearned',
     );
@@ -314,9 +311,6 @@ extension LightcoreControllerSaveRestorePayload on LightcoreController {
     );
     _tutorialEnemyCountAdjusted = _boolValue(
       tutorialData['enemyCountAdjusted'],
-    );
-    _tutorialFirstTowerStatsOpened = _boolValue(
-      tutorialData['firstTowerStatsOpened'],
     );
     _tutorialStabilityPanelOpened = _boolValue(
       tutorialData['stabilityPanelOpened'],
@@ -384,7 +378,6 @@ extension LightcoreControllerSaveRestorePayload on LightcoreController {
     _normalizeEquippedProfileMedal();
     _migrateRestoredTutorialState(
       hasStabilityPanelOpened: hasRestoredStabilityPanelOpened,
-      hasFirstTowerStatsOpened: hasRestoredFirstTowerStatsOpened,
       hasCoreShotTapLearned: hasRestoredCoreShotTapLearned,
       hasAutoQueuedPulses: hasRestoredAutoQueuedPulses,
     );
@@ -527,7 +520,6 @@ extension LightcoreControllerSaveRestorePayload on LightcoreController {
 
   void _migrateRestoredTutorialState({
     required bool hasStabilityPanelOpened,
-    required bool hasFirstTowerStatsOpened,
     required bool hasCoreShotTapLearned,
     required bool hasAutoQueuedPulses,
   }) {
@@ -548,13 +540,6 @@ extension LightcoreControllerSaveRestorePayload on LightcoreController {
             _tutorialTowerManagerAssigned ||
             _tutorialAutoQueuedPulses > 0)) {
       _tutorialStabilityPanelOpened = true;
-    }
-    if (!hasFirstTowerStatsOpened &&
-        (hasDurableEarlyProgress ||
-            _tutorialStabilityPanelOpened ||
-            _tutorialAutoQueuedPulses > 0 ||
-            _slots.any((slot) => slot.isBuilt && slot.fireSequence > 0))) {
-      _tutorialFirstTowerStatsOpened = true;
     }
     if (!hasAutoQueuedPulses && hasDurableEarlyProgress) {
       _tutorialAutoQueuedPulses = max(_tutorialAutoQueuedPulses, 5);

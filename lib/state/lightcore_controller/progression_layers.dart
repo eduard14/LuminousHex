@@ -1637,7 +1637,6 @@ extension LightcoreControllerProgressionLayers on LightcoreController {
     _tutorialFirstManagersOpened = true;
     _tutorialFirstEnemyTargetSet = true;
     _tutorialEnemyCountAdjusted = true;
-    _tutorialFirstTowerStatsOpened = true;
     _tutorialStabilityPanelOpened = false;
     _tutorialTowerMatrixOpened = true;
     _tutorialStoreOpened = true;
@@ -1865,7 +1864,6 @@ extension LightcoreControllerProgressionLayers on LightcoreController {
     }
     _tutorialEarlyQuestChainCompleted = true;
     _tutorialSafeScanDefeats = 5;
-    _tutorialFirstTowerStatsOpened = true;
     _tutorialStabilityPanelOpened = false;
     _tutorialManualAimFireLearned = true;
     _tutorialAutoQueuedPulses = 0;
