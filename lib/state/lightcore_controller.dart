@@ -362,7 +362,7 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
     coachCopy:
         'Choose Comet Mortar or Rayline Spire in Hex 1 so the shell has its first reliable attack style.',
     completionCondition: 'Start or finish first Fabrication',
-    reward: 'Instant first tower',
+    reward: 'Starter Lumen boost',
     failureHelpState:
         'Open the first hex controls, then choose one of the highlighted starter build buttons.',
     analyticsEvent: 'tutorial_fabricate_first_light',
@@ -377,7 +377,7 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
     coachCopy:
         'Tap the highlighted anomaly to focus fire. If the core is still charging, the shot fires as soon as it is ready.',
     completionCondition: 'Focus and fire one shot at an anomaly',
-    reward: 'Lumens and White Drift practice scan',
+    reward: 'Upgrade Lumens and White Drift practice scan',
     failureHelpState:
         'Tap the highlighted anomaly, not a tower. Towers open tower controls; enemies set focus fire.',
     analyticsEvent: 'tutorial_manual_aim_fire',
@@ -406,7 +406,7 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
     trigger: 'First tower can be upgraded',
     primaryClickTarget: 'Tower Stats pop-out > Upgrade',
     coachCopy:
-        'Upgrade the first tower once before expanding. A stronger anchor makes every auto-shot matter more.',
+        'Upgrade the first tower once before expanding. A stronger anchor makes every ready shot matter more.',
     completionCondition: 'First tower reaches level 2',
     reward: 'Small Lumen grant',
     failureHelpState:

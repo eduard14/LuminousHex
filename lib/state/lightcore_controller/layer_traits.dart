@@ -544,7 +544,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
       LightcoreTutorialStep.unfoldShell => 0,
       LightcoreTutorialStep.waitForFirstHex => 12,
       LightcoreTutorialStep.selectFirstHex => 0,
-      LightcoreTutorialStep.buildFirstRedTower => 0,
+      LightcoreTutorialStep.buildFirstRedTower => 18,
       LightcoreTutorialStep.tapFirstTower => 48,
       LightcoreTutorialStep.tapSecondShellTower => 42,
       LightcoreTutorialStep.upgradeFirstTowerToLevel3 => 48,
@@ -624,11 +624,11 @@ extension LightcoreControllerLayerTraits on LightcoreController {
     LightcoreTutorialStep.unfoldShell =>
       'Core online. The shell can now open lanes and start earning.',
     LightcoreTutorialStep.buildFirstRedTower =>
-      'First tower online. It will charge shots and support focus fire.',
+      'First tower online. Focus an anomaly, earn Lumens, then upgrade the lane.',
     LightcoreTutorialStep.tapFirstTower =>
-      'Focus fire learned. Managers later take over firing when you want automation.',
+      'Focus fire learned. You have enough Lumens to upgrade the first tower.',
     LightcoreTutorialStep.upgradeFirstTowerToLevel3 =>
-      'Anchor tower tuned. Higher tower levels make every auto-shot hit harder.',
+      'Anchor tower tuned. Challenge Lv 1 is ready when the field feels too quiet.',
     LightcoreTutorialStep.raiseThreat =>
       'Threat raised. The starter region is now testing that upgraded tower.',
     LightcoreTutorialStep.pullFirstWhiteEnemy =>

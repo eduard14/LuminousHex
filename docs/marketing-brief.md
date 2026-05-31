@@ -75,6 +75,8 @@ shell, and keep climbing.
   focus fire.
 - The first focus-fire lesson guarantees a visible starter anomaly so the
   player can act immediately after the first relay comes online.
+- The first tower/focus/upgrade loop grants enough starter Lumens to move from
+  build to focus fire to the first upgrade without idle grinding.
 - Tutorial guidance appears as a compact battlefield notification with the next
   action visible; players expand it only when they want more detail.
 - Tower body taps are reserved for tower controls, upgrades, stats, and
