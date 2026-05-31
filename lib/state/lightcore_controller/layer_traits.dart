@@ -130,7 +130,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
       return false;
     }
     return _tutorialManualAimFireLearned &&
-        tower.level >= 4 &&
+        tower.level >= 3 &&
         _tutorialFirstTowerStatsOpened &&
         _tutorialStabilityPanelOpened &&
         (totalRadianceStatPointsSpent > 0 ||
@@ -152,7 +152,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
     final firstTower = _firstTutorialTower;
     if (firstTower == null ||
         !_isOpeningStarterTower(firstTower.config) ||
-        firstTower.level < 3 ||
+        firstTower.level < 2 ||
         _firstThreatChallengeStarted ||
         !canStartFirstThreatChallenge) {
       return false;
@@ -227,13 +227,13 @@ extension LightcoreControllerLayerTraits on LightcoreController {
       LightcoreTutorialStep.tapSecondShellTower =>
         _tutorialSecondShellShotTapLearned || _ammoQueue.isNotEmpty,
       LightcoreTutorialStep.upgradeFirstTowerToLevel3 =>
-        firstTower != null && firstTower.level >= 3,
+        firstTower != null && firstTower.level >= 2,
       LightcoreTutorialStep.raiseThreat => _firstThreatChallengeStarted,
       LightcoreTutorialStep.pullFirstWhiteEnemy => enemyPullCount >= 1,
       LightcoreTutorialStep.readEffectiveGain => _tutorialStabilityPanelOpened,
       LightcoreTutorialStep.autoQueueCheck => _tutorialAutoQueuedPulses >= 5,
       LightcoreTutorialStep.upgradeFirstTowerToLevel4 =>
-        firstTower != null && firstTower.level >= 4,
+        firstTower != null && firstTower.level >= 3,
       LightcoreTutorialStep.pullFirstRedEnemy => enemyPullCount >= 2,
       LightcoreTutorialStep.setFirstEnemyTarget =>
         _tutorialFirstEnemyTargetSet || _ownsBasicRedEnemy,
@@ -308,7 +308,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
       return LightcoreTutorialStep.inspectFirstTowerStats;
     }
     final firstTowerUpgradeCost = upgradeCost(firstTower);
-    if (firstTower.level < 3 &&
+    if (firstTower.level < 2 &&
         firstTowerUpgradeCost > 0 &&
         lumens >= firstTowerUpgradeCost) {
       return LightcoreTutorialStep.upgradeFirstTowerToLevel3;
@@ -320,8 +320,8 @@ extension LightcoreControllerLayerTraits on LightcoreController {
       return LightcoreTutorialStep.readEffectiveGain;
     }
     final nextFirstTowerUpgradeCost = upgradeCost(firstTower);
-    if (firstTower.level < 4 &&
-        firstTower.level >= 3 &&
+    if (firstTower.level < 3 &&
+        firstTower.level >= 2 &&
         nextFirstTowerUpgradeCost > 0 &&
         lumens >= nextFirstTowerUpgradeCost) {
       return LightcoreTutorialStep.upgradeFirstTowerToLevel4;
@@ -1432,7 +1432,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         LightcoreTutorialStep.readEffectiveGain => 'Read Effective Gain',
         LightcoreTutorialStep.autoQueueCheck => 'Auto Queue Check',
         LightcoreTutorialStep.upgradeFirstTowerToLevel4 =>
-          'Tune Before Expanding',
+          'Reinforce The Anchor',
         LightcoreTutorialStep.pullFirstRedEnemy => 'Teach Color Counters',
         LightcoreTutorialStep.setFirstEnemyTarget => 'Review Red Pressure',
         LightcoreTutorialStep.adjustEnemyCount => 'Read Spiral Path',
@@ -1478,7 +1478,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         LightcoreTutorialStep.tapSecondShellTower =>
           'Tap the charged child-shell tower to feed the Lightcore.',
         LightcoreTutorialStep.upgradeFirstTowerToLevel3 =>
-          'Click the first tower in Hex 1 and upgrade it to level 3.',
+          'Click the first tower in Hex 1 and upgrade it once.',
         LightcoreTutorialStep.raiseThreat =>
           'Click Challenge Lv 1 on the battlefield to raise anomaly pressure.',
         LightcoreTutorialStep.pullFirstWhiteEnemy =>
@@ -1488,7 +1488,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         LightcoreTutorialStep.autoQueueCheck =>
           'Watch your manager spend 5 queued pulses automatically.',
         LightcoreTutorialStep.upgradeFirstTowerToLevel4 =>
-          'Click the first tower in Hex 1 and upgrade it again.',
+          'Click the first tower in Hex 1 and upgrade it to level 3.',
         LightcoreTutorialStep.pullFirstRedEnemy =>
           'Click Map and start the next stabilization challenge.',
         LightcoreTutorialStep.setFirstEnemyTarget =>
@@ -1559,7 +1559,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         LightcoreTutorialStep.tapSecondShellTower =>
           'Second-shell lanes use the same tower-tap rule: tower bodies open tower controls while packet flow stays automatic.',
         LightcoreTutorialStep.upgradeFirstTowerToLevel3 =>
-          'Early upgrades beat overexpanding. One strong anchor tower produces better damage and charge flow than several weak ones.',
+          'The first upgrade proves the loop quickly: aim, earn, tune, then raise pressure.',
         LightcoreTutorialStep.raiseThreat =>
           'The upgraded tower is overmatching the starter field. Raise the starter-region challenge so stronger pressure turns back into better rewards.',
         LightcoreTutorialStep.pullFirstWhiteEnemy =>
@@ -1569,7 +1569,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         LightcoreTutorialStep.autoQueueCheck =>
           'Automation proves an assigned manager can route queued packets without taking enemy focus control away from the player.',
         LightcoreTutorialStep.upgradeFirstTowerToLevel4 =>
-          'A level 4 anchor keeps the lane efficient before Lumens get split across multiple towers.',
+          'A level 3 anchor keeps the lane efficient before Lumens get split across multiple towers.',
         LightcoreTutorialStep.pullFirstRedEnemy =>
           'Same-color attacks are resisted. Red anomalies punish overcommitting to one color and unlock the full counter system.',
         LightcoreTutorialStep.setFirstEnemyTarget =>

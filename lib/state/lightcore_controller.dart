@@ -438,8 +438,8 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
     trigger: 'First tower can be upgraded',
     primaryClickTarget: 'Tower Stats pop-out > Upgrade',
     coachCopy:
-        'Upgrade the first tower before expanding. Higher levels make each queued packet matter more.',
-    completionCondition: 'First tower reaches level 3',
+        'Upgrade the first tower once before expanding. A stronger anchor makes each queued packet matter more.',
+    completionCondition: 'First tower reaches level 2',
     reward: 'Small Lumen grant',
     failureHelpState:
         'Open Hex 1 stats and use the highlighted Upgrade button when Lumens are available.',
@@ -507,14 +507,14 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
   LightcoreTutorialStep
       .upgradeFirstTowerToLevel4: LightcoreTutorialQuestDefinition(
     id: 'TUT-013',
-    title: 'Tune Before Expanding',
+    title: 'Reinforce the Anchor',
     teachGoal:
         'A stronger anchor lane gives you room to test harder regions without crushing Output Efficiency.',
     trigger: 'Early red research lesson',
     primaryClickTarget: 'Tower Stats pop-out > Upgrade',
     coachCopy:
         'Upgrade the first tower again before spreading Lumens across more towers.',
-    completionCondition: 'First tower reaches level 4',
+    completionCondition: 'First tower reaches level 3',
     reward: 'Small Lumen grant',
     failureHelpState:
         'Open Hex 1 stats and use Upgrade when the Lumen cost is affordable.',

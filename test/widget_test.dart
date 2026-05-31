@@ -1690,8 +1690,6 @@ void main() {
     controller.markTutorialFirstTowerStatsOpened();
     controller.lumens = 1000;
     expect(controller.tutorialUpgradeTower(0), isTrue);
-    controller.lumens = controller.upgradeCost(controller.slots[0]);
-    expect(controller.tutorialUpgradeTower(0), isTrue);
     expect(controller.tutorialStep, LightcoreTutorialStep.raiseThreat);
 
     await _pumpShell(tester, controller, disableTutorial: false);

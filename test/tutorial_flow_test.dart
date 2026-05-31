@@ -263,13 +263,7 @@ void main() {
       LightcoreTutorialStep.upgradeFirstTowerToLevel3,
     );
     expect(controller.tutorialUpgradeTower(0), isTrue);
-    expect(
-      controller.tutorialStep,
-      LightcoreTutorialStep.upgradeFirstTowerToLevel3,
-    );
-    controller.lumens = controller.upgradeCost(controller.slots[0]);
-    expect(controller.tutorialUpgradeTower(0), isTrue);
-    expect(controller.slots[0].level, 3);
+    expect(controller.slots[0].level, 2);
     expect(controller.tutorialStep, LightcoreTutorialStep.raiseThreat);
     expect(controller.canStartFirstThreatChallenge, isTrue);
     final baselineStats = controller.activeThreatAssignmentGroupStats;
@@ -298,7 +292,7 @@ void main() {
     );
     controller.lumens = controller.upgradeCost(controller.slots[0]);
     expect(controller.tutorialUpgradeTower(0), isTrue);
-    expect(controller.slots[0].level, 4);
+    expect(controller.slots[0].level, 3);
 
     controller.experience = LightcoreController.experienceForOverallLevel(2);
     controller.tick(0);
