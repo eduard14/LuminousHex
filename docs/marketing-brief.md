@@ -109,6 +109,9 @@ shell, and keep climbing.
   optional guide sheet.
 - The starter Challenge prompt lives above the overdrive HUD, keeping the main
   combat action clear instead of making bottom-corner controls compete.
+- Clearing starter Challenge Lv 1 pays enough Lumens for the next anchor-tower
+  upgrade, so the first combat loop chains directly into a stronger lane
+  instead of asking for a grind pause.
 - Tower body taps are reserved for tower controls, upgrades, stats, and
   targeting tools, keeping build/stat actions distinct from anomaly aiming.
 - Enemy focus taps automatically close open battle control panels so aiming

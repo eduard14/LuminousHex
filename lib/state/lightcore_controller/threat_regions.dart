@@ -588,10 +588,16 @@ extension LightcoreControllerThreatRegions on LightcoreController {
     if (challenge.finalLayer) {
       _grantRegionBossRewards(config, resolvedDefeatedBossIds);
     }
-    final lumenReward = _threatRegionChallengeLumenReward(
+    final baseLumenReward = _threatRegionChallengeLumenReward(
       config,
       challenge.targetStabilizationLevel,
     );
+    final lumenReward =
+        baseLumenReward +
+        _openingChallengeUpgradeTopUp(
+          challenge: challenge,
+          baseLumenReward: baseLumenReward,
+        );
     lumens += lumenReward;
     _syncTutorialStep(showBanner: false);
     final rewardParts = <String>[
@@ -638,6 +644,28 @@ extension LightcoreControllerThreatRegions on LightcoreController {
     int targetLevel,
   ) {
     return 28 + (targetLevel * 12) + (config.ring * 18);
+  }
+
+  int _openingChallengeUpgradeTopUp({
+    required ThreatRegionChallengeState challenge,
+    required int baseLumenReward,
+  }) {
+    if (_earlyTutorialComplete ||
+        challenge.regionId != ThreatRegionLibrary.all.first.id ||
+        challenge.targetStabilizationLevel != 1) {
+      return 0;
+    }
+    final firstTower = _firstTutorialTower;
+    if (firstTower == null ||
+        !_isOpeningStarterTower(firstTower.config) ||
+        firstTower.level != 2) {
+      return 0;
+    }
+    final nextUpgradeCost = upgradeCost(firstTower);
+    if (nextUpgradeCost <= 0) {
+      return 0;
+    }
+    return max(0, nextUpgradeCost - (lumens + baseLumenReward));
   }
 
   bool failThreatRegionChallenge() {

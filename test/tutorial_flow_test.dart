@@ -276,12 +276,14 @@ void main() {
       isTrue,
     );
 
-    controller.lumens = controller.upgradeCost(controller.slots[0]);
+    expect(
+      controller.lumens,
+      greaterThanOrEqualTo(controller.upgradeCost(controller.slots[0])),
+    );
     expect(
       controller.tutorialStep,
       LightcoreTutorialStep.upgradeFirstTowerToLevel4,
     );
-    controller.lumens = controller.upgradeCost(controller.slots[0]);
     expect(controller.tutorialUpgradeTower(0), isTrue);
     expect(controller.slots[0].level, 3);
 
