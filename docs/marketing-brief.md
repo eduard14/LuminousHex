@@ -101,11 +101,14 @@ shell, and keep climbing.
   fabrication jargon, keeping the opening loop action-oriented.
 - The guided first tower comes online immediately after selection, so the
   opening flow moves straight from tower choice into focus fire.
-- Tutorial guidance appears as a compact battlefield notification with the next
-  action visible; players expand it only when they want more detail.
+- Tutorial guidance appears as a compact battlefield notification with the
+  active task highlighted in-world; players expand the guide only when they
+  want more detail.
 - Collapsed tutorial notifications stay lightweight: they show the quest title
-  and a tap-to-expand affordance, while the detailed instruction lives in the
+  and a view-guide affordance, while the detailed instruction lives in the
   optional guide sheet.
+- The starter Challenge prompt lives above the overdrive HUD, keeping the main
+  combat action clear instead of making bottom-corner controls compete.
 - Tower body taps are reserved for tower controls, upgrades, stats, and
   targeting tools, keeping build/stat actions distinct from anomaly aiming.
 - Enemy focus taps automatically close open battle control panels so aiming

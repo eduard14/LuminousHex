@@ -1207,7 +1207,7 @@ class _BattleScreenState extends State<BattleScreen> {
           Positioned(
             left: inset,
             right: inset,
-            bottom: bottomInset + (compact ? 8 : 12),
+            bottom: bottomInset + _overdriveHudHeight + (compact ? 10 : 14),
             child: Align(
               alignment: Alignment.bottomCenter,
               child: raiseThreatPrompt,
@@ -2193,6 +2193,7 @@ class _ManualOverdriveHudState extends State<_ManualOverdriveHud> {
         : LightcorePalette.mist;
 
     return Column(
+      key: const ValueKey<String>('manual-overdrive-hud'),
       mainAxisSize: MainAxisSize.min,
       children: [
         Text(

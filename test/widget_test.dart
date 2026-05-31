@@ -1742,8 +1742,14 @@ void main() {
       findsOneWidget,
     );
     expect(
-      tester.getRect(prompt).center.dy,
-      greaterThan(tester.getRect(find.byType(LightcoreShell)).height * 0.5),
+      tester
+          .getRect(prompt)
+          .overlaps(
+            tester.getRect(
+              find.byKey(const ValueKey<String>('manual-overdrive-hud')),
+            ),
+          ),
+      isFalse,
     );
   });
 
@@ -2279,7 +2285,7 @@ void main() {
       findsOneWidget,
     );
 
-    expect(find.text('Tap for next step'), findsOneWidget);
+    expect(find.text('View guide'), findsOneWidget);
     expect(
       find.text(
         'Tap the center Lightcore to wake the first shell and reveal where towers will go.',
@@ -2362,7 +2368,7 @@ void main() {
       find.byKey(const ValueKey<String>('battle-quest-summary-instruction')),
       findsOneWidget,
     );
-    expect(find.text('Tap for next step'), findsOneWidget);
+    expect(find.text('View guide'), findsOneWidget);
     expect(
       find.text(
         'Tap the center Lightcore to wake the first shell and reveal where towers will go.',

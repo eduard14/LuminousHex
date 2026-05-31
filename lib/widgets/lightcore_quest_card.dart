@@ -192,7 +192,7 @@ class _LightcoreQuestCardState extends State<LightcoreQuestCard> {
                       children: [
                         Flexible(
                           child: Text(
-                            'Tap for next step',
+                            'View guide',
                             key: const ValueKey<String>(
                               'battle-quest-summary-instruction',
                             ),
