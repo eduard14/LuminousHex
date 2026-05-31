@@ -1157,17 +1157,20 @@ class _BattleScreenState extends State<BattleScreen> {
       controller: controller,
       compact: compact,
     );
-    final showChargeRail =
+    final showReadyShotIndicator =
         widget.showBattleHud && controller.queuedCorePackets > 0;
 
     return Stack(
       children: [
         Positioned.fill(child: _buildGameCanvas(compact ? 20 : 0)),
-        if (showChargeRail)
+        if (showReadyShotIndicator)
           Positioned(
             right: inset,
             top: topInset + (compact ? 54 : 66),
-            child: _CoreQueueRail(controller: controller, compact: compact),
+            child: _ReadyShotIndicator(
+              controller: controller,
+              compact: compact,
+            ),
           ),
         if (widget.showBattleHud && shellVisibilityHud != null)
           Positioned(right: inset, top: topInset, child: shellVisibilityHud),
@@ -2329,8 +2332,8 @@ class _InlineStatList extends StatelessWidget {
   }
 }
 
-class _CoreQueueRail extends StatelessWidget {
-  const _CoreQueueRail({required this.controller, required this.compact});
+class _ReadyShotIndicator extends StatelessWidget {
+  const _ReadyShotIndicator({required this.controller, required this.compact});
 
   final LightcoreController controller;
   final bool compact;
@@ -2344,7 +2347,7 @@ class _CoreQueueRail extends StatelessWidget {
     final pipSize = compact ? 8.0 : 10.0;
     final iconSize = compact ? 24.0 : 28.0;
     return Semantics(
-      key: const ValueKey<String>('battle-charge-rail'),
+      key: const ValueKey<String>('battle-ready-shot-indicator'),
       label:
           'Charged shots ${controller.queuedCorePackets} of ${controller.coreQueueCapacity}',
       child: Container(

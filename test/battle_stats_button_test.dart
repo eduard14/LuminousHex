@@ -168,7 +168,7 @@ void main() {
     expect(find.text('Core Stats'), findsOneWidget);
   });
 
-  testWidgets('charged shot rail stays hidden while empty', (tester) async {
+  testWidgets('ready shot indicator stays hidden while empty', (tester) async {
     final controller = LightcoreController();
     addTearDown(controller.dispose);
     controller.debugDisableTutorial();
@@ -176,7 +176,7 @@ void main() {
     await _pumpBattleScreen(tester, controller);
 
     expect(
-      find.byKey(const ValueKey<String>('battle-charge-rail')),
+      find.byKey(const ValueKey<String>('battle-ready-shot-indicator')),
       findsNothing,
     );
   });
@@ -194,12 +194,12 @@ void main() {
     await _pumpBattleScreen(tester, controller);
 
     expect(
-      find.byKey(const ValueKey<String>('battle-charge-rail')),
+      find.byKey(const ValueKey<String>('battle-ready-shot-indicator')),
       findsOneWidget,
     );
     expect(
       find.descendant(
-        of: find.byKey(const ValueKey<String>('battle-charge-rail')),
+        of: find.byKey(const ValueKey<String>('battle-ready-shot-indicator')),
         matching: find.byIcon(Icons.bolt_rounded),
       ),
       findsOneWidget,
