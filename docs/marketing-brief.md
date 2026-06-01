@@ -71,8 +71,8 @@ shell, and keep climbing.
 - Relay towers charge shots into the Lightcore instead of asking the player to
   manually queue or drag ammo.
 - Opening combat is low-friction: shots auto-charge after the Lightcore wakes,
-  Hex 1 is immediately selectable, then the player clicks anomalies to aim and
-  focus fire.
+  Hex 1 is immediately selectable, then the player clicks an anomaly before any
+  ready-shot queue appears and the next generated shot fires there.
 - The first focus-fire lesson guarantees a visible starter anomaly so the
   player can act immediately after the first relay comes online.
 - The first tower/focus/upgrade loop grants enough starter Lumens to move from
@@ -82,7 +82,8 @@ shell, and keep climbing.
   harder, the next upgrade stabilizes the route, then Challenge Lv 2 repeats
   the overwhelm-and-upgrade beat before Hex 2 opens.
 - The scripted guided loop is regression-tested against a five-minute simulated
-  budget so pacing changes cannot quietly push Hex 2 beyond the opening window.
+  budget and a click-before-ready focus shot, so pacing changes cannot quietly
+  push Hex 2 beyond the opening window or reintroduce queued-shot waiting.
 - Guided Challenge Lv 1 and Lv 2 feedback uses battle-loop language ("harder
   enemies dented Hex 1, upgrade to stabilize") instead of region/farm jargon
   while the player is still learning the opening loop.
@@ -335,8 +336,8 @@ Suggested first release order:
 
 1. Lemon Goose Games Inc. splash.
 2. Fractured Lightcore premise in one short text card.
-3. First relay comes online, shots auto-charge, player clicks anomalies to focus
-   fire.
+3. First relay comes online, player clicks an anomaly, and the next auto-charged
+   shot fires there.
 4. Anomalies spiral inward and disrupt lanes.
 5. Threat Scan pull reveals a new Knowledge Card.
 6. Region challenge and Farm Validation pressure.
