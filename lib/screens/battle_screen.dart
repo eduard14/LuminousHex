@@ -1114,6 +1114,10 @@ class _BattleScreenState extends State<BattleScreen> {
         if (selectedSlotIndex == 0 && selected?.isBuilt == true) {
           return 'Use the Tower Level button in the open Hex 1 controls one more time before expanding.';
         }
+      case LightcoreTutorialStep.upgradeFirstTowerToLevel5:
+        if (selectedSlotIndex == 0 && selected?.isBuilt == true) {
+          return 'Upgrade Hex 1 once more to stabilize Challenge Lv 2 pressure before opening Hex 2.';
+        }
       case LightcoreTutorialStep.tapFirstTower:
         if (_tutorialOpenPanelBlocksCurrentStep(controller)) {
           return 'Close the open tower controls, then tap a visible anomaly to focus fire. Tower taps reopen tower controls.';

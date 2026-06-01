@@ -527,7 +527,8 @@ extension LightcoreControllerThreatRegions on LightcoreController {
       activeLayer.bossReady = false;
       activeLayer.normalKillsSinceBoss = 0;
     }
-    if (_tutorialStep == LightcoreTutorialStep.raiseThreat) {
+    if (_tutorialStep == LightcoreTutorialStep.raiseThreat ||
+        _tutorialStep == LightcoreTutorialStep.pushNextArea) {
       _syncTutorialStep(showBanner: false);
     }
     _showBanner('${config.name} stabilization challenge started.');
@@ -657,14 +658,15 @@ extension LightcoreControllerThreatRegions on LightcoreController {
     required int baseLumenReward,
   }) {
     if (_earlyTutorialComplete ||
-        challenge.regionId != ThreatRegionLibrary.all.first.id ||
-        challenge.targetStabilizationLevel != 1) {
+        challenge.regionId != ThreatRegionLibrary.all.first.id) {
       return 0;
     }
     final firstTower = _firstTutorialTower;
+    final targetLevel = challenge.targetStabilizationLevel;
     if (firstTower == null ||
         !_isOpeningStarterTower(firstTower.config) ||
-        firstTower.level != 2) {
+        !((targetLevel == 1 && firstTower.level == 2) ||
+            (targetLevel == 2 && firstTower.level == 3))) {
       return 0;
     }
     final nextUpgradeCost = upgradeCost(firstTower);
@@ -678,13 +680,13 @@ extension LightcoreControllerThreatRegions on LightcoreController {
   _grantOpeningChallengeHex2Progress(ThreatRegionChallengeState challenge) {
     if (_earlyTutorialComplete ||
         challenge.regionId != ThreatRegionLibrary.all.first.id ||
-        challenge.targetStabilizationLevel != 1) {
+        challenge.targetStabilizationLevel != 2) {
       return (experienceGranted: 0, killsGranted: 0);
     }
     final firstTower = _firstTutorialTower;
     if (firstTower == null ||
         !_isOpeningStarterTower(firstTower.config) ||
-        firstTower.level != 2) {
+        firstTower.level != 4) {
       return (experienceGranted: 0, killsGranted: 0);
     }
     final targetProgress = unlockKillsForOuterSlot(1);

@@ -645,7 +645,8 @@ extension LightcoreControllerStateAccessors on LightcoreController {
       _tutorialStep == LightcoreTutorialStep.tapFirstTower ||
       _tutorialStep == LightcoreTutorialStep.tapSecondShellTower ||
       _tutorialStep == LightcoreTutorialStep.upgradeFirstTowerToLevel3 ||
-      _tutorialStep == LightcoreTutorialStep.upgradeFirstTowerToLevel4;
+      _tutorialStep == LightcoreTutorialStep.upgradeFirstTowerToLevel4 ||
+      _tutorialStep == LightcoreTutorialStep.upgradeFirstTowerToLevel5;
 
   bool get tutorialNeedsTowerPaletteGate {
     if (_earlyTutorialComplete || _currentLayerEarlyTutorialComplete) {
@@ -678,7 +679,9 @@ extension LightcoreControllerStateAccessors on LightcoreController {
                     _tutorialStep ==
                         LightcoreTutorialStep.upgradeFirstTowerToLevel3 ||
                     _tutorialStep ==
-                        LightcoreTutorialStep.upgradeFirstTowerToLevel4) &&
+                        LightcoreTutorialStep.upgradeFirstTowerToLevel4 ||
+                    _tutorialStep ==
+                        LightcoreTutorialStep.upgradeFirstTowerToLevel5) &&
                 selectedSlotIndex != 0))) {
       return true;
     }
@@ -695,7 +698,8 @@ extension LightcoreControllerStateAccessors on LightcoreController {
       LightcoreTutorialStep.selectFirstHex => 'BUILD HERE',
       LightcoreTutorialStep.buildFirstRedTower => 'CHOOSE TOWER',
       LightcoreTutorialStep.upgradeFirstTowerToLevel3 ||
-      LightcoreTutorialStep.upgradeFirstTowerToLevel4 => 'UPGRADE',
+      LightcoreTutorialStep.upgradeFirstTowerToLevel4 ||
+      LightcoreTutorialStep.upgradeFirstTowerToLevel5 => 'UPGRADE',
       LightcoreTutorialStep.tapSecondShellTower => _tutorialTowerShotGuideLabel(
         slotIndex,
       ),
@@ -735,10 +739,12 @@ extension LightcoreControllerStateAccessors on LightcoreController {
 
   bool get tutorialHighlightsThreatChallengeButton =>
       _tutorialStep == LightcoreTutorialStep.raiseThreat ||
+      _tutorialStep == LightcoreTutorialStep.pushNextArea ||
       _tutorialStep == LightcoreTutorialStep.openBossPulls;
 
   bool get tutorialShowsBattleThreatPrompt =>
-      _tutorialStep == LightcoreTutorialStep.raiseThreat;
+      _tutorialStep == LightcoreTutorialStep.raiseThreat ||
+      _tutorialStep == LightcoreTutorialStep.pushNextArea;
 
   bool get tutorialHighlightsTowersNav =>
       _tutorialStep == LightcoreTutorialStep.openTowerMatrix;

@@ -220,6 +220,7 @@ extension LightcoreControllerBattleResetActions on LightcoreController {
     _tutorialManualAimFireLearned = false;
     _tutorialOpeningPressureHitApplied = false;
     _tutorialChallengePressureHitApplied = false;
+    _tutorialSecondChallengePressureHitApplied = false;
     _tutorialSecondShellShotTapLearned = false;
     _tutorialOverdriveLearned = false;
     _tutorialStep = LightcoreTutorialStep.none;

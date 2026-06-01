@@ -68,10 +68,12 @@ enum LightcoreTutorialStep {
   tapSecondShellTower,
   upgradeFirstTowerToLevel3,
   raiseThreat,
+  pushNextArea,
   pullFirstWhiteEnemy,
   readEffectiveGain,
   managerAutoAim,
   upgradeFirstTowerToLevel4,
+  upgradeFirstTowerToLevel5,
   pullFirstRedEnemy,
   setFirstEnemyTarget,
   adjustEnemyCount,
@@ -427,6 +429,21 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
         'Use the compact Challenge Lv 1 prompt on the battle screen.',
     analyticsEvent: 'tutorial_raise_threat',
   ),
+  LightcoreTutorialStep.pushNextArea: LightcoreTutorialQuestDefinition(
+    id: 'TUT-010B',
+    title: 'Push Next Area',
+    teachGoal:
+        'After an upgrade stabilizes the lane, push the next stabilization layer to make the enemies harder again.',
+    trigger: 'Challenge Lv 1 is stable after the second tower upgrade',
+    primaryClickTarget: 'Battlefield > Challenge ready prompt > Challenge Lv 2',
+    coachCopy:
+        'Start Challenge Lv 2. The loop is upgrade to stabilize, push a harder area, then upgrade again when pressure climbs.',
+    completionCondition: 'Starter-region Challenge Lv 2 started',
+    reward: 'Threat Scan x1',
+    failureHelpState:
+        'Use the compact Challenge Lv 2 prompt on the battle screen.',
+    analyticsEvent: 'tutorial_push_next_area',
+  ),
   LightcoreTutorialStep.pullFirstWhiteEnemy: LightcoreTutorialQuestDefinition(
     id: 'TUT-010',
     title: 'Open Knowledge Cards',
@@ -485,6 +502,22 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
     failureHelpState:
         'Open Hex 1 stats and use Upgrade when the Lumen cost is affordable.',
     analyticsEvent: 'tutorial_upgrade_first_tower_l4',
+  ),
+  LightcoreTutorialStep
+      .upgradeFirstTowerToLevel5: LightcoreTutorialQuestDefinition(
+    id: 'TUT-013B',
+    title: 'Stabilize Again',
+    teachGoal:
+        'The next challenge should overwhelm the current setup briefly. Upgrading the anchor tower restores flow and opens expansion.',
+    trigger: 'Challenge Lv 2 pressure dents the opening lane',
+    primaryClickTarget: 'Tower Stats pop-out > Upgrade',
+    coachCopy:
+        'Challenge Lv 2 overwhelmed Hex 1. Upgrade the anchor one more time; once flow recovers, Hex 2 opens for the next tower.',
+    completionCondition: 'First tower reaches level 4',
+    reward: 'Hex 2 starter choice',
+    failureHelpState:
+        'Open Hex 1 controls and use the highlighted Upgrade button.',
+    analyticsEvent: 'tutorial_upgrade_first_tower_l5',
   ),
   LightcoreTutorialStep.pullFirstRedEnemy: LightcoreTutorialQuestDefinition(
     id: 'TUT-014',
@@ -1705,6 +1738,7 @@ class LightcoreController extends ChangeNotifier {
   bool _tutorialManualAimFireLearned = false;
   bool _tutorialOpeningPressureHitApplied = false;
   bool _tutorialChallengePressureHitApplied = false;
+  bool _tutorialSecondChallengePressureHitApplied = false;
   bool _tutorialSecondShellShotTapLearned = false;
   bool _tutorialOverdriveLearned = false;
   bool _tutorialIntroBossPending = false;

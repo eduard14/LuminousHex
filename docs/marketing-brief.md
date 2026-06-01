@@ -79,7 +79,8 @@ shell, and keep climbing.
   build to focus fire to the first upgrade without idle grinding.
 - The first five minutes demonstrate the repeat loop directly: anomalies dent
   Hex 1, Output Efficiency drops, upgrading restores flow, Challenge Lv 1 hits
-  harder, and the next upgrade stabilizes the route again.
+  harder, the next upgrade stabilizes the route, then Challenge Lv 2 repeats
+  the overwhelm-and-upgrade beat before Hex 2 opens.
 - The post-upgrade threat prompt explains the payoff and highlights the
   Challenge button directly, framing the next step as a reward wave the player
   has earned instead of a low-threat warning or menu hunt.
@@ -117,10 +118,11 @@ shell, and keep climbing.
 - Clearing starter Challenge Lv 1 pays enough Lumens for the next anchor-tower
   upgrade, so the first combat loop chains directly into a stronger lane
   instead of asking for a grind pause.
-- The same starter challenge grants enough opening EXP/Kills to unlock Hex 2,
-  keeping the next build decision connected to the first challenge clear.
+- Hex 2 waits until the player clears Challenge Lv 2 and stabilizes Hex 1
+  again, keeping the second tower decision connected to the core
+  pressure-upgrade-repeat loop instead of interrupting it.
 - The first Hex 2 starter choice is also funded and brought online instantly,
-  letting the opening loop move from first challenge payoff into a second tower
+  letting the opening loop move from the second stabilization payoff into a second tower
   decision without a 45-second fabrication wait.
 - Tower body taps are reserved for tower controls, upgrades, stats, and
   targeting tools, keeping build/stat actions distinct from anomaly aiming.
