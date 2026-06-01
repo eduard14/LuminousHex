@@ -133,8 +133,24 @@ void main() {
     expect(controller.slots[0].level, 2);
     expect(controller.outputEfficiencyMultiplier, greaterThanOrEqualTo(0.98));
     expect(controller.canStartFirstThreatChallenge, isTrue);
+    expect(
+      controller.firstThreatChallengePressurePreviewLabel,
+      contains('Enemy Lv 2'),
+    );
+    expect(
+      controller.firstThreatChallengePressurePreviewLabel,
+      contains('8 active'),
+    );
     expect(controller.startFirstThreatChallenge(), isTrue);
     expect(controller.activeThreatRegionChallenge?.targetStabilizationLevel, 1);
+    expect(
+      controller.enemyTargetCount,
+      LightcoreController.initialEnemyTarget + 2,
+    );
+    expect(
+      controller.activeEnemyDeck.map((card) => card.level),
+      everyElement(2),
+    );
 
     _advanceActiveOpeningChallenge(controller);
     final starterRegion = controller.threatRegionConfigs.first;
@@ -153,8 +169,24 @@ void main() {
     expect(controller.slots[0].level, 3);
     expect(controller.outputEfficiencyMultiplier, greaterThanOrEqualTo(0.98));
     expect(controller.canStartFirstThreatChallenge, isTrue);
+    expect(
+      controller.firstThreatChallengePressurePreviewLabel,
+      contains('Enemy Lv 3'),
+    );
+    expect(
+      controller.firstThreatChallengePressurePreviewLabel,
+      contains('10 active'),
+    );
     expect(controller.startFirstThreatChallenge(), isTrue);
     expect(controller.activeThreatRegionChallenge?.targetStabilizationLevel, 2);
+    expect(
+      controller.enemyTargetCount,
+      LightcoreController.initialEnemyTarget + 4,
+    );
+    expect(
+      controller.activeEnemyDeck.map((card) => card.level),
+      everyElement(3),
+    );
 
     _advanceActiveOpeningChallenge(controller);
     expect(

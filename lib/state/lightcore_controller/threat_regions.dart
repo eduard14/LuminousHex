@@ -163,6 +163,27 @@ extension LightcoreControllerThreatRegions on LightcoreController {
     );
   }
 
+  int get activeThreatRegionChallengeEnemyLevel {
+    final challenge = _threatRegionChallenge;
+    return challenge == null ? 0 : _challengeEnemyLevel(challenge);
+  }
+
+  int get activeThreatRegionChallengeEnemyTargetCount {
+    final challenge = _threatRegionChallenge;
+    return challenge == null
+        ? 0
+        : _challengeEnemyTargetCount(challenge.targetStabilizationLevel);
+  }
+
+  String get activeThreatRegionChallengePressureLabel {
+    final level = activeThreatRegionChallengeEnemyLevel;
+    final targetCount = activeThreatRegionChallengeEnemyTargetCount;
+    if (level <= 0 || targetCount <= 0) {
+      return '';
+    }
+    return 'Enemy Lv $level • $targetCount active';
+  }
+
   int get activeThreatRegionRequiredBossCount {
     final challenge = _threatRegionChallenge;
     if (challenge == null || !challenge.finalLayer) {
@@ -315,6 +336,16 @@ extension LightcoreControllerThreatRegions on LightcoreController {
   String get firstThreatChallengeRewardLabel {
     final reward = firstThreatChallengeLumenRewardPreview;
     return reward <= 0 ? '' : LightcoreCurrencyLabels.rewardLumens(reward);
+  }
+
+  String get firstThreatChallengePressurePreviewLabel {
+    final starter = ThreatRegionLibrary.all.first;
+    final state = threatRegionStateById(starter.id);
+    final nextLevel = (state?.stabilizedLevel ?? 0) + 1;
+    if (nextLevel > starter.stabilizationLayers) {
+      return '';
+    }
+    return 'Enemy Lv ${_challengeEnemyLevelForTarget(nextLevel)} • ${_challengeEnemyTargetCount(nextLevel)} active';
   }
 
   bool startFirstThreatChallenge() =>
@@ -651,7 +682,11 @@ extension LightcoreControllerThreatRegions on LightcoreController {
   }
 
   void _applyChallengeSwarmPressure() {
-    _enemyTargetCount = _normalizeEnemyTargetCount(initialEnemyTarget);
+    final challenge = _threatRegionChallenge;
+    final targetCount = challenge == null
+        ? initialEnemyTarget
+        : _challengeEnemyTargetCount(challenge.targetStabilizationLevel);
+    _enemyTargetCount = _normalizeEnemyTargetCount(targetCount);
     activeLayer.enemyTargetCount = _enemyTargetCount;
   }
 
@@ -682,6 +717,17 @@ extension LightcoreControllerThreatRegions on LightcoreController {
   ) {
     return 28 + (targetLevel * 12) + (config.ring * 18);
   }
+
+  int _challengeEnemyTargetCount(int targetLevel) =>
+      (initialEnemyTarget + (max(1, targetLevel) * 2)).clamp(
+        initialEnemyTarget,
+        baseEnemyTargetMax,
+      );
+
+  int _challengeEnemyLevel(ThreatRegionChallengeState challenge) =>
+      _challengeEnemyLevelForTarget(challenge.targetStabilizationLevel);
+
+  int _challengeEnemyLevelForTarget(int targetLevel) => max(1, targetLevel + 1);
 
   int _openingChallengeUpgradeTopUp({
     required ThreatRegionChallengeState challenge,
@@ -1131,9 +1177,9 @@ extension LightcoreControllerThreatRegions on LightcoreController {
       return const <EnemyCardState>[];
     }
     final regionId = challenge?.regionId ?? validation!.regionId;
-    final targetLevel =
-        challenge?.targetStabilizationLevel ??
-        validation!.targetStabilizationLevel;
+    final targetLevel = challenge == null
+        ? validation!.targetStabilizationLevel
+        : _challengeEnemyLevel(challenge);
     final config = threatRegionConfigById(regionId);
     if (config == null) {
       return const <EnemyCardState>[];

@@ -85,8 +85,10 @@ shell, and keep climbing.
   Challenge button directly, including harder-enemy framing and the Lumen
   reward preview, so the next step reads as an earned push instead of a menu
   hunt.
-- Active challenge HUD now shows the Lumen reward preview beside the wave
-  timer so the first pressure run has a visible payoff while it is underway.
+- Challenge prompts and active challenge HUD now show the harder enemy level,
+  active swarm count, and Lumen reward preview; starter challenge waves raise
+  both enemy level and active enemy pressure so the "new area is harder" beat
+  is mechanical, not only tutorial copy.
 - Completing Challenge Lv 1 satisfies the opening Output Efficiency lesson,
   keeping the player in the fight-and-upgrade loop instead of forcing a stats
   panel detour.

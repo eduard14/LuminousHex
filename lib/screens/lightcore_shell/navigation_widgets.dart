@@ -186,6 +186,7 @@ class _ThreatChallengeHudBanner extends StatelessWidget {
         ? 'Pressure run'
         : 'Apex $defeatedBosses/$requiredBosses';
     final rewardLabel = controller.activeThreatRegionChallengeRewardLabel;
+    final pressureLabel = controller.activeThreatRegionChallengePressureLabel;
 
     return Material(
       color: Colors.transparent,
@@ -256,9 +257,12 @@ class _ThreatChallengeHudBanner extends StatelessWidget {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  rewardLabel.isEmpty
-                      ? '$bossLabel  •  Current wave timer'
-                      : '$bossLabel  •  Reward $rewardLabel',
+                  [
+                    bossLabel,
+                    if (pressureLabel.isNotEmpty) pressureLabel,
+                    if (rewardLabel.isNotEmpty) 'Reward $rewardLabel',
+                    if (rewardLabel.isEmpty) 'Current wave timer',
+                  ].join('  •  '),
                   style: Theme.of(context).textTheme.labelSmall?.copyWith(
                     color: LightcorePalette.mist.withValues(alpha: 0.72),
                     fontWeight: FontWeight.w700,

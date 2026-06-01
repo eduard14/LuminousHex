@@ -1043,6 +1043,7 @@ class _BattleScreenState extends State<BattleScreen> {
       compact: compact,
       label: controller.firstThreatChallengeLabel,
       rewardLabel: controller.firstThreatChallengeRewardLabel,
+      pressureLabel: controller.firstThreatChallengePressurePreviewLabel,
       enabled: controller.canStartFirstThreatChallenge,
       onPressed: () {
         LightcoreAudio.instance.playSfx(LightcoreSfx.uiConfirm);
@@ -1272,6 +1273,7 @@ class _RaiseThreatPrompt extends StatelessWidget {
     required this.compact,
     required this.label,
     required this.rewardLabel,
+    required this.pressureLabel,
     required this.enabled,
     required this.onPressed,
   });
@@ -1279,6 +1281,7 @@ class _RaiseThreatPrompt extends StatelessWidget {
   final bool compact;
   final String label;
   final String rewardLabel;
+  final String pressureLabel;
   final bool enabled;
   final VoidCallback onPressed;
 
@@ -1341,9 +1344,7 @@ class _RaiseThreatPrompt extends StatelessWidget {
                           ),
                         ),
                         Text(
-                          rewardLabel.isEmpty
-                              ? 'Harder enemies. Better rewards.'
-                              : 'Harder enemies • $rewardLabel',
+                          _challengePreviewSubtitle,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: textTheme.labelSmall?.copyWith(
@@ -1382,6 +1383,19 @@ class _RaiseThreatPrompt extends StatelessWidget {
         );
       },
     );
+  }
+
+  String get _challengePreviewSubtitle {
+    if (pressureLabel.isEmpty && rewardLabel.isEmpty) {
+      return 'Harder enemies. Better rewards.';
+    }
+    if (pressureLabel.isEmpty) {
+      return 'Harder enemies • $rewardLabel';
+    }
+    if (rewardLabel.isEmpty) {
+      return pressureLabel;
+    }
+    return '$pressureLabel • $rewardLabel';
   }
 }
 
