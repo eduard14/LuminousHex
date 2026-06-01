@@ -506,26 +506,27 @@ extension LightcoreControllerLayerTraits on LightcoreController {
   }
 
   LightcoreTutorialStep? _deriveSidecarTutorialStep() {
+    final sidecarTutorialsReady =
+        builtTowerCount >= 3 || _hasCreatedFirstChildShell || bossHuntsUnlocked;
     if (!_tutorialTowerMatrixOpened &&
         _earlyTutorialComplete &&
         completedShellLibraryUnlocked) {
       return LightcoreTutorialStep.openTowerMatrix;
     }
     if (_earlyTutorialComplete &&
-        (builtTowerCount >= 2 || _hasCreatedFirstChildShell) &&
+        sidecarTutorialsReady &&
         totalRadianceStatPointsSpent == 0 &&
         hasUnspentRadianceStatPoints) {
       return LightcoreTutorialStep.upgradeCoreRange;
     }
     if (!_tutorialStoreOpened &&
         _earlyTutorialComplete &&
-        (builtTowerCount >= 2 ||
-            _hasCreatedFirstChildShell ||
-            totalRadianceStatPointsSpent > 0 ||
-            _core.rangeUpgradeLevel > 0)) {
+        sidecarTutorialsReady &&
+        (totalRadianceStatPointsSpent > 0 || _core.rangeUpgradeLevel > 0)) {
       return LightcoreTutorialStep.openStore;
     }
     if (!_tutorialBattlePassRewardClaimed &&
+        sidecarTutorialsReady &&
         totalClaimableBattlePassRewards > 0) {
       return LightcoreTutorialStep.claimBattlePassReward;
     }

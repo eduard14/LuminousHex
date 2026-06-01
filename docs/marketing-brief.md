@@ -91,6 +91,9 @@ shell, and keep climbing.
   panel detour.
 - Unspent Radiance points stay available in Profile without blocking the first
   tower-upgrade-to-second-tower expansion loop.
+- Radiance, Store, and pass tutorials wait until the shell has at least three
+  towers, a child shell, or boss-hunt progression, keeping the opening guide on
+  combat instead of sidecar economy surfaces.
 - Tower badges use projectile color and hex-edge level progress only; payload
   tinting is kept out of the first-session visual language until payload traits
   are explicitly taught later.
