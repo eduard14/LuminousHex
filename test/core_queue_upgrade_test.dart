@@ -158,6 +158,7 @@ void main() {
     expect(controller.fireQueuedCorePacketAtEnemy(enemy!.id), isTrue);
 
     expect(controller.queuedCorePackets, 0);
+    expect(controller.focusedEnemyId, enemy.id);
     final shot = controller.shots.single;
     expect(shot.sourceSlotIndex, isNull);
     expect(shot.affinity, PrototypeAffinity.neutral);

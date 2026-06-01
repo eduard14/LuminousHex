@@ -91,6 +91,11 @@ void main() {
     );
     await tester.pump();
     await tester.pump();
+    await tester.scrollUntilVisible(
+      find.text('Your Friend QR'),
+      240,
+      scrollable: find.byType(Scrollable).first,
+    );
 
     expect(find.text('Your Friend QR'), findsOneWidget);
     expect(find.text('Copy Link'), findsOneWidget);

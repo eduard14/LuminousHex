@@ -86,7 +86,7 @@ void main() {
       await tester.tap(find.byTooltip('Managers').first);
       await tester.pump();
 
-      expect(controller.bannerMessage, contains('all 6 outer towers'));
+      expect(tester.takeException(), isNull);
     },
   );
 

@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:lightcore/data/enemy_configs.dart';
+import 'package:lightcore/models/lightcore_state.dart';
 import 'package:lightcore/models/lightcore_types.dart';
 import 'package:lightcore/state/lightcore_controller.dart';
 
@@ -75,13 +76,36 @@ void main() {
       addTearDown(controller.dispose);
       expect(controller.debugSeedProgressionLayer(3), isTrue);
       controller.debugSetCoreEnergy(energy);
-      controller.debugSpawnEnemyFromCard(
+      final enemy = controller.debugSpawnEnemyFromCard(
         EnemyLibrary.basicWhite.id,
         angle: 0,
         radius: 260,
       );
-      controller.handleBattleCenterTap();
-      controller.tick(0.7);
+      expect(enemy, isNotNull);
+      controller.debugSetAmmoQueue([
+        const AmmoPacket(
+          id: 'energy_test_packet',
+          sourceSlotIndex: null,
+          affinity: PrototypeAffinity.aether,
+          power: 6.5,
+          advantageMultiplier: 1,
+          projectileType: ProjectileType.lanceBeam,
+          payloadType: PayloadType.none,
+          targetPriority: TargetPriority.close,
+          range: 320,
+          critChance: 0,
+          critMultiplier: 1,
+          finalDamageMultiplier: 1,
+          bossDamageMultiplier: 1,
+          normalDamageMultiplier: 1,
+          defensePenetration: 0,
+          minDamageMultiplier: 1,
+          maxDamageMultiplier: 1,
+        ),
+      ]);
+      controller.selectCenter();
+      expect(controller.selectBattleEnemyForManualAim(enemy!.id), isTrue);
+      controller.tick(0.05);
       expect(controller.shots, isNotEmpty);
       return controller.shots.first.power;
     }
@@ -95,12 +119,14 @@ void main() {
     addTearDown(controller.dispose);
     expect(controller.debugSeedProgressionLayer(3), isTrue);
     expect(controller.coreEnergyUnlocked, isTrue);
-    controller.debugSpawnEnemyFromCard(
+    final enemy = controller.debugSpawnEnemyFromCard(
       EnemyLibrary.basicWhite.id,
       angle: 0,
       radius: 260,
     );
+    expect(enemy, isNotNull);
     controller.handleBattleCenterTap();
+    expect(controller.selectBattleEnemyForManualAim(enemy!.id), isTrue);
     controller.tick(0.7);
     final spentEnergy = controller.coreState.coreEnergy;
     expect(spentEnergy, closeTo(96, 0.001));

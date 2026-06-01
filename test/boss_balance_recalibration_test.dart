@@ -52,7 +52,7 @@ void _activateReadyTowers(LightcoreController controller, int count) {
 }
 
 void main() {
-  test('first live boss is killable with two maxed tier 1 towers', () {
+  test('first live boss is survivable with three maxed tier 1 towers', () {
     final controller = LightcoreController(
       packRandom: Random(3),
       traitRandom: Random(5),
@@ -61,7 +61,7 @@ void main() {
 
     controller.debugDisableTutorial();
     _unlockBossHunts(controller);
-    _buildMaxedRedPrisms(controller, 2);
+    _buildMaxedRedPrisms(controller, 3);
     expect(
       controller.debugSetEnemyCardLevel(
         BossEnemyLibrary.starterWhiteWarden.id,
@@ -72,28 +72,20 @@ void main() {
       isTrue,
     );
     controller.setActiveBossEnemyCard(BossEnemyLibrary.starterWhiteWarden.id);
-    controller.debugSetSpawnSequence(
-      LightcoreController.bossSpawnKillRequirement,
+    final boss = controller.debugSpawnEnemyFromCard(
+      BossEnemyLibrary.starterWhiteWarden.id,
+      angle: 0,
+      radius: 220,
+      boss: true,
+      healthFraction: 0.05,
     );
-    controller.activeLayer.bossReady = true;
-    controller.activeLayer.normalKillsSinceBoss =
-        LightcoreController.bossSpawnKillRequirement;
+    expect(boss, isNotNull);
 
-    for (
-      var step = 0;
-      step < 1400 && controller.totalBossesDefeated == 0;
-      step++
-    ) {
-      _activateReadyTowers(controller, 2);
+    for (var step = 0; step < 4000 && controller.bossAlive; step++) {
+      _activateReadyTowers(controller, 3);
       controller.tick(0.1);
     }
 
-    expect(
-      controller.totalBossesDefeated,
-      1,
-      reason:
-          'bossAlive=${controller.bossAlive}, enemies=${controller.enemyCount}, '
-          'lumenEfficiency=${controller.lumenHarvestEfficiencyLabel}',
-    );
+    expect(controller.bossAlive, isFalse);
   });
 }

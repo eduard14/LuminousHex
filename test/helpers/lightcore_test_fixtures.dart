@@ -116,7 +116,7 @@ ThemeData buildTestLightcoreTheme() {
 }
 
 LightcoreController createDeterministicController() {
-  return LightcoreController(
+  final controller = LightcoreController(
     packRandom: Random(1101),
     traitRandom: Random(2202),
     managerRandom: Random(3303),
@@ -125,6 +125,8 @@ LightcoreController createDeterministicController() {
     playerId: 'GX-74E2-A91C',
     screenName: 'Astra',
   );
+  controller.debugDisableTutorial();
+  return controller;
 }
 
 void preparePromotionReadyRing(LightcoreController controller) {

@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:lightcore/data/enemy_configs.dart';
 import 'package:lightcore/data/lumicore_trait_catalog.dart';
 import 'package:lightcore/data/tower_configs.dart';
 import 'package:lightcore/models/lightcore_config.dart';
@@ -176,20 +177,38 @@ void main() {
     expect(controller.coreProjectileArsenal, layer2RainbowProjectileLoadout);
     expect(controller.corePayloadArsenal, layer2RainbowPayloadLoadout);
 
-    controller.selectCenter();
-    controller.handleBattleCenterTap();
-    var pulse = controller.pulses.last;
-    expect(pulse.projectileType, layer2RainbowProjectileLoadout.first);
-    expect(pulse.payloadType, layer2RainbowPayloadLoadout.first);
-    expect(pulse.affinity, pulse.projectileType.affinity);
-    expect(pulse.secondaryAffinity, pulse.payloadType.affinity);
+    var target = controller.debugSpawnEnemyFromCard(
+      EnemyLibrary.basicWhite.id,
+      angle: 0,
+      radius: 220,
+    );
+    expect(target, isNotNull);
+    expect(controller.firePrismRiftAimedShot(aimDx: 1, aimDy: 0), isTrue);
+    var shot = controller.shots.last;
+    expect(shot.projectileType, layer2RainbowProjectileLoadout.first);
+    expect(shot.payloadType, layer2RainbowPayloadLoadout.first);
+    expect(shot.affinity, shot.projectileType.affinity);
+    expect(shot.secondaryAffinity, shot.payloadType.affinity);
 
-    controller.handleBattleCenterTap();
-    pulse = controller.pulses.last;
-    expect(pulse.projectileType, layer2RainbowProjectileLoadout[1]);
-    expect(pulse.payloadType, layer2RainbowPayloadLoadout[1]);
-    expect(pulse.affinity, pulse.projectileType.affinity);
-    expect(pulse.secondaryAffinity, pulse.payloadType.affinity);
+    for (
+      var step = 0;
+      step < 80 && !controller.canFirePrismRiftAimedShot;
+      step++
+    ) {
+      controller.tick(0.05);
+    }
+    target = controller.debugSpawnEnemyFromCard(
+      EnemyLibrary.basicWhite.id,
+      angle: 0,
+      radius: 220,
+    );
+    expect(target, isNotNull);
+    expect(controller.firePrismRiftAimedShot(aimDx: 1, aimDy: 0), isTrue);
+    shot = controller.shots.last;
+    expect(shot.projectileType, layer2RainbowProjectileLoadout[1]);
+    expect(shot.payloadType, layer2RainbowPayloadLoadout[1]);
+    expect(shot.affinity, shot.projectileType.affinity);
+    expect(shot.secondaryAffinity, shot.payloadType.affinity);
   });
 
   test(

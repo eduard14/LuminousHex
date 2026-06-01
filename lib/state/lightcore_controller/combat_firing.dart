@@ -163,7 +163,8 @@ extension LightcoreControllerCombatFiring on LightcoreController {
               _coreBasicShotPower() *
               friendAllianceCombatMultiplier *
               _projectileDamageMultiplier(projectileType) *
-              _gearPowerMultiplier,
+              _gearPowerMultiplier *
+              _coreEnergyOutputMultiplier,
           projectileType: projectileType,
           payloadType: payloadType,
           progress: 0,
@@ -220,6 +221,8 @@ extension LightcoreControllerCombatFiring on LightcoreController {
     if (target == null) {
       return false;
     }
+    _focusedEnemyId = target.id;
+    _focusTargetRemainingSeconds = focusTargetDurationSeconds;
     var ammoIndex = _ammoQueue.indexWhere((packet) {
       final coreRoutedRange = coreEffectiveRangeForUpgradeLevel(
         _core.rangeUpgradeLevel,
