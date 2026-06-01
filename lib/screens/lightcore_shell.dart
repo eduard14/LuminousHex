@@ -1125,41 +1125,45 @@ class _LightcoreShellState extends State<LightcoreShell> {
                                     : friendAlertCount > 9
                                     ? '9+'
                                     : friendAlertCount.toString();
-                                final headerActions = <Widget>[
-                                  _HeaderActionButton(
-                                    icon: Icons.storefront_rounded,
-                                    tooltip: 'Open Store',
-                                    highlighted: controller
-                                        .tutorialHighlightsStoreButton,
-                                    highlightTint: LightcorePalette.quest,
-                                    onPressed: () => _openStore(context),
-                                  ),
-                                  _HeaderActionButton(
-                                    icon: Icons.workspace_premium_rounded,
-                                    tooltip: claimablePassRewards > 0
-                                        ? 'Open Passes ($claimablePassRewards claimable)'
-                                        : 'Open Passes',
-                                    badgeLabel: claimablePassRewards > 0
-                                        ? claimablePassRewards.toString()
-                                        : null,
-                                    highlighted: controller
-                                        .tutorialHighlightsBattlePassButton,
-                                    highlightTint: LightcorePalette.quest,
-                                    onPressed: () => _openBattlePass(context),
-                                  ),
-                                  _HeaderMenuButton(
-                                    controller: controller,
-                                    friendBadgeLabel: friendBadgeLabel,
-                                    highlighted: controller
-                                        .tutorialHighlightsHeaderMenuButton,
-                                    highlightTint: LightcorePalette.quest,
-                                    onSelected: (action) =>
-                                        _selectHeaderMenuAction(
-                                          context,
-                                          action,
+                                final headerActions =
+                                    controller.tutorialUsesBattleOnlyNavigation
+                                    ? const <Widget>[]
+                                    : <Widget>[
+                                        _HeaderActionButton(
+                                          icon: Icons.storefront_rounded,
+                                          tooltip: 'Open Store',
+                                          highlighted: controller
+                                              .tutorialHighlightsStoreButton,
+                                          highlightTint: LightcorePalette.quest,
+                                          onPressed: () => _openStore(context),
                                         ),
-                                  ),
-                                ];
+                                        _HeaderActionButton(
+                                          icon: Icons.workspace_premium_rounded,
+                                          tooltip: claimablePassRewards > 0
+                                              ? 'Open Passes ($claimablePassRewards claimable)'
+                                              : 'Open Passes',
+                                          badgeLabel: claimablePassRewards > 0
+                                              ? claimablePassRewards.toString()
+                                              : null,
+                                          highlighted: controller
+                                              .tutorialHighlightsBattlePassButton,
+                                          highlightTint: LightcorePalette.quest,
+                                          onPressed: () =>
+                                              _openBattlePass(context),
+                                        ),
+                                        _HeaderMenuButton(
+                                          controller: controller,
+                                          friendBadgeLabel: friendBadgeLabel,
+                                          highlighted: controller
+                                              .tutorialHighlightsHeaderMenuButton,
+                                          highlightTint: LightcorePalette.quest,
+                                          onSelected: (action) =>
+                                              _selectHeaderMenuAction(
+                                                context,
+                                                action,
+                                              ),
+                                        ),
+                                      ];
 
                                 return Padding(
                                   padding: EdgeInsets.symmetric(

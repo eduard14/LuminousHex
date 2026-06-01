@@ -97,6 +97,9 @@ shell, and keep climbing.
   combat instead of sidecar economy surfaces.
 - Locked bottom navigation destinations stay hidden during the guided opening
   loop, so the first-session chrome does not advertise unavailable systems.
+- Store, Passes, and header menu actions also stay hidden during the guided
+  opening, keeping the top chrome focused on battle state instead of side
+  systems.
 - Tower badges use projectile color and hex-edge level progress only; payload
   tinting is kept out of the first-session visual language until payload traits
   are explicitly taught later.

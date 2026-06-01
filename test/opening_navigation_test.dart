@@ -20,6 +20,9 @@ void main() {
     expect(find.text('Managers'), findsNothing);
     expect(find.text('Map'), findsNothing);
     expect(find.text('Anomaly'), findsNothing);
+    expect(find.byTooltip('Open Store'), findsNothing);
+    expect(find.byTooltip('Open Passes'), findsNothing);
+    expect(find.byTooltip('Open Menu'), findsNothing);
 
     controller.debugDisableTutorial();
     await tester.pump();
@@ -29,6 +32,9 @@ void main() {
     expect(find.text('Managers'), findsOneWidget);
     expect(find.text('Map'), findsOneWidget);
     expect(find.text('Anomaly'), findsOneWidget);
+    expect(find.byTooltip('Open Store'), findsOneWidget);
+    expect(find.byTooltip('Open Passes'), findsOneWidget);
+    expect(find.byTooltip('Open Menu'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 }
