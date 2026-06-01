@@ -69,7 +69,7 @@ shell, and keep climbing.
 
 - Real-time hex battlefield with one central Lightcore and six relay towers.
 - Relay towers charge shots into the Lightcore instead of asking the player to
-  tap or drag ammo.
+  manually queue or drag ammo.
 - Opening combat is low-friction: shots auto-charge after the Lightcore wakes,
   Hex 1 is immediately selectable, then the player clicks anomalies to aim and
   focus fire.

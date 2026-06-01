@@ -317,10 +317,10 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
     teachGoal:
         'Grow the shell by keeping the core active. The core auto-charges shots that earn Lumens.',
     trigger: 'New account',
-    primaryClickTarget: 'Core Map > tap central core',
+    primaryClickTarget: 'Core Map > click central core',
     coachCopy:
-        'Tap the center Lightcore to wake the first shell and reveal where towers will go.',
-    completionCondition: 'Tap central core',
+        'Click the center Lightcore to wake the first shell and reveal where towers will go.',
+    completionCondition: 'Click central core',
     reward: 'Safe White Threat Scan x1',
     failureHelpState:
         'Pulse the central core again and keep nonessential UI dimmed.',
@@ -333,10 +333,10 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
         'The first lane opens as soon as the shell wakes, so the player can move directly into building.',
     trigger: 'Legacy save is still parked on the old first-lane wait step',
     primaryClickTarget: 'Battlefield > Hex 1',
-    coachCopy: 'Hex 1 is ready. Tap the highlighted lane to build.',
+    coachCopy: 'Hex 1 is ready. Click the highlighted lane to build.',
     completionCondition: 'Hex 1 selected',
     reward: 'Small Lumen grant',
-    failureHelpState: 'Tap the highlighted first hex.',
+    failureHelpState: 'Click the highlighted first hex.',
     analyticsEvent: 'tutorial_wait_first_hex',
   ),
   LightcoreTutorialStep.selectFirstHex: LightcoreTutorialQuestDefinition(
@@ -347,11 +347,11 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
     trigger: 'First build lane is available',
     primaryClickTarget: 'Battlefield > first outer hex',
     coachCopy:
-        'Tap the highlighted first hex. The lower-left prism control opens the build and stats pop-out.',
+        'Click the highlighted first hex. The lower-left prism control opens the build and stats pop-out.',
     completionCondition: 'Hex 1 selected',
     reward: 'Build controls revealed',
     failureHelpState:
-        'If the shell is folded, tap the center core or the battlefield to open it.',
+        'If the shell is folded, click the center core or the battlefield to open it.',
     analyticsEvent: 'tutorial_select_first_hex',
   ),
   LightcoreTutorialStep.buildFirstRedTower: LightcoreTutorialQuestDefinition(
@@ -470,7 +470,7 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
         'Open Output Efficiency when you want the income formula: Base Gain x Threat Reward x Output Efficiency.',
     completionCondition: 'Open stability panel',
     reward: 'Small Lumen boost',
-    failureHelpState: 'Tap Output Efficiency to show the formula again.',
+    failureHelpState: 'Click Output Efficiency to show the formula again.',
     analyticsEvent: 'tutorial_read_effective_gain',
   ),
   LightcoreTutorialStep.managerAutoAim: LightcoreTutorialQuestDefinition(
@@ -617,7 +617,7 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
         'Open the Store and inspect the resource offers. Opening it never spends anything.',
     completionCondition: 'Store opened',
     reward: 'Flux and Threat Scan',
-    failureHelpState: 'Tap the highlighted Storefront icon in the top HUD.',
+    failureHelpState: 'Click the highlighted Storefront icon in the top HUD.',
     analyticsEvent: 'tutorial_open_store',
   ),
   LightcoreTutorialStep.claimBattlePassReward: LightcoreTutorialQuestDefinition(
@@ -631,7 +631,7 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
     completionCondition: 'Claim one pass reward',
     reward: 'Flux',
     failureHelpState:
-        'Tap the highlighted Passes icon, then claim any lit reward.',
+        'Click the highlighted Passes icon, then claim any lit reward.',
     analyticsEvent: 'tutorial_claim_battle_pass',
   ),
   LightcoreTutorialStep.openBossPulls: LightcoreTutorialQuestDefinition(
@@ -689,7 +689,7 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
         'Open the profile panel and check account attributes before continuing.',
     completionCondition: 'Profile panel opened after first Apex',
     reward: 'Flux',
-    failureHelpState: 'Tap the highlighted profile HUD in the upper left.',
+    failureHelpState: 'Click the highlighted profile HUD in the upper left.',
     analyticsEvent: 'tutorial_open_equipment',
   ),
   LightcoreTutorialStep.openManagers: LightcoreTutorialQuestDefinition(

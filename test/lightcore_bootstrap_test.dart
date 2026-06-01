@@ -46,6 +46,36 @@ void main() {
     expect(manifest.versionGateFor('1.3.0'), LightcoreVersionGate.ok);
   });
 
+  test('opening tutorial definitions use click language', () {
+    const openingQuestIds = <String>{
+      'TUT-001',
+      'TUT-002',
+      'TUT-003',
+      'TUT-011',
+      'TUT-019',
+      'TUT-020',
+      'TUT-024',
+    };
+
+    for (final quest in LightcoreController.tutorialQuestLibrary) {
+      if (!openingQuestIds.contains(quest.id)) {
+        continue;
+      }
+      final visibleCopy = <String>[
+        quest.primaryClickTarget,
+        quest.coachCopy,
+        quest.completionCondition,
+        quest.failureHelpState,
+      ].join('\n');
+
+      expect(
+        visibleCopy,
+        isNot(contains(RegExp(r'\b[Tt]ap\b'))),
+        reason: '${quest.id} should not use stale tap copy.',
+      );
+    }
+  });
+
   test('content manifest can gate same-version build numbers', () {
     const manifest = LightcoreContentManifest(
       firebaseProjectId: 'lumicore-95c8a',
