@@ -211,6 +211,10 @@ void main() {
     controller.selectSlot(1);
     expect(controller.buildTowerAt(1, TowerLibrary.cyanPrism), isTrue);
     expect(controller.builtTowerCount, 2);
+    expect(controller.tutorialStep, LightcoreTutorialStep.none);
+    expect(controller.tutorialPromptsEnabled, isTrue);
+    expect(controller.tutorialUsesBattleOnlyNavigation, isFalse);
+    expect(controller.tutorialNeedsTowerPaletteGate, isFalse);
   });
 
   test('bulk manager forging grants pack bonuses and a rarity floor', () {

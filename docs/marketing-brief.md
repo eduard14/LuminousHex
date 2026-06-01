@@ -147,6 +147,9 @@ shell, and keep climbing.
 - The first Hex 2 starter choice is also funded and brought online instantly,
   letting the opening loop move from the second stabilization payoff into a second tower
   decision without a 45-second fabrication wait.
+- Bringing Hex 2 online ends the guided battle-only opening instead of pushing
+  an immediate Map, Anomaly, or side-system chore; broader systems return after
+  the player has completed the pressure-upgrade-repeat loop.
 - Tower body clicks are reserved for tower controls, upgrades, stats, and
   targeting tools, keeping build/stat actions distinct from anomaly aiming.
 - Enemy focus clicks automatically close open battle control panels so aiming
