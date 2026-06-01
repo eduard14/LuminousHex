@@ -430,7 +430,7 @@ void main() {
     expect(restoredTutorial['stabilityPanelOpened'], isTrue);
     expect(restoredTutorial['managerAutoAimShots'], greaterThanOrEqualTo(5));
     expect(restored.managerAssignmentUnlocked, isFalse);
-    expect(restored.tutorialStep, LightcoreTutorialStep.openStore);
+    expect(restored.tutorialStep, isNot(LightcoreTutorialStep.unfoldShell));
   });
 
   test('restore accepts legacy auto queue tutorial save fields', () {

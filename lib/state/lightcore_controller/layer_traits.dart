@@ -373,6 +373,8 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         firstTower != null && firstTower.level >= 3,
       LightcoreTutorialStep.upgradeFirstTowerToLevel5 =>
         firstTower != null && firstTower.level >= 4,
+      LightcoreTutorialStep.buildSecondStarterTower =>
+        builtTowerCount >= 2 || _totalTowersBuilt > 1,
       LightcoreTutorialStep.pullFirstRedEnemy => enemyPullCount >= 2,
       LightcoreTutorialStep.setFirstEnemyTarget =>
         _tutorialFirstEnemyTargetSet || _ownsBasicRedEnemy,
@@ -586,6 +588,9 @@ extension LightcoreControllerLayerTraits on LightcoreController {
     if (coreLearningStep != null) {
       return coreLearningStep;
     }
+    if (tutorialShowsStarterProjectileChoices) {
+      return LightcoreTutorialStep.buildSecondStarterTower;
+    }
     final introBossDefeated =
         _tutorialFirstBossDefeated || totalBossesDefeated > 0;
     if (_earlyTutorialComplete &&
@@ -699,7 +704,8 @@ extension LightcoreControllerLayerTraits on LightcoreController {
       LightcoreTutorialStep.pushNextArea ||
       LightcoreTutorialStep.readEffectiveGain ||
       LightcoreTutorialStep.upgradeFirstTowerToLevel4 ||
-      LightcoreTutorialStep.upgradeFirstTowerToLevel5 => false,
+      LightcoreTutorialStep.upgradeFirstTowerToLevel5 ||
+      LightcoreTutorialStep.buildSecondStarterTower => false,
       _ => true,
     };
   }
@@ -724,6 +730,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
       LightcoreTutorialStep.managerAutoAim => 120,
       LightcoreTutorialStep.upgradeFirstTowerToLevel4 => 64,
       LightcoreTutorialStep.upgradeFirstTowerToLevel5 => 72,
+      LightcoreTutorialStep.buildSecondStarterTower => 40,
       LightcoreTutorialStep.setFirstEnemyTarget => 45,
       LightcoreTutorialStep.adjustEnemyCount => 55,
       LightcoreTutorialStep.openTowerMatrix => 50,
@@ -818,6 +825,8 @@ extension LightcoreControllerLayerTraits on LightcoreController {
       'Opening lane reinforced. Strong anchors handle denser pressure better.',
     LightcoreTutorialStep.upgradeFirstTowerToLevel5 =>
       'Flow restored. Hex 2 is ready for the next tower decision.',
+    LightcoreTutorialStep.buildSecondStarterTower =>
+      'Hex 2 online. The opening loop can now grow into multi-tower coverage.',
     LightcoreTutorialStep.pullFirstRedEnemy =>
       'Red signature added. Same-color resistance is why mixed colors matter.',
     LightcoreTutorialStep.setFirstEnemyTarget =>
@@ -946,6 +955,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
       LightcoreTutorialStep.managerAutoAim ||
       LightcoreTutorialStep.upgradeFirstTowerToLevel4 ||
       LightcoreTutorialStep.upgradeFirstTowerToLevel5 ||
+      LightcoreTutorialStep.buildSecondStarterTower ||
       LightcoreTutorialStep.pullFirstRedEnemy ||
       LightcoreTutorialStep.setFirstEnemyTarget ||
       LightcoreTutorialStep.adjustEnemyCount ||
@@ -1608,6 +1618,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         LightcoreTutorialStep.upgradeFirstTowerToLevel4 =>
           'Reinforce The Anchor',
         LightcoreTutorialStep.upgradeFirstTowerToLevel5 => 'Stabilize Again',
+        LightcoreTutorialStep.buildSecondStarterTower => 'Expand To Hex 2',
         LightcoreTutorialStep.pullFirstRedEnemy => 'Teach Color Counters',
         LightcoreTutorialStep.setFirstEnemyTarget => 'Review Red Pressure',
         LightcoreTutorialStep.adjustEnemyCount => 'Read Spiral Path',
@@ -1664,6 +1675,8 @@ extension LightcoreControllerLayerTraits on LightcoreController {
           'Click the first tower in Hex 1 and upgrade it to level 3.',
         LightcoreTutorialStep.upgradeFirstTowerToLevel5 =>
           'Click the first tower in Hex 1 and upgrade it once more.',
+        LightcoreTutorialStep.buildSecondStarterTower =>
+          'Click Hex 2 and choose Thread Beam or Shield Halo.',
         LightcoreTutorialStep.pullFirstRedEnemy =>
           'Click Map and start the next stabilization challenge.',
         LightcoreTutorialStep.setFirstEnemyTarget =>
@@ -1745,6 +1758,8 @@ extension LightcoreControllerLayerTraits on LightcoreController {
           'The challenge proved the next area hits harder. Upgrade again, stabilize, then repeat the route with tougher enemies.',
         LightcoreTutorialStep.upgradeFirstTowerToLevel5 =>
           'The second challenge repeats the core loop: harder pressure first, then another anchor upgrade before expansion.',
+        LightcoreTutorialStep.buildSecondStarterTower =>
+          'Expansion comes after stabilization. Hex 2 adds coverage once the player has seen enemies attack, harder areas overwhelm, and upgrades restore flow.',
         LightcoreTutorialStep.pullFirstRedEnemy =>
           'Same-color attacks are resisted. Red anomalies punish overcommitting to one color and unlock the full counter system.',
         LightcoreTutorialStep.setFirstEnemyTarget =>
@@ -1826,6 +1841,8 @@ extension LightcoreControllerLayerTraits on LightcoreController {
             'Challenge Lv 1 hits harder than the training wave. The answer is the core loop: upgrade, stabilize, then push the next route.',
           LightcoreTutorialStep.upgradeFirstTowerToLevel5 =>
             'Challenge Lv 2 proves the route can still bite. Hex 1 gets one more reinforcement before command opens Hex 2.',
+          LightcoreTutorialStep.buildSecondStarterTower =>
+            'Hex 2 is clear. Command opens one more starter choice so the shell grows after the loop is understood.',
           LightcoreTutorialStep.pullFirstRedEnemy =>
             'Anomaly scouts start adapting as soon as they detect the Prism spectrum you deployed on the shell rim.',
           LightcoreTutorialStep.setFirstEnemyTarget =>
@@ -1897,8 +1914,10 @@ extension LightcoreControllerLayerTraits on LightcoreController {
   }
 
   bool tutorialHighlightsBuildButton(TowerConfig config) =>
-      _tutorialStep == LightcoreTutorialStep.buildFirstRedTower &&
-      _isOpeningStarterTower(config);
+      (_tutorialStep == LightcoreTutorialStep.buildFirstRedTower &&
+          _isOpeningStarterTower(config)) ||
+      (_tutorialStep == LightcoreTutorialStep.buildSecondStarterTower &&
+          tutorialTowerChoices.any((choice) => choice.id == config.id));
 
   bool tutorialHighlightsUpgradeButton(int slotIndex) =>
       slotIndex == 0 &&

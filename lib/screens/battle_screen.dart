@@ -1118,6 +1118,10 @@ class _BattleScreenState extends State<BattleScreen> {
         if (selectedSlotIndex == 0 && selected?.isBuilt == true) {
           return 'Upgrade Hex 1 once more to stabilize Challenge Lv 2 pressure before opening Hex 2.';
         }
+      case LightcoreTutorialStep.buildSecondStarterTower:
+        if (selectedSlotIndex == 1 && selected?.isBuilt == false) {
+          return 'Hex 2 build controls are open. Choose Thread Beam or Shield Halo to add coverage after the pressure loop.';
+        }
       case LightcoreTutorialStep.tapFirstTower:
         if (_tutorialOpenPanelBlocksCurrentStep(controller)) {
           return 'Close the open tower controls, then tap a visible anomaly to focus fire. Tower taps reopen tower controls.';

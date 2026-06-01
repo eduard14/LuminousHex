@@ -121,6 +121,9 @@ shell, and keep climbing.
 - Hex 2 waits until the player clears Challenge Lv 2 and stabilizes Hex 1
   again, keeping the second tower decision connected to the core
   pressure-upgrade-repeat loop instead of interrupting it.
+- Hex 2 now has its own compact expansion guide after the repeat loop, so the
+  second tower choice is taught in-world instead of silently relying on the
+  restricted tower palette.
 - The first Hex 2 starter choice is also funded and brought online instantly,
   letting the opening loop move from the second stabilization payoff into a second tower
   decision without a 45-second fabrication wait.

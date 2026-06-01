@@ -74,6 +74,7 @@ enum LightcoreTutorialStep {
   managerAutoAim,
   upgradeFirstTowerToLevel4,
   upgradeFirstTowerToLevel5,
+  buildSecondStarterTower,
   pullFirstRedEnemy,
   setFirstEnemyTarget,
   adjustEnemyCount,
@@ -518,6 +519,22 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
     failureHelpState:
         'Open Hex 1 controls and use the highlighted Upgrade button.',
     analyticsEvent: 'tutorial_upgrade_first_tower_l5',
+  ),
+  LightcoreTutorialStep
+      .buildSecondStarterTower: LightcoreTutorialQuestDefinition(
+    id: 'TUT-013C',
+    title: 'Expand To Hex 2',
+    teachGoal:
+        'Once the pressure-upgrade loop is stable, add a second tower so the shell can hold harder waves without turning expansion into a chore.',
+    trigger: 'Hex 2 opens after the second stabilization recovery',
+    primaryClickTarget: 'Battlefield > Hex 2 build controls',
+    coachCopy:
+        'Click Hex 2 and choose the highlighted starter tower. This adds coverage after Hex 1 proves it can stabilize harder areas.',
+    completionCondition: 'Second tower comes online',
+    reward: 'Full tower palette',
+    failureHelpState:
+        'Open Hex 2 controls and choose Thread Beam or Shield Halo.',
+    analyticsEvent: 'tutorial_build_second_starter_tower',
   ),
   LightcoreTutorialStep.pullFirstRedEnemy: LightcoreTutorialQuestDefinition(
     id: 'TUT-014',

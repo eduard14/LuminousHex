@@ -1,7 +1,10 @@
 # Testing
 
-LumiHex uses a tiered test setup so day-to-day development stays fast while
-still protecting important UI and progression flows.
+LumiHex uses a small CI-facing test suite while gameplay design is still moving
+quickly. The default tests are guardrails for build health, persistence,
+content integrity, and a few screen smoke paths. Detailed gameplay, balance,
+tutorial choreography, projectile, and tower math regressions were intentionally
+removed from the default suite so tests do not freeze pre-production design.
 
 ## Fast local checks
 
@@ -11,8 +14,12 @@ Run the existing unit and widget regression suite:
 flutter test
 ```
 
-This covers gameplay math, progression, menu rendering, overlays, and compact
-layout overflow checks. These tests are intended to be cheap enough to run often.
+This covers cloud save and restore behavior, currency invariants, basic menu
+and screen smoke checks, data/catalog integrity, asset references, rewarded-ad
+disclosure, and the lightweight Layer 2 UI promotion smoke. The suite is meant
+to answer “does the app still broadly work?” rather than “did gameplay tuning
+stay exactly the same?” Deleted gameplay tests can be recovered from git history
+if a mechanic becomes stable enough to protect again.
 
 ## Screenshot aesthetic regression checks
 
@@ -89,6 +96,8 @@ Supported tower seeds are `starter`, `prism`, and `nexus`. Dungeon routes are
 
 ## Development impact
 
-The default development loop is unchanged: `flutter test` does not include the
-golden or integration directories. Use those heavier suites before releases,
-before visual polish changes, or when touching promotion/navigation UI.
+The default development loop is intentionally lighter than before:
+`flutter test` does not include the golden or integration directories, and it no
+longer includes brittle gameplay/balance micro-regressions. Use the heavier
+suites before releases, before visual polish changes, or when touching
+promotion/navigation UI.

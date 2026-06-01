@@ -646,7 +646,8 @@ extension LightcoreControllerStateAccessors on LightcoreController {
       _tutorialStep == LightcoreTutorialStep.tapSecondShellTower ||
       _tutorialStep == LightcoreTutorialStep.upgradeFirstTowerToLevel3 ||
       _tutorialStep == LightcoreTutorialStep.upgradeFirstTowerToLevel4 ||
-      _tutorialStep == LightcoreTutorialStep.upgradeFirstTowerToLevel5;
+      _tutorialStep == LightcoreTutorialStep.upgradeFirstTowerToLevel5 ||
+      _tutorialStep == LightcoreTutorialStep.buildSecondStarterTower;
 
   bool get tutorialNeedsTowerPaletteGate {
     if (_earlyTutorialComplete || _currentLayerEarlyTutorialComplete) {
@@ -685,6 +686,11 @@ extension LightcoreControllerStateAccessors on LightcoreController {
                 selectedSlotIndex != 0))) {
       return true;
     }
+    if (slotIndex == 1 &&
+        _tutorialStep == LightcoreTutorialStep.buildSecondStarterTower &&
+        selectedSlotIndex != 1) {
+      return true;
+    }
     final shotTutorialSlotIndex = _secondShellShotTutorialSlotIndex();
     return _tutorialStep == LightcoreTutorialStep.tapSecondShellTower &&
         shotTutorialSlotIndex == slotIndex;
@@ -697,6 +703,7 @@ extension LightcoreControllerStateAccessors on LightcoreController {
     return switch (_tutorialStep) {
       LightcoreTutorialStep.selectFirstHex => 'BUILD HERE',
       LightcoreTutorialStep.buildFirstRedTower => 'CHOOSE TOWER',
+      LightcoreTutorialStep.buildSecondStarterTower => 'BUILD HEX 2',
       LightcoreTutorialStep.upgradeFirstTowerToLevel3 ||
       LightcoreTutorialStep.upgradeFirstTowerToLevel4 ||
       LightcoreTutorialStep.upgradeFirstTowerToLevel5 => 'UPGRADE',
