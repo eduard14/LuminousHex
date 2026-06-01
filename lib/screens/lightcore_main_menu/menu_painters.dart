@@ -15,7 +15,6 @@ class _MenuAtmospherePainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final isWide = size.width > size.height * 1.05;
     final pulse = (math.sin(phase * math.pi * 2) + 1) / 2;
-    final spinPhase = phase * math.pi * 2;
     final accent = canStart
         ? LightcorePalette.verdant
         : (isLoading ? LightcorePalette.aether : LightcorePalette.warning);
@@ -89,19 +88,21 @@ class _MenuAtmospherePainter extends CustomPainter {
         ),
     );
 
-    for (var i = 0; i < 16; i += 1) {
-      final ringAngle = spinPhase + (i * 0.42);
-      final radiusX = size.width * (isWide ? 0.18 : 0.31);
-      final radiusY = size.height * (isWide ? 0.075 : 0.09);
-      final point = Offset(
-        coreCenter.dx + math.cos(ringAngle) * radiusX,
-        coreCenter.dy + math.sin(ringAngle) * radiusY,
-      );
-      final glow = 0.08 + (((i % 4) / 4) * 0.08) + (pulse * 0.08);
-      canvas.drawCircle(
-        point,
-        i.isEven ? 1.8 : 1.2,
-        Paint()..color = LightcorePalette.layer2.withValues(alpha: glow),
+    final shellRadius =
+        math.min(size.width, size.height) * (isWide ? 0.14 : 0.2);
+    final shellVertices = _hexagonVertices(coreCenter, shellRadius);
+    final shellPaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1
+      ..strokeCap = StrokeCap.round
+      ..color = LightcorePalette.layer2.withValues(alpha: 0.12 + pulse * 0.08);
+    for (var edge = 0; edge < shellVertices.length; edge += 1) {
+      final start = shellVertices[edge];
+      final end = shellVertices[(edge + 1) % shellVertices.length];
+      canvas.drawLine(
+        Offset.lerp(start, end, 0.08)!,
+        Offset.lerp(start, end, 0.44)!,
+        shellPaint,
       );
     }
   }
@@ -214,28 +215,21 @@ class _CorePulsePainter extends CustomPainter {
         ..color = accent.withValues(alpha: 0.12 + (pulse * 0.05)),
     );
 
-    final nodeAngles = [
-      spinPhase - 0.2,
-      spinPhase + 1.65,
-      spinPhase + 3.1,
-      spinPhase + 4.7,
-    ];
-
-    for (var i = 0; i < nodeAngles.length; i += 1) {
-      final point = Offset(
-        center.dx + math.cos(nodeAngles[i]) * outerOval.width * 0.5,
-        center.dy + math.sin(nodeAngles[i]) * outerOval.height * 0.5,
-      );
-      final color = i.isEven ? accent : tertiary;
-      canvas.drawCircle(
-        point,
-        6,
-        Paint()..color = color.withValues(alpha: 0.18 + (pulse * 0.1)),
-      );
-      canvas.drawCircle(
-        point,
-        3.2,
-        Paint()..color = color.withValues(alpha: 0.72 + (pulse * 0.16)),
+    final tickPaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2
+      ..strokeCap = StrokeCap.round
+      ..color = tertiary.withValues(alpha: 0.34 + (pulse * 0.18));
+    final tickVertices = _hexagonVertices(center, size.shortestSide * 0.43);
+    for (var edge = 0; edge < tickVertices.length; edge += 1) {
+      final start = tickVertices[edge];
+      final end = tickVertices[(edge + 1) % tickVertices.length];
+      final phaseOffset = (spinPhase / (math.pi * 2) + edge / 6) % 1;
+      final tickStart = 0.12 + (phaseOffset * 0.18);
+      canvas.drawLine(
+        Offset.lerp(start, end, tickStart.clamp(0.0, 0.7))!,
+        Offset.lerp(start, end, (tickStart + 0.16).clamp(0.0, 0.86))!,
+        tickPaint,
       );
     }
   }
@@ -249,13 +243,10 @@ class _CorePulsePainter extends CustomPainter {
 }
 
 Path _hexagonPath(Offset center, double radius) {
+  final vertices = _hexagonVertices(center, radius);
   final path = Path();
-  for (var i = 0; i < 6; i += 1) {
-    final angle = -math.pi / 2 + (i * math.pi / 3);
-    final point = Offset(
-      center.dx + (math.cos(angle) * radius),
-      center.dy + (math.sin(angle) * radius),
-    );
+  for (var i = 0; i < vertices.length; i += 1) {
+    final point = vertices[i];
     if (i == 0) {
       path.moveTo(point.dx, point.dy);
     } else {
@@ -264,4 +255,18 @@ Path _hexagonPath(Offset center, double radius) {
   }
   path.close();
   return path;
+}
+
+List<Offset> _hexagonVertices(Offset center, double radius) {
+  final vertices = <Offset>[];
+  for (var i = 0; i < 6; i += 1) {
+    final angle = -math.pi / 2 + (i * math.pi / 3);
+    vertices.add(
+      Offset(
+        center.dx + (math.cos(angle) * radius),
+        center.dy + (math.sin(angle) * radius),
+      ),
+    );
+  }
+  return vertices;
 }

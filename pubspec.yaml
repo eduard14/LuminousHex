@@ -75,7 +75,6 @@ flutter:
   uses-material-design: true
 
   assets:
-    - lib/Menu_Background.png
     - assets/audio/music/
     - assets/audio/sfx/
     - assets/Images/

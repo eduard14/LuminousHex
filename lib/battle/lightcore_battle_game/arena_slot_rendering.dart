@@ -419,17 +419,30 @@ extension LightcoreBattleGameArenaSlotRendering on LightcoreBattleGame {
       );
     }
 
-    final nodeDistance = radius * (0.28 + (eased * 0.5));
-    for (var index = 0; index < 6; index++) {
-      final angle = spin + (((math.pi * 2) / 6) * index);
-      final node = Offset(
-        center.dx + math.cos(angle) * nodeDistance,
-        center.dy + math.sin(angle) * nodeDistance,
+    final edgeRadius = radius * (0.44 + (eased * 0.32));
+    for (var edge = 0; edge < 6; edge++) {
+      final edgeProgress = ((clamped * 1.18) - (edge * 0.045))
+          .clamp(0.0, 1.0)
+          .toDouble();
+      if (edgeProgress <= 0) {
+        continue;
+      }
+      final vertices = _polygonPoints(
+        center,
+        edgeRadius,
+        6,
+        math.pi / 6 + (spin * 0.08),
       );
-      canvas.drawCircle(
-        node,
-        radius * (0.026 + (0.018 * eased) + (pulse * 0.006)),
-        Paint()..color = color.withValues(alpha: 0.78 + (eased * 0.22)),
+      final start = vertices[edge];
+      final end = vertices[(edge + 1) % vertices.length];
+      canvas.drawLine(
+        start,
+        Offset.lerp(start, end, edgeProgress)!,
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = math.max(1.6, radius * 0.038)
+          ..strokeCap = StrokeCap.round
+          ..color = color.withValues(alpha: 0.48 + (pulse * 0.18)),
       );
     }
 
@@ -489,18 +502,17 @@ extension LightcoreBattleGameArenaSlotRendering on LightcoreBattleGame {
         ..color = color.withValues(alpha: 0.98),
     );
 
-    for (var node = 0; node < 6; node++) {
-      final angle = coreRotation + (((math.pi * 2) / 6) * node);
-      final nodeCenter = Offset(
-        center.dx + math.cos(angle) * coreRadius * 1.72,
-        center.dy + math.sin(angle) * coreRadius * 1.72,
-      );
-      canvas.drawCircle(
-        nodeCenter,
-        radius * (0.018 + (constructionProgress * 0.008)),
+    final edgeVertices = _polygonPoints(center, coreRadius * 1.72, 6, 0);
+    for (var edge = 0; edge < edgeVertices.length; edge++) {
+      canvas.drawLine(
+        edgeVertices[edge],
+        edgeVertices[(edge + 1) % edgeVertices.length],
         Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = math.max(1.0, radius * 0.018)
+          ..strokeCap = StrokeCap.round
           ..color = color.withValues(
-            alpha: 0.78 + (constructionProgress * 0.22),
+            alpha: (0.24 + (constructionProgress * 0.34)),
           ),
       );
     }

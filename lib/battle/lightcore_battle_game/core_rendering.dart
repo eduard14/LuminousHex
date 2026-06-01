@@ -306,8 +306,8 @@ extension LightcoreBattleGameCoreRendering on LightcoreBattleGame {
       case ProjectileBehaviorProfile.chain:
         final left = center.translate(-radius * 0.58, radius * 0.2);
         final right = center.translate(radius * 0.58, -radius * 0.2);
-        canvas.drawCircle(left, radius * 0.22, paint);
-        canvas.drawCircle(right, radius * 0.22, paint);
+        canvas.drawPath(_hexPath(left, radius * 0.22), paint);
+        canvas.drawPath(_hexPath(right, radius * 0.22), paint);
         canvas.drawLine(left, right, paint);
       case ProjectileBehaviorProfile.split:
         final stem = center.translate(-radius * 0.72, radius * 0.52);
@@ -370,16 +370,19 @@ extension LightcoreBattleGameCoreRendering on LightcoreBattleGame {
           );
         }
       case ProjectileBehaviorProfile.nova:
-        canvas.drawCircle(center, radius * 0.2, fill);
+        canvas.drawPath(_hexPath(center, radius * 0.24), fill);
         for (var index = 0; index < 6; index += 1) {
           final angle = (math.pi * 2 / 6) * index;
-          canvas.drawCircle(
+          canvas.drawLine(
             center.translate(
-              math.cos(angle) * radius * 0.72,
-              math.sin(angle) * radius * 0.72,
+              math.cos(angle) * radius * 0.38,
+              math.sin(angle) * radius * 0.38,
             ),
-            radius * 0.1,
-            fill,
+            center.translate(
+              math.cos(angle) * radius * 0.88,
+              math.sin(angle) * radius * 0.88,
+            ),
+            paint..strokeWidth = math.max(1.1, size * 0.07),
           );
         }
     }

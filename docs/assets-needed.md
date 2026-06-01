@@ -516,7 +516,6 @@ store/pass setup, start with this:
 - 1 wordmark.
 - 1 crest.
 - 1 app icon master.
-- 1 menu background.
 - 1 battle background.
 - 1 core sprite set.
 - 6 tower prism sprite sets.
