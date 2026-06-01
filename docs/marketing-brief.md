@@ -77,6 +77,9 @@ shell, and keep climbing.
   player can act immediately after the first relay comes online.
 - The first tower/focus/upgrade loop grants enough starter Lumens to move from
   build to focus fire to the first upgrade without idle grinding.
+- The first five minutes demonstrate the repeat loop directly: anomalies dent
+  Hex 1, Output Efficiency drops, upgrading restores flow, Challenge Lv 1 hits
+  harder, and the next upgrade stabilizes the route again.
 - The post-upgrade threat prompt explains the payoff and highlights the
   Challenge button directly, framing the next step as a reward wave the player
   has earned instead of a low-threat warning or menu hunt.
@@ -127,13 +130,6 @@ shell, and keep climbing.
   handoff effects appear when a relay charges the core.
 - Payload-colored orbit dots are kept out of shot, relay, and fire-burst
   visuals so early combat does not imply there are floating payloads to manage.
-- Fabrication and projectile badge glyphs use traced hex edges/spokes instead
-  of satellite dots, keeping tower state tied to the shell grid language.
-- The launch button backdrop uses shell-line traces instead of orbiting colored
-  dots, so the first impression does not teach players to look for payload
-  objects.
-- The first menu screen no longer displays the old orbit-dot background art;
-  it uses a quieter procedural shell beam behind Play.
 - Child-shell presence is shown through hex bodies, range language, and
   promotion moments, not orbiting marker dots around the active core.
 - Ready-shot UI is a compact availability indicator, not an empty queue rail

@@ -600,6 +600,7 @@ extension LightcoreControllerThreatRegions on LightcoreController {
         );
     lumens += lumenReward;
     final openingProgressReward = _grantOpeningChallengeHex2Progress(challenge);
+    _applyOpeningChallengePressureLessonIfNeeded(challenge);
     _syncTutorialStep(showBanner: false);
     final rewardParts = <String>[
       LightcoreCurrencyLabels.rewardLumens(lumenReward),

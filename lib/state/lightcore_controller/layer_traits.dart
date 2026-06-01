@@ -151,6 +151,73 @@ extension LightcoreControllerLayerTraits on LightcoreController {
   bool get _firstThreatChallengeStarted =>
       _firstThreatChallengeActive || _firstThreatChallengeCompleted;
 
+  void _applyOpeningPressureLessonIfNeeded() {
+    final firstTower = _firstTutorialTower;
+    if (_tutorialOpeningPressureHitApplied ||
+        _earlyTutorialComplete ||
+        _firstThreatChallengeStarted ||
+        firstTower == null ||
+        !_isOpeningStarterTower(firstTower.config) ||
+        firstTower.level > 1) {
+      return;
+    }
+    _tutorialOpeningPressureHitApplied = true;
+    _setCoreStability(min(_core.coreStability, 82));
+    _slots[0] = firstTower.copyWith(
+      disruption: max(firstTower.disruption, 0.34),
+      charge: min(firstTower.charge, 0.36),
+    );
+    _showBanner(
+      'Anomaly pressure bruised Hex 1. Upgrade the tower to stabilize output.',
+      category: LightcoreNotificationCategory.battle,
+      duration: 3.4,
+    );
+  }
+
+  void _applyOpeningChallengePressureLessonIfNeeded(
+    ThreatRegionChallengeState challenge,
+  ) {
+    final firstTower = _firstTutorialTower;
+    if (_tutorialChallengePressureHitApplied ||
+        _earlyTutorialComplete ||
+        challenge.regionId != ThreatRegionLibrary.all.first.id ||
+        challenge.targetStabilizationLevel != 1 ||
+        firstTower == null ||
+        !_isOpeningStarterTower(firstTower.config) ||
+        firstTower.level != 2) {
+      return;
+    }
+    _tutorialChallengePressureHitApplied = true;
+    _setCoreStability(min(_core.coreStability, 76));
+    _slots[0] = firstTower.copyWith(
+      disruption: max(firstTower.disruption, 0.48),
+      charge: min(firstTower.charge, 0.28),
+    );
+    _showBanner(
+      'Challenge waves hit harder. Reinforce Hex 1 to bring flow back under control.',
+      category: LightcoreNotificationCategory.battle,
+      duration: 3.4,
+    );
+  }
+
+  void _recoverOpeningPressureOnTutorialUpgrade(int slotIndex, int nextLevel) {
+    if (slotIndex != 0) {
+      return;
+    }
+    final tower = _slots[slotIndex];
+    if (!_isOpeningStarterTower(tower.config)) {
+      return;
+    }
+    if ((_tutorialOpeningPressureHitApplied && nextLevel == 2) ||
+        (_tutorialChallengePressureHitApplied && nextLevel == 3)) {
+      _setCoreStability(max(_core.coreStability, 98));
+      _slots[slotIndex] = tower.copyWith(
+        disruption: min(tower.disruption, 0.08),
+        charge: max(tower.charge, 0.62),
+      );
+    }
+  }
+
   bool get _openingThreatEscalationReady {
     final firstTower = _firstTutorialTower;
     if (firstTower == null ||
@@ -1561,7 +1628,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         LightcoreTutorialStep.tapSecondShellTower =>
           'Second-shell lanes use the same tower-tap rule: tower bodies open tower controls while firing stays automatic.',
         LightcoreTutorialStep.upgradeFirstTowerToLevel3 =>
-          'The first upgrade proves the loop quickly: aim, earn, tune, then raise pressure.',
+          'The first upgrade is the recovery beat: enemies pressure the lane, Output Efficiency slips, and a tower level brings flow back.',
         LightcoreTutorialStep.raiseThreat =>
           'The upgraded tower is ready for more pressure. Start the starter-region challenge so stronger waves turn into better rewards.',
         LightcoreTutorialStep.pullFirstWhiteEnemy =>
@@ -1571,7 +1638,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         LightcoreTutorialStep.managerAutoAim =>
           'Automation proves an assigned manager can fire ready shots without taking enemy focus control away from the player.',
         LightcoreTutorialStep.upgradeFirstTowerToLevel4 =>
-          'A level 3 anchor keeps the lane efficient before Lumens get split across multiple towers.',
+          'The challenge proved the next area hits harder. Upgrade again, stabilize, then repeat the route with tougher enemies.',
         LightcoreTutorialStep.pullFirstRedEnemy =>
           'Same-color attacks are resisted. Red anomalies punish overcommitting to one color and unlock the full counter system.',
         LightcoreTutorialStep.setFirstEnemyTarget =>
@@ -1638,7 +1705,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
           LightcoreTutorialStep.tapSecondShellTower =>
             'The next shell is awake. Tap the charged tower body before Lumo hands you speed controls.',
           LightcoreTutorialStep.upgradeFirstTowerToLevel3 =>
-            'Command is tuning the flagship lane before exposing more of the shell to hostile traffic.',
+            'The first anomaly wave dents the lane. Command routes Lumens into Hex 1 so the shell can recover instead of expanding too early.',
           LightcoreTutorialStep.raiseThreat =>
             'Command opens Challenge Lv 1 directly from battle so the tuned tower gets a real wave to break.',
           LightcoreTutorialStep.pullFirstWhiteEnemy =>
@@ -1648,7 +1715,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
           LightcoreTutorialStep.managerAutoAim =>
             'The assigned Core Manager takes the relay chair and starts firing ready shots without a manual command.',
           LightcoreTutorialStep.upgradeFirstTowerToLevel4 =>
-            'The shell is absorbing denser traffic now, so the first lane needs one more tune pass before expansion.',
+            'Challenge Lv 1 hits harder than the training wave. The answer is the core loop: upgrade, stabilize, then push the next route.',
           LightcoreTutorialStep.pullFirstRedEnemy =>
             'Anomaly scouts start adapting as soon as they detect the Prism spectrum you deployed on the shell rim.',
           LightcoreTutorialStep.setFirstEnemyTarget =>

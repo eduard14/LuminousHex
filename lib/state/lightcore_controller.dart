@@ -399,13 +399,13 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
   LightcoreTutorialStep
       .upgradeFirstTowerToLevel3: LightcoreTutorialQuestDefinition(
     id: 'TUT-009',
-    title: 'Tune the Main Tower',
+    title: 'Stabilize Hex 1',
     teachGoal:
-        'One strong anchor lane keeps Output Efficiency stable before the shell spreads into more pressure.',
-    trigger: 'First tower can be upgraded',
+        'When anomalies push through, Output Efficiency drops. Upgrading the active tower stabilizes the lane and restores flow.',
+    trigger: 'First anomaly pressure dents the opening lane',
     primaryClickTarget: 'Tower Stats pop-out > Upgrade',
     coachCopy:
-        'Upgrade the first tower once before expanding. A stronger anchor makes every ready shot matter more.',
+        'Hex 1 just took pressure. Upgrade the first tower to recover flow before taking on a harder area.',
     completionCondition: 'First tower reaches level 2',
     reward: 'Small Lumen grant',
     failureHelpState:
@@ -473,13 +473,13 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
   LightcoreTutorialStep
       .upgradeFirstTowerToLevel4: LightcoreTutorialQuestDefinition(
     id: 'TUT-013',
-    title: 'Reinforce the Anchor',
+    title: 'Answer Harder Waves',
     teachGoal:
-        'A stronger anchor lane gives you room to test harder regions without crushing Output Efficiency.',
-    trigger: 'Early red research lesson',
+        'A cleared challenge should make the next area feel harder. Reinforce the first tower, stabilize again, then repeat the route.',
+    trigger: 'Starter challenge pressure dents the opening lane again',
     primaryClickTarget: 'Tower Stats pop-out > Upgrade',
     coachCopy:
-        'Upgrade the first tower again before spreading Lumens across more towers.',
+        'Challenge Lv 1 pushed the lane harder. Upgrade Hex 1 again so the harder area becomes manageable.',
     completionCondition: 'First tower reaches level 3',
     reward: 'Small Lumen grant',
     failureHelpState:
@@ -1703,6 +1703,8 @@ class LightcoreController extends ChangeNotifier {
   bool _tutorialMenteesOpened = false;
   bool _tutorialMentorsOpened = false;
   bool _tutorialManualAimFireLearned = false;
+  bool _tutorialOpeningPressureHitApplied = false;
+  bool _tutorialChallengePressureHitApplied = false;
   bool _tutorialSecondShellShotTapLearned = false;
   bool _tutorialOverdriveLearned = false;
   bool _tutorialIntroBossPending = false;

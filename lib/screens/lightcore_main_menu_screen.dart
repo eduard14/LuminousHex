@@ -79,6 +79,7 @@ class _GuestSignInPromptResult {
 
 class _LightcoreMainMenuScreenState extends State<LightcoreMainMenuScreen>
     with SingleTickerProviderStateMixin {
+  static const _menuBackgroundAsset = 'lib/Menu_Background.png';
   static const _pulseCycleDuration = Duration(milliseconds: 7200);
   static const _loadingStageDuration = Duration(milliseconds: 1800);
   static const List<String> _loadingStages = ['Load'];
@@ -539,11 +540,27 @@ class _LightcoreMainMenuScreenState extends State<LightcoreMainMenuScreen>
       report: report,
     );
     final clientVersion = _clientDisplayVersion(report);
+    final screenSize = MediaQuery.sizeOf(context);
+    final devicePixelRatio = MediaQuery.devicePixelRatioOf(context);
+    final backgroundCacheWidth = (screenSize.width * devicePixelRatio)
+        .ceil()
+        .clamp(640, 1600)
+        .toInt();
+
     return SizedBox.expand(
       child: DecoratedBox(
         decoration: const BoxDecoration(color: Color(0xFF010409)),
         child: Stack(
           children: [
+            Positioned.fill(
+              child: Image.asset(
+                _menuBackgroundAsset,
+                fit: BoxFit.cover,
+                alignment: Alignment.center,
+                cacheWidth: backgroundCacheWidth,
+                filterQuality: FilterQuality.high,
+              ),
+            ),
             const Positioned.fill(
               child: DecoratedBox(
                 decoration: BoxDecoration(

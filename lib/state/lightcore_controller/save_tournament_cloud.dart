@@ -868,6 +868,8 @@ extension LightcoreControllerSaveTournamentCloud on LightcoreController {
         'menteesOpened': _tutorialMenteesOpened,
         'mentorsOpened': _tutorialMentorsOpened,
         'manualAimFireLearned': _tutorialManualAimFireLearned,
+        'openingPressureHitApplied': _tutorialOpeningPressureHitApplied,
+        'challengePressureHitApplied': _tutorialChallengePressureHitApplied,
         'secondShellShotTapLearned': _tutorialSecondShellShotTapLearned,
         'overdriveLearned': _tutorialOverdriveLearned,
         'introBossPending': _tutorialIntroBossPending,

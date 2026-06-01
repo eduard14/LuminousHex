@@ -567,6 +567,7 @@ extension LightcoreControllerBattleTowerActions on LightcoreController {
       level: nextLevel,
       investedLumens: tower.investedLumens + cost,
     );
+    _recoverOpeningPressureOnTutorialUpgrade(slotIndex, nextLevel);
     _showBanner('${towerDisplayName(tower)} pushed to level $nextLevel.');
     _syncTutorialStep(showBanner: false);
     _notifyNow();

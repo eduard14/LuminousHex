@@ -330,6 +330,14 @@ extension LightcoreControllerSaveRestorePayload on LightcoreController {
       tutorialData['manualAimFireLearned'],
       fallback: _tutorialEarlyQuestChainCompleted,
     );
+    _tutorialOpeningPressureHitApplied = _boolValue(
+      tutorialData['openingPressureHitApplied'],
+      fallback: _tutorialEarlyQuestChainCompleted,
+    );
+    _tutorialChallengePressureHitApplied = _boolValue(
+      tutorialData['challengePressureHitApplied'],
+      fallback: _tutorialEarlyQuestChainCompleted,
+    );
     _tutorialSecondShellShotTapLearned = _boolValue(
       tutorialData['secondShellShotTapLearned'],
     );
