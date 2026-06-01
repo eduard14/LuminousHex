@@ -79,8 +79,8 @@ extension LightcoreControllerBattleActions on LightcoreController {
       progress: max(_pulses[index].progress, 0.985),
       inboundStartedAtElapsed: elapsed,
     );
-    if (_tutorialStep == LightcoreTutorialStep.tapSecondShellTower) {
-      _tutorialSecondShellShotTapLearned = true;
+    if (_tutorialStep == LightcoreTutorialStep.inspectSecondShellTower) {
+      _tutorialSecondShellTowerInspected = true;
     }
     _syncTutorialStep(showBanner: false);
     _notifyNow();

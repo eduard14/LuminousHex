@@ -129,7 +129,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
     if (!_isOpeningStarterTower(tower.config)) {
       return false;
     }
-    return _tutorialManualAimFireLearned &&
+    return _tutorialFocusFireLearned &&
         tower.level >= 4 &&
         _openingRepeatChallengeCompleted;
   }
@@ -330,7 +330,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
 
   int? _secondShellShotTutorialSlotIndex() {
     if (!_hasCreatedFirstChildShell ||
-        _tutorialSecondShellShotTapLearned ||
+        _tutorialSecondShellTowerInspected ||
         (!activeLayerHasParentSlot && !isCompositeLayer)) {
       return null;
     }
@@ -346,7 +346,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
   LightcoreTutorialStep? _deriveSecondShellShotTutorialStep() =>
       _secondShellShotTutorialSlotIndex() == null
       ? null
-      : LightcoreTutorialStep.tapSecondShellTower;
+      : LightcoreTutorialStep.inspectSecondShellTower;
 
   bool _isTutorialStepComplete(LightcoreTutorialStep step) {
     final firstTower = _slots.isEmpty ? null : _slots[0];
@@ -358,9 +358,9 @@ extension LightcoreControllerLayerTraits on LightcoreController {
       LightcoreTutorialStep.buildFirstRedTower =>
         _isOpeningStarterTower(firstTower?.config) &&
             firstTower?.isFabricating == false,
-      LightcoreTutorialStep.tapFirstTower => _tutorialManualAimFireLearned,
-      LightcoreTutorialStep.tapSecondShellTower =>
-        _tutorialSecondShellShotTapLearned || _ammoQueue.isNotEmpty,
+      LightcoreTutorialStep.focusFirstEnemy => _tutorialFocusFireLearned,
+      LightcoreTutorialStep.inspectSecondShellTower =>
+        _tutorialSecondShellTowerInspected || _ammoQueue.isNotEmpty,
       LightcoreTutorialStep.upgradeFirstTowerToLevel3 =>
         firstTower != null && firstTower.level >= 2,
       LightcoreTutorialStep.raiseThreat => _firstThreatChallengeStarted,
@@ -442,8 +442,8 @@ extension LightcoreControllerLayerTraits on LightcoreController {
     if (!_isOpeningStarterTower(firstTower.config)) {
       return null;
     }
-    if (!_tutorialManualAimFireLearned) {
-      return LightcoreTutorialStep.tapFirstTower;
+    if (!_tutorialFocusFireLearned) {
+      return LightcoreTutorialStep.focusFirstEnemy;
     }
     final firstTowerUpgradeCost = upgradeCost(firstTower);
     if (firstTower.level < 2 &&
@@ -614,7 +614,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
       if (shotStep != null) {
         return shotStep;
       }
-      return _tutorialSecondShellShotTapLearned
+      return _tutorialSecondShellTowerInspected
           ? LightcoreTutorialStep.holdOverdrive
           : LightcoreTutorialStep.none;
     }
@@ -699,7 +699,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
       LightcoreTutorialStep.waitForFirstHex ||
       LightcoreTutorialStep.selectFirstHex ||
       LightcoreTutorialStep.buildFirstRedTower ||
-      LightcoreTutorialStep.tapFirstTower ||
+      LightcoreTutorialStep.focusFirstEnemy ||
       LightcoreTutorialStep.upgradeFirstTowerToLevel3 ||
       LightcoreTutorialStep.raiseThreat ||
       LightcoreTutorialStep.pushNextArea ||
@@ -722,8 +722,8 @@ extension LightcoreControllerLayerTraits on LightcoreController {
       LightcoreTutorialStep.waitForFirstHex => 12,
       LightcoreTutorialStep.selectFirstHex => 0,
       LightcoreTutorialStep.buildFirstRedTower => 18,
-      LightcoreTutorialStep.tapFirstTower => 48,
-      LightcoreTutorialStep.tapSecondShellTower => 42,
+      LightcoreTutorialStep.focusFirstEnemy => 48,
+      LightcoreTutorialStep.inspectSecondShellTower => 42,
       LightcoreTutorialStep.upgradeFirstTowerToLevel3 => 48,
       LightcoreTutorialStep.raiseThreat => 0,
       LightcoreTutorialStep.pushNextArea => 0,
@@ -763,7 +763,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
     };
     final scansGranted = switch (step) {
       LightcoreTutorialStep.unfoldShell => 1,
-      LightcoreTutorialStep.tapFirstTower => 1,
+      LightcoreTutorialStep.focusFirstEnemy => 1,
       LightcoreTutorialStep.pullFirstWhiteEnemy => 0,
       LightcoreTutorialStep.pullFirstRedEnemy => 1,
       LightcoreTutorialStep.openTowerMatrix => 1,
@@ -806,7 +806,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
       'Core online. The shell can now open lanes and start earning.',
     LightcoreTutorialStep.buildFirstRedTower =>
       'First tower online. Focus an anomaly, earn Lumens, then upgrade the lane.',
-    LightcoreTutorialStep.tapFirstTower =>
+    LightcoreTutorialStep.focusFirstEnemy =>
       'Focus fire learned. You have enough Lumens to upgrade the first tower.',
     LightcoreTutorialStep.upgradeFirstTowerToLevel3 =>
       'Anchor tower tuned. Start Challenge Lv 1 for denser waves and better rewards.',
@@ -946,8 +946,8 @@ extension LightcoreControllerLayerTraits on LightcoreController {
       LightcoreTutorialStep.waitForFirstHex ||
       LightcoreTutorialStep.selectFirstHex ||
       LightcoreTutorialStep.buildFirstRedTower ||
-      LightcoreTutorialStep.tapFirstTower ||
-      LightcoreTutorialStep.tapSecondShellTower ||
+      LightcoreTutorialStep.focusFirstEnemy ||
+      LightcoreTutorialStep.inspectSecondShellTower ||
       LightcoreTutorialStep.upgradeFirstTowerToLevel3 ||
       LightcoreTutorialStep.raiseThreat ||
       LightcoreTutorialStep.pushNextArea ||
@@ -1607,8 +1607,8 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         LightcoreTutorialStep.waitForFirstHex => 'Hex 1 Ready',
         LightcoreTutorialStep.selectFirstHex => 'Select Hex 1',
         LightcoreTutorialStep.buildFirstRedTower => 'Choose First Tower',
-        LightcoreTutorialStep.tapFirstTower => 'Focus Fire',
-        LightcoreTutorialStep.tapSecondShellTower => 'Inspect Child Tower',
+        LightcoreTutorialStep.focusFirstEnemy => 'Focus Fire',
+        LightcoreTutorialStep.inspectSecondShellTower => 'Inspect Child Tower',
         LightcoreTutorialStep.upgradeFirstTowerToLevel3 =>
           'Tune The Main Tower',
         LightcoreTutorialStep.raiseThreat => 'Start Challenge',
@@ -1656,9 +1656,9 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         LightcoreTutorialStep.selectFirstHex => 'Click Hex 1.',
         LightcoreTutorialStep.buildFirstRedTower =>
           'Click Hex 1 and choose Comet Mortar or Rayline Spire.',
-        LightcoreTutorialStep.tapFirstTower =>
+        LightcoreTutorialStep.focusFirstEnemy =>
           'Click a visible anomaly to focus fire. Tower clicks open tower controls.',
-        LightcoreTutorialStep.tapSecondShellTower =>
+        LightcoreTutorialStep.inspectSecondShellTower =>
           'Click the charged child-shell tower to inspect its controls.',
         LightcoreTutorialStep.upgradeFirstTowerToLevel3 =>
           'Click the first tower in Hex 1 and upgrade it once.',
@@ -1733,8 +1733,8 @@ extension LightcoreControllerLayerTraits on LightcoreController {
     LightcoreTutorialStep.waitForFirstHex ||
     LightcoreTutorialStep.selectFirstHex => 'Click Hex 1',
     LightcoreTutorialStep.buildFirstRedTower => 'Choose a tower',
-    LightcoreTutorialStep.tapFirstTower => 'Click an anomaly',
-    LightcoreTutorialStep.tapSecondShellTower => 'Inspect tower',
+    LightcoreTutorialStep.focusFirstEnemy => 'Click an anomaly',
+    LightcoreTutorialStep.inspectSecondShellTower => 'Inspect tower',
     LightcoreTutorialStep.upgradeFirstTowerToLevel3 ||
     LightcoreTutorialStep.upgradeFirstTowerToLevel4 ||
     LightcoreTutorialStep.upgradeFirstTowerToLevel5 => 'Upgrade Hex 1',
@@ -1782,9 +1782,9 @@ extension LightcoreControllerLayerTraits on LightcoreController {
           'Command opens the shell one lane at a time so flow stays stable while the relay network comes online.',
         LightcoreTutorialStep.buildFirstRedTower =>
           'Tower projectile families matter. Comet Mortar opens with area pressure, while Rayline Spire opens with steady single-target pressure.',
-        LightcoreTutorialStep.tapFirstTower =>
+        LightcoreTutorialStep.focusFirstEnemy =>
           'Enemy focus teaches target choice while firing stays automatic. Tower clicks remain tower controls.',
-        LightcoreTutorialStep.tapSecondShellTower =>
+        LightcoreTutorialStep.inspectSecondShellTower =>
           'Second-shell lanes use the same tower-click rule: tower bodies open tower controls while firing stays automatic.',
         LightcoreTutorialStep.upgradeFirstTowerToLevel3 =>
           'The first upgrade is the recovery beat: enemies pressure the lane, Output Efficiency slips, and a tower level brings flow back.',
@@ -1865,9 +1865,9 @@ extension LightcoreControllerLayerTraits on LightcoreController {
             'Hex 1 is the safest breach point, so command uses it as the anchor lane for the opening defense grid.',
           LightcoreTutorialStep.buildFirstRedTower =>
             'Lumo wants the first prism online before the shell fans wider, so the relay net has a stable firing spine.',
-          LightcoreTutorialStep.tapFirstTower =>
+          LightcoreTutorialStep.focusFirstEnemy =>
             'The shot is loaded. Click a visible anomaly to focus it; click towers only when you want tower controls.',
-          LightcoreTutorialStep.tapSecondShellTower =>
+          LightcoreTutorialStep.inspectSecondShellTower =>
             'The next shell is awake. Click the charged tower body before Lumo hands you speed controls.',
           LightcoreTutorialStep.upgradeFirstTowerToLevel3 =>
             'The first anomaly wave dents the lane. Command routes Lumens into Hex 1 so the shell can recover instead of expanding too early.',

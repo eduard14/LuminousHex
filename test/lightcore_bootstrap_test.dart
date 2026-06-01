@@ -478,8 +478,16 @@ void main() {
     final payload = controller.buildCloudSavePayload();
     final tutorial = payload['tutorial'] as Map<String, dynamic>;
     tutorial.remove('managerAutoAimShots');
+    tutorial.remove('focusFireLearned');
+    tutorial.remove('secondShellTowerInspected');
     tutorial['autoQueuedPulses'] = 5;
-    tutorial['rewardedSteps'] = <String>['autoQueueCheck'];
+    tutorial['manualAimFireLearned'] = true;
+    tutorial['secondShellShotTapLearned'] = true;
+    tutorial['rewardedSteps'] = <String>[
+      'autoQueueCheck',
+      'tapFirstTower',
+      'tapSecondShellTower',
+    ];
 
     final restored = LightcoreController.fromCloudSavePayload(payload);
     addTearDown(restored.dispose);
@@ -487,10 +495,22 @@ void main() {
     final restoredTutorial =
         restored.buildCloudSavePayload()['tutorial'] as Map<String, dynamic>;
     expect(restoredTutorial['managerAutoAimShots'], 5);
+    expect(restoredTutorial['focusFireLearned'], isTrue);
+    expect(restoredTutorial['secondShellTowerInspected'], isTrue);
     expect(restoredTutorial.containsKey('autoQueuedPulses'), isFalse);
+    expect(restoredTutorial.containsKey('manualAimFireLearned'), isFalse);
+    expect(restoredTutorial.containsKey('secondShellShotTapLearned'), isFalse);
     expect(
       restoredTutorial['rewardedSteps'],
       contains(LightcoreTutorialStep.managerAutoAim.name),
+    );
+    expect(
+      restoredTutorial['rewardedSteps'],
+      contains(LightcoreTutorialStep.focusFirstEnemy.name),
+    );
+    expect(
+      restoredTutorial['rewardedSteps'],
+      contains(LightcoreTutorialStep.inspectSecondShellTower.name),
     );
   });
 

@@ -1643,8 +1643,8 @@ extension LightcoreControllerProgressionLayers on LightcoreController {
     _tutorialFriendsOpened = true;
     _tutorialMenteesOpened = true;
     _tutorialMentorsOpened = true;
-    _tutorialManualAimFireLearned = true;
-    _tutorialSecondShellShotTapLearned = true;
+    _tutorialFocusFireLearned = true;
+    _tutorialSecondShellTowerInspected = true;
     _tutorialOverdriveLearned = true;
     _tutorialIntroBossPending = false;
     _tutorialSafeScanDefeats = 5;
@@ -1861,7 +1861,7 @@ extension LightcoreControllerProgressionLayers on LightcoreController {
     _tutorialEarlyQuestChainCompleted = true;
     _tutorialSafeScanDefeats = 5;
     _tutorialStabilityPanelOpened = false;
-    _tutorialManualAimFireLearned = true;
+    _tutorialFocusFireLearned = true;
     _tutorialManagerAutoAimShots = 0;
     _syncTutorialStep(showBanner: false);
     _notifyNow();

@@ -642,8 +642,8 @@ extension LightcoreControllerStateAccessors on LightcoreController {
       _tutorialStep == LightcoreTutorialStep.unfoldShell ||
       _tutorialStep == LightcoreTutorialStep.selectFirstHex ||
       _tutorialStep == LightcoreTutorialStep.buildFirstRedTower ||
-      _tutorialStep == LightcoreTutorialStep.tapFirstTower ||
-      _tutorialStep == LightcoreTutorialStep.tapSecondShellTower ||
+      _tutorialStep == LightcoreTutorialStep.focusFirstEnemy ||
+      _tutorialStep == LightcoreTutorialStep.inspectSecondShellTower ||
       _tutorialStep == LightcoreTutorialStep.upgradeFirstTowerToLevel3 ||
       _tutorialStep == LightcoreTutorialStep.upgradeFirstTowerToLevel4 ||
       _tutorialStep == LightcoreTutorialStep.upgradeFirstTowerToLevel5 ||
@@ -698,7 +698,7 @@ extension LightcoreControllerStateAccessors on LightcoreController {
       return true;
     }
     final shotTutorialSlotIndex = _secondShellShotTutorialSlotIndex();
-    return _tutorialStep == LightcoreTutorialStep.tapSecondShellTower &&
+    return _tutorialStep == LightcoreTutorialStep.inspectSecondShellTower &&
         shotTutorialSlotIndex == slotIndex;
   }
 
@@ -713,9 +713,8 @@ extension LightcoreControllerStateAccessors on LightcoreController {
       LightcoreTutorialStep.upgradeFirstTowerToLevel3 ||
       LightcoreTutorialStep.upgradeFirstTowerToLevel4 ||
       LightcoreTutorialStep.upgradeFirstTowerToLevel5 => 'UPGRADE',
-      LightcoreTutorialStep.tapSecondShellTower => _tutorialTowerShotGuideLabel(
-        slotIndex,
-      ),
+      LightcoreTutorialStep.inspectSecondShellTower =>
+        _tutorialTowerShotGuideLabel(slotIndex),
       _ => null,
     };
   }
@@ -810,7 +809,7 @@ extension LightcoreControllerStateAccessors on LightcoreController {
       _tutorialTrackedBossEnemyId != null;
 
   String? get tutorialHighlightedEnemyId {
-    if (_tutorialStep == LightcoreTutorialStep.tapFirstTower &&
+    if (_tutorialStep == LightcoreTutorialStep.focusFirstEnemy &&
         _enemies.isNotEmpty) {
       return _enemies.first.id;
     }

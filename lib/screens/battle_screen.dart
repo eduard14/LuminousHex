@@ -1065,8 +1065,8 @@ class _BattleScreenState extends State<BattleScreen> {
       return false;
     }
     return switch (controller.tutorialStep) {
-      LightcoreTutorialStep.tapFirstTower ||
-      LightcoreTutorialStep.tapSecondShellTower ||
+      LightcoreTutorialStep.focusFirstEnemy ||
+      LightcoreTutorialStep.inspectSecondShellTower ||
       LightcoreTutorialStep.pullFirstWhiteEnemy ||
       LightcoreTutorialStep.pullFirstRedEnemy ||
       LightcoreTutorialStep.setFirstEnemyTarget ||
@@ -1124,11 +1124,11 @@ class _BattleScreenState extends State<BattleScreen> {
         if (selectedSlotIndex == 1 && selected?.isBuilt == false) {
           return 'Hex 2 build controls are open. Choose Thread Beam or Shield Halo to add coverage after the pressure loop.';
         }
-      case LightcoreTutorialStep.tapFirstTower:
+      case LightcoreTutorialStep.focusFirstEnemy:
         if (_tutorialOpenPanelBlocksCurrentStep(controller)) {
           return 'Close the open tower controls, then click a visible anomaly to focus fire. Tower clicks reopen tower controls.';
         }
-      case LightcoreTutorialStep.tapSecondShellTower:
+      case LightcoreTutorialStep.inspectSecondShellTower:
         if (_tutorialOpenPanelBlocksCurrentStep(controller)) {
           return 'Close the open tower controls, then click the charged child-shell tower on the battlefield.';
         }

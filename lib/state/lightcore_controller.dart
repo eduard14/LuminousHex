@@ -64,8 +64,8 @@ enum LightcoreTutorialStep {
   waitForFirstHex,
   selectFirstHex,
   buildFirstRedTower,
-  tapFirstTower,
-  tapSecondShellTower,
+  focusFirstEnemy,
+  inspectSecondShellTower,
   upgradeFirstTowerToLevel3,
   raiseThreat,
   pushNextArea,
@@ -369,7 +369,7 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
         'Open the first hex controls, then choose one of the highlighted starter build buttons.',
     analyticsEvent: 'tutorial_fabricate_first_light',
   ),
-  LightcoreTutorialStep.tapFirstTower: LightcoreTutorialQuestDefinition(
+  LightcoreTutorialStep.focusFirstEnemy: LightcoreTutorialQuestDefinition(
     id: 'TUT-007',
     title: 'Focus Fire',
     teachGoal:
@@ -384,7 +384,8 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
         'Click the highlighted anomaly, not a tower. Towers open tower controls; enemies set focus fire.',
     analyticsEvent: 'tutorial_manual_aim_fire',
   ),
-  LightcoreTutorialStep.tapSecondShellTower: LightcoreTutorialQuestDefinition(
+  LightcoreTutorialStep
+      .inspectSecondShellTower: LightcoreTutorialQuestDefinition(
     id: 'TUT-008',
     title: 'Inspect Child Tower',
     teachGoal:
@@ -1752,11 +1753,11 @@ class LightcoreController extends ChangeNotifier {
   bool _tutorialFriendsOpened = false;
   bool _tutorialMenteesOpened = false;
   bool _tutorialMentorsOpened = false;
-  bool _tutorialManualAimFireLearned = false;
+  bool _tutorialFocusFireLearned = false;
   bool _tutorialOpeningPressureHitApplied = false;
   bool _tutorialChallengePressureHitApplied = false;
   bool _tutorialSecondChallengePressureHitApplied = false;
-  bool _tutorialSecondShellShotTapLearned = false;
+  bool _tutorialSecondShellTowerInspected = false;
   bool _tutorialOverdriveLearned = false;
   bool _tutorialIntroBossPending = false;
   int _tutorialSafeScanDefeats = 0;

@@ -326,8 +326,8 @@ extension LightcoreControllerSaveRestorePayload on LightcoreController {
     _tutorialFriendsOpened = _boolValue(tutorialData['friendsOpened']);
     _tutorialMenteesOpened = _boolValue(tutorialData['menteesOpened']);
     _tutorialMentorsOpened = _boolValue(tutorialData['mentorsOpened']);
-    _tutorialManualAimFireLearned = _boolValue(
-      tutorialData['manualAimFireLearned'],
+    _tutorialFocusFireLearned = _boolValue(
+      tutorialData['focusFireLearned'] ?? tutorialData['manualAimFireLearned'],
       fallback: _tutorialEarlyQuestChainCompleted,
     );
     _tutorialOpeningPressureHitApplied = _boolValue(
@@ -342,8 +342,9 @@ extension LightcoreControllerSaveRestorePayload on LightcoreController {
       tutorialData['secondChallengePressureHitApplied'],
       fallback: _tutorialEarlyQuestChainCompleted,
     );
-    _tutorialSecondShellShotTapLearned = _boolValue(
-      tutorialData['secondShellShotTapLearned'],
+    _tutorialSecondShellTowerInspected = _boolValue(
+      tutorialData['secondShellTowerInspected'] ??
+          tutorialData['secondShellShotTapLearned'],
     );
     _tutorialOverdriveLearned = _boolValue(tutorialData['overdriveLearned']);
     _tutorialIntroBossPending = _boolValue(tutorialData['introBossPending']);
@@ -550,7 +551,7 @@ extension LightcoreControllerSaveRestorePayload on LightcoreController {
       _tutorialManagerAutoAimShots = max(_tutorialManagerAutoAimShots, 5);
     }
     if (hasDurableEarlyProgress) {
-      _tutorialManualAimFireLearned = true;
+      _tutorialFocusFireLearned = true;
     }
   }
 
@@ -582,6 +583,12 @@ extension LightcoreControllerSaveRestorePayload on LightcoreController {
   LightcoreTutorialStep? _restoreTutorialStepName(String value) {
     if (value == 'autoQueueCheck') {
       return LightcoreTutorialStep.managerAutoAim;
+    }
+    if (value == 'tapFirstTower') {
+      return LightcoreTutorialStep.focusFirstEnemy;
+    }
+    if (value == 'tapSecondShellTower') {
+      return LightcoreTutorialStep.inspectSecondShellTower;
     }
     return _enumByName(LightcoreTutorialStep.values, value);
   }

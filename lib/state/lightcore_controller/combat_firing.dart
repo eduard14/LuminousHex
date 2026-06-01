@@ -310,7 +310,7 @@ extension LightcoreControllerCombatFiring on LightcoreController {
           cooldownMultiplier,
     );
     _spendCoreEnergy(3 + (ammo.payloadType == PayloadType.none ? 0 : 1));
-    _tutorialManualAimFireLearned = true;
+    _tutorialFocusFireLearned = true;
     _applyOpeningPressureLessonIfNeeded();
     _needsNotify = true;
     _notifyNow();
@@ -575,7 +575,7 @@ extension LightcoreControllerCombatFiring on LightcoreController {
       fireSequence: nextFireSequence,
     );
     if (firedFocusedQueuedShot) {
-      _tutorialManualAimFireLearned = true;
+      _tutorialFocusFireLearned = true;
       _applyOpeningPressureLessonIfNeeded();
     }
     return true;

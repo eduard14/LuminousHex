@@ -129,11 +129,11 @@ extension LightcoreControllerCombatLoop on LightcoreController {
         continue;
       }
       final completesSecondShellShotTutorial =
-          _tutorialStep == LightcoreTutorialStep.tapSecondShellTower &&
+          _tutorialStep == LightcoreTutorialStep.inspectSecondShellTower &&
           _secondShellShotTutorialSlotIndex() == index;
       _slots[index] = activatedTower;
       if (completesSecondShellShotTutorial) {
-        _tutorialSecondShellShotTapLearned = true;
+        _tutorialSecondShellTowerInspected = true;
       }
       _swarmActivated = true;
       _needsNotify = true;

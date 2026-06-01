@@ -10,8 +10,8 @@ typedef _Layer3TrialSpawn = ({
 
 extension LightcoreControllerCombatEnemies on LightcoreController {
   void _ensureTutorialFocusEnemy() {
-    if (_tutorialStep != LightcoreTutorialStep.tapFirstTower ||
-        _tutorialManualAimFireLearned ||
+    if (_tutorialStep != LightcoreTutorialStep.focusFirstEnemy ||
+        _tutorialFocusFireLearned ||
         activeLayerPassiveOnly ||
         _enemies.isNotEmpty ||
         _enemies.length >= enemyTargetCount) {

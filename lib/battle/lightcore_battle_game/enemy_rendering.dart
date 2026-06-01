@@ -429,7 +429,7 @@ extension _LightcoreBattleGameEnemyRendering on LightcoreBattleGame {
         radius: _enemyRadius(enemy) * 1.78,
         tint: LightcorePalette.warning,
         tapCueLabel:
-            controller.tutorialStep == LightcoreTutorialStep.tapFirstTower
+            controller.tutorialStep == LightcoreTutorialStep.focusFirstEnemy
             ? 'FOCUS'
             : null,
       );

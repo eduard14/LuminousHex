@@ -236,11 +236,11 @@ extension LightcoreControllerBattleTowerActions on LightcoreController {
       return false;
     }
     final completesSecondShellShotTutorial =
-        _tutorialStep == LightcoreTutorialStep.tapSecondShellTower &&
+        _tutorialStep == LightcoreTutorialStep.inspectSecondShellTower &&
         _secondShellShotTutorialSlotIndex() == slotIndex;
     _slots[slotIndex] = activatedTower;
     if (completesSecondShellShotTutorial) {
-      _tutorialSecondShellShotTapLearned = true;
+      _tutorialSecondShellTowerInspected = true;
     }
     _syncTutorialStep(showBanner: false);
     _notifyNow();
