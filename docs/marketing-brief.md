@@ -178,6 +178,9 @@ shell, and keep climbing.
 - Opening stabilization challenges keep a compact live battle HUD on screen that
   names the harder enemy wave, shows progress, and points the player back to
   upgrading Hex 1 after the wave clears.
+- The first two guided stabilization challenges are shortened into brisk
+  pressure spikes so the opening loop reaches Hex 2 quickly instead of asking
+  the player to wait through full-length region timers.
 - Shell visibility is an explicit HUD toggle, keeping battlefield taps from
   folding the active battlefield or opening tower placement.
 - Manager automation upgrades ready shots into hands-off target routing while

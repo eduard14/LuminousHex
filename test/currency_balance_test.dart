@@ -163,6 +163,11 @@ void main() {
     expect(controller.bannerMessage, isNot(contains('stabilization')));
     expect(controller.activeThreatRegionChallenge?.targetStabilizationLevel, 1);
     expect(
+      controller.activeThreatRegionChallengeTotalRemainingSeconds,
+      lessThanOrEqualTo(30),
+      reason: 'The first guided challenge should be a brisk action beat.',
+    );
+    expect(
       controller.enemyTargetCount,
       LightcoreController.initialEnemyTarget + 2,
     );
@@ -205,6 +210,11 @@ void main() {
     expect(controller.bannerMessage, contains('Challenge Lv 2 started'));
     expect(controller.bannerMessage, isNot(contains('stabilization')));
     expect(controller.activeThreatRegionChallenge?.targetStabilizationLevel, 2);
+    expect(
+      controller.activeThreatRegionChallengeTotalRemainingSeconds,
+      lessThanOrEqualTo(30),
+      reason: 'The repeat guided challenge should not become a waiting chore.',
+    );
     expect(
       controller.enemyTargetCount,
       LightcoreController.initialEnemyTarget + 4,
@@ -249,9 +259,9 @@ void main() {
     expect(controller.tutorialNeedsTowerPaletteGate, isFalse);
     expect(
       guidedElapsedSeconds,
-      lessThanOrEqualTo(300),
+      lessThanOrEqualTo(90),
       reason:
-          'The guided pressure-upgrade-repeat loop should reach Hex 2 inside the first five minutes.',
+          'The guided pressure-upgrade-repeat loop should reach Hex 2 well before the first five minutes turn into waiting.',
     );
   });
 

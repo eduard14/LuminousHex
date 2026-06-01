@@ -2,11 +2,10 @@ part of '../lightcore_controller.dart';
 
 extension LightcoreControllerThreatRegions on LightcoreController {
   static const double threatRegionChallengeSeconds = 90;
+  static const double _guidedOpeningChallengeSeconds = 24;
   static const int threatRegionChallengeWaveCount =
       LightcoreController.threatRegionChallengeWaveCount;
   static const double threatRegionMinimumStabilityPercent = 70;
-  static const double _threatRegionChallengeWaveSeconds =
-      threatRegionChallengeSeconds / threatRegionChallengeWaveCount;
 
   List<ThreatRegionState> _createThreatRegionStates() {
     final starterId = ThreatRegionLibrary.all.first.id;
@@ -101,10 +100,8 @@ extension LightcoreControllerThreatRegions on LightcoreController {
     if (challenge == null) {
       return 0;
     }
-    return (challenge.elapsedSeconds / threatRegionChallengeSeconds).clamp(
-      0.0,
-      1.0,
-    );
+    return (challenge.elapsedSeconds / _challengeDurationSeconds(challenge))
+        .clamp(0.0, 1.0);
   }
 
   double get activeThreatRegionChallengeRemainingSeconds {
@@ -114,7 +111,7 @@ extension LightcoreControllerThreatRegions on LightcoreController {
     }
     return max(
       0,
-      _threatRegionChallengeWaveSeconds - challenge.waveElapsedSeconds,
+      _challengeWaveSeconds(challenge) - challenge.waveElapsedSeconds,
     );
   }
 
@@ -123,7 +120,10 @@ extension LightcoreControllerThreatRegions on LightcoreController {
     if (challenge == null) {
       return 0;
     }
-    return max(0, threatRegionChallengeSeconds - challenge.elapsedSeconds);
+    return max(
+      0,
+      _challengeDurationSeconds(challenge) - challenge.elapsedSeconds,
+    );
   }
 
   double get activeThreatRegionChallengeWaveProgress {
@@ -131,7 +131,7 @@ extension LightcoreControllerThreatRegions on LightcoreController {
     if (challenge == null) {
       return 0;
     }
-    return (challenge.waveElapsedSeconds / _threatRegionChallengeWaveSeconds)
+    return (challenge.waveElapsedSeconds / _challengeWaveSeconds(challenge))
         .clamp(0.0, 1.0);
   }
 
@@ -142,7 +142,7 @@ extension LightcoreControllerThreatRegions on LightcoreController {
     }
     return max(
       0,
-      _threatRegionChallengeWaveSeconds - challenge.waveElapsedSeconds,
+      _challengeWaveSeconds(challenge) - challenge.waveElapsedSeconds,
     );
   }
 
@@ -750,6 +750,14 @@ extension LightcoreControllerThreatRegions on LightcoreController {
             challenge.targetStabilizationLevel == 2);
   }
 
+  double _challengeDurationSeconds(ThreatRegionChallengeState challenge) =>
+      _isGuidedOpeningChallenge(challenge)
+      ? _guidedOpeningChallengeSeconds
+      : threatRegionChallengeSeconds;
+
+  double _challengeWaveSeconds(ThreatRegionChallengeState challenge) =>
+      _challengeDurationSeconds(challenge) / threatRegionChallengeWaveCount;
+
   String? _openingChallengeStartBanner(ThreatRegionChallengeState challenge) {
     if (!_isGuidedOpeningChallenge(challenge)) {
       return null;
@@ -1018,15 +1026,17 @@ extension LightcoreControllerThreatRegions on LightcoreController {
     if (challenge == null) {
       return;
     }
+    final challengeSeconds = _challengeDurationSeconds(challenge);
+    final waveSeconds = _challengeWaveSeconds(challenge);
     final nextElapsed = min(
-      threatRegionChallengeSeconds,
+      challengeSeconds,
       challenge.elapsedSeconds + battleDt,
     );
-    if (nextElapsed >= threatRegionChallengeSeconds) {
+    if (nextElapsed >= challengeSeconds) {
       _threatRegionChallenge = challenge.copyWith(
-        elapsedSeconds: threatRegionChallengeSeconds,
+        elapsedSeconds: challengeSeconds,
         waveIndex: threatRegionChallengeWaveCount - 1,
-        waveElapsedSeconds: _threatRegionChallengeWaveSeconds,
+        waveElapsedSeconds: waveSeconds,
       );
       completeThreatRegionChallenge(
         endingStabilityPercent: _core.coreStability,
@@ -1035,10 +1045,9 @@ extension LightcoreControllerThreatRegions on LightcoreController {
     }
     final nextWaveIndex = min(
       threatRegionChallengeWaveCount - 1,
-      (nextElapsed / _threatRegionChallengeWaveSeconds).floor(),
+      (nextElapsed / waveSeconds).floor(),
     );
-    final nextWaveElapsed =
-        nextElapsed - (nextWaveIndex * _threatRegionChallengeWaveSeconds);
+    final nextWaveElapsed = nextElapsed - (nextWaveIndex * waveSeconds);
     _threatRegionChallenge = challenge.copyWith(
       elapsedSeconds: nextElapsed,
       waveIndex: nextWaveIndex,
