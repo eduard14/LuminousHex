@@ -703,7 +703,7 @@ class _DefaultAutoManagerPanel extends StatelessWidget {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  'No Core Manager is assigned. Shots auto-charge; tap anomalies to steer fire until manager auto-fire unlocks.',
+                  'No Core Manager is assigned. Shots auto-charge; click anomalies to steer fire until manager auto-fire unlocks.',
                   style: textTheme.bodySmall?.copyWith(
                     color: LightcorePalette.mist.withValues(alpha: 0.78),
                   ),
@@ -720,7 +720,7 @@ class _DefaultAutoManagerPanel extends StatelessWidget {
                     ),
                     _ResourceChip(
                       icon: Icons.touch_app_rounded,
-                      label: 'Focus tap override',
+                      label: 'Click focus override',
                       tint: LightcorePalette.solar,
                     ),
                     _ResourceChip(

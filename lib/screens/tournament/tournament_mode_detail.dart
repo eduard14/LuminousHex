@@ -1773,7 +1773,7 @@ class _TournamentModeDetailScreenState
         MeterBar(value: _blitzShield, color: tint),
         const SizedBox(height: 6),
         Text(
-          'Shell integrity ${(100 * _blitzShield).round()}% • focus taps only',
+          'Shell integrity ${(100 * _blitzShield).round()}% • focus clicks only',
           style: Theme.of(context).textTheme.bodySmall,
         ),
         const SizedBox(height: 12),

@@ -91,7 +91,7 @@ const List<_HelpSectionData> _baseHelpSections = <_HelpSectionData>[
     title: 'Shell Defense Basics',
     summary: 'How the core, relay prisms, and anomalies interact.',
     body:
-        'The center tower is the Lightcore. After the shell wakes, shots charge automatically and anomaly taps focus where the next shot should go. Core Managers later add auto-fire. The six surrounding towers are relay prisms. They build charge automatically, while tower taps stay reserved for controls, stats, upgrades, and targeting tools.\n\n'
+        'The center tower is the Lightcore. After the shell wakes, shots charge automatically and anomaly clicks focus where the next shot should go. Core Managers later add auto-fire. The six surrounding towers are relay prisms. They build charge automatically, while tower clicks stay reserved for controls, stats, upgrades, and targeting tools.\n\n'
         'Anomalies spiral inward from beyond the shell. They do not destroy the core directly. Instead they jam the edge hex they hit, slow relay output, and reduce how efficiently the shell harvests Lumens.',
   ),
   _HelpSectionData(
@@ -167,7 +167,7 @@ const List<_HelpSectionData> _baseHelpSections = <_HelpSectionData>[
     title: 'Targeting and Foundries',
     summary: 'How child towers bias shots and how managers modify behavior.',
     body:
-        'Targeting priorities such as Close, Strong, and Weak tell a relay what kind of anomaly it should prefer when that tower contributes charge. Direct anomaly taps can still override focus during active play.\n\n'
+        'Targeting priorities such as Close, Strong, and Weak tell a relay what kind of anomaly it should prefer when that tower contributes charge. Direct anomaly clicks can still override focus during active play.\n\n'
         'Core Managers assign to a shell and add auto-fire. Each one has an automation rate: if towers charge faster than the manager can fire, the shell loses efficiency while shots wait. Threat Directors attach to Threat Map regions and immediately tune spawn cadence, enemy strength, reward bonuses, EXP, and stability risk; stabilization validates that setup for offline output. Both manager families unlock after Layer 1 shell coverage.',
   ),
 ];

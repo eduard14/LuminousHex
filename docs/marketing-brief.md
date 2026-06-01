@@ -47,11 +47,11 @@ shell, and keep climbing.
 
 1. Enter a hex shell built around the central Lightcore.
 2. Reveal the first perimeter hex immediately and build the opening relay.
-3. Tap a highlighted starter anomaly to focus fire while the core and relay
+3. Click a highlighted starter anomaly to focus fire while the core and relay
    towers auto-charge shots.
 4. Upgrade the first tower from its controls as the next action, keeping stats
    optional instead of a required tutorial stop.
-5. Build the remaining perimeter relay towers while tower taps stay reserved for
+5. Build the remaining perimeter relay towers while tower clicks stay reserved for
    tower controls.
 6. Upgrade towers, core stats, and encounter capacity with earned resources.
 7. Roll Threat Scans into Knowledge Cards that make enemy families easier
@@ -97,6 +97,8 @@ shell, and keep climbing.
 - Tower badges use projectile color and hex-edge level progress only; payload
   tinting is kept out of the first-session visual language until payload traits
   are explicitly taught later.
+- Battle canvas input prioritizes visible anomaly focus before tower control hit
+  tests, so aiming at enemies does not compete with opening tower panels.
 - Red tower badges use a comet-shaped projectile glyph, not a circular marker
   that can read as a numeric level.
 - First-session battle HUD panels hide empty payload rows and payload sub-pips,
@@ -130,9 +132,9 @@ shell, and keep climbing.
 - The first Hex 2 starter choice is also funded and brought online instantly,
   letting the opening loop move from the second stabilization payoff into a second tower
   decision without a 45-second fabrication wait.
-- Tower body taps are reserved for tower controls, upgrades, stats, and
+- Tower body clicks are reserved for tower controls, upgrades, stats, and
   targeting tools, keeping build/stat actions distinct from anomaly aiming.
-- Enemy focus taps automatically close open battle control panels so aiming
+- Enemy focus clicks automatically close open battle control panels so aiming
   returns the player to combat instead of leaving controls competing on screen.
 - Ready shots do not orbit as collectible-looking field objects; only brief
   handoff effects appear when a relay charges the core.
@@ -287,7 +289,7 @@ video hooks.
 
 | Pillar | Post Ideas |
 | --- | --- |
-| Gameplay hook | Short clips of tower charge feeding the Lightcore, tower controls opening cleanly, and anomaly taps focusing fire. |
+| Gameplay hook | Short clips of tower charge feeding the Lightcore, tower controls opening cleanly, and anomaly clicks focusing fire. |
 | Progression | Before/after shell promotion, Root to Prism, Prism to Nexus, inheritance previews. |
 | Buildcraft | Color-family comparisons, pure builds versus blended projectile/payload builds. |
 | Anomaly pressure | Knowledge Card pulls, Apex Anomaly reveals, Focus Target saves, lane disruption moments. |

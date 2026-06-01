@@ -1124,7 +1124,7 @@ class _BattleScreenState extends State<BattleScreen> {
         }
       case LightcoreTutorialStep.tapFirstTower:
         if (_tutorialOpenPanelBlocksCurrentStep(controller)) {
-          return 'Close the open tower controls, then tap a visible anomaly to focus fire. Tower taps reopen tower controls.';
+          return 'Close the open tower controls, then click a visible anomaly to focus fire. Tower clicks reopen tower controls.';
         }
       case LightcoreTutorialStep.tapSecondShellTower:
         if (_tutorialOpenPanelBlocksCurrentStep(controller)) {

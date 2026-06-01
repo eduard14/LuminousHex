@@ -377,18 +377,18 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
     trigger: 'First tower exists',
     primaryClickTarget: 'Battlefield > anomaly target',
     coachCopy:
-        'Tap the highlighted anomaly to focus fire. If the core is still charging, the shot fires as soon as it is ready.',
+        'Click the highlighted anomaly to focus fire. If the core is still charging, the shot fires as soon as it is ready.',
     completionCondition: 'Focus and fire one shot at an anomaly',
     reward: 'Upgrade Lumens and White Drift practice scan',
     failureHelpState:
-        'Tap the highlighted anomaly, not a tower. Towers open tower controls; enemies set focus fire.',
+        'Click the highlighted anomaly, not a tower. Towers open tower controls; enemies set focus fire.',
     analyticsEvent: 'tutorial_manual_aim_fire',
   ),
   LightcoreTutorialStep.tapSecondShellTower: LightcoreTutorialQuestDefinition(
     id: 'TUT-008',
     title: 'Fire Child Tower',
     teachGoal:
-        'Child-shell towers keep the same tap-to-control rule: tower taps are for tower controls while firing stays automatic.',
+        'Child-shell towers keep the same click-to-control rule: tower clicks are for tower controls while firing stays automatic.',
     trigger: 'First child shell has a charged tower',
     primaryClickTarget: 'Battlefield > charged child-shell tower',
     coachCopy:
@@ -481,7 +481,7 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
     trigger: 'Manager assigned',
     primaryClickTarget: 'Battlefield > manager firing lane',
     coachCopy:
-        'Watch the assigned manager fire ready shots automatically. You can still tap enemies to override focus.',
+        'Watch the assigned manager fire ready shots automatically. You can still click enemies to override focus.',
     completionCondition: 'Let the manager fire 5 ready shots',
     reward: 'Lumens and Threat Scan x1',
     failureHelpState:

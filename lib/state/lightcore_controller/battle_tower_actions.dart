@@ -148,7 +148,7 @@ extension LightcoreControllerBattleTowerActions on LightcoreController {
     selectedSlotIndex = null;
     _towerRangePreviewSlotIndex = null;
     _showBanner(
-      'Lightcore selected. Shots auto-charge; tap anomalies to focus fire.',
+      'Lightcore selected. Shots auto-charge; click anomalies to focus fire.',
       category: LightcoreNotificationCategory.battle,
     );
     _syncTutorialStep(showBanner: false);

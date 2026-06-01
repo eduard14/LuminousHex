@@ -316,11 +316,6 @@ class LightcoreBattleGame extends FlameGame with ScaleDetector {
       }
       return;
     }
-    final tappedIndex = _hitTestSlotBody(pointer);
-    if (tappedIndex != null) {
-      onSlotTap(tappedIndex);
-      return;
-    }
     final tappedEnemyId = _hitTestEnemy(pointer);
     if (tappedEnemyId != null &&
         controller.fireQueuedCorePacketAtEnemy(tappedEnemyId)) {
@@ -331,6 +326,11 @@ class LightcoreBattleGame extends FlameGame with ScaleDetector {
     if (tappedEnemyId != null &&
         controller.selectBattleEnemyForManualAim(tappedEnemyId)) {
       onEnemyTargeted?.call();
+      return;
+    }
+    final tappedIndex = _hitTestSlotBody(pointer);
+    if (tappedIndex != null) {
+      onSlotTap(tappedIndex);
       return;
     }
     final tappedSlotIndex = _hitTestSlot(pointer);

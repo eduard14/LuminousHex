@@ -1657,7 +1657,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         LightcoreTutorialStep.buildFirstRedTower =>
           'Click Hex 1 and choose Comet Mortar or Rayline Spire.',
         LightcoreTutorialStep.tapFirstTower =>
-          'Tap a visible anomaly to focus fire. Tower taps open tower controls.',
+          'Click a visible anomaly to focus fire. Tower clicks open tower controls.',
         LightcoreTutorialStep.tapSecondShellTower =>
           'Tap the charged child-shell tower to inspect its controls.',
         LightcoreTutorialStep.upgradeFirstTowerToLevel3 =>
@@ -1740,9 +1740,9 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         LightcoreTutorialStep.buildFirstRedTower =>
           'Tower projectile families matter. Comet Mortar opens with area pressure, while Rayline Spire opens with steady single-target pressure.',
         LightcoreTutorialStep.tapFirstTower =>
-          'Enemy focus teaches target choice before managers unlock auto-fire. Tower clicks remain tower controls.',
+          'Enemy focus teaches target choice while firing stays automatic. Tower clicks remain tower controls.',
         LightcoreTutorialStep.tapSecondShellTower =>
-          'Second-shell lanes use the same tower-tap rule: tower bodies open tower controls while firing stays automatic.',
+          'Second-shell lanes use the same tower-click rule: tower bodies open tower controls while firing stays automatic.',
         LightcoreTutorialStep.upgradeFirstTowerToLevel3 =>
           'The first upgrade is the recovery beat: enemies pressure the lane, Output Efficiency slips, and a tower level brings flow back.',
         LightcoreTutorialStep.raiseThreat =>
@@ -1823,7 +1823,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
           LightcoreTutorialStep.buildFirstRedTower =>
             'Lumo wants the first prism online before the shell fans wider, so the relay net has a stable firing spine.',
           LightcoreTutorialStep.tapFirstTower =>
-            'The shot is loaded. Aim at a visible anomaly; tap towers only when you want tower controls.',
+            'The shot is loaded. Click a visible anomaly to focus it; click towers only when you want tower controls.',
           LightcoreTutorialStep.tapSecondShellTower =>
             'The next shell is awake. Tap the charged tower body before Lumo hands you speed controls.',
           LightcoreTutorialStep.upgradeFirstTowerToLevel3 =>

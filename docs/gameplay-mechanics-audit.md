@@ -55,7 +55,7 @@ cadence, enemy strength, and reward bonuses.
 ### Battle topology
 
 - The center core is the only direct attacker. Early play auto-generates
-  `AmmoPacket` entries after the Lightcore wakes, then anomaly taps aim/focus
+  `AmmoPacket` entries after the Lightcore wakes, then anomaly clicks aim/focus
   fire without making the player tap the core to queue shots.
 - The active tutorial stays as a compact, tap-to-expand quest notification on
   the battlefield. The collapsed notification names the next action while the
