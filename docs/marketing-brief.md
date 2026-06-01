@@ -83,6 +83,9 @@ shell, and keep climbing.
   the overwhelm-and-upgrade beat before Hex 2 opens.
 - The scripted guided loop is regression-tested against a five-minute simulated
   budget so pacing changes cannot quietly push Hex 2 beyond the opening window.
+- Guided Challenge Lv 1 and Lv 2 feedback uses battle-loop language ("harder
+  enemies dented Hex 1, upgrade to stabilize") instead of region/farm jargon
+  while the player is still learning the opening loop.
 - The post-upgrade threat prompt explains the payoff and highlights the
   Challenge button directly, including harder-enemy framing and the Lumen
   reward preview, so the next step reads as an earned push instead of a menu

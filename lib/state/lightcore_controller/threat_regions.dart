@@ -592,7 +592,14 @@ extension LightcoreControllerThreatRegions on LightcoreController {
         _tutorialStep == LightcoreTutorialStep.pushNextArea) {
       _syncTutorialStep(showBanner: false);
     }
-    _showBanner('${config.name} stabilization challenge started.');
+    final openingStartBanner = _openingChallengeStartBanner(
+      _threatRegionChallenge!,
+    );
+    if (openingStartBanner == null) {
+      _showBanner('${config.name} stabilization challenge started.');
+    } else {
+      _showOpeningChallengeBanner(openingStartBanner);
+    }
     _notifyNow();
     return true;
   }
@@ -671,12 +678,20 @@ extension LightcoreControllerThreatRegions on LightcoreController {
       if (openingProgressReward.killsGranted > 0)
         '+${openingProgressReward.killsGranted} Kills',
     ];
-    final revealText = revealedNext == null
-        ? ''
-        : ' Next route region: ${revealedNext.name}.';
-    _showBanner(
-      '${config.name} stabilized Lv ${nextState.stabilizedLevel}/${config.stabilizationLayers}. Live farm unlocked.$revealText Reward: ${rewardParts.join(', ')}.',
+    final openingBanner = _openingChallengeCompletionBanner(
+      challenge: challenge,
+      rewardParts: rewardParts,
     );
+    if (openingBanner == null) {
+      final revealText = revealedNext == null
+          ? ''
+          : ' Next route region: ${revealedNext.name}.';
+      _showBanner(
+        '${config.name} stabilized Lv ${nextState.stabilizedLevel}/${config.stabilizationLayers}. Live farm unlocked.$revealText Reward: ${rewardParts.join(', ')}.',
+      );
+    } else {
+      _showOpeningChallengeBanner(openingBanner);
+    }
     _notifyNow();
     return true;
   }
@@ -728,6 +743,55 @@ extension LightcoreControllerThreatRegions on LightcoreController {
       _challengeEnemyLevelForTarget(challenge.targetStabilizationLevel);
 
   int _challengeEnemyLevelForTarget(int targetLevel) => max(1, targetLevel + 1);
+
+  bool _isGuidedOpeningChallenge(ThreatRegionChallengeState challenge) {
+    return challenge.regionId == ThreatRegionLibrary.all.first.id &&
+        (challenge.targetStabilizationLevel == 1 ||
+            challenge.targetStabilizationLevel == 2);
+  }
+
+  String? _openingChallengeStartBanner(ThreatRegionChallengeState challenge) {
+    if (!_isGuidedOpeningChallenge(challenge)) {
+      return null;
+    }
+    return switch (challenge.targetStabilizationLevel) {
+      1 => 'Threat raised. Harder enemies are testing that upgraded tower.',
+      2 => 'Challenge Lv 2 started. Harder enemies are pushing Hex 1 again.',
+      _ => null,
+    };
+  }
+
+  void _showOpeningChallengeBanner(String message) {
+    if (_suppressRuntimeBanners) {
+      return;
+    }
+    final normalizedMessage = message.trim();
+    if (normalizedMessage.isEmpty) {
+      return;
+    }
+    bannerMessage = normalizedMessage;
+    _bannerTimer = 3.4;
+    _needsNotify = true;
+  }
+
+  String? _openingChallengeCompletionBanner({
+    required ThreatRegionChallengeState challenge,
+    required List<String> rewardParts,
+  }) {
+    if (!_isGuidedOpeningChallenge(challenge)) {
+      return null;
+    }
+    final rewardText = rewardParts.isEmpty
+        ? ''
+        : ' Reward: ${rewardParts.join(', ')}.';
+    return switch (challenge.targetStabilizationLevel) {
+      1 =>
+        'Challenge Lv 1 cleared. Harder enemies dented Hex 1; upgrade the tower to stabilize.$rewardText',
+      2 =>
+        'Challenge Lv 2 cleared. Hex 1 is strained again; upgrade once more to open Hex 2.$rewardText',
+      _ => null,
+    };
+  }
 
   int _openingChallengeUpgradeTopUp({
     required ThreatRegionChallengeState challenge,
