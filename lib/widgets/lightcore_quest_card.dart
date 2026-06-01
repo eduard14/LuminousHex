@@ -131,10 +131,7 @@ class _LightcoreQuestCardState extends State<LightcoreQuestCard> {
     if (headline == null || instruction == null) {
       return const SizedBox.shrink();
     }
-    final compactInstruction =
-        widget.instructionOverride ??
-        controller.tutorialCompactPrompt ??
-        instruction;
+    final compactInstruction = controller.tutorialCompactPrompt ?? instruction;
 
     final step = controller.tutorialStep;
     final tint = LightcorePalette.quest;

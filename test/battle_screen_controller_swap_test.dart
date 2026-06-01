@@ -6,6 +6,7 @@ import 'package:lightcore/battle/lightcore_battle_game.dart';
 import 'package:lightcore/screens/battle_screen.dart';
 import 'package:lightcore/state/lightcore_controller.dart';
 import 'package:lightcore/theme/lightcore_theme.dart';
+import 'package:lightcore/widgets/lightcore_quest_card.dart';
 
 void main() {
   testWidgets('battle canvas replaces its game when controller changes', (
@@ -61,6 +62,40 @@ void main() {
 
     expect(find.text('Click Hex 1'), findsOneWidget);
     expect(find.text('View guide'), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('collapsed guide stays short when detail override is long', (
+    tester,
+  ) async {
+    addTearDown(() async {
+      await tester.binding.setSurfaceSize(null);
+    });
+    await tester.binding.setSurfaceSize(const Size(430, 780));
+    final controller = LightcoreController();
+    addTearDown(controller.dispose);
+
+    controller.selectCenter();
+    const longOverride =
+        'Hex 1 build controls are open. Choose Comet Mortar or Rayline Spire to bring the first tower online.';
+
+    await tester.pumpWidget(
+      MaterialApp(
+        debugShowCheckedModeBanner: false,
+        theme: buildLightcoreTheme(),
+        home: Scaffold(
+          body: LightcoreQuestCard(
+            controller: controller,
+            compact: true,
+            instructionOverride: longOverride,
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(find.text('Click Hex 1'), findsOneWidget);
+    expect(find.text(longOverride), findsNothing);
     expect(tester.takeException(), isNull);
   });
 }
