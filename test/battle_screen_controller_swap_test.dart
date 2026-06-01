@@ -133,6 +133,26 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('opening core panel hides ready-shot capacity controls', (
+    tester,
+  ) async {
+    addTearDown(() async {
+      await tester.binding.setSurfaceSize(null);
+    });
+    await tester.binding.setSurfaceSize(const Size(430, 780));
+    final controller = LightcoreController();
+    addTearDown(controller.dispose);
+
+    controller.selectCenter();
+    await _pumpBattleScreen(tester, controller);
+    await tester.pump();
+
+    expect(controller.tutorialUsesBattleOnlyNavigation, isTrue);
+    expect(find.textContaining('Ready Shots'), findsNothing);
+    expect(find.text('Ready'), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('challenge prompt does not reserve hidden overdrive space', (
     tester,
   ) async {

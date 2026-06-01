@@ -1473,11 +1473,19 @@ class _CoreStatsPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
+    final showReadyShotControls = !controller.tutorialUsesBattleOnlyNavigation;
     final coreHasPayload =
         controller.coreState.payloadType != PayloadType.none ||
         controller.corePayloadArsenal.any(
           (payload) => payload != PayloadType.none,
         );
+    final coreUpgradeParts = <String>[
+      'Range $rangePreview',
+      'Fire Speed $fireSpeedPreview',
+      if (showReadyShotControls) 'Ready Shots $readyShotPreview',
+      'Multi-Shot $multiShotPreview',
+      'Cooldown ${controller.coreCooldownLabel}',
+    ];
     final coreTraitLabel = coreHasPayload
         ? 'Core ${controller.coreAffinitySignatureLabel}  •  ${controller.coreProjectileArsenalLabel}  •  ${controller.corePayloadArsenalLabel}  •  ${controller.bossSpawnStatusLabel}'
         : 'Core ${controller.coreAffinitySignatureLabel}  •  ${controller.coreProjectileArsenalLabel}  •  ${controller.bossSpawnStatusLabel}';
@@ -1502,7 +1510,11 @@ class _CoreStatsPanel extends StatelessWidget {
           label: 'Stability',
           value: controller.coreStabilityLabel,
         ),
-        _InlineStatEntry(label: 'Ready', value: controller.coreQueueLoadLabel),
+        if (showReadyShotControls)
+          _InlineStatEntry(
+            label: 'Ready',
+            value: controller.coreQueueLoadLabel,
+          ),
         _InlineStatEntry(
           label: 'Ring',
           value:
@@ -1598,7 +1610,7 @@ class _CoreStatsPanel extends StatelessWidget {
         ],
         const SizedBox(height: 10),
         Text(
-          'Core upgrades: Range $rangePreview  •  Fire Speed $fireSpeedPreview  •  Ready Shots $readyShotPreview  •  Multi-Shot $multiShotPreview  •  Cooldown ${controller.coreCooldownLabel}',
+          'Core upgrades: ${coreUpgradeParts.join('  •  ')}',
           style: textTheme.bodyMedium?.copyWith(
             color: LightcorePalette.solar,
             fontWeight: FontWeight.w600,
@@ -1659,19 +1671,20 @@ class _CoreStatsPanel extends StatelessWidget {
                     : 'Fire Speed Maxed',
               ),
             ),
-            FilledButton.icon(
-              onPressed:
-                  controller.canUpgradeCoreQueueLimit &&
-                      controller.lumens >= controller.coreQueueUpgradeCost
-                  ? controller.upgradeCoreQueueLimit
-                  : null,
-              icon: const Icon(Icons.all_inbox_rounded),
-              label: Text(
-                controller.canUpgradeCoreQueueLimit
-                    ? 'Ready Shots • ${controller.coreQueueUpgradeCost}L'
-                    : 'Ready Shots Maxed',
+            if (showReadyShotControls)
+              FilledButton.icon(
+                onPressed:
+                    controller.canUpgradeCoreQueueLimit &&
+                        controller.lumens >= controller.coreQueueUpgradeCost
+                    ? controller.upgradeCoreQueueLimit
+                    : null,
+                icon: const Icon(Icons.all_inbox_rounded),
+                label: Text(
+                  controller.canUpgradeCoreQueueLimit
+                      ? 'Ready Shots • ${controller.coreQueueUpgradeCost}L'
+                      : 'Ready Shots Maxed',
+                ),
               ),
-            ),
             FilledButton.icon(
               onPressed:
                   controller.canUpgradeCoreMultiShot &&
