@@ -64,7 +64,7 @@ cadence, enemy strength, and reward bonuses.
   manager automation, but waiting packets do not orbit as field objects. Only
   brief tower-to-core handoff effects are shown so players do not chase
   non-interactive packet visuals.
-- Tapping an anomaly focuses fire immediately. If the queue is still charging,
+- Clicking an anomaly focuses fire immediately. If the queue is still charging,
   the focused target receives the next available queued packet before manager
   auto-fire is unlocked.
 - The Focus Fire tutorial guarantees a visible starter anomaly when the lesson

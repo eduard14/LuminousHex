@@ -444,7 +444,7 @@ class _QuestDetailText extends StatelessWidget {
 }
 
 IconData _questPromptIcon(LightcoreTutorialStep step) => switch (step) {
-  LightcoreTutorialStep.unfoldShell => Icons.touch_app_rounded,
+  LightcoreTutorialStep.unfoldShell => Icons.mouse_rounded,
   LightcoreTutorialStep.waitForFirstHex => Icons.hexagon_rounded,
   LightcoreTutorialStep.raiseThreat => Icons.flag_rounded,
   LightcoreTutorialStep.pushNextArea => Icons.flag_rounded,
@@ -452,5 +452,5 @@ IconData _questPromptIcon(LightcoreTutorialStep step) => switch (step) {
   LightcoreTutorialStep.readEffectiveGain => Icons.blur_circular_rounded,
   LightcoreTutorialStep.managerAutoAim => Icons.all_inclusive_rounded,
   LightcoreTutorialStep.holdOverdrive => Icons.pan_tool_alt_rounded,
-  _ => Icons.touch_app_rounded,
+  _ => Icons.mouse_rounded,
 };

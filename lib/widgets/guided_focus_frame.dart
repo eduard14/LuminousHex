@@ -311,7 +311,7 @@ class _TutorialTapCue extends StatelessWidget {
                         child: Transform.rotate(
                           angle: -0.28,
                           child: const Icon(
-                            Icons.touch_app_rounded,
+                            Icons.mouse_rounded,
                             color: LightcorePalette.night,
                             size: 22,
                           ),

@@ -1197,7 +1197,7 @@ class _BattleScreenState extends State<BattleScreen> {
           Positioned(right: inset, top: topInset, child: shellVisibilityHud),
         if (widget.showBattleHud && selectionHud != null)
           Positioned(left: inset, bottom: bottomInset, child: selectionHud),
-        if (widget.showBattleHud)
+        if (widget.showBattleHud && controller.showManualOverdriveHud)
           Positioned(
             right: inset,
             bottom: bottomInset,

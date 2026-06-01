@@ -49,6 +49,16 @@ extension LightcoreControllerStatusBattlePass on LightcoreController {
 
   bool get canUseManualOverdrive => _swarmActivated && !_hasPermanentOverdrive;
 
+  bool get showManualOverdriveHud {
+    if (!_tutorialPromptsEnabled ||
+        _earlyTutorialComplete ||
+        _tutorialOverdriveLearned ||
+        _hasPermanentOverdrive) {
+      return true;
+    }
+    return _tutorialStep == LightcoreTutorialStep.holdOverdrive;
+  }
+
   bool get isManualOverdriveHeld =>
       _manualOverdriveHeld && canUseManualOverdrive;
 
@@ -79,7 +89,7 @@ extension LightcoreControllerStatusBattlePass on LightcoreController {
     if (manualOverdriveCharge > 0.02) {
       return 'Stored momentum is still accelerating the live battle.';
     }
-    return 'Tap for a burst or hold to build up to x1.5 speed.';
+    return 'Click for a burst or hold to build up to x1.5 speed.';
   }
 
   int get tournamentPowerIndex => evenEntryTournamentPowerIndex;

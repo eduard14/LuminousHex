@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:lightcore/battle/lightcore_battle_game.dart';
+import 'package:lightcore/data/tower_configs.dart';
 import 'package:lightcore/screens/battle_screen.dart';
 import 'package:lightcore/state/lightcore_controller.dart';
 import 'package:lightcore/theme/lightcore_theme.dart';
@@ -96,6 +97,38 @@ void main() {
 
     expect(find.text('Click Hex 1'), findsOneWidget);
     expect(find.text(longOverride), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('opening battle hides overdrive until it is taught', (
+    tester,
+  ) async {
+    addTearDown(() async {
+      await tester.binding.setSurfaceSize(null);
+    });
+    await tester.binding.setSurfaceSize(const Size(430, 780));
+    final controller = LightcoreController();
+    addTearDown(controller.dispose);
+
+    controller.selectCenter();
+    expect(controller.buildTowerAt(0, TowerLibrary.redPrism), isTrue);
+    expect(controller.canUseManualOverdrive, isTrue);
+    expect(controller.showManualOverdriveHud, isFalse);
+
+    await _pumpBattleScreen(tester, controller);
+
+    expect(
+      find.byKey(const ValueKey<String>('manual-overdrive-hud')),
+      findsNothing,
+    );
+
+    controller.debugDisableTutorial();
+    await tester.pump();
+
+    expect(
+      find.byKey(const ValueKey<String>('manual-overdrive-hud')),
+      findsOneWidget,
+    );
     expect(tester.takeException(), isNull);
   });
 }

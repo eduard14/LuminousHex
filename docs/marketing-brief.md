@@ -119,8 +119,8 @@ shell, and keep climbing.
   detailed instruction lives in the optional guide sheet.
 - Opening battle tutorial steps no longer raise transient prompt banners; the
   battlefield highlight, click cue, and compact guide own that instruction lane.
-- The starter Challenge prompt lives above the overdrive HUD, keeping the main
-  combat action clear instead of making bottom-corner controls compete.
+- Manual Overdrive stays out of the battle HUD during the guided opening loop,
+  keeping aim, tower controls, upgrades, and challenge prompts from competing.
 - Clearing starter Challenge Lv 1 pays enough Lumens for the next anchor-tower
   upgrade, so the first combat loop chains directly into a stronger lane
   instead of asking for a grind pause.
