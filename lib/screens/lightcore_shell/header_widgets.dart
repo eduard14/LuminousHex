@@ -9,6 +9,7 @@ class _ShellProfileHeaderHud extends StatelessWidget {
     required this.highlighted,
     required this.pulseSignal,
     required this.showNotificationBadge,
+    required this.openingMode,
     required this.onProfilePressed,
   });
 
@@ -18,12 +19,21 @@ class _ShellProfileHeaderHud extends StatelessWidget {
   final bool highlighted;
   final int pulseSignal;
   final bool showNotificationBadge;
+  final bool openingMode;
   final VoidCallback onProfilePressed;
 
   @override
   Widget build(BuildContext context) {
-    final avatarSize = compact ? 40.0 : 50.0;
-    final width = compact ? 128.0 : 218.0;
+    final avatarSize = openingMode
+        ? (compact ? 34.0 : 42.0)
+        : compact
+        ? 40.0
+        : 50.0;
+    final width = openingMode
+        ? (compact ? 112.0 : 156.0)
+        : compact
+        ? 128.0
+        : 218.0;
     final outputEfficiency = controller.outputEfficiencyLabel;
     final guideLoadout = LightcoreController.equipmentReleaseEnabled
         ? CosmicEquipmentLoadout.fromItems(<PlayerEquipmentItem?>[
@@ -32,17 +42,21 @@ class _ShellProfileHeaderHud extends StatelessWidget {
           ])
         : CosmicEquipmentLoadout.empty;
 
-    Widget profileButton = GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: onProfilePressed,
-      child: LightcoreGuideBadge(
-        guide: controller.guideProfile,
-        size: avatarSize,
-        equipmentLoadout: guideLoadout,
-      ),
+    final guideBadge = LightcoreGuideBadge(
+      guide: controller.guideProfile,
+      size: avatarSize,
+      equipmentLoadout: guideLoadout,
     );
 
-    if (showNotificationBadge) {
+    Widget profileButton = openingMode
+        ? guideBadge
+        : GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: onProfilePressed,
+            child: guideBadge,
+          );
+
+    if (!openingMode && showNotificationBadge) {
       profileButton = Badge(
         backgroundColor: LightcorePalette.warning,
         label: const Icon(
@@ -55,8 +69,12 @@ class _ShellProfileHeaderHud extends StatelessWidget {
     }
 
     profileButton = Tooltip(
-      message: tooltip,
-      child: Semantics(button: true, label: tooltip, child: profileButton),
+      message: openingMode ? 'Opening guide' : tooltip,
+      child: Semantics(
+        button: !openingMode,
+        label: openingMode ? 'Opening guide' : tooltip,
+        child: profileButton,
+      ),
     );
 
     return GuidedFocusFrame(
@@ -76,7 +94,7 @@ class _ShellProfileHeaderHud extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  if (!compact) ...[
+                  if (!compact && !openingMode) ...[
                     Text(
                       controller.playerDisplayName,
                       maxLines: 1,
@@ -90,20 +108,22 @@ class _ShellProfileHeaderHud extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                   ],
-                  _ShellHeaderStatRow(
-                    tooltip: controller.globalTowerStrengthRankingTooltip,
-                    icon: Icons.leaderboard_rounded,
-                    value: controller.globalTowerStrengthRankLabel,
-                    tint: LightcorePalette.quest,
-                    compact: compact,
-                  ),
-                  _ShellHeaderStatRow(
-                    tooltip: 'TS: ${controller.towerStrengthLabel}',
-                    icon: Icons.emoji_events_rounded,
-                    value: controller.towerStrengthCompactLabel,
-                    tint: LightcorePalette.layer2,
-                    compact: compact,
-                  ),
+                  if (!openingMode) ...[
+                    _ShellHeaderStatRow(
+                      tooltip: controller.globalTowerStrengthRankingTooltip,
+                      icon: Icons.leaderboard_rounded,
+                      value: controller.globalTowerStrengthRankLabel,
+                      tint: LightcorePalette.quest,
+                      compact: compact,
+                    ),
+                    _ShellHeaderStatRow(
+                      tooltip: 'TS: ${controller.towerStrengthLabel}',
+                      icon: Icons.emoji_events_rounded,
+                      value: controller.towerStrengthCompactLabel,
+                      tint: LightcorePalette.layer2,
+                      compact: compact,
+                    ),
+                  ],
                   _ShellHeaderStatRow(
                     tooltip: 'Lumen: ${controller.lumens}',
                     icon: Icons.monetization_on_rounded,
@@ -112,13 +132,14 @@ class _ShellProfileHeaderHud extends StatelessWidget {
                     compact: compact,
                     glowSignal: controller.lumens,
                   ),
-                  _ShellHeaderStatRow(
-                    tooltip: 'Flux: ${controller.flux}',
-                    icon: Icons.diamond_rounded,
-                    value: _formatMetricCount(controller.flux),
-                    tint: LightcorePalette.aether,
-                    compact: compact,
-                  ),
+                  if (!openingMode)
+                    _ShellHeaderStatRow(
+                      tooltip: 'Flux: ${controller.flux}',
+                      icon: Icons.diamond_rounded,
+                      value: _formatMetricCount(controller.flux),
+                      tint: LightcorePalette.aether,
+                      compact: compact,
+                    ),
                   _ShellHeaderStatRow(
                     tooltip:
                         'Output Efficiency: $outputEfficiency • Core Stability ${controller.coreStabilityLabel}',

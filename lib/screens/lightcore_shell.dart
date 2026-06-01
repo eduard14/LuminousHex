@@ -1190,6 +1190,8 @@ class _LightcoreShellState extends State<LightcoreShell> {
                                             ),
                                         showNotificationBadge: controller
                                             .hasUnspentRadianceStatPoints,
+                                        openingMode: controller
+                                            .tutorialUsesBattleOnlyNavigation,
                                         onProfilePressed: () =>
                                             _openPlayerManager(context),
                                       ),

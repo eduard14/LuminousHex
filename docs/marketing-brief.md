@@ -102,6 +102,10 @@ shell, and keep climbing.
 - Store, Passes, and header menu actions also stay hidden during the guided
   opening, keeping the top chrome focused on battle state instead of side
   systems.
+- The opening resource rail collapses to the guide badge, Lumens, and Output
+  Efficiency only; profile, rank, Tower Strength, and Flux return after the
+  guided opening so meta progression does not compete with the first combat
+  loop.
 - Tower badges use projectile color and hex-edge level progress only; payload
   tinting is kept out of the first-session visual language until payload traits
   are explicitly taught later.

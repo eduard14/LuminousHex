@@ -23,6 +23,20 @@ void main() {
     expect(find.byTooltip('Open Store'), findsNothing);
     expect(find.byTooltip('Open Passes'), findsNothing);
     expect(find.byTooltip('Open Menu'), findsNothing);
+    expect(find.byTooltip('Open Profile'), findsNothing);
+    expect(find.byTooltip('Opening guide'), findsOneWidget);
+    expect(
+      find.byTooltip('TS: ${controller.towerStrengthLabel}'),
+      findsNothing,
+    );
+    expect(find.byTooltip('Flux: ${controller.flux}'), findsNothing);
+    expect(find.byTooltip('Lumen: ${controller.lumens}'), findsOneWidget);
+    expect(
+      find.byTooltip(
+        'Output Efficiency: ${controller.outputEfficiencyLabel} • Core Stability ${controller.coreStabilityLabel}',
+      ),
+      findsOneWidget,
+    );
 
     controller.debugDisableTutorial();
     await tester.pump();
@@ -35,6 +49,13 @@ void main() {
     expect(find.byTooltip('Open Store'), findsOneWidget);
     expect(find.byTooltip('Open Passes'), findsOneWidget);
     expect(find.byTooltip('Open Menu'), findsOneWidget);
+    expect(find.byTooltip('Opening guide'), findsNothing);
+    expect(find.byTooltip('Open Profile'), findsOneWidget);
+    expect(
+      find.byTooltip('TS: ${controller.towerStrengthLabel}'),
+      findsOneWidget,
+    );
+    expect(find.byTooltip('Flux: ${controller.flux}'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 }
