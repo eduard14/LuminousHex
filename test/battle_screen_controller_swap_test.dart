@@ -172,12 +172,16 @@ void _prepareOpeningChallengePrompt(LightcoreController controller) {
     controller.debugSetTowerCharge(0, charge: 1, cooldownRemaining: 0),
     isTrue,
   );
+  expect(controller.queuedCorePackets, 0);
+  expect(controller.focusBattleEnemyForNextShot(starter!.id), isTrue);
   _advanceUntil(
     controller,
-    () => controller.queuedCorePackets > 0,
-    reason: 'opening tower never fed a shot into the core',
+    () =>
+        controller.tutorialStep ==
+        LightcoreTutorialStep.upgradeFirstTowerToLevel3,
+    reason: 'opening focus click did not auto-fire the next generated shot',
   );
-  expect(controller.fireQueuedCorePacketAtEnemy(starter!.id), isTrue);
+  expect(controller.queuedCorePackets, 0);
   final upgradeCost = controller.upgradeCost(controller.slots[0]);
   if (controller.lumens < upgradeCost) {
     controller.lumens = upgradeCost;

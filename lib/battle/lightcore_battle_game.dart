@@ -324,7 +324,7 @@ class LightcoreBattleGame extends FlameGame with ScaleDetector {
       return;
     }
     if (tappedEnemyId != null &&
-        controller.selectBattleEnemyForManualAim(tappedEnemyId)) {
+        controller.focusBattleEnemyForNextShot(tappedEnemyId)) {
       onEnemyTargeted?.call();
       return;
     }

@@ -19,7 +19,7 @@ extension LightcoreControllerCombatFiring on LightcoreController {
     return true;
   }
 
-  bool selectBattleEnemyForManualAim(String enemyId) {
+  bool focusBattleEnemyForNextShot(String enemyId) {
     if (activeLayerPassiveOnly) {
       return false;
     }

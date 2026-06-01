@@ -126,7 +126,7 @@ void main() {
       isTrue,
     );
     expect(controller.queuedCorePackets, 0);
-    expect(controller.selectBattleEnemyForManualAim(starter!.id), isTrue);
+    expect(controller.focusBattleEnemyForNextShot(starter!.id), isTrue);
     recordGuidedClick();
     expect(controller.focusedEnemyId, starter.id);
     guidedElapsedSeconds += _advanceUntil(
