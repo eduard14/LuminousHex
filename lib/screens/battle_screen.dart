@@ -1473,7 +1473,8 @@ class _CoreStatsPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
-    final showReadyShotControls = !controller.tutorialUsesBattleOnlyNavigation;
+    final openingCorePanel = controller.tutorialUsesBattleOnlyNavigation;
+    final showReadyShotControls = !openingCorePanel;
     final coreHasPayload =
         controller.coreState.payloadType != PayloadType.none ||
         controller.corePayloadArsenal.any(
@@ -1515,59 +1516,72 @@ class _CoreStatsPanel extends StatelessWidget {
             label: 'Ready',
             value: controller.coreQueueLoadLabel,
           ),
-        _InlineStatEntry(
-          label: 'Ring',
-          value:
-              '${controller.promotionReadyTowerCount}/${LightcoreController.slotCount}',
-        ),
-        _InlineStatEntry(
-          label: 'Slots',
-          value:
-              '${controller.unlockedOuterSlotCount}/${LightcoreController.slotCount}',
-        ),
+        if (!openingCorePanel) ...[
+          _InlineStatEntry(
+            label: 'Ring',
+            value:
+                '${controller.promotionReadyTowerCount}/${LightcoreController.slotCount}',
+          ),
+          _InlineStatEntry(
+            label: 'Slots',
+            value:
+                '${controller.unlockedOuterSlotCount}/${LightcoreController.slotCount}',
+          ),
+        ],
       ],
       [
-        _InlineStatEntry(label: 'Power', value: controller.corePowerLabel),
+        if (!openingCorePanel)
+          _InlineStatEntry(label: 'Power', value: controller.corePowerLabel),
         _InlineStatEntry(label: 'Range', value: controller.coreRangeLabel),
         _InlineStatEntry(label: 'Fire', value: controller.coreFireSpeedLabel),
         _InlineStatEntry(
           label: 'Cooldown',
           value: controller.coreCooldownLabel,
         ),
-        _InlineStatEntry(label: 'Multi', value: controller.coreMultiShotLabel),
+        if (!openingCorePanel)
+          _InlineStatEntry(
+            label: 'Multi',
+            value: controller.coreMultiShotLabel,
+          ),
       ],
+      if (!openingCorePanel)
+        [
+          _InlineStatEntry(label: 'Crit', value: controller.coreCritLabel),
+          _InlineStatEntry(
+            label: 'Final',
+            value: controller.coreFinalDamageLabel,
+          ),
+          _InlineStatEntry(
+            label: 'Apex',
+            value: controller.coreBossDamageLabel,
+          ),
+          _InlineStatEntry(
+            label: 'Normal',
+            value: controller.coreNormalDamageLabel,
+          ),
+          _InlineStatEntry(
+            label: 'Pen',
+            value: controller.coreDefensePenetrationLabel,
+          ),
+        ],
       [
-        _InlineStatEntry(label: 'Crit', value: controller.coreCritLabel),
-        _InlineStatEntry(
-          label: 'Final',
-          value: controller.coreFinalDamageLabel,
-        ),
-        _InlineStatEntry(label: 'Apex', value: controller.coreBossDamageLabel),
-        _InlineStatEntry(
-          label: 'Normal',
-          value: controller.coreNormalDamageLabel,
-        ),
-        _InlineStatEntry(
-          label: 'Pen',
-          value: controller.coreDefensePenetrationLabel,
-        ),
-      ],
-      [
-        _InlineStatEntry(
-          label: 'AR Level',
-          value: '${controller.accountRadianceLevel}',
-        ),
-        _InlineStatEntry(
-          label: 'TS',
-          value: controller.towerStrengthCompactLabel,
-        ),
-        _InlineStatEntry(label: 'EXP', value: '${controller.experience}'),
-        _InlineStatEntry(
-          label: 'Apex',
-          value: controller.bossAlive
-              ? 'Live'
-              : controller.bossKillsRemaining.toString(),
-        ),
+        if (!openingCorePanel) ...[
+          _InlineStatEntry(
+            label: 'AR Level',
+            value: '${controller.accountRadianceLevel}',
+          ),
+          _InlineStatEntry(
+            label: 'TS',
+            value: controller.towerStrengthCompactLabel,
+          ),
+          _InlineStatEntry(label: 'EXP', value: '${controller.experience}'),
+          _InlineStatEntry(
+            label: 'Apex',
+            value: controller.bossAlive
+                ? 'Live'
+                : controller.bossKillsRemaining.toString(),
+          ),
+        ],
         _InlineStatEntry(label: 'Anomalies', value: '${controller.enemyCount}'),
       ],
     ];

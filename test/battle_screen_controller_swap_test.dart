@@ -150,6 +150,14 @@ void main() {
     expect(controller.tutorialUsesBattleOnlyNavigation, isTrue);
     expect(find.textContaining('Ready Shots'), findsNothing);
     expect(find.text('Ready'), findsNothing);
+    expect(find.text('Ring'), findsNothing);
+    expect(find.text('Slots'), findsNothing);
+    expect(find.text('TS'), findsNothing);
+    expect(find.text('EXP'), findsNothing);
+    expect(find.text('Crit'), findsNothing);
+    expect(find.text('Final'), findsNothing);
+    expect(find.text('Normal'), findsNothing);
+    expect(find.text('Pen'), findsNothing);
     expect(tester.takeException(), isNull);
   });
 
