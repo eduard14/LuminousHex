@@ -1727,6 +1727,49 @@ extension LightcoreControllerLayerTraits on LightcoreController {
           'Open Menu, select Tournaments, and inspect Arena Flow.',
       };
 
+  String? get tutorialCompactPrompt => switch (_tutorialStep) {
+    LightcoreTutorialStep.none => null,
+    LightcoreTutorialStep.unfoldShell => 'Click the core',
+    LightcoreTutorialStep.waitForFirstHex ||
+    LightcoreTutorialStep.selectFirstHex => 'Click Hex 1',
+    LightcoreTutorialStep.buildFirstRedTower => 'Choose a tower',
+    LightcoreTutorialStep.tapFirstTower => 'Click an anomaly',
+    LightcoreTutorialStep.tapSecondShellTower => 'Inspect tower',
+    LightcoreTutorialStep.upgradeFirstTowerToLevel3 ||
+    LightcoreTutorialStep.upgradeFirstTowerToLevel4 ||
+    LightcoreTutorialStep.upgradeFirstTowerToLevel5 => 'Upgrade Hex 1',
+    LightcoreTutorialStep.raiseThreat => 'Start Challenge Lv 1',
+    LightcoreTutorialStep.pushNextArea => 'Start Challenge Lv 2',
+    LightcoreTutorialStep.pullFirstWhiteEnemy => 'Run 1 scan',
+    LightcoreTutorialStep.readEffectiveGain => 'Open Output Efficiency',
+    LightcoreTutorialStep.managerAutoAim => 'Watch auto-fire',
+    LightcoreTutorialStep.buildSecondStarterTower => 'Build Hex 2',
+    LightcoreTutorialStep.pullFirstRedEnemy => 'Start next challenge',
+    LightcoreTutorialStep.setFirstEnemyTarget => 'Review Basic Red',
+    LightcoreTutorialStep.adjustEnemyCount => 'Inspect the route',
+    LightcoreTutorialStep.openTowerMatrix => 'Open Towers',
+    LightcoreTutorialStep.upgradeCoreRange => 'Spend 1 attribute',
+    LightcoreTutorialStep.openStore => 'Open Store',
+    LightcoreTutorialStep.claimBattlePassReward => 'Claim Pass reward',
+    LightcoreTutorialStep.openBossPulls => 'Open Map',
+    LightcoreTutorialStep.armFirstBoss => 'Review Apex suite',
+    LightcoreTutorialStep.defeatFirstBoss => 'Defeat White Warden',
+    LightcoreTutorialStep.openEquipment => 'Open Profile',
+    LightcoreTutorialStep.openManagers => 'Open Managers',
+    LightcoreTutorialStep.forgeTowerManager => 'Forge Core Manager',
+    LightcoreTutorialStep.assignTowerManager => 'Assign Core Manager',
+    LightcoreTutorialStep.forgeEnemyManager => 'Forge Threat Director',
+    LightcoreTutorialStep.assignEnemyManager => 'Assign Threat Director',
+    LightcoreTutorialStep.holdOverdrive => 'Hold Overdrive',
+    LightcoreTutorialStep.setScreenName => 'Set screen name',
+    LightcoreTutorialStep.openFriends => 'Open Friends',
+    LightcoreTutorialStep.openMentees ||
+    LightcoreTutorialStep.openMentors => 'Open Mentorship',
+    LightcoreTutorialStep.inspectEnemyBlitz => 'Inspect Blitz',
+    LightcoreTutorialStep.inspectHexGauntlet => 'Inspect Gauntlet',
+    LightcoreTutorialStep.inspectArenaFlow => 'Inspect Arena',
+  };
+
   String? get tutorialMechanicHint =>
       tutorialQuestDefinition?.teachGoal ??
       switch (_tutorialStep) {

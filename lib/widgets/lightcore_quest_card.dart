@@ -131,6 +131,10 @@ class _LightcoreQuestCardState extends State<LightcoreQuestCard> {
     if (headline == null || instruction == null) {
       return const SizedBox.shrink();
     }
+    final compactInstruction =
+        widget.instructionOverride ??
+        controller.tutorialCompactPrompt ??
+        instruction;
 
     final step = controller.tutorialStep;
     final tint = LightcorePalette.quest;
@@ -154,7 +158,8 @@ class _LightcoreQuestCardState extends State<LightcoreQuestCard> {
         child: Semantics(
           key: const ValueKey<String>('battle-quest-summary-card'),
           button: true,
-          label: 'Open guide details for $headline. $instruction',
+          label:
+              'Open guide details for $headline. $compactInstruction. $instruction',
           child: Row(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -192,7 +197,7 @@ class _LightcoreQuestCardState extends State<LightcoreQuestCard> {
                       children: [
                         Flexible(
                           child: Text(
-                            'View guide',
+                            compactInstruction,
                             key: const ValueKey<String>(
                               'battle-quest-summary-instruction',
                             ),

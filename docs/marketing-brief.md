@@ -115,8 +115,8 @@ shell, and keep climbing.
   active task highlighted in-world; players expand the guide only when they
   want more detail.
 - Collapsed tutorial notifications stay lightweight: they show the quest title
-  and a view-guide affordance, while the detailed instruction lives in the
-  optional guide sheet.
+  plus a short action like "Click Hex 1" or "Start Challenge Lv 1", while the
+  detailed instruction lives in the optional guide sheet.
 - Opening battle tutorial steps no longer raise transient prompt banners; the
   battlefield highlight, click cue, and compact guide own that instruction lane.
 - The starter Challenge prompt lives above the overdrive HUD, keeping the main

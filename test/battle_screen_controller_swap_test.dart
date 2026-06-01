@@ -45,6 +45,24 @@ void main() {
     expect(secondController.outerRingRevealed, isTrue);
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets('collapsed guide shows the next action', (tester) async {
+    addTearDown(() async {
+      await tester.binding.setSurfaceSize(null);
+    });
+    await tester.binding.setSurfaceSize(const Size(430, 780));
+    final controller = LightcoreController();
+    addTearDown(controller.dispose);
+
+    controller.selectCenter();
+    expect(controller.tutorialCompactPrompt, 'Click Hex 1');
+
+    await _pumpBattleScreen(tester, controller);
+
+    expect(find.text('Click Hex 1'), findsOneWidget);
+    expect(find.text('View guide'), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
 }
 
 Future<void> _pumpBattleScreen(
