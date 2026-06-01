@@ -22,6 +22,39 @@ void _completeLayer1Coverage(LightcoreController controller) {
   expect(controller.managerAssignmentUnlocked, isTrue);
 }
 
+void _fundNextTowerUpgrade(LightcoreController controller, int slotIndex) {
+  final cost = controller.upgradeCost(controller.slots[slotIndex]);
+  if (controller.lumens < cost) {
+    controller.lumens = cost;
+  }
+}
+
+void _advanceUntil(
+  LightcoreController controller,
+  bool Function() condition, {
+  String reason = 'condition was not reached',
+  int steps = 160,
+  double dt = 0.5,
+}) {
+  for (var i = 0; i < steps; i++) {
+    if (condition()) {
+      return;
+    }
+    controller.tick(dt);
+  }
+  fail(reason);
+}
+
+void _advanceActiveOpeningChallenge(LightcoreController controller) {
+  _advanceUntil(
+    controller,
+    () => controller.activeThreatRegionChallenge == null,
+    reason: 'opening challenge did not resolve',
+    steps: 280,
+    dt: 0.5,
+  );
+}
+
 void main() {
   test('retired apex scan labels display as threat scans', () {
     expect(LightcoreCurrencyLabels.bossScanCount(1), '1 Threat Scan');
@@ -62,6 +95,90 @@ void main() {
         controller.firstThreatChallengeLumenRewardPreview,
       ),
     );
+  });
+
+  test('opening loop pressures upgrade and repeats before Hex 2', () {
+    final controller = LightcoreController();
+    addTearDown(controller.dispose);
+
+    controller.selectSlot(0);
+    expect(controller.buildTowerAt(0, TowerLibrary.redPrism), isTrue);
+    expect(controller.builtTowerCount, 1);
+
+    final starter = controller.debugSpawnEnemyFromCard(
+      EnemyLibrary.starterDefault.id,
+      angle: 0,
+      radius: 120,
+      healthFraction: 1,
+    );
+    expect(starter, isNotNull);
+    expect(
+      controller.debugSetTowerCharge(0, charge: 1, cooldownRemaining: 0),
+      isTrue,
+    );
+    _advanceUntil(
+      controller,
+      () => controller.queuedCorePackets > 0,
+      reason: 'opening tower never fed a shot into the core',
+    );
+    expect(controller.fireQueuedCorePacketAtEnemy(starter!.id), isTrue);
+    expect(
+      controller.tutorialStep,
+      LightcoreTutorialStep.upgradeFirstTowerToLevel3,
+    );
+    expect(controller.outputEfficiencyMultiplier, lessThan(0.95));
+
+    _fundNextTowerUpgrade(controller, 0);
+    expect(controller.upgradeTower(0), isTrue);
+    expect(controller.slots[0].level, 2);
+    expect(controller.outputEfficiencyMultiplier, greaterThanOrEqualTo(0.98));
+    expect(controller.canStartFirstThreatChallenge, isTrue);
+    expect(controller.startFirstThreatChallenge(), isTrue);
+    expect(controller.activeThreatRegionChallenge?.targetStabilizationLevel, 1);
+
+    _advanceActiveOpeningChallenge(controller);
+    final starterRegion = controller.threatRegionConfigs.first;
+    expect(
+      controller.threatRegionStateById(starterRegion.id)?.stabilizedLevel,
+      1,
+    );
+    expect(controller.outputEfficiencyMultiplier, lessThan(0.9));
+    expect(
+      controller.tutorialStep,
+      LightcoreTutorialStep.upgradeFirstTowerToLevel4,
+    );
+
+    _fundNextTowerUpgrade(controller, 0);
+    expect(controller.upgradeTower(0), isTrue);
+    expect(controller.slots[0].level, 3);
+    expect(controller.outputEfficiencyMultiplier, greaterThanOrEqualTo(0.98));
+    expect(controller.canStartFirstThreatChallenge, isTrue);
+    expect(controller.startFirstThreatChallenge(), isTrue);
+    expect(controller.activeThreatRegionChallenge?.targetStabilizationLevel, 2);
+
+    _advanceActiveOpeningChallenge(controller);
+    expect(
+      controller.threatRegionStateById(starterRegion.id)?.stabilizedLevel,
+      2,
+    );
+    expect(controller.outputEfficiencyMultiplier, lessThan(0.9));
+    expect(
+      controller.tutorialStep,
+      LightcoreTutorialStep.upgradeFirstTowerToLevel5,
+    );
+
+    _fundNextTowerUpgrade(controller, 0);
+    expect(controller.upgradeTower(0), isTrue);
+    expect(controller.slots[0].level, 4);
+    expect(controller.isOuterSlotUnlocked(1), isTrue);
+    expect(
+      controller.tutorialStep,
+      LightcoreTutorialStep.buildSecondStarterTower,
+    );
+
+    controller.selectSlot(1);
+    expect(controller.buildTowerAt(1, TowerLibrary.cyanPrism), isTrue);
+    expect(controller.builtTowerCount, 2);
   });
 
   test('bulk manager forging grants pack bonuses and a rarity floor', () {

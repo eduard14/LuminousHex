@@ -38,9 +38,9 @@ cadence, enemy strength, and reward bonuses.
 
 ## Current Gameplay Loop
 
-1. Reveal the shell by tapping/selecting the center.
+1. Reveal the shell by clicking/selecting the center.
 2. Select Hex 1 immediately and build the first relay tower.
-3. Tap the highlighted starter anomaly to focus queued fire while the Lightcore
+3. Click the highlighted starter anomaly to focus queued fire while the Lightcore
    and ready relays auto-feed packets into the core queue.
 4. Inspect the first tower's stats after the first shot lands, then upgrade it.
 5. Upgrade all built towers to level 5.
@@ -56,8 +56,8 @@ cadence, enemy strength, and reward bonuses.
 
 - The center core is the only direct attacker. Early play auto-generates
   `AmmoPacket` entries after the Lightcore wakes, then anomaly clicks aim/focus
-  fire without making the player tap the core to queue shots.
-- The active tutorial stays as a compact, tap-to-expand quest notification on
+  fire without making the player manually queue core shots.
+- The active tutorial stays as a compact, click-to-expand quest notification on
   the battlefield. The collapsed notification names the next action while the
   battlefield highlight and click gesture point at the target.
 - Outer towers generate `EnergyPulseState` objects through starter auto-feed or

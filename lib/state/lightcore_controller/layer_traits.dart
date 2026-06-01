@@ -243,7 +243,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
     if ((_tutorialOpeningPressureHitApplied && nextLevel == 2) ||
         (_tutorialChallengePressureHitApplied && nextLevel == 3) ||
         (_tutorialSecondChallengePressureHitApplied && nextLevel == 4)) {
-      _setCoreStability(max(_core.coreStability, 98));
+      _setCoreStability(_maxCoreStability);
       _slots[slotIndex] = tower.copyWith(
         disruption: min(tower.disruption, 0.08),
         charge: max(tower.charge, 0.62),
@@ -1669,7 +1669,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         LightcoreTutorialStep.pullFirstWhiteEnemy =>
           'Click Map and run 1 threat scan.',
         LightcoreTutorialStep.readEffectiveGain =>
-          'Tap Output Efficiency when you want to inspect Effective Gain.',
+          'Click Output Efficiency when you want to inspect Effective Gain.',
         LightcoreTutorialStep.managerAutoAim =>
           'Watch your manager fire 5 ready shots.',
         LightcoreTutorialStep.upgradeFirstTowerToLevel4 =>
