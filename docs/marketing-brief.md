@@ -95,6 +95,8 @@ shell, and keep climbing.
 - Radiance, Store, and pass tutorials wait until the shell has at least three
   towers, a child shell, or boss-hunt progression, keeping the opening guide on
   combat instead of sidecar economy surfaces.
+- Locked bottom navigation destinations stay hidden during the guided opening
+  loop, so the first-session chrome does not advertise unavailable systems.
 - Tower badges use projectile color and hex-edge level progress only; payload
   tinting is kept out of the first-session visual language until payload traits
   are explicitly taught later.
@@ -159,7 +161,7 @@ shell, and keep climbing.
   challenges and live farming.
 - First-session guidance stays lightweight: collapsed guide flags, explicit
   target labels, transient top notifications, and bottom action prompts keep the
-  battlefield visible during early taps.
+  battlefield visible during early clicks.
 - Lumo/Luma guide callouts appear on loading interstitials with strategic tips
   such as balancing growth, flow, and Output Efficiency.
 - Screen transitions, event-run loading, and major shell area transitions use the

@@ -656,6 +656,12 @@ extension LightcoreControllerStateAccessors on LightcoreController {
     return true;
   }
 
+  bool get tutorialUsesBattleOnlyNavigation =>
+      _tutorialPromptsEnabled &&
+      !_earlyTutorialComplete &&
+      activeLayer.tier == 1 &&
+      !_layer2.unlocked;
+
   bool get tutorialShowsStarterProjectileChoices =>
       _earlyTutorialComplete &&
       _totalTowersBuilt <= 1 &&

@@ -101,12 +101,14 @@ class _LightcoreShellState extends State<LightcoreShell> {
   ];
 
   List<_ShellOverlayDestination> get _visibleNavigationDestinations =>
-      _navigationDestinations
-          .where(
-            (destination) =>
-                destination.visibleInBottomNavigation(widget.controller),
-          )
-          .toList(growable: false);
+      widget.controller.tutorialUsesBattleOnlyNavigation
+      ? const <_ShellOverlayDestination>[_ShellOverlayDestination.battle]
+      : _navigationDestinations
+            .where(
+              (destination) =>
+                  destination.visibleInBottomNavigation(widget.controller),
+            )
+            .toList(growable: false);
 
   _ShellOverlayDestination? _activeOverlay;
   ShellPromotionPresentation? _activeShellPromotionPresentation;
@@ -1263,11 +1265,15 @@ class _LightcoreShellState extends State<LightcoreShell> {
                                 AnimatedBuilder(
                                   animation: controller,
                                   builder: (context, _) {
+                                    final navigationDestinations =
+                                        _visibleNavigationDestinations;
+                                    if (navigationDestinations.length <= 1) {
+                                      return const SizedBox.shrink();
+                                    }
                                     return _ShellBottomNavigation(
                                       controller: controller,
                                       compact: isCompactLayout,
-                                      destinations:
-                                          _visibleNavigationDestinations,
+                                      destinations: navigationDestinations,
                                       selectedIndex: _selectedNavigationIndex,
                                       tint:
                                           (effectiveOverlay ??
