@@ -184,6 +184,30 @@ void main() {
     expect(tester.getBottomLeft(prompt).dy, greaterThan(730));
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets('active opening challenge explains the pressure upgrade loop', (
+    tester,
+  ) async {
+    addTearDown(() async {
+      await tester.binding.setSurfaceSize(null);
+    });
+    await tester.binding.setSurfaceSize(const Size(430, 780));
+    final controller = LightcoreController();
+    addTearDown(controller.dispose);
+
+    _prepareOpeningChallengePrompt(controller);
+    expect(controller.startFirstThreatChallenge(), isTrue);
+    expect(controller.activeThreatRegionChallenge, isNotNull);
+
+    await _pumpBattleScreen(tester, controller);
+
+    expect(find.text('Challenge live'), findsOneWidget);
+    expect(find.text('Challenge Lv 1'), findsOneWidget);
+    expect(find.textContaining('Enemy Lv 2'), findsOneWidget);
+    expect(find.textContaining('upgrade Hex 1'), findsOneWidget);
+    expect(find.text('Challenge ready'), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
 }
 
 void _prepareOpeningChallengePrompt(LightcoreController controller) {

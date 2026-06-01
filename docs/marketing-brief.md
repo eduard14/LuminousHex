@@ -175,6 +175,9 @@ shell, and keep climbing.
   output, and stability rather than queue management.
 - Guided-opening core stats suppress meta/buildcraft rows such as Ring, Slots,
   TS, EXP, crit, final damage, and penetration so the first panel stays readable.
+- Opening stabilization challenges keep a compact live battle HUD on screen that
+  names the harder enemy wave, shows progress, and points the player back to
+  upgrading Hex 1 after the wave clears.
 - Shell visibility is an explicit HUD toggle, keeping battlefield taps from
   folding the active battlefield or opening tower placement.
 - Manager automation upgrades ready shots into hands-off target routing while

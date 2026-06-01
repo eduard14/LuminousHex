@@ -1036,15 +1036,38 @@ class _BattleScreenState extends State<BattleScreen> {
     LightcoreController controller, {
     required bool compact,
   }) {
-    if (!widget.showBattleHud || !controller.tutorialShowsBattleThreatPrompt) {
+    final activeChallenge = controller.activeThreatRegionChallenge;
+    final openingChallengeLive =
+        activeChallenge != null &&
+        activeChallenge.targetStabilizationLevel <= 2 &&
+        controller.tutorialUsesBattleOnlyNavigation;
+    if (!widget.showBattleHud ||
+        (!controller.tutorialShowsBattleThreatPrompt &&
+            !openingChallengeLive)) {
       return null;
     }
+    final challengeLevel = activeChallenge?.targetStabilizationLevel;
     return _RaiseThreatPrompt(
       compact: compact,
-      label: controller.firstThreatChallengeLabel,
-      rewardLabel: controller.firstThreatChallengeRewardLabel,
-      pressureLabel: controller.firstThreatChallengePressurePreviewLabel,
-      enabled: controller.canStartFirstThreatChallenge,
+      label: openingChallengeLive
+          ? 'Challenge Lv $challengeLevel'
+          : controller.firstThreatChallengeLabel,
+      rewardLabel: openingChallengeLive
+          ? controller.activeThreatRegionChallengeRewardLabel
+          : controller.firstThreatChallengeRewardLabel,
+      pressureLabel: openingChallengeLive
+          ? controller.activeThreatRegionChallengePressureLabel
+          : controller.firstThreatChallengePressurePreviewLabel,
+      enabled: !openingChallengeLive && controller.canStartFirstThreatChallenge,
+      active: openingChallengeLive,
+      progress: openingChallengeLive
+          ? controller.activeThreatRegionChallengeProgress
+          : 0,
+      loopInstruction: openingChallengeLive
+          ? challengeLevel == 1
+                ? 'Harder enemies are attacking. Clear the wave, then upgrade Hex 1 to stabilize.'
+                : 'The next area is harder again. Hold the wave, then reinforce Hex 1.'
+          : 'Start the harder wave when Hex 1 is stable.',
       onPressed: () {
         LightcoreAudio.instance.playSfx(LightcoreSfx.uiConfirm);
         final started = controller.startFirstThreatChallenge();
@@ -1275,6 +1298,9 @@ class _RaiseThreatPrompt extends StatelessWidget {
     required this.rewardLabel,
     required this.pressureLabel,
     required this.enabled,
+    required this.active,
+    required this.progress,
+    required this.loopInstruction,
     required this.onPressed,
   });
 
@@ -1283,12 +1309,18 @@ class _RaiseThreatPrompt extends StatelessWidget {
   final String rewardLabel;
   final String pressureLabel;
   final bool enabled;
+  final bool active;
+  final double progress;
+  final String loopInstruction;
   final VoidCallback onPressed;
 
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
-    final width = compact ? 350.0 : 390.0;
+    final width = compact ? 370.0 : 430.0;
+    final title = active ? 'Challenge live' : 'Challenge ready';
+    final icon = active ? Icons.warning_amber_rounded : Icons.flag_rounded;
+    final accent = active ? LightcorePalette.warning : LightcorePalette.quest;
     return LayoutBuilder(
       builder: (context, constraints) {
         final resolvedWidth = constraints.maxWidth.isFinite
@@ -1302,7 +1334,7 @@ class _RaiseThreatPrompt extends StatelessWidget {
               color: LightcorePalette.panel.withValues(alpha: 0.96),
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: LightcorePalette.quest.withValues(alpha: 0.38),
+                color: accent.withValues(alpha: active ? 0.46 : 0.38),
               ),
               boxShadow: [
                 BoxShadow(
@@ -1323,11 +1355,7 @@ class _RaiseThreatPrompt extends StatelessWidget {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  Icon(
-                    Icons.flag_rounded,
-                    size: compact ? 17 : 19,
-                    color: LightcorePalette.quest,
-                  ),
+                  Icon(icon, size: compact ? 17 : 19, color: accent),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Column(
@@ -1335,14 +1363,42 @@ class _RaiseThreatPrompt extends StatelessWidget {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          'Challenge ready',
+                          title,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: textTheme.labelLarge?.copyWith(
-                            color: LightcorePalette.layer2,
+                            color: active
+                                ? LightcorePalette.warning
+                                : LightcorePalette.layer2,
                             fontWeight: FontWeight.w900,
                           ),
                         ),
+                        if (active)
+                          Text(
+                            label,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: textTheme.labelSmall?.copyWith(
+                              color: LightcorePalette.mist.withValues(
+                                alpha: 0.78,
+                              ),
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                        if (active) ...[
+                          const SizedBox(height: 4),
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(999),
+                            child: LinearProgressIndicator(
+                              minHeight: 5,
+                              value: progress.clamp(0.0, 1.0),
+                              backgroundColor: LightcorePalette.night
+                                  .withValues(alpha: 0.58),
+                              valueColor: AlwaysStoppedAnimation<Color>(accent),
+                            ),
+                          ),
+                          const SizedBox(height: 5),
+                        ],
                         Text(
                           _challengePreviewSubtitle,
                           maxLines: 1,
@@ -1354,28 +1410,43 @@ class _RaiseThreatPrompt extends StatelessWidget {
                             fontWeight: FontWeight.w700,
                           ),
                         ),
+                        if (active)
+                          Text(
+                            loopInstruction,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: textTheme.labelSmall?.copyWith(
+                              color: LightcorePalette.mist.withValues(
+                                alpha: 0.86,
+                              ),
+                              fontWeight: FontWeight.w800,
+                              height: 1.12,
+                            ),
+                          ),
                       ],
                     ),
                   ),
-                  const SizedBox(width: 8),
-                  Flexible(
-                    child: GuidedFocusFrame(
-                      active: enabled,
-                      tint: LightcorePalette.quest,
-                      radius: 999,
-                      padding: const EdgeInsets.all(3),
-                      tapCueLabel: 'Start',
-                      child: FilledButton.icon(
-                        onPressed: enabled ? onPressed : null,
-                        icon: const Icon(Icons.play_arrow_rounded),
-                        label: Text(
-                          label,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                  if (!active) ...[
+                    const SizedBox(width: 8),
+                    Flexible(
+                      child: GuidedFocusFrame(
+                        active: enabled,
+                        tint: LightcorePalette.quest,
+                        radius: 999,
+                        padding: const EdgeInsets.all(3),
+                        tapCueLabel: 'Start',
+                        child: FilledButton.icon(
+                          onPressed: enabled ? onPressed : null,
+                          icon: const Icon(Icons.play_arrow_rounded),
+                          label: Text(
+                            label,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
                       ),
                     ),
-                  ),
+                  ],
                 ],
               ),
             ),
