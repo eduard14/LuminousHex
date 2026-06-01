@@ -29,24 +29,26 @@ void _fundNextTowerUpgrade(LightcoreController controller, int slotIndex) {
   }
 }
 
-void _advanceUntil(
+double _advanceUntil(
   LightcoreController controller,
   bool Function() condition, {
   String reason = 'condition was not reached',
   int steps = 160,
   double dt = 0.5,
 }) {
+  var elapsed = 0.0;
   for (var i = 0; i < steps; i++) {
     if (condition()) {
-      return;
+      return elapsed;
     }
     controller.tick(dt);
+    elapsed += dt;
   }
   fail(reason);
 }
 
-void _advanceActiveOpeningChallenge(LightcoreController controller) {
-  _advanceUntil(
+double _advanceActiveOpeningChallenge(LightcoreController controller) {
+  return _advanceUntil(
     controller,
     () => controller.activeThreatRegionChallenge == null,
     reason: 'opening challenge did not resolve',
@@ -100,9 +102,16 @@ void main() {
   test('opening loop pressures upgrade and repeats before Hex 2', () {
     final controller = LightcoreController();
     addTearDown(controller.dispose);
+    var guidedElapsedSeconds = 0.0;
+
+    void recordGuidedClick([double seconds = 2.0]) {
+      guidedElapsedSeconds += seconds;
+    }
 
     controller.selectSlot(0);
+    recordGuidedClick();
     expect(controller.buildTowerAt(0, TowerLibrary.redPrism), isTrue);
+    recordGuidedClick();
     expect(controller.builtTowerCount, 1);
 
     final starter = controller.debugSpawnEnemyFromCard(
@@ -116,12 +125,13 @@ void main() {
       controller.debugSetTowerCharge(0, charge: 1, cooldownRemaining: 0),
       isTrue,
     );
-    _advanceUntil(
+    guidedElapsedSeconds += _advanceUntil(
       controller,
       () => controller.queuedCorePackets > 0,
       reason: 'opening tower never fed a shot into the core',
     );
     expect(controller.fireQueuedCorePacketAtEnemy(starter!.id), isTrue);
+    recordGuidedClick();
     expect(
       controller.tutorialStep,
       LightcoreTutorialStep.upgradeFirstTowerToLevel3,
@@ -130,6 +140,7 @@ void main() {
 
     _fundNextTowerUpgrade(controller, 0);
     expect(controller.upgradeTower(0), isTrue);
+    recordGuidedClick();
     expect(controller.slots[0].level, 2);
     expect(controller.outputEfficiencyMultiplier, greaterThanOrEqualTo(0.98));
     expect(controller.canStartFirstThreatChallenge, isTrue);
@@ -142,6 +153,7 @@ void main() {
       contains('8 active'),
     );
     expect(controller.startFirstThreatChallenge(), isTrue);
+    recordGuidedClick();
     expect(controller.activeThreatRegionChallenge?.targetStabilizationLevel, 1);
     expect(
       controller.enemyTargetCount,
@@ -152,7 +164,7 @@ void main() {
       everyElement(2),
     );
 
-    _advanceActiveOpeningChallenge(controller);
+    guidedElapsedSeconds += _advanceActiveOpeningChallenge(controller);
     final starterRegion = controller.threatRegionConfigs.first;
     expect(
       controller.threatRegionStateById(starterRegion.id)?.stabilizedLevel,
@@ -166,6 +178,7 @@ void main() {
 
     _fundNextTowerUpgrade(controller, 0);
     expect(controller.upgradeTower(0), isTrue);
+    recordGuidedClick();
     expect(controller.slots[0].level, 3);
     expect(controller.outputEfficiencyMultiplier, greaterThanOrEqualTo(0.98));
     expect(controller.canStartFirstThreatChallenge, isTrue);
@@ -178,6 +191,7 @@ void main() {
       contains('10 active'),
     );
     expect(controller.startFirstThreatChallenge(), isTrue);
+    recordGuidedClick();
     expect(controller.activeThreatRegionChallenge?.targetStabilizationLevel, 2);
     expect(
       controller.enemyTargetCount,
@@ -188,7 +202,7 @@ void main() {
       everyElement(3),
     );
 
-    _advanceActiveOpeningChallenge(controller);
+    guidedElapsedSeconds += _advanceActiveOpeningChallenge(controller);
     expect(
       controller.threatRegionStateById(starterRegion.id)?.stabilizedLevel,
       2,
@@ -201,6 +215,7 @@ void main() {
 
     _fundNextTowerUpgrade(controller, 0);
     expect(controller.upgradeTower(0), isTrue);
+    recordGuidedClick();
     expect(controller.slots[0].level, 4);
     expect(controller.isOuterSlotUnlocked(1), isTrue);
     expect(
@@ -209,12 +224,20 @@ void main() {
     );
 
     controller.selectSlot(1);
+    recordGuidedClick();
     expect(controller.buildTowerAt(1, TowerLibrary.cyanPrism), isTrue);
+    recordGuidedClick();
     expect(controller.builtTowerCount, 2);
     expect(controller.tutorialStep, LightcoreTutorialStep.none);
     expect(controller.tutorialPromptsEnabled, isTrue);
     expect(controller.tutorialUsesBattleOnlyNavigation, isFalse);
     expect(controller.tutorialNeedsTowerPaletteGate, isFalse);
+    expect(
+      guidedElapsedSeconds,
+      lessThanOrEqualTo(300),
+      reason:
+          'The guided pressure-upgrade-repeat loop should reach Hex 2 inside the first five minutes.',
+    );
   });
 
   test('bulk manager forging grants pack bonuses and a rarity floor', () {

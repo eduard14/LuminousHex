@@ -81,6 +81,8 @@ shell, and keep climbing.
   Hex 1, Output Efficiency drops, upgrading restores flow, Challenge Lv 1 hits
   harder, the next upgrade stabilizes the route, then Challenge Lv 2 repeats
   the overwhelm-and-upgrade beat before Hex 2 opens.
+- The scripted guided loop is regression-tested against a five-minute simulated
+  budget so pacing changes cannot quietly push Hex 2 beyond the opening window.
 - The post-upgrade threat prompt explains the payoff and highlights the
   Challenge button directly, including harder-enemy framing and the Lumen
   reward preview, so the next step reads as an earned push instead of a menu
