@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:lightcore/battle/lightcore_battle_game.dart';
+import 'package:lightcore/data/enemy_configs.dart';
 import 'package:lightcore/data/tower_configs.dart';
 import 'package:lightcore/screens/battle_screen.dart';
 import 'package:lightcore/state/lightcore_controller.dart';
@@ -131,6 +132,73 @@ void main() {
     );
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets('challenge prompt does not reserve hidden overdrive space', (
+    tester,
+  ) async {
+    addTearDown(() async {
+      await tester.binding.setSurfaceSize(null);
+    });
+    await tester.binding.setSurfaceSize(const Size(430, 780));
+    final controller = LightcoreController();
+    addTearDown(controller.dispose);
+
+    _prepareOpeningChallengePrompt(controller);
+    expect(controller.tutorialStep, LightcoreTutorialStep.raiseThreat);
+    expect(controller.showManualOverdriveHud, isFalse);
+
+    await _pumpBattleScreen(tester, controller);
+
+    final prompt = find.byKey(
+      const ValueKey<String>('battle-raise-threat-prompt'),
+    );
+    expect(prompt, findsOneWidget);
+    expect(tester.getBottomLeft(prompt).dy, greaterThan(730));
+    expect(tester.takeException(), isNull);
+  });
+}
+
+void _prepareOpeningChallengePrompt(LightcoreController controller) {
+  controller.selectCenter();
+  expect(controller.buildTowerAt(0, TowerLibrary.redPrism), isTrue);
+  final starter = controller.debugSpawnEnemyFromCard(
+    EnemyLibrary.starterDefault.id,
+    angle: 0,
+    radius: 120,
+    healthFraction: 1,
+  );
+  expect(starter, isNotNull);
+  expect(
+    controller.debugSetTowerCharge(0, charge: 1, cooldownRemaining: 0),
+    isTrue,
+  );
+  _advanceUntil(
+    controller,
+    () => controller.queuedCorePackets > 0,
+    reason: 'opening tower never fed a shot into the core',
+  );
+  expect(controller.fireQueuedCorePacketAtEnemy(starter!.id), isTrue);
+  final upgradeCost = controller.upgradeCost(controller.slots[0]);
+  if (controller.lumens < upgradeCost) {
+    controller.lumens = upgradeCost;
+  }
+  expect(controller.upgradeTower(0), isTrue);
+}
+
+void _advanceUntil(
+  LightcoreController controller,
+  bool Function() condition, {
+  required String reason,
+  int steps = 160,
+  double dt = 0.5,
+}) {
+  for (var index = 0; index < steps; index++) {
+    if (condition()) {
+      return;
+    }
+    controller.tick(dt);
+  }
+  fail(reason);
 }
 
 Future<void> _pumpBattleScreen(

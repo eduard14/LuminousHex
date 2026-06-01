@@ -1180,6 +1180,11 @@ class _BattleScreenState extends State<BattleScreen> {
     );
     final showReadyShotIndicator =
         widget.showBattleHud && controller.queuedCorePackets > 0;
+    final overdriveHudVisible =
+        widget.showBattleHud && controller.showManualOverdriveHud;
+    final bottomControlClearance = overdriveHudVisible
+        ? _overdriveHudHeight
+        : 0.0;
 
     return Stack(
       children: [
@@ -1197,7 +1202,7 @@ class _BattleScreenState extends State<BattleScreen> {
           Positioned(right: inset, top: topInset, child: shellVisibilityHud),
         if (widget.showBattleHud && selectionHud != null)
           Positioned(left: inset, bottom: bottomInset, child: selectionHud),
-        if (widget.showBattleHud && controller.showManualOverdriveHud)
+        if (overdriveHudVisible)
           Positioned(
             right: inset,
             bottom: bottomInset,
@@ -1207,7 +1212,7 @@ class _BattleScreenState extends State<BattleScreen> {
           Positioned(
             left: inset,
             right: compact ? inset : null,
-            bottom: bottomInset + _overdriveHudHeight,
+            bottom: bottomInset + bottomControlClearance,
             child: selectionOverlay,
           ),
         if (questPanel != null)
@@ -1216,7 +1221,7 @@ class _BattleScreenState extends State<BattleScreen> {
           Positioned(
             left: inset,
             right: inset,
-            bottom: bottomInset + _overdriveHudHeight + (compact ? 10 : 14),
+            bottom: bottomInset + bottomControlClearance + (compact ? 10 : 14),
             child: Align(
               alignment: Alignment.bottomCenter,
               child: raiseThreatPrompt,
