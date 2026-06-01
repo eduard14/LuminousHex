@@ -125,6 +125,9 @@ shell, and keep climbing.
 - Tutorial guidance appears as a compact battlefield notification with the
   active task highlighted in-world; players expand the guide only when they
   want more detail.
+- Player-facing guidance consistently uses click language for battlefield,
+  tower, quest, and detail interactions so the opening does not read like an
+  old tap-to-queue mobile chore loop.
 - Collapsed tutorial notifications stay lightweight: they show the quest title
   plus a short action like "Click Hex 1" or "Start Challenge Lv 1", while the
   detailed instruction lives in the optional guide sheet.

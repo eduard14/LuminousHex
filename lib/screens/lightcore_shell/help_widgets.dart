@@ -177,7 +177,7 @@ List<_HelpSectionData> get _helpSections => <_HelpSectionData>[
   _HelpSectionData(
     id: 'guide-quest-walkthrough',
     title: 'Guide Quest Walkthrough',
-    summary: 'Every tutorial quest, what it teaches, and what to tap.',
+    summary: 'Every tutorial quest, what it teaches, and what to click.',
     body: LightcoreController.tutorialQuestHelpBody,
   ),
 ];

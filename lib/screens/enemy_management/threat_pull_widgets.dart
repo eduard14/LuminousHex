@@ -359,7 +359,7 @@ class _BossScanPreview extends StatelessWidget {
     final owned = card.isOwned;
 
     return Tooltip(
-      message: '${card.config.name} • tap for details',
+      message: '${card.config.name} • click for details',
       child: _ThreatSummonCard(
         config: card.config,
         dimension: 52,

@@ -849,7 +849,7 @@ class _TournamentModeDetailScreenState
           nextScore +=
               battleClears * (38 + (_blitzWave * 3) + (_blitzEnemyTier * 7));
           nextHint =
-              'Manual clears paid $clearPayout resources. Keep tapping the core and ready weekend towers.';
+              'Manual clears paid $clearPayout resources. Keep clicking the core and ready weekend towers.';
         }
         nextScore += max(0, towerOutput - (enemyPressure * 0.3)) * dt;
         if (_blitzShield <= 0.08) {
@@ -1071,7 +1071,7 @@ class _TournamentModeDetailScreenState
       _blitzTowerTier += 1;
       _score += 30;
       _hint = nextBuiltTowerCount == 1
-          ? 'Weekend tower unlocked. Tap it when charged to feed the core.'
+          ? 'Weekend tower unlocked. Click it when charged to feed the core.'
           : nextBuiltTowerCount == 2
           ? 'Second weekend tower unlocked. This Blitz rotation now has its full tower pair.'
           : 'Weekend towers leveled. Manual shots now hit harder.';

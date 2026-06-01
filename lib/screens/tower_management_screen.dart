@@ -828,7 +828,7 @@ class _BuiltSlotCard extends StatelessWidget {
                       slot.isChildLayerNode
                           ? isPromoted
                                 ? 'Layer 2 tower online. It has its own level and stat board; the source shell remains linked for core upgrades and inspection.'
-                                : 'Lower-shell project. Tap to enter this shell, rebuild from Root, and align it into an active child tower.'
+                                : 'Lower-shell project. Click to enter this shell, rebuild from Root, and align it into an active child tower.'
                           : isFabricating
                           ? 'Fabricating Source Tower. Its rolled projectile, payload, and trainable stats are locked, but combat systems come online when the timer completes.'
                           : slot.config!.summary,

@@ -770,7 +770,7 @@ class _ThreatAssignmentTile extends StatelessWidget {
 
     return Tooltip(
       message:
-          '${card.config.name} • ${card.config.rarity.label} • $status • tap for details',
+          '${card.config.name} • ${card.config.rarity.label} • $status • click for details',
       child: AnimatedScale(
         duration: const Duration(milliseconds: 160),
         scale: expanded ? 1.04 : 1,
