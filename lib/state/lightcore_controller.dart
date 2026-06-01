@@ -386,17 +386,17 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
   ),
   LightcoreTutorialStep.tapSecondShellTower: LightcoreTutorialQuestDefinition(
     id: 'TUT-008',
-    title: 'Fire Child Tower',
+    title: 'Inspect Child Tower',
     teachGoal:
         'Child-shell towers keep the same click-to-control rule: tower clicks are for tower controls while firing stays automatic.',
     trigger: 'First child shell has a charged tower',
     primaryClickTarget: 'Battlefield > charged child-shell tower',
     coachCopy:
-        'Tap the highlighted child-shell tower to inspect its controls. Firing stays automatic.',
+        'Click the highlighted child-shell tower to inspect its controls. Firing stays automatic.',
     completionCondition: 'Inspect one charged child-shell tower',
     reward: 'Small Lumen grant',
     failureHelpState:
-        'Wait for the highlighted child-shell tower to charge, then tap the tower body to open controls.',
+        'Wait for the highlighted child-shell tower to charge, then click the tower body to open controls.',
     analyticsEvent: 'tutorial_second_shell_tower_fire',
   ),
   LightcoreTutorialStep

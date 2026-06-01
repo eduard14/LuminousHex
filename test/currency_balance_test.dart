@@ -51,6 +51,19 @@ void main() {
     expect(reward.label, contains('Manager Shards'));
   });
 
+  test('starter challenge prompt previews lumen reward', () {
+    final controller = LightcoreController();
+    addTearDown(controller.dispose);
+
+    expect(controller.firstThreatChallengeLumenRewardPreview, greaterThan(0));
+    expect(
+      controller.firstThreatChallengeRewardLabel,
+      LightcoreCurrencyLabels.rewardLumens(
+        controller.firstThreatChallengeLumenRewardPreview,
+      ),
+    );
+  });
+
   test('bulk manager forging grants pack bonuses and a rarity floor', () {
     final controller = LightcoreController();
     addTearDown(controller.dispose);

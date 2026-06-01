@@ -1042,6 +1042,7 @@ class _BattleScreenState extends State<BattleScreen> {
     return _RaiseThreatPrompt(
       compact: compact,
       label: controller.firstThreatChallengeLabel,
+      rewardLabel: controller.firstThreatChallengeRewardLabel,
       enabled: controller.canStartFirstThreatChallenge,
       onPressed: () {
         LightcoreAudio.instance.playSfx(LightcoreSfx.uiConfirm);
@@ -1128,7 +1129,7 @@ class _BattleScreenState extends State<BattleScreen> {
         }
       case LightcoreTutorialStep.tapSecondShellTower:
         if (_tutorialOpenPanelBlocksCurrentStep(controller)) {
-          return 'Close the open tower controls, then tap the charged child-shell tower on the battlefield.';
+          return 'Close the open tower controls, then click the charged child-shell tower on the battlefield.';
         }
       default:
         if (_tutorialOpenPanelBlocksCurrentStep(controller)) {
@@ -1265,12 +1266,14 @@ class _RaiseThreatPrompt extends StatelessWidget {
   const _RaiseThreatPrompt({
     required this.compact,
     required this.label,
+    required this.rewardLabel,
     required this.enabled,
     required this.onPressed,
   });
 
   final bool compact;
   final String label;
+  final String rewardLabel;
   final bool enabled;
   final VoidCallback onPressed;
 
@@ -1333,7 +1336,9 @@ class _RaiseThreatPrompt extends StatelessWidget {
                           ),
                         ),
                         Text(
-                          'Start a tougher wave. Earn better rewards.',
+                          rewardLabel.isEmpty
+                              ? 'Harder enemies. Better rewards.'
+                              : 'Harder enemies • $rewardLabel',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: textTheme.labelSmall?.copyWith(
@@ -2395,7 +2400,7 @@ class _ReadyShotIndicator extends StatelessWidget {
     return Semantics(
       key: const ValueKey<String>('battle-ready-shot-indicator'),
       label:
-          'Ready shot count $count of ${controller.coreQueueCapacity}. Tap an anomaly to focus fire.',
+          'Ready shot count $count of ${controller.coreQueueCapacity}. Click an anomaly to focus fire.',
       child: Container(
         padding: EdgeInsets.symmetric(
           horizontal: compact ? 10 : 12,

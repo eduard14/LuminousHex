@@ -1608,7 +1608,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         LightcoreTutorialStep.selectFirstHex => 'Select Hex 1',
         LightcoreTutorialStep.buildFirstRedTower => 'Choose First Tower',
         LightcoreTutorialStep.tapFirstTower => 'Focus Fire',
-        LightcoreTutorialStep.tapSecondShellTower => 'Fire Child Tower',
+        LightcoreTutorialStep.tapSecondShellTower => 'Inspect Child Tower',
         LightcoreTutorialStep.upgradeFirstTowerToLevel3 =>
           'Tune The Main Tower',
         LightcoreTutorialStep.raiseThreat => 'Start Challenge',
@@ -1659,7 +1659,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         LightcoreTutorialStep.tapFirstTower =>
           'Click a visible anomaly to focus fire. Tower clicks open tower controls.',
         LightcoreTutorialStep.tapSecondShellTower =>
-          'Tap the charged child-shell tower to inspect its controls.',
+          'Click the charged child-shell tower to inspect its controls.',
         LightcoreTutorialStep.upgradeFirstTowerToLevel3 =>
           'Click the first tower in Hex 1 and upgrade it once.',
         LightcoreTutorialStep.raiseThreat =>
@@ -1825,7 +1825,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
           LightcoreTutorialStep.tapFirstTower =>
             'The shot is loaded. Click a visible anomaly to focus it; click towers only when you want tower controls.',
           LightcoreTutorialStep.tapSecondShellTower =>
-            'The next shell is awake. Tap the charged tower body before Lumo hands you speed controls.',
+            'The next shell is awake. Click the charged tower body before Lumo hands you speed controls.',
           LightcoreTutorialStep.upgradeFirstTowerToLevel3 =>
             'The first anomaly wave dents the lane. Command routes Lumens into Hex 1 so the shell can recover instead of expanding too early.',
           LightcoreTutorialStep.raiseThreat =>

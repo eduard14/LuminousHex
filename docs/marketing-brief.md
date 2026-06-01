@@ -71,7 +71,7 @@ shell, and keep climbing.
 - Relay towers charge shots into the Lightcore instead of asking the player to
   tap or drag ammo.
 - Opening combat is low-friction: shots auto-charge after the Lightcore wakes,
-  Hex 1 is immediately selectable, then the player taps anomalies to aim and
+  Hex 1 is immediately selectable, then the player clicks anomalies to aim and
   focus fire.
 - The first focus-fire lesson guarantees a visible starter anomaly so the
   player can act immediately after the first relay comes online.
@@ -82,8 +82,9 @@ shell, and keep climbing.
   harder, the next upgrade stabilizes the route, then Challenge Lv 2 repeats
   the overwhelm-and-upgrade beat before Hex 2 opens.
 - The post-upgrade threat prompt explains the payoff and highlights the
-  Challenge button directly, framing the next step as a reward wave the player
-  has earned instead of a low-threat warning or menu hunt.
+  Challenge button directly, including harder-enemy framing and the Lumen
+  reward preview, so the next step reads as an earned push instead of a menu
+  hunt.
 - Active challenge HUD now shows the Lumen reward preview beside the wave
   timer so the first pressure run has a visible payoff while it is underway.
 - Completing Challenge Lv 1 satisfies the opening Output Efficiency lesson,
@@ -149,7 +150,7 @@ shell, and keep climbing.
 - Shell visibility is an explicit HUD toggle, keeping battlefield taps from
   folding the active battlefield or opening tower placement.
 - Manager automation upgrades ready shots into hands-off target routing while
-  still letting active players override focus by tapping anomalies.
+  still letting active players override focus by clicking anomalies.
 - Ready-shot combat rewards smart timing, charge flow, and tower placement.
 - Output Efficiency pressure system replaces a simple health-loss fail state.
 - Lane disruption reduces rewards and charge flow when anomalies reach the ring.
@@ -312,7 +313,7 @@ Suggested first release order:
 
 1. Lemon Goose Games Inc. splash.
 2. Fractured Lightcore premise in one short text card.
-3. First relay comes online, shots auto-charge, player taps anomalies to focus
+3. First relay comes online, shots auto-charge, player clicks anomalies to focus
    fire.
 4. Anomalies spiral inward and disrupt lanes.
 5. Threat Scan pull reveals a new Knowledge Card.

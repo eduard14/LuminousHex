@@ -287,6 +287,36 @@ extension LightcoreControllerThreatRegions on LightcoreController {
         : 'Challenge Lv $nextLevel';
   }
 
+  int get firstThreatChallengeLumenRewardPreview {
+    final starter = ThreatRegionLibrary.all.first;
+    final state = threatRegionStateById(starter.id);
+    final nextLevel = (state?.stabilizedLevel ?? 0) + 1;
+    if (nextLevel > starter.stabilizationLayers) {
+      return 0;
+    }
+    final baseReward = _threatRegionChallengeLumenReward(starter, nextLevel);
+    if (_earlyTutorialComplete) {
+      return baseReward;
+    }
+    final firstTower = _firstTutorialTower;
+    if (firstTower == null ||
+        !_isOpeningStarterTower(firstTower.config) ||
+        !((nextLevel == 1 && firstTower.level == 2) ||
+            (nextLevel == 2 && firstTower.level == 3))) {
+      return baseReward;
+    }
+    final nextUpgradeCost = upgradeCost(firstTower);
+    if (nextUpgradeCost <= 0) {
+      return baseReward;
+    }
+    return baseReward + max(0, nextUpgradeCost - (lumens + baseReward));
+  }
+
+  String get firstThreatChallengeRewardLabel {
+    final reward = firstThreatChallengeLumenRewardPreview;
+    return reward <= 0 ? '' : LightcoreCurrencyLabels.rewardLumens(reward);
+  }
+
   bool startFirstThreatChallenge() =>
       startThreatRegionChallenge(ThreatRegionLibrary.all.first.id);
 
