@@ -2,11 +2,11 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
-import '../models/lightcore_state.dart';
 import '../models/lightcore_types.dart';
 import '../state/lightcore_controller.dart';
 import '../theme/lightcore_palette.dart';
 import '../widgets/aurora_panel.dart';
+import '../widgets/layer_one_component_forecast_panel.dart';
 import '../widgets/lightcore_info_button.dart';
 import '../widgets/meter_bar.dart';
 
@@ -156,7 +156,7 @@ class AdvancementScreen extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 14),
-                  _PromotionPreviewPanel(preview: controller.promotionPreview),
+                  LayerOneComponentForecastPanel(controller: controller),
                   const SizedBox(height: 18),
                   if (canUnlock)
                     _PromotionActionButton(
@@ -218,73 +218,6 @@ const String _advancementPathHelp =
 
 const String _promotionRulesHelp =
     'Component merges require all six edge towers at max level. Pure tower mixes produce pure projectile and payload odds; mixed colors can create combinations such as one color projectile with another color payload. Higher Layer 1 waves improve the generated component tier.';
-
-class _PromotionPreviewPanel extends StatelessWidget {
-  const _PromotionPreviewPanel({required this.preview});
-
-  final PromotionPreviewSnapshot preview;
-
-  @override
-  Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-    final tint = preview.canPromote
-        ? LightcorePalette.solar
-        : LightcorePalette.layer2;
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: tint.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: tint.withValues(alpha: 0.24)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(Icons.manage_search_rounded, color: tint, size: 18),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  'Component Preview',
-                  style: textTheme.titleMedium?.copyWith(
-                    color: LightcorePalette.mist,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Read-only snapshot before you spend the full ring.',
-            style: textTheme.bodySmall?.copyWith(
-              color: LightcorePalette.mist.withValues(alpha: 0.74),
-            ),
-          ),
-          const SizedBox(height: 12),
-          Wrap(
-            spacing: 10,
-            runSpacing: 10,
-            children: [
-              _BenefitChip(label: 'Action: ${preview.actionLabel}'),
-              _BenefitChip(label: 'Result: ${preview.resultLabel}'),
-              _BenefitChip(label: 'Current core: ${preview.currentCoreLabel}'),
-              _BenefitChip(
-                label: 'Projectile mix: ${preview.projectileMixLabel}',
-              ),
-              _BenefitChip(label: 'Payload mix: ${preview.payloadMixLabel}'),
-              _BenefitChip(label: 'Anomalies: ${preview.anomalyBehaviorLabel}'),
-              _BenefitChip(label: 'Managers: ${preview.managerBehaviorLabel}'),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
 
 class _PromotionActionButton extends StatefulWidget {
   const _PromotionActionButton({

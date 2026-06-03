@@ -77,6 +77,45 @@ void main() {
     );
   });
 
+  test('component forecast labels track wave tier breakpoints', () {
+    final controller = createDeterministicController();
+    addTearDown(controller.dispose);
+
+    expect(
+      controller.activeLayerComponentForecastReadyLabel,
+      'Build towers to shape a component',
+    );
+    expect(controller.activeLayerComponentStatTier, 1);
+    expect(controller.activeLayerExpectedSubtraitCount, 1);
+    expect(
+      controller.activeLayerNextComponentTierLabel,
+      'Reach Wave 10 for 2 subtraits',
+    );
+
+    _preparePureRing(controller, TowerLibrary.orangePrism, bestWave: 10);
+
+    expect(
+      controller.activeLayerComponentForecastReadyLabel,
+      'Ready to Create Layer 2 Component',
+    );
+    expect(controller.activeLayerBestWaveLabel, 'Best Wave 10');
+    expect(controller.activeLayerComponentStatTier, 10);
+    expect(controller.activeLayerExpectedSubtraitCount, 2);
+    expect(
+      controller.activeLayerNextComponentTierLabel,
+      'Reach Wave 25 for 3 subtraits',
+    );
+
+    controller.activeLayer.bestWaveReached = 25;
+
+    expect(controller.activeLayerComponentStatTier, 25);
+    expect(controller.activeLayerExpectedSubtraitCount, 3);
+    expect(
+      controller.activeLayerNextComponentTierLabel,
+      'Max subtrait count reached',
+    );
+  });
+
   test('Layer 2 components round trip through cloud saves', () {
     final controller = createDeterministicController();
     addTearDown(controller.dispose);

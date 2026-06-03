@@ -89,6 +89,9 @@ climbing.
 - Guided Push Wave 5 and Wave 10 feedback uses battle-loop language ("harder
   enemies dented Hex 1, upgrade to hold the lane") instead of region/farm jargon
   while the player is still learning the opening loop.
+- Layer 1 now exposes a Component Forecast in battle, tower management, and the
+  Layer 2 Components screen so players can see current projectile odds, payload
+  odds, best wave, stat tier, and expected subtraits before merging.
 - The post-upgrade threat prompt explains the payoff and highlights the
   Challenge button directly, including harder-enemy framing and the Lumen
   reward preview, so the next step reads as an earned push instead of a menu
@@ -251,6 +254,9 @@ climbing.
 - The starter-region Push Wave 5 prompt appears as a bottom battle action
   after early overmatch, turning the first tower upgrade into immediate added
   pressure without covering the first tower hex.
+- The compact battle Component Forecast appears once the shell has useful
+  Layer 1 context, and the full forecast is available on Tower Management and
+  Layer 2 Components for deliberate build planning.
 
 ### Progression And Rewards
 

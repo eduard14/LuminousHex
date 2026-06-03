@@ -9,6 +9,7 @@ import '../state/lightcore_controller.dart';
 import '../theme/lightcore_palette.dart';
 import '../widgets/aurora_panel.dart';
 import '../widgets/guided_focus_frame.dart';
+import '../widgets/layer_one_component_forecast_panel.dart';
 import '../widgets/lightcore_info_button.dart';
 import '../widgets/meter_bar.dart';
 import '../widgets/symbol_grid_tile.dart';
@@ -152,6 +153,13 @@ class _TowerManagementScreenState extends State<TowerManagementScreen> {
               ),
             ),
             const SliverToBoxAdapter(child: SizedBox(height: 14)),
+            if (controller.builtTowerCount > 0)
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.only(bottom: 14),
+                  child: LayerOneComponentForecastPanel(controller: controller),
+                ),
+              ),
             if (controller.activeLayerHasParentSlot)
               SliverToBoxAdapter(
                 child: Padding(

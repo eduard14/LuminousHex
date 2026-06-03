@@ -907,6 +907,63 @@ extension LightcoreControllerStateAccessors on LightcoreController {
         : 'Create $nextShellClassLabel Component';
   }
 
+  int get activeLayerComponentStatTier => max(1, activeLayer.bestWaveReached);
+
+  int get activeLayerExpectedSubtraitCount {
+    final tier = activeLayerComponentStatTier;
+    if (tier >= 25) {
+      return 3;
+    }
+    if (tier >= 10) {
+      return 2;
+    }
+    return 1;
+  }
+
+  String get activeLayerBestWaveLabel =>
+      'Best Wave ${max(1, activeLayer.bestWaveReached)}';
+
+  String get activeLayerNextComponentTierLabel {
+    final wave = max(1, activeLayer.bestWaveReached);
+    if (wave < 10) {
+      return 'Reach Wave 10 for 2 subtraits';
+    }
+    if (wave < 25) {
+      return 'Reach Wave 25 for 3 subtraits';
+    }
+    return 'Max subtrait count reached';
+  }
+
+  String get activeLayerComponentForecastReadyLabel {
+    if (activeLayerPassiveOnly) {
+      return 'Archived source shell';
+    }
+    if (builtTowerCount <= 0) {
+      return 'Build towers to shape a component';
+    }
+    if (builtTowerCount < slotCount) {
+      return 'Need ${slotCount - builtTowerCount} more towers';
+    }
+    if (promotionReadyTowerCount < slotCount) {
+      return 'Need ${slotCount - promotionReadyTowerCount} max-level towers';
+    }
+    if (canUnlockLayer2) {
+      return 'Ready to Create Layer 2 Component';
+    }
+    return 'Component merge locked';
+  }
+
+  String get latestLayer2ComponentSummaryLabel {
+    final component = latestLayer2Component;
+    if (component == null) {
+      return 'No Layer 2 components created yet';
+    }
+    final subtraitLabel = component.subtraits.length == 1
+        ? '1 subtrait'
+        : '${component.subtraits.length} subtraits';
+    return '${component.signatureLabel} • Wave ${component.reachedWave} • $subtraitLabel';
+  }
+
   bool get promotionRainbowEligible =>
       _layerCanRollRainbowTower(activeLayer, targetTier: activeLayerTargetTier);
 

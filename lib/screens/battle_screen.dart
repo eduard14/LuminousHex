@@ -15,6 +15,7 @@ import '../state/lightcore_controller.dart';
 import '../theme/lightcore_palette.dart';
 import '../widgets/aurora_panel.dart';
 import '../widgets/guided_focus_frame.dart';
+import '../widgets/layer_one_component_forecast_panel.dart';
 import '../widgets/lightcore_quest_card.dart';
 import '../widgets/meter_bar.dart';
 import '../widgets/symbol_grid_tile.dart';
@@ -1545,6 +1546,12 @@ class _CoreStatsPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
     final openingCorePanel = controller.tutorialUsesBattleOnlyNavigation;
+    final showOpeningForecast =
+        controller.tutorialStep == LightcoreTutorialStep.raiseThreat ||
+        controller.tutorialStep == LightcoreTutorialStep.pushNextArea;
+    final showComponentForecast =
+        controller.builtTowerCount > 0 &&
+        (!openingCorePanel || showOpeningForecast);
     final showReadyShotControls = !openingCorePanel;
     final coreHasPayload =
         controller.coreState.payloadType != PayloadType.none ||
@@ -1867,6 +1874,14 @@ class _CoreStatsPanel extends StatelessWidget {
         ),
         const SizedBox(height: 12),
         Text(coreTraitLabel, style: textTheme.bodyMedium),
+        if (showComponentForecast) ...[
+          const SizedBox(height: 12),
+          LayerOneComponentForecastPanel(
+            controller: controller,
+            compact: true,
+            showLatestComponent: false,
+          ),
+        ],
       ],
     );
   }

@@ -16,11 +16,11 @@ flutter test
 
 This covers cloud save and restore behavior, currency invariants, basic menu
 and screen smoke checks, data/catalog integrity, asset references, rewarded-ad
-disclosure, Layer 2 component generation, farm-wave locking, and the lightweight
-Layer 2 component UI smoke. The suite is meant
-to answer “does the app still broadly work?” rather than “did gameplay tuning
-stay exactly the same?” Deleted gameplay tests can be recovered from git history
-if a mechanic becomes stable enough to protect again.
+disclosure, Layer 2 component generation, forecast labels, farm-wave locking,
+and the lightweight Layer 2 component UI smoke. The suite is meant to answer
+“does the app still broadly work?” rather than “did gameplay tuning stay exactly
+the same?” Deleted gameplay tests can be recovered from git history if a
+mechanic becomes stable enough to protect again.
 
 ## Screenshot aesthetic regression checks
 
