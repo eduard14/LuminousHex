@@ -202,10 +202,13 @@ extension LightcoreBattleGameDrawingHelpers on LightcoreBattleGame {
   }
 
   int? _hitTestSlot(Vector2 pointer) {
+    if (pointer.distanceTo(_center) <= _towerCoreGuardRadius) {
+      return null;
+    }
     for (var index = 0; index < _slotPositions.length; index++) {
       final hitScale = controller.tutorialHighlightsBattleSlot(index)
-          ? 1.55
-          : 1.05;
+          ? 1.22
+          : 0.86;
       if (pointer.distanceTo(_slotPositions[index]) <= _slotRadius * hitScale) {
         return index;
       }
@@ -214,8 +217,11 @@ extension LightcoreBattleGameDrawingHelpers on LightcoreBattleGame {
   }
 
   int? _hitTestSlotBody(Vector2 pointer) {
+    if (pointer.distanceTo(_center) <= _towerCoreGuardRadius) {
+      return null;
+    }
     for (var index = 0; index < _slotPositions.length; index++) {
-      if (pointer.distanceTo(_slotPositions[index]) <= _slotRadius * 0.82) {
+      if (pointer.distanceTo(_slotPositions[index]) <= _slotRadius * 0.68) {
         return index;
       }
     }

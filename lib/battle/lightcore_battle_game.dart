@@ -121,6 +121,13 @@ class LightcoreBattleGame extends FlameGame with ScaleDetector {
       Map.unmodifiable(_enemyHitFaceRemaining);
   bool get isShellPromotionAnimating => _shellPromotion != null;
   double get debugShellPromotionElapsed => _shellPromotionElapsed;
+  Offset? get debugCoreCenter => _layoutReady ? _center.toOffset() : null;
+  double get debugCoreTapRadius => _coreTapRadius;
+  double get debugTowerCoreGuardRadius => _towerCoreGuardRadius;
+  Offset? debugSlotCenter(int slotIndex) =>
+      _layoutReady && slotIndex >= 0 && slotIndex < _slotPositions.length
+      ? _slotPositions[slotIndex].toOffset()
+      : null;
   Vector2? debugPulsePosition(String pulseId) => _pulsePositionForId(pulseId);
   Offset? debugEnemyPosition(String enemyId) {
     final enemy = controller.enemies
@@ -131,6 +138,10 @@ class LightcoreBattleGame extends FlameGame with ScaleDetector {
 
   bool get _lowPowerBattleEffects =>
       controller.graphicsQuality == LightcoreGraphicsQuality.lowPower;
+
+  double get _coreTapRadius => _coreRadius * 1.15;
+
+  double get _towerCoreGuardRadius => _coreTapRadius * 0.96;
 
   double get _battleEffectAlphaScale => switch (controller.graphicsQuality) {
     LightcoreGraphicsQuality.high => 1.0,
@@ -169,6 +180,17 @@ class LightcoreBattleGame extends FlameGame with ScaleDetector {
     }
     return _hitTestSlotBody(Vector2(localPosition.dx, localPosition.dy)) !=
         null;
+  }
+
+  bool debugWouldHitTowerAt(Offset localPosition) =>
+      isTowerHitAt(localPosition);
+
+  bool debugWouldHitAnySlotAt(Offset localPosition) {
+    if (!_layoutReady || !enableBattlefieldTaps || _shellPromotion != null) {
+      return false;
+    }
+    final pointer = Vector2(localPosition.dx, localPosition.dy);
+    return _hitTestSlotBody(pointer) != null || _hitTestSlot(pointer) != null;
   }
 
   void playShellPromotion(ShellPromotionPresentation presentation) {
@@ -311,7 +333,7 @@ class LightcoreBattleGame extends FlameGame with ScaleDetector {
       return;
     }
     if (!controller.outerRingRevealed) {
-      if (pointer.distanceTo(_center) <= _coreRadius * 1.15) {
+      if (pointer.distanceTo(_center) <= _coreTapRadius) {
         onCenterTap();
       }
       return;
@@ -338,7 +360,7 @@ class LightcoreBattleGame extends FlameGame with ScaleDetector {
       onSlotTap(tappedSlotIndex);
       return;
     }
-    if (pointer.distanceTo(_center) <= _coreRadius * 1.15) {
+    if (pointer.distanceTo(_center) <= _coreTapRadius) {
       onCenterTap();
     } else {
       onBackgroundTap();

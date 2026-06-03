@@ -240,6 +240,45 @@ void main() {
     expect(find.textContaining('Charge Rate'), findsWidgets);
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets('tower hit zone does not steal taps at the core edge', (
+    tester,
+  ) async {
+    addTearDown(() async {
+      await tester.binding.setSurfaceSize(null);
+    });
+    await tester.binding.setSurfaceSize(const Size(430, 780));
+    final controller = LightcoreController();
+    addTearDown(controller.dispose);
+
+    controller.debugDisableTutorial();
+    controller.selectCenter();
+    controller.lumens = 10000;
+    expect(controller.buildTowerAt(0, TowerLibrary.redPrism), isTrue);
+
+    await _pumpBattleScreen(tester, controller);
+
+    final game = tester
+        .widget<GameWidget<LightcoreBattleGame>>(
+          find.byType(GameWidget<LightcoreBattleGame>),
+        )
+        .game!;
+    final coreCenter = game.debugCoreCenter;
+    final slotCenter = game.debugSlotCenter(0);
+    expect(coreCenter, isNotNull);
+    expect(slotCenter, isNotNull);
+
+    final delta = slotCenter! - coreCenter!;
+    final distance = delta.distance;
+    final direction = Offset(delta.dx / distance, delta.dy / distance);
+    final coreSidePoint =
+        coreCenter + (direction * (game.debugTowerCoreGuardRadius * 0.98));
+
+    expect(game.debugWouldHitAnySlotAt(slotCenter), isTrue);
+    expect(game.debugWouldHitAnySlotAt(coreSidePoint), isFalse);
+    expect(game.debugWouldHitTowerAt(coreSidePoint), isFalse);
+    expect(tester.takeException(), isNull);
+  });
 }
 
 void _prepareOpeningChallengePrompt(LightcoreController controller) {

@@ -142,6 +142,9 @@ climbing.
   are explicitly taught later.
 - Battle canvas input prioritizes visible anomaly focus before tower control hit
   tests, so aiming at enemies does not compete with opening tower panels.
+- Tower hit zones now stay tighter around the visible relay bodies and avoid the
+  central Lightcore edge, so core clicks near the center do not accidentally
+  open tower controls.
 - Red tower badges use a comet-shaped projectile glyph, not a circular marker
   that can read as a numeric level.
 - First-session battle HUD panels hide empty payload rows and payload sub-pips,
