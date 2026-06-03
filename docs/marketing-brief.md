@@ -95,11 +95,18 @@ climbing.
 - Layer 1 now exposes a Component Forecast in battle, tower management, and the
   Layer 2 Components screen so players can see current projectile odds, payload
   odds, best wave, Layer 2 level, and expected subtraits before merging.
+- The Component Forecast now shows the key wave milestones directly: Wave 5
+  farm lock, Wave 10 Layer 2 Lv 1, Wave 15 stronger seed, and Wave 25
+  3-subtrait rolls.
 - The battlefield now keeps a compact wave HUD visible, including the early
   `Wave 10 -> Layer 2 Lv 1` seed goal, so the Layer 1 push has a clear target.
 - Selecting a built tower now opens its level and rolled stat upgrade board on
   the battlefield, making fire-rate, damage, range, multishot-adjacent, and
   other wave-by-wave upgrades visible without hunting through a detail modal.
+- Layer 1 merges now hand the created Layer 2 component into the promotion
+  result surface, showing the rolled projectile, payload, Layer 2 level,
+  source wave, farm-output value, subtraits, favorite action, and area
+  assignment control.
 - Layer 2 Components now have a production inventory: players can sort farmed
   rolls, favorite keepers, assign one component per revealed Threat Map area,
   upgrade them with Component Scrolls, and dismantle unwanted rolls.
@@ -253,6 +260,10 @@ climbing.
 - Region challenges are short wave pushes with isolated combat pressure and a
   per-wave timer: no EXP, upgrade spending, or notification clutter during the
   run.
+- Region intel dialogs now act as the Layer 2 area command surface, showing the
+  next push wave, best farm wave, locked offline output, assigned component,
+  Threat Director, and boss-only equipment source before the player chooses
+  Push Wave or Lock Farm Wave.
 - Farm-wave locking records the best completed wave for that region/director
   setup and determines offline output until the player pushes and locks higher.
 - Swarm Magnet controls the account-wide farming swarm size and can be rerolled

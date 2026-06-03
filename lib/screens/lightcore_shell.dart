@@ -430,6 +430,9 @@ class _LightcoreShellState extends State<LightcoreShell> {
     final sourceCore = controller.coreState;
     final sourceSlots = controller.slots.toList(growable: false);
     final expectedTargetLabel = controller.nextShellClassLabel;
+    final componentIdsBefore = controller.layer2Components
+        .map((component) => component.id)
+        .toSet();
 
     setState(() {
       _activeOverlay = null;
@@ -456,6 +459,12 @@ class _LightcoreShellState extends State<LightcoreShell> {
         });
         return;
       }
+      final createdComponents = controller.layer2Components
+          .where((component) => !componentIdsBefore.contains(component.id))
+          .toList(growable: false);
+      final layer2Component = createdComponents.isEmpty
+          ? controller.latestLayer2Component
+          : createdComponents.last;
       final presentation = ShellPromotionPresentation(
         sequence: ++_shellPromotionSequence,
         sourceLayerLabel: sourceLayerLabel,
@@ -467,6 +476,7 @@ class _LightcoreShellState extends State<LightcoreShell> {
         sourceCore: sourceCore,
         targetCore: controller.coreState,
         sourceSlots: sourceSlots,
+        layer2Component: layer2Component,
       );
       setState(() {
         _activeShellPromotionPresentation = presentation;

@@ -18,8 +18,9 @@ This covers cloud save and restore behavior, currency invariants, basic menu
 and screen smoke checks, data/catalog integrity, asset references, rewarded-ad
 disclosure, Layer 2 component generation, forecast labels, farm-wave locking,
 component inventory actions, Component Scroll persistence, region assignment
-output scaling, boss scroll rewards, and the lightweight Layer 2 component UI
-smoke. The suite is meant to answer
+output scaling, boss scroll rewards, wave milestone chips, the Layer 2 area
+command panel, and the lightweight Layer 2 component UI smoke. The suite is
+meant to answer
 “does the app still broadly work?” rather than “did gameplay tuning stay exactly
 the same?” Deleted gameplay tests can be recovered from git history if a
 mechanic becomes stable enough to protect again.

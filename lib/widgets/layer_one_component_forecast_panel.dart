@@ -100,6 +100,11 @@ class LayerOneComponentForecastPanel extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
+          _WaveMilestoneStrip(
+            bestWave: controller.activeLayer.bestWaveReached,
+            compact: compact,
+          ),
+          const SizedBox(height: 12),
           _RateSummaryRow(
             title: 'Projectile',
             emptyLabel: 'No projectile odds yet',
@@ -208,6 +213,82 @@ class LayerOneComponentForecastPanel extends StatelessWidget {
           ],
         );
       },
+    );
+  }
+}
+
+class _WaveMilestoneStrip extends StatelessWidget {
+  const _WaveMilestoneStrip({required this.bestWave, required this.compact});
+
+  final int bestWave;
+  final bool compact;
+
+  @override
+  Widget build(BuildContext context) {
+    final milestones = const [
+      (wave: 5, label: 'Farm lock'),
+      (wave: 10, label: 'Layer 2 Lv 1'),
+      (wave: 15, label: 'Stronger seed'),
+      (wave: 25, label: '3 subtraits'),
+    ];
+    return Wrap(
+      spacing: 6,
+      runSpacing: 6,
+      children: [
+        for (final milestone in milestones.take(compact ? 3 : 4))
+          _MilestoneChip(
+            wave: milestone.wave,
+            label: milestone.label,
+            reached: bestWave >= milestone.wave,
+          ),
+      ],
+    );
+  }
+}
+
+class _MilestoneChip extends StatelessWidget {
+  const _MilestoneChip({
+    required this.wave,
+    required this.label,
+    required this.reached,
+  });
+
+  final int wave;
+  final String label;
+  final bool reached;
+
+  @override
+  Widget build(BuildContext context) {
+    final tint = reached ? LightcorePalette.success : LightcorePalette.warning;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: tint.withValues(alpha: reached ? 0.14 : 0.08),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: tint.withValues(alpha: 0.28)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              reached
+                  ? Icons.check_circle_rounded
+                  : Icons.radio_button_unchecked,
+              color: tint,
+              size: 15,
+            ),
+            const SizedBox(width: 6),
+            Text(
+              'W$wave $label',
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                color: tint,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

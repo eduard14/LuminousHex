@@ -145,6 +145,7 @@ class _BattleScreenState extends State<BattleScreen> {
   bool _selectionControlsVisible = true;
   Timer? _promotionStatsTimer;
   int? _activePromotionSequence;
+  Layer2ComponentState? _promotionResultComponent;
   int? _canvasTapPointer;
   Offset? _canvasTapStart;
   bool _canvasTapCanceled = false;
@@ -314,10 +315,12 @@ class _BattleScreenState extends State<BattleScreen> {
         }
         widget.controller.selectCenter();
         _game.clearShellPromotion();
+        final resultComponent = presentation.layer2Component;
         setState(() {
           _panelFocus = _BattlePanelFocus.core;
           _statsTarget = const _BattleStatsTarget.core();
           _selectionControlsVisible = true;
+          _promotionResultComponent = resultComponent;
           _activePromotionSequence = null;
           _promotionStatsTimer = null;
         });
@@ -1075,6 +1078,22 @@ class _BattleScreenState extends State<BattleScreen> {
     );
   }
 
+  Widget? _buildPromotionResultCard({
+    required LightcoreController controller,
+    required bool compact,
+  }) {
+    final component = _promotionResultComponent;
+    if (component == null || !widget.showBattleHud) {
+      return null;
+    }
+    return _Layer2ComponentResultCard(
+      controller: controller,
+      component: component,
+      compact: compact,
+      onDismissed: () => setState(() => _promotionResultComponent = null),
+    );
+  }
+
   bool _tutorialOpenPanelBlocksCurrentStep(LightcoreController controller) {
     if (!_selectionControlsVisible) {
       return false;
@@ -1190,6 +1209,10 @@ class _BattleScreenState extends State<BattleScreen> {
       controller,
       compact: compact,
     );
+    final promotionResultCard = _buildPromotionResultCard(
+      controller: controller,
+      compact: compact,
+    );
     final shellVisibilityHud = _buildShellVisibilityHud(
       controller: controller,
       compact: compact,
@@ -1236,6 +1259,16 @@ class _BattleScreenState extends State<BattleScreen> {
             child: Align(
               alignment: Alignment.bottomCenter,
               child: raiseThreatPrompt,
+            ),
+          ),
+        if (promotionResultCard != null)
+          Positioned(
+            left: inset,
+            right: inset,
+            top: topInset + (compact ? 86 : 72),
+            child: Align(
+              alignment: Alignment.topCenter,
+              child: promotionResultCard,
             ),
           ),
       ],
@@ -1370,6 +1403,204 @@ class _LayerOneWaveHud extends StatelessWidget {
                 ),
               ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _Layer2ComponentResultCard extends StatelessWidget {
+  const _Layer2ComponentResultCard({
+    required this.controller,
+    required this.component,
+    required this.compact,
+    required this.onDismissed,
+  });
+
+  final LightcoreController controller;
+  final Layer2ComponentState component;
+  final bool compact;
+  final VoidCallback onDismissed;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    final current = controller.layer2ComponentById(component.id) ?? component;
+    final revealedRegions = controller.threatRegions
+        .where((state) => state.revealed)
+        .map((state) => controller.threatRegionConfigById(state.regionId))
+        .whereType<ThreatRegionConfig>()
+        .toList(growable: false);
+    final assignedRegion = current.equippedRegionId == null
+        ? null
+        : controller.threatRegionConfigById(current.equippedRegionId!);
+    final tint = current.projectileAffinity.color;
+    return ConstrainedBox(
+      constraints: BoxConstraints(maxWidth: compact ? 380 : 520),
+      child: AuroraPanel(
+        tint: tint,
+        radius: 18,
+        padding: EdgeInsets.all(compact ? 12 : 14),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(Icons.auto_awesome_rounded, color: tint),
+                const SizedBox(width: 9),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Layer 2 Component Created',
+                        style: textTheme.titleMedium?.copyWith(
+                          color: LightcorePalette.mist,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        current.signatureLabel,
+                        style: textTheme.bodySmall?.copyWith(
+                          color: LightcorePalette.mist.withValues(alpha: 0.78),
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  tooltip: 'Dismiss result',
+                  onPressed: onDismissed,
+                  icon: const Icon(Icons.close_rounded),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Wrap(
+              spacing: 7,
+              runSpacing: 7,
+              children: [
+                _BattleResultChip(label: 'Wave ${current.reachedWave}'),
+                _BattleResultChip(
+                  label: 'Layer 2 Lv ${current.reachedWave ~/ 10}',
+                ),
+                _BattleResultChip(
+                  label:
+                      '${current.subtraits.length} subtrait${current.subtraits.length == 1 ? '' : 's'}',
+                ),
+                _BattleResultChip(
+                  label: controller.layer2ComponentOutputLabel(current),
+                ),
+                _BattleResultChip(
+                  label: assignedRegion == null
+                      ? 'Unassigned'
+                      : 'Assigned: ${assignedRegion.name}',
+                ),
+              ],
+            ),
+            if (current.subtraits.isNotEmpty) ...[
+              const SizedBox(height: 9),
+              Wrap(
+                spacing: 7,
+                runSpacing: 7,
+                children: [
+                  for (final trait in current.subtraits)
+                    _BattleResultChip(
+                      label:
+                          '${trait.type.label} +${(trait.value * 100).toStringAsFixed(1)}%',
+                    ),
+                ],
+              ),
+            ],
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                FilledButton.icon(
+                  onPressed: () =>
+                      controller.toggleLayer2ComponentFavorite(current.id),
+                  icon: Icon(
+                    current.favorite
+                        ? Icons.star_rounded
+                        : Icons.star_outline_rounded,
+                  ),
+                  label: Text(current.favorite ? 'Kept' : 'Keep Roll'),
+                ),
+                if (revealedRegions.isNotEmpty)
+                  PopupMenuButton<String>(
+                    tooltip: 'Assign component to an area',
+                    onSelected: (regionId) {
+                      controller.equipLayer2ComponentToRegion(
+                        componentId: current.id,
+                        regionId: regionId,
+                      );
+                    },
+                    itemBuilder: (context) => [
+                      for (final region in revealedRegions)
+                        PopupMenuItem(
+                          value: region.id,
+                          child: Text(region.name),
+                        ),
+                    ],
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: LightcorePalette.stroke),
+                      ),
+                      child: const Padding(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 9,
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.public_rounded, size: 18),
+                            SizedBox(width: 8),
+                            Text('Assign Area'),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _BattleResultChip extends StatelessWidget {
+  const _BattleResultChip({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: LightcorePalette.abyss.withValues(alpha: 0.56),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: LightcorePalette.stroke.withValues(alpha: 0.36),
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
+        child: Text(
+          label,
+          style: Theme.of(context).textTheme.labelMedium?.copyWith(
+            color: LightcorePalette.mist,
+            fontWeight: FontWeight.w800,
           ),
         ),
       ),

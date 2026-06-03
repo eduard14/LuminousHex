@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lightcore/data/tower_configs.dart';
 import 'package:lightcore/screens/advancement_screen.dart';
+import 'package:lightcore/screens/threat_map_screen.dart';
 import 'package:lightcore/screens/tower_management_screen.dart';
 
 import 'helpers/lightcore_test_fixtures.dart';
@@ -37,6 +38,9 @@ void main() {
       expect(find.text('Best Wave 25'), findsOneWidget);
       expect(find.text('Layer 2 Lv 2'), findsOneWidget);
       expect(find.text('3 subtraits'), findsOneWidget);
+      expect(find.text('W5 Farm lock'), findsOneWidget);
+      expect(find.text('W10 Layer 2 Lv 1'), findsOneWidget);
+      expect(find.text('W25 3 subtraits'), findsOneWidget);
       final createPrismButton = find.text('Create Layer 2 Component');
       final advancementScroll = find.byKey(
         const PageStorageKey<String>('advancement-scroll'),
@@ -123,6 +127,74 @@ void main() {
     expect(find.text('Need 5 more towers'), findsOneWidget);
     expect(find.text('Best Wave 1'), findsOneWidget);
     expect(find.text('Layer 2 Lv 0'), findsOneWidget);
+    expect(find.text('W5 Farm lock'), findsOneWidget);
     expect(find.text('Red 100%'), findsWidgets);
+  });
+
+  testWidgets('threat map region dialog shows Layer 2 area command state', (
+    tester,
+  ) async {
+    addTearDown(() async {
+      await tester.binding.setSurfaceSize(null);
+    });
+    await tester.binding.setSurfaceSize(lightcoreGoldenDesktopSize);
+
+    final controller = createDeterministicController();
+    addTearDown(controller.dispose);
+    controller.debugDisableTutorial();
+    controller.lumens = 100000;
+    expect(controller.buildTowerAt(0, TowerLibrary.redPrism), isTrue);
+    final starter = controller.threatRegionConfigs.first;
+    expect(controller.startThreatRegionChallenge(starter.id), isTrue);
+    expect(controller.completeThreatRegionChallenge(), isTrue);
+
+    preparePromotionReadyRing(controller);
+    controller.activeLayer.bestWaveReached = 10;
+    controller.unlockLayer2Tower();
+    final component = controller.latestLayer2Component;
+    expect(component, isNotNull);
+    expect(
+      controller.equipLayer2ComponentToRegion(
+        componentId: component!.id,
+        regionId: starter.id,
+      ),
+      isTrue,
+    );
+    expect(controller.startThreatRegionFarmValidation(starter.id), isTrue);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        debugShowCheckedModeBanner: false,
+        theme: buildTestLightcoreTheme(),
+        home: Scaffold(
+          body: Builder(
+            builder: (context) => Center(
+              child: FilledButton(
+                onPressed: () => showThreatRegionIntelDialog(
+                  context,
+                  controller,
+                  starter.id,
+                ),
+                child: const Text('Open region'),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await pumpFixedFrame(tester);
+
+    await tester.tap(find.text('Open region'));
+    await pumpFixedFrame(tester);
+
+    expect(find.text('Layer 2 Area Command'), findsOneWidget);
+    expect(find.text('Best farm wave'), findsOneWidget);
+    expect(find.text('Wave 5'), findsWidgets);
+    expect(find.text('Offline'), findsWidgets);
+    expect(find.text('Component'), findsOneWidget);
+    expect(find.textContaining('farm output'), findsWidgets);
+    expect(find.text('Equipment'), findsOneWidget);
+    expect(find.text('Layer 2+ Apex only'), findsOneWidget);
+    expect(find.text('Relock Farm Wave'), findsOneWidget);
   });
 }

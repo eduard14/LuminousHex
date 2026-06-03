@@ -10,6 +10,7 @@ class ShellPromotionPresentation {
     required this.sourceCore,
     required this.targetCore,
     required this.sourceSlots,
+    this.layer2Component,
   });
 
   final int sequence;
@@ -20,4 +21,5 @@ class ShellPromotionPresentation {
   final CoreState sourceCore;
   final CoreState targetCore;
   final List<OuterTowerState> sourceSlots;
+  final Layer2ComponentState? layer2Component;
 }

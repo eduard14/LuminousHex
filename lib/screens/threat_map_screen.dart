@@ -936,6 +936,14 @@ class _ThreatRegionIntelDialog extends StatelessWidget {
                       ),
                     ],
                   ),
+                  const SizedBox(height: 14),
+                  _Layer2AreaCommandPanel(
+                    controller: controller,
+                    region: region,
+                    state: state,
+                    activeHere: activeHere,
+                    validationHere: validationHere,
+                  ),
                 ],
                 const SizedBox(height: 18),
                 Row(
@@ -947,70 +955,260 @@ class _ThreatRegionIntelDialog extends StatelessWidget {
                         label: const Text('Close'),
                       ),
                     ),
-                    if (revealed) ...[
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: FilledButton.icon(
-                          onPressed:
-                              controller.canStartThreatRegionChallenge(
-                                region.id,
-                              )
-                              ? () {
-                                  final started = controller
-                                      .startThreatRegionChallenge(region.id);
-                                  if (started) {
-                                    Navigator.of(context).maybePop();
-                                  }
-                                }
-                              : null,
-                          icon: Icon(
-                            full ? Icons.check_rounded : Icons.flag_rounded,
-                          ),
-                          label: Text(
-                            full
-                                ? 'Cleared'
-                                : activeHere
-                                ? 'Active'
-                                : 'Push Wave ${((state?.stabilizedLevel ?? 0) + 1) * 5}',
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: OutlinedButton.icon(
-                          onPressed:
-                              controller.canStartThreatRegionFarmValidation(
-                                region.id,
-                              )
-                              ? () {
-                                  final started = controller
-                                      .startThreatRegionFarmValidation(
-                                        region.id,
-                                      );
-                                  if (started) {
-                                    Navigator.of(context).maybePop();
-                                  }
-                                }
-                              : null,
-                          icon: Icon(
-                            controller.validatedFarmRegionId == region.id
-                                ? Icons.verified_rounded
-                                : Icons.waves_rounded,
-                          ),
-                          label: Text(
-                            validationHere
-                                ? 'Farm Active'
-                                : controller.validatedFarmRegionId == region.id
-                                ? 'Relock'
-                                : 'Lock Farm Wave',
-                          ),
-                        ),
-                      ),
-                    ],
                   ],
                 ),
               ],
             ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _Layer2AreaCommandPanel extends StatelessWidget {
+  const _Layer2AreaCommandPanel({
+    required this.controller,
+    required this.region,
+    required this.state,
+    required this.activeHere,
+    required this.validationHere,
+  });
+
+  final LightcoreController controller;
+  final ThreatRegionConfig region;
+  final ThreatRegionState state;
+  final bool activeHere;
+  final bool validationHere;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    final component = controller.equippedLayer2ComponentForRegion(region.id);
+    final nextWave = (state.stabilizedLevel + 1) * 5;
+    final canPush = controller.canStartThreatRegionChallenge(region.id);
+    final canLock = controller.canStartThreatRegionFarmValidation(region.id);
+    final lockedHere = controller.validatedFarmRegionId == region.id;
+    final offlineKills = lockedHere
+        ? controller.threatRegionOfflineKillsPerHour
+        : 0.0;
+    final offlineLumens = lockedHere
+        ? controller.threatRegionOfflineLumensPerHour
+        : 0.0;
+    final farmWave = math.max(
+      state.bestCompletedWave,
+      state.stabilizedLevel * 5,
+    );
+    final finalWave = region.stabilizationLayers * 5;
+    final director = state.assignedThreatDirectorId == null
+        ? null
+        : controller.enemyManagers
+              .where(
+                (manager) =>
+                    manager.instanceId == state.assignedThreatDirectorId,
+              )
+              .cast<EnemyManagerState?>()
+              .firstWhere((manager) => manager != null, orElse: () => null);
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: LightcorePalette.panelRaised.withValues(alpha: 0.5),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: LightcorePalette.layer2.withValues(alpha: 0.26),
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(
+                  Icons.route_rounded,
+                  color: LightcorePalette.layer2,
+                  size: 20,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Layer 2 Area Command',
+                    style: textTheme.titleSmall?.copyWith(
+                      color: LightcorePalette.mist,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ),
+                _MapChip(
+                  label: lockedHere ? 'Farming' : 'Needs lock',
+                  tint: lockedHere
+                      ? LightcorePalette.success
+                      : LightcorePalette.warning,
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                _CommandMetric(
+                  label: 'Best farm wave',
+                  value: farmWave <= 0 ? 'None' : 'Wave $farmWave',
+                ),
+                _CommandMetric(
+                  label: 'Route clear',
+                  value: 'Wave ${state.stabilizedLevel * 5}/$finalWave',
+                ),
+                _CommandMetric(
+                  label: 'Next push',
+                  value: state.stabilizedLevel >= region.stabilizationLayers
+                      ? 'Cleared'
+                      : 'Wave $nextWave',
+                ),
+                _CommandMetric(
+                  label: 'Offline',
+                  value: lockedHere
+                      ? '${offlineLumens.toStringAsFixed(0)} L/h'
+                      : 'Lock wave',
+                ),
+                _CommandMetric(
+                  label: 'Kills',
+                  value: lockedHere
+                      ? '${offlineKills.toStringAsFixed(0)}/h'
+                      : 'Pending',
+                ),
+                _CommandMetric(
+                  label: 'Director',
+                  value: director?.name ?? 'None',
+                ),
+                _CommandMetric(
+                  label: 'Component',
+                  value: component == null
+                      ? 'Unassigned'
+                      : controller.layer2ComponentOutputLabel(component),
+                ),
+                _CommandMetric(label: 'Equipment', value: 'Layer 2+ Apex only'),
+              ],
+            ),
+            if (component != null) ...[
+              const SizedBox(height: 10),
+              Text(
+                component.signatureLabel,
+                style: textTheme.bodySmall?.copyWith(
+                  color: LightcorePalette.layer2,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ],
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                FilledButton.icon(
+                  onPressed: canPush
+                      ? () {
+                          final started = controller.startThreatRegionChallenge(
+                            region.id,
+                          );
+                          if (started) {
+                            Navigator.of(context).maybePop();
+                          }
+                        }
+                      : null,
+                  icon: Icon(
+                    activeHere
+                        ? Icons.warning_amber_rounded
+                        : Icons.flag_rounded,
+                  ),
+                  label: Text(
+                    activeHere
+                        ? 'Challenge Active'
+                        : state.stabilizedLevel >= region.stabilizationLayers
+                        ? 'Area Cleared'
+                        : 'Push Wave $nextWave',
+                  ),
+                ),
+                OutlinedButton.icon(
+                  onPressed: canLock
+                      ? () {
+                          final locked = controller
+                              .startThreatRegionFarmValidation(region.id);
+                          if (locked) {
+                            Navigator.of(context).maybePop();
+                          }
+                        }
+                      : null,
+                  icon: Icon(
+                    validationHere
+                        ? Icons.hourglass_top_rounded
+                        : lockedHere
+                        ? Icons.verified_rounded
+                        : Icons.waves_rounded,
+                  ),
+                  label: Text(
+                    validationHere
+                        ? 'Locking Farm'
+                        : lockedHere
+                        ? 'Relock Farm Wave'
+                        : 'Lock Farm Wave',
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CommandMetric extends StatelessWidget {
+  const _CommandMetric({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return ConstrainedBox(
+      constraints: const BoxConstraints(minWidth: 118, maxWidth: 176),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: LightcorePalette.abyss.withValues(alpha: 0.48),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: LightcorePalette.stroke.withValues(alpha: 0.34),
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  color: LightcorePalette.mist.withValues(alpha: 0.62),
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                value,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                  color: LightcorePalette.mist,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+            ],
           ),
         ),
       ),
