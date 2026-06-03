@@ -332,7 +332,11 @@ extension LightcoreControllerStateAccessors on LightcoreController {
 
   double get coreDamageAmount => _coreDamageAmountsByLayer[_activeLayerId] ?? 0;
 
-  Layer2TowerState get layer2State => _layer2;
+  UnmodifiableListView<Layer2ComponentState> get layer2Components =>
+      UnmodifiableListView(_layer2Components);
+
+  Layer2ComponentState? get latestLayer2Component =>
+      _layer2Components.isEmpty ? null : _layer2Components.last;
 
   double get relayImpactRadius => _relayImpactRadius;
 
@@ -660,7 +664,7 @@ extension LightcoreControllerStateAccessors on LightcoreController {
       _tutorialPromptsEnabled &&
       !_earlyTutorialComplete &&
       activeLayer.tier == 1 &&
-      !_layer2.unlocked;
+      _layer2Components.isEmpty;
 
   bool get tutorialShowsStarterProjectileChoices =>
       _earlyTutorialComplete &&
@@ -668,7 +672,7 @@ extension LightcoreControllerStateAccessors on LightcoreController {
       builtTowerCount == 1 &&
       activeLayer.parentLayerId == null &&
       activeLayer.tier == 1 &&
-      !_layer2.unlocked;
+      _layer2Components.isEmpty;
 
   bool get tutorialHighlightsBattleCore =>
       _tutorialStep == LightcoreTutorialStep.unfoldShell;
@@ -898,7 +902,9 @@ extension LightcoreControllerStateAccessors on LightcoreController {
     if (layer3TrialRequired) {
       return 'Begin Nexus Trial';
     }
-    return 'Create $nextShellClassLabel';
+    return activeLayer.tier == 1
+        ? 'Create Layer 2 Component'
+        : 'Create $nextShellClassLabel Component';
   }
 
   bool get promotionRainbowEligible =>

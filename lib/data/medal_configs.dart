@@ -83,7 +83,7 @@ class MedalLibrary {
     id: 'ascendant',
     name: 'Ascendant',
     summary: 'A profile medal for pushing beyond the root shell.',
-    requirementLabel: 'Reach Prestige 1',
+    requirementLabel: 'Reach Layer 2',
     requiredValue: 1,
     bonusLabel: '+5.0% Range',
     bonuses: EquipmentBonusProfile(range: 0.05),

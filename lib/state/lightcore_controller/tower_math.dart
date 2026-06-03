@@ -660,26 +660,7 @@ extension LightcoreControllerTowerMath on LightcoreController {
   }
 
   double _layer2TowerDpsEstimate() {
-    if (!_layer2.unlocked) {
-      return 0;
-    }
-    final shotPower =
-        (8 + (_layer2.count * 2.4) + (builtTowerCount * 1.2)) *
-        _towerDamageOutputMultiplier *
-        friendAllianceCombatMultiplier *
-        _averageFinalDamageForLayer(activeLayer) *
-        ((_averageMinDamageForLayer(activeLayer) +
-                _averageMaxDamageForLayer(activeLayer)) /
-            2) *
-        _projectileDamageMultiplier(_layer2.projectileType) *
-        _averageCriticalMultiplier(
-          _averageCritChanceForLayer(activeLayer),
-          _averageCritMultiplierForLayer(activeLayer),
-        ) *
-        _averageNormalDamageForLayer(activeLayer);
-    final cooldown =
-        0.78 * _projectileCooldownMultiplier(_layer2.projectileType);
-    return shotPower / max(0.08, cooldown);
+    return 0;
   }
 
   double get activeLayerMaxDpsEstimate {

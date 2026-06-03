@@ -202,7 +202,7 @@ void main() {
     await _pumpBattleScreen(tester, controller);
 
     expect(find.text('Challenge live'), findsOneWidget);
-    expect(find.text('Challenge Lv 1'), findsOneWidget);
+    expect(find.text('Push Wave 5'), findsOneWidget);
     expect(find.textContaining('Enemy Lv 2'), findsOneWidget);
     expect(find.textContaining('upgrade Hex 1'), findsOneWidget);
     expect(find.text('Challenge ready'), findsNothing);

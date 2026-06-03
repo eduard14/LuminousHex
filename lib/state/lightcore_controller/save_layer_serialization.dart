@@ -10,7 +10,6 @@ extension LightcoreControllerSaveLayerSerialization on LightcoreController {
           .map(_serializeOuterTowerState)
           .toList(growable: false),
       'core': _serializeCoreState(layer.core),
-      'layer2': _serializeLayer2TowerState(layer.layer2),
       'activeEnemyCardIds': List<String>.from(layer.activeEnemyCardIds),
       'activeBossEnemyCardId': layer.activeBossEnemyCardId,
       'enemyTargetCount': layer.enemyTargetCount,
@@ -48,6 +47,7 @@ extension LightcoreControllerSaveLayerSerialization on LightcoreController {
       'promotedParentLayerId': layer.promotedParentLayerId,
       'promotedIntoParentSlot': layer.promotedIntoParentSlot,
       'promotionTraitRoll': layer.promotionTraitRoll,
+      'bestWaveReached': layer.bestWaveReached,
       'layer3TrialCleared': layer.layer3TrialCleared,
     };
   }
@@ -83,7 +83,6 @@ extension LightcoreControllerSaveLayerSerialization on LightcoreController {
       label: _stringOrNull(data['label']) ?? 'Recovered Shell',
       slots: _deserializeOuterTowerSlots(_coerceList(data['slots'])),
       core: _deserializeCoreState(_coerceMap(data['core'])),
-      layer2: _deserializeLayer2TowerState(_coerceMap(data['layer2'])),
       enemies: <EnemyState>[],
       pulses: <EnergyPulseState>[],
       shots: <CoreShotState>[],
@@ -128,6 +127,7 @@ extension LightcoreControllerSaveLayerSerialization on LightcoreController {
       promotedParentLayerId: _stringOrNull(data['promotedParentLayerId']),
       promotedIntoParentSlot: _boolValue(data['promotedIntoParentSlot']),
       promotionTraitRoll: _intValue(data['promotionTraitRoll']),
+      bestWaveReached: max(1, _intValue(data['bestWaveReached'], fallback: 1)),
       layer3TrialCleared: _boolValue(data['layer3TrialCleared']),
     );
   }
@@ -459,6 +459,127 @@ extension LightcoreControllerSaveLayerSerialization on LightcoreController {
     );
   }
 
+  Map<String, dynamic> _serializeLayer2ComponentState(
+    Layer2ComponentState component,
+  ) {
+    return <String, dynamic>{
+      'id': component.id,
+      'sourceLayerId': component.sourceLayerId,
+      'sourceLayerLabel': component.sourceLayerLabel,
+      'createdAtMillis': component.createdAtMillis,
+      'reachedWave': component.reachedWave,
+      'statTier': component.statTier,
+      'projectileAffinity': component.projectileAffinity.name,
+      'payloadAffinity': component.payloadAffinity?.name,
+      'projectileType': component.projectileType.name,
+      'payloadType': component.payloadType.name,
+      'basePowerMultiplier': component.basePowerMultiplier,
+      'baseRangeMultiplier': component.baseRangeMultiplier,
+      'baseChargeMultiplier': component.baseChargeMultiplier,
+      'baseFinalDamageMultiplier': component.baseFinalDamageMultiplier,
+      'baseBossDamageMultiplier': component.baseBossDamageMultiplier,
+      'baseNormalDamageMultiplier': component.baseNormalDamageMultiplier,
+      'baseDefensePenetration': component.baseDefensePenetration,
+      'subtraits': component.subtraits
+          .map(
+            (subtrait) => <String, dynamic>{
+              'type': subtrait.type.name,
+              'value': subtrait.value,
+            },
+          )
+          .toList(growable: false),
+      'scrollLevel': component.scrollLevel,
+      'equippedRegionId': component.equippedRegionId,
+    };
+  }
+
+  Layer2ComponentState? _deserializeLayer2ComponentState(
+    Map<String, dynamic> data,
+  ) {
+    final id = _stringOrNull(data['id']);
+    final sourceLayerId = _stringOrNull(data['sourceLayerId']);
+    final projectileAffinity = _enumByName(
+      PrototypeAffinity.values,
+      _stringOrNull(data['projectileAffinity']),
+    );
+    final projectileType = _enumByName(
+      ProjectileType.values,
+      _stringOrNull(data['projectileType']),
+    );
+    final payloadType =
+        _enumByName(PayloadType.values, _stringOrNull(data['payloadType'])) ??
+        PayloadType.none;
+    if (id == null ||
+        sourceLayerId == null ||
+        projectileAffinity == null ||
+        projectileType == null) {
+      return null;
+    }
+    return Layer2ComponentState(
+      id: id,
+      sourceLayerId: sourceLayerId,
+      sourceLayerLabel:
+          _stringOrNull(data['sourceLayerLabel']) ?? 'Archived Shell',
+      createdAtMillis: _intValue(data['createdAtMillis']),
+      reachedWave: max(1, _intValue(data['reachedWave'], fallback: 1)),
+      statTier: max(1, _intValue(data['statTier'], fallback: 1)),
+      projectileAffinity: projectileAffinity,
+      payloadAffinity: _enumByName(
+        PrototypeAffinity.values,
+        _stringOrNull(data['payloadAffinity']),
+      ),
+      projectileType: projectileType,
+      payloadType: payloadType,
+      basePowerMultiplier: _doubleValue(
+        data['basePowerMultiplier'],
+        fallback: 1,
+      ),
+      baseRangeMultiplier: _doubleValue(
+        data['baseRangeMultiplier'],
+        fallback: 1,
+      ),
+      baseChargeMultiplier: _doubleValue(
+        data['baseChargeMultiplier'],
+        fallback: 1,
+      ),
+      baseFinalDamageMultiplier: _doubleValue(
+        data['baseFinalDamageMultiplier'],
+        fallback: 1,
+      ),
+      baseBossDamageMultiplier: _doubleValue(
+        data['baseBossDamageMultiplier'],
+        fallback: 1,
+      ),
+      baseNormalDamageMultiplier: _doubleValue(
+        data['baseNormalDamageMultiplier'],
+        fallback: 1,
+      ),
+      baseDefensePenetration: _doubleValue(data['baseDefensePenetration']),
+      subtraits: _coerceList(data['subtraits'])
+          .map((item) => _deserializeLayer2ComponentSubtrait(_coerceMap(item)))
+          .whereType<Layer2ComponentSubtraitState>()
+          .toList(growable: false),
+      scrollLevel: max(0, _intValue(data['scrollLevel'])),
+      equippedRegionId: _stringOrNull(data['equippedRegionId']),
+    );
+  }
+
+  Layer2ComponentSubtraitState? _deserializeLayer2ComponentSubtrait(
+    Map<String, dynamic> data,
+  ) {
+    final type = _enumByName(
+      TowerUpgradeStatType.values,
+      _stringOrNull(data['type']),
+    );
+    if (type == null) {
+      return null;
+    }
+    return Layer2ComponentSubtraitState(
+      type: type,
+      value: _doubleValue(data['value']),
+    );
+  }
+
   ProjectileType? _deserializeOuterTowerProjectileType(
     TowerConfig? config,
     String? projectileTypeName,
@@ -648,41 +769,6 @@ extension LightcoreControllerSaveLayerSerialization on LightcoreController {
       coreUpgradeOptions: coreUpgradeOptions.isNotEmpty
           ? coreUpgradeOptions
           : _rollCoreUpgradeBoardForLoadout(projectileType, payloadType),
-    );
-  }
-
-  Map<String, dynamic> _serializeLayer2TowerState(Layer2TowerState layer2) {
-    return <String, dynamic>{
-      'unlocked': layer2.unlocked,
-      'count': layer2.count,
-      'fireCooldownRemaining': layer2.fireCooldownRemaining,
-      'projectileType': layer2.projectileType.name,
-      'payloadType': layer2.payloadType.name,
-      'affinity': layer2.affinity.name,
-      'sourceSummary': layer2.sourceSummary,
-    };
-  }
-
-  Layer2TowerState _deserializeLayer2TowerState(Map<String, dynamic> data) {
-    return Layer2TowerState(
-      unlocked: _boolValue(data['unlocked']),
-      count: _intValue(data['count']),
-      fireCooldownRemaining: _doubleValue(data['fireCooldownRemaining']),
-      projectileType: _restoreActiveProjectileType(
-        _stringOrNull(data['projectileType']),
-        fallback: ProjectileType.threadBeam,
-      ),
-      payloadType:
-          _enumByName(PayloadType.values, _stringOrNull(data['payloadType'])) ??
-          PayloadType.none,
-      affinity:
-          _enumByName(
-            PrototypeAffinity.values,
-            _stringOrNull(data['affinity']),
-          ) ??
-          PrototypeAffinity.solar,
-      sourceSummary:
-          _stringOrNull(data['sourceSummary']) ?? 'Awaiting first ascension',
     );
   }
 }

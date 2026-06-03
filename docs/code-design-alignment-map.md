@@ -20,14 +20,14 @@ start from a targeted `rg` search.
 | Area | Primary files | Useful symbols / searches |
 | --- | --- | --- |
 | Game authority | `lib/state/lightcore_controller.dart` | `LightcoreController`, `tick`, `_spawnEnemy`, `_killEnemy`, `unlockLayer2Tower` |
-| Runtime state | `lib/models/lightcore_state.dart` | `OuterTowerState`, `CoreState`, `Layer2TowerState`, `TowerLayerSnapshot` |
+| Runtime state | `lib/models/lightcore_state.dart` | `OuterTowerState`, `CoreState`, `Layer2ComponentState`, `TowerLayerSnapshot` |
 | Tower content | `lib/data/tower_configs.dart`, `lib/data/lumicore_trait_catalog.dart` | `TowerLibrary`, `layer1ProjectileByAffinity`, `layer2PayloadByAffinity` |
 | Anomaly content | `lib/data/enemy_configs.dart`, `lib/data/card_configs.dart` | `EnemyLibrary`, `BossEnemyLibrary`, `EnemyCardState` |
 | Threat Directors | `lib/data/enemy_manager_configs.dart` | `EnemyManagerLibrary`, `EnemyManagerState`, `enemyManagerForCard` |
 | Equipment | `lib/data/equipment_configs.dart` | `EquipmentLibrary`, `PlayerEquipmentItem`, `_awardEquipmentDropIfRolled` |
 | Social / mentor | `lib/models/lightcore_social_state.dart`, `functions/index.js` | `LightcoreSocialOverview`, `MENTOR_LINK_COLLECTION`, `computeSocialBonusProfile` |
 | Backend idle and tournaments | `lib/services/lightcore_firebase_backend.dart`, `functions/index.js` | `claimOfflineProgress`, `syncIdleSnapshot`, `submitTournamentRun` |
-| Player-facing shell UI | `lib/screens/lightcore_shell.dart`, `lib/screens/tower_management_screen.dart`, `lib/screens/prestige_screen.dart`, `lib/screens/enemy_management_screen.dart` | `FriendManagementScreen`, `TournamentScreen`, `PrestigeScreen` |
+| Player-facing shell UI | `lib/screens/lightcore_shell.dart`, `lib/screens/tower_management_screen.dart`, `lib/screens/advancement_screen.dart`, `lib/screens/enemy_management_screen.dart` | `FriendManagementScreen`, `TournamentScreen`, `AdvancementScreen` |
 
 ## V8 System Map
 
@@ -37,18 +37,18 @@ start from a targeted `rg` search.
 | Source Tower identities | Aligned | `TowerLibrary`, `PrototypeAffinityX`, `layer1ProjectileByAffinity` | The seven playable Source Tower families exist: White, Red, Orange, Yellow, Green, Blue/Aether, Purple. Black is reserved for anomalies and special systems. Legacy internal ids such as `cyan_prism` remain for Blue/Rayline. |
 | Tower fabrication | Partial | `startTowerFabricationAt`, `_advanceTowerFabrication`, `OuterTowerState.isFabricating`, `tutorialStartTowerFabricationAt`, `buildTowerAt` | The player-facing tower screen now starts a timed fabrication job that reserves the slot, persists remaining time, and only counts the tower as active when complete. `buildTowerAt` remains an instant test/debug compatibility path, and there is no manual completion claim or trusted server timestamp yet. |
 | Random trainable stats, Overcharge, Radiant | Aligned | `TowerUpgradeOptionState`, `_rollTowerUpgradeBoard`, `towerUpgradeEffectLabel` | Towers roll 2-4 trainable stats. Radiant applies the V8 1.30 multiplier in upgrade labeling and effect math. Overcharge is represented as a flagged upgrade option. |
-| Layer 2 Alignment / shell promotion | Partial | `unlockLayer2Tower`, `_resolvePromotedTraitLoadoutForLayer`, `_syncParentSlotFromLayer`, `activeChildTowerProjection` | The game uses shell-class promotion and child-shell forging, not the workbook's simpler "seven Layer 1 towers create one Layer 2 Aligned Tower" wording. Component history is preserved through child-layer links and inherited stats, but there is no separate alignment timer for promotions. |
-| Old `Layer2TowerState` weapon | Legacy internals | `Layer2TowerState`, `_fireLayer2IfPossible`, `_layer2.unlocked` | `Layer2TowerState` still exists as a second-weapon runtime object, but no normal gameplay path sets it unlocked and current UI does not present it as a weapon. Treat it as legacy unless a future design explicitly revives it. |
+| Layer 2 component merge | Partial | `unlockLayer2Tower`, `_resolvePromotedTraitLoadoutForLayer`, `_createLayer2ComponentForLayer`, `Layer2ComponentState` | Layer 1 tower composition now creates persistent Layer 2 components. Projectile and payload affinities roll independently from completed tower mix, pure mixes reach 100%, best reached wave sets stat tier, and components roll 1-3 subtraits. The higher-shell scaffold still exists for navigation/build space. |
+| Old Layer 2 weapon model | Removed | `_fireLayer2IfPossible`, `Layer2TowerState`, `_layer2` | The standalone second-gun firing path, model state, snapshot field, and new-save serialization were removed. Legacy save payloads ignore old `layer2` data while component inventory becomes the Layer 2 source of truth. |
 | Component history retention | Partial | `OuterTowerState.childLayerId`, `childProjectileLoadout`, `childPayloadLoadout`, `childBuiltCount`, `_syncParentSlotFromLayer` | Child shells remain playable and parent slots retain projected inherited values. This supports "history remains inspectable", but the UI is currently shell/tree oriented rather than a dedicated component-history view. |
 | Core clusters and firing queue | Aligned | `CoreState`, `AmmoPacket`, `_ammoQueue`, `_advancePulses`, `_fireCoreIfPossible`, `coreQueueCapacity` | The center core consumes relay packets as intended. Built towers feed relay packets at a starter rate; one Core Manager can be assigned per shell to improve payload feed, and managers no longer generate free core-basic packets. |
 | Multiple active cores | Partial | `_viewLayerId`, `_runtimeLayerId`, `tick`, `_advanceRuntimeLayer`, `_storeActiveLayer` | `tick` now iterates every stored shell and advances combat, fabrication timers, pressure, shots, and automated output. Foreground-only helpers still gate tutorial prompts and localhost auto-tapping. Offline claims remain snapshot-based rather than full replay. |
 | Core Stability and Output Efficiency formula | Aligned | `_outputEfficiencyPercentForStability`, `_setCoreStability`, `outputEfficiencyMultiplier`, `activeEffectiveGainMultiplier` | Formula matches V8: `E = max(E_min, (S / 100)^gamma)` with `E_min = 0.15`, `gamma = 1.10`. Effective gain is exposed as Threat Reward x Output Efficiency. |
 | Stability damage and recovery | Aligned | `_applyLumenHarvestDamage`, `_stabilityDamageMultiplierForEnemy`, `_recoverLumenHarvest`, `coreStabilityRecoveryPerSecond` | Leaks and Apex pressure reduce Core Stability rather than player health. Recovery uses base recovery plus green tower, manager, and core-level contributions. |
 | Threat Scans as risk/reward bundles | Partial | `ThreatScanBundleSnapshot`, `activeThreatScanBundle`, `openEnemyTickets`, `activeEnemyDeck`, `activeThreatRewardMultiplier`, `activeThreatStabilityMultiplier`, `enemyTargetCount` | Threat Scans unlock or copy anomaly cards, and the armed deck is now projected into a formal bundle snapshot with risk, reward, stability pressure, director names, and counterplay. This is still derived from deck composition rather than authored selectable bundle content. |
-| Threat Directors | Aligned | `EnemyManagerLibrary`, `_generateEnemyManager`, `assignEnemyManagerToCore`, `activeRegionThreatDirector`, `_enemyManagerEffectMultiplier` | Threat Directors use the old bible display-name roster while preserving V8-style mechanical archetypes in config summaries. They attach to Threat Map regions and tune the current spawn cadence, enemy strength, rewards, EXP, stability risk, farm wave cadence, queue disruption, and Apex stability. |
+| Threat Directors | Aligned | `EnemyManagerLibrary`, `_generateEnemyManager`, `assignEnemyManagerToCore`, `activeRegionThreatDirector`, `_enemyManagerEffectMultiplier` | Threat Directors use the old bible display-name roster while preserving V8-style mechanical archetypes in config summaries. They attach to Threat Map regions and tune the current spawn cadence, enemy strength, rewards, EXP, stability risk, farm wave cadence, queue disruption, Apex stability, and locked farm-wave output. |
 | Apex Anomaly cadence | Aligned | `bossSpawnKillRequirement`, `normalKillsSinceBoss`, `bossReady`, `_spawnEnemy`, `_killEnemy` | Every 100 normal anomaly clears primes the next Apex spawn if an Apex card is armed. Apex clears grant Lumens, Apex Scans, Heartcores, and sometimes other rewards. |
 | Apex pressure | Aligned | `_apexBaseStabilityDamageMultiplier`, `_apexRarityStabilityDamageStep`, `_directorApexStabilityMultiplier` | Apex enemies multiply stability damage and can inherit director pressure. There is no separate health bar fail state, consistent with V8's efficiency-defense direction. |
-| Equipment acquisition | Aligned | `equipmentDropChanceForEnemy`, `_awardEquipmentDropIfRolled`, `_grantEquipmentEventCache`, `TournamentRewardPackage` | Normal and Apex anomaly clears no longer roll equipment. Event caches and tournament reward packages are the acquisition path; debug helpers remain for tests and tools. |
+| Equipment acquisition | Partial | `equipmentDropChanceForEnemy`, `_awardEquipmentDropIfRolled`, `_grantEquipmentEventCache`, `TournamentRewardPackage` | Layer 2+ boss clears can now roll equipment. Normal farm waves still do not roll equipment, and event caches/tournament packages remain valid acquisition paths. |
 | Tournament tower snapshots | Partial | `TournamentScreen`, `LightcoreTournamentPlayerSnapshot`, `buildTournamentSnapshot`, `functions/index.js` tournament handlers | Arena Flow now uses the player's highest-layer Home Tower for tier, core, and power index. Weekly tournament entries are keyed by server window, Arena Flow pads its leaderboard with server-seeded rivals, and rewards are claimed from the last closed server board. Other tournament formats still use event-specific shells and anomaly pools. |
 | Mentor network | Partial | `LightcoreSocialOverview`, `sendMentorInvite`, `acceptMentorLink`, `computeSocialBonusProfile`, `homeTowerMentorExperienceMultiplier`, `homeTowerLabel` | Real player mentor links, level-band checks, capped first-ring bonuses, and second-ring recognition exist. Client runtime now shapes those bonuses through the highest-layer Home Tower affinity. |
 | Friends and Apex Scan gifts | Aligned | `sendBossPullGift`, `claimBossPullGift`, `applySocialBossGiftClaim` | UI and backend returned messages call these Apex Scan gifts. Callable names remain stable for compatibility. |
@@ -65,10 +65,10 @@ start from a targeted `rg` search.
    compatibility path for tests/debug flows. There is no trusted timestamp,
    offline fabrication catch-up, or "claim fabricated tower" step yet.
 
-2. `Layer2TowerState` is legacy relative to shell promotion.
-   The model and `_fireLayer2IfPossible` still support a separate Layer 2 gun,
-   but normal advancement no longer unlocks it and the UI should not surface it.
-   Treat this as legacy unless a new design explicitly revives it.
+2. Legacy Layer 2 weapon payloads are read-only migration residue.
+   The second-gun firing path, `_layer2` runtime field, and
+   `Layer2TowerState` model are removed. Old `layer2` save data is ignored
+   during restore, while component inventory now carries Layer 2 progression.
 
 3. Threat Scan bundles are derived, not authored content.
    `ThreatScanBundleSnapshot` formalizes the active deck into bundle readouts,
@@ -214,7 +214,7 @@ start from a targeted `rg` search.
 
 ```bash
 rg -n "startTowerFabricationAt|_advanceTowerFabrication|isFabricating|_buildRolledTowerState|_rollTowerUpgradeBoard" lib
-rg -n "Layer2TowerState|_fireLayer2IfPossible|_layer2\\.unlocked" lib
+rg -n "Layer2TowerState|_layer2\\b" lib
 rg -n "_runtimeLayerId|_viewLayerId|passiveLumenPerSecond|offlineKillsPerHour" lib/state/lightcore_controller.dart
 rg -n "Output Efficiency|coreStability|flowEfficiency|activeEffectiveGain" lib
 rg -n "ThreatScanBundleSnapshot|activeThreatScanBundle|openEnemyTickets|activeThreatRewardMultiplier|EnemyManagerLibrary|bossSpawnKillRequirement" lib

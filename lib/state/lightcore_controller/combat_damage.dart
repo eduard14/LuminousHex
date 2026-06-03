@@ -618,6 +618,10 @@ extension LightcoreControllerCombatDamage on LightcoreController {
         !bossAlive &&
         !activeLayer.bossReady) {
       activeLayer.normalKillsSinceBoss += 1;
+      activeLayer.bestWaveReached = max(
+        activeLayer.bestWaveReached,
+        1 + (_spawnSequence ~/ max(1, initialEnemyTarget)),
+      );
       if (activeLayer.normalKillsSinceBoss >= bossSpawnKillRequirement) {
         activeLayer.bossReady = true;
         _showBanner(
@@ -717,8 +721,16 @@ extension LightcoreControllerCombatDamage on LightcoreController {
     _syncTutorialStep(showBanner: false);
   }
 
-  PlayerEquipmentItem? _awardEquipmentDropIfRolled(EnemyState _) {
-    return null;
+  PlayerEquipmentItem? _awardEquipmentDropIfRolled(EnemyState enemy) {
+    final chance = equipmentDropChanceForEnemy(enemy);
+    if (chance <= 0 || _packRandom.nextDouble() >= chance) {
+      return null;
+    }
+    final item = _buildEquipmentDrop(enemy);
+    _equipmentInventory.add(item);
+    _trackNewEquipmentItem(item);
+    _enforceEquipmentInventoryCap();
+    return item;
   }
 
   PlayerEquipmentItem _grantEquipmentEventCache({ManagerRarity? rarity}) {

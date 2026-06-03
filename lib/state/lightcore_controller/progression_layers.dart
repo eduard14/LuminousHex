@@ -840,7 +840,6 @@ extension LightcoreControllerProgressionLayers on LightcoreController {
         automationCooldownRemaining: 0,
         fireSequence: 0,
       ),
-      layer2: source.layer2.copyWith(fireCooldownRemaining: 0),
       enemies: <EnemyState>[],
       pulses: <EnergyPulseState>[],
       shots: <CoreShotState>[],
@@ -1421,8 +1420,16 @@ extension LightcoreControllerProgressionLayers on LightcoreController {
   }
 
   @visibleForTesting
-  double equipmentDropChanceForEnemy(EnemyState _) {
-    return 0;
+  double equipmentDropChanceForEnemy(EnemyState enemy) {
+    if (!LightcoreController.equipmentReleaseEnabled ||
+        !enemy.config.isBoss ||
+        activeLayer.tier < payloadUnlockLayer) {
+      return 0;
+    }
+    final rarityBonus = enemy.config.rarity.index * 0.025;
+    final levelBonus = max(0, enemy.cardLevel - 1) * 0.004;
+    final directorBonus = activeRegionThreatDirector == null ? 0.0 : 0.025;
+    return (0.18 + rarityBonus + levelBonus + directorBonus).clamp(0.0, 0.55);
   }
 
   EnemyManagerState? enemyManagerForCard(String enemyCardId) {

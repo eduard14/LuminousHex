@@ -650,7 +650,7 @@ class _TournamentModeDetailScreenState
       );
     }
     if (widget.controller.fullyStabilizedRegionCount == 0) {
-      missing.add('one fully stabilized region');
+      missing.add('one fully cleared region');
     }
     if (!widget.controller.hasCompleteEnemySuite) {
       missing.add('a complete enemy suite');

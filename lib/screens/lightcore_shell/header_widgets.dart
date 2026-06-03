@@ -534,7 +534,7 @@ enum _ShellOverlayDestination {
   enemies,
   dungeons,
   tournaments,
-  prestige,
+  advancement,
 }
 
 extension on _ShellOverlayDestination {
@@ -550,7 +550,7 @@ extension on _ShellOverlayDestination {
     _ShellOverlayDestination.enemies => 'Anomalies',
     _ShellOverlayDestination.dungeons => 'Dungeons',
     _ShellOverlayDestination.tournaments => 'Tournament',
-    _ShellOverlayDestination.prestige => 'Advance',
+    _ShellOverlayDestination.advancement => 'Advance',
   };
 
   String get shortLabel => switch (this) {
@@ -565,7 +565,7 @@ extension on _ShellOverlayDestination {
     _ShellOverlayDestination.enemies => 'Anomaly',
     _ShellOverlayDestination.dungeons => 'Dungeons',
     _ShellOverlayDestination.tournaments => 'Arena',
-    _ShellOverlayDestination.prestige => 'Advance',
+    _ShellOverlayDestination.advancement => 'Advance',
   };
 
   Color get tint => switch (this) {
@@ -580,7 +580,7 @@ extension on _ShellOverlayDestination {
     _ShellOverlayDestination.enemies => LightcorePalette.scanGlow,
     _ShellOverlayDestination.dungeons => LightcorePalette.warning,
     _ShellOverlayDestination.tournaments => LightcorePalette.warning,
-    _ShellOverlayDestination.prestige => LightcorePalette.violet,
+    _ShellOverlayDestination.advancement => LightcorePalette.violet,
   };
 
   String get loadingSubtitle => switch (this) {
@@ -596,13 +596,13 @@ extension on _ShellOverlayDestination {
     _ShellOverlayDestination.enemies => 'Opening Knowledge Cards.',
     _ShellOverlayDestination.dungeons => 'Opening Daily Dungeons.',
     _ShellOverlayDestination.tournaments => 'Opening Tournaments.',
-    _ShellOverlayDestination.prestige => 'Opening Layer Advance.',
+    _ShellOverlayDestination.advancement => 'Opening Layer Advance.',
   };
 
   List<String> get loadingTips => switch (this) {
     _ShellOverlayDestination.threatMap => const [
-      'Threat Map progress is linear: fully stabilize one region before the next route opens.',
-      'Farm Validation proves a region can survive three waves before offline rewards begin.',
+      'Threat Map progress is linear: clear one region route before the next opens.',
+      'Locking a farm wave records the region and Threat Director for offline rewards.',
     ],
     _ShellOverlayDestination.dungeons => const [
       'Daily dungeon progress persists, so cleared targets stay unlocked.',
@@ -624,7 +624,7 @@ extension on _ShellOverlayDestination {
       'Managers improve auto-fire, but enemy focus clicks still help during pressure spikes.',
       'A well-matched manager can smooth charge flow across a weaker tower lane.',
     ],
-    _ShellOverlayDestination.prestige => const [
+    _ShellOverlayDestination.advancement => const [
       'Complete shell layers become the foundation for deeper prism structures.',
       'Promotion carries build history forward into the next shell class.',
     ],
@@ -648,7 +648,7 @@ extension on _ShellOverlayDestination {
     _ShellOverlayDestination.tournaments => const Icon(
       Icons.emoji_events_rounded,
     ),
-    _ShellOverlayDestination.prestige => const Icon(
+    _ShellOverlayDestination.advancement => const Icon(
       Icons.stacked_bar_chart_rounded,
     ),
   };
@@ -662,13 +662,13 @@ extension on _ShellOverlayDestination {
     _ShellOverlayDestination.mentors => _mentorshipLockMessage(controller),
     _ShellOverlayDestination.dungeons => _dailyDungeonLockMessage(controller),
     _ShellOverlayDestination.tournaments => _tournamentLockMessage(controller),
-    _ShellOverlayDestination.prestige => _advancementLockMessage(controller),
+    _ShellOverlayDestination.advancement => _advancementLockMessage(controller),
     _ => null,
   };
 
   bool visibleInBottomNavigation(LightcoreController controller) =>
       switch (this) {
-        _ShellOverlayDestination.prestige =>
+        _ShellOverlayDestination.advancement =>
           _advancementLockMessage(controller) == null,
         _ => true,
       };
@@ -686,9 +686,9 @@ String? _enemySuiteLockMessage(LightcoreController controller) {
     return null;
   }
   if (controller.threatRegionsUnlocked) {
-    return 'Anomalies unlock after the first regional boss drops suite pieces. Open Map and stabilize the starter region.';
+    return 'Anomalies unlock after the first regional boss drops suite pieces. Open Map and clear the starter region.';
   }
-  return 'Anomalies unlock after regional boss suite pieces exist. Build the first tower, then stabilize the starter region from Map.';
+  return 'Anomalies unlock after regional boss suite pieces exist. Build the first tower, then clear the starter region from Map.';
 }
 
 String? _towerArchiveLockMessage(LightcoreController controller) {
@@ -746,7 +746,7 @@ String? _advancementLockMessage(LightcoreController controller) {
 String? _tournamentLockMessage(LightcoreController controller) {
   if (!controller.tournamentsUnlocked) {
     final remaining = controller.tournamentLevelsRemaining;
-    return 'Tournaments unlock at Prism, full first-ring stabilization, or Account Radiance Lv ${LightcoreController.tournamentUnlockLevel}. Need $remaining more level${remaining == 1 ? '' : 's'} for the level fallback.';
+    return 'Tournaments unlock at Prism, full first-ring clear, or Account Radiance Lv ${LightcoreController.tournamentUnlockLevel}. Need $remaining more level${remaining == 1 ? '' : 's'} for the level fallback.';
   }
   if (!controller.hasCustomScreenName) {
     return 'Set a screen name in Settings before entering tournaments.';

@@ -57,7 +57,7 @@ class _PrismRiftPreviewPanel extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Rift Stabilizer', style: textTheme.titleMedium),
+                          Text('Rift Clear', style: textTheme.titleMedium),
                           const SizedBox(height: 2),
                           Text(
                             cleared

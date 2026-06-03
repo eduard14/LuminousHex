@@ -403,9 +403,9 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
   LightcoreTutorialStep
       .upgradeFirstTowerToLevel3: LightcoreTutorialQuestDefinition(
     id: 'TUT-009',
-    title: 'Stabilize Hex 1',
+    title: 'Reinforce Hex 1',
     teachGoal:
-        'When anomalies push through, Output Efficiency drops. Upgrading the active tower stabilizes the lane and restores flow.',
+        'When anomalies push through, Output Efficiency drops. Upgrading the active tower holds the lane and restores flow.',
     trigger: 'First anomaly pressure dents the opening lane',
     primaryClickTarget: 'Tower Stats pop-out > Upgrade',
     coachCopy:
@@ -418,32 +418,32 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
   ),
   LightcoreTutorialStep.raiseThreat: LightcoreTutorialQuestDefinition(
     id: 'TUT-010A',
-    title: 'Start Challenge',
+    title: 'Push Wave 5',
     teachGoal:
-        'When the first tower is tuned, start the next stabilization challenge so the battlefield gets busier and rewards climb.',
+        'When the first tower is tuned, push the next area wave so the battlefield gets busier and rewards climb.',
     trigger: 'First upgraded tower is clearing safely',
-    primaryClickTarget: 'Battlefield > Challenge ready prompt > Challenge Lv 1',
+    primaryClickTarget: 'Battlefield > Push Wave prompt > Push Wave 5',
     coachCopy:
-        'Start Challenge Lv 1 from the battlefield. It adds denser waves and better rewards for the upgraded tower to handle.',
-    completionCondition: 'Starter-region challenge started',
+        'Start Push Wave 5 from the battlefield. It adds denser enemies and better rewards for the upgraded tower to handle.',
+    completionCondition: 'Starter-region Wave 5 push started',
     reward: 'Threat Scan x1',
     failureHelpState:
-        'Use the compact Challenge Lv 1 prompt on the battle screen.',
+        'Use the compact Push Wave 5 prompt on the battle screen.',
     analyticsEvent: 'tutorial_raise_threat',
   ),
   LightcoreTutorialStep.pushNextArea: LightcoreTutorialQuestDefinition(
     id: 'TUT-010B',
     title: 'Push Next Area',
     teachGoal:
-        'After an upgrade stabilizes the lane, push the next stabilization layer to make the enemies harder again.',
-    trigger: 'Challenge Lv 1 is stable after the second tower upgrade',
-    primaryClickTarget: 'Battlefield > Challenge ready prompt > Challenge Lv 2',
+        'After an upgrade holds the lane, push the next area wave to make the enemies harder again.',
+    trigger: 'Wave 5 is under control after the second tower upgrade',
+    primaryClickTarget: 'Battlefield > Push Wave prompt > Push Wave 10',
     coachCopy:
-        'Start Challenge Lv 2. The loop is upgrade to stabilize, push a harder area, then upgrade again when pressure climbs.',
-    completionCondition: 'Starter-region Challenge Lv 2 started',
+        'Start Push Wave 10. The loop is upgrade, push a harder area, then upgrade again when pressure climbs.',
+    completionCondition: 'Starter-region Wave 10 push started',
     reward: 'Threat Scan x1',
     failureHelpState:
-        'Use the compact Challenge Lv 2 prompt on the battle screen.',
+        'Use the compact Push Wave 10 prompt on the battle screen.',
     analyticsEvent: 'tutorial_push_next_area',
   ),
   LightcoreTutorialStep.pullFirstWhiteEnemy: LightcoreTutorialQuestDefinition(
@@ -454,7 +454,7 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
     trigger: 'Opening combat lesson done',
     primaryClickTarget: 'Anomalies > Research',
     coachCopy:
-        'Resolve one Threat Scan into a Knowledge Card. Map regions open through the linear stabilization route.',
+        'Resolve one Threat Scan into a Knowledge Card. Map regions open through the linear area route.',
     completionCondition: 'Resolve 1 Knowledge Card scan',
     reward: 'Knowledge Card primer',
     failureHelpState: 'Open Anomalies and resolve one Knowledge Card scan.',
@@ -494,11 +494,11 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
     id: 'TUT-013',
     title: 'Answer Harder Waves',
     teachGoal:
-        'A cleared challenge should make the next area feel harder. Reinforce the first tower, stabilize again, then repeat the route.',
+        'A cleared challenge should make the next area feel harder. Reinforce the first tower, hold the lane again, then repeat the route.',
     trigger: 'Starter challenge pressure dents the opening lane again',
     primaryClickTarget: 'Tower Stats pop-out > Upgrade',
     coachCopy:
-        'Challenge Lv 1 pushed the lane harder. Upgrade Hex 1 again so the harder area becomes manageable.',
+        'Push Wave 5 pressed the lane harder. Upgrade Hex 1 again so the harder area becomes manageable.',
     completionCondition: 'First tower reaches level 3',
     reward: 'Small Lumen grant',
     failureHelpState:
@@ -508,13 +508,13 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
   LightcoreTutorialStep
       .upgradeFirstTowerToLevel5: LightcoreTutorialQuestDefinition(
     id: 'TUT-013B',
-    title: 'Stabilize Again',
+    title: 'Hold the Lane Again',
     teachGoal:
         'The next challenge should overwhelm the current setup briefly. Upgrading the anchor tower restores flow and opens expansion.',
-    trigger: 'Challenge Lv 2 pressure dents the opening lane',
+    trigger: 'Wave 10 pressure dents the opening lane',
     primaryClickTarget: 'Tower Stats pop-out > Upgrade',
     coachCopy:
-        'Challenge Lv 2 overwhelmed Hex 1. Upgrade the anchor one more time; once flow recovers, Hex 2 opens for the next tower.',
+        'Wave 10 overwhelmed Hex 1. Upgrade the anchor one more time; once flow recovers, Hex 2 opens for the next tower.',
     completionCondition: 'First tower reaches level 4',
     reward: 'Hex 2 starter choice',
     failureHelpState:
@@ -527,10 +527,10 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
     title: 'Expand To Hex 2',
     teachGoal:
         'Once the pressure-upgrade loop is stable, add a second tower so the shell can hold harder waves without turning expansion into a chore.',
-    trigger: 'Hex 2 opens after the second stabilization recovery',
+    trigger: 'Hex 2 opens after the second area clear recovery',
     primaryClickTarget: 'Battlefield > Hex 2 build controls',
     coachCopy:
-        'Click Hex 2 and choose the highlighted starter tower. This adds coverage after Hex 1 proves it can stabilize harder areas.',
+        'Click Hex 2 and choose the highlighted starter tower. This adds coverage after Hex 1 proves it can hold harder areas.',
     completionCondition: 'Second tower comes online',
     reward: 'Full tower palette',
     failureHelpState:
@@ -545,8 +545,8 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
     trigger: 'After safe research lesson',
     primaryClickTarget: 'Bottom nav > Map > Challenge',
     coachCopy:
-        'Challenge the next starter-region stabilization layer. Failing returns you to the previous stabilized level.',
-    completionCondition: 'Start the next stabilization challenge',
+        'Push the next starter-region wave. Failing returns you to the previous cleared wave.',
+    completionCondition: 'Start the next area push',
     reward: 'Threat Scan x1',
     failureHelpState: 'Open Map and start the highlighted Challenge.',
     analyticsEvent: 'tutorial_red_counter_scan',
@@ -569,7 +569,7 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
     id: 'TUT-016',
     title: 'Read the Route',
     teachGoal:
-        'The Threat Map is a fixed route. Fully stabilizing a region opens the next step on the path.',
+        'The Threat Map is a fixed route. Fully clearing a region opens the next step on the path.',
     trigger: 'Red signature is available',
     primaryClickTarget: 'Bottom nav > Map',
     coachCopy:
@@ -637,16 +637,16 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
   ),
   LightcoreTutorialStep.openBossPulls: LightcoreTutorialQuestDefinition(
     id: 'TUT-021',
-    title: 'Stabilize the First Region',
+    title: 'Clear the First Region',
     teachGoal:
-        'The full hex map unlocks after the starter region is fully stabilized and its boss is defeated.',
+        'The full hex map unlocks after the starter region is fully cleared and its boss is defeated.',
     trigger: 'Prism Shell created',
     primaryClickTarget: 'Bottom nav > Map > Challenge',
     coachCopy:
         'Open Map and challenge the starter region until the final boss layer is cleared.',
-    completionCondition: 'Starter region fully stabilized',
+    completionCondition: 'Starter region fully cleared',
     reward: 'Full Threat Map',
-    failureHelpState: 'Open Map and start the next stabilization challenge.',
+    failureHelpState: 'Open Map and start the next area push.',
     analyticsEvent: 'tutorial_open_boss_pulls',
   ),
   LightcoreTutorialStep.armFirstBoss: LightcoreTutorialQuestDefinition(
@@ -657,7 +657,7 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
     trigger: 'First Apex card owned',
     primaryClickTarget: 'Bottom nav > Anomalies > Knowledge Build',
     coachCopy:
-        'Use boss drops from stabilized regions to assemble your first enemy suite.',
+        'Use boss drops from cleared regions to assemble your first enemy suite.',
     completionCondition:
         'Enemy suite has 1 Apex Core, 2 traits, and 3 anomalies',
     reward: 'Suite primer',
@@ -752,12 +752,12 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
     id: 'TUT-029',
     title: 'Assign a Threat Director',
     teachGoal:
-        'An assigned Threat Director tunes the selected region immediately, then stabilization validates its offline output.',
+        'An assigned Threat Director tunes the selected region immediately, then farm-wave locks set its offline output.',
     trigger: 'Threat Director owned',
     primaryClickTarget:
         'Managers > Threat Director > Assign to Selected Region',
     coachCopy:
-        'Assign the Threat Director to the selected Threat Map region, then restabilize that region for offline output.',
+        'Assign the Threat Director to the selected Threat Map region, then relock that region farm wave for offline output.',
     completionCondition: 'Assign director to region',
     reward: 'Threat Scans',
     failureHelpState:
@@ -1203,6 +1203,7 @@ class LightcoreController extends ChangeNotifier {
     _cards = <InventoryCard>[];
     _enemyManagers = <EnemyManagerState>[];
     _completedTowerShells = <CompletedTowerShellState>[];
+    _layer2Components = <Layer2ComponentState>[];
     _equipmentInventory = <PlayerEquipmentItem>[];
     _equippedPlayerItems = <EquipmentLoadoutSlot, String?>{
       for (final slot in EquipmentLoadoutSlot.values) slot: null,
@@ -1292,7 +1293,7 @@ class LightcoreController extends ChangeNotifier {
   }
 
   static const int slotCount = 6;
-  static const bool equipmentReleaseEnabled = false;
+  static const bool equipmentReleaseEnabled = true;
   static const int maxShellTier = 4;
   static const int maxTowerLevel = 5;
   static const int maxTowerUpgradeRank = maxTowerLevel - 1;
@@ -1573,6 +1574,7 @@ class LightcoreController extends ChangeNotifier {
   late List<InventoryCard> _cards;
   late List<EnemyManagerState> _enemyManagers;
   late List<CompletedTowerShellState> _completedTowerShells;
+  late List<Layer2ComponentState> _layer2Components;
   late List<EnemyCardState> _enemyCards;
   late List<EnemyCardState> _bossEnemyCards;
   late List<ThreatRegionState> _threatRegions;
@@ -1615,7 +1617,6 @@ class LightcoreController extends ChangeNotifier {
   LightcoreBalanceTuning _balanceTuning;
   final Set<String> _newEquipmentItemIds = <String>{};
   late CoreState _core;
-  late Layer2TowerState _layer2;
   late String _activeLayerId;
   late String _viewLayerId;
   late String _runtimeLayerId;

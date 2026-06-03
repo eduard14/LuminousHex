@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:lightcore/screens/prestige_screen.dart';
+import 'package:lightcore/screens/advancement_screen.dart';
 
 import 'helpers/lightcore_test_fixtures.dart';
 
 void main() {
   testWidgets(
-    'advancement UI forges Prism Shell from a promotion-ready shell',
+    'component UI creates Layer 2 component from a promotion-ready shell',
     (tester) async {
       addTearDown(() async {
         await tester.binding.setSurfaceSize(null);
@@ -22,27 +22,27 @@ void main() {
           debugShowCheckedModeBanner: false,
           theme: buildTestLightcoreTheme(),
           home: Scaffold(
-            body: PrestigeScreen(controller: controller, isActive: true),
+            body: AdvancementScreen(controller: controller, isActive: true),
           ),
         ),
       );
       await pumpFixedFrame(tester);
 
-      expect(find.text('Advancement Path'), findsOneWidget);
-      final createPrismButton = find.text('Create Prism Shell');
-      final prestigeScroll = find.byKey(
-        const PageStorageKey<String>('prestige-scroll'),
+      expect(find.text('Layer 2 Components'), findsOneWidget);
+      final createPrismButton = find.text('Create Layer 2 Component');
+      final advancementScroll = find.byKey(
+        const PageStorageKey<String>('advancement-scroll'),
       );
-      expect(prestigeScroll, findsOneWidget);
-      final prestigeScrollable = find.descendant(
-        of: prestigeScroll,
+      expect(advancementScroll, findsOneWidget);
+      final advancementScrollable = find.descendant(
+        of: advancementScroll,
         matching: find.byType(Scrollable),
       );
-      expect(prestigeScrollable, findsOneWidget);
+      expect(advancementScrollable, findsOneWidget);
       await tester.scrollUntilVisible(
         createPrismButton,
         120,
-        scrollable: prestigeScrollable,
+        scrollable: advancementScrollable,
       );
       await pumpFixedFrame(tester);
 
@@ -52,11 +52,11 @@ void main() {
       await tester.tap(find.byTooltip('Show merge rates'));
       await pumpFixedFrame(tester);
 
-      expect(find.text('Merge Rates'), findsOneWidget);
+      expect(find.text('Component Roll Rates'), findsOneWidget);
       expect(find.text('Rainbow'), findsOneWidget);
       expect(find.text('10%'), findsOneWidget);
-      expect(find.text('Projectile Tower'), findsOneWidget);
-      expect(find.text('Payload Tower'), findsOneWidget);
+      expect(find.text('Projectile Odds'), findsOneWidget);
+      expect(find.text('Payload Odds'), findsOneWidget);
 
       await tester.tap(find.text('Close'));
       await pumpFixedFrame(tester);
@@ -67,6 +67,7 @@ void main() {
       expect(controller.progressionLayer, greaterThanOrEqualTo(2));
       expect(controller.activeLayer.tier, 2);
       expect(controller.activeLayer.label, 'Prism Shell');
+      expect(controller.layer2Components, hasLength(1));
     },
   );
 }

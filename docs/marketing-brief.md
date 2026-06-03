@@ -1,6 +1,6 @@
 # LumiHex Marketing Brief
 
-Last updated: 2026-05-30
+Last updated: 2026-06-03
 
 This is the source-of-truth marketing handoff for LumiHex. Update it whenever
 player-facing features, naming, story, monetization, screenshots, or asset needs
@@ -40,8 +40,9 @@ relay at a time, turns enemy pressure into progression, and forges completed
 shells into higher-order prism structures.
 
 Marketing tone should be clear and energetic, not lore-heavy. The story exists
-to explain the loop: build relays, defend the core, shape anomalies, promote the
-shell, and keep climbing.
+to explain the loop: build relays, defend the core, shape anomalies, merge
+Layer 1 towers into Layer 2 components, lock better farm waves, and keep
+climbing.
 
 ## Core Gameplay Loop
 
@@ -56,10 +57,11 @@ shell, and keep climbing.
 6. Upgrade towers, core stats, and encounter capacity with earned resources.
 7. Roll Threat Scans into Knowledge Cards that make enemy families easier
    to understand and farm.
-8. Follow the fixed Threat Map route, fully stabilize each region to unlock the
-   next one, then validate harder farm pressure for offline rewards.
+8. Follow the fixed Threat Map route, clear higher waves in each area, then lock
+   the best completed farm wave for offline rewards.
 9. Defeat normal anomalies to prime Apex Anomaly encounters.
-10. Promote completed shells into higher classes and inherited child towers.
+10. Merge completed Layer 1 shells into Layer 2 components with independent
+   projectile and payload rolls, wave-based stat tiers, and random subtraits.
 11. Return to older shells as passive support archives while the live shell grows.
 12. Expand into managers, daily dungeons, tournaments, and social play.
 
@@ -78,14 +80,14 @@ shell, and keep climbing.
 - The first tower/focus/upgrade loop grants enough starter Lumens to move from
   build to focus fire to the first upgrade without idle grinding.
 - The first five minutes demonstrate the repeat loop directly: anomalies dent
-  Hex 1, Output Efficiency drops, upgrading restores flow, Challenge Lv 1 hits
-  harder, the next upgrade stabilizes the route, then Challenge Lv 2 repeats
+  Hex 1, Output Efficiency drops, upgrading restores flow, Push Wave 5 hits
+  harder, the next upgrade holds the route, then Push Wave 10 repeats
   the overwhelm-and-upgrade beat before Hex 2 opens.
 - The scripted guided loop is regression-tested against a five-minute simulated
   budget and a click-before-ready focus shot, so pacing changes cannot quietly
   push Hex 2 beyond the opening window or reintroduce queued-shot waiting.
-- Guided Challenge Lv 1 and Lv 2 feedback uses battle-loop language ("harder
-  enemies dented Hex 1, upgrade to stabilize") instead of region/farm jargon
+- Guided Push Wave 5 and Wave 10 feedback uses battle-loop language ("harder
+  enemies dented Hex 1, upgrade to hold the lane") instead of region/farm jargon
   while the player is still learning the opening loop.
 - The post-upgrade threat prompt explains the payoff and highlights the
   Challenge button directly, including harder-enemy framing and the Lumen
@@ -95,7 +97,7 @@ shell, and keep climbing.
   active swarm count, and Lumen reward preview; starter challenge waves raise
   both enemy level and active enemy pressure so the "new area is harder" beat
   is mechanical, not only tutorial copy.
-- Completing Challenge Lv 1 satisfies the opening Output Efficiency lesson,
+- Completing Push Wave 5 satisfies the opening Output Efficiency lesson,
   keeping the player in the fight-and-upgrade loop instead of forcing a stats
   panel detour.
 - Unspent Radiance points stay available in Profile without blocking the first
@@ -135,23 +137,23 @@ shell, and keep climbing.
   tower, quest, and detail interactions so the opening does not read like an
   old tap-to-queue mobile chore loop.
 - Collapsed tutorial notifications stay lightweight: they show the quest title
-  plus a short action like "Click Hex 1" or "Start Challenge Lv 1", while the
+  plus a short action like "Click Hex 1" or "Push Wave 5", while the
   detailed instruction lives in the optional guide sheet.
 - Opening battle tutorial steps no longer raise transient prompt banners; the
   battlefield highlight, click cue, and compact guide own that instruction lane.
 - Manual Overdrive stays out of the battle HUD during the guided opening loop,
   keeping aim, tower controls, upgrades, and challenge prompts from competing.
-- Clearing starter Challenge Lv 1 pays enough Lumens for the next anchor-tower
+- Clearing starter Push Wave 5 pays enough Lumens for the next anchor-tower
   upgrade, so the first combat loop chains directly into a stronger lane
   instead of asking for a grind pause.
-- Hex 2 waits until the player clears Challenge Lv 2 and stabilizes Hex 1
+- Hex 2 waits until the player clears Push Wave 10 and reinforces Hex 1
   again, keeping the second tower decision connected to the core
   pressure-upgrade-repeat loop instead of interrupting it.
 - Hex 2 now has its own compact expansion guide after the repeat loop, so the
   second tower choice is taught in-world instead of silently relying on the
   restricted tower palette.
 - The first Hex 2 starter choice is also funded and brought online instantly,
-  letting the opening loop move from the second stabilization payoff into a second tower
+  letting the opening loop move from the second pressure payoff into a second tower
   decision without a 45-second fabrication wait.
 - Bringing Hex 2 online ends the guided battle-only opening instead of pushing
   an immediate Map, Anomaly, or side-system chore; broader systems return after
@@ -175,10 +177,10 @@ shell, and keep climbing.
   output, and stability rather than queue management.
 - Guided-opening core stats suppress meta/buildcraft rows such as Ring, Slots,
   TS, EXP, crit, final damage, and penetration so the first panel stays readable.
-- Opening stabilization challenges keep a compact live battle HUD on screen that
+- Opening area-push challenges keep a compact live battle HUD on screen that
   names the harder enemy wave, shows progress, and points the player back to
   upgrading Hex 1 after the wave clears.
-- The first two guided stabilization challenges are shortened into brisk
+- The first two guided area-push challenges are shortened into brisk
   pressure spikes so the opening loop reaches Hex 2 quickly instead of asking
   the player to wait through full-length region timers.
 - Shell visibility is an explicit HUD toggle, keeping battlefield taps from
@@ -222,8 +224,8 @@ shell, and keep climbing.
   promoted child shells.
 - Live/passive shell state makes older shells inspectable while they support the
   active build.
-- Promotion creates a long-term buildcraft layer around purity, blended colors,
-  inherited payloads, and stat history.
+- Layer 1 merges create a long-term buildcraft layer around purity, blended
+  projectile/payload colors, wave-tiered component stats, and random subtraits.
 
 ### Anomalies And Encounter Tuning
 
@@ -232,13 +234,13 @@ shell, and keep climbing.
   friendly units.
 - Threat Map regions define the main enemy progression path as a fixed linear
   route with visible connections between each step.
-- The next Threat Map region only opens after the current region is fully
-  stabilized at all levels.
-- Region challenges are short three-wave stabilization tests with isolated
-  combat pressure and a per-wave timer: no EXP, upgrade spending, or
-  notification clutter during the run.
-- Farm Validation asks players to survive three waves at that region level with
-  its Threat Director before the region can produce offline rewards.
+- The next Threat Map region opens as players clear the current route's required
+  waves and boss checks.
+- Region challenges are short wave pushes with isolated combat pressure and a
+  per-wave timer: no EXP, upgrade spending, or notification clutter during the
+  run.
+- Farm-wave locking records the best completed wave for that region/director
+  setup and determines offline output until the player pushes and locks higher.
 - Swarm Magnet controls the account-wide farming swarm size and can be rerolled
   with dedicated currency.
 - Threat Directors tune the selected region's current spawn cadence, enemy
@@ -246,7 +248,7 @@ shell, and keep climbing.
   behavior.
 - Apex Anomalies spawn after normal anomaly progress and grant larger rewards.
 - Threat Map and regional challenge surfaces frame anomaly pressure by region.
-- The starter-region Challenge Lv 1 prompt appears as a bottom battle action
+- The starter-region Push Wave 5 prompt appears as a bottom battle action
   after early overmatch, turning the first tower upgrade into immediate added
   pressure without covering the first tower hex.
 
@@ -256,8 +258,8 @@ shell, and keep climbing.
 - Flux supports manager forging and related systems.
 - Threat Scans feed Knowledge Card pulls.
 - Apex Scans feed Apex Anomaly pulls and social gifts.
-- Validated region farms determine offline rewards from elapsed sign-in time,
-  Threat Director multipliers, and that level's enemy output.
+- Locked region farm waves determine offline rewards from elapsed sign-in time,
+  Threat Director multipliers, and that wave's enemy output.
 - Account Radiance tracks broader player growth.
 - Global Total Strength leaderboard previews the player's rank immediately from
   local tower changes while the public board refreshes periodically.
@@ -351,7 +353,7 @@ Suggested first release order:
    shot fires there.
 4. Anomalies spiral inward and disrupt lanes.
 5. Threat Scan pull reveals a new Knowledge Card.
-6. Region challenge and Farm Validation pressure.
+6. Region challenge and farm-wave lock pressure.
 7. Apex Anomaly arrival.
 8. Shell promotion into a higher prism structure.
 9. Managers automate relays and validated offline rewards land.
@@ -375,11 +377,12 @@ Suggested first release order:
 - Do not claim web is a release platform; web is currently staging/test only.
 - Do not call enemy cards friendly units, heroes, summons, or allies.
 - Do not describe Knowledge Cards as friendly units, heroes, or allies.
-- Do not describe Threat Scans as a Threat Map reveal or stabilization mechanic.
+- Do not describe Threat Scans as a Threat Map reveal or area-clear mechanic.
 - Do not imply every shell runs a full battle simulation while offline.
 - Do not describe offline rewards as passive tower income; they come from
   validated region/director farm calculations.
-- Do not market equipment, gear drops, or gear loadouts as a launch feature.
+- Market equipment narrowly as boss-only Layer 2+ drops; do not imply normal
+  farm waves drop full equipment.
 - Do not market guilds as a launch feature until the live guild loop is complete.
 - Do not use Lumicore as a public title or franchise name.
 - Do not imply IAP, production sign-in, or platform purchases are ready before

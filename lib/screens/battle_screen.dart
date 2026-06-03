@@ -1046,11 +1046,11 @@ class _BattleScreenState extends State<BattleScreen> {
             !openingChallengeLive)) {
       return null;
     }
-    final challengeLevel = activeChallenge?.targetStabilizationLevel;
+    final challengeWave = (activeChallenge?.targetStabilizationLevel ?? 0) * 5;
     return _RaiseThreatPrompt(
       compact: compact,
       label: openingChallengeLive
-          ? 'Challenge Lv $challengeLevel'
+          ? 'Push Wave $challengeWave'
           : controller.firstThreatChallengeLabel,
       rewardLabel: openingChallengeLive
           ? controller.activeThreatRegionChallengeRewardLabel
@@ -1064,8 +1064,8 @@ class _BattleScreenState extends State<BattleScreen> {
           ? controller.activeThreatRegionChallengeProgress
           : 0,
       loopInstruction: openingChallengeLive
-          ? challengeLevel == 1
-                ? 'Harder enemies are attacking. Clear the wave, then upgrade Hex 1 to stabilize.'
+          ? challengeWave == 5
+                ? 'Harder enemies are attacking. Clear the wave, then upgrade Hex 1 to hold the lane.'
                 : 'The next area is harder again. Hold the wave, then reinforce Hex 1.'
           : 'Start the harder wave when Hex 1 is stable.',
       onPressed: () {
@@ -1141,7 +1141,7 @@ class _BattleScreenState extends State<BattleScreen> {
         }
       case LightcoreTutorialStep.upgradeFirstTowerToLevel5:
         if (selectedSlotIndex == 0 && selected?.isBuilt == true) {
-          return 'Upgrade Hex 1 once more to stabilize Challenge Lv 2 pressure before opening Hex 2.';
+          return 'Upgrade Hex 1 once more to hold Wave 10 pressure before opening Hex 2.';
         }
       case LightcoreTutorialStep.buildSecondStarterTower:
         if (selectedSlotIndex == 1 && selected?.isBuilt == false) {

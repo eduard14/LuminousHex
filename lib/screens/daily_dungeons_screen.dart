@@ -595,7 +595,7 @@ class _DailyDungeonsScreenState extends State<DailyDungeonsScreen> {
           const _DungeonGuidePanel(
             title: 'Prism Rift Guide',
             instruction:
-                'Pick the highest open tower level you can stabilize, then enter the rift to clear it through the shared battle field.',
+                'Pick the highest open tower level you can clear, then enter the rift through the shared battle field.',
             detail:
                 'Prism Rift supplies the battle loadout for you. Aim the rift shot during the run to finish waves before stability collapses.',
             icon: Icons.track_changes_rounded,

@@ -10,8 +10,8 @@ import '../widgets/aurora_panel.dart';
 import '../widgets/lightcore_info_button.dart';
 import '../widgets/meter_bar.dart';
 
-class PrestigeScreen extends StatelessWidget {
-  const PrestigeScreen({
+class AdvancementScreen extends StatelessWidget {
+  const AdvancementScreen({
     super.key,
     required this.controller,
     required this.isActive,
@@ -41,7 +41,7 @@ class PrestigeScreen extends StatelessWidget {
             controller.activeLayer.promotedParentLayerId != null;
 
         return ListView(
-          key: const PageStorageKey<String>('prestige-scroll'),
+          key: const PageStorageKey<String>('advancement-scroll'),
           controller: scrollController,
           padding: const EdgeInsets.only(bottom: 28),
           children: [
@@ -54,12 +54,12 @@ class PrestigeScreen extends StatelessWidget {
                     children: [
                       Expanded(
                         child: Text(
-                          'Advancement Path',
+                          'Layer 2 Components',
                           style: textTheme.titleLarge,
                         ),
                       ),
                       const LightcoreInfoButton(
-                        title: 'Advancement Help',
+                        title: 'Component Merge Help',
                         message: _advancementPathHelp,
                         tint: LightcorePalette.layer2,
                       ),
@@ -116,7 +116,7 @@ class PrestigeScreen extends StatelessWidget {
                         ),
                       ),
                       const LightcoreInfoButton(
-                        title: 'Promotion Rules',
+                        title: 'Component Rules',
                         message: _promotionRulesHelp,
                         tint: LightcorePalette.solar,
                       ),
@@ -127,7 +127,7 @@ class PrestigeScreen extends StatelessWidget {
                     spacing: 10,
                     runSpacing: 10,
                     children: [
-                      const _BenefitChip(label: 'Seven-shell clusters'),
+                      const _BenefitChip(label: 'Seven-part merge inputs'),
                       _BenefitChip(
                         label: controller.activeLayerPassiveOnly
                             ? 'Viewed shell is passive'
@@ -141,7 +141,7 @@ class PrestigeScreen extends StatelessWidget {
                             ? 'Source shell is passive'
                             : unlocked
                             ? 'Current core: ${controller.coreProjectileLabel} / ${controller.corePayloadLabel}'
-                            : 'Promotion rolls from the shell',
+                            : 'Component rolls from Layer 1',
                       ),
                       _BenefitChip(
                         label:
@@ -214,10 +214,10 @@ class PrestigeScreen extends StatelessWidget {
 }
 
 const String _advancementPathHelp =
-    'Promotion forges the next shell class from the current ring traits while archiving the lower shell as passive support. Root Shells are projectile-only seeds, Prism Shells add rolled payload traits, Nexus Shells deepen recursive inheritance, and Ascendant Shell is the final shell tier.\n\nEvery higher shell is a seven-shell cluster: the source shell plus six edge anchors. Only the highest live shell runs combat. Archived lower shells stay visible in the map and convert managed towers into reduced passive Lumens.';
+    'Layer 1 tower composition creates Layer 2 components. Projectile and payload roll independently from the completed tower mix, while the best reached wave sets the component stat tier and subtrait count.\n\nCompleted lower shells remain inspectable as source history. The current shell scaffold still opens higher construction space, but the farmable reward is the Layer 2 component roll.';
 
 const String _promotionRulesHelp =
-    'Promotion requires all six edge towers at max level. If this shell is targeting a parent slot, promotion forges one adjacent tower in the parent shell. Projectile and payload traits roll independently from this shell. Promoted lower shells remain visible as passive support and keep their assigned anomaly decks.';
+    'Component merges require all six edge towers at max level. Pure tower mixes produce pure projectile and payload odds; mixed colors can create combinations such as one color projectile with another color payload. Higher Layer 1 waves improve the generated component tier.';
 
 class _PromotionPreviewPanel extends StatelessWidget {
   const _PromotionPreviewPanel({required this.preview});
@@ -248,7 +248,7 @@ class _PromotionPreviewPanel extends StatelessWidget {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  'Promotion Preview',
+                  'Component Preview',
                   style: textTheme.titleMedium?.copyWith(
                     color: LightcorePalette.mist,
                     fontWeight: FontWeight.w900,
@@ -346,7 +346,7 @@ class _PromotionActionButtonState extends State<_PromotionActionButton>
         final textTheme = Theme.of(context).textTheme;
         final payloadRates = controller.promotionPayloadAffinityRates;
         return AlertDialog(
-          title: const Text('Merge Rates'),
+          title: const Text('Component Roll Rates'),
           content: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 380),
             child: Column(
@@ -360,7 +360,7 @@ class _PromotionActionButtonState extends State<_PromotionActionButton>
                   icon: Icons.auto_awesome_rounded,
                 ),
                 const SizedBox(height: 12),
-                const _PromotionRatesSectionLabel(label: 'Projectile Tower'),
+                const _PromotionRatesSectionLabel(label: 'Projectile Odds'),
                 const SizedBox(height: 6),
                 ...controller.promotionProjectileAffinityRates.entries.map(
                   (entry) => _PromotionRateRow(
@@ -371,7 +371,7 @@ class _PromotionActionButtonState extends State<_PromotionActionButton>
                 ),
                 if (payloadRates.isNotEmpty) ...[
                   const SizedBox(height: 12),
-                  const _PromotionRatesSectionLabel(label: 'Payload Tower'),
+                  const _PromotionRatesSectionLabel(label: 'Payload Odds'),
                   const SizedBox(height: 6),
                   ...payloadRates.entries.map(
                     (entry) => _PromotionRateRow(
@@ -383,7 +383,7 @@ class _PromotionActionButtonState extends State<_PromotionActionButton>
                 ],
                 const SizedBox(height: 10),
                 Text(
-                  'Projectile and payload variants split evenly inside the rolled color.',
+                  'Projectile and payload roll independently from the Layer 1 tower mix.',
                   style: textTheme.bodySmall?.copyWith(
                     color: LightcorePalette.mist.withValues(alpha: 0.72),
                   ),
@@ -426,7 +426,7 @@ class _PromotionActionButtonState extends State<_PromotionActionButton>
                 child: FilledButton.icon(
                   onPressed: _busy ? null : _handlePressed,
                   icon: const Icon(Icons.auto_awesome_rounded),
-                  label: Text(_busy ? 'Aligning Shell' : widget.label),
+                  label: Text(_busy ? 'Creating Component' : widget.label),
                 ),
               ),
               const SizedBox(width: 8),

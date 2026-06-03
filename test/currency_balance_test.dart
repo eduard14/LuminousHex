@@ -177,7 +177,7 @@ void main() {
     );
 
     guidedElapsedSeconds += _advanceActiveOpeningChallenge(controller);
-    expect(controller.bannerMessage, contains('Challenge Lv 1 cleared'));
+    expect(controller.bannerMessage, contains('Push Wave 5 cleared'));
     expect(controller.bannerMessage, contains('upgrade the tower'));
     expect(controller.bannerMessage, isNot(contains('Live farm unlocked')));
     final starterRegion = controller.threatRegionConfigs.first;
@@ -207,7 +207,7 @@ void main() {
     );
     expect(controller.startFirstThreatChallenge(), isTrue);
     recordGuidedClick();
-    expect(controller.bannerMessage, contains('Challenge Lv 2 started'));
+    expect(controller.bannerMessage, contains('Push Wave 10 started'));
     expect(controller.bannerMessage, isNot(contains('stabilization')));
     expect(controller.activeThreatRegionChallenge?.targetStabilizationLevel, 2);
     expect(
@@ -225,7 +225,7 @@ void main() {
     );
 
     guidedElapsedSeconds += _advanceActiveOpeningChallenge(controller);
-    expect(controller.bannerMessage, contains('Challenge Lv 2 cleared'));
+    expect(controller.bannerMessage, contains('Push Wave 10 cleared'));
     expect(controller.bannerMessage, contains('open Hex 2'));
     expect(controller.bannerMessage, isNot(contains('Live farm unlocked')));
     expect(

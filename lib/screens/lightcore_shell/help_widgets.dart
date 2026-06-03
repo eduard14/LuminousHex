@@ -63,7 +63,7 @@ const List<_HelpSectionData> _baseHelpSections = <_HelpSectionData>[
     summary:
         'Why the shell is moving through space and what the swarm really is.',
     body:
-        'The Lightcore is navigating fractured sectors and sealing black holes before they grow into stronger singularities. Every shell is a temporary defense ring built to stabilize the route ahead.\n\n'
+        'The Lightcore is navigating fractured sectors and sealing black holes before they grow into stronger singularities. Every shell is a temporary defense ring built to clear the route ahead.\n\n'
         'Anomalies keep mutating as you move deeper into space. That is why new systems come online over time, why Knowledge Cards matter, and why promoted shells must keep pushing forward instead of holding one lane forever.',
   ),
   _HelpSectionData(
@@ -75,7 +75,7 @@ const List<_HelpSectionData> _baseHelpSections = <_HelpSectionData>[
         'Top action icons:\n'
         '- Storefront opens the Store.\n'
         '- Friends opens friend requests and daily Threat Scan gifts.\n'
-        '- Map opens the linear region stabilization route.\n'
+        '- Map opens the linear area route and farm-wave controls.\n'
         '- Premium badge opens Passes. A number badge means claimable rewards are waiting.\n'
         '- Settings opens stats, help, and reset controls.\n\n'
         'Status icons:\n'
@@ -108,7 +108,7 @@ const List<_HelpSectionData> _baseHelpSections = <_HelpSectionData>[
     title: 'Resources',
     summary: 'What Lumens, Flux, and Threat Scans are for.',
     body:
-        'Lumens are your main stabilization currency. Use them to anchor new prisms and upgrade existing ones. Lumen income scales hardest with active-shell progress, so it is your main growth curve.\n\n'
+        'Lumens are your main tower-building currency. Use them to anchor new prisms and upgrade existing ones. Lumen income scales hardest with active-shell progress, so it is your main growth curve.\n\n'
         'Flux feeds the foundries. The foundry unlocks when a Layer 1 shell has all ${LightcoreController.slotCount} outer towers online, so early Flux is intentionally banked until managers enter the run.\n\n'
         'Threat Scans let you resolve anomaly signatures. Scan income starts slower than Lumen income, so each scan matters more.',
   ),
@@ -141,7 +141,7 @@ const List<_HelpSectionData> _baseHelpSections = <_HelpSectionData>[
     title: 'Projectile Families',
     summary: 'How Source Towers become aligned projectile and payload traits.',
     body:
-        'Every buildable Source Tower is a pure Spectrum Band seed with one projectile family and no payload. Projectile is the delivery method, payload is the hit effect, and Aligned Towers roll those two traits independently from the child shells underneath them. That means an Aligned Tower can resolve into signatures such as Red projectile / Blue payload.\n\n'
+        'Every buildable Source Tower is a pure Spectrum Band seed with one projectile family and no payload. Projectile is the delivery method, payload is the hit effect, and Layer 2 components roll those two traits independently from the Layer 1 tower mix. That means a component can resolve into signatures such as Red projectile / Blue payload.\n\n'
         'Default family tracks:\n'
         '- White Starbolt: Starbolt. Payloads: Precision, priority correction, and consistency through managers or alignment history.\n'
         '- Blue Rayline: Thread Beam -> Pulse Beam, Split Beam -> Sweep Beam, Lance Beam, Prism Beam, Sentinel Beam. Payloads: Chill, Fracture -> Deep Chill, Brittle Fracture.\n'
@@ -150,16 +150,16 @@ const List<_HelpSectionData> _baseHelpSections = <_HelpSectionData>[
         '- Yellow Arc: Chain Arc -> Fork Arc, Arc Node -> Storm Arc, Web Arc, Sky Arc, Interceptor Ship. Payloads: Shock, Disrupt -> Overload, EMP Disrupt.\n'
         '- Purple Wave: Pulse Ring -> Echo Ring, Collapse Ring -> Halo Wave, Spiral Wave, Warp Wave, Shade Satellite. Payloads: Expose, Pull -> Collapse, Singularity Pull.\n'
         '- Green Shield: persistent Shield Halo, no packet generation -> Sweep Node, Sling Node -> Halo Nodes, Anchor Node, Flail Node, Familiar Ship. Payloads: Corrupt, Spread -> Cascade Corrupt, Viral Spread.\n\n'
-        'Projectile and payload colors stay tied to what the child shells actually contain. If you want a parent tower to stay pure, every aligned child shell feeding it must stay pure too.',
+        'Projectile and payload colors stay tied to the Layer 1 towers actually used. Pure tower mixes create pure odds; off-color towers add their projectile and payload families to the result pool.',
   ),
   _HelpSectionData(
     id: 'layers-promotion',
     title: 'Shell Classes and Alignment',
     summary: 'How seven lower shells align into one higher shell class.',
     body:
-        'A shell is not ready to align just because all six outer slots are filled. Edge slots unlock from total EXP, beginning at 25, and Root Shell alignment also requires every Source Tower to reach level 5. Alignment is manual from the Advancement screen.\n\n'
+        'A shell is not ready to merge just because all six outer slots are filled. Edge slots unlock from total EXP, beginning at 25, and Root Shell merging also requires every Source Tower to reach level 5. Merging is manual from the Layer 2 Components screen.\n\n'
         'A higher shell is a seven-shell cluster: the source shell plus six edge anchors. Seven Root Shells make a Prism Shell, seven Prism Shells make a Nexus Shell, and seven Nexus Shells make the final Ascendant Shell.\n\n'
-        'Prism towers gain payload traits. Nexus and Ascendant alignments upgrade those projectile and payload pools again.\n\n'
+        'The first Layer 2 component merge unlocks payload results. Later shell classes deepen projectile and payload pools, but the farmable reward remains the component roll.\n\n'
         'Every active shell can run its own battle simulation. The viewed shell gets direct input, while background shells continue resolving their timers, pressure, and automated output.',
   ),
   _HelpSectionData(
@@ -168,7 +168,7 @@ const List<_HelpSectionData> _baseHelpSections = <_HelpSectionData>[
     summary: 'How child towers bias shots and how managers modify behavior.',
     body:
         'Targeting priorities such as Close, Strong, and Weak tell a relay what kind of anomaly it should prefer when that tower contributes charge. Direct anomaly clicks can still override focus during active play.\n\n'
-        'Core Managers assign to a shell and add auto-fire. Each one has an automation rate: if towers charge faster than the manager can fire, the shell loses efficiency while shots wait. Threat Directors attach to Threat Map regions and immediately tune spawn cadence, enemy strength, reward bonuses, EXP, and stability risk; stabilization validates that setup for offline output. Both manager families unlock after Layer 1 shell coverage.',
+        'Core Managers assign to a shell and add auto-fire. Each one has an automation rate: if towers charge faster than the manager can fire, the shell loses efficiency while shots wait. Threat Directors attach to Threat Map regions and immediately tune spawn cadence, enemy strength, reward bonuses, EXP, stability risk, and locked farm-wave output. Both manager families unlock after Layer 1 shell coverage.',
   ),
 ];
 

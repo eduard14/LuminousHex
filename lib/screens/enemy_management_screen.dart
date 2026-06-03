@@ -525,7 +525,7 @@ class _ThreatRegionMapPanelState extends State<_ThreatRegionMapPanel> {
               const _InfoChip(label: 'Linear route'),
               _InfoChip(label: 'Swarm ${controller.farmSwarmSize}'),
               _InfoChip(
-                label: '${controller.fullyStabilizedRegionCount} stabilized',
+                label: '${controller.fullyStabilizedRegionCount} cleared',
               ),
             ],
           ),
@@ -576,7 +576,7 @@ class _ThreatRegionMapPanelState extends State<_ThreatRegionMapPanel> {
             const SizedBox(height: 12),
             Text(
               detailRevealed
-                  ? '${detailRegion.name}: Lv ${detailState.stabilizedLevel}/${detailRegion.stabilizationLayers} stabilized'
+                  ? '${detailRegion.name}: W${detailState.stabilizedLevel * 5}/${detailRegion.stabilizationLayers * 5} cleared'
                   : '${detailRegion.name}: locked route step ${controller.threatRegionSpiralIndex(detailRegion.id) + 1}',
               style: textTheme.bodyMedium,
             ),
@@ -598,8 +598,8 @@ class _ThreatRegionMapPanelState extends State<_ThreatRegionMapPanel> {
               const SizedBox(height: 8),
               _InlineEnemyNote(
                 message: controller.validatedFarmRegionId == detailRegion.id
-                    ? 'Offline farm validated at swarm ${controller.validatedFarmSwarmSize} • ${controller.threatRegionOfflineKillsPerHour.toStringAsFixed(0)} kills/hr • ${controller.threatRegionOfflineLumensPerHour.toStringAsFixed(0)} Lumens/hr.'
-                    : 'Offline rewards unlock after Farm Validation survives 3 waves at this level with its Threat Director.',
+                    ? 'Farm wave locked at swarm ${controller.validatedFarmSwarmSize} • ${controller.threatRegionOfflineKillsPerHour.toStringAsFixed(0)} kills/hr • ${controller.threatRegionOfflineLumensPerHour.toStringAsFixed(0)} Lumens/hr.'
+                    : 'Offline rewards unlock after locking the best completed wave with this region Threat Director.',
                 tint: controller.validatedFarmRegionId == detailRegion.id
                     ? LightcorePalette.success
                     : LightcorePalette.warning,
@@ -639,7 +639,7 @@ class _ThreatRegionMapPanelState extends State<_ThreatRegionMapPanel> {
               else
                 _InlineEnemyNote(
                   message:
-                      'Forge a Threat Director to tune this region before Farm Validation.',
+                      'Forge a Threat Director to tune this region before locking a farm wave.',
                   tint: LightcorePalette.layer2,
                 ),
             ],
@@ -665,8 +665,8 @@ class _ThreatRegionMapPanelState extends State<_ThreatRegionMapPanel> {
                       label: Text(
                         detailState.stabilizedLevel >=
                                 detailRegion.stabilizationLayers
-                            ? 'Stable'
-                            : 'Challenge Lv ${detailState.stabilizedLevel + 1}',
+                            ? 'Cleared'
+                            : 'Push Wave ${(detailState.stabilizedLevel + 1) * 5}',
                       ),
                     ),
                   ),
@@ -682,8 +682,8 @@ class _ThreatRegionMapPanelState extends State<_ThreatRegionMapPanel> {
                     icon: const Icon(Icons.waves_rounded),
                     label: Text(
                       controller.validatedFarmRegionId == detailRegion.id
-                          ? 'Revalidate Farm'
-                          : 'Validate Farm',
+                          ? 'Relock Farm'
+                          : 'Lock Farm Wave',
                     ),
                   ),
                 ],
@@ -694,7 +694,7 @@ class _ThreatRegionMapPanelState extends State<_ThreatRegionMapPanel> {
             const SizedBox(height: 10),
             Text(
               controller.threatRegionsUnlocked
-                  ? 'The route opens one region at a time. Fully stabilize the current region to unlock the next step.'
+                  ? 'The route opens one region at a time. Fully clear the current region to unlock the next step.'
                   : 'All regions are fixed for every player. Build the first tower to start the route.',
               style: textTheme.bodySmall?.copyWith(
                 color: LightcorePalette.warning,
@@ -1199,7 +1199,7 @@ class _ThreatRegionMapPainter extends CustomPainter {
       return;
     }
     final progress = revealed && state != null
-        ? 'Lv ${state.stabilizedLevel}/${region.stabilizationLayers}'
+        ? 'W${state.stabilizedLevel * 5}/${region.stabilizationLayers * 5}'
         : 'UNCHARTED';
     _drawCenteredText(
       canvas,
@@ -1562,7 +1562,7 @@ class _EnemyPullSheetState extends State<EnemyPullSheet> {
                             ] else if (!controller.fullThreatMapUnlocked) ...[
                               _InlineEnemyNote(
                                 message:
-                                    'Regional boss pulls unlock after the starter region is fully stabilized and its boss is defeated.',
+                                    'Regional boss pulls unlock after the starter region is fully cleared and its boss is defeated.',
                                 tint: LightcorePalette.warning,
                               ),
                             ] else ...[

@@ -84,7 +84,7 @@ class _ThreatMapScreenState extends State<ThreatMapScreen> {
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
-                                  'Linear stabilization route',
+                                  'Linear area route',
                                   style: textTheme.labelLarge?.copyWith(
                                     color: LightcorePalette.aether,
                                     fontWeight: FontWeight.w800,
@@ -154,7 +154,7 @@ class _ThreatMapStatusBar extends StatelessWidget {
         _MapChip(label: 'Route ${controller.fullyStabilizedRegionCount + 1}'),
         const _MapChip(label: 'One path'),
         _MapChip(label: 'Swarm ${controller.farmSwarmSize}'),
-        _MapChip(label: '${controller.fullyStabilizedRegionCount} stable'),
+        _MapChip(label: '${controller.fullyStabilizedRegionCount} cleared'),
         if (controller.nextThreatRegionConfig != null)
           _MapChip(
             label: 'Locked next: ${controller.nextThreatRegionConfig!.name}',
@@ -690,7 +690,7 @@ class _ThreatSectorMapPainter extends CustomPainter {
       return;
     }
     final progress = revealed && state != null
-        ? 'Lv ${state.stabilizedLevel}/${region.stabilizationLayers}'
+        ? 'W${state.stabilizedLevel * 5}/${region.stabilizationLayers * 5}'
         : 'UNCHARTED';
     _drawCenteredText(
       canvas,
@@ -870,7 +870,7 @@ class _ThreatRegionIntelDialog extends StatelessWidget {
                   children: [
                     _MapChip(
                       label: revealed
-                          ? 'Lv ${state!.stabilizedLevel}/${region.stabilizationLayers}'
+                          ? 'W${state!.stabilizedLevel * 5}/${region.stabilizationLayers * 5}'
                           : 'Unrevealed',
                       tint: revealed
                           ? (full
@@ -882,7 +882,7 @@ class _ThreatRegionIntelDialog extends StatelessWidget {
                       label: '${region.anomalyCardIds.length} anomalies',
                     ),
                     _MapChip(label: '${bossNames.length} apex'),
-                    _MapChip(label: '${region.stabilizationLayers} layers'),
+                    _MapChip(label: '${region.stabilizationLayers * 5} waves'),
                   ],
                 ),
                 const SizedBox(height: 14),
@@ -968,10 +968,10 @@ class _ThreatRegionIntelDialog extends StatelessWidget {
                           ),
                           label: Text(
                             full
-                                ? 'Stable'
+                                ? 'Cleared'
                                 : activeHere
                                 ? 'Active'
-                                : 'Challenge Lv ${(state?.stabilizedLevel ?? 0) + 1}',
+                                : 'Push Wave ${((state?.stabilizedLevel ?? 0) + 1) * 5}',
                           ),
                         ),
                       ),
@@ -1001,8 +1001,8 @@ class _ThreatRegionIntelDialog extends StatelessWidget {
                             validationHere
                                 ? 'Farm Active'
                                 : controller.validatedFarmRegionId == region.id
-                                ? 'Revalidate'
-                                : 'Validate Farm',
+                                ? 'Relock'
+                                : 'Lock Farm Wave',
                           ),
                         ),
                       ),
@@ -1122,11 +1122,11 @@ String _challengeStatus(LightcoreController controller) {
 String _farmValidationStatus(LightcoreController controller) {
   final validation = controller.activeThreatRegionFarmValidation;
   if (validation == null) {
-    return 'Farm idle';
+    return 'Farm wave idle';
   }
   final remaining = controller.activeThreatRegionFarmValidationRemainingSeconds
       .ceil();
-  return 'Farm wave ${validation.waveIndex + 1}/${LightcoreController.farmValidationWaveCount} • ${_formatDuration(remaining)}';
+  return 'Locking wave ${validation.waveIndex + 1}/${LightcoreController.farmValidationWaveCount} • ${_formatDuration(remaining)}';
 }
 
 String _formatDuration(int totalSeconds) {

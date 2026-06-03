@@ -509,9 +509,9 @@ extension LightcoreControllerBattleTowerActions on LightcoreController {
     selectedSlotIndex = slotIndex;
     _towerRangePreviewSlotIndex = slotIndex;
 
-    if (isOuterRingComplete && !_layer2.unlocked) {
+    if (isOuterRingComplete && _layer2Components.isEmpty) {
       _showBanner(
-        'Ring complete. Alignment still needs all $slotCount Source Towers at level $maxTowerLevel.',
+        'Ring complete. Component merge still needs all $slotCount Source Towers at level $maxTowerLevel.',
       );
     } else {
       _showBanner(
@@ -1205,6 +1205,11 @@ extension LightcoreControllerBattleTowerActions on LightcoreController {
     final forgedTraitLabel = forgedTraits.rainbow
         ? 'Rainbow tower'
         : _traitSignatureLabel(forgedAffinity, forgedTraits.payloadAffinity);
+    final layer2Component = _createLayer2ComponentForLayer(
+      activeLayer,
+      targetTier: nextTier,
+    );
+    _layer2Components.add(layer2Component);
     final previousProgressionLayer = progressionLayer;
     final retainedTowerManagerId = _towerCoreManagerForLayer(
       activeLayer,
@@ -1226,15 +1231,6 @@ extension LightcoreControllerBattleTowerActions on LightcoreController {
       label: nextShellName,
       tier: nextTier,
       inheritedCore: promotedCore,
-      inheritedLayer2: Layer2TowerState(
-        unlocked: true,
-        count: 1,
-        fireCooldownRemaining: 0,
-        projectileType: forgedProjectile,
-        payloadType: forgedPayload,
-        affinity: forgedAffinity,
-        sourceSummary: forgedTraitLabel,
-      ),
       initialEnemyDeck: List<String>.from(activeLayer.activeEnemyCardIds),
       sourceLayerId: activeLayer.id,
     );
@@ -1257,7 +1253,7 @@ extension LightcoreControllerBattleTowerActions on LightcoreController {
     _loadLayer(parent);
     final bossUnlockBanner = _grantBossUnlockIfNeeded();
     _showBanner(
-      '$nextShellName aligned with $forgedTraitLabel • ${forgedProjectile.label} • ${forgedPayload.label}. Edge slots now grow $sourceShellName anchors; source + six anchors make the 7-shell cluster.${_progressionUnlockBannerFragment(previousProgressionLayer)}${bossUnlockBanner == null ? '' : ' $bossUnlockBanner'}',
+      '$nextShellName aligned with $forgedTraitLabel • ${forgedProjectile.label} • ${forgedPayload.label}. Layer 2 component created at wave ${layer2Component.reachedWave} with ${layer2Component.subtraits.length} subtrait${layer2Component.subtraits.length == 1 ? '' : 's'}. Edge slots now grow $sourceShellName anchors; source + six anchors make the 7-shell cluster.${_progressionUnlockBannerFragment(previousProgressionLayer)}${bossUnlockBanner == null ? '' : ' $bossUnlockBanner'}',
     );
     _notifyNow();
   }
@@ -1284,7 +1280,6 @@ extension LightcoreControllerBattleTowerActions on LightcoreController {
       fireCooldownRemaining: 0,
       packetCooldownRemaining: 0,
     );
-    _layer2 = _layer2.copyWith(fireCooldownRemaining: 0);
     _storeActiveLayer();
     _showBanner(
       'Nexus trial started. Preselected bosses, swarm bodies, and rush anomalies are testing this tower before Layer 3 opens.',

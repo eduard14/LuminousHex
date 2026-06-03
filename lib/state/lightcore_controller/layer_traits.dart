@@ -809,11 +809,11 @@ extension LightcoreControllerLayerTraits on LightcoreController {
     LightcoreTutorialStep.focusFirstEnemy =>
       'Focus fire learned. You have enough Lumens to upgrade the first tower.',
     LightcoreTutorialStep.upgradeFirstTowerToLevel3 =>
-      'Anchor tower tuned. Start Challenge Lv 1 for denser waves and better rewards.',
+      'Anchor tower tuned. Push Wave 5 for denser enemies and better rewards.',
     LightcoreTutorialStep.raiseThreat =>
       'Threat raised. The starter region is now testing that upgraded tower.',
     LightcoreTutorialStep.pushNextArea =>
-      'Challenge Lv 2 started. This is the repeat: harder area, then stabilize.',
+      'Push Wave 10 started. This is the repeat: harder area, then reinforce.',
     LightcoreTutorialStep.pullFirstWhiteEnemy =>
       'Safe signature added. Threat Scans shape the encounter, not your tower roster.',
     LightcoreTutorialStep.readEffectiveGain =>
@@ -979,7 +979,6 @@ extension LightcoreControllerLayerTraits on LightcoreController {
     required String label,
     required int tier,
     CoreState? inheritedCore,
-    Layer2TowerState? inheritedLayer2,
     List<String>? initialEnemyDeck,
     String? parentLayerId,
     int? parentSlotIndex,
@@ -1008,13 +1007,6 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         (index) => OuterTowerState(slotIndex: index),
       ),
       core: core,
-      layer2:
-          inheritedLayer2 ??
-          const Layer2TowerState(
-            unlocked: false,
-            count: 0,
-            fireCooldownRemaining: 0,
-          ),
       enemies: <EnemyState>[],
       pulses: <EnergyPulseState>[],
       shots: <CoreShotState>[],
@@ -1099,7 +1091,6 @@ extension LightcoreControllerLayerTraits on LightcoreController {
       );
       layer.core = _core;
     }
-    _layer2 = layer.layer2;
     _enemies = List<EnemyState>.from(layer.enemies);
     layer.enemies = _enemies;
     _pulses = List<EnergyPulseState>.from(layer.pulses);
@@ -1221,7 +1212,6 @@ extension LightcoreControllerLayerTraits on LightcoreController {
     final layer = activeLayer;
     layer.slots = _slots;
     layer.core = _core;
-    layer.layer2 = _layer2;
     layer.enemies = _enemies;
     layer.pulses = _pulses;
     layer.shots = _shots;
@@ -1663,9 +1653,9 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         LightcoreTutorialStep.upgradeFirstTowerToLevel3 =>
           'Click the first tower in Hex 1 and upgrade it once.',
         LightcoreTutorialStep.raiseThreat =>
-          'Click Challenge Lv 1 on the battlefield to start a tougher reward wave.',
+          'Click Push Wave 5 on the battlefield to start a tougher reward wave.',
         LightcoreTutorialStep.pushNextArea =>
-          'Click Challenge Lv 2 on the battlefield to start the next tougher wave.',
+          'Click Push Wave 10 on the battlefield to start the next tougher wave.',
         LightcoreTutorialStep.pullFirstWhiteEnemy =>
           'Click Map and run 1 threat scan.',
         LightcoreTutorialStep.readEffectiveGain =>
@@ -1738,8 +1728,8 @@ extension LightcoreControllerLayerTraits on LightcoreController {
     LightcoreTutorialStep.upgradeFirstTowerToLevel3 ||
     LightcoreTutorialStep.upgradeFirstTowerToLevel4 ||
     LightcoreTutorialStep.upgradeFirstTowerToLevel5 => 'Upgrade Hex 1',
-    LightcoreTutorialStep.raiseThreat => 'Start Challenge Lv 1',
-    LightcoreTutorialStep.pushNextArea => 'Start Challenge Lv 2',
+    LightcoreTutorialStep.raiseThreat => 'Push Wave 5',
+    LightcoreTutorialStep.pushNextArea => 'Push Wave 10',
     LightcoreTutorialStep.pullFirstWhiteEnemy => 'Run 1 scan',
     LightcoreTutorialStep.readEffectiveGain => 'Open Output Efficiency',
     LightcoreTutorialStep.managerAutoAim => 'Watch auto-fire',
@@ -1872,9 +1862,9 @@ extension LightcoreControllerLayerTraits on LightcoreController {
           LightcoreTutorialStep.upgradeFirstTowerToLevel3 =>
             'The first anomaly wave dents the lane. Command routes Lumens into Hex 1 so the shell can recover instead of expanding too early.',
           LightcoreTutorialStep.raiseThreat =>
-            'Command opens Challenge Lv 1 directly from battle so the tuned tower gets a real wave to break.',
+            'Command opens Push Wave 5 directly from battle so the tuned tower gets a real wave to break.',
           LightcoreTutorialStep.pushNextArea =>
-            'Challenge Lv 1 is stable, so command pushes the next route layer before opening another construction lane.',
+            'Wave 5 is under control, so command pushes the next route wave before opening another construction lane.',
           LightcoreTutorialStep.pullFirstWhiteEnemy =>
             'The starter driftling was only training noise. This is your first proper hostile signature.',
           LightcoreTutorialStep.readEffectiveGain =>
@@ -1882,9 +1872,9 @@ extension LightcoreControllerLayerTraits on LightcoreController {
           LightcoreTutorialStep.managerAutoAim =>
             'The assigned Core Manager takes the relay chair and starts firing ready shots without a manual command.',
           LightcoreTutorialStep.upgradeFirstTowerToLevel4 =>
-            'Challenge Lv 1 hits harder than the training wave. The answer is the core loop: upgrade, stabilize, then push the next route.',
+            'Wave 5 hits harder than the training wave. The answer is the core loop: upgrade, hold the lane, then push the next route.',
           LightcoreTutorialStep.upgradeFirstTowerToLevel5 =>
-            'Challenge Lv 2 proves the route can still bite. Hex 1 gets one more reinforcement before command opens Hex 2.',
+            'Wave 10 proves the route can still bite. Hex 1 gets one more reinforcement before command opens Hex 2.',
           LightcoreTutorialStep.buildSecondStarterTower =>
             'Hex 2 is clear. Command opens one more starter choice so the shell grows after the loop is understood.',
           LightcoreTutorialStep.pullFirstRedEnemy =>

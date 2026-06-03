@@ -13,7 +13,7 @@ Primary sources:
 - `lib/data/card_configs.dart`
 - `lib/data/enemy_manager_configs.dart`
 - `lib/screens/lightcore_shell.dart`
-- `lib/screens/prestige_screen.dart`
+- `lib/screens/advancement_screen.dart`
 - `test/overall_progression_and_boss_test.dart`
 - `test/progression_unlocks_test.dart`
 - `test/child_tower_growth_test.dart`
@@ -234,29 +234,26 @@ exposes these inherited values before promotion.
 
 ## Mechanics That Need Improvement
 
-### 1. The `Layer2TowerState` system is legacy internals
+### 1. Legacy Layer 2 weapon payloads are migration-only
 
 Why it does not make sense:
 
-- The controller contains a full second-weapon system:
-  `_fireLayer2IfPossible`, layer2 cooldown, layer2 range checks, and flow
-  relief.
-- The prestige UI used to display a separate second-weapon counter, but current
-  UI treats promotion as shell creation/forging instead.
-- Promotion uses `unlockLayer2Tower()` as the main entry point.
-- But no gameplay path appears to set `layer2.unlocked = true`, raise its
-  `count`, or configure its traits.
+- The old second-weapon firing path has been removed from combat.
+- `Layer2TowerState`, the `_layer2` runtime field, and the snapshot field have
+  been removed.
+- Component merges now use `Layer2ComponentState` for the real Layer 2 output.
 
 Why this matters:
 
-- It reads like a live feature but behaves like dead or abandoned design.
-- It creates false expectations that promotion unlocks a separate Prism gun,
-  when promotion currently creates or forges shells instead.
+- Old save payloads may still contain `layer2`, but restore treats them as
+  ignored legacy data.
+- Player-facing copy should describe components, projectile/payload odds,
+  wave-tiered stats, and subtraits instead of a separate Prism gun.
 
 Recommended direction:
 
-- Keep it out of player-facing copy unless a future design deliberately revives
-  it as a separate weapon.
+- Remove the placeholder model field once all snapshot constructors no longer
+  require it.
 
 ### 2. Apex Scans need clearer framing
 
@@ -448,7 +445,7 @@ Use this instead of re-scanning the repo:
 - Player-facing help and terminology:
   `lib/screens/lightcore_shell.dart`
 - Promotion UI and advancement messaging:
-  `lib/screens/prestige_screen.dart`
+  `lib/screens/advancement_screen.dart`
 - Behavior that already has tests:
   `test/overall_progression_and_boss_test.dart`,
   `test/progression_unlocks_test.dart`,
@@ -461,8 +458,8 @@ anchors, use `docs/code-design-alignment-map.md`.
 
 ## Recommended Next Steps
 
-1. Keep old `Layer2TowerState` internals out of player-facing copy unless
-   revived by a future weapon design.
+1. Keep old Layer 2 weapon payloads out of player-facing copy unless revived by
+   a future weapon design.
 2. Keep Apex Scans framed as the Apex Anomaly pull currency.
 3. Keep live/passive archive labels visible anywhere shell state can be changed.
 4. Keep promotion-result previews visible before promotion actions.

@@ -304,8 +304,8 @@ extension LightcoreControllerThreatRegions on LightcoreController {
     final state = threatRegionStateById(starter.id);
     final nextLevel = (state?.stabilizedLevel ?? 0) + 1;
     return nextLevel > starter.stabilizationLayers
-        ? 'Stable'
-        : 'Challenge Lv $nextLevel';
+        ? 'Cleared'
+        : 'Push Wave ${nextLevel * 5}';
   }
 
   int get firstThreatChallengeLumenRewardPreview {
@@ -360,8 +360,11 @@ extension LightcoreControllerThreatRegions on LightcoreController {
     if (state == null || config == null || !state.revealed) {
       return false;
     }
-    return state.stabilizedLevel > 0;
+    return state.bestCompletedWave > 0 || state.stabilizedLevel > 0;
   }
+
+  bool canLockThreatRegionFarmWave(String regionId) =>
+      canStartThreatRegionFarmValidation(regionId);
 
   bool get enemySuiteBuilderUnlocked =>
       overallLevel >= dailyDungeonUnlockLevel ||
@@ -514,7 +517,7 @@ extension LightcoreControllerThreatRegions on LightcoreController {
       _syncTutorialStep(showBanner: false);
     }
     _showBanner(
-      'Threat Director assigned. Run Farm Validation in ${ThreatRegionLibrary.byId[regionId]?.name ?? 'region'} to validate offline output.',
+      'Threat Director assigned. Lock a farm wave in ${ThreatRegionLibrary.byId[regionId]?.name ?? 'region'} to update offline output.',
     );
     _notifyNow();
     return true;
@@ -636,8 +639,12 @@ extension LightcoreControllerThreatRegions on LightcoreController {
     final now = DateTime.now().millisecondsSinceEpoch;
     final fullyStabilized =
         challenge.targetStabilizationLevel >= config.stabilizationLayers;
+    final completedWave = _farmWaveForRegionLevel(
+      challenge.targetStabilizationLevel,
+    );
     final nextState = state.copyWith(
       stabilizedLevel: challenge.targetStabilizationLevel,
+      bestCompletedWave: max(state.bestCompletedWave, completedWave),
       bestStabilityPercent: max(
         state.bestStabilityPercent,
         endingStabilityPercent,
@@ -687,7 +694,7 @@ extension LightcoreControllerThreatRegions on LightcoreController {
           ? ''
           : ' Next route region: ${revealedNext.name}.';
       _showBanner(
-        '${config.name} stabilized Lv ${nextState.stabilizedLevel}/${config.stabilizationLayers}. Live farm unlocked.$revealText Reward: ${rewardParts.join(', ')}.',
+        '${config.name} cleared wave $completedWave. Lock this farm wave from the map or push higher.$revealText Reward: ${rewardParts.join(', ')}.',
       );
     } else {
       _showOpeningChallengeBanner(openingBanner);
@@ -744,6 +751,8 @@ extension LightcoreControllerThreatRegions on LightcoreController {
 
   int _challengeEnemyLevelForTarget(int targetLevel) => max(1, targetLevel + 1);
 
+  int _farmWaveForRegionLevel(int targetLevel) => max(1, targetLevel) * 5;
+
   bool _isGuidedOpeningChallenge(ThreatRegionChallengeState challenge) {
     return challenge.regionId == ThreatRegionLibrary.all.first.id &&
         (challenge.targetStabilizationLevel == 1 ||
@@ -764,7 +773,7 @@ extension LightcoreControllerThreatRegions on LightcoreController {
     }
     return switch (challenge.targetStabilizationLevel) {
       1 => 'Threat raised. Harder enemies are testing that upgraded tower.',
-      2 => 'Challenge Lv 2 started. Harder enemies are pushing Hex 1 again.',
+      2 => 'Push Wave 10 started. Harder enemies are pushing Hex 1 again.',
       _ => null,
     };
   }
@@ -794,9 +803,9 @@ extension LightcoreControllerThreatRegions on LightcoreController {
         : ' Reward: ${rewardParts.join(', ')}.';
     return switch (challenge.targetStabilizationLevel) {
       1 =>
-        'Challenge Lv 1 cleared. Harder enemies dented Hex 1; upgrade the tower to stabilize.$rewardText',
+        'Push Wave 5 cleared. Harder enemies dented Hex 1; upgrade the tower to hold the lane.$rewardText',
       2 =>
-        'Challenge Lv 2 cleared. Hex 1 is strained again; upgrade once more to open Hex 2.$rewardText',
+        'Push Wave 10 cleared. Hex 1 is strained again; upgrade once more to open Hex 2.$rewardText',
       _ => null,
     };
   }
@@ -898,9 +907,7 @@ extension LightcoreControllerThreatRegions on LightcoreController {
 
   bool startThreatRegionFarmValidation(String regionId) {
     if (!canStartThreatRegionFarmValidation(regionId)) {
-      _showBanner(
-        'Clear at least one stabilization level before Farm Validation.',
-      );
+      _showBanner('Clear at least one area wave before locking a farm wave.');
       _notifyNow();
       return false;
     }
@@ -909,29 +916,67 @@ extension LightcoreControllerThreatRegions on LightcoreController {
     if (config == null || state == null) {
       return false;
     }
+    return lockThreatRegionFarmWave(regionId);
+  }
+
+  bool lockThreatRegionFarmWave(String regionId) {
+    final config = threatRegionConfigById(regionId);
+    final state = threatRegionStateById(regionId);
+    if (config == null || state == null) {
+      return false;
+    }
+    final completedWave = max(
+      state.bestCompletedWave,
+      _farmWaveForRegionLevel(state.stabilizedLevel),
+    );
+    if (completedWave <= 0) {
+      _showBanner('Clear an area wave before locking ${config.name}.');
+      _notifyNow();
+      return false;
+    }
     _selectedThreatRegionId = regionId;
-    _activateThreatRegionLoadout(config);
-    _threatRegionFarmValidation = ThreatRegionFarmValidationState(
-      regionId: regionId,
-      targetStabilizationLevel: state.stabilizedLevel,
-      startedAtMillis: DateTime.now().millisecondsSinceEpoch,
+    final efficiency = (_core.coreStability / 100).clamp(0.0, 1.0);
+    final effectiveLevel = max(1, (completedWave / 5).ceil());
+    final killsPerHour = _estimateThreatRegionFarmKillsPerHour(
+      config: config,
+      stabilizedLevel: effectiveLevel,
       farmSwarmSize: _farmSwarmSize,
       threatDirectorId: state.assignedThreatDirectorId,
-      lowestStabilityPercent: _core.coreStability,
+      efficiency: efficiency <= 0 ? 1 : efficiency,
+    );
+    final lumensPerHour = _estimateThreatRegionFarmLumensPerHour(
+      config: config,
+      stabilizedLevel: effectiveLevel,
+      farmSwarmSize: _farmSwarmSize,
+      threatDirectorId: state.assignedThreatDirectorId,
+      efficiency: efficiency <= 0 ? 1 : efficiency,
     );
     _applyFarmSwarmPressure();
-    _enemies.clear();
-    _pulses.clear();
-    _shots.clear();
-    _impacts.clear();
-    _blueFocusTargetEnemyIdBySlot.clear();
-    _clearFocusTarget();
-    activeLayer.bossReady = false;
-    activeLayer.normalKillsSinceBoss = 0;
-    _swarmActivated = true;
-    _spawnTimer = min(_spawnTimer, 0.01);
+    _validatedFarmRegionId = config.id;
+    _validatedFarmSwarmSize = _farmSwarmSize;
+    _validatedFarmThreatDirectorId = state.assignedThreatDirectorId;
+    _validatedFarmStabilizedLevel = effectiveLevel;
+    _validatedFarmEfficiency = efficiency;
+    _validatedFarmKillsPerHour = killsPerHour;
+    _validatedFarmLumensPerHour = lumensPerHour;
+    _syncLegacyOfflineFarmFields();
+    _replaceThreatRegionState(
+      state.assignedThreatDirectorId == null
+          ? state.copyWith(
+              lockedFarmWave: completedWave,
+              lockedFarmEfficiency: efficiency,
+              clearLockedFarmThreatDirector: true,
+              clearValidatedThreatDirector: true,
+            )
+          : state.copyWith(
+              lockedFarmWave: completedWave,
+              lockedFarmEfficiency: efficiency,
+              lockedFarmThreatDirectorId: state.assignedThreatDirectorId,
+              validatedThreatDirectorId: state.assignedThreatDirectorId,
+            ),
+    );
     _showBanner(
-      '${config.name} Farm Validation started: survive $farmValidationWaveCount waves at this level with its Threat Director.',
+      '${config.name} farm wave $completedWave locked: ${killsPerHour.toStringAsFixed(0)} kills/hr • ${lumensPerHour.toStringAsFixed(0)} Lumens/hr.',
     );
     _notifyNow();
     return true;
@@ -946,7 +991,7 @@ extension LightcoreControllerThreatRegions on LightcoreController {
     _threatRegionFarmValidation = null;
     _applyFarmSwarmPressure();
     _showBanner(
-      '${config?.name ?? 'Region'} Farm Validation failed. Offline farm unchanged.',
+      '${config?.name ?? 'Region'} farm-wave lock failed. Offline farm unchanged.',
     );
     _notifyNow();
     return false;
@@ -1112,7 +1157,7 @@ extension LightcoreControllerThreatRegions on LightcoreController {
     _clearFocusTarget();
     _spawnTimer = 0.01;
     _showBanner(
-      'Farm Validation wave ${nextWaveIndex + 1}/$farmValidationWaveCount.',
+      'Farm-wave lock check ${nextWaveIndex + 1}/$farmValidationWaveCount.',
       category: LightcoreNotificationCategory.battle,
     );
   }
@@ -1561,6 +1606,10 @@ extension LightcoreControllerThreatRegions on LightcoreController {
       'regionId': state.regionId,
       'revealed': state.revealed,
       'stabilizedLevel': state.stabilizedLevel,
+      'bestCompletedWave': state.bestCompletedWave,
+      'lockedFarmWave': state.lockedFarmWave,
+      'lockedFarmEfficiency': state.lockedFarmEfficiency,
+      'lockedFarmThreatDirectorId': state.lockedFarmThreatDirectorId,
       'assignedThreatDirectorId': state.assignedThreatDirectorId,
       'validatedThreatDirectorId': state.validatedThreatDirectorId,
       'bestStabilityPercent': state.bestStabilityPercent,
@@ -1690,12 +1739,28 @@ extension LightcoreControllerThreatRegions on LightcoreController {
     if (regionId == null || config == null) {
       return null;
     }
+    final restoredStabilizedLevel = _intValue(
+      data['stabilizedLevel'],
+    ).clamp(0, config.stabilizationLayers);
+    final migratedWave = restoredStabilizedLevel * 5;
+    final bestCompletedWave = max(
+      migratedWave,
+      _intValue(data['bestCompletedWave']),
+    );
+    final lockedFarmWave = max(migratedWave, _intValue(data['lockedFarmWave']));
     return ThreatRegionState(
       regionId: regionId,
       revealed: _boolValue(data['revealed']),
-      stabilizedLevel: _intValue(
-        data['stabilizedLevel'],
-      ).clamp(0, config.stabilizationLayers),
+      stabilizedLevel: restoredStabilizedLevel,
+      bestCompletedWave: bestCompletedWave,
+      lockedFarmWave: lockedFarmWave,
+      lockedFarmEfficiency: _doubleValue(
+        data['lockedFarmEfficiency'],
+        fallback: lockedFarmWave > 0 ? 1 : 0,
+      ).clamp(0, 1),
+      lockedFarmThreatDirectorId: _stringOrNull(
+        data['lockedFarmThreatDirectorId'],
+      ),
       assignedThreatDirectorId: _stringOrNull(data['assignedThreatDirectorId']),
       validatedThreatDirectorId: _stringOrNull(
         data['validatedThreatDirectorId'],

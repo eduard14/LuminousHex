@@ -37,7 +37,7 @@ import 'card_management_screen.dart';
 import 'daily_dungeons_screen.dart';
 import 'enemy_management_screen.dart';
 import 'friend_management_screen.dart';
-import 'prestige_screen.dart';
+import 'advancement_screen.dart';
 import 'space_room_screen.dart';
 import 'threat_map_screen.dart';
 import 'tournament_screen.dart';
@@ -97,7 +97,7 @@ class _LightcoreShellState extends State<LightcoreShell> {
     _ShellOverlayDestination.managers,
     _ShellOverlayDestination.threatMap,
     _ShellOverlayDestination.enemies,
-    _ShellOverlayDestination.prestige,
+    _ShellOverlayDestination.advancement,
   ];
 
   List<_ShellOverlayDestination> get _visibleNavigationDestinations =>
@@ -144,7 +144,7 @@ class _LightcoreShellState extends State<LightcoreShell> {
     _ShellOverlayDestination.dungeons: ScrollController(
       keepScrollOffset: false,
     ),
-    _ShellOverlayDestination.prestige: ScrollController(
+    _ShellOverlayDestination.advancement: ScrollController(
       keepScrollOffset: false,
     ),
   };
@@ -781,7 +781,7 @@ class _LightcoreShellState extends State<LightcoreShell> {
           _ShellOverlayDestination.threatMap ||
           _ShellOverlayDestination.dungeons ||
           _ShellOverlayDestination.tournaments ||
-          _ShellOverlayDestination.prestige:
+          _ShellOverlayDestination.advancement:
         break;
     }
     _showOverlay(destination);
@@ -854,7 +854,7 @@ class _LightcoreShellState extends State<LightcoreShell> {
         backend: widget.backend,
         onBattleSurfaceActiveChanged: _setEventBattleSurfaceActive,
       ),
-      _ShellOverlayDestination.prestige => PrestigeScreen(
+      _ShellOverlayDestination.advancement => AdvancementScreen(
         controller: controller,
         isActive: true,
         scrollController: _overlayScrollControllerFor(destination),

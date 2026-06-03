@@ -891,6 +891,10 @@ class ThreatRegionState {
     required this.regionId,
     this.revealed = false,
     this.stabilizedLevel = 0,
+    this.bestCompletedWave = 0,
+    this.lockedFarmWave = 0,
+    this.lockedFarmEfficiency = 0,
+    this.lockedFarmThreatDirectorId,
     this.assignedThreatDirectorId,
     this.validatedThreatDirectorId,
     this.bestStabilityPercent = 0,
@@ -900,6 +904,10 @@ class ThreatRegionState {
   final String regionId;
   final bool revealed;
   final int stabilizedLevel;
+  final int bestCompletedWave;
+  final int lockedFarmWave;
+  final double lockedFarmEfficiency;
+  final String? lockedFarmThreatDirectorId;
   final String? assignedThreatDirectorId;
   final String? validatedThreatDirectorId;
   final double bestStabilityPercent;
@@ -908,22 +916,36 @@ class ThreatRegionState {
   bool get hasValidatedThreatDirector =>
       assignedThreatDirectorId != null &&
       assignedThreatDirectorId == validatedThreatDirectorId;
+  bool get hasLockedFarmWave => lockedFarmWave > 0;
+  bool get lockedFarmDirectorIsCurrent =>
+      lockedFarmThreatDirectorId == assignedThreatDirectorId;
 
   ThreatRegionState copyWith({
     bool? revealed,
     int? stabilizedLevel,
+    int? bestCompletedWave,
+    int? lockedFarmWave,
+    double? lockedFarmEfficiency,
+    String? lockedFarmThreatDirectorId,
     String? assignedThreatDirectorId,
     String? validatedThreatDirectorId,
     double? bestStabilityPercent,
     int? fullyStabilizedAtMillis,
     bool clearAssignedThreatDirector = false,
     bool clearValidatedThreatDirector = false,
+    bool clearLockedFarmThreatDirector = false,
     bool clearFullyStabilizedAt = false,
   }) {
     return ThreatRegionState(
       regionId: regionId,
       revealed: revealed ?? this.revealed,
       stabilizedLevel: stabilizedLevel ?? this.stabilizedLevel,
+      bestCompletedWave: bestCompletedWave ?? this.bestCompletedWave,
+      lockedFarmWave: lockedFarmWave ?? this.lockedFarmWave,
+      lockedFarmEfficiency: lockedFarmEfficiency ?? this.lockedFarmEfficiency,
+      lockedFarmThreatDirectorId: clearLockedFarmThreatDirector
+          ? null
+          : lockedFarmThreatDirectorId ?? this.lockedFarmThreatDirectorId,
       assignedThreatDirectorId: clearAssignedThreatDirector
           ? null
           : assignedThreatDirectorId ?? this.assignedThreatDirectorId,
@@ -1703,43 +1725,105 @@ class CoreState {
   }
 }
 
-class Layer2TowerState {
-  const Layer2TowerState({
-    required this.unlocked,
-    required this.count,
-    required this.fireCooldownRemaining,
-    this.projectileType = ProjectileType.threadBeam,
-    this.payloadType = PayloadType.none,
-    this.affinity = PrototypeAffinity.solar,
-    this.sourceSummary = 'Awaiting first ascension',
+class Layer2ComponentSubtraitState {
+  const Layer2ComponentSubtraitState({required this.type, required this.value});
+
+  final TowerUpgradeStatType type;
+  final double value;
+
+  Layer2ComponentSubtraitState copyWith({
+    TowerUpgradeStatType? type,
+    double? value,
+  }) {
+    return Layer2ComponentSubtraitState(
+      type: type ?? this.type,
+      value: value ?? this.value,
+    );
+  }
+}
+
+class Layer2ComponentState {
+  const Layer2ComponentState({
+    required this.id,
+    required this.sourceLayerId,
+    required this.sourceLayerLabel,
+    required this.createdAtMillis,
+    required this.reachedWave,
+    required this.statTier,
+    required this.projectileAffinity,
+    required this.payloadAffinity,
+    required this.projectileType,
+    required this.payloadType,
+    required this.basePowerMultiplier,
+    required this.baseRangeMultiplier,
+    required this.baseChargeMultiplier,
+    required this.baseFinalDamageMultiplier,
+    required this.baseBossDamageMultiplier,
+    required this.baseNormalDamageMultiplier,
+    required this.baseDefensePenetration,
+    required this.subtraits,
+    this.scrollLevel = 0,
+    this.equippedRegionId,
   });
 
-  final bool unlocked;
-  final int count;
-  final double fireCooldownRemaining;
+  final String id;
+  final String sourceLayerId;
+  final String sourceLayerLabel;
+  final int createdAtMillis;
+  final int reachedWave;
+  final int statTier;
+  final PrototypeAffinity projectileAffinity;
+  final PrototypeAffinity? payloadAffinity;
   final ProjectileType projectileType;
   final PayloadType payloadType;
-  final PrototypeAffinity affinity;
-  final String sourceSummary;
+  final double basePowerMultiplier;
+  final double baseRangeMultiplier;
+  final double baseChargeMultiplier;
+  final double baseFinalDamageMultiplier;
+  final double baseBossDamageMultiplier;
+  final double baseNormalDamageMultiplier;
+  final double baseDefensePenetration;
+  final List<Layer2ComponentSubtraitState> subtraits;
+  final int scrollLevel;
+  final String? equippedRegionId;
 
-  Layer2TowerState copyWith({
-    bool? unlocked,
-    int? count,
-    double? fireCooldownRemaining,
-    ProjectileType? projectileType,
-    PayloadType? payloadType,
-    PrototypeAffinity? affinity,
-    String? sourceSummary,
+  bool get hasPayload => payloadType != PayloadType.none;
+
+  String get signatureLabel {
+    final payload = payloadAffinity == null
+        ? 'No payload'
+        : '${payloadAffinity!.label} payload';
+    return '${projectileAffinity.label} projectile / $payload';
+  }
+
+  Layer2ComponentState copyWith({
+    int? scrollLevel,
+    String? equippedRegionId,
+    bool clearEquippedRegion = false,
   }) {
-    return Layer2TowerState(
-      unlocked: unlocked ?? this.unlocked,
-      count: count ?? this.count,
-      fireCooldownRemaining:
-          fireCooldownRemaining ?? this.fireCooldownRemaining,
-      projectileType: projectileType ?? this.projectileType,
-      payloadType: payloadType ?? this.payloadType,
-      affinity: affinity ?? this.affinity,
-      sourceSummary: sourceSummary ?? this.sourceSummary,
+    return Layer2ComponentState(
+      id: id,
+      sourceLayerId: sourceLayerId,
+      sourceLayerLabel: sourceLayerLabel,
+      createdAtMillis: createdAtMillis,
+      reachedWave: reachedWave,
+      statTier: statTier,
+      projectileAffinity: projectileAffinity,
+      payloadAffinity: payloadAffinity,
+      projectileType: projectileType,
+      payloadType: payloadType,
+      basePowerMultiplier: basePowerMultiplier,
+      baseRangeMultiplier: baseRangeMultiplier,
+      baseChargeMultiplier: baseChargeMultiplier,
+      baseFinalDamageMultiplier: baseFinalDamageMultiplier,
+      baseBossDamageMultiplier: baseBossDamageMultiplier,
+      baseNormalDamageMultiplier: baseNormalDamageMultiplier,
+      baseDefensePenetration: baseDefensePenetration,
+      subtraits: subtraits,
+      scrollLevel: scrollLevel ?? this.scrollLevel,
+      equippedRegionId: clearEquippedRegion
+          ? null
+          : equippedRegionId ?? this.equippedRegionId,
     );
   }
 }
@@ -1751,7 +1835,6 @@ class TowerLayerSnapshot {
     required this.label,
     required this.slots,
     required this.core,
-    required this.layer2,
     required this.enemies,
     required this.pulses,
     required this.shots,
@@ -1783,6 +1866,7 @@ class TowerLayerSnapshot {
     this.promotedParentLayerId,
     this.promotedIntoParentSlot = false,
     this.promotionTraitRoll = 0,
+    this.bestWaveReached = 1,
     this.layer3TrialCleared = false,
     this.layer3TrialActive = false,
     this.layer3TrialSpawnIndex = 0,
@@ -1793,7 +1877,6 @@ class TowerLayerSnapshot {
   String label;
   List<OuterTowerState> slots;
   CoreState core;
-  Layer2TowerState layer2;
   List<EnemyState> enemies;
   List<EnergyPulseState> pulses;
   List<CoreShotState> shots;
@@ -1825,6 +1908,7 @@ class TowerLayerSnapshot {
   String? promotedParentLayerId;
   bool promotedIntoParentSlot;
   int promotionTraitRoll;
+  int bestWaveReached;
   bool layer3TrialCleared;
   bool layer3TrialActive;
   int layer3TrialSpawnIndex;

@@ -45,15 +45,6 @@ extension LightcoreControllerCombatLoop on LightcoreController {
       if (coreAutoGenerationUnlocked) {
         _advanceCorePayloadFeed(battleDt);
       }
-      if (_layer2.unlocked) {
-        _layer2 = _layer2.copyWith(
-          fireCooldownRemaining: max(
-            0.0,
-            _layer2.fireCooldownRemaining - battleDt,
-          ),
-        );
-      }
-
       if (activeLayer.layer3TrialActive) {
         _advanceLayer3Trial(battleDt);
       } else if (_swarmActivated &&
@@ -84,7 +75,6 @@ extension LightcoreControllerCombatLoop on LightcoreController {
       if (_focusedEnemyId != null || coreAutoFireUnlocked) {
         _fireCoreIfPossible(allowDefaultShot: false);
       }
-      _fireLayer2IfPossible();
       _updateFlowEfficiency();
       if (foreground) {
         _syncTutorialStep(showBanner: false);
@@ -160,7 +150,7 @@ extension LightcoreControllerCombatLoop on LightcoreController {
     final pressure = min(1.0, elapsed / 115);
     final ringBoost = builtTowerCount * 0.018;
     final tierBoost = (activeLayer.tier - 1) * 0.09;
-    final layer2Boost = _layer2.unlocked ? 0.08 : 0;
+    final layer2Boost = _layer2Components.isNotEmpty ? 0.08 : 0;
     final managerBoost = _enemySpawnPressureMultiplier(deck: deck);
     final targetSpan = enemyTargetMax - minEnemyTarget;
     final targetPressure = targetSpan <= 0

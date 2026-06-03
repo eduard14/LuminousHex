@@ -233,6 +233,10 @@ extension LightcoreControllerSaveRestorePayload on LightcoreController {
         .map((item) => _deserializePlayerEquipmentItem(_coerceMap(item)))
         .whereType<PlayerEquipmentItem>()
         .toList();
+    _layer2Components = _coerceList(inventoryData['layer2Components'])
+        .map((item) => _deserializeLayer2ComponentState(_coerceMap(item)))
+        .whereType<Layer2ComponentState>()
+        .toList();
     _equippedPlayerItems = <EquipmentLoadoutSlot, String?>{
       for (final slot in EquipmentLoadoutSlot.values) slot: null,
     };
@@ -504,7 +508,6 @@ extension LightcoreControllerSaveRestorePayload on LightcoreController {
 
   bool _layerHasBattleProgress(TowerLayerSnapshot layer) {
     return layer.slots.any((slot) => slot.isBuilt || slot.isFabricating) ||
-        layer.layer2.unlocked ||
         layer.elapsed > 0 ||
         layer.spawnSequence > 0 ||
         layer.enemyCounter > 0 ||

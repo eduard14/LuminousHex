@@ -23,13 +23,13 @@ receipt validation stay out of scope until the app is closer to submission.
 
 - Threat Directors must visibly change live spawn pressure, enemy strength,
   rewards, EXP, stability risk, and farm output.
-- Farm Validation must require surviving 3 waves at the selected level with the
+- Farm-wave locking must require a completed region wave and must record the
   current Threat Director before offline rewards are produced.
 - Offline reward claims must use elapsed server sign-in time, the validated
-  region level, the validated Threat Director, and the saved enemy output
+  region farm wave, the locked Threat Director, and the saved enemy output
   snapshot.
-- Equipment, guilds, avatar cosmetics, and Space Room must stay hidden from the
-  launch surface.
+- Equipment drops must stay boss-only from Layer 2+ areas. Guilds, avatar
+  cosmetics, and Space Room must stay hidden from the launch surface.
 - Dev event preview URLs are allowed in web debug builds only and must not be
   linked from production UI.
 
@@ -55,8 +55,8 @@ receipt validation stay out of scope until the app is closer to submission.
 3. Build and upgrade towers until manager assignment unlocks.
 4. Assign a Threat Director to a revealed region and confirm live enemy pressure
    and reward labels change.
-5. Complete Farm Validation and verify the next offline claim references the
-   validated region/director output.
+5. Lock a farm wave and verify the next offline claim references the locked
+   region/director output.
 6. Open the leaderboard, change tower strength locally, and verify the player's
    projected rank moves immediately while the global board remains the cached
    server board.

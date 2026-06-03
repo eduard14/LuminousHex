@@ -147,7 +147,6 @@ extension LightcoreControllerInventoryRuntime on LightcoreController {
     final originalActiveLayerId = _activeLayerId;
     final originalSlots = _slots;
     final originalCore = _core;
-    final originalLayer2 = _layer2;
     final originalActiveEnemyCardIds = _activeEnemyCardIds;
     final originalActiveBossEnemyCardId = _activeBossEnemyCardId;
     final originalEnemyTargetCount = _enemyTargetCount;
@@ -161,7 +160,6 @@ extension LightcoreControllerInventoryRuntime on LightcoreController {
         _activeLayerId = layer.id;
         _slots = layer.slots;
         _core = layer.core;
-        _layer2 = layer.layer2;
         _activeEnemyCardIds = layer.activeEnemyCardIds;
         _activeBossEnemyCardId = layer.activeBossEnemyCardId;
         _enemyTargetCount = layer.enemyTargetCount;
@@ -174,7 +172,6 @@ extension LightcoreControllerInventoryRuntime on LightcoreController {
       _activeLayerId = originalActiveLayerId;
       _slots = originalSlots;
       _core = originalCore;
-      _layer2 = originalLayer2;
       _activeEnemyCardIds = originalActiveEnemyCardIds;
       _activeBossEnemyCardId = originalActiveBossEnemyCardId;
       _enemyTargetCount = originalEnemyTargetCount;
@@ -737,7 +734,6 @@ extension LightcoreControllerInventoryRuntime on LightcoreController {
   ) {
     final built = layer.slots.where(_slotCountsTowardRing).toList();
     final counts = <PrototypeAffinity, int>{};
-    _addCoreProjectileAffinityWeights(layer, counts);
     for (final tower in built) {
       if (_towerHasRainbowLoadout(tower)) {
         for (final affinity in chromaticTowerAffinities) {
@@ -757,7 +753,7 @@ extension LightcoreControllerInventoryRuntime on LightcoreController {
       );
     }
     if (counts.isEmpty) {
-      counts[layer.core.affinity] = 1;
+      _addCoreProjectileAffinityWeights(layer, counts);
     }
     return counts;
   }
@@ -767,7 +763,6 @@ extension LightcoreControllerInventoryRuntime on LightcoreController {
   ) {
     final built = layer.slots.where(_slotCountsTowardRing).toList();
     final counts = <PrototypeAffinity, int>{};
-    _addCorePayloadAffinityWeights(layer, counts);
     for (final tower in built) {
       if (_towerHasRainbowLoadout(tower)) {
         for (final affinity in chromaticTowerAffinities) {
@@ -787,7 +782,7 @@ extension LightcoreControllerInventoryRuntime on LightcoreController {
       );
     }
     if (counts.isEmpty) {
-      counts[layer.core.secondaryAffinity ?? layer.core.affinity] = 1;
+      _addCorePayloadAffinityWeights(layer, counts);
     }
     return counts;
   }
@@ -950,6 +945,102 @@ extension LightcoreControllerInventoryRuntime on LightcoreController {
       payloadLoadout: <PayloadType>[payload],
       rainbow: false,
     );
+  }
+
+  Layer2ComponentState _createLayer2ComponentForLayer(
+    TowerLayerSnapshot layer, {
+    required int targetTier,
+  }) {
+    final traits = _resolvePromotedTraitLoadoutForLayer(
+      layer,
+      targetTier: targetTier,
+    );
+    final random = Random(
+      _promotionTraitSeedForLayer(layer, targetTier: targetTier) ^ 0x4C32C0DE,
+    );
+    final reachedWave = max(1, layer.bestWaveReached);
+    final statTier = max(1, reachedWave);
+    final tierScale = 1 + (statTier * 0.018);
+    final projectile = traits.projectileLoadout.first;
+    final payload = traits.payloadLoadout.first;
+    final basePower = _averageTowerMetricForLayer(
+      layer,
+      towerPower,
+      fallback: coreBasicShotPower,
+    );
+    final now = DateTime.now().millisecondsSinceEpoch;
+    return Layer2ComponentState(
+      id: 'l2c_${layer.id}_${layer.promotionTraitRoll}_$now',
+      sourceLayerId: layer.id,
+      sourceLayerLabel: layerDisplayLabel(layer),
+      createdAtMillis: now,
+      reachedWave: reachedWave,
+      statTier: statTier,
+      projectileAffinity: traits.projectileAffinity,
+      payloadAffinity: traits.payloadAffinity,
+      projectileType: projectile,
+      payloadType: payload,
+      basePowerMultiplier: max(1, basePower / 10) * tierScale,
+      baseRangeMultiplier: _averageRangeForLayer(layer) / max(1, coreBaseRange),
+      baseChargeMultiplier: _averageGenerationForLayer(layer),
+      baseFinalDamageMultiplier:
+          _averageFinalDamageForLayer(layer) *
+          _componentTierMultiplier(statTier, 0.010),
+      baseBossDamageMultiplier:
+          _averageBossDamageForLayer(layer) *
+          _componentTierMultiplier(statTier, 0.014),
+      baseNormalDamageMultiplier:
+          _averageNormalDamageForLayer(layer) *
+          _componentTierMultiplier(statTier, 0.011),
+      baseDefensePenetration:
+          _averageDefensePenetrationForLayer(layer) +
+          min(0.35, statTier * 0.0025),
+      subtraits: _rollLayer2ComponentSubtraits(random, statTier),
+    );
+  }
+
+  double _componentTierMultiplier(int statTier, double step) =>
+      1 + (max(0, statTier - 1) * step);
+
+  List<Layer2ComponentSubtraitState> _rollLayer2ComponentSubtraits(
+    Random random,
+    int statTier,
+  ) {
+    final count = statTier >= 25
+        ? 3
+        : statTier >= 10
+        ? 2
+        : 1;
+    final pool = <TowerUpgradeStatType>[
+      TowerUpgradeStatType.finalDamage,
+      TowerUpgradeStatType.bossDamage,
+      TowerUpgradeStatType.normalDamage,
+      TowerUpgradeStatType.defensePenetration,
+      TowerUpgradeStatType.range,
+      TowerUpgradeStatType.generationSpeed,
+      TowerUpgradeStatType.critChance,
+      TowerUpgradeStatType.critDamage,
+      TowerUpgradeStatType.minDamage,
+      TowerUpgradeStatType.maxDamage,
+    ]..shuffle(random);
+    return pool
+        .take(count)
+        .map((type) {
+          final base = switch (type) {
+            TowerUpgradeStatType.defensePenetration => 0.012,
+            TowerUpgradeStatType.critChance => 0.010,
+            TowerUpgradeStatType.range => 0.018,
+            TowerUpgradeStatType.generationSpeed => 0.016,
+            _ => 0.020,
+          };
+          final spread = base * (0.65 + random.nextDouble() * 0.75);
+          final tierBonus = statTier * base * 0.08;
+          return Layer2ComponentSubtraitState(
+            type: type,
+            value: spread + tierBonus,
+          );
+        })
+        .toList(growable: false);
   }
 
   double _averageTowerMetricForLayer(

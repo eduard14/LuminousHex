@@ -16,7 +16,8 @@ flutter test
 
 This covers cloud save and restore behavior, currency invariants, basic menu
 and screen smoke checks, data/catalog integrity, asset references, rewarded-ad
-disclosure, and the lightweight Layer 2 UI promotion smoke. The suite is meant
+disclosure, Layer 2 component generation, farm-wave locking, and the lightweight
+Layer 2 component UI smoke. The suite is meant
 to answer “does the app still broadly work?” rather than “did gameplay tuning
 stay exactly the same?” Deleted gameplay tests can be recovered from git history
 if a mechanic becomes stable enough to protect again.
@@ -37,7 +38,7 @@ flutter test golden_test --update-goldens
 ```
 
 The current golden coverage captures the main menu, early compact battle HUD,
-and compact battle after a deterministic Prism Shell promotion.
+and compact battle after a deterministic Layer 2 component merge.
 
 ## Device/browser UI smoke checks
 
@@ -53,15 +54,16 @@ or use another configured device:
 flutter test integration_test/layer2_ui_smoke_test.dart -d <deviceId>
 ```
 
-The Prism Shell smoke test starts from a deterministic promotion-ready state,
-opens the Advancement UI, forges a Prism Shell through the actual UI, and
-verifies the app lands in the promoted shell.
+The Layer 2 smoke test starts from a deterministic merge-ready state, opens the
+component UI, creates a Layer 2 component through the actual UI, and verifies
+the app records the component.
 
 Flutter's `integration_test` runner currently requires a supported device target;
 if the local device toolchain is unavailable, run the equivalent fast regression:
 
 ```sh
 flutter test test/layer2_ui_regression_test.dart
+flutter test test/layer2_component_progression_test.dart
 ```
 
 ## Manual web screenshots
@@ -100,4 +102,4 @@ The default development loop is intentionally lighter than before:
 `flutter test` does not include the golden or integration directories, and it no
 longer includes brittle gameplay/balance micro-regressions. Use the heavier
 suites before releases, before visual polish changes, or when touching
-promotion/navigation UI.
+component-merge/navigation UI.

@@ -117,7 +117,7 @@ class CardManagementScreen extends StatelessWidget {
               tint: LightcorePalette.aether,
               subtitle: !controller.managerAssignmentUnlocked
                   ? 'Build all ${LightcoreController.slotCount} outer towers in this Layer 1 shell before managers can be assigned.'
-                  : 'Core Managers add auto-fire on this shell. Threat Directors tune the selected region live and validate offline output after stabilization.',
+                  : 'Core Managers add auto-fire on this shell. Threat Directors tune the selected region live, then farm-wave locks set offline output.',
             ),
             const SizedBox(height: 10),
             Wrap(

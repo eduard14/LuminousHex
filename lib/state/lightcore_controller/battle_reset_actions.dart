@@ -36,7 +36,6 @@ extension LightcoreControllerBattleResetActions on LightcoreController {
       fireCooldownRemaining: 0,
       packetCooldownRemaining: 0,
     );
-    _layer2 = _layer2.copyWith(fireCooldownRemaining: 0);
     _slots = _slots
         .map(
           (slot) =>
@@ -82,7 +81,6 @@ extension LightcoreControllerBattleResetActions on LightcoreController {
 
     activeLayer.slots = reset.slots;
     activeLayer.core = reset.core;
-    activeLayer.layer2 = reset.layer2;
     activeLayer.enemies = reset.enemies;
     activeLayer.pulses = reset.pulses;
     activeLayer.shots = reset.shots;

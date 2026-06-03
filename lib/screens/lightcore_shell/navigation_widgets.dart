@@ -224,7 +224,7 @@ class _ThreatChallengeHudBanner extends StatelessWidget {
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        '$waveLabel  •  ${region.name} Lv ${challenge.targetStabilizationLevel}/${region.stabilizationLayers}',
+                        '$waveLabel  •  ${region.name} Wave ${challenge.targetStabilizationLevel * 5}/${region.stabilizationLayers * 5}',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: Theme.of(context).textTheme.labelLarge?.copyWith(

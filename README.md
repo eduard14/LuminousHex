@@ -84,7 +84,7 @@ lib/
   battle/     Flame battlefield runtime
   data/       Tower, enemy, manager, and card definitions
   models/     Core gameplay and progression state
-  screens/    Landing, battle, tower, enemy, manager, and prestige UI
+  screens/    Landing, battle, tower, enemy, manager, and advancement UI
   state/      Local game authority and progression logic
   theme/      Visual system
   widgets/    Shared UI components

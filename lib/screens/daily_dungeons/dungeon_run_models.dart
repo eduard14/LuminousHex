@@ -178,10 +178,10 @@ _dailyDungeonBattleModes =
         icon: Icons.terrain_rounded,
         seedOffset: 1009,
         killTargetPressure: 3,
-        clearVerb: 'stabilized',
+        clearVerb: 'cleared',
         failVerb: 'collapsed',
         usesManualAim: true,
-        successTitle: 'Rift Stabilized',
+        successTitle: 'Rift Cleared',
       ),
     };
 

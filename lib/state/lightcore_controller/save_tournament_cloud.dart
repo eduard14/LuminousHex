@@ -14,8 +14,6 @@ class _EventBattleConfig {
     this.enemyDraft = const <EnemyCardState>[],
     this.bossDraft,
     this.enemyPressure = LightcoreController.initialEnemyTarget,
-    this.layer2Unlocked = false,
-    this.layer2Count = 0,
     this.coreMultiShotUpgradeLevel = 0,
     this.spawnBossImmediately = false,
     this.installCoreManager = true,
@@ -40,8 +38,6 @@ class _EventBattleConfig {
   final Iterable<EnemyCardState> enemyDraft;
   final EnemyCardState? bossDraft;
   final int enemyPressure;
-  final bool layer2Unlocked;
-  final int layer2Count;
   final int coreMultiShotUpgradeLevel;
   final bool spawnBossImmediately;
   final bool installCoreManager;
@@ -99,7 +95,6 @@ extension LightcoreControllerSaveTournamentCloud on LightcoreController {
       packetCooldownRemaining: 0,
       automationCooldownRemaining: 0,
     );
-    _layer2 = homeLayer.layer2.copyWith(fireCooldownRemaining: 0);
     for (var slotIndex = 0; slotIndex < slotCount; slotIndex += 1) {
       if (slotIndex >= homeLayer.slots.length ||
           !source._slotCountsTowardRing(homeLayer.slots[slotIndex])) {
@@ -183,8 +178,6 @@ extension LightcoreControllerSaveTournamentCloud on LightcoreController {
       enemyDraft: enemyDraft,
       bossDraft: bossDraft,
       enemyPressure: enemyPressure,
-      layer2Unlocked: mode == LightcoreTournamentModeId.arenaFlow,
-      layer2Count: mode == LightcoreTournamentModeId.arenaFlow ? 2 : 0,
       spawnBossImmediately: mode == LightcoreTournamentModeId.arenaFlow,
       installCoreManager: mode != LightcoreTournamentModeId.enemyBlitz,
     );
@@ -383,8 +376,6 @@ extension LightcoreControllerSaveTournamentCloud on LightcoreController {
       enemyDraft: enemyDraft,
       enemyPressure:
           initialEnemyTarget + min(20, 3 + (profile.towerLevel ~/ 2)),
-      layer2Unlocked: profile.towerLevel >= 7,
-      layer2Count: profile.towerLevel >= 14 ? 2 : 1,
       installCoreManager: false,
     );
   }
@@ -412,7 +403,6 @@ extension LightcoreControllerSaveTournamentCloud on LightcoreController {
       packetCooldownRemaining: 0,
       automationCooldownRemaining: 0,
     );
-    _layer2 = homeLayer.layer2.copyWith(fireCooldownRemaining: 0);
     for (var slotIndex = 0; slotIndex < slotCount; slotIndex += 1) {
       if (slotIndex >= homeLayer.slots.length ||
           !source._slotCountsTowardRing(homeLayer.slots[slotIndex])) {
@@ -513,16 +503,6 @@ extension LightcoreControllerSaveTournamentCloud on LightcoreController {
           .clamp(0, maxCoreMultiShotUpgradeLevel)
           .toInt(),
     );
-    _layer2 = Layer2TowerState(
-      unlocked: config.layer2Unlocked,
-      count: config.layer2Unlocked ? max(1, config.layer2Count) : 0,
-      fireCooldownRemaining: 0,
-      projectileType: config.coreProjectile,
-      payloadType: config.corePayload,
-      affinity: config.coreAffinity,
-      sourceSummary: '${config.eventLabel} event relay',
-    );
-
     for (var slotIndex = 0; slotIndex < slotCount; slotIndex += 1) {
       if (slotIndex >= normalizedBuiltSlots || config.towerLoadout.isEmpty) {
         _slots[slotIndex] = OuterTowerState(slotIndex: slotIndex);
@@ -834,6 +814,9 @@ extension LightcoreControllerSaveTournamentCloud on LightcoreController {
             .toList(growable: false),
         'equipmentInventory': _equipmentInventory
             .map(_serializePlayerEquipmentItem)
+            .toList(growable: false),
+        'layer2Components': _layer2Components
+            .map(_serializeLayer2ComponentState)
             .toList(growable: false),
         'equippedPlayerItems': <String, dynamic>{
           for (final entry in _equippedPlayerItems.entries)
