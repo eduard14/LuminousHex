@@ -194,11 +194,6 @@ extension LightcoreControllerSaveLayerSerialization on LightcoreController {
       'equippedCardInstanceId': tower.equippedCardInstanceId,
       'projectileType': tower.projectileType?.name,
       'payloadType': tower.payloadType?.name,
-      'targetPriority': tower.targetPriority.name,
-      'projectileTargetPriorities': <String, dynamic>{
-        for (final entry in tower.projectileTargetPriorities.entries)
-          entry.key.name: entry.value.name,
-      },
       'fireSequence': tower.fireSequence,
       'investedLumens': tower.investedLumens,
       'fabricationTotalSeconds': tower.fabricationTotalSeconds,
@@ -292,23 +287,6 @@ extension LightcoreControllerSaveLayerSerialization on LightcoreController {
         PayloadType.values,
         _stringOrNull(data['payloadType']),
       ),
-      targetPriority:
-          _enumByName(
-            TargetPriority.values,
-            _stringOrNull(data['targetPriority']),
-          ) ??
-          TargetPriority.close,
-      projectileTargetPriorities: <ProjectileType, TargetPriority>{
-        for (final entry in _coerceMap(
-          data['projectileTargetPriorities'],
-        ).entries)
-          if (_restoreOptionalActiveProjectileType(_stringOrNull(entry.key)) !=
-                  null &&
-              _enumByName(TargetPriority.values, _stringOrNull(entry.value)) !=
-                  null)
-            _restoreOptionalActiveProjectileType(_stringOrNull(entry.key))!:
-                _enumByName(TargetPriority.values, _stringOrNull(entry.value))!,
-      },
       fireSequence: _intValue(data['fireSequence']),
       investedLumens: _intValue(data['investedLumens']),
       fabricationTotalSeconds: _doubleValue(data['fabricationTotalSeconds']),

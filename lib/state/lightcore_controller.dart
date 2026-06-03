@@ -371,18 +371,18 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
   ),
   LightcoreTutorialStep.focusFirstEnemy: LightcoreTutorialQuestDefinition(
     id: 'TUT-007',
-    title: 'Focus Fire',
+    title: 'Auto Targeting',
     teachGoal:
-        'Enemy clicks set the tactical target. Tower clicks stay reserved for tower controls, upgrades, stats, and targeting tools.',
+        'The shell picks live targets automatically while tower clicks stay reserved for controls, upgrades, and stats.',
     trigger: 'First tower exists',
-    primaryClickTarget: 'Battlefield > anomaly target',
+    primaryClickTarget: 'Battlefield > auto-targeted anomaly',
     coachCopy:
-        'Click the highlighted anomaly to focus fire. If the core is still charging, the shot fires as soon as it is ready.',
-    completionCondition: 'Focus and fire one shot at an anomaly',
+        'Let the loaded shot auto-target a visible anomaly. Tower clicks open controls and do not steer fire.',
+    completionCondition: 'Auto-fire one shot at an anomaly',
     reward: 'Upgrade Lumens and White Drift practice scan',
     failureHelpState:
-        'Click the highlighted anomaly, not a tower. Towers open tower controls; enemies set focus fire.',
-    analyticsEvent: 'tutorial_manual_aim_fire',
+        'Keep the shell awake and let the next charged shot choose its target.',
+    analyticsEvent: 'tutorial_auto_target_fire',
   ),
   LightcoreTutorialStep
       .inspectSecondShellTower: LightcoreTutorialQuestDefinition(
@@ -482,7 +482,7 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
     trigger: 'Manager assigned',
     primaryClickTarget: 'Battlefield > manager firing lane',
     coachCopy:
-        'Watch the assigned manager fire automatically. You can still click enemies to override focus.',
+        'Watch the assigned manager fire automatically while the shell chooses targets.',
     completionCondition: 'Let the manager fire 5 automated shots',
     reward: 'Lumens and Threat Scan x1',
     failureHelpState:

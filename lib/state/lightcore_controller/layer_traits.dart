@@ -795,9 +795,9 @@ extension LightcoreControllerLayerTraits on LightcoreController {
     LightcoreTutorialStep.unfoldShell =>
       'Core online. The shell can now open lanes and start earning.',
     LightcoreTutorialStep.buildFirstRedTower =>
-      'First tower online. Focus an anomaly, earn Lumens, then upgrade the lane.',
+      'First tower online. Auto-target an anomaly, earn Lumens, then upgrade the lane.',
     LightcoreTutorialStep.focusFirstEnemy =>
-      'Focus fire learned. You have enough Lumens to upgrade the first tower.',
+      'Auto-targeting verified. You have enough Lumens to upgrade the first tower.',
     LightcoreTutorialStep.upgradeFirstTowerToLevel3 =>
       'Anchor tower tuned. Push Wave 5 for denser enemies and better rewards.',
     LightcoreTutorialStep.raiseThreat =>
@@ -811,7 +811,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
     LightcoreTutorialStep.assignTowerManager =>
       'Manager assigned. Core fire now runs with better automation.',
     LightcoreTutorialStep.managerAutoAim =>
-      'Automation verified. Core fire keeps moving while you focus targets.',
+      'Automation verified. Core fire keeps moving while the shell chooses targets.',
     LightcoreTutorialStep.upgradeFirstTowerToLevel4 =>
       'Opening lane reinforced. Strong anchors handle denser pressure better.',
     LightcoreTutorialStep.upgradeFirstTowerToLevel5 =>
@@ -1465,22 +1465,6 @@ extension LightcoreControllerLayerTraits on LightcoreController {
 
   bool canRerollPromotedChildTower(OuterTowerState tower) => false;
 
-  TargetPriority towerTargetPriority(OuterTowerState tower) =>
-      towerTargetPriorityForProjectile(tower, towerProjectileType(tower));
-
-  TargetPriority towerTargetPriorityForProjectile(
-    OuterTowerState tower,
-    ProjectileType projectileType,
-  ) => tower.projectileTargetPriorities[projectileType] ?? tower.targetPriority;
-
-  String towerTargetLabel(OuterTowerState tower) =>
-      towerTargetPriority(tower).label;
-
-  String towerTargetLabelForProjectile(
-    OuterTowerState tower,
-    ProjectileType projectileType,
-  ) => towerTargetPriorityForProjectile(tower, projectileType).label;
-
   String towerPatternAchievementLabel(OuterTowerState tower) {
     if (!_slotCountsTowardRing(tower)) {
       return 'None';
@@ -1587,7 +1571,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         LightcoreTutorialStep.waitForFirstHex => 'Hex 1 Ready',
         LightcoreTutorialStep.selectFirstHex => 'Select Hex 1',
         LightcoreTutorialStep.buildFirstRedTower => 'Choose First Tower',
-        LightcoreTutorialStep.focusFirstEnemy => 'Focus Fire',
+        LightcoreTutorialStep.focusFirstEnemy => 'Auto Targeting',
         LightcoreTutorialStep.inspectSecondShellTower => 'Inspect Child Tower',
         LightcoreTutorialStep.upgradeFirstTowerToLevel3 =>
           'Tune The Main Tower',
@@ -1637,7 +1621,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         LightcoreTutorialStep.buildFirstRedTower =>
           'Click Hex 1 and choose Comet Mortar or Rayline Spire.',
         LightcoreTutorialStep.focusFirstEnemy =>
-          'Click a visible anomaly to focus fire. Tower clicks open tower controls.',
+          'Let the next charged shot auto-target a visible anomaly.',
         LightcoreTutorialStep.inspectSecondShellTower =>
           'Click the charged child-shell tower to inspect its controls.',
         LightcoreTutorialStep.upgradeFirstTowerToLevel3 =>
@@ -1713,7 +1697,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
     LightcoreTutorialStep.waitForFirstHex ||
     LightcoreTutorialStep.selectFirstHex => 'Click Hex 1',
     LightcoreTutorialStep.buildFirstRedTower => 'Choose a tower',
-    LightcoreTutorialStep.focusFirstEnemy => 'Click an anomaly',
+    LightcoreTutorialStep.focusFirstEnemy => 'Watch auto-target',
     LightcoreTutorialStep.inspectSecondShellTower => 'Inspect tower',
     LightcoreTutorialStep.upgradeFirstTowerToLevel3 ||
     LightcoreTutorialStep.upgradeFirstTowerToLevel4 ||
@@ -1811,7 +1795,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         LightcoreTutorialStep.forgeTowerManager =>
           'Core Manager pulls cost Flux and advance the Core Manager Pass. Each roll can improve auto-fire across the active shell.',
         LightcoreTutorialStep.assignTowerManager =>
-          'Assigned Core Managers fire the core for you, turning focus fire into a steadier automated rhythm.',
+          'Assigned Core Managers fire the core for you, turning auto-targeting into a steadier automated rhythm.',
         LightcoreTutorialStep.forgeEnemyManager =>
           'Threat Director pulls cost Flux and advance the Threat Director Pass. Their bonuses tune live spawns, enemy strength, and rewards.',
         LightcoreTutorialStep.assignEnemyManager =>
@@ -1846,7 +1830,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
           LightcoreTutorialStep.buildFirstRedTower =>
             'Lumo wants the first prism online before the shell fans wider, so the relay net has a stable firing spine.',
           LightcoreTutorialStep.focusFirstEnemy =>
-            'The shot is loaded. Click a visible anomaly to focus it; click towers only when you want tower controls.',
+            'The shot is loaded. The shell will pick a visible anomaly automatically; click towers only when you want tower controls.',
           LightcoreTutorialStep.inspectSecondShellTower =>
             'The next shell is awake. Click the charged tower body before Lumo hands you speed controls.',
           LightcoreTutorialStep.upgradeFirstTowerToLevel3 =>

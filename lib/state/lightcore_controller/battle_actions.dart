@@ -41,7 +41,6 @@ extension LightcoreControllerBattleActions on LightcoreController {
         advantageMultiplier: 1,
         projectileType: projectileType,
         payloadType: payloadType,
-        targetPriority: TargetPriority.close,
         range: coreEffectiveRangeForUpgradeLevel(
           _core.rangeUpgradeLevel,
           projectileType: projectileType,

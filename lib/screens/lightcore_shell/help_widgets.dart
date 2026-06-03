@@ -91,16 +91,17 @@ const List<_HelpSectionData> _baseHelpSections = <_HelpSectionData>[
     title: 'Shell Defense Basics',
     summary: 'How the core, relay prisms, and anomalies interact.',
     body:
-        'The center tower is the Lightcore. After the shell wakes, shots charge automatically and anomaly clicks focus where the next shot should go. Core Managers later add auto-fire. The six surrounding towers are relay prisms. They build charge automatically, while tower clicks stay reserved for controls, stats, upgrades, and targeting tools.\n\n'
+        'The center tower is the Lightcore. After the shell wakes, shots charge automatically and choose anomaly targets on their own. Core Managers later add auto-fire. The six surrounding towers are relay prisms. They build charge automatically, while tower clicks stay reserved for controls, stats, and upgrades.\n\n'
         'Anomalies spiral inward from beyond the shell. They do not destroy the core directly. Instead they jam the edge hex they hit, slow relay output, and reduce how efficiently the shell harvests Lumens.',
   ),
   _HelpSectionData(
     id: 'focus-fire-lanes',
-    title: 'Focus Fire and Lanes',
-    summary: 'How core charge, anomaly focus, and lane pressure fit together.',
+    title: 'Auto Targeting and Lanes',
+    summary:
+        'How core charge, automatic targets, and lane pressure fit together.',
     body:
         'Core Stability is the hidden pressure value from 0 to 100. Output Efficiency is the visible multiplier derived from that stability, and Effective Gain is Base Gain x Threat Reward x Output Efficiency.\n\n'
-        'Core fire charges automatically. Click an anomaly to focus the next shot there, or let a Core Manager automate firing later. The battle HUD stays focused on wave progress, tower upgrades, and lane pressure instead of ammo queue management.\n\n'
+        'Core fire charges automatically. Shots pick live targets from the current wave, while Core Managers automate the firing cadence later. The battle HUD stays focused on wave progress, tower upgrades, and lane pressure instead of ammo queue management.\n\n'
         'A lane is the approach corridor tied to each outer hex. When anomalies break through a corridor, they jam that lane and slow the prism assigned to it. Repeated lane hits shake Core Stability, and Output Efficiency recovers over time through recovery stats and stable builds.',
   ),
   _HelpSectionData(
@@ -165,9 +166,9 @@ const List<_HelpSectionData> _baseHelpSections = <_HelpSectionData>[
   _HelpSectionData(
     id: 'targeting-managers',
     title: 'Targeting and Foundries',
-    summary: 'How child towers bias shots and how managers modify behavior.',
+    summary: 'How automatic targeting and managers modify behavior.',
     body:
-        'Targeting priorities such as Close, Strong, and Weak tell a relay what kind of anomaly it should prefer when that tower contributes charge. Direct anomaly clicks can still override focus during active play.\n\n'
+        'Relays no longer carry player-selected target priorities. When a tower contributes charge, the shell automatically weighs range, lane danger, boss pressure, affinity, and expected damage before choosing an anomaly.\n\n'
         'Core Managers assign to a shell and add auto-fire. Each one has an automation rate: if towers charge faster than the manager can fire, the shell loses efficiency while shots wait. Threat Directors attach to Threat Map regions and immediately tune spawn cadence, enemy strength, reward bonuses, EXP, stability risk, and locked farm-wave output. Both manager families unlock after Layer 1 shell coverage.',
   ),
 ];

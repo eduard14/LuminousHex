@@ -147,7 +147,7 @@ class CardManagementScreen extends StatelessWidget {
                         ),
                   badgeIcon: Icons.hexagon_rounded,
                   semanticLabel:
-                      'Shell Core Manager, ${towerCoreManager?.name ?? 'Focus Fire'}',
+                      'Shell Core Manager, ${towerCoreManager?.name ?? 'Auto Targeting'}',
                   label: 'Towers',
                   value: towerCoreManager?.name ?? 'Focus',
                   selected: towerCoreManager != null,
@@ -200,7 +200,7 @@ class CardManagementScreen extends StatelessWidget {
             _DefaultAutoManagerPanel(controller: controller),
             const SizedBox(height: 10),
             Text(
-              'Shell Manager: ${towerCoreManager?.name ?? 'Focus Fire'}  •  Region Director: ${regionThreatDirector?.name ?? 'Open'}',
+              'Shell Manager: ${towerCoreManager?.name ?? 'Auto Targeting'}  •  Region Director: ${regionThreatDirector?.name ?? 'Open'}',
               style: textTheme.bodySmall?.copyWith(
                 color: LightcorePalette.mist.withValues(alpha: 0.74),
                 fontWeight: FontWeight.w700,
@@ -267,7 +267,7 @@ class CardManagementScreen extends StatelessWidget {
               _InlineSectionNotice(
                 message: controller.managersUnlocked
                     ? 'Forge a Core Manager when you have enough Flux. Forged managers add auto-fire after manager automation is online.'
-                    : 'Forged Core Managers unlock when a Layer 1 shell has all ${LightcoreController.slotCount} outer towers online. Until then, shots auto-charge and enemy taps focus fire.',
+                    : 'Forged Core Managers unlock when a Layer 1 shell has all ${LightcoreController.slotCount} outer towers online. Until then, shots auto-charge and choose targets automatically.',
                 tint: LightcorePalette.violet,
               ),
               const SizedBox(height: 10),
@@ -691,7 +691,7 @@ class _DefaultAutoManagerPanel extends StatelessWidget {
                   children: [
                     Expanded(
                       child: Text(
-                        'Focus Fire',
+                        'Auto Targeting',
                         style: textTheme.titleSmall?.copyWith(
                           color: LightcorePalette.mist,
                           fontWeight: FontWeight.w900,
@@ -703,7 +703,7 @@ class _DefaultAutoManagerPanel extends StatelessWidget {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  'No Core Manager is assigned. Shots auto-charge; click anomalies to steer fire until manager auto-fire unlocks.',
+                  'No Core Manager is assigned. Shots auto-charge and choose targets automatically until manager auto-fire unlocks.',
                   style: textTheme.bodySmall?.copyWith(
                     color: LightcorePalette.mist.withValues(alpha: 0.78),
                   ),

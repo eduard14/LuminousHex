@@ -3,39 +3,6 @@ part of '../lightcore_controller.dart';
 const int _coreBlueFocusTargetKey = -1;
 
 extension LightcoreControllerCombatFiring on LightcoreController {
-  bool focusBattleEnemy(String enemyId) {
-    if (activeLayerPassiveOnly || _focusTargetCooldownRemaining > 0) {
-      return false;
-    }
-    final enemy = _enemyById(enemyId);
-    if (enemy == null) {
-      return false;
-    }
-    _focusedEnemyId = enemy.id;
-    _focusTargetRemainingSeconds = focusTargetDurationSeconds;
-    _focusTargetCooldownRemaining = focusTargetCooldownSeconds;
-    _showBanner('${enemy.config.name} focused. Core fire steers there.');
-    _notifyNow();
-    return true;
-  }
-
-  bool focusBattleEnemyForNextShot(String enemyId) {
-    if (activeLayerPassiveOnly) {
-      return false;
-    }
-    final enemy = _enemyById(enemyId);
-    if (enemy == null) {
-      return false;
-    }
-    _focusedEnemyId = enemy.id;
-    _focusTargetRemainingSeconds = focusTargetDurationSeconds;
-    _showBanner(
-      'Focus locked on ${enemy.config.name}. Next core shot fires there.',
-    );
-    _notifyNow();
-    return true;
-  }
-
   void _advanceFocusTarget(double dt) {
     _focusTargetCooldownRemaining = max(0, _focusTargetCooldownRemaining - dt);
     final focusedId = _focusedEnemyId;
@@ -211,112 +178,6 @@ extension LightcoreControllerCombatFiring on LightcoreController {
     return true;
   }
 
-  bool fireQueuedCorePacketAtEnemy(String enemyId) {
-    if (activeLayerPassiveOnly ||
-        _core.fireCooldownRemaining > 0 ||
-        _ammoQueue.isEmpty) {
-      return false;
-    }
-    final target = _enemyById(enemyId);
-    if (target == null) {
-      return false;
-    }
-    _focusedEnemyId = target.id;
-    _focusTargetRemainingSeconds = focusTargetDurationSeconds;
-    var ammoIndex = _ammoQueue.indexWhere((packet) {
-      final coreRoutedRange = coreEffectiveRangeForUpgradeLevel(
-        _core.rangeUpgradeLevel,
-        projectileType: packet.projectileType,
-      );
-      return target.radius <= max(packet.range, coreRoutedRange);
-    });
-    if (ammoIndex == -1) {
-      ammoIndex = 0;
-    }
-    final ammo = _ammoQueue.removeAt(ammoIndex);
-    final coreRoutedRange = coreEffectiveRangeForUpgradeLevel(
-      _core.rangeUpgradeLevel,
-      projectileType: ammo.projectileType,
-    );
-    final shotMaxRange = max(ammo.range, coreRoutedRange);
-    final sourceTower = ammo.sourceSlotIndex == null
-        ? null
-        : _slots[ammo.sourceSlotIndex!];
-    var critChance = ammo.critChance;
-    var criticalBoosted = false;
-    if (ammo.criticalBoosted) {
-      critChance = 1.0;
-      criticalBoosted = true;
-    }
-    final cooldownMultiplier =
-        sourceTower != null && _slotCountsTowardRing(sourceTower)
-        ? _slotCoreCooldownMultiplier(sourceTower)
-        : 1.0;
-    var shotPower =
-        ammo.power *
-        ammo.finalDamageMultiplier *
-        _sampleDamageRangeMultiplier(
-          ammo.minDamageMultiplier,
-          ammo.maxDamageMultiplier,
-        ) *
-        _projectileDamageMultiplier(ammo.projectileType) *
-        _coreEnergyOutputMultiplier;
-    if (_ammoUsesBlueFocusLaser(ammo)) {
-      shotPower *= _blueFocusLaserDamageMultiplier;
-      _blueFocusTargetEnemyIdBySlot[ammo.sourceSlotIndex ??
-              _coreBlueFocusTargetKey] =
-          target.id;
-    }
-    final aimAngle = target.angle;
-    _shots.add(
-      CoreShotState(
-        id: 'shot_${_shotCounter++}',
-        enemyId: target.id,
-        affinity: ammo.affinity,
-        secondaryAffinity: ammo.secondaryAffinity,
-        power: shotPower,
-        projectileType: ammo.projectileType,
-        payloadType: ammo.payloadType,
-        progress: 0,
-        layer2: false,
-        critChance: critChance,
-        critMultiplier: ammo.critMultiplier,
-        critical: false,
-        aimAngle: aimAngle,
-        travelRadius: _shotTravelRadiusForProjectile(
-          ammo.projectileType,
-          targetRadius: min(target.radius, shotMaxRange),
-          maxRange: shotMaxRange,
-          basicImpact: _shotUsesCoreBasicImpact(
-            layer2: false,
-            projectileType: ammo.projectileType,
-            sourceSlotIndex: ammo.sourceSlotIndex,
-          ),
-        ),
-        sourceSlotIndex: ammo.sourceSlotIndex,
-        advantageMultiplier: ammo.advantageMultiplier,
-        bossDamageMultiplier: ammo.bossDamageMultiplier,
-        normalDamageMultiplier: ammo.normalDamageMultiplier,
-        defensePenetration: ammo.defensePenetration,
-        criticalBoosted: criticalBoosted,
-      ),
-    );
-    _core = _core.copyWith(
-      fireCooldownRemaining:
-          coreShotCooldownForUpgradeLevel(
-            _core.fireSpeedUpgradeLevel,
-            projectileType: ammo.projectileType,
-          ) *
-          cooldownMultiplier,
-    );
-    _spendCoreEnergy(3 + (ammo.payloadType == PayloadType.none ? 0 : 1));
-    _tutorialFocusFireLearned = true;
-    _applyOpeningPressureLessonIfNeeded();
-    _needsNotify = true;
-    _notifyNow();
-    return true;
-  }
-
   double _prismRiftAimAngle({required double aimDx, required double aimDy}) {
     final magnitude = sqrt((aimDx * aimDx) + (aimDy * aimDy));
     if (magnitude <= 0.001) {
@@ -372,7 +233,6 @@ extension LightcoreControllerCombatFiring on LightcoreController {
     var nextFireSequence = _core.fireSequence;
     var cooldownAfterVolley = 0.0;
     var firedShots = 0;
-    var firedFocusedQueuedShot = false;
     final volleyTargetIds = <String>{};
 
     for (var shotIndex = 0; shotIndex < volleyCount; shotIndex++) {
@@ -417,17 +277,11 @@ extension LightcoreControllerCombatFiring on LightcoreController {
                 maxRadius: shotMaxRange,
                 excludedEnemyIds: volleyTargetIds,
               )
-            : _targetForPriority(
-                    ammo.targetPriority,
-                    maxRadius: shotMaxRange,
-                    sourceSlotIndex: ammo.sourceSlotIndex,
-                    excludedEnemyIds: volleyTargetIds,
-                  ) ??
-                  _nearestEnemyForSource(
-                    maxRadius: shotMaxRange,
-                    sourceSlotIndex: ammo.sourceSlotIndex,
-                    excludedEnemyIds: volleyTargetIds,
-                  );
+            : _automaticTargetForPacket(
+                ammo,
+                maxRadius: shotMaxRange,
+                excludedEnemyIds: volleyTargetIds,
+              );
         if (target == null) {
           break;
         }
@@ -476,13 +330,6 @@ extension LightcoreControllerCombatFiring on LightcoreController {
           _core.rangeUpgradeLevel,
           projectileType: projectileType,
         );
-        target = _nearestEnemy(
-          maxRadius: shotMaxRange,
-          excludedEnemyIds: volleyTargetIds,
-        );
-        if (target == null) {
-          break;
-        }
         affinity = _coreAffinityForProjectile(projectileType);
         secondaryAffinity = _coreSecondaryAffinityForPayload(payloadType);
         sourceSlotIndex = null;
@@ -502,6 +349,20 @@ extension LightcoreControllerCombatFiring on LightcoreController {
             _projectileDamageMultiplier(projectileType) *
             _gearPowerMultiplier *
             _coreEnergyOutputMultiplier;
+        target = _automaticTarget(
+          maxRadius: shotMaxRange,
+          excludedEnemyIds: volleyTargetIds,
+          affinity: affinity,
+          sourceSlotIndex: sourceSlotIndex,
+          power: shotPower,
+          advantageMultiplier: advantageMultiplier,
+          bossDamageMultiplier: bossDamageMultiplier,
+          normalDamageMultiplier: normalDamageMultiplier,
+          defensePenetration: defensePenetration,
+        );
+        if (target == null) {
+          break;
+        }
         energySpend = 5 + (payloadType == PayloadType.none ? 0 : 1);
         advancesCoreSequence = true;
       }
@@ -559,9 +420,6 @@ extension LightcoreControllerCombatFiring on LightcoreController {
         nextFireSequence += 1;
       }
       _spendCoreEnergy(energySpend);
-      if (firedQueuedPacket && target.id == _focusedEnemyId) {
-        firedFocusedQueuedShot = true;
-      }
       volleyTargetIds.add(target.id);
       firedShots += 1;
     }
@@ -574,7 +432,7 @@ extension LightcoreControllerCombatFiring on LightcoreController {
       fireCooldownRemaining: cooldownAfterVolley,
       fireSequence: nextFireSequence,
     );
-    if (firedFocusedQueuedShot) {
+    if (!_tutorialFocusFireLearned) {
       _tutorialFocusFireLearned = true;
       _applyOpeningPressureLessonIfNeeded();
     }
@@ -647,49 +505,19 @@ extension LightcoreControllerCombatFiring on LightcoreController {
     var bestScore = -double.infinity;
     for (var index = 0; index < _ammoQueue.length; index++) {
       final packet = _ammoQueue[index];
-      final target =
-          _targetForPriority(
-            packet.targetPriority,
-            maxRadius: packet.range,
-            sourceSlotIndex: packet.sourceSlotIndex,
-            excludedEnemyIds: excludedTargetIds,
-          ) ??
-          _nearestEnemyForSource(
-            maxRadius: packet.range,
-            sourceSlotIndex: packet.sourceSlotIndex,
-            excludedEnemyIds: excludedTargetIds,
-          );
+      final coreRoutedRange = coreEffectiveRangeForUpgradeLevel(
+        _core.rangeUpgradeLevel,
+        projectileType: packet.projectileType,
+      );
+      final target = _automaticTargetForPacket(
+        packet,
+        maxRadius: max(packet.range, coreRoutedRange),
+        excludedEnemyIds: excludedTargetIds,
+      );
       if (target == null) {
         continue;
       }
-      final affinityScale = _affinityMultiplierAgainstEnemy(
-        packet.affinity,
-        target,
-      );
-      final sourceTower = packet.sourceSlotIndex == null
-          ? null
-          : _slots[packet.sourceSlotIndex!];
-      final towerAffinityScale =
-          affinityScale > 1 &&
-              sourceTower != null &&
-              _slotCountsTowardRing(sourceTower)
-          ? _slotAffinityBonusMultiplier(sourceTower)
-          : 1.0;
-      final score =
-          packet.power *
-          packet.finalDamageMultiplier *
-          _enemyTypeDamageMultiplier(
-            target: target,
-            normalDamageMultiplier: packet.normalDamageMultiplier,
-            bossDamageMultiplier: packet.bossDamageMultiplier,
-          ) *
-          affinityScale *
-          (affinityScale > 1 ? packet.advantageMultiplier : 1) *
-          towerAffinityScale *
-          (1 - (target.defense * (1 - packet.defensePenetration)) / 300).clamp(
-            0.2,
-            1.0,
-          );
+      final score = _automaticTargetScoreForPacket(packet, target);
       if (score > bestScore) {
         bestScore = score;
         bestIndex = index;
@@ -698,9 +526,32 @@ extension LightcoreControllerCombatFiring on LightcoreController {
     return bestIndex;
   }
 
-  EnemyState? _targetForPriority(
-    TargetPriority priority, {
-    double? maxRadius,
+  EnemyState? _automaticTargetForPacket(
+    AmmoPacket packet, {
+    required double maxRadius,
+    Set<String> excludedEnemyIds = const <String>{},
+  }) {
+    return _automaticTarget(
+      maxRadius: maxRadius,
+      excludedEnemyIds: excludedEnemyIds,
+      affinity: packet.affinity,
+      sourceSlotIndex: packet.sourceSlotIndex,
+      power: packet.power * packet.finalDamageMultiplier,
+      advantageMultiplier: packet.advantageMultiplier,
+      bossDamageMultiplier: packet.bossDamageMultiplier,
+      normalDamageMultiplier: packet.normalDamageMultiplier,
+      defensePenetration: packet.defensePenetration,
+    );
+  }
+
+  EnemyState? _automaticTarget({
+    required double maxRadius,
+    required PrototypeAffinity affinity,
+    required double power,
+    double advantageMultiplier = 1,
+    double bossDamageMultiplier = 1,
+    double normalDamageMultiplier = 1,
+    double defensePenetration = 0,
     int? sourceSlotIndex,
     Set<String> excludedEnemyIds = const <String>{},
   }) {
@@ -714,49 +565,94 @@ extension LightcoreControllerCombatFiring on LightcoreController {
     if (focused != null) {
       return focused;
     }
-    final boss = _priorityBossTarget(
-      maxRadius: maxRadius,
-      excludedEnemyIds: excludedEnemyIds,
+
+    EnemyState? best;
+    var bestScore = -double.infinity;
+    for (final enemy in _enemies) {
+      if (excludedEnemyIds.contains(enemy.id) || enemy.radius > maxRadius) {
+        continue;
+      }
+      final score = _automaticTargetScore(
+        enemy,
+        affinity: affinity,
+        power: power,
+        advantageMultiplier: advantageMultiplier,
+        bossDamageMultiplier: bossDamageMultiplier,
+        normalDamageMultiplier: normalDamageMultiplier,
+        defensePenetration: defensePenetration,
+        sourceSlotIndex: sourceSlotIndex,
+        maxRadius: maxRadius,
+      );
+      if (score > bestScore ||
+          (score == bestScore &&
+              (best == null || enemy.radius < best.radius))) {
+        bestScore = score;
+        best = enemy;
+      }
+    }
+    return best;
+  }
+
+  double _automaticTargetScoreForPacket(AmmoPacket packet, EnemyState target) {
+    return _automaticTargetScore(
+      target,
+      affinity: packet.affinity,
+      power: packet.power * packet.finalDamageMultiplier,
+      advantageMultiplier: packet.advantageMultiplier,
+      bossDamageMultiplier: packet.bossDamageMultiplier,
+      normalDamageMultiplier: packet.normalDamageMultiplier,
+      defensePenetration: packet.defensePenetration,
+      sourceSlotIndex: packet.sourceSlotIndex,
+      maxRadius: packet.range,
     );
-    if (boss != null) {
-      return boss;
-    }
-    switch (priority) {
-      case TargetPriority.close:
-        return _nearestEnemyForSource(
-          maxRadius: maxRadius,
-          sourceSlotIndex: sourceSlotIndex,
-          excludedEnemyIds: excludedEnemyIds,
-        );
-      case TargetPriority.strong:
-        EnemyState? strongest;
-        for (final enemy in _enemies) {
-          if (excludedEnemyIds.contains(enemy.id)) {
-            continue;
-          }
-          if (maxRadius != null && enemy.radius > maxRadius) {
-            continue;
-          }
-          if (strongest == null || enemy.health > strongest.health) {
-            strongest = enemy;
-          }
-        }
-        return strongest;
-      case TargetPriority.weak:
-        EnemyState? weakest;
-        for (final enemy in _enemies) {
-          if (excludedEnemyIds.contains(enemy.id)) {
-            continue;
-          }
-          if (maxRadius != null && enemy.radius > maxRadius) {
-            continue;
-          }
-          if (weakest == null || enemy.health < weakest.health) {
-            weakest = enemy;
-          }
-        }
-        return weakest;
-    }
+  }
+
+  double _automaticTargetScore(
+    EnemyState enemy, {
+    required PrototypeAffinity affinity,
+    required double power,
+    required double advantageMultiplier,
+    required double bossDamageMultiplier,
+    required double normalDamageMultiplier,
+    required double defensePenetration,
+    required double maxRadius,
+    int? sourceSlotIndex,
+  }) {
+    final affinityScale = _affinityMultiplierAgainstEnemy(affinity, enemy);
+    final sourceTower = sourceSlotIndex == null
+        ? null
+        : _slots[sourceSlotIndex];
+    final towerAffinityScale =
+        affinityScale > 1 &&
+            sourceTower != null &&
+            _slotCountsTowardRing(sourceTower)
+        ? _slotAffinityBonusMultiplier(sourceTower)
+        : 1.0;
+    final effectiveDamage =
+        power *
+        _enemyTypeDamageMultiplier(
+          target: enemy,
+          normalDamageMultiplier: normalDamageMultiplier,
+          bossDamageMultiplier: bossDamageMultiplier,
+        ) *
+        affinityScale *
+        (affinityScale > 1 ? advantageMultiplier : 1) *
+        towerAffinityScale *
+        (1 - (enemy.defense * (1 - defensePenetration)) / 300).clamp(0.2, 1.0);
+    final killPressure = effectiveDamage / max(1.0, enemy.health);
+    final lanePressure = (1 - (enemy.radius / max(1.0, maxRadius))).clamp(
+      0.0,
+      1.0,
+    );
+    final sourcePressure = sourceSlotIndex == null
+        ? 0.0
+        : (1 -
+                  (_enemyDistanceToSlot(enemy, sourceSlotIndex) /
+                      max(1.0, maxRadius)))
+              .clamp(0.0, 1.0)
+              .toDouble();
+    final bossPressure = enemy.config.isBoss ? 1.35 : 1.0;
+    return (killPressure * 2.2 + lanePressure + sourcePressure) * bossPressure;
   }
 
   EnemyState? _targetForBlueFocusPacket(
@@ -786,18 +682,11 @@ extension LightcoreControllerCombatFiring on LightcoreController {
       }
     }
 
-    final target =
-        _targetForPriority(
-          packet.targetPriority,
-          maxRadius: maxRadius,
-          sourceSlotIndex: sourceSlotIndex,
-          excludedEnemyIds: excludedEnemyIds,
-        ) ??
-        _nearestEnemyForSource(
-          maxRadius: maxRadius,
-          sourceSlotIndex: sourceSlotIndex,
-          excludedEnemyIds: excludedEnemyIds,
-        );
+    final target = _automaticTargetForPacket(
+      packet,
+      maxRadius: maxRadius,
+      excludedEnemyIds: excludedEnemyIds,
+    );
     if (target != null) {
       _blueFocusTargetEnemyIdBySlot[focusTargetKey] = target.id;
     }
@@ -815,53 +704,6 @@ extension LightcoreControllerCombatFiring on LightcoreController {
         continue;
       }
       final distance = _enemyDistance(origin, enemy);
-      if (distance < closestDistance ||
-          (distance == closestDistance &&
-              (closest == null || enemy.radius < closest.radius))) {
-        closest = enemy;
-        closestDistance = distance;
-      }
-    }
-    return closest;
-  }
-
-  EnemyState? _nearestEnemyForSource({
-    double? maxRadius,
-    int? sourceSlotIndex,
-    Set<String> excludedEnemyIds = const <String>{},
-  }) {
-    if (sourceSlotIndex == null) {
-      return _nearestEnemy(
-        maxRadius: maxRadius,
-        excludedEnemyIds: excludedEnemyIds,
-      );
-    }
-    return _nearestEnemyToSlot(
-      sourceSlotIndex,
-      maxRadius: maxRadius,
-      excludedEnemyIds: excludedEnemyIds,
-    );
-  }
-
-  EnemyState? _nearestEnemyToSlot(
-    int sourceSlotIndex, {
-    double? maxRadius,
-    Set<String> excludedEnemyIds = const <String>{},
-  }) {
-    if (_enemies.isEmpty) {
-      return null;
-    }
-
-    EnemyState? closest;
-    var closestDistance = double.infinity;
-    for (final enemy in _enemies) {
-      if (excludedEnemyIds.contains(enemy.id)) {
-        continue;
-      }
-      if (maxRadius != null && enemy.radius > maxRadius) {
-        continue;
-      }
-      final distance = _enemyDistanceToSlot(enemy, sourceSlotIndex);
       if (distance < closestDistance ||
           (distance == closestDistance &&
               (closest == null || enemy.radius < closest.radius))) {

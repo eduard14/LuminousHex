@@ -48,8 +48,8 @@ climbing.
 
 1. Enter a hex shell built around the central Lightcore.
 2. Reveal the first perimeter hex immediately and build the opening relay.
-3. Click anomalies to focus fire while the core and relay towers auto-charge
-   shots.
+3. Let the core and relay towers auto-charge shots while the shell chooses
+   anomaly targets automatically.
 4. Upgrade the first tower from its controls as the next action.
 5. Clear wave milestones to unlock the remaining perimeter relay towers:
    Hex 1 at Wave 1, Hexes 2-3 after Wave 5, and Hexes 4-6 after Wave 10.
@@ -75,10 +75,10 @@ climbing.
 - Relay towers charge shots into the Lightcore instead of asking the player to
   manually queue or drag ammo.
 - Opening combat is low-friction: shots auto-charge after the Lightcore wakes,
-  Hex 1 is immediately selectable, and anomaly clicks focus the next generated
-  shots without a tap-to-queue requirement.
-- The first tower/focus/upgrade loop grants enough starter Lumens to move from
-  build to focus fire to the first upgrade without idle grinding.
+  Hex 1 is immediately selectable, and generated shots auto-target anomalies
+  without a tap-to-queue requirement.
+- The first tower/auto-target/upgrade loop grants enough starter Lumens to move
+  from build to the first upgrade without idle grinding.
 - The opening shell is wave-gated instead of tutorial-gated: the player starts
   with Hex 1, unlocks Hexes 2-3 after Wave 5, and has all six perimeter hexes
   available after Wave 10.
@@ -137,13 +137,14 @@ climbing.
   that can read as a numeric level.
 - First-session battle HUD panels hide empty payload rows and payload sub-pips,
   keeping the early combat read focused on projectile choice, wave progress,
-  tower upgrades, and anomaly focus.
-- Manager-less shells now call the opening state Focus Fire instead of Manual
-  Command, and core stats separate charge-buffer capacity from shell completion.
+  tower upgrades, and auto-targeted anomaly pressure.
+- Manager-less shells now call the opening state Auto Targeting instead of
+  Focus Fire or Manual Command, and core stats separate charge-buffer capacity
+  from shell completion.
 - The first tower timer is presented as Building and Online instead of
   fabrication jargon, keeping the opening loop action-oriented.
-- Player-facing guidance uses click/focus language for battlefield, tower, and
-  detail interactions so the opening does not read like an old tap-to-queue
+- Player-facing guidance uses auto-targeting language for battlefield, tower,
+  and detail interactions so the opening does not read like an old tap-to-queue
   mobile chore loop.
 - Manual Overdrive appears from the underlying combat unlocks instead of being
   hidden behind tutorial state.
@@ -153,10 +154,8 @@ climbing.
 - Hexes 2 and 3 wait until Wave 5 is cleared; Hexes 4-6 wait until Wave 10 is
   cleared, keeping tower expansion connected to the pressure-upgrade-repeat
   loop instead of allowing a full shell immediately.
-- Tower body clicks are reserved for tower controls, upgrades, stats, and
-  targeting tools, keeping build/stat actions distinct from anomaly aiming.
-- Enemy focus clicks automatically close open battle control panels so aiming
-  returns the player to combat instead of leaving controls competing on screen.
+- Tower body clicks are reserved for tower controls, upgrades, and stats,
+  keeping build/stat actions distinct from automated combat targeting.
 - Core shots do not orbit as collectible-looking field objects; only brief
   handoff effects appear when a relay charges the core.
 - Payload-colored orbit dots are kept out of shot, relay, and fire-burst
@@ -175,13 +174,13 @@ climbing.
   of asking the player to wait through full-length region timers.
 - Shell visibility is an explicit HUD toggle, keeping battlefield taps from
   folding the active battlefield or opening tower placement.
-- Manager automation upgrades core fire into hands-off target routing while
-  still letting active players override focus by clicking anomalies.
-- Combat rewards smart focus timing, charge flow, and tower placement.
+- Manager automation upgrades core fire into hands-off target routing without
+  adding manual target overrides.
+- Combat rewards charge flow, tower placement, and keeping lanes stable.
 - Output Efficiency pressure system replaces a simple health-loss fail state.
 - Lane disruption reduces rewards and charge flow when anomalies reach the ring.
 - Manual Overdrive accelerates the live shell battle.
-- Focus Target lets players briefly prioritize a dangerous anomaly during active
+- Automatic targeting briefly prioritizes dangerous anomalies during active
   challenges and live farming.
 - Lumo/Luma loading interstitials can show short non-blocking flavor tips such
   as balancing growth, flow, and Output Efficiency.
@@ -320,10 +319,10 @@ video hooks.
 
 | Pillar | Post Ideas |
 | --- | --- |
-| Gameplay hook | Short clips of tower charge feeding the Lightcore, tower controls opening cleanly, and anomaly clicks focusing fire. |
+| Gameplay hook | Short clips of tower charge feeding the Lightcore, tower controls opening cleanly, and shots auto-targeting anomalies. |
 | Progression | Before/after shell promotion, Root to Prism, Prism to Nexus, inheritance previews. |
 | Buildcraft | Color-family comparisons, pure builds versus blended projectile/payload builds. |
-| Anomaly pressure | Knowledge Card pulls, Apex Anomaly reveals, Focus Target saves, lane disruption moments. |
+| Anomaly pressure | Knowledge Card pulls, Apex Anomaly reveals, auto-target saves, lane disruption moments. |
 | Rewards | Offline gains, pass claims, tournament rewards, and event progress. |
 | Studio identity | Lemon Goose Games Inc. splash, dev updates, patch notes, asset reveals. |
 

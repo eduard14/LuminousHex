@@ -154,7 +154,6 @@ class _TowerDetailContent extends StatelessWidget {
         tower.config?.affinity.color ??
         tower.childAffinity?.color ??
         LightcorePalette.layer2;
-    final projectiles = controller.towerProjectileArsenal(tower);
     final isMaxed = tower.level >= LightcoreController.maxTowerLevel;
     final statRows = <_TowerStatRowData>[
       _TowerStatRowData(
@@ -185,7 +184,7 @@ class _TowerDetailContent extends StatelessWidget {
       ),
       _TowerStatRowData(
         label: 'Shell Manager',
-        value: card?.name ?? 'Focus Fire',
+        value: card?.name ?? 'Auto Targeting',
       ),
       _TowerStatRowData(
         label: 'Automation',
@@ -253,23 +252,11 @@ class _TowerDetailContent extends StatelessWidget {
           label: 'DoT Damage',
           value: controller.towerDotDamageLabel(tower),
         ),
-      _TowerStatRowData(
-        label: 'Live Target',
-        value: controller.towerTargetLabel(tower),
-      ),
     ];
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(0, 0, 0, 6),
       children: [
-        _ProjectileTargetingSection(
-          controller: controller,
-          tower: tower,
-          slotIndex: slotIndex,
-          projectiles: projectiles,
-          staticArchive: staticArchive,
-        ),
-        const SizedBox(height: 14),
         _TowerPortraitPanel(controller: controller, tower: tower, tint: tint),
         if (staticArchive) ...[
           const SizedBox(height: 14),
@@ -357,14 +344,14 @@ class _TowerDetailContent extends StatelessWidget {
           subtitle: controller.managerAssignmentUnlocked
               ? card?.summary ??
                     'Manager auto-fire is ready. Open Managers to assign a forged Core Manager.'
-              : 'No Core Manager is assigned. Auto-charge and focus fire stay active until this Layer 1 shell has all ${LightcoreController.slotCount} outer towers online.',
+              : 'No Core Manager is assigned. Auto-charge and auto-targeting stay active until this Layer 1 shell has all ${LightcoreController.slotCount} outer towers online.',
           tint: LightcorePalette.layer2,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _TowerInfoChip(
                 label: 'Manager',
-                value: card?.name ?? 'Focus Fire',
+                value: card?.name ?? 'Auto Targeting',
                 tint: LightcorePalette.layer2,
               ),
               if (controller.managerAssignmentUnlocked && card != null) ...[
@@ -533,7 +520,7 @@ class _TowerPortraitPanel extends StatelessWidget {
               _TowerInfoChip(label: 'Charge', value: chargeLabel, tint: tint),
               _TowerInfoChip(
                 label: 'Target',
-                value: controller.towerTargetLabel(tower),
+                value: 'Auto',
                 tint: LightcorePalette.mist,
               ),
               _TowerInfoChip(
@@ -830,141 +817,6 @@ class _TowerStatRowData {
   final String label;
   final String value;
   final bool accent;
-}
-
-class _ProjectileTargetingSection extends StatelessWidget {
-  const _ProjectileTargetingSection({
-    required this.controller,
-    required this.tower,
-    required this.slotIndex,
-    required this.projectiles,
-    required this.staticArchive,
-  });
-
-  final LightcoreController controller;
-  final OuterTowerState tower;
-  final int slotIndex;
-  final List<ProjectileType> projectiles;
-  final bool staticArchive;
-
-  @override
-  Widget build(BuildContext context) {
-    return _ConsoleSection(
-      title: 'Projectile Targeting',
-      subtitle:
-          'Assign a target bias to each projectile trait this prism can fire. Root towers only expose their own fixed projectile.',
-      tint: LightcorePalette.mist,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          for (final projectile in projectiles) ...[
-            _ProjectileTargetRow(
-              projectileType: projectile,
-              isActive: controller.towerProjectileType(tower) == projectile,
-              selectedPriority: controller.towerTargetPriorityForProjectile(
-                tower,
-                projectile,
-              ),
-              onSelected: staticArchive
-                  ? null
-                  : (priority) => controller.setTowerProjectileTargetPriority(
-                      slotIndex,
-                      projectile,
-                      priority,
-                    ),
-            ),
-            if (projectile != projectiles.last) const SizedBox(height: 12),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
-class _ProjectileTargetRow extends StatelessWidget {
-  const _ProjectileTargetRow({
-    required this.projectileType,
-    required this.isActive,
-    required this.selectedPriority,
-    required this.onSelected,
-  });
-
-  final ProjectileType projectileType;
-  final bool isActive;
-  final TargetPriority selectedPriority;
-  final ValueChanged<TargetPriority>? onSelected;
-
-  @override
-  Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: LightcorePalette.abyss.withValues(alpha: 0.26),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: isActive
-              ? LightcorePalette.solar.withValues(alpha: 0.54)
-              : LightcorePalette.mist.withValues(alpha: 0.16),
-        ),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    projectileType.label,
-                    style: textTheme.titleMedium?.copyWith(
-                      color: isActive
-                          ? LightcorePalette.solar
-                          : LightcorePalette.mist,
-                    ),
-                  ),
-                ),
-                if (isActive)
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: LightcorePalette.solar.withValues(alpha: 0.18),
-                      borderRadius: BorderRadius.circular(999),
-                    ),
-                    child: Text(
-                      'Live',
-                      style: textTheme.labelMedium?.copyWith(
-                        color: LightcorePalette.solar,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                for (final priority in TargetPriority.values)
-                  ChoiceChip(
-                    label: Text(priority.label),
-                    selected: selectedPriority == priority,
-                    onSelected: onSelected == null
-                        ? null
-                        : (_) => onSelected!(priority),
-                  ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 }
 
 class _TowerUpgradeCard extends StatelessWidget {

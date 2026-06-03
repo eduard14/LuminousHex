@@ -40,8 +40,8 @@ cadence, enemy strength, and reward bonuses.
 
 1. Reveal the shell by clicking/selecting the center.
 2. Select Hex 1 immediately and build the first relay tower.
-3. Click the highlighted starter anomaly to focus queued fire while the Lightcore
-   and ready relays auto-feed packets into the core queue.
+3. Let the highlighted starter anomaly be auto-targeted while the Lightcore and
+   ready relays auto-feed packets into the core queue.
 4. Inspect the first tower's stats after the first shot lands, then upgrade it.
 5. Upgrade all built towers to level 5.
 6. Tune the encounter by changing the active anomaly deck and target count.
@@ -55,8 +55,8 @@ cadence, enemy strength, and reward bonuses.
 ### Battle topology
 
 - The center core is the only direct attacker. Early play auto-generates
-  `AmmoPacket` entries after the Lightcore wakes, then anomaly clicks aim/focus
-  fire without making the player manually queue core shots.
+  `AmmoPacket` entries after the Lightcore wakes, then shots auto-target
+  anomalies without making the player manually queue or aim core shots.
 - The active tutorial stays as a compact, click-to-expand quest notification on
   the battlefield. The collapsed notification names the next action while the
   battlefield highlight and click gesture point at the target.
@@ -64,11 +64,10 @@ cadence, enemy strength, and reward bonuses.
   manager automation, but waiting packets do not orbit as field objects. Only
   brief tower-to-core handoff effects are shown so players do not chase
   non-interactive packet visuals.
-- Clicking an anomaly focuses fire immediately. If the queue is still charging,
-  the focused target receives the next available queued packet before manager
-  auto-fire is unlocked.
-- The Focus Fire tutorial guarantees a visible starter anomaly when the lesson
-  begins, so the player has a target instead of waiting for a spawn.
+- Auto-targeting evaluates visible anomalies when fire resolves, so a queued
+  packet can pick a useful live target before manager auto-fire is unlocked.
+- The Auto Targeting tutorial guarantees a visible starter anomaly when the
+  lesson begins, so the shell has a target instead of waiting for a spawn.
 - Auto-fire stays locked until a Core Manager is assigned. Once unlocked, the
   core consumes the best ammo packet available, picks a target, and fires.
 - Enemies do not destroy the core in the prototype. Reaching the relay ring
@@ -106,7 +105,7 @@ cadence, enemy strength, and reward bonuses.
 - Core Managers and Threat Directors unlock at Core Lv 3 or Account Radiance
   Lv 10.
 - Towers auto-feed after the shell wakes. Tapping a built tower opens tower
-  controls, stats, upgrades, and targeting tools instead of firing a packet.
+  controls, stats, and upgrades instead of firing or aiming a packet.
 - Higher shell classes inherit projectile and payload arsenals from the child shells
   beneath them instead of collapsing to one dominant shot type.
 - Source Tower and Root Shell Core max level is 5.

@@ -846,11 +846,11 @@ class _BuiltSlotCard extends StatelessWidget {
                     Text(
                       slot.isChildLayerNode
                           ? isPromoted
-                                ? 'Aligned ${controller.towerAffinitySignatureLabel(slot)}  •  ${controller.towerProjectileLabel(slot)} / ${controller.towerPayloadLabel(slot)}  •  Target ${controller.towerTargetLabel(slot)}  •  ${controller.towerCompletionLabel(slot)}'
+                                ? 'Aligned ${controller.towerAffinitySignatureLabel(slot)}  •  ${controller.towerProjectileLabel(slot)} / ${controller.towerPayloadLabel(slot)}  •  Auto-target  •  ${controller.towerCompletionLabel(slot)}'
                                 : 'Child shell progress ${controller.childShellProgressLabel(slot)}  •  ${controller.childTowerGrowthLabel(slot)}'
                           : isFabricating
                           ? '${controller.towerFabricationProgressLabel(slot)}  •  ${controller.towerProjectileLabel(slot)} / ${controller.towerPayloadLabel(slot)}'
-                          : '${slot.config!.passiveLabel}  •  ${controller.towerProjectileLabel(slot)} / ${controller.towerPayloadLabel(slot)}  •  Target ${controller.towerTargetLabel(slot)}',
+                          : '${slot.config!.passiveLabel}  •  ${controller.towerProjectileLabel(slot)} / ${controller.towerPayloadLabel(slot)}  •  Auto-target',
                       style: textTheme.bodyMedium?.copyWith(
                         color: tint,
                         fontWeight: FontWeight.w700,
@@ -979,8 +979,8 @@ class _BuiltSlotCard extends StatelessWidget {
                 value: slot.isChildLayerNode
                     ? 'Inner Layer'
                     : controller.managerAssignmentUnlocked
-                    ? manager?.name ?? 'Focus Fire'
-                    : 'Focus Fire',
+                    ? manager?.name ?? 'Auto Targeting'
+                    : 'Auto Targeting',
               ),
               if (!isProject && !isFabricating)
                 _MetricTile(
@@ -1007,32 +1007,6 @@ class _BuiltSlotCard extends StatelessWidget {
               max: pipMax,
               tint: tint,
               label: isProject ? 'Shell build' : 'Tower level',
-            ),
-          ],
-          if (!isProject && !isFabricating) ...[
-            const SizedBox(height: 12),
-            Text(
-              'Live Projectile Target',
-              style: textTheme.bodyMedium?.copyWith(
-                color: tint,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                for (final priority in TargetPriority.values)
-                  ChoiceChip(
-                    label: Text(priority.label),
-                    selected: controller.towerTargetPriority(slot) == priority,
-                    onSelected: (_) => controller.setTowerTargetPriority(
-                      slot.slotIndex,
-                      priority,
-                    ),
-                  ),
-              ],
             ),
           ],
           const SizedBox(height: 12),

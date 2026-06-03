@@ -93,10 +93,7 @@ void main() {
       greenSlot
         ..['projectileType'] = ProjectileType.orbitNode.name
         ..['childProjectileType'] = ProjectileType.orbitNode.name
-        ..['childProjectileLoadout'] = <String>[ProjectileType.orbitNode.name]
-        ..['projectileTargetPriorities'] = <String, String>{
-          ProjectileType.orbitNode.name: TargetPriority.strong.name,
-        };
+        ..['childProjectileLoadout'] = <String>[ProjectileType.orbitNode.name];
 
       final restored = LightcoreController.fromCloudSavePayload(payload);
       addTearDown(restored.dispose);
@@ -111,11 +108,6 @@ void main() {
       expect(restored.slots.first.childProjectileLoadout, [
         ProjectileType.shieldHalo,
       ]);
-      expect(
-        restored.slots.first.projectileTargetPriorities[ProjectileType
-            .shieldHalo],
-        TargetPriority.strong,
-      );
     },
   );
 

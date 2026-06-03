@@ -15,7 +15,7 @@ extension LightcoreControllerBattleUnlocks on LightcoreController {
           : 'Anchor this hex before it can fire.';
     }
     if (_ammoQueue.length >= coreQueueCapacity) {
-      return 'Core charge full. Click an anomaly to focus fire or upgrade charge buffer.';
+      return 'Core charge full. Auto-targeting is ready, or upgrade charge buffer.';
     }
     if (tower.cooldownRemaining > 0) {
       return '${towerDisplayName(tower)} is cycling for ${tower.cooldownRemaining.toStringAsFixed(1)}s.';

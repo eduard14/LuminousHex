@@ -229,7 +229,6 @@ class _BattleScreenState extends State<BattleScreen> {
       onCenterTap: _handleCenterTap,
       onSlotTap: _handleSlotTap,
       onBackgroundTap: _handleBackgroundTap,
-      onEnemyTargeted: _handleEnemyTargeted,
       enableBattlefieldTaps: widget.enableBattlefieldTaps,
       showTutorialGuides: widget.showBattleGuides,
       showArenaSlots: widget.showArenaSlots,
@@ -597,18 +596,6 @@ class _BattleScreenState extends State<BattleScreen> {
         _selectionControlsVisible = false;
       });
       return;
-    }
-  }
-
-  void _handleEnemyTargeted() {
-    if (_selectionControlsVisible ||
-        _statsTarget != null ||
-        _panelFocus != _BattlePanelFocus.none) {
-      setState(() {
-        _statsTarget = null;
-        _panelFocus = _BattlePanelFocus.none;
-        _selectionControlsVisible = false;
-      });
     }
   }
 
@@ -2273,7 +2260,7 @@ class _CoreStatsPanel extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            'Click anomalies to auto-target. Reorder charged shots before they fire.',
+            'Charged shots auto-target anomalies. Reorder packets before they fire.',
             style: textTheme.bodySmall?.copyWith(
               color: LightcorePalette.mist.withValues(alpha: 0.72),
               fontWeight: FontWeight.w700,

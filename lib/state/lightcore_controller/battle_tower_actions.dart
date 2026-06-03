@@ -51,18 +51,6 @@ extension LightcoreControllerBattleTowerActions on LightcoreController {
     return true;
   }
 
-  Map<ProjectileType, TargetPriority> _updatedProjectileTargetPriorities(
-    OuterTowerState tower,
-    ProjectileType projectileType,
-    TargetPriority priority,
-  ) {
-    final next = Map<ProjectileType, TargetPriority>.from(
-      tower.projectileTargetPriorities,
-    );
-    next[projectileType] = priority;
-    return next;
-  }
-
   int _grantSummoningLevelTicketRewards({
     required int previousLevel,
     required int currentLevel,
@@ -148,7 +136,7 @@ extension LightcoreControllerBattleTowerActions on LightcoreController {
     selectedSlotIndex = null;
     _towerRangePreviewSlotIndex = null;
     _showBanner(
-      'Lightcore selected. Shots auto-charge; click anomalies to focus fire.',
+      'Lightcore selected. Shots auto-charge and auto-target anomalies.',
       category: LightcoreNotificationCategory.battle,
     );
     _syncTutorialStep(showBanner: false);
@@ -956,62 +944,6 @@ extension LightcoreControllerBattleTowerActions on LightcoreController {
     _showBanner('Hex ${slotIndex + 1} sold for $refund Lumens.');
     _notifyNow();
     return true;
-  }
-
-  void setTowerTargetPriority(int slotIndex, TargetPriority priority) {
-    if (slotIndex < 0 || slotIndex >= _slots.length) {
-      return;
-    }
-    if (activeLayerPassiveOnly) {
-      return;
-    }
-    final tower = _slots[slotIndex];
-    if (!tower.isBuilt || tower.isFabricating) {
-      return;
-    }
-    final projectileType = _slotProjectileType(tower);
-    _slots[slotIndex] = tower.copyWith(
-      targetPriority: priority,
-      projectileTargetPriorities: _updatedProjectileTargetPriorities(
-        tower,
-        projectileType,
-        priority,
-      ),
-    );
-    _showBanner(
-      '${towerDisplayName(tower)} ${projectileType.label.toLowerCase()} now prioritizes ${priority.label.toLowerCase()} targets.',
-    );
-    _notifyNow();
-  }
-
-  void setTowerProjectileTargetPriority(
-    int slotIndex,
-    ProjectileType projectileType,
-    TargetPriority priority,
-  ) {
-    if (slotIndex < 0 || slotIndex >= _slots.length) {
-      return;
-    }
-    if (activeLayerPassiveOnly) {
-      return;
-    }
-    final tower = _slots[slotIndex];
-    if (!tower.isBuilt || tower.isFabricating) {
-      return;
-    }
-    final isLiveProjectile = _slotProjectileType(tower) == projectileType;
-    _slots[slotIndex] = tower.copyWith(
-      targetPriority: isLiveProjectile ? priority : tower.targetPriority,
-      projectileTargetPriorities: _updatedProjectileTargetPriorities(
-        tower,
-        projectileType,
-        priority,
-      ),
-    );
-    _showBanner(
-      '${towerDisplayName(tower)} ${projectileType.label.toLowerCase()} now prioritizes ${priority.label.toLowerCase()} targets.',
-    );
-    _notifyNow();
   }
 
   void equipCardToSelected(String cardId) {

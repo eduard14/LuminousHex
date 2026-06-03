@@ -147,8 +147,6 @@ class OuterTowerState {
     this.equippedCardInstanceId,
     this.projectileType,
     this.payloadType,
-    this.targetPriority = TargetPriority.close,
-    this.projectileTargetPriorities = const {},
     this.fireSequence = 0,
     this.investedLumens = 0,
     this.fabricationTotalSeconds = 0,
@@ -217,8 +215,6 @@ class OuterTowerState {
   final String? equippedCardInstanceId;
   final ProjectileType? projectileType;
   final PayloadType? payloadType;
-  final TargetPriority targetPriority;
-  final Map<ProjectileType, TargetPriority> projectileTargetPriorities;
   final int fireSequence;
   final int investedLumens;
   final double fabricationTotalSeconds;
@@ -302,8 +298,6 @@ class OuterTowerState {
       equippedCardInstanceId: equippedCardInstanceId,
       projectileType: projectileType,
       payloadType: payloadType,
-      targetPriority: targetPriority,
-      projectileTargetPriorities: projectileTargetPriorities,
       fireSequence: fireSequence,
       investedLumens: investedLumens,
       fabricationTotalSeconds: fabricationTotalSeconds,
@@ -373,8 +367,6 @@ class OuterTowerState {
     String? equippedCardInstanceId,
     ProjectileType? projectileType,
     PayloadType? payloadType,
-    TargetPriority? targetPriority,
-    Map<ProjectileType, TargetPriority>? projectileTargetPriorities,
     int? fireSequence,
     int? investedLumens,
     double? fabricationTotalSeconds,
@@ -448,9 +440,6 @@ class OuterTowerState {
           : equippedCardInstanceId ?? this.equippedCardInstanceId,
       projectileType: projectileType ?? this.projectileType,
       payloadType: payloadType ?? this.payloadType,
-      targetPriority: targetPriority ?? this.targetPriority,
-      projectileTargetPriorities:
-          projectileTargetPriorities ?? this.projectileTargetPriorities,
       fireSequence: fireSequence ?? this.fireSequence,
       investedLumens: investedLumens ?? this.investedLumens,
       fabricationTotalSeconds:
@@ -1327,7 +1316,6 @@ class EnergyPulseState {
     required this.advantageMultiplier,
     required this.projectileType,
     required this.payloadType,
-    required this.targetPriority,
     required this.range,
     required this.generationSpeed,
     required this.critChance,
@@ -1351,7 +1339,6 @@ class EnergyPulseState {
   final double advantageMultiplier;
   final ProjectileType projectileType;
   final PayloadType payloadType;
-  final TargetPriority targetPriority;
   final double range;
   final double generationSpeed;
   final double critChance;
@@ -1380,7 +1367,6 @@ class EnergyPulseState {
       advantageMultiplier: advantageMultiplier,
       projectileType: projectileType,
       payloadType: payloadType,
-      targetPriority: targetPriority,
       range: range,
       generationSpeed: generationSpeed,
       critChance: critChance,
@@ -1409,7 +1395,6 @@ class AmmoPacket {
     required this.advantageMultiplier,
     required this.projectileType,
     required this.payloadType,
-    required this.targetPriority,
     required this.range,
     required this.critChance,
     required this.critMultiplier,
@@ -1430,7 +1415,6 @@ class AmmoPacket {
   final double advantageMultiplier;
   final ProjectileType projectileType;
   final PayloadType payloadType;
-  final TargetPriority targetPriority;
   final double range;
   final double critChance;
   final double critMultiplier;

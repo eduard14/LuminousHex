@@ -228,23 +228,6 @@ extension LightcoreBattleGameDrawingHelpers on LightcoreBattleGame {
     return null;
   }
 
-  String? _hitTestEnemy(Vector2 pointer) {
-    for (final enemy in controller.enemies.toList().reversed) {
-      if (_enemyRevealProgress(enemy) <= 0) {
-        continue;
-      }
-      final position = _enemyPosition(enemy);
-      final targetRadius =
-          _enemyRadius(enemy) * (enemy.config.isBoss ? 2.1 : 1.7);
-      final dx = pointer.x - position.dx;
-      final dy = pointer.y - position.dy;
-      if (math.sqrt((dx * dx) + (dy * dy)) <= targetRadius) {
-        return enemy.id;
-      }
-    }
-    return null;
-  }
-
   Offset _enemyPosition(EnemyState enemy) {
     return _battlePosition(angle: enemy.angle, radius: enemy.radius);
   }
