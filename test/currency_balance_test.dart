@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:lightcore/data/enemy_configs.dart';
@@ -59,6 +61,30 @@ double _advanceActiveOpeningChallenge(LightcoreController controller) {
 }
 
 void main() {
+  test('play starts wave pressure and hands-off core firing', () {
+    final controller = LightcoreController(spawnRandom: Random(7));
+    addTearDown(controller.dispose);
+    controller.debugDisableTutorial();
+
+    expect(controller.swarmActivated, isFalse);
+    expect(controller.coreAutoGenerationUnlocked, isFalse);
+
+    expect(controller.startBattle(showBanner: false), isTrue);
+
+    expect(controller.swarmActivated, isTrue);
+    expect(controller.coreAutoGenerationUnlocked, isTrue);
+    expect(controller.coreAutoFireUnlocked, isTrue);
+
+    _advanceUntil(
+      controller,
+      () => controller.shots.isNotEmpty || controller.kills > 0,
+      reason: 'core did not auto-fire after Play',
+      steps: 80,
+      dt: 0.1,
+    );
+    expect(controller.focusedEnemyId, isNull);
+  });
+
   test('retired apex scan labels display as threat scans', () {
     expect(LightcoreCurrencyLabels.bossScanCount(1), '1 Threat Scan');
     expect(LightcoreCurrencyLabels.bossScanCount(2), '2 Threat Scans');

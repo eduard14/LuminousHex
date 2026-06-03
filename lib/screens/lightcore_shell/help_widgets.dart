@@ -91,7 +91,7 @@ const List<_HelpSectionData> _baseHelpSections = <_HelpSectionData>[
     title: 'Shell Defense Basics',
     summary: 'How the core, relay prisms, and anomalies interact.',
     body:
-        'The center tower is the Lightcore. After the shell wakes, shots charge automatically and choose anomaly targets on their own. Core Managers later add auto-fire. The six surrounding towers are relay prisms. They build charge automatically, while tower clicks stay reserved for controls, stats, and upgrades.\n\n'
+        'The center tower is the Lightcore. Press Play to start enemy pressure; shots charge automatically, fire automatically, and choose anomaly targets on their own. The six surrounding towers are relay prisms. They build charge automatically, while tower clicks stay reserved for controls, stats, and upgrades.\n\n'
         'Anomalies spiral inward from beyond the shell. They do not destroy the core directly. Instead they jam the edge hex they hit, slow relay output, and reduce how efficiently the shell harvests Lumens.',
   ),
   _HelpSectionData(

@@ -419,21 +419,10 @@ extension LightcoreControllerCombatEnemies on LightcoreController {
   }
 
   ({double angle, double radius}) _nextClusteredSpawnPoint() {
-    final clusterIndex = _spawnSequence ~/ _spawnClusterSize;
-    final clusterOffsetIndex =
-        (_spawnSequence % _spawnClusterSize) - ((_spawnClusterSize - 1) / 2);
-    _prepareRandomSpawnCluster(clusterIndex);
-    final angle =
-        _activeSpawnClusterAngle +
-        (clusterOffsetIndex * _spawnClusterAngleStep) +
-        _randomCentered(_spawnClusterAngleJitter);
-    final floorRadius = _spawnRadiusFloorForSequence(_spawnSequence);
-    final radius = _spawnRadiusWithJitter(
-      _activeSpawnClusterRadius + (clusterOffsetIndex * 4),
-      _spawnClusterRadiusJitter,
-      minimumRadius: floorRadius,
+    return (
+      angle: _randomSpawnAngle(),
+      radius: _randomSpawnRadius(spawnSequence: _spawnSequence),
     );
-    return (angle: angle, radius: radius);
   }
 
   void _advanceLayer3Trial(double dt) {
@@ -707,20 +696,25 @@ extension LightcoreControllerCombatEnemies on LightcoreController {
     );
   }
 
-  void _prepareRandomSpawnCluster(int clusterIndex) {
-    if (_activeSpawnClusterIndex == clusterIndex) {
-      return;
-    }
-    _activeSpawnClusterIndex = clusterIndex;
-    _activeSpawnClusterAngle = _randomSpawnAngle();
-    _activeSpawnClusterRadius = _randomSpawnRadius(
-      spawnSequence: clusterIndex * _spawnClusterSize,
-    );
-  }
-
   double _randomSpawnAngle() => _spawnRandom.nextDouble() * pi * 2;
 
   double _randomSpawnRadius({int? spawnSequence}) {
+    if (spawnSequence != null &&
+        spawnSequence < _openingRangeProximitySpawnCount) {
+      final openingMaxRadius = min(
+        spawnRadius,
+        max(_relayImpactRadius + 80, coreEffectiveRange - 12),
+      );
+      final openingMinRadius = min(
+        openingMaxRadius,
+        max(_relayImpactRadius + 64, openingMaxRadius - 52),
+      );
+      return (openingMinRadius +
+              (_spawnRandom.nextDouble() *
+                  max(0.0, openingMaxRadius - openingMinRadius)))
+          .clamp(_relayImpactRadius + 40, openingMaxRadius)
+          .toDouble();
+    }
     final floorRadius = _spawnRadiusFloorForSequence(spawnSequence);
     return (floorRadius +
             (_spawnRandom.nextDouble() * _spawnRadiusBandVariance))

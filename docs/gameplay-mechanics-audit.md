@@ -55,8 +55,11 @@ cadence, enemy strength, and reward bonuses.
 ### Battle topology
 
 - The center core is the only direct attacker. Early play auto-generates
-  `AmmoPacket` entries after the Lightcore wakes, then shots auto-target
+  `AmmoPacket` entries after the player presses Play, then shots auto-target
   anomalies without making the player manually queue or aim core shots.
+- Automatic spawns use randomized perimeter angles. The first opening spawns
+  use a closer radius band so starter core shots can target and kill without a
+  manual focus tap.
 - The active tutorial stays as a compact, click-to-expand quest notification on
   the battlefield. The collapsed notification names the next action while the
   battlefield highlight and click gesture point at the target.
@@ -104,7 +107,7 @@ cadence, enemy strength, and reward bonuses.
   and cores.
 - Core Managers and Threat Directors unlock at Core Lv 3 or Account Radiance
   Lv 10.
-- Towers auto-feed after the shell wakes. Tapping a built tower opens tower
+- Towers auto-feed after combat starts. Tapping a built tower opens tower
   controls, stats, and upgrades instead of firing or aiming a packet.
 - Higher shell classes inherit projectile and payload arsenals from the child shells
   beneath them instead of collapsing to one dominant shot type.

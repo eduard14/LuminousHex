@@ -313,24 +313,24 @@ const Map<LightcoreTutorialStep, LightcoreTutorialQuestDefinition>
 _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefinition>{
   LightcoreTutorialStep.unfoldShell: LightcoreTutorialQuestDefinition(
     id: 'TUT-001',
-    title: 'Wake the Core',
+    title: 'Press Play',
     teachGoal:
-        'Grow the shell by keeping the core active. The core auto-charges shots that earn Lumens.',
+        'Start the battle loop. The core auto-charges shots that earn Lumens.',
     trigger: 'New account',
-    primaryClickTarget: 'Core Map > click central core',
+    primaryClickTarget: 'Battlefield > Play',
     coachCopy:
-        'Click the center Lightcore to wake the first shell and reveal where towers will go.',
-    completionCondition: 'Click central core',
+        'Press Play to start the first wave and reveal where towers will go.',
+    completionCondition: 'Press Play',
     reward: 'Safe White Threat Scan x1',
     failureHelpState:
-        'Pulse the central core again and keep nonessential UI dimmed.',
-    analyticsEvent: 'tutorial_wake_core',
+        'Use the Play button to start combat before building the first tower.',
+    analyticsEvent: 'tutorial_press_play',
   ),
   LightcoreTutorialStep.waitForFirstHex: LightcoreTutorialQuestDefinition(
     id: 'TUT-002',
     title: 'Hex 1 Ready',
     teachGoal:
-        'The first lane opens as soon as the shell wakes, so the player can move directly into building.',
+        'The first lane opens as soon as Play starts combat, so the player can move directly into building.',
     trigger: 'Legacy save is still parked on the old first-lane wait step',
     primaryClickTarget: 'Battlefield > Hex 1',
     coachCopy: 'Hex 1 is ready. Click the highlighted lane to build.',
@@ -381,7 +381,7 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
     completionCondition: 'Auto-fire one shot at an anomaly',
     reward: 'Upgrade Lumens and White Drift practice scan',
     failureHelpState:
-        'Keep the shell awake and let the next charged shot choose its target.',
+        'Keep combat running and let the next charged shot choose its target.',
     analyticsEvent: 'tutorial_auto_target_fire',
   ),
   LightcoreTutorialStep
@@ -993,11 +993,8 @@ const int _openingRangeProximitySpawnCount =
     LightcoreController._openingRangeProximitySpawnCount;
 const double _openingRangeProximityBuffer =
     LightcoreController._openingRangeProximityBuffer;
-const int _spawnClusterSize = LightcoreController._spawnClusterSize;
 const double _spawnClusterAngleStep =
     LightcoreController._spawnClusterAngleStep;
-const double _spawnClusterAngleJitter =
-    LightcoreController._spawnClusterAngleJitter;
 const double _spawnClusterRadiusJitter =
     LightcoreController._spawnClusterRadiusJitter;
 const double _relayImpactRadius = LightcoreController._relayImpactRadius;
@@ -1247,7 +1244,7 @@ class LightcoreController extends ChangeNotifier {
     _sharedRelayOuterPieceIds = List<String?>.filled(slotCount, null);
     _initializeSharedRelayLoadout();
     _showBanner(
-      'Wake the Lightcore. The route ahead is full of black holes. Unfold the first shell and anchor your first prism.',
+      'Press Play to start the route. The core will charge shots and target anomalies automatically.',
       duration: 3.2,
     );
     _syncTutorialStep(showBanner: false);
@@ -1369,9 +1366,7 @@ class LightcoreController extends ChangeNotifier {
   static const double _spawnCrowdRadiusPerEnemy = 14;
   static const int _openingRangeProximitySpawnCount = initialEnemyTarget;
   static const double _openingRangeProximityBuffer = 58;
-  static const int _spawnClusterSize = 3;
   static const double _spawnClusterAngleStep = 0.052;
-  static const double _spawnClusterAngleJitter = 0.012;
   static const double _spawnClusterRadiusJitter = 10;
   static const double _relayImpactRadius = 102;
   static const double _pulseSpeed = 2.1;
@@ -1713,9 +1708,6 @@ class LightcoreController extends ChangeNotifier {
   int _enemyTargetUpgradeLevel = 0;
   int _spawnSequence = 0;
   int _enemyCounter = 0;
-  int? _activeSpawnClusterIndex;
-  double _activeSpawnClusterAngle = 0;
-  double _activeSpawnClusterRadius = 0;
   int _pulseCounter = 0;
   int _shotCounter = 0;
   int _impactCounter = 0;

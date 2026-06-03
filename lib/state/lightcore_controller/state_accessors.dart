@@ -461,9 +461,10 @@ extension LightcoreControllerStateAccessors on LightcoreController {
       _managerAssignmentUnlockedForLayer(activeLayer);
 
   bool get coreAutoGenerationUnlocked =>
-      _outerRingRevealed && !activeLayerPassiveOnly;
+      (_outerRingRevealed || _swarmActivated) && !activeLayerPassiveOnly;
 
   bool get coreAutoFireUnlocked =>
+      coreAutoGenerationUnlocked ||
       _towerCoreManagerForLayer(activeLayer) != null;
 
   bool get isOuterRingComplete => builtTowerCount == slotCount;

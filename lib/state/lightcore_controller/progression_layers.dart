@@ -1846,7 +1846,6 @@ extension LightcoreControllerProgressionLayers on LightcoreController {
       return;
     }
     _spawnSequence = max(0, value);
-    _activeSpawnClusterIndex = null;
     activeLayer.spawnSequence = _spawnSequence;
     _notifyNow();
   }

@@ -474,6 +474,15 @@ class _BattleScreenState extends State<BattleScreen> {
     _logBattle('center-tap');
     LightcoreAudio.instance.playSfx(LightcoreSfx.uiTap);
     final controller = widget.controller;
+    if (!controller.swarmActivated) {
+      controller.startBattle(showBanner: false);
+      setState(() {
+        _statsTarget = null;
+        _panelFocus = _BattlePanelFocus.none;
+        _selectionControlsVisible = true;
+      });
+      return;
+    }
     controller.handleBattleCenterTap();
     if (controller.activeThreatRegionChallenge != null) {
       setState(() {
@@ -900,6 +909,7 @@ class _BattleScreenState extends State<BattleScreen> {
     return _BattleShellVisibilityHud(
       compact: compact,
       expanded: controller.outerRingRevealed,
+      started: controller.swarmActivated,
       onPressed: _toggleShellVisibility,
     );
   }
@@ -1000,6 +1010,21 @@ class _BattleScreenState extends State<BattleScreen> {
             right: inset,
             top: math.max(inset, topInset - (compact ? 22 : 10)),
             child: shellVisibilityHud,
+          ),
+        if (widget.showBattleHud && !controller.swarmActivated)
+          Center(
+            child: _BattlePlayButton(
+              compact: compact,
+              onPressed: () {
+                LightcoreAudio.instance.playSfx(LightcoreSfx.uiTap);
+                controller.startBattle(showBanner: false);
+                setState(() {
+                  _statsTarget = null;
+                  _panelFocus = _BattlePanelFocus.none;
+                  _selectionControlsVisible = true;
+                });
+              },
+            ),
           ),
         if (widget.showBattleHud && selectionHud != null)
           Positioned(left: inset, bottom: bottomInset, child: selectionHud),
@@ -2285,18 +2310,26 @@ class _BattleShellVisibilityHud extends StatelessWidget {
   const _BattleShellVisibilityHud({
     required this.compact,
     required this.expanded,
+    required this.started,
     required this.onPressed,
   });
 
   final bool compact;
   final bool expanded;
+  final bool started;
   final VoidCallback onPressed;
 
   @override
   Widget build(BuildContext context) {
     final size = compact ? 42.0 : 46.0;
-    final label = expanded ? 'Collapse shell' : 'Expand shell';
-    final icon = expanded
+    final label = !started
+        ? 'Play'
+        : expanded
+        ? 'Collapse shell'
+        : 'Expand shell';
+    final icon = !started
+        ? Icons.play_arrow_rounded
+        : expanded
         ? Icons.unfold_less_double_rounded
         : Icons.unfold_more_double_rounded;
     return Tooltip(
@@ -2332,6 +2365,63 @@ class _BattleShellVisibilityHud extends StatelessWidget {
                 icon,
                 color: LightcorePalette.mist.withValues(alpha: 0.84),
                 size: compact ? 22 : 24,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _BattlePlayButton extends StatelessWidget {
+  const _BattlePlayButton({required this.compact, required this.onPressed});
+
+  final bool compact;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final size = compact ? 74.0 : 88.0;
+    return Tooltip(
+      message: 'Play',
+      child: Semantics(
+        button: true,
+        label: 'Play',
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            key: const ValueKey<String>('battle-play-button'),
+            borderRadius: BorderRadius.circular(size / 2),
+            onTap: onPressed,
+            child: Container(
+              width: size,
+              height: size,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: LightcorePalette.aether.withValues(alpha: 0.92),
+                border: Border.all(
+                  color: LightcorePalette.mist.withValues(alpha: 0.7),
+                  width: 1.4,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: LightcorePalette.aether.withValues(alpha: 0.34),
+                    blurRadius: 28,
+                    spreadRadius: 2,
+                  ),
+                  BoxShadow(
+                    color: LightcorePalette.night.withValues(alpha: 0.28),
+                    blurRadius: 22,
+                    spreadRadius: -8,
+                    offset: const Offset(0, 12),
+                  ),
+                ],
+              ),
+              child: Icon(
+                Icons.play_arrow_rounded,
+                color: LightcorePalette.night,
+                size: compact ? 46 : 56,
               ),
             ),
           ),

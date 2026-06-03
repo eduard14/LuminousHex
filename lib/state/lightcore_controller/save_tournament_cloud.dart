@@ -576,7 +576,6 @@ extension LightcoreControllerSaveTournamentCloud on LightcoreController {
     _ammoQueue = <AmmoPacket>[];
     _spawnTimer = 0.05;
     elapsed = 0;
-    _activeSpawnClusterIndex = null;
     _blueFocusTargetEnemyIdBySlot.clear();
     _resetManualOverdrive();
     _updateFlowEfficiency();

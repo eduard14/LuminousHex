@@ -16,7 +16,6 @@ extension LightcoreControllerBattleResetActions on LightcoreController {
     elapsed = 0;
     _spawnTimer = 1.0;
     _spawnSequence = 0;
-    _activeSpawnClusterIndex = null;
     _enemyCounter = 0;
     _pulseCounter = 0;
     _shotCounter = 0;
@@ -96,7 +95,6 @@ extension LightcoreControllerBattleResetActions on LightcoreController {
     activeLayer.elapsed = 0;
     activeLayer.spawnTimer = 1.35;
     activeLayer.spawnSequence = 0;
-    _activeSpawnClusterIndex = null;
     activeLayer.enemyCounter = 0;
     activeLayer.pulseCounter = 0;
     activeLayer.shotCounter = 0;

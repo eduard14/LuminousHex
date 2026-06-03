@@ -118,9 +118,36 @@ extension LightcoreControllerBattleTowerActions on LightcoreController {
     return true;
   }
 
+  bool startBattle({bool showBanner = true}) {
+    if (activeLayerPassiveOnly) {
+      if (showBanner) {
+        _showBanner(
+          '$activeLayerLabel is a static archive. Return to a live shell to fight.',
+        );
+      }
+      _notifyNow();
+      return false;
+    }
+    final wasInactive = !_swarmActivated;
+    _outerRingRevealed = true;
+    _swarmActivated = true;
+    selectedSlotIndex = null;
+    _towerRangePreviewSlotIndex = null;
+    _spawnTimer = min(_spawnTimer, 0.01);
+    if (showBanner && wasInactive) {
+      _showBanner(
+        'Battle started. Shots charge and choose anomaly targets automatically.',
+        category: LightcoreNotificationCategory.battle,
+      );
+    }
+    _syncTutorialStep(showBanner: false);
+    _notifyNow();
+    return true;
+  }
+
   void handleBattleCenterTap() {
     if (!_outerRingRevealed) {
-      selectCenter();
+      startBattle(showBanner: false);
       return;
     }
     if (activeLayerPassiveOnly) {
@@ -240,8 +267,11 @@ extension LightcoreControllerBattleTowerActions on LightcoreController {
       _outerRingRevealed = false;
       selectedSlotIndex = null;
       _towerRangePreviewSlotIndex = null;
-    } else {
+    } else if (_swarmActivated) {
       _outerRingRevealed = true;
+    } else {
+      startBattle(showBanner: false);
+      return;
     }
     _notifyNow();
   }
@@ -269,6 +299,7 @@ extension LightcoreControllerBattleTowerActions on LightcoreController {
     _swarmActivated = true;
     selectedSlotIndex = null;
     _towerRangePreviewSlotIndex = null;
+    _spawnTimer = min(_spawnTimer, 0.01);
     _syncTutorialStep(showBanner: !firstReveal);
     _notifyNow();
   }
@@ -1218,7 +1249,6 @@ extension LightcoreControllerBattleTowerActions on LightcoreController {
     _swarmActivated = true;
     elapsed = 0;
     _spawnTimer = 0.05;
-    _activeSpawnClusterIndex = null;
     _core = _core.copyWith(
       flowEfficiency: _maxFlowEfficiency,
       fireCooldownRemaining: 0,

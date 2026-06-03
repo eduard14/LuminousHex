@@ -9,6 +9,30 @@ import 'package:lightcore/state/lightcore_controller.dart';
 import 'package:lightcore/theme/lightcore_theme.dart';
 
 void main() {
+  testWidgets('first inactive battle screen shows play button', (tester) async {
+    addTearDown(() async {
+      await tester.binding.setSurfaceSize(null);
+    });
+    await tester.binding.setSurfaceSize(const Size(430, 780));
+    final controller = LightcoreController();
+    addTearDown(controller.dispose);
+    controller.debugDisableTutorial();
+
+    await _pumpBattleScreen(tester, controller);
+
+    final playButton = find.byKey(const ValueKey<String>('battle-play-button'));
+    expect(playButton, findsOneWidget);
+    expect(controller.swarmActivated, isFalse);
+
+    await tester.tap(playButton);
+    await tester.pump();
+
+    expect(controller.swarmActivated, isTrue);
+    expect(controller.outerRingRevealed, isTrue);
+    expect(playButton, findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('battle canvas replaces its game when controller changes', (
     tester,
   ) async {

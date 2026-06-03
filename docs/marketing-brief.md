@@ -74,9 +74,11 @@ climbing.
 - Real-time hex battlefield with one central Lightcore and six relay towers.
 - Relay towers charge shots into the Lightcore instead of asking the player to
   manually queue or drag ammo.
-- Opening combat is low-friction: shots auto-charge after the Lightcore wakes,
+- Opening combat is low-friction: shots auto-charge after the player presses Play,
   Hex 1 is immediately selectable, and generated shots auto-target anomalies
   without a tap-to-queue requirement.
+- Opening anomalies enter from randomized perimeter angles instead of uniform
+  lanes, with the first wave kept inside starter core range.
 - The first tower/auto-target/upgrade loop grants enough starter Lumens to move
   from build to the first upgrade without idle grinding.
 - The opening shell is wave-gated instead of tutorial-gated: the player starts

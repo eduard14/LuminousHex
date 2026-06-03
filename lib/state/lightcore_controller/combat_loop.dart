@@ -76,7 +76,7 @@ extension LightcoreControllerCombatLoop on LightcoreController {
         _advanceOpeningAutoEscalation();
       }
       if (_focusedEnemyId != null || coreAutoFireUnlocked) {
-        _fireCoreIfPossible(allowDefaultShot: false);
+        _fireCoreIfPossible(allowDefaultShot: coreAutoGenerationUnlocked);
       }
       _updateFlowEfficiency();
       if (foreground) {

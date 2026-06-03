@@ -1117,7 +1117,6 @@ extension LightcoreControllerLayerTraits on LightcoreController {
     elapsed = layer.elapsed;
     _spawnTimer = layer.spawnTimer;
     _spawnSequence = layer.spawnSequence;
-    _activeSpawnClusterIndex = null;
     _enemyCounter = layer.enemyCounter;
     _pulseCounter = layer.pulseCounter;
     _shotCounter = layer.shotCounter;
@@ -1567,7 +1566,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
       tutorialQuestDefinition?.title ??
       switch (_tutorialStep) {
         LightcoreTutorialStep.none => null,
-        LightcoreTutorialStep.unfoldShell => 'Unfold The Shell',
+        LightcoreTutorialStep.unfoldShell => 'Press Play',
         LightcoreTutorialStep.waitForFirstHex => 'Hex 1 Ready',
         LightcoreTutorialStep.selectFirstHex => 'Select Hex 1',
         LightcoreTutorialStep.buildFirstRedTower => 'Choose First Tower',
@@ -1615,7 +1614,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
       switch (_tutorialStep) {
         LightcoreTutorialStep.none => null,
         LightcoreTutorialStep.unfoldShell =>
-          'Click the center core to wake the shell.',
+          'Press Play to start the first wave.',
         LightcoreTutorialStep.waitForFirstHex => 'Click Hex 1.',
         LightcoreTutorialStep.selectFirstHex => 'Click Hex 1.',
         LightcoreTutorialStep.buildFirstRedTower =>
@@ -1693,7 +1692,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
 
   String? get tutorialCompactPrompt => switch (_tutorialStep) {
     LightcoreTutorialStep.none => null,
-    LightcoreTutorialStep.unfoldShell => 'Click the core',
+    LightcoreTutorialStep.unfoldShell => 'Press Play',
     LightcoreTutorialStep.waitForFirstHex ||
     LightcoreTutorialStep.selectFirstHex => 'Click Hex 1',
     LightcoreTutorialStep.buildFirstRedTower => 'Choose a tower',
@@ -1739,7 +1738,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
       switch (_tutorialStep) {
         LightcoreTutorialStep.none => null,
         LightcoreTutorialStep.unfoldShell =>
-          'The shell stays folded until the core wakes up, so lanes and combat systems remain locked while it sleeps.',
+          'The first Play press starts enemy pressure, shot charging, and the initial build lane.',
         LightcoreTutorialStep.waitForFirstHex =>
           'Hex 1 opens with the shell now, so the first lesson moves straight into selecting a lane and building.',
         LightcoreTutorialStep.selectFirstHex =>
@@ -1832,7 +1831,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
           LightcoreTutorialStep.focusFirstEnemy =>
             'The shot is loaded. The shell will pick a visible anomaly automatically; click towers only when you want tower controls.',
           LightcoreTutorialStep.inspectSecondShellTower =>
-            'The next shell is awake. Click the charged tower body before Lumo hands you speed controls.',
+            'The next shell is active. Click the charged tower body before Lumo hands you speed controls.',
           LightcoreTutorialStep.upgradeFirstTowerToLevel3 =>
             'The first anomaly wave dents the lane. Command routes Lumens into Hex 1 so the shell can recover instead of expanding too early.',
           LightcoreTutorialStep.raiseThreat =>
