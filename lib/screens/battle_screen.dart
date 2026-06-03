@@ -365,7 +365,8 @@ class _BattleScreenState extends State<BattleScreen> {
     return null;
   }
 
-  Widget _buildGameCanvas(double radius) {
+  Widget _buildGameCanvas(double radius, {required bool towerSelected}) {
+    _game.setUiFocusMode(towerSelected: towerSelected);
     return ClipRRect(
       borderRadius: BorderRadius.circular(radius),
       child: Stack(
@@ -874,7 +875,7 @@ class _BattleScreenState extends State<BattleScreen> {
     return ConstrainedBox(
       constraints: BoxConstraints(
         maxWidth: compact ? MediaQuery.sizeOf(context).width - 24 : 460,
-        maxHeight: MediaQuery.sizeOf(context).height * (compact ? 0.56 : 0.58),
+        maxHeight: MediaQuery.sizeOf(context).height * (compact ? 0.38 : 0.5),
       ),
       child: AuroraPanel(
         tint: tint,
@@ -936,41 +937,6 @@ class _BattleScreenState extends State<BattleScreen> {
     );
   }
 
-  Widget? _buildRaiseThreatPrompt(
-    LightcoreController controller, {
-    required bool compact,
-  }) {
-    final activeChallenge = controller.activeThreatRegionChallenge;
-    if (!widget.showBattleHud ||
-        activeChallenge != null ||
-        !controller.canStartFirstThreatChallenge) {
-      return null;
-    }
-    return _RaiseThreatPrompt(
-      compact: compact,
-      label: controller.firstThreatChallengeLabel,
-      rewardLabel: controller.firstThreatChallengeRewardLabel,
-      pressureLabel: controller.firstThreatChallengePressurePreviewLabel,
-      enabled: controller.canStartFirstThreatChallenge,
-      active: false,
-      progress: 0,
-      loopInstruction:
-          'Start the next wave when your current tower plan is ready.',
-      onPressed: () {
-        LightcoreAudio.instance.playSfx(LightcoreSfx.uiConfirm);
-        final started = controller.startFirstThreatChallenge();
-        if (!started) {
-          return;
-        }
-        setState(() {
-          _statsTarget = null;
-          _selectionControlsVisible = false;
-          _panelFocus = _BattlePanelFocus.none;
-        });
-      },
-    );
-  }
-
   Widget? _buildPromotionResultCard({
     required LightcoreController controller,
     required bool compact,
@@ -1007,10 +973,6 @@ class _BattleScreenState extends State<BattleScreen> {
       controller: controller,
       selected: selected,
     );
-    final raiseThreatPrompt = _buildRaiseThreatPrompt(
-      controller,
-      compact: compact,
-    );
     final promotionResultCard = _buildPromotionResultCard(
       controller: controller,
       compact: compact,
@@ -1027,15 +989,18 @@ class _BattleScreenState extends State<BattleScreen> {
 
     return Stack(
       children: [
-        Positioned.fill(child: _buildGameCanvas(compact ? 20 : 0)),
-        if (widget.showBattleHud)
+        Positioned.fill(
+          child: _buildGameCanvas(
+            compact ? 20 : 0,
+            towerSelected: selected != null && selected.isBuilt,
+          ),
+        ),
+        if (widget.showBattleHud && shellVisibilityHud != null)
           Positioned(
             right: inset,
-            top: topInset + (shellVisibilityHud != null ? 54 : 0),
-            child: _LayerOneWaveHud(controller: controller, compact: compact),
+            top: math.max(inset, topInset - (compact ? 22 : 10)),
+            child: shellVisibilityHud,
           ),
-        if (widget.showBattleHud && shellVisibilityHud != null)
-          Positioned(right: inset, top: topInset, child: shellVisibilityHud),
         if (widget.showBattleHud && selectionHud != null)
           Positioned(left: inset, bottom: bottomInset, child: selectionHud),
         if (overdriveHudVisible)
@@ -1050,16 +1015,6 @@ class _BattleScreenState extends State<BattleScreen> {
             right: compact ? inset : null,
             bottom: bottomInset + bottomControlClearance,
             child: selectionOverlay,
-          ),
-        if (raiseThreatPrompt != null && selectionOverlay == null)
-          Positioned(
-            left: inset,
-            right: inset,
-            bottom: bottomInset + bottomControlClearance + (compact ? 10 : 14),
-            child: Align(
-              alignment: Alignment.bottomCenter,
-              child: raiseThreatPrompt,
-            ),
           ),
         if (promotionResultCard != null)
           Positioned(
@@ -1105,118 +1060,6 @@ class _BattleScreenState extends State<BattleScreen> {
               },
             );
           },
-        ),
-      ),
-    );
-  }
-}
-
-class _LayerOneWaveHud extends StatelessWidget {
-  const _LayerOneWaveHud({required this.controller, required this.compact});
-
-  final LightcoreController controller;
-  final bool compact;
-
-  @override
-  Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-    final challenge = controller.activeThreatRegionChallenge;
-    final activeWave = challenge == null
-        ? math.max(1, controller.activeLayer.bestWaveReached)
-        : challenge.targetStabilizationLevel * 5;
-    final title = challenge == null ? 'Best Wave' : 'Current Wave';
-    final layer2SeedLabel = controller.activeLayerComponentLevel <= 0
-        ? 'Wave 10 -> Layer 2 Lv 1'
-        : '${controller.activeLayerComponentLevelLabel} seed';
-    final towerUnlockLabel =
-        '${controller.unlockedOuterSlotCount}/${LightcoreController.slotCount} hexes unlocked';
-    final subtitle = challenge == null
-        ? '$layer2SeedLabel • $towerUnlockLabel'
-        : 'Round ${challenge.waveIndex + 1}/${LightcoreController.threatRegionChallengeWaveCount} • $towerUnlockLabel';
-    final progress = challenge == null
-        ? (controller.activeLayer.bestWaveReached / 10)
-              .clamp(0.0, 1.0)
-              .toDouble()
-        : controller.activeThreatRegionChallengeWaveProgress;
-    return SizedBox(
-      key: const ValueKey<String>('battle-wave-hud'),
-      width: compact ? 188 : 230,
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          color: LightcorePalette.panel.withValues(alpha: 0.9),
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: LightcorePalette.aether.withValues(alpha: 0.36),
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: LightcorePalette.night.withValues(alpha: 0.28),
-              blurRadius: 14,
-              spreadRadius: -8,
-              offset: const Offset(0, 8),
-            ),
-          ],
-        ),
-        child: Padding(
-          padding: EdgeInsets.all(compact ? 9 : 10),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                title,
-                style: textTheme.labelSmall?.copyWith(
-                  color: LightcorePalette.mist.withValues(alpha: 0.72),
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                'Wave $activeWave',
-                style: textTheme.titleMedium?.copyWith(
-                  color: LightcorePalette.aether,
-                  fontWeight: FontWeight.w900,
-                  height: 1,
-                ),
-              ),
-              const SizedBox(height: 5),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(999),
-                child: LinearProgressIndicator(
-                  minHeight: 4,
-                  value: progress,
-                  backgroundColor: LightcorePalette.night.withValues(
-                    alpha: 0.58,
-                  ),
-                  valueColor: const AlwaysStoppedAnimation<Color>(
-                    LightcorePalette.aether,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 5),
-              Text(
-                subtitle,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: textTheme.labelSmall?.copyWith(
-                  color: LightcorePalette.mist.withValues(alpha: 0.78),
-                  fontWeight: FontWeight.w800,
-                  height: 1.1,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                'Merge needs all 6 towers maxed',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: textTheme.labelSmall?.copyWith(
-                  color: LightcorePalette.solar.withValues(alpha: 0.82),
-                  fontWeight: FontWeight.w800,
-                  height: 1.1,
-                ),
-              ),
-            ],
-          ),
         ),
       ),
     );
@@ -1421,178 +1264,6 @@ class _BattleResultChip extends StatelessWidget {
   }
 }
 
-class _RaiseThreatPrompt extends StatelessWidget {
-  const _RaiseThreatPrompt({
-    required this.compact,
-    required this.label,
-    required this.rewardLabel,
-    required this.pressureLabel,
-    required this.enabled,
-    required this.active,
-    required this.progress,
-    required this.loopInstruction,
-    required this.onPressed,
-  });
-
-  final bool compact;
-  final String label;
-  final String rewardLabel;
-  final String pressureLabel;
-  final bool enabled;
-  final bool active;
-  final double progress;
-  final String loopInstruction;
-  final VoidCallback onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-    final width = compact ? 370.0 : 430.0;
-    final title = active ? 'Challenge live' : 'Challenge ready';
-    final icon = active ? Icons.warning_amber_rounded : Icons.flag_rounded;
-    final accent = active ? LightcorePalette.warning : LightcorePalette.quest;
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final resolvedWidth = constraints.maxWidth.isFinite
-            ? width.clamp(0.0, constraints.maxWidth).toDouble()
-            : width;
-        return SizedBox(
-          key: const ValueKey<String>('battle-raise-threat-prompt'),
-          width: resolvedWidth,
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              color: LightcorePalette.panel.withValues(alpha: 0.96),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: accent.withValues(alpha: active ? 0.46 : 0.38),
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: LightcorePalette.night.withValues(alpha: 0.28),
-                  blurRadius: 18,
-                  spreadRadius: -10,
-                  offset: const Offset(0, 8),
-                ),
-              ],
-            ),
-            child: Padding(
-              padding: EdgeInsets.fromLTRB(
-                compact ? 10 : 12,
-                compact ? 8 : 10,
-                compact ? 9 : 11,
-                compact ? 9 : 11,
-              ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Icon(icon, size: compact ? 17 : 19, color: accent),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          title,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: textTheme.labelLarge?.copyWith(
-                            color: active
-                                ? LightcorePalette.warning
-                                : LightcorePalette.layer2,
-                            fontWeight: FontWeight.w900,
-                          ),
-                        ),
-                        if (active)
-                          Text(
-                            label,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: textTheme.labelSmall?.copyWith(
-                              color: LightcorePalette.mist.withValues(
-                                alpha: 0.78,
-                              ),
-                              fontWeight: FontWeight.w900,
-                            ),
-                          ),
-                        if (active) ...[
-                          const SizedBox(height: 4),
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(999),
-                            child: LinearProgressIndicator(
-                              minHeight: 5,
-                              value: progress.clamp(0.0, 1.0),
-                              backgroundColor: LightcorePalette.night
-                                  .withValues(alpha: 0.58),
-                              valueColor: AlwaysStoppedAnimation<Color>(accent),
-                            ),
-                          ),
-                          const SizedBox(height: 5),
-                        ],
-                        Text(
-                          _challengePreviewSubtitle,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: textTheme.labelSmall?.copyWith(
-                            color: LightcorePalette.mist.withValues(
-                              alpha: 0.76,
-                            ),
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                        if (active)
-                          Text(
-                            loopInstruction,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: textTheme.labelSmall?.copyWith(
-                              color: LightcorePalette.mist.withValues(
-                                alpha: 0.86,
-                              ),
-                              fontWeight: FontWeight.w800,
-                              height: 1.12,
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-                  if (!active) ...[
-                    const SizedBox(width: 8),
-                    Flexible(
-                      child: FilledButton.icon(
-                        onPressed: enabled ? onPressed : null,
-                        icon: const Icon(Icons.play_arrow_rounded),
-                        label: Text(
-                          label,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  String get _challengePreviewSubtitle {
-    if (pressureLabel.isEmpty && rewardLabel.isEmpty) {
-      return 'Harder enemies. Better rewards.';
-    }
-    if (pressureLabel.isEmpty) {
-      return 'Harder enemies • $rewardLabel';
-    }
-    if (rewardLabel.isEmpty) {
-      return pressureLabel;
-    }
-    return '$pressureLabel • $rewardLabel';
-  }
-}
-
 class _BattleControlPanel extends StatelessWidget {
   const _BattleControlPanel({
     required this.controller,
@@ -1669,13 +1340,6 @@ class _LiveTowerUpgradePanel extends StatelessWidget {
     final textTheme = Theme.of(context).textTheme;
     final tint = tower.config?.affinity.color ?? LightcorePalette.layer2;
     final upgradeOptions = controller.towerUpgradeOptionsFor(tower);
-    final levelCost = controller.upgradeCost(tower);
-    final isMaxed = tower.level >= LightcoreController.maxTowerLevel;
-    final canLevel =
-        !controller.activeLayerPassiveOnly &&
-        !tower.isFabricating &&
-        !isMaxed &&
-        controller.lumens >= levelCost;
     final spent = controller.towerUpgradePointsSpent(tower);
     final cap = controller.towerUpgradePointsCap(tower);
 
@@ -1695,7 +1359,7 @@ class _LiveTowerUpgradePanel extends StatelessWidget {
                   ),
                   const SizedBox(height: 3),
                   Text(
-                    'Layer 1 tower upgrades shape this shell before merge. They are part of this tower roll.',
+                    'Persistent stat upgrades shape this tower roll before merge.',
                     style: textTheme.bodySmall?.copyWith(
                       color: LightcorePalette.mist.withValues(alpha: 0.78),
                       fontWeight: FontWeight.w700,
@@ -1721,19 +1385,9 @@ class _LiveTowerUpgradePanel extends StatelessWidget {
           runSpacing: 8,
           children: [
             _BattleUpgradeChip(
-              label: 'Tower',
-              value: '${tower.level}/${LightcoreController.maxTowerLevel}',
-              tint: tint,
-            ),
-            _BattleUpgradeChip(
-              label: 'Stats',
+              label: 'Persistent Stats',
               value: '$spent/$cap',
               tint: LightcorePalette.solar,
-            ),
-            _BattleUpgradeChip(
-              label: 'Best Wave',
-              value: '${controller.activeLayer.bestWaveReached}',
-              tint: LightcorePalette.aether,
             ),
             _BattleUpgradeChip(
               label: 'Layer 2',
@@ -1743,23 +1397,8 @@ class _LiveTowerUpgradePanel extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 12),
-        SizedBox(
-          width: double.infinity,
-          child: FilledButton.icon(
-            onPressed: canLevel
-                ? () => controller.upgradeTower(slotIndex)
-                : null,
-            icon: const Icon(Icons.keyboard_double_arrow_up_rounded),
-            label: Text(
-              isMaxed
-                  ? 'Layer 1 Tower Maxed'
-                  : 'Layer 1 Tower Level • ${levelCost}L',
-            ),
-          ),
-        ),
-        const SizedBox(height: 12),
         Text(
-          'Layer 1 Stat Upgrades',
+          'Persistent Stat Upgrades',
           style: textTheme.titleSmall?.copyWith(
             color: LightcorePalette.mist,
             fontWeight: FontWeight.w900,

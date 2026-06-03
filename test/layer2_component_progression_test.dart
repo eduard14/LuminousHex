@@ -99,7 +99,7 @@ void main() {
       controller.activeLayerComponentForecastReadyLabel,
       'Ready to Create Layer 2 Component',
     );
-    expect(controller.activeLayerBestWaveLabel, 'Best Wave 10');
+    expect(controller.activeLayerBestWaveLabel, 'Wave 10');
     expect(controller.activeLayerComponentStatTier, 10);
     expect(controller.activeLayerComponentLevel, 1);
     expect(controller.activeLayerExpectedSubtraitCount, 2);

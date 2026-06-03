@@ -305,7 +305,7 @@ extension LightcoreControllerThreatRegions on LightcoreController {
     final nextLevel = (state?.stabilizedLevel ?? 0) + 1;
     return nextLevel > starter.stabilizationLayers
         ? 'Cleared'
-        : 'Push Wave ${nextLevel * 5}';
+        : 'Wave ${nextLevel * 5}';
   }
 
   int get firstThreatChallengeLumenRewardPreview {
@@ -322,11 +322,11 @@ extension LightcoreControllerThreatRegions on LightcoreController {
     final firstTower = _firstTutorialTower;
     if (firstTower == null ||
         !_isOpeningStarterTower(firstTower.config) ||
-        !((nextLevel == 1 && firstTower.level == 2) ||
-            (nextLevel == 2 && firstTower.level == 3))) {
+        !((nextLevel == 1 && towerUpgradePointsSpent(firstTower) >= 1) ||
+            (nextLevel == 2 && towerUpgradePointsSpent(firstTower) >= 2))) {
       return baseReward;
     }
-    final nextUpgradeCost = upgradeCost(firstTower);
+    final nextUpgradeCost = _nextTowerStatUpgradeCost(firstTower);
     if (nextUpgradeCost <= 0) {
       return baseReward;
     }
@@ -795,7 +795,7 @@ extension LightcoreControllerThreatRegions on LightcoreController {
     }
     return switch (challenge.targetStabilizationLevel) {
       1 => 'Threat raised. Harder enemies are testing that upgraded tower.',
-      2 => 'Push Wave 10 started. Harder enemies are pushing Hex 1 again.',
+      2 => 'Wave 10 started. Harder enemies are testing Hex 1 again.',
       _ => null,
     };
   }
@@ -825,9 +825,9 @@ extension LightcoreControllerThreatRegions on LightcoreController {
         : ' Reward: ${rewardParts.join(', ')}.';
     return switch (challenge.targetStabilizationLevel) {
       1 =>
-        'Push Wave 5 cleared. Harder enemies dented Hex 1; upgrade the tower to hold the lane.$rewardText',
+        'Wave 5 cleared. Harder enemies dented Hex 1; tune the tower to hold the lane.$rewardText',
       2 =>
-        'Push Wave 10 cleared. Hex 1 is strained again; upgrade once more to open Hex 2.$rewardText',
+        'Wave 10 cleared. Hex 1 is strained again; tune once more to open Hex 2.$rewardText',
       _ => null,
     };
   }
@@ -844,11 +844,11 @@ extension LightcoreControllerThreatRegions on LightcoreController {
     final targetLevel = challenge.targetStabilizationLevel;
     if (firstTower == null ||
         !_isOpeningStarterTower(firstTower.config) ||
-        !((targetLevel == 1 && firstTower.level == 2) ||
-            (targetLevel == 2 && firstTower.level == 3))) {
+        !((targetLevel == 1 && towerUpgradePointsSpent(firstTower) >= 1) ||
+            (targetLevel == 2 && towerUpgradePointsSpent(firstTower) >= 2))) {
       return 0;
     }
-    final nextUpgradeCost = upgradeCost(firstTower);
+    final nextUpgradeCost = _nextTowerStatUpgradeCost(firstTower);
     if (nextUpgradeCost <= 0) {
       return 0;
     }

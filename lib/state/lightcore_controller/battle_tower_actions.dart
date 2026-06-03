@@ -388,7 +388,15 @@ extension LightcoreControllerBattleTowerActions on LightcoreController {
       _notifyNow();
       return false;
     }
-    return upgradeTower(slotIndex);
+    if (slotIndex < 0 || slotIndex >= _slots.length) {
+      return false;
+    }
+    final tower = _slots[slotIndex];
+    final upgrade = _nextTowerStatUpgrade(tower);
+    if (upgrade == null) {
+      return false;
+    }
+    return upgradeTowerStat(slotIndex, upgrade.type);
   }
 
   bool buildTowerForSelected(TowerConfig config) {
@@ -499,7 +507,7 @@ extension LightcoreControllerBattleTowerActions on LightcoreController {
 
     if (isOuterRingComplete && _layer2Components.isEmpty) {
       _showBanner(
-        'Ring complete. Component merge still needs all $slotCount Source Towers at level $maxTowerLevel.',
+        'Ring complete. Component merge still needs all $slotCount Source Tower stat boards tuned.',
       );
     } else {
       _showBanner(
@@ -606,6 +614,10 @@ extension LightcoreControllerBattleTowerActions on LightcoreController {
     _slots[slotIndex] = tower.copyWith(
       investedLumens: tower.investedLumens + cost,
       towerUpgradeOptions: nextOptions,
+    );
+    _recoverOpeningPressureOnTutorialUpgrade(
+      slotIndex,
+      towerUpgradePointsSpent(_slots[slotIndex]),
     );
     _showBanner(
       '${towerDisplayName(tower)} tuned ${selectedUpgrade.type.label.toLowerCase()} to $nextRank/$maxTowerUpgradeRank.',
@@ -1064,7 +1076,7 @@ extension LightcoreControllerBattleTowerActions on LightcoreController {
       _showBanner(
         builtTowerCount < slotCount
             ? 'Alignment locked. Build all $slotCount Source Towers first.'
-            : 'Alignment locked. Raise every Source Tower to level $maxTowerLevel first.',
+            : 'Alignment locked. Tune every Source Tower stat board first.',
       );
       _notifyNow();
       return;

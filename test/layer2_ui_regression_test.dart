@@ -35,7 +35,7 @@ void main() {
       expect(find.text('Layer 2 Components'), findsOneWidget);
       expect(find.text('Layer 1 Component Forecast'), findsOneWidget);
       expect(find.text('Ready to Create Layer 2 Component'), findsOneWidget);
-      expect(find.text('Best Wave 25'), findsOneWidget);
+      expect(find.text('Wave 25'), findsOneWidget);
       expect(find.text('Layer 2 Lv 2'), findsOneWidget);
       expect(find.text('3 subtraits'), findsOneWidget);
       expect(find.text('W5 Farm lock'), findsOneWidget);
@@ -125,7 +125,7 @@ void main() {
 
     expect(find.text('Layer 1 Component Forecast'), findsOneWidget);
     expect(find.text('Need 5 more towers'), findsOneWidget);
-    expect(find.text('Best Wave 1'), findsOneWidget);
+    expect(find.text('Wave 1'), findsOneWidget);
     expect(find.text('Layer 2 Lv 0'), findsOneWidget);
     expect(find.text('W5 Farm lock'), findsOneWidget);
     expect(find.text('Red 100%'), findsWidgets);

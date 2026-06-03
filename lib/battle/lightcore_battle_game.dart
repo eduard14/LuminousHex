@@ -87,6 +87,8 @@ class LightcoreBattleGame extends FlameGame with ScaleDetector {
   Vector2 _screenShakeOffset = Vector2.zero();
   Vector2 _baseCenter = Vector2.zero();
   Vector2 _panOffset = Vector2.zero();
+  double _uiFocusLift = 0;
+  double _uiFocusScale = 1;
   Vector2? _lastGestureFocalPoint;
   double _lastGestureScaleSignal = 1.0;
   int _gesturePointerCount = 0;
@@ -105,6 +107,20 @@ class LightcoreBattleGame extends FlameGame with ScaleDetector {
   void onGameResize(Vector2 size) {
     super.onGameResize(size);
     _recomputeLayout();
+  }
+
+  void setUiFocusMode({required bool towerSelected}) {
+    final nextLift = towerSelected ? -0.12 : 0.0;
+    final nextScale = towerSelected ? 0.9 : 1.0;
+    if ((nextLift - _uiFocusLift).abs() < 0.001 &&
+        (nextScale - _uiFocusScale).abs() < 0.001) {
+      return;
+    }
+    _uiFocusLift = nextLift;
+    _uiFocusScale = nextScale;
+    if (_layoutReady) {
+      _recomputeLayout();
+    }
   }
 
   double get viewScale => _viewScale;
@@ -210,13 +226,13 @@ class LightcoreBattleGame extends FlameGame with ScaleDetector {
       return;
     }
     final shortest = math.min(size.x, size.y);
-    _baseCenter = Vector2(size.x / 2, size.y * 0.46);
+    _baseCenter = Vector2(size.x / 2, size.y * (0.46 + _uiFocusLift));
     _panOffset = _clampPanOffset(_panOffset);
     _center = _baseCenter + _panOffset;
-    _hexRadius = shortest * 0.108 * _viewScale;
+    _hexRadius = shortest * 0.108 * _viewScale * _uiFocusScale;
     _slotRadius = _hexRadius * 0.95;
     _coreRadius = _hexRadius * 1.03;
-    _spawnRadiusVisual = shortest * 0.58 * _viewScale;
+    _spawnRadiusVisual = shortest * 0.58 * _viewScale * _uiFocusScale;
     _slotPositions = _buildBorderingRing();
     _layoutReady = _slotPositions.isNotEmpty;
     _relayImpactRadiusVisual = _layoutReady

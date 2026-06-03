@@ -780,7 +780,7 @@ extension LightcoreControllerStateAccessors on LightcoreController {
   }
 
   String get activeLayerBestWaveLabel =>
-      'Best Wave ${max(1, activeLayer.bestWaveReached)}';
+      'Wave ${max(1, activeLayer.bestWaveReached)}';
 
   String get activeLayerNextComponentTierLabel {
     final wave = max(1, activeLayer.bestWaveReached);
@@ -804,7 +804,7 @@ extension LightcoreControllerStateAccessors on LightcoreController {
       return 'Need ${slotCount - builtTowerCount} more towers';
     }
     if (promotionReadyTowerCount < slotCount) {
-      return 'Need ${slotCount - promotionReadyTowerCount} max-level towers';
+      return 'Need ${slotCount - promotionReadyTowerCount} tuned towers';
     }
     if (canUnlockLayer2) {
       return 'Ready to Create Layer 2 Component';

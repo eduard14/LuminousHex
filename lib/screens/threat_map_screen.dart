@@ -1128,7 +1128,7 @@ class _Layer2AreaCommandPanel extends StatelessWidget {
                         ? 'Challenge Active'
                         : state.stabilizedLevel >= region.stabilizationLayers
                         ? 'Area Cleared'
-                        : 'Push Wave $nextWave',
+                        : 'Start Wave $nextWave',
                   ),
                 ),
                 OutlinedButton.icon(

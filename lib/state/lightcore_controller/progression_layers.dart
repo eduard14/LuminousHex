@@ -628,8 +628,18 @@ extension LightcoreControllerProgressionLayers on LightcoreController {
 
   double _towerDotDamageUpgradeBonus(double bonusValue) => bonusValue * 0.24;
 
-  int _towerLevelRanks(OuterTowerState tower) =>
-      max(0, min(maxTowerLevel, tower.level) - 1);
+  double _towerLevelRanks(OuterTowerState tower) {
+    if (tower.isChildLayerNode) {
+      return max(0, min(maxTowerLevel, tower.level) - 1).toDouble();
+    }
+    final optionCount = tower.towerUpgradeOptions.length;
+    if (optionCount <= 0) {
+      return 0;
+    }
+    return (towerUpgradePointsSpent(tower) / optionCount)
+        .clamp(0.0, maxTowerUpgradeRank.toDouble())
+        .toDouble();
+  }
 
   double _towerLevelOutputMultiplier(OuterTowerState tower) =>
       1 + (_towerLevelRanks(tower) * 0.035);
@@ -848,6 +858,24 @@ extension LightcoreControllerProgressionLayers on LightcoreController {
   int towerUpgradePointsRemaining(OuterTowerState tower) =>
       max(0, towerUpgradePointsCap(tower) - towerUpgradePointsSpent(tower));
 
+  TowerUpgradeOptionState? _nextTowerStatUpgrade(OuterTowerState tower) {
+    TowerUpgradeOptionState? selected;
+    for (final upgrade in tower.towerUpgradeOptions) {
+      if (upgrade.rank >= maxTowerUpgradeRank) {
+        continue;
+      }
+      if (selected == null || upgrade.rank < selected.rank) {
+        selected = upgrade;
+      }
+    }
+    return selected;
+  }
+
+  int _nextTowerStatUpgradeCost(OuterTowerState tower) {
+    final upgrade = _nextTowerStatUpgrade(tower);
+    return upgrade == null ? 0 : towerStatUpgradeCost(tower, upgrade);
+  }
+
   UnmodifiableListView<TowerUpgradeOptionState> get coreUpgradeOptions =>
       UnmodifiableListView(_core.coreUpgradeOptions);
 
@@ -878,9 +906,7 @@ extension LightcoreControllerProgressionLayers on LightcoreController {
   }
 
   bool isTowerComplete(OuterTowerState tower) =>
-      tower.hasTowerProgression &&
-      tower.level >= maxTowerLevel &&
-      towerStatUpgradesComplete(tower);
+      tower.hasTowerProgression && towerStatUpgradesComplete(tower);
 
   String towerCompletionLabel(OuterTowerState tower) {
     final spent = towerUpgradePointsSpent(tower);
@@ -889,10 +915,7 @@ extension LightcoreControllerProgressionLayers on LightcoreController {
     if (isTowerComplete(tower)) {
       return 'Complete • $statsLabel';
     }
-    if (tower.level >= maxTowerLevel) {
-      return 'Level max • $statsLabel';
-    }
-    return 'Level ${tower.level}/$maxTowerLevel • $statsLabel';
+    return 'Tuning in progress • $statsLabel';
   }
 
   UnmodifiableListView<TowerUpgradeOptionState> towerUpgradeOptionsFor(

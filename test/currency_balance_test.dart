@@ -125,7 +125,7 @@ void main() {
     expect(controller.activeThreatRegionChallenge?.targetStabilizationLevel, 1);
 
     _advanceActiveOpeningChallenge(controller);
-    expect(controller.bannerMessage, contains('Push Wave 5 cleared'));
+    expect(controller.bannerMessage, contains('Wave 5 cleared'));
     expect(controller.bannerMessage, isNot(contains('Live farm unlocked')));
     final starterRegion = controller.threatRegionConfigs.first;
     expect(
@@ -152,11 +152,11 @@ void main() {
       contains('10 active'),
     );
     expect(controller.startFirstThreatChallenge(), isTrue);
-    expect(controller.bannerMessage, contains('Push Wave 10 started'));
+    expect(controller.bannerMessage, contains('Wave 10 started'));
     expect(controller.activeThreatRegionChallenge?.targetStabilizationLevel, 2);
 
     _advanceActiveOpeningChallenge(controller);
-    expect(controller.bannerMessage, contains('Push Wave 10 cleared'));
+    expect(controller.bannerMessage, contains('Wave 10 cleared'));
     expect(controller.bannerMessage, isNot(contains('Live farm unlocked')));
     expect(
       controller.threatRegionStateById(starterRegion.id)?.stabilizedLevel,

@@ -72,6 +72,9 @@ extension LightcoreControllerCombatLoop on LightcoreController {
       _advanceEnemies(battleDt);
       _advanceThreatRegionChallenge(battleDt);
       _advanceThreatRegionFarmValidation(battleDt);
+      if (foreground) {
+        _advanceOpeningAutoEscalation();
+      }
       if (_focusedEnemyId != null || coreAutoFireUnlocked) {
         _fireCoreIfPossible(allowDefaultShot: false);
       }

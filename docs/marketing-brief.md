@@ -83,7 +83,7 @@ climbing.
   with Hex 1, unlocks Hexes 2-3 after Wave 5, and has all six perimeter hexes
   available after Wave 10.
 - Wave 10 creates the Layer 2 level 1 seed target, but the player still needs a
-  full shell before merge: all six outer towers built and maxed.
+  full shell before merge: all six outer towers built and stat boards tuned.
 - Challenge prompts and active challenge HUD now show the harder enemy level,
   active swarm count, and Lumen reward preview; starter challenge waves raise
   both enemy level and active enemy pressure so the "new area is harder" beat is
@@ -148,8 +148,8 @@ climbing.
   mobile chore loop.
 - Manual Overdrive appears from the underlying combat unlocks instead of being
   hidden behind tutorial state.
-- Clearing starter Push Wave 5 pays enough Lumens for the next anchor-tower
-  upgrade, so the first combat loop chains directly into a stronger lane
+- Clearing starter Wave 5 pays enough Lumens for the next anchor-tower stat
+  tune, so the first combat loop chains directly into a stronger lane
   instead of asking for a grind pause.
 - Hexes 2 and 3 wait until Wave 5 is cleared; Hexes 4-6 wait until Wave 10 is
   cleared, keeping tower expansion connected to the pressure-upgrade-repeat
@@ -226,9 +226,9 @@ climbing.
   per-wave timer: no EXP, upgrade spending, or notification clutter during the
   run.
 - Region intel dialogs now act as the Layer 2 area command surface, showing the
-  next push wave, best farm wave, locked offline output, assigned component,
+  next wave, best farm wave, locked offline output, assigned component,
   Threat Director, and boss-only equipment source before the player chooses
-  Push Wave or Lock Farm Wave.
+  Start Wave or Lock Farm Wave.
 - Farm-wave locking records the best completed wave for that region/director
   setup and determines offline output until the player pushes and locks higher.
 - Swarm Magnet controls the account-wide farming swarm size and can be rerolled
@@ -238,9 +238,9 @@ climbing.
   behavior.
 - Apex Anomalies spawn after normal anomaly progress and grant larger rewards.
 - Threat Map and regional challenge surfaces frame anomaly pressure by region.
-- The starter-region Push Wave 5 prompt appears as a compact battle action after
-  early overmatch, turning the first tower upgrade into immediate added pressure
-  without covering the first tower hex or bottom browser chrome.
+- Starter-region Wave 5 now starts automatically after early overmatch, turning
+  the first tower tune into immediate added pressure without covering the first
+  tower hex or bottom browser chrome.
 - The compact battle Component Forecast appears once the shell has useful
   Layer 1 context, and the full forecast is available on Tower Management and
   Layer 2 Components for deliberate build planning.

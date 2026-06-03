@@ -13,7 +13,6 @@ import '../widgets/layer_one_component_forecast_panel.dart';
 import '../widgets/lightcore_info_button.dart';
 import '../widgets/meter_bar.dart';
 import '../widgets/symbol_grid_tile.dart';
-import '../widgets/tower_level_hex_badge.dart';
 import '../widgets/tower_ring_icon.dart';
 import 'tower_detail_screen.dart';
 
@@ -789,24 +788,28 @@ class _BuiltSlotCard extends StatelessWidget {
     final isPromoted = slot.isPromotedChildTower;
     final isFabricating = slot.isFabricating;
     final hasTowerProgression = slot.hasTowerProgression;
-    final showTowerLevelBadge = hasTowerProgression && !isFabricating;
+    final statSpent = controller.towerUpgradePointsSpent(slot);
+    final statCap = controller.towerUpgradePointsCap(slot);
+    final showStatBadge = hasTowerProgression && !isFabricating;
     final progressValue = isFabricating
         ? slot.fabricationProgress
         : isProject
         ? (slot.childBuiltCount / LightcoreController.slotCount)
               .clamp(0.0, 1.0)
               .toDouble()
-        : slot.charge.clamp(0.0, 1.0).toDouble();
+        : statCap <= 0
+        ? 1.0
+        : (statSpent / statCap).clamp(0.0, 1.0).toDouble();
     final pipCurrent = isFabricating
         ? 0
         : isProject
         ? slot.childBuiltCount
         : hasTowerProgression
-        ? slot.level
+        ? statSpent
         : slot.level;
     final pipMax = isProject
         ? LightcoreController.slotCount
-        : LightcoreController.maxTowerLevel;
+        : math.max(1, statCap);
 
     return AuroraPanel(
       tint: tint,
@@ -868,15 +871,37 @@ class _BuiltSlotCard extends StatelessWidget {
                   ],
                 ),
               ),
-              if (showTowerLevelBadge)
-                TowerLevelHexBadge(
-                  level: slot.level,
-                  maxLevel: LightcoreController.maxTowerLevel,
-                  projectileType: controller.towerProjectileType(slot),
-                  tint: tint,
-                  complete: controller.isTowerComplete(slot),
-                  semanticLabel:
-                      '${controller.towerDisplayName(slot)} ${controller.towerCompletionLabel(slot)}',
+              if (showStatBadge)
+                Container(
+                  width: 72,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 9,
+                  ),
+                  decoration: BoxDecoration(
+                    color: tint.withValues(alpha: 0.16),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: tint.withValues(alpha: 0.36)),
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        '$statSpent/$statCap',
+                        style: textTheme.titleSmall?.copyWith(
+                          color: tint,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                      Text(
+                        'Stats',
+                        style: textTheme.labelSmall?.copyWith(
+                          color: LightcorePalette.mist.withValues(alpha: 0.72),
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ],
+                  ),
                 )
               else
                 Container(
@@ -1006,7 +1031,7 @@ class _BuiltSlotCard extends StatelessWidget {
               current: pipCurrent,
               max: pipMax,
               tint: tint,
-              label: isProject ? 'Shell build' : 'Tower level',
+              label: isProject ? 'Shell build' : 'Persistent stats',
             ),
           ],
           const SizedBox(height: 12),
@@ -1023,9 +1048,14 @@ class _BuiltSlotCard extends StatelessWidget {
                         ? null
                         : isProject
                         ? () => controller.enterChildLayer(slot.slotIndex)
-                        : slot.level < LightcoreController.maxTowerLevel
-                        ? () => controller.tutorialUpgradeTower(slot.slotIndex)
-                        : null,
+                        : () {
+                            controller.selectSlot(slot.slotIndex);
+                            showTowerDetailOverlay(
+                              context: context,
+                              controller: controller,
+                              slotIndex: slot.slotIndex,
+                            );
+                          },
                     child: Text(
                       isFabricating
                           ? 'Fabricating ${controller.towerFabricationRemainingLabel(slot)}'
@@ -1035,11 +1065,9 @@ class _BuiltSlotCard extends StatelessWidget {
                                 : controller.isSlotPromotionReady(slot)
                                 ? 'Inner Shell Ready'
                                 : 'Continue Layer'
-                          : slot.level < LightcoreController.maxTowerLevel
-                          ? 'Tower Level • ${controller.upgradeCost(slot)} Lumens'
                           : controller.isTowerComplete(slot)
-                          ? 'Complete'
-                          : 'Level Max',
+                          ? 'Persistent Stats Complete'
+                          : 'Tune Persistent Stats',
                     ),
                   ),
                 ),

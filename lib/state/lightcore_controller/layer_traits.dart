@@ -141,7 +141,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
       return false;
     }
     return _tutorialFocusFireLearned &&
-        tower.level >= 4 &&
+        towerUpgradePointsSpent(tower) >= 3 &&
         _openingRepeatChallengeCompleted;
   }
 
@@ -184,7 +184,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         _firstThreatChallengeStarted ||
         firstTower == null ||
         !_isOpeningStarterTower(firstTower.config) ||
-        firstTower.level > 1) {
+        towerUpgradePointsSpent(firstTower) > 0) {
       return;
     }
     _tutorialOpeningPressureHitApplied = true;
@@ -212,7 +212,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
     }
     if (!_tutorialChallengePressureHitApplied &&
         challenge.targetStabilizationLevel == 1 &&
-        firstTower.level == 2) {
+        towerUpgradePointsSpent(firstTower) >= 1) {
       _tutorialChallengePressureHitApplied = true;
       _setCoreStability(min(_core.coreStability, 76));
       _slots[0] = firstTower.copyWith(
@@ -228,7 +228,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
     }
     if (!_tutorialSecondChallengePressureHitApplied &&
         challenge.targetStabilizationLevel == 2 &&
-        firstTower.level == 3) {
+        towerUpgradePointsSpent(firstTower) >= 2) {
       _tutorialSecondChallengePressureHitApplied = true;
       _setCoreStability(min(_core.coreStability, 72));
       _slots[0] = firstTower.copyWith(
@@ -243,7 +243,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
     }
   }
 
-  void _recoverOpeningPressureOnTutorialUpgrade(int slotIndex, int nextLevel) {
+  void _recoverOpeningPressureOnTutorialUpgrade(int slotIndex, int nextRank) {
     if (slotIndex != 0) {
       return;
     }
@@ -251,16 +251,16 @@ extension LightcoreControllerLayerTraits on LightcoreController {
     if (!_isOpeningStarterTower(tower.config)) {
       return;
     }
-    if ((_tutorialOpeningPressureHitApplied && nextLevel == 2) ||
-        (_tutorialChallengePressureHitApplied && nextLevel == 3) ||
-        (_tutorialSecondChallengePressureHitApplied && nextLevel == 4)) {
+    if ((_tutorialOpeningPressureHitApplied && nextRank >= 1) ||
+        (_tutorialChallengePressureHitApplied && nextRank >= 2) ||
+        (_tutorialSecondChallengePressureHitApplied && nextRank >= 3)) {
       _setCoreStability(_maxCoreStability);
       _slots[slotIndex] = tower.copyWith(
         disruption: min(tower.disruption, 0.08),
         charge: max(tower.charge, 0.62),
       );
     }
-    if (_tutorialSecondChallengePressureHitApplied && nextLevel == 4) {
+    if (_tutorialSecondChallengePressureHitApplied && nextRank >= 3) {
       _grantOpeningHex2ProgressAfterRepeatUpgrade();
     }
   }
@@ -284,7 +284,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
     final firstTower = _firstTutorialTower;
     if (firstTower == null ||
         !_isOpeningStarterTower(firstTower.config) ||
-        firstTower.level < 2 ||
+        towerUpgradePointsSpent(firstTower) < 1 ||
         _firstThreatChallengeStarted ||
         !canStartFirstThreatChallenge) {
       return false;
@@ -306,7 +306,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
     final firstTower = _firstTutorialTower;
     if (firstTower == null ||
         !_isOpeningStarterTower(firstTower.config) ||
-        firstTower.level < 3 ||
+        towerUpgradePointsSpent(firstTower) < 2 ||
         !_firstThreatChallengeCompleted ||
         _openingRepeatChallengeCompleted ||
         _openingRepeatChallengeActive ||
@@ -317,6 +317,12 @@ extension LightcoreControllerLayerTraits on LightcoreController {
       return false;
     }
     return true;
+  }
+
+  void _advanceOpeningAutoEscalation() {
+    if (_openingThreatEscalationReady || _openingRepeatEscalationReady) {
+      startFirstThreatChallenge();
+    }
   }
 
   bool get _hasCreatedFirstChildShell =>
@@ -456,14 +462,11 @@ extension LightcoreControllerLayerTraits on LightcoreController {
     if (!_tutorialFocusFireLearned) {
       return LightcoreTutorialStep.focusFirstEnemy;
     }
-    final firstTowerUpgradeCost = upgradeCost(firstTower);
-    if (firstTower.level < 2 &&
+    final firstTowerUpgradeCost = _nextTowerStatUpgradeCost(firstTower);
+    if (towerUpgradePointsSpent(firstTower) < 1 &&
         firstTowerUpgradeCost > 0 &&
         lumens >= firstTowerUpgradeCost) {
       return LightcoreTutorialStep.upgradeFirstTowerToLevel3;
-    }
-    if (_openingThreatEscalationReady) {
-      return LightcoreTutorialStep.raiseThreat;
     }
     if (_firstThreatChallengeActive) {
       return LightcoreTutorialStep.none;
@@ -471,18 +474,15 @@ extension LightcoreControllerLayerTraits on LightcoreController {
     if (!_tutorialStabilityPanelOpened && !_firstThreatChallengeCompleted) {
       return LightcoreTutorialStep.readEffectiveGain;
     }
-    final nextFirstTowerUpgradeCost = upgradeCost(firstTower);
-    if (firstTower.level < 3 &&
-        firstTower.level >= 2 &&
+    final nextFirstTowerUpgradeCost = _nextTowerStatUpgradeCost(firstTower);
+    if (towerUpgradePointsSpent(firstTower) < 2 &&
+        towerUpgradePointsSpent(firstTower) >= 1 &&
         nextFirstTowerUpgradeCost > 0 &&
         lumens >= nextFirstTowerUpgradeCost) {
       return LightcoreTutorialStep.upgradeFirstTowerToLevel4;
     }
-    if (_openingRepeatEscalationReady) {
-      return LightcoreTutorialStep.pushNextArea;
-    }
-    if (firstTower.level < 4 &&
-        firstTower.level >= 3 &&
+    if (towerUpgradePointsSpent(firstTower) < 3 &&
+        towerUpgradePointsSpent(firstTower) >= 2 &&
         _openingRepeatChallengeCompleted &&
         nextFirstTowerUpgradeCost > 0 &&
         lumens >= nextFirstTowerUpgradeCost) {
@@ -799,11 +799,11 @@ extension LightcoreControllerLayerTraits on LightcoreController {
     LightcoreTutorialStep.focusFirstEnemy =>
       'Auto-targeting verified. You have enough Lumens to upgrade the first tower.',
     LightcoreTutorialStep.upgradeFirstTowerToLevel3 =>
-      'Anchor tower tuned. Push Wave 5 for denser enemies and better rewards.',
+      'Anchor tower tuned. Wave 5 will bring denser enemies and better rewards.',
     LightcoreTutorialStep.raiseThreat =>
       'Threat raised. The starter region is now testing that upgraded tower.',
     LightcoreTutorialStep.pushNextArea =>
-      'Push Wave 10 started. This is the repeat: harder area, then reinforce.',
+      'Wave 10 started. This is the repeat: harder area, then reinforce.',
     LightcoreTutorialStep.pullFirstWhiteEnemy =>
       'Safe signature added. Threat Scans shape the encounter, not your tower roster.',
     LightcoreTutorialStep.readEffectiveGain =>
@@ -1576,7 +1576,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         LightcoreTutorialStep.upgradeFirstTowerToLevel3 =>
           'Tune The Main Tower',
         LightcoreTutorialStep.raiseThreat => 'Start Challenge',
-        LightcoreTutorialStep.pushNextArea => 'Push Next Area',
+        LightcoreTutorialStep.pushNextArea => 'Next Area Wave',
         LightcoreTutorialStep.pullFirstWhiteEnemy => 'Open Knowledge Cards',
         LightcoreTutorialStep.readEffectiveGain => 'Read Effective Gain',
         LightcoreTutorialStep.managerAutoAim => 'Manager Auto-Fire',
@@ -1627,9 +1627,9 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         LightcoreTutorialStep.upgradeFirstTowerToLevel3 =>
           'Click the first tower in Hex 1 and upgrade it once.',
         LightcoreTutorialStep.raiseThreat =>
-          'Click Push Wave 5 on the battlefield to start a tougher reward wave.',
+          'Keep the first tower tuned so Wave 5 starts automatically.',
         LightcoreTutorialStep.pushNextArea =>
-          'Click Push Wave 10 on the battlefield to start the next tougher wave.',
+          'Keep the anchor tower stable so Wave 10 starts automatically.',
         LightcoreTutorialStep.pullFirstWhiteEnemy =>
           'Click Map and run 1 threat scan.',
         LightcoreTutorialStep.readEffectiveGain =>
@@ -1637,7 +1637,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         LightcoreTutorialStep.managerAutoAim =>
           'Watch your manager fire 5 automated shots.',
         LightcoreTutorialStep.upgradeFirstTowerToLevel4 =>
-          'Click the first tower in Hex 1 and upgrade it to level 3.',
+          'Click the first tower in Hex 1 and buy another persistent stat rank.',
         LightcoreTutorialStep.upgradeFirstTowerToLevel5 =>
           'Click the first tower in Hex 1 and upgrade it once more.',
         LightcoreTutorialStep.buildSecondStarterTower =>
@@ -1702,8 +1702,8 @@ extension LightcoreControllerLayerTraits on LightcoreController {
     LightcoreTutorialStep.upgradeFirstTowerToLevel3 ||
     LightcoreTutorialStep.upgradeFirstTowerToLevel4 ||
     LightcoreTutorialStep.upgradeFirstTowerToLevel5 => 'Upgrade Hex 1',
-    LightcoreTutorialStep.raiseThreat => 'Push Wave 5',
-    LightcoreTutorialStep.pushNextArea => 'Push Wave 10',
+    LightcoreTutorialStep.raiseThreat => 'Wave 5',
+    LightcoreTutorialStep.pushNextArea => 'Wave 10',
     LightcoreTutorialStep.pullFirstWhiteEnemy => 'Run 1 scan',
     LightcoreTutorialStep.readEffectiveGain => 'Open Output Efficiency',
     LightcoreTutorialStep.managerAutoAim => 'Watch auto-fire',
@@ -1751,7 +1751,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         LightcoreTutorialStep.inspectSecondShellTower =>
           'Second-shell lanes use the same tower-click rule: tower bodies open tower controls while firing stays automatic.',
         LightcoreTutorialStep.upgradeFirstTowerToLevel3 =>
-          'The first upgrade is the recovery beat: enemies pressure the lane, Output Efficiency slips, and a tower level brings flow back.',
+          'The first stat rank is the recovery beat: enemies pressure the lane, Output Efficiency slips, and persistent tuning brings flow back.',
         LightcoreTutorialStep.raiseThreat =>
           'The upgraded tower is ready for more pressure. Start the starter-region challenge so stronger waves turn into better rewards.',
         LightcoreTutorialStep.pushNextArea =>
@@ -1836,7 +1836,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
           LightcoreTutorialStep.upgradeFirstTowerToLevel3 =>
             'The first anomaly wave dents the lane. Command routes Lumens into Hex 1 so the shell can recover instead of expanding too early.',
           LightcoreTutorialStep.raiseThreat =>
-            'Command opens Push Wave 5 directly from battle so the tuned tower gets a real wave to break.',
+            'Command starts Wave 5 automatically once the tuned tower is ready for real pressure.',
           LightcoreTutorialStep.pushNextArea =>
             'Wave 5 is under control, so command pushes the next route wave before opening another construction lane.',
           LightcoreTutorialStep.pullFirstWhiteEnemy =>

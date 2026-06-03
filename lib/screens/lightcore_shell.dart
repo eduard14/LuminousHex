@@ -1273,6 +1273,9 @@ class _LightcoreShellState extends State<LightcoreShell> {
                                       child: _OverallProgressBarPanel(
                                         controller: controller,
                                         compact: isCompactLayout,
+                                        towerSelected:
+                                            controller.selectedSlotOrNull !=
+                                            null,
                                       ),
                                     );
                                   },

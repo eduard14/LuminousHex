@@ -63,16 +63,21 @@ class _OverallProgressBarPanel extends StatelessWidget {
   const _OverallProgressBarPanel({
     required this.controller,
     required this.compact,
+    required this.towerSelected,
   });
 
   final LightcoreController controller;
   final bool compact;
+  final bool towerSelected;
 
   @override
   Widget build(BuildContext context) {
-    final bossTint =
-        controller.activeBossEnemyCard?.config.affinity.color ??
-        LightcorePalette.solar;
+    if (towerSelected) {
+      return const SizedBox.shrink();
+    }
+    final waveProgress = (controller.activeLayer.bestWaveReached / 10)
+        .clamp(0.0, 1.0)
+        .toDouble();
 
     return Column(
       children: [
@@ -104,14 +109,16 @@ class _OverallProgressBarPanel extends StatelessWidget {
         ),
         SizedBox(height: compact ? 6 : 8),
         _ProgressStrip(
-          value: controller.bossSpawnProgress,
-          color: bossTint,
+          value: waveProgress,
+          color: LightcorePalette.solar,
           compact: compact,
-          semanticsLabel: controller.bossSpawnStatusLabel,
-          trailing: Icon(
-            Icons.shield_moon_rounded,
-            size: compact ? 18 : 20,
-            color: controller.bossAlive ? LightcorePalette.warning : bossTint,
+          semanticsLabel: controller.activeLayerBestWaveLabel,
+          trailing: Text(
+            'Wave',
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              color: LightcorePalette.solar,
+              fontWeight: FontWeight.w900,
+            ),
           ),
         ),
       ],

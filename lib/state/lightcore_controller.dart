@@ -418,32 +418,32 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
   ),
   LightcoreTutorialStep.raiseThreat: LightcoreTutorialQuestDefinition(
     id: 'TUT-010A',
-    title: 'Push Wave 5',
+    title: 'Wave 5',
     teachGoal:
-        'When the first tower is tuned, push the next area wave so the battlefield gets busier and rewards climb.',
+        'When the first tower is tuned, the next area wave starts automatically so the battlefield gets busier and rewards climb.',
     trigger: 'First upgraded tower is clearing safely',
-    primaryClickTarget: 'Battlefield > Push Wave prompt > Push Wave 5',
+    primaryClickTarget: 'Battlefield > Wave 5',
     coachCopy:
-        'Start Push Wave 5 from the battlefield. It adds denser enemies and better rewards for the upgraded tower to handle.',
-    completionCondition: 'Starter-region Wave 5 push started',
+        'Wave 5 starts automatically when the first tower can handle denser enemies and better rewards.',
+    completionCondition: 'Starter-region Wave 5 started',
     reward: 'Threat Scan x1',
     failureHelpState:
-        'Use the compact Push Wave 5 prompt on the battle screen.',
+        'Tune the first tower and keep the lane stable so Wave 5 starts.',
     analyticsEvent: 'tutorial_raise_threat',
   ),
   LightcoreTutorialStep.pushNextArea: LightcoreTutorialQuestDefinition(
     id: 'TUT-010B',
-    title: 'Push Next Area',
+    title: 'Next Area Wave',
     teachGoal:
-        'After an upgrade holds the lane, push the next area wave to make the enemies harder again.',
+        'After an upgrade holds the lane, the next area wave starts automatically to make the enemies harder again.',
     trigger: 'Wave 5 is under control after the second tower upgrade',
-    primaryClickTarget: 'Battlefield > Push Wave prompt > Push Wave 10',
+    primaryClickTarget: 'Battlefield > Wave 10',
     coachCopy:
-        'Start Push Wave 10. The loop is upgrade, push a harder area, then upgrade again when pressure climbs.',
-    completionCondition: 'Starter-region Wave 10 push started',
+        'Wave 10 starts automatically. The loop is tune, hold a harder area, then tune again when pressure climbs.',
+    completionCondition: 'Starter-region Wave 10 started',
     reward: 'Threat Scan x1',
     failureHelpState:
-        'Use the compact Push Wave 10 prompt on the battle screen.',
+        'Tune the anchor tower and keep the lane stable so Wave 10 starts.',
     analyticsEvent: 'tutorial_push_next_area',
   ),
   LightcoreTutorialStep.pullFirstWhiteEnemy: LightcoreTutorialQuestDefinition(
@@ -498,8 +498,8 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
     trigger: 'Starter challenge pressure dents the opening lane again',
     primaryClickTarget: 'Tower Stats pop-out > Upgrade',
     coachCopy:
-        'Push Wave 5 pressed the lane harder. Upgrade Hex 1 again so the harder area becomes manageable.',
-    completionCondition: 'First tower reaches level 3',
+        'Wave 5 pressed the lane harder. Tune Hex 1 again so the harder area becomes manageable.',
+    completionCondition: 'First tower has two stat ranks',
     reward: 'Small Lumen grant',
     failureHelpState:
         'Open Hex 1 stats and use Upgrade when the Lumen cost is affordable.',
@@ -515,7 +515,7 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
     primaryClickTarget: 'Tower Stats pop-out > Upgrade',
     coachCopy:
         'Wave 10 overwhelmed Hex 1. Upgrade the anchor one more time; once flow recovers, Hex 2 opens for the next tower.',
-    completionCondition: 'First tower reaches level 4',
+    completionCondition: 'First tower has three stat ranks',
     reward: 'Hex 2 starter choice',
     failureHelpState:
         'Open Hex 1 controls and use the highlighted Upgrade button.',

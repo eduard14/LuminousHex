@@ -25,7 +25,7 @@ Lightcore is not a standard tower defense where every tower shoots. The center
 core is the only unit that fires directly. The six outer towers are relays that
 charge, package shot data, and feed ammo packets into the core queue.
 
-The player builds a six-slot shell, upgrades each outer tower to level 5, then
+The player builds a six-slot shell, tunes each outer tower stat board, then
 promotes the shell into a higher layer. Root-shell promotion creates a new
 higher-tier shell. Child-shell promotion forges one tower into a parent slot.
 Promoted lower shells stay inspectable as passive archives; the shell map marks
@@ -43,7 +43,7 @@ cadence, enemy strength, and reward bonuses.
 3. Let the highlighted starter anomaly be auto-targeted while the Lightcore and
    ready relays auto-feed packets into the core queue.
 4. Inspect the first tower's stats after the first shot lands, then upgrade it.
-5. Upgrade all built towers to level 5.
+5. Tune all built tower stat boards.
 6. Tune the encounter by changing the active anomaly deck and target count.
 7. Promote the finished shell.
 8. Re-enter child shells and repeat until higher-tier parent slots are forged.
@@ -108,7 +108,7 @@ cadence, enemy strength, and reward bonuses.
   controls, stats, and upgrades instead of firing or aiming a packet.
 - Higher shell classes inherit projectile and payload arsenals from the child shells
   beneath them instead of collapsing to one dominant shot type.
-- Source Tower and Root Shell Core max level is 5.
+- Source Towers use persistent stat boards; Root Shell Core max level is 5.
 - Sell value is 70 percent of invested Lumens.
 
 ### Naming conventions
@@ -220,7 +220,7 @@ Promotion is one of the least obvious systems in the project.
     final damage, boss damage, normal damage, defense penetration, min damage,
     and max damage
   - Extra bonuses from the child-shell upgrade board
-- Weighting is based on effective tower level, so higher-level contributors
+- Weighting is based on persistent tower tuning, so better-tuned contributors
   matter more.
 - Higher shell classes fire by cycling those inherited arsenals, so one mixed child can
   contaminate an otherwise pure parent build.

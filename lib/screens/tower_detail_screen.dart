@@ -154,14 +154,9 @@ class _TowerDetailContent extends StatelessWidget {
         tower.config?.affinity.color ??
         tower.childAffinity?.color ??
         LightcorePalette.layer2;
-    final isMaxed = tower.level >= LightcoreController.maxTowerLevel;
     final statRows = <_TowerStatRowData>[
       _TowerStatRowData(
-        label: 'Level',
-        value: '${tower.level}/${LightcoreController.maxTowerLevel}',
-      ),
-      _TowerStatRowData(
-        label: 'Stat Ranks',
+        label: 'Persistent Stats',
         value:
             '${controller.towerUpgradePointsSpent(tower)}/${controller.towerUpgradePointsCap(tower)}',
       ),
@@ -276,10 +271,8 @@ class _TowerDetailContent extends StatelessWidget {
         _ConsoleSection(
           title: 'Upgrade Board',
           subtitle: controller.isTowerComplete(tower)
-              ? 'Tower level and rolled stat ranks are complete. The board remains here for stat comparison.'
-              : isMaxed
-              ? 'Tower level is maxed. Finish rolled stat ranks to complete the tower.'
-              : 'Upgrade tower level separately from rolled stat ranks. Locked stats stay visible below for quick comparison.',
+              ? 'Persistent stat ranks are complete. The board remains here for stat comparison.'
+              : 'Persistent stat ranks are part of this tower roll. Locked stats stay visible below for quick comparison.',
           tint: LightcorePalette.solar,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -287,7 +280,6 @@ class _TowerDetailContent extends StatelessWidget {
               _TowerRankSummary(
                 controller: controller,
                 tower: tower,
-                slotIndex: slotIndex,
                 rolledCount: upgradeOptions.length,
                 lockedCount: lockedTypes.length,
                 tint: tint,
@@ -580,7 +572,6 @@ class _TowerRankSummary extends StatelessWidget {
   const _TowerRankSummary({
     required this.controller,
     required this.tower,
-    required this.slotIndex,
     required this.rolledCount,
     required this.lockedCount,
     required this.tint,
@@ -588,7 +579,6 @@ class _TowerRankSummary extends StatelessWidget {
 
   final LightcoreController controller;
   final OuterTowerState tower;
-  final int slotIndex;
   final int rolledCount;
   final int lockedCount;
   final Color tint;
@@ -599,9 +589,6 @@ class _TowerRankSummary extends StatelessWidget {
     final spent = controller.towerUpgradePointsSpent(tower);
     final remaining = controller.towerUpgradePointsRemaining(tower);
     final cap = controller.towerUpgradePointsCap(tower);
-    final isMaxed = tower.level >= LightcoreController.maxTowerLevel;
-    final isComplete = controller.isTowerComplete(tower);
-    final levelCost = controller.upgradeCost(tower);
 
     return Container(
       padding: const EdgeInsets.all(14),
@@ -619,12 +606,12 @@ class _TowerRankSummary extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(
-                  'Tower Rank',
+                  'Persistent Stat Board',
                   style: textTheme.titleMedium?.copyWith(color: tint),
                 ),
               ),
               Text(
-                '${tower.level}/${LightcoreController.maxTowerLevel}',
+                '$spent/$cap',
                 style: textTheme.titleMedium?.copyWith(
                   color: LightcorePalette.solar,
                 ),
@@ -632,32 +619,16 @@ class _TowerRankSummary extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 10),
-          MeterBar(
-            value: tower.level / LightcoreController.maxTowerLevel,
-            color: tint,
-            height: 12,
-          ),
+          MeterBar(value: cap <= 0 ? 1 : spent / cap, color: tint, height: 12),
           const SizedBox(height: 12),
           Wrap(
             spacing: 8,
             runSpacing: 8,
             children: [
-              _TowerInfoChip(label: 'Stats', value: '$spent/$cap', tint: tint),
               _TowerInfoChip(
                 label: 'Ranks Left',
                 value: '$remaining',
                 tint: LightcorePalette.solar,
-              ),
-              _TowerInfoChip(
-                label: tower.isFabricating ? 'Online' : 'Level Cost',
-                value: tower.isFabricating
-                    ? controller.towerFabricationRemainingLabel(tower)
-                    : isMaxed
-                    ? isComplete
-                          ? 'Complete'
-                          : 'Maxed'
-                    : '${levelCost}L',
-                tint: LightcorePalette.flare,
               ),
               _TowerInfoChip(
                 label: 'Rolled',
@@ -670,28 +641,6 @@ class _TowerRankSummary extends StatelessWidget {
                 tint: LightcorePalette.mist,
               ),
             ],
-          ),
-          const SizedBox(height: 12),
-          SizedBox(
-            width: double.infinity,
-            child: FilledButton.icon(
-              onPressed:
-                  !tower.isFabricating &&
-                      !isMaxed &&
-                      !controller.activeLayerPassiveOnly
-                  ? () => controller.upgradeTower(slotIndex)
-                  : null,
-              icon: const Icon(Icons.upgrade_rounded),
-              label: Text(
-                tower.isFabricating
-                    ? 'Fabricating ${controller.towerFabricationRemainingLabel(tower)}'
-                    : isMaxed
-                    ? isComplete
-                          ? 'Complete'
-                          : 'Level Max'
-                    : 'Tower Level • ${levelCost}L',
-              ),
-            ),
           ),
         ],
       ),

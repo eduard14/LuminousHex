@@ -132,7 +132,7 @@ const List<_HelpSectionData> _baseHelpSections = <_HelpSectionData>[
         'Shell Level: the level of the active shell core. Root Shell level uses Lumens. Child shell level grows when its child-tower tuning board is completed.\n\n'
         'Shell Class: the tier name of a shell. The current class order is Root Shell, Prism Shell, Nexus Shell, then Ascendant Shell.\n\n'
         'Perimeter Tower: any tower occupying one of the six edge slots around the core. Source Towers and Child Towers are both perimeter towers.\n\n'
-        'Source Tower: a buildable Root Shell perimeter tower. Each Source Tower has one Spectrum Band, one projectile family, no payload, a tower level, and a stat board.\n\n'
+        'Source Tower: a buildable Root Shell perimeter tower. Each Source Tower has one Spectrum Band, one projectile family, no payload, and a persistent stat board.\n\n'
         'Child Shell: a lower shell built inside a parent perimeter slot. It has its own core, perimeter slots, enemies, and tuning progress.\n\n'
         'Child Tower: the promoted result of a completed Child Shell. It occupies the parent perimeter slot, inherits projectile and payload traits from its Child Shell, and upgrades like a perimeter tower.\n\n'
         'Archived Shell: a completed lower shell that remains inspectable after promotion and can contribute passive support.',
@@ -158,7 +158,7 @@ const List<_HelpSectionData> _baseHelpSections = <_HelpSectionData>[
     title: 'Shell Classes and Alignment',
     summary: 'How seven lower shells align into one higher shell class.',
     body:
-        'A shell is not ready to merge just because all six outer slots are filled. Edge slots unlock from total EXP, beginning at 25, and Root Shell merging also requires every Source Tower to reach level 5. Merging is manual from the Layer 2 Components screen.\n\n'
+        'A shell is not ready to merge just because all six outer slots are filled. Edge slots unlock from total EXP, beginning at 25, and Root Shell merging also requires every Source Tower stat board to be tuned. Merging is manual from the Layer 2 Components screen.\n\n'
         'A higher shell is a seven-shell cluster: the source shell plus six edge anchors. Seven Root Shells make a Prism Shell, seven Prism Shells make a Nexus Shell, and seven Nexus Shells make the final Ascendant Shell.\n\n'
         'The first Layer 2 component merge unlocks payload results. Later shell classes deepen projectile and payload pools, but the farmable reward remains the component roll.\n\n'
         'Every active shell can run its own battle simulation. The viewed shell gets direct input, while background shells continue resolving their timers, pressure, and automated output.',

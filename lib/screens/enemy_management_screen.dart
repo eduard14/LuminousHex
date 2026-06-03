@@ -666,7 +666,7 @@ class _ThreatRegionMapPanelState extends State<_ThreatRegionMapPanel> {
                         detailState.stabilizedLevel >=
                                 detailRegion.stabilizationLayers
                             ? 'Cleared'
-                            : 'Push Wave ${(detailState.stabilizedLevel + 1) * 5}',
+                            : 'Start Wave ${(detailState.stabilizedLevel + 1) * 5}',
                       ),
                     ),
                   ),
