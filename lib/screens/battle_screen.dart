@@ -18,6 +18,7 @@ import '../widgets/aurora_panel.dart';
 import '../widgets/layer_one_component_forecast_panel.dart';
 import '../widgets/meter_bar.dart';
 import '../widgets/symbol_grid_tile.dart';
+import '../widgets/tower_health_bar.dart';
 import '../widgets/tower_ring_icon.dart';
 import 'tower_detail_screen.dart';
 
@@ -1363,10 +1364,15 @@ class _LiveTowerUpgradePanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
-    final tint = tower.config?.affinity.color ?? LightcorePalette.layer2;
+    final tint =
+        tower.config?.affinity.color ??
+        tower.childAffinity?.color ??
+        LightcorePalette.layer2;
     final upgradeOptions = controller.towerUpgradeOptionsFor(tower);
     final spent = controller.towerUpgradePointsSpent(tower);
     final cap = controller.towerUpgradePointsCap(tower);
+    final healthLabel = controller.towerHealthLabel(tower);
+    final healthValue = controller.towerHealthFraction(tower);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1405,6 +1411,13 @@ class _LiveTowerUpgradePanel extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 10),
+        TowerHealthBar(
+          value: healthValue,
+          label: healthLabel,
+          color: tint,
+          height: 10,
+        ),
+        const SizedBox(height: 12),
         Wrap(
           spacing: 8,
           runSpacing: 8,

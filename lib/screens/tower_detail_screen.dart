@@ -6,6 +6,7 @@ import '../state/lightcore_controller.dart';
 import '../theme/lightcore_palette.dart';
 import '../widgets/aurora_panel.dart';
 import '../widgets/meter_bar.dart';
+import '../widgets/tower_health_bar.dart';
 import '../widgets/tower_ring_icon.dart';
 import '../widgets/tower_pattern_bonus_panel.dart';
 
@@ -174,8 +175,8 @@ class _TowerDetailContent extends StatelessWidget {
         value: '${controller.towerLiveCooldown(tower).toStringAsFixed(2)}s',
       ),
       _TowerStatRowData(
-        label: 'Lane Load',
-        value: '${(controller.towerDisruptionFraction(tower) * 100).round()}%',
+        label: 'Tower Health',
+        value: controller.towerHealthLabel(tower),
       ),
       _TowerStatRowData(
         label: 'Shell Manager',
@@ -391,6 +392,8 @@ class _TowerPortraitPanel extends StatelessWidget {
     final textTheme = Theme.of(context).textTheme;
     final chargeLabel =
         '${(tower.charge * 100).clamp(0, 100).toStringAsFixed(0)}%';
+    final healthLabel = controller.towerHealthLabel(tower);
+    final healthValue = controller.towerHealthFraction(tower);
     final title = controller.towerDisplayName(tower);
     final summary =
         tower.config?.summary ??
@@ -503,7 +506,12 @@ class _TowerPortraitPanel extends StatelessWidget {
           const SizedBox(height: 14),
           Text(traitSummary, style: textTheme.bodyMedium),
           const SizedBox(height: 14),
-          MeterBar(value: tower.charge.clamp(0, 1), color: tint, height: 12),
+          TowerHealthBar(
+            value: healthValue,
+            label: healthLabel,
+            color: tint,
+            height: 12,
+          ),
           const SizedBox(height: 10),
           Wrap(
             spacing: 8,

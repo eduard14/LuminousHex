@@ -178,14 +178,14 @@ climbing.
   folding the active battlefield or opening tower placement.
 - Manager automation upgrades core fire into hands-off target routing without
   adding manual target overrides.
-- Combat rewards charge flow, tower placement, and keeping lanes stable.
+- Combat rewards charge cadence, tower placement, and keeping lanes stable.
 - Output Efficiency pressure system replaces a simple health-loss fail state.
-- Lane disruption reduces rewards and charge flow when anomalies reach the ring.
+- Lane disruption reduces rewards and Tower Health when anomalies reach the ring.
 - Manual Overdrive accelerates the live shell battle.
 - Automatic targeting briefly prioritizes dangerous anomalies during active
   challenges and live farming.
 - Lumo/Luma loading interstitials can show short non-blocking flavor tips such
-  as balancing growth, flow, and Output Efficiency.
+  as balancing growth, Tower Health, and Output Efficiency.
 - Screen transitions, event-run loading, and major shell area transitions use the
   same fullscreen branded Lightcore loading interstitial with generic loading
   status, Lumo/Luma background art, and short tip text. App startup shows

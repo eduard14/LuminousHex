@@ -220,7 +220,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         charge: min(firstTower.charge, 0.28),
       );
       _showBanner(
-        'Challenge waves hit harder. Reinforce Hex 1 to bring flow back under control.',
+        'Challenge waves hit harder. Reinforce Hex 1 to bring Tower Health back under control.',
         category: LightcoreNotificationCategory.battle,
         duration: 3.4,
       );
@@ -807,7 +807,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
     LightcoreTutorialStep.pullFirstWhiteEnemy =>
       'Safe signature added. Threat Scans shape the encounter, not your tower roster.',
     LightcoreTutorialStep.readEffectiveGain =>
-      'Flow mapped. Better threats only matter when Output Efficiency stays healthy.',
+      'Tower Health mapped. Better threats only matter when Output Efficiency stays healthy.',
     LightcoreTutorialStep.assignTowerManager =>
       'Manager assigned. Core fire now runs with better automation.',
     LightcoreTutorialStep.managerAutoAim =>
@@ -815,7 +815,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
     LightcoreTutorialStep.upgradeFirstTowerToLevel4 =>
       'Opening lane reinforced. Strong anchors handle denser pressure better.',
     LightcoreTutorialStep.upgradeFirstTowerToLevel5 =>
-      'Flow restored. Hex 2 is ready for the next tower decision.',
+      'Tower Health restored. Hex 2 is ready for the next tower decision.',
     LightcoreTutorialStep.buildSecondStarterTower =>
       'Hex 2 online. The opening loop can now grow into multi-tower coverage.',
     LightcoreTutorialStep.pullFirstRedEnemy =>
@@ -1742,7 +1742,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         LightcoreTutorialStep.waitForFirstHex =>
           'Hex 1 opens with the shell now, so the first lesson moves straight into selecting a lane and building.',
         LightcoreTutorialStep.selectFirstHex =>
-          'Command opens the shell one lane at a time so flow stays stable while the relay network comes online.',
+          'Command opens the shell one lane at a time so Tower Health stays stable while the relay network comes online.',
         LightcoreTutorialStep.buildFirstRedTower =>
           'Tower projectile families matter. Comet Mortar opens with area pressure, while Rayline Spire opens with steady single-target pressure.',
         LightcoreTutorialStep.focusFirstEnemy =>
@@ -1750,7 +1750,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         LightcoreTutorialStep.inspectSecondShellTower =>
           'Second-shell lanes use the same tower-click rule: tower bodies open tower controls while firing stays automatic.',
         LightcoreTutorialStep.upgradeFirstTowerToLevel3 =>
-          'The first stat rank is the recovery beat: enemies pressure the lane, Output Efficiency slips, and persistent tuning brings flow back.',
+          'The first stat rank is the recovery beat: enemies pressure the lane, Output Efficiency slips, and persistent tuning restores Tower Health.',
         LightcoreTutorialStep.raiseThreat =>
           'The upgraded tower is ready for more pressure. Start the starter-region challenge so stronger waves turn into better rewards.',
         LightcoreTutorialStep.pushNextArea =>
@@ -1766,7 +1766,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         LightcoreTutorialStep.upgradeFirstTowerToLevel5 =>
           'The second challenge repeats the core loop: harder pressure first, then another anchor upgrade before expansion.',
         LightcoreTutorialStep.buildSecondStarterTower =>
-          'Expansion comes after stabilization. Hex 2 adds coverage once the player has seen enemies attack, harder areas overwhelm, and upgrades restore flow.',
+          'Expansion comes after stabilization. Hex 2 adds coverage once the player has seen enemies attack, harder areas overwhelm, and upgrades restore Tower Health.',
         LightcoreTutorialStep.pullFirstRedEnemy =>
           'Same-color attacks are resisted. Red anomalies punish overcommitting to one color and unlock the full counter system.',
         LightcoreTutorialStep.setFirstEnemyTarget =>

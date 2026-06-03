@@ -13,6 +13,7 @@ import '../widgets/layer_one_component_forecast_panel.dart';
 import '../widgets/lightcore_info_button.dart';
 import '../widgets/meter_bar.dart';
 import '../widgets/symbol_grid_tile.dart';
+import '../widgets/tower_health_bar.dart';
 import '../widgets/tower_ring_icon.dart';
 import 'tower_detail_screen.dart';
 
@@ -784,6 +785,8 @@ class _BuiltSlotCard extends StatelessWidget {
         slot.config?.affinity.color ??
         slot.childAffinity?.color ??
         LightcorePalette.layer2;
+    final healthLabel = controller.towerHealthLabel(slot);
+    final healthValue = controller.towerHealthFraction(slot);
     final isProject = controller.isSlotLayerProject(slot);
     final isPromoted = slot.isPromotedChildTower;
     final isFabricating = slot.isFabricating;
@@ -992,12 +995,12 @@ class _BuiltSlotCard extends StatelessWidget {
                   value: controller.towerCritLabel(slot),
                 ),
               _MetricTile(
-                label: isProject ? 'Target' : 'Load',
+                label: isProject ? 'Target' : 'Health',
                 value: isProject
                     ? 'Inner shell'
                     : isFabricating
                     ? 'Fabricating'
-                    : '${(controller.towerDisruptionFraction(slot) * 100).round()}%',
+                    : healthLabel,
               ),
               _MetricTile(
                 label: 'Core Manager',
@@ -1014,6 +1017,15 @@ class _BuiltSlotCard extends StatelessWidget {
                 ),
             ],
           ),
+          if (!isProject && !isFabricating) ...[
+            const SizedBox(height: 14),
+            TowerHealthBar(
+              value: healthValue,
+              label: healthLabel,
+              color: tint,
+              height: 10,
+            ),
+          ],
           const SizedBox(height: 14),
           MeterBar(value: progressValue, color: tint),
           if (isFabricating) ...[

@@ -368,7 +368,7 @@ class CardLibrary {
   ) => _manager(
     id: id,
     name: name,
-    roleLabel: 'Flow Manager',
+    roleLabel: 'Cadence Manager',
     mechanic: '+30% charge rate. Turns a relay into a packet printer.',
     focus: focus,
     boardBonus: boardBonus,
@@ -484,7 +484,7 @@ class CardLibrary {
   ) => _manager(
     id: id,
     name: name,
-    roleLabel: 'Flow Manager',
+    roleLabel: 'Cadence Manager',
     mechanic:
         'Stacks efficient charge routing with weaker direct damage gains.',
     focus: focus,

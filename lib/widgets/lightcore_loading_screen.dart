@@ -8,7 +8,7 @@ import '../theme/lightcore_palette.dart';
 import 'cosmic_guide_avatar.dart';
 
 const List<String> _defaultLoadingTips = <String>[
-  'The optimal growth strategy may not be 100% flow.',
+  'The optimal growth strategy may not be 100% damage.',
   'Output Efficiency can beat raw reward boosts when stability starts slipping.',
   'Threat Scans are safer when your tower colors already counter the region.',
 ];

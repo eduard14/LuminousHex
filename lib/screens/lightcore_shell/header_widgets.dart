@@ -622,7 +622,7 @@ extension on _ShellOverlayDestination {
     ],
     _ShellOverlayDestination.managers => const [
       'Managers improve auto-fire, but enemy focus clicks still help during pressure spikes.',
-      'A well-matched manager can smooth charge flow across a weaker tower lane.',
+      'A well-matched manager can smooth charge cadence across a weaker tower lane.',
     ],
     _ShellOverlayDestination.advancement => const [
       'Complete shell layers become the foundation for deeper prism structures.',

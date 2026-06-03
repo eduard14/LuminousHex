@@ -213,6 +213,7 @@ void main() {
     expect(find.text('Best Wave'), findsNothing);
     expect(find.textContaining('Persistent Stats 0/'), findsOneWidget);
     expect(find.textContaining('Layer 2 Lv 1'), findsOneWidget);
+    expect(find.text('Tower Health'), findsOneWidget);
     expect(find.text('Persistent Stat Upgrades'), findsOneWidget);
     expect(find.textContaining('Layer 1 Tower Level'), findsNothing);
     expect(find.textContaining('Charge Rate'), findsWidgets);

@@ -405,11 +405,11 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
     id: 'TUT-009',
     title: 'Reinforce Hex 1',
     teachGoal:
-        'When anomalies push through, Output Efficiency drops. Upgrading the active tower holds the lane and restores flow.',
+        'When anomalies push through, Output Efficiency drops. Upgrading the active tower restores Tower Health and holds the lane.',
     trigger: 'First anomaly pressure dents the opening lane',
     primaryClickTarget: 'Tower Stats pop-out > Upgrade',
     coachCopy:
-        'Hex 1 just took pressure. Upgrade the first tower to recover flow before taking on a harder area.',
+        'Hex 1 just took pressure. Upgrade the first tower to recover Tower Health before taking on a harder area.',
     completionCondition: 'First tower reaches level 2',
     reward: 'Small Lumen grant',
     failureHelpState:
@@ -462,7 +462,7 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
   ),
   LightcoreTutorialStep.readEffectiveGain: LightcoreTutorialQuestDefinition(
     id: 'TUT-011',
-    title: 'Check Flow',
+    title: 'Check Efficiency',
     teachGoal:
         'Output Efficiency is the real farming limiter. Bigger threats only help when your shell stays stable enough to cash them in.',
     trigger: 'After first research scan',
@@ -510,11 +510,11 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
     id: 'TUT-013B',
     title: 'Hold the Lane Again',
     teachGoal:
-        'The next challenge should overwhelm the current setup briefly. Upgrading the anchor tower restores flow and opens expansion.',
+        'The next challenge should overwhelm the current setup briefly. Upgrading the anchor tower restores Tower Health and opens expansion.',
     trigger: 'Wave 10 pressure dents the opening lane',
     primaryClickTarget: 'Tower Stats pop-out > Upgrade',
     coachCopy:
-        'Wave 10 overwhelmed Hex 1. Upgrade the anchor one more time; once flow recovers, Hex 2 opens for the next tower.',
+        'Wave 10 overwhelmed Hex 1. Upgrade the anchor one more time; once Tower Health recovers, Hex 2 opens for the next tower.',
     completionCondition: 'First tower has three stat ranks',
     reward: 'Hex 2 starter choice',
     failureHelpState:

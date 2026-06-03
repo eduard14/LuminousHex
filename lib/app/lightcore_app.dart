@@ -1768,7 +1768,7 @@ class _LightcoreAppState extends State<LightcoreApp>
           signalLabels: ['OPEN', 'LOAD', 'SHOW'],
           guide: _guideProfile ?? LightcoreGuideProfile.lumo,
           tips: const [
-            'The optimal growth strategy may not be 100% flow.',
+            'The optimal growth strategy may not be 100% damage.',
             'Output Efficiency can beat raw reward boosts when stability starts slipping.',
             'Threat Scans are safer when your tower colors already counter the region.',
             'Managers keep packets moving, but enemy focus clicks still bail out pressure spikes.',

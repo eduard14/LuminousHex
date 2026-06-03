@@ -771,6 +771,16 @@ extension LightcoreControllerTowerMath on LightcoreController {
     return min(0.82, tower.disruption.clamp(0, 1.2) * 0.68);
   }
 
+  double towerHealthFraction(OuterTowerState tower) {
+    if (!_slotCountsTowardRing(tower)) {
+      return tower.isBuilt ? 1 : 0;
+    }
+    return (1 - towerDisruptionFraction(tower)).clamp(0.0, 1.0).toDouble();
+  }
+
+  String towerHealthLabel(OuterTowerState tower) =>
+      '${(towerHealthFraction(tower) * 100).round()}%';
+
   double towerBaseRange(OuterTowerState tower) {
     if (!tower.isBuilt) {
       return 0;
