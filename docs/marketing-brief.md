@@ -77,8 +77,8 @@ climbing.
 - Opening combat is low-friction: shots auto-charge after the player presses Play,
   Hex 1 is immediately selectable, and generated shots auto-target anomalies
   without a tap-to-queue requirement.
-- Opening anomalies enter from randomized perimeter angles instead of uniform
-  lanes, with the first wave kept inside starter core range.
+- Anomalies enter from randomized points outside the battle radius instead of
+  uniform lanes, then move inward faster with a subtler spiral.
 - The first tower/auto-target/upgrade loop grants enough starter Lumens to move
   from build to the first upgrade without idle grinding.
 - The opening shell is wave-gated instead of tutorial-gated: the player starts

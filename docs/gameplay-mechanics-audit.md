@@ -57,9 +57,9 @@ cadence, enemy strength, and reward bonuses.
 - The center core is the only direct attacker. Early play auto-generates
   `AmmoPacket` entries after the player presses Play, then shots auto-target
   anomalies without making the player manually queue or aim core shots.
-- Automatic spawns use randomized perimeter angles. The first opening spawns
-  use a closer radius band so starter core shots can target and kill without a
-  manual focus tap.
+- Automatic spawns use randomized perimeter angles and the same outer radius
+  band from the first enemy onward. Enemy movement is tuned toward faster inward
+  pressure with less angular spiral drift.
 - The active tutorial stays as a compact, click-to-expand quest notification on
   the battlefield. The collapsed notification names the next action while the
   battlefield highlight and click gesture point at the target.

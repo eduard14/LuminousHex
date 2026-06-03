@@ -699,22 +699,6 @@ extension LightcoreControllerCombatEnemies on LightcoreController {
   double _randomSpawnAngle() => _spawnRandom.nextDouble() * pi * 2;
 
   double _randomSpawnRadius({int? spawnSequence}) {
-    if (spawnSequence != null &&
-        spawnSequence < _openingRangeProximitySpawnCount) {
-      final openingMaxRadius = min(
-        spawnRadius,
-        max(_relayImpactRadius + 80, coreEffectiveRange - 12),
-      );
-      final openingMinRadius = min(
-        openingMaxRadius,
-        max(_relayImpactRadius + 64, openingMaxRadius - 52),
-      );
-      return (openingMinRadius +
-              (_spawnRandom.nextDouble() *
-                  max(0.0, openingMaxRadius - openingMinRadius)))
-          .clamp(_relayImpactRadius + 40, openingMaxRadius)
-          .toDouble();
-    }
     final floorRadius = _spawnRadiusFloorForSequence(spawnSequence);
     return (floorRadius +
             (_spawnRandom.nextDouble() * _spawnRadiusBandVariance))
@@ -722,16 +706,7 @@ extension LightcoreControllerCombatEnemies on LightcoreController {
         .toDouble();
   }
 
-  double _spawnRadiusFloorForSequence(int? spawnSequence) {
-    if (spawnSequence == null ||
-        spawnSequence >= _openingRangeProximitySpawnCount) {
-      return spawnRadius;
-    }
-    return min(
-      spawnRadius,
-      defaultTowerBaseRange + _openingRangeProximityBuffer,
-    ).toDouble();
-  }
+  double _spawnRadiusFloorForSequence(int? spawnSequence) => spawnRadius;
 
   double _spawnRadiusWithJitter(
     double radius,
@@ -835,6 +810,7 @@ extension LightcoreControllerCombatEnemies on LightcoreController {
                     ) +
                     angularJitter,
               ) *
+              0.52 *
               (splitDepth > 0 ? 1.18 : 1) *
               (config.isBoss ? 0.82 : 1.0)
         : 0.0;

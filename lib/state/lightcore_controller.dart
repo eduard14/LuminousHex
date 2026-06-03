@@ -989,10 +989,6 @@ const double _spawnRadiusBandSpacing =
 const int _spawnRadiusBandCount = LightcoreController._spawnRadiusBandCount;
 const double _spawnCrowdRadiusPerEnemy =
     LightcoreController._spawnCrowdRadiusPerEnemy;
-const int _openingRangeProximitySpawnCount =
-    LightcoreController._openingRangeProximitySpawnCount;
-const double _openingRangeProximityBuffer =
-    LightcoreController._openingRangeProximityBuffer;
 const double _spawnClusterAngleStep =
     LightcoreController._spawnClusterAngleStep;
 const double _spawnClusterRadiusJitter =
@@ -1364,8 +1360,6 @@ class LightcoreController extends ChangeNotifier {
   static const double _spawnRadiusBandSpacing = 20;
   static const int _spawnRadiusBandCount = 4;
   static const double _spawnCrowdRadiusPerEnemy = 14;
-  static const int _openingRangeProximitySpawnCount = initialEnemyTarget;
-  static const double _openingRangeProximityBuffer = 58;
   static const double _spawnClusterAngleStep = 0.052;
   static const double _spawnClusterRadiusJitter = 10;
   static const double _relayImpactRadius = 102;
@@ -1386,8 +1380,8 @@ class LightcoreController extends ChangeNotifier {
   static const double _bossBaseDefenseScale = 0.62;
   static const double _bossTierDefenseScaleStep = 0.04;
   static const double _bossSpeedScale = 0.74;
-  static const double _defaultEnemyMovementSpeedMultiplier = 1.32;
-  static const double _enemyAngularDriftCapPerSecond = 0.42;
+  static const double _defaultEnemyMovementSpeedMultiplier = 1.55;
+  static const double _enemyAngularDriftCapPerSecond = 0.24;
   static const double _yellowBlinkFirstSeconds = 1.6;
   static const double _yellowBlinkIntervalSeconds = 3.1;
   static const double _yellowBlinkAngleShift = 0.34;

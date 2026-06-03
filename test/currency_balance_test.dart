@@ -79,7 +79,7 @@ void main() {
       controller,
       () => controller.shots.isNotEmpty || controller.kills > 0,
       reason: 'core did not auto-fire after Play',
-      steps: 80,
+      steps: 260,
       dt: 0.1,
     );
     expect(controller.focusedEnemyId, isNull);
