@@ -81,7 +81,7 @@ class LayerOneComponentForecastPanel extends StatelessWidget {
                 icon: Icons.waves_rounded,
               ),
               _ForecastChip(
-                label: 'Tier ${controller.activeLayerComponentStatTier}',
+                label: controller.activeLayerComponentLevelLabel,
                 tint: LightcorePalette.solar,
                 icon: Icons.military_tech_rounded,
               ),
@@ -159,8 +159,8 @@ class LayerOneComponentForecastPanel extends StatelessWidget {
                     value: controller.activeLayerBestWaveLabel,
                   ),
                   _DialogLine(
-                    label: 'Stat tier',
-                    value: 'Tier ${controller.activeLayerComponentStatTier}',
+                    label: 'Layer 2 level',
+                    value: controller.activeLayerComponentLevelLabel,
                   ),
                   _DialogLine(
                     label: 'Subtraits',
@@ -191,7 +191,7 @@ class LayerOneComponentForecastPanel extends StatelessWidget {
                   ],
                   const SizedBox(height: 12),
                   Text(
-                    'Composition controls projectile and payload odds. Best wave controls stat tier and subtrait count.',
+                    'Composition controls projectile and payload odds. Best wave controls Layer 2 level and subtrait count.',
                     style: textTheme.bodySmall?.copyWith(
                       color: LightcorePalette.mist.withValues(alpha: 0.72),
                     ),

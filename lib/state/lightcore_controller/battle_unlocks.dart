@@ -7,15 +7,15 @@ extension LightcoreControllerBattleUnlocks on LightcoreController {
     }
     final manager = cardForSlot(tower);
     if (manager != null) {
-      return '${manager.name} is already automating ready shots on this shell.';
+      return '${manager.name} is already automating core fire on this shell.';
     }
     if (!_slotCountsTowardRing(tower)) {
       return tower.isLayerProject
-          ? 'Open this child shell and build it before it can add ready shots.'
+          ? 'Open this child shell and build it before it can add core fire.'
           : 'Anchor this hex before it can fire.';
     }
     if (_ammoQueue.length >= coreQueueCapacity) {
-      return 'Ready shots full. Click an anomaly to focus fire or upgrade shot capacity.';
+      return 'Core charge full. Click an anomaly to focus fire or upgrade charge buffer.';
     }
     if (tower.cooldownRemaining > 0) {
       return '${towerDisplayName(tower)} is cycling for ${tower.cooldownRemaining.toStringAsFixed(1)}s.';

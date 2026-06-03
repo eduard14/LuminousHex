@@ -66,7 +66,7 @@ class CardManagementScreen extends StatelessWidget {
                 LightcoreInfoButton(
                   title: 'Main Manager Help',
                   message: controller.managerAssignmentUnlocked
-                      ? 'Assign one Core Manager to the shell to automate ready shots. Threat Directors attach to revealed regions and tune the current spawn, enemy strength, and reward bonuses.'
+                      ? 'Assign one Core Manager to the shell to automate core fire. Threat Directors attach to revealed regions and tune the current spawn, enemy strength, and reward bonuses.'
                       : 'Manager assignment unlocks when this Layer 1 shell has all ${LightcoreController.slotCount} outer towers online. Flux still banks now so the foundry is ready when it opens.',
                   tint: LightcorePalette.aether,
                 ),

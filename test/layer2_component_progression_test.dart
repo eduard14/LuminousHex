@@ -86,10 +86,11 @@ void main() {
       'Build towers to shape a component',
     );
     expect(controller.activeLayerComponentStatTier, 1);
+    expect(controller.activeLayerComponentLevel, 0);
     expect(controller.activeLayerExpectedSubtraitCount, 1);
     expect(
       controller.activeLayerNextComponentTierLabel,
-      'Reach Wave 10 for 2 subtraits',
+      'Reach Wave 10 for Layer 2 Lv 1',
     );
 
     _preparePureRing(controller, TowerLibrary.orangePrism, bestWave: 10);
@@ -100,6 +101,7 @@ void main() {
     );
     expect(controller.activeLayerBestWaveLabel, 'Best Wave 10');
     expect(controller.activeLayerComponentStatTier, 10);
+    expect(controller.activeLayerComponentLevel, 1);
     expect(controller.activeLayerExpectedSubtraitCount, 2);
     expect(
       controller.activeLayerNextComponentTierLabel,
@@ -109,6 +111,7 @@ void main() {
     controller.activeLayer.bestWaveReached = 25;
 
     expect(controller.activeLayerComponentStatTier, 25);
+    expect(controller.activeLayerComponentLevel, 2);
     expect(controller.activeLayerExpectedSubtraitCount, 3);
     expect(
       controller.activeLayerNextComponentTierLabel,

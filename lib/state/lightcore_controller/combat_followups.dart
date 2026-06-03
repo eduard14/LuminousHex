@@ -204,7 +204,7 @@ extension LightcoreControllerCombatFollowups on LightcoreController {
         emptyLane: true,
       );
       _showBanner(
-        'Empty lane ${slotIndex + 1} disrupted one ready shot and bruised Core Stability.',
+        'Empty lane ${slotIndex + 1} disrupted core charge and bruised Core Stability.',
         category: LightcoreNotificationCategory.battle,
       );
     }

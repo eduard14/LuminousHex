@@ -235,7 +235,7 @@ class _AdvancementScreenState extends State<AdvancementScreen> {
 }
 
 const String _advancementPathHelp =
-    'Layer 1 tower composition creates Layer 2 components. Projectile and payload roll independently from the completed tower mix, while the best reached wave sets the component stat tier and subtrait count.\n\nCompleted lower shells remain inspectable as source history. The current shell scaffold still opens higher construction space, but the farmable reward is the Layer 2 component roll.';
+    'Layer 1 tower composition creates Layer 2 components. Projectile and payload roll independently from the completed tower mix, while the best reached wave sets the component Layer 2 level and subtrait count.\n\nCompleted lower shells remain inspectable as source history. The current shell scaffold still opens higher construction space, but the farmable reward is the Layer 2 component roll.';
 
 const String _promotionRulesHelp =
     'Component merges require all six edge towers at max level. Pure tower mixes produce pure projectile and payload odds; mixed colors can create combinations such as one color projectile with another color payload. Higher Layer 1 waves improve the generated component tier.';
@@ -413,7 +413,7 @@ class _Layer2ComponentInventoryCard extends StatelessWidget {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        'Wave ${component.reachedWave} • Tier ${component.statTier} • Scroll ${component.scrollLevel}',
+                        'Wave ${component.reachedWave} • Layer 2 Lv ${component.reachedWave ~/ 10} • Scroll ${component.scrollLevel}',
                         style: textTheme.bodySmall?.copyWith(
                           color: LightcorePalette.mist.withValues(alpha: 0.72),
                         ),

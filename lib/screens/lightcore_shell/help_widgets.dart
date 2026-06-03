@@ -97,10 +97,10 @@ const List<_HelpSectionData> _baseHelpSections = <_HelpSectionData>[
   _HelpSectionData(
     id: 'focus-fire-lanes',
     title: 'Focus Fire and Lanes',
-    summary: 'How ready shots, anomaly focus, and lane pressure fit together.',
+    summary: 'How core charge, anomaly focus, and lane pressure fit together.',
     body:
         'Core Stability is the hidden pressure value from 0 to 100. Output Efficiency is the visible multiplier derived from that stability, and Effective Gain is Base Gain x Threat Reward x Output Efficiency.\n\n'
-        'Ready shots charge automatically. Click an anomaly to focus the next shot there, or let a Core Manager automate firing later. The compact ready-shot indicator appears only when shots are available; empty slot management stays off the battlefield.\n\n'
+        'Core fire charges automatically. Click an anomaly to focus the next shot there, or let a Core Manager automate firing later. The battle HUD stays focused on wave progress, tower upgrades, and lane pressure instead of ammo queue management.\n\n'
         'A lane is the approach corridor tied to each outer hex. When anomalies break through a corridor, they jam that lane and slow the prism assigned to it. Repeated lane hits shake Core Stability, and Output Efficiency recovers over time through recovery stats and stable builds.',
   ),
   _HelpSectionData(

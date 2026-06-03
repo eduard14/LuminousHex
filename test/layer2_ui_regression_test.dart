@@ -35,7 +35,7 @@ void main() {
       expect(find.text('Layer 1 Component Forecast'), findsOneWidget);
       expect(find.text('Ready to Create Layer 2 Component'), findsOneWidget);
       expect(find.text('Best Wave 25'), findsOneWidget);
-      expect(find.text('Tier 25'), findsOneWidget);
+      expect(find.text('Layer 2 Lv 2'), findsOneWidget);
       expect(find.text('3 subtraits'), findsOneWidget);
       final createPrismButton = find.text('Create Layer 2 Component');
       final advancementScroll = find.byKey(
@@ -61,8 +61,8 @@ void main() {
       await pumpFixedFrame(tester);
 
       expect(find.text('Layer 1 Component Forecast'), findsWidgets);
-      expect(find.text('Stat tier'), findsOneWidget);
-      expect(find.text('Tier 25'), findsWidgets);
+      expect(find.text('Layer 2 level'), findsOneWidget);
+      expect(find.text('Layer 2 Lv 2'), findsWidgets);
 
       await tester.tap(find.text('Close'));
       await pumpFixedFrame(tester);
@@ -122,7 +122,7 @@ void main() {
     expect(find.text('Layer 1 Component Forecast'), findsOneWidget);
     expect(find.text('Need 5 more towers'), findsOneWidget);
     expect(find.text('Best Wave 1'), findsOneWidget);
-    expect(find.text('Tier 1'), findsOneWidget);
+    expect(find.text('Layer 2 Lv 0'), findsOneWidget);
     expect(find.text('Red 100%'), findsWidgets);
   });
 }

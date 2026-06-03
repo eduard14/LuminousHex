@@ -909,6 +909,12 @@ extension LightcoreControllerStateAccessors on LightcoreController {
 
   int get activeLayerComponentStatTier => max(1, activeLayer.bestWaveReached);
 
+  int get activeLayerComponentLevel =>
+      max(0, activeLayerComponentStatTier ~/ 10);
+
+  String get activeLayerComponentLevelLabel =>
+      'Layer 2 Lv $activeLayerComponentLevel';
+
   int get activeLayerExpectedSubtraitCount {
     final tier = activeLayerComponentStatTier;
     if (tier >= 25) {
@@ -926,7 +932,7 @@ extension LightcoreControllerStateAccessors on LightcoreController {
   String get activeLayerNextComponentTierLabel {
     final wave = max(1, activeLayer.bestWaveReached);
     if (wave < 10) {
-      return 'Reach Wave 10 for 2 subtraits';
+      return 'Reach Wave 10 for Layer 2 Lv 1';
     }
     if (wave < 25) {
       return 'Reach Wave 25 for 3 subtraits';

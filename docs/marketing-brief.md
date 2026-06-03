@@ -61,7 +61,7 @@ climbing.
    the best completed farm wave for offline rewards.
 9. Defeat normal anomalies to prime Apex Anomaly encounters.
 10. Merge completed Layer 1 shells into Layer 2 components with independent
-   projectile and payload rolls, wave-based stat tiers, and random subtraits.
+   projectile and payload rolls, wave-based Layer 2 levels, and random subtraits.
 11. Equip farmed Layer 2 components to Threat Map areas, upgrade standout rolls
    with Component Scrolls from Layer 2+ boss clears, and dismantle bad rolls
    into more scrolls.
@@ -76,8 +76,8 @@ climbing.
 - Relay towers charge shots into the Lightcore instead of asking the player to
   manually queue or drag ammo.
 - Opening combat is low-friction: shots auto-charge after the Lightcore wakes,
-  Hex 1 is immediately selectable, then the player clicks an anomaly before any
-  ready-shot queue appears and the next generated shot fires there.
+  Hex 1 is immediately selectable, then the player clicks an anomaly to focus
+  fire while the next generated shot fires there.
 - The first focus-fire lesson guarantees a visible starter anomaly so the
   player can act immediately after the first relay comes online.
 - The first tower/focus/upgrade loop grants enough starter Lumens to move from
@@ -94,7 +94,12 @@ climbing.
   while the player is still learning the opening loop.
 - Layer 1 now exposes a Component Forecast in battle, tower management, and the
   Layer 2 Components screen so players can see current projectile odds, payload
-  odds, best wave, stat tier, and expected subtraits before merging.
+  odds, best wave, Layer 2 level, and expected subtraits before merging.
+- The battlefield now keeps a compact wave HUD visible, including the early
+  `Wave 10 -> Layer 2 Lv 1` seed goal, so the Layer 1 push has a clear target.
+- Selecting a built tower now opens its level and rolled stat upgrade board on
+  the battlefield, making fire-rate, damage, range, multishot-adjacent, and
+  other wave-by-wave upgrades visible without hunting through a detail modal.
 - Layer 2 Components now have a production inventory: players can sort farmed
   rolls, favorite keepers, assign one component per revealed Threat Map area,
   upgrade them with Component Scrolls, and dismantle unwanted rolls.
@@ -133,10 +138,10 @@ climbing.
 - Red tower badges use a comet-shaped projectile glyph, not a circular marker
   that can read as a numeric level.
 - First-session battle HUD panels hide empty payload rows and payload sub-pips,
-  keeping the early combat read focused on projectile choice, ready shots, and
-  anomaly focus.
+  keeping the early combat read focused on projectile choice, wave progress,
+  tower upgrades, and anomaly focus.
 - Manager-less shells now call the opening state Focus Fire instead of Manual
-  Command, and core stats separate ready-shot capacity from ring completion.
+  Command, and core stats separate charge-buffer capacity from ring completion.
 - The first tower timer is presented as Building and Online instead of
   fabrication jargon, keeping the opening loop action-oriented.
 - The guided first tower comes online immediately after selection, so the
@@ -173,17 +178,15 @@ climbing.
   targeting tools, keeping build/stat actions distinct from anomaly aiming.
 - Enemy focus clicks automatically close open battle control panels so aiming
   returns the player to combat instead of leaving controls competing on screen.
-- Ready shots do not orbit as collectible-looking field objects; only brief
+- Core shots do not orbit as collectible-looking field objects; only brief
   handoff effects appear when a relay charges the core.
 - Payload-colored orbit dots are kept out of shot, relay, and fire-burst
   visuals so early combat does not imply there are floating payloads to manage.
 - Child-shell presence is shown through hex bodies, range language, and
   promotion moments, not orbiting marker dots around the active core.
-- Ready-shot UI is a compact availability indicator, not an empty queue rail
-  that asks the player to manage ammo slots.
-- The ready-shot HUD uses one bolt count instead of projectile-colored pips, so
-  it reads as availability rather than collectible payload objects.
-- Core controls hide ready-shot capacity rows and upgrades during the guided
+- The battlefield no longer shows a ready-shot counter during normal Layer 1
+  play; the visible combat read is wave, focus, and tower upgrades.
+- Core controls hide charge-buffer rows and upgrades during the guided
   opening, keeping the first-session panel focused on range, fire speed,
   output, and stability rather than queue management.
 - Guided-opening core stats suppress meta/buildcraft rows such as Ring, Slots,
@@ -196,9 +199,9 @@ climbing.
   the player to wait through full-length region timers.
 - Shell visibility is an explicit HUD toggle, keeping battlefield taps from
   folding the active battlefield or opening tower placement.
-- Manager automation upgrades ready shots into hands-off target routing while
+- Manager automation upgrades core fire into hands-off target routing while
   still letting active players override focus by clicking anomalies.
-- Ready-shot combat rewards smart timing, charge flow, and tower placement.
+- Combat rewards smart focus timing, charge flow, and tower placement.
 - Output Efficiency pressure system replaces a simple health-loss fail state.
 - Lane disruption reduces rewards and charge flow when anomalies reach the ring.
 - Manual Overdrive accelerates the live shell battle.

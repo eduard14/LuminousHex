@@ -208,6 +208,38 @@ void main() {
     expect(find.text('Challenge ready'), findsNothing);
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets('battle surface shows wave and selected tower upgrades', (
+    tester,
+  ) async {
+    addTearDown(() async {
+      await tester.binding.setSurfaceSize(null);
+    });
+    await tester.binding.setSurfaceSize(const Size(430, 780));
+    final controller = LightcoreController();
+    addTearDown(controller.dispose);
+
+    controller.debugDisableTutorial();
+    controller.selectCenter();
+    controller.lumens = 10000;
+    expect(controller.buildTowerAt(0, TowerLibrary.redPrism), isTrue);
+    controller.activeLayer.bestWaveReached = 10;
+    controller.selectSlot(0);
+
+    await _pumpBattleScreen(tester, controller);
+
+    expect(
+      find.byKey(const ValueKey<String>('battle-wave-hud')),
+      findsOneWidget,
+    );
+    expect(find.text('Best Wave'), findsOneWidget);
+    expect(find.text('Wave 10'), findsOneWidget);
+    expect(find.text('Layer 2 Lv 1 seed'), findsOneWidget);
+    expect(find.text('Rolled Stat Upgrades'), findsOneWidget);
+    expect(find.textContaining('Tower Level'), findsOneWidget);
+    expect(find.textContaining('Charge Rate'), findsWidgets);
+    expect(tester.takeException(), isNull);
+  });
 }
 
 void _prepareOpeningChallengePrompt(LightcoreController controller) {

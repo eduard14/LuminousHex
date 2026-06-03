@@ -819,9 +819,9 @@ extension LightcoreControllerLayerTraits on LightcoreController {
     LightcoreTutorialStep.readEffectiveGain =>
       'Flow mapped. Better threats only matter when Output Efficiency stays healthy.',
     LightcoreTutorialStep.assignTowerManager =>
-      'Manager assigned. Ready shots now fire with better automation.',
+      'Manager assigned. Core fire now runs with better automation.',
     LightcoreTutorialStep.managerAutoAim =>
-      'Automation verified. Ready shots keep firing while you focus on targets.',
+      'Automation verified. Core fire keeps moving while you focus targets.',
     LightcoreTutorialStep.upgradeFirstTowerToLevel4 =>
       'Opening lane reinforced. Strong anchors handle denser pressure better.',
     LightcoreTutorialStep.upgradeFirstTowerToLevel5 =>
@@ -1661,7 +1661,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         LightcoreTutorialStep.readEffectiveGain =>
           'Click Output Efficiency when you want to inspect Effective Gain.',
         LightcoreTutorialStep.managerAutoAim =>
-          'Watch your manager fire 5 ready shots.',
+          'Watch your manager fire 5 automated shots.',
         LightcoreTutorialStep.upgradeFirstTowerToLevel4 =>
           'Click the first tower in Hex 1 and upgrade it to level 3.',
         LightcoreTutorialStep.upgradeFirstTowerToLevel5 =>
@@ -1787,7 +1787,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         LightcoreTutorialStep.readEffectiveGain =>
           'Output Efficiency turns threat pressure into a visible gain multiplier, so the best scan is the one your core can keep stable.',
         LightcoreTutorialStep.managerAutoAim =>
-          'Automation proves an assigned manager can fire ready shots without taking enemy focus control away from the player.',
+          'Automation proves an assigned manager can fire the core without taking enemy focus control away from the player.',
         LightcoreTutorialStep.upgradeFirstTowerToLevel4 =>
           'The challenge proved the next area hits harder. Upgrade again, stabilize, then repeat the route with tougher enemies.',
         LightcoreTutorialStep.upgradeFirstTowerToLevel5 =>
@@ -1821,7 +1821,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         LightcoreTutorialStep.forgeTowerManager =>
           'Core Manager pulls cost Flux and advance the Core Manager Pass. Each roll can improve auto-fire across the active shell.',
         LightcoreTutorialStep.assignTowerManager =>
-          'Assigned Core Managers fire ready shots for you, turning focus fire into a steadier automated rhythm.',
+          'Assigned Core Managers fire the core for you, turning focus fire into a steadier automated rhythm.',
         LightcoreTutorialStep.forgeEnemyManager =>
           'Threat Director pulls cost Flux and advance the Threat Director Pass. Their bonuses tune live spawns, enemy strength, and rewards.',
         LightcoreTutorialStep.assignEnemyManager =>
@@ -1870,7 +1870,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
           LightcoreTutorialStep.readEffectiveGain =>
             'The crew pins the real-gain formula beside the output dial before opening harder scans.',
           LightcoreTutorialStep.managerAutoAim =>
-            'The assigned Core Manager takes the relay chair and starts firing ready shots without a manual command.',
+            'The assigned Core Manager takes the relay chair and starts firing the core without a manual command.',
           LightcoreTutorialStep.upgradeFirstTowerToLevel4 =>
             'Wave 5 hits harder than the training wave. The answer is the core loop: upgrade, hold the lane, then push the next route.',
           LightcoreTutorialStep.upgradeFirstTowerToLevel5 =>
