@@ -75,9 +75,7 @@ class _OverallProgressBarPanel extends StatelessWidget {
     if (towerSelected) {
       return const SizedBox.shrink();
     }
-    final waveProgress = (controller.activeLayer.bestWaveReached / 10)
-        .clamp(0.0, 1.0)
-        .toDouble();
+    final waveProgress = controller.activeLayerWaveProgress;
 
     return Column(
       children: [
@@ -112,12 +110,18 @@ class _OverallProgressBarPanel extends StatelessWidget {
           value: waveProgress,
           color: LightcorePalette.solar,
           compact: compact,
-          semanticsLabel: controller.activeLayerBestWaveLabel,
-          trailing: Text(
-            'Wave',
-            style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: LightcorePalette.solar,
-              fontWeight: FontWeight.w900,
+          semanticsLabel: controller.activeLayerWaveHudLabel,
+          trailing: SizedBox(
+            width: compact ? 54 : 64,
+            child: Text(
+              controller.activeLayerWaveHudLabel,
+              textAlign: TextAlign.end,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                color: LightcorePalette.solar,
+                fontWeight: FontWeight.w900,
+              ),
             ),
           ),
         ),

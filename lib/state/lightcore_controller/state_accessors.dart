@@ -615,6 +615,21 @@ extension LightcoreControllerStateAccessors on LightcoreController {
   double get bossSpawnProgress =>
       (bossKillsIntoCycle / bossSpawnKillRequirement).clamp(0.0, 1.0);
 
+  int get activeLayerWaveNumber =>
+      1 + (activeLayer.normalKillsSinceBoss ~/ max(1, initialEnemyTarget));
+
+  String get activeLayerWaveHudLabel => 'Wave $activeLayerWaveNumber';
+
+  double get activeLayerWaveProgress {
+    if (activeLayer.bossReady) {
+      return 1.0;
+    }
+    final waveEnemyCount = max(1, initialEnemyTarget);
+    return ((activeLayer.normalKillsSinceBoss % waveEnemyCount) /
+            waveEnemyCount)
+        .clamp(0.0, 1.0);
+  }
+
   bool get bossAlive => _enemies.any((enemy) => enemy.config.isBoss);
 
   LightcoreTutorialStep get tutorialStep => LightcoreTutorialStep.none;
