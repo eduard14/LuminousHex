@@ -30,6 +30,10 @@ receipt validation stay out of scope until the app is closer to submission.
   snapshot.
 - Equipment drops must stay boss-only from Layer 2+ areas. Guilds, avatar
   cosmetics, and Space Room must stay hidden from the launch surface.
+- Layer 2 component rolls must persist favorite, scroll level, and region
+  assignment state. Component Scrolls must come from Layer 2+ boss clears,
+  scroll upgrades, and dismantling, and equipped components must increase the
+  assigned region's farm output without changing the locked wave.
 - Dev event preview URLs are allowed in web debug builds only and must not be
   linked from production UI.
 
@@ -57,10 +61,15 @@ receipt validation stay out of scope until the app is closer to submission.
    and reward labels change.
 5. Lock a farm wave and verify the next offline claim references the locked
    region/director output.
-6. Open the leaderboard, change tower strength locally, and verify the player's
+6. Create a Layer 2 component, favorite it, assign it to the locked area,
+   upgrade it with Component Scrolls, and verify the displayed offline farm rate
+   rises while the locked wave remains unchanged.
+7. Defeat a Layer 2+ boss and confirm Component Scrolls increase; dismantle an
+   unfavorited component and confirm it returns scrolls.
+8. Open the leaderboard, change tower strength locally, and verify the player's
    projected rank moves immediately while the global board remains the cached
    server board.
-7. Send a normal global chat message, a whisper, a repeated message, and a
+9. Send a normal global chat message, a whisper, a repeated message, and a
    tracked bot-message phrase in a non-production test project.
-8. Confirm chat moderation records warning, chat-ban, and account-ban state as
+10. Confirm chat moderation records warning, chat-ban, and account-ban state as
    expected.

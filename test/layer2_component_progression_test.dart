@@ -140,6 +140,111 @@ void main() {
     ]);
   });
 
+  test(
+    'component scroll upgrades and favorites round trip through cloud saves',
+    () {
+      final controller = createDeterministicController();
+      addTearDown(controller.dispose);
+      _preparePureRing(controller, TowerLibrary.purplePrism, bestWave: 25);
+
+      controller.unlockLayer2Tower();
+      final component = controller.latestLayer2Component!;
+      controller.componentScrolls = controller.componentScrollUpgradeCost(
+        component,
+      );
+
+      expect(controller.upgradeLayer2Component(component.id), isTrue);
+      expect(controller.toggleLayer2ComponentFavorite(component.id), isTrue);
+
+      final upgraded = controller.layer2ComponentById(component.id)!;
+      expect(upgraded.scrollLevel, 1);
+      expect(upgraded.favorite, isTrue);
+      expect(controller.scrapLayer2Component(component.id), isFalse);
+
+      final restored = LightcoreController.fromCloudSavePayload(
+        controller.buildCloudSavePayload(),
+      );
+      addTearDown(restored.dispose);
+
+      final roundTripped = restored.layer2Components.single;
+      expect(roundTripped.scrollLevel, 1);
+      expect(roundTripped.favorite, isTrue);
+      expect(restored.componentScrolls, 0);
+    },
+  );
+
+  test('component assignment scales the validated regional farm rate', () {
+    final controller = createDeterministicController();
+    addTearDown(controller.dispose);
+    _preparePureRing(controller, TowerLibrary.redPrism, bestWave: 25);
+    controller.unlockLayer2Tower();
+    final component = controller.latestLayer2Component!;
+
+    final starter = controller.threatRegionConfigs.first;
+    controller.debugRevealThreatRegion(starter.id, stabilizedLevel: 1);
+    expect(controller.startThreatRegionFarmValidation(starter.id), isTrue);
+    final baseline = controller.threatRegionOfflineKillsPerHour;
+
+    expect(
+      controller.equipLayer2ComponentToRegion(
+        componentId: component.id,
+        regionId: starter.id,
+      ),
+      isTrue,
+    );
+
+    expect(controller.threatRegionOfflineKillsPerHour, greaterThan(baseline));
+    expect(
+      controller.equippedLayer2ComponentForRegion(starter.id)?.id,
+      component.id,
+    );
+  });
+
+  test('component region assignments restore after threat map state', () {
+    final controller = createDeterministicController();
+    addTearDown(controller.dispose);
+    _preparePureRing(controller, TowerLibrary.redPrism, bestWave: 25);
+    controller.unlockLayer2Tower();
+    final component = controller.latestLayer2Component!;
+
+    final secondRegion = controller.threatRegionConfigs[1];
+    controller.debugRevealThreatRegion(secondRegion.id, stabilizedLevel: 1);
+    expect(
+      controller.equipLayer2ComponentToRegion(
+        componentId: component.id,
+        regionId: secondRegion.id,
+      ),
+      isTrue,
+    );
+
+    final restored = LightcoreController.fromCloudSavePayload(
+      controller.buildCloudSavePayload(),
+    );
+    addTearDown(restored.dispose);
+
+    expect(
+      restored.layer2ComponentById(component.id)?.equippedRegionId,
+      secondRegion.id,
+    );
+  });
+
+  test(
+    'dismantling unprotected components returns scrolls and removes the roll',
+    () {
+      final controller = createDeterministicController();
+      addTearDown(controller.dispose);
+      _preparePureRing(controller, TowerLibrary.orangePrism, bestWave: 10);
+      controller.unlockLayer2Tower();
+      final component = controller.latestLayer2Component!;
+      final scrapValue = controller.componentScrapScrollValue(component);
+
+      expect(controller.scrapLayer2Component(component.id), isTrue);
+
+      expect(controller.layer2Components, isEmpty);
+      expect(controller.componentScrolls, scrapValue);
+    },
+  );
+
   test('region farm wave locks from the best completed challenge wave', () {
     final controller = createDeterministicController();
     addTearDown(controller.dispose);
@@ -190,5 +295,25 @@ void main() {
     expect(layer1.equipmentDropChanceForEnemy(layer1Boss!), 0);
     expect(layer2.equipmentDropChanceForEnemy(layer2Normal!), 0);
     expect(layer2.equipmentDropChanceForEnemy(layer2Boss!), greaterThan(0));
+  });
+
+  test('Layer 2 bosses grant component scrolls', () {
+    final controller = createDeterministicController();
+    addTearDown(controller.dispose);
+    controller.debugCompleteBossAndEquipmentTutorial();
+    forgeLayer2(controller);
+
+    final boss = controller.debugSpawnEnemyFromCard(
+      BossEnemyLibrary.starterWhiteWarden.id,
+      boss: true,
+      angle: 0,
+      radius: 120,
+      healthFraction: 1,
+    );
+
+    expect(boss, isNotNull);
+    expect(controller.componentScrolls, 0);
+    expect(controller.debugDefeatEnemy(boss!.id), isTrue);
+    expect(controller.componentScrolls, greaterThan(0));
   });
 }

@@ -1764,6 +1764,7 @@ class Layer2ComponentState {
     required this.subtraits,
     this.scrollLevel = 0,
     this.equippedRegionId,
+    this.favorite = false,
   });
 
   final String id;
@@ -1786,6 +1787,7 @@ class Layer2ComponentState {
   final List<Layer2ComponentSubtraitState> subtraits;
   final int scrollLevel;
   final String? equippedRegionId;
+  final bool favorite;
 
   bool get hasPayload => payloadType != PayloadType.none;
 
@@ -1799,6 +1801,7 @@ class Layer2ComponentState {
   Layer2ComponentState copyWith({
     int? scrollLevel,
     String? equippedRegionId,
+    bool? favorite,
     bool clearEquippedRegion = false,
   }) {
     return Layer2ComponentState(
@@ -1824,6 +1827,7 @@ class Layer2ComponentState {
       equippedRegionId: clearEquippedRegion
           ? null
           : equippedRegionId ?? this.equippedRegionId,
+      favorite: favorite ?? this.favorite,
     );
   }
 }

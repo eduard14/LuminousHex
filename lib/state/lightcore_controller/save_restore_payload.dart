@@ -69,6 +69,10 @@ extension LightcoreControllerSaveRestorePayload on LightcoreController {
       fallback: managerPowerLevel,
     ).clamp(0, LightcoreController.maxManagerPowerLevel).toInt();
     shellCores = _intValue(resourceData['shellCores'], fallback: shellCores);
+    componentScrolls = _intValue(
+      resourceData['componentScrolls'],
+      fallback: componentScrolls,
+    );
     enemyTickets = _intValue(
       resourceData['enemyTickets'],
       fallback: enemyTickets,
@@ -245,6 +249,7 @@ extension LightcoreControllerSaveRestorePayload on LightcoreController {
       _equippedPlayerItems[slot] = _stringOrNull(equippedItemData[slot.name]);
     }
     _restoreThreatMapState(_coerceMap(payload['threatMap']));
+    _normalizeLayer2ComponentRegionAssignments();
 
     _battlePasses = _restoreBattlePassMap(_coerceList(payload['battlePasses']));
 

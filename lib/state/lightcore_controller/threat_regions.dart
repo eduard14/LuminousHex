@@ -424,15 +424,27 @@ extension LightcoreControllerThreatRegions on LightcoreController {
     if (state.assignedThreatDirectorId != directorId) {
       return 0;
     }
+    final componentScale = _layer2ComponentFarmOutputMultiplierForRegion(
+      regionId,
+    );
     if (_validatedFarmKillsPerHour > 0) {
-      return min(maxOfflineKillsPerHour, _validatedFarmKillsPerHour);
+      return min(
+        maxOfflineKillsPerHour,
+        _validatedFarmKillsPerHour * componentScale,
+      );
     }
-    return _estimateThreatRegionFarmKillsPerHour(
-      config: config,
-      stabilizedLevel: stabilizedLevel,
-      farmSwarmSize: _validatedFarmSwarmSize,
-      threatDirectorId: directorId,
-      efficiency: _validatedFarmEfficiency <= 0 ? 1 : _validatedFarmEfficiency,
+    return min(
+      maxOfflineKillsPerHour,
+      _estimateThreatRegionFarmKillsPerHour(
+            config: config,
+            stabilizedLevel: stabilizedLevel,
+            farmSwarmSize: _validatedFarmSwarmSize,
+            threatDirectorId: directorId,
+            efficiency: _validatedFarmEfficiency <= 0
+                ? 1
+                : _validatedFarmEfficiency,
+          ) *
+          componentScale,
     );
   }
 
@@ -452,16 +464,22 @@ extension LightcoreControllerThreatRegions on LightcoreController {
     if (state.assignedThreatDirectorId != directorId) {
       return 0;
     }
+    final componentScale = _layer2ComponentFarmOutputMultiplierForRegion(
+      regionId,
+    );
     if (_validatedFarmLumensPerHour > 0) {
-      return _validatedFarmLumensPerHour;
+      return _validatedFarmLumensPerHour * componentScale;
     }
     return _estimateThreatRegionFarmLumensPerHour(
-      config: config,
-      stabilizedLevel: stabilizedLevel,
-      farmSwarmSize: _validatedFarmSwarmSize,
-      threatDirectorId: directorId,
-      efficiency: _validatedFarmEfficiency <= 0 ? 1 : _validatedFarmEfficiency,
-    );
+          config: config,
+          stabilizedLevel: stabilizedLevel,
+          farmSwarmSize: _validatedFarmSwarmSize,
+          threatDirectorId: directorId,
+          efficiency: _validatedFarmEfficiency <= 0
+              ? 1
+              : _validatedFarmEfficiency,
+        ) *
+        componentScale;
   }
 
   String get threatScanRateInfo =>

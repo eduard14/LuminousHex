@@ -86,6 +86,12 @@ void main() {
       expect(controller.activeLayer.tier, 2);
       expect(controller.activeLayer.label, 'Prism Shell');
       expect(controller.layer2Components, hasLength(1));
+      await tester.pump();
+
+      expect(find.text('Component Inventory'), findsOneWidget);
+      expect(find.text('0 Component Scrolls'), findsOneWidget);
+      expect(find.textContaining('farm output'), findsOneWidget);
+      expect(find.text('Assign Area'), findsOneWidget);
     },
   );
 

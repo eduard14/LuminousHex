@@ -62,8 +62,11 @@ climbing.
 9. Defeat normal anomalies to prime Apex Anomaly encounters.
 10. Merge completed Layer 1 shells into Layer 2 components with independent
    projectile and payload rolls, wave-based stat tiers, and random subtraits.
-11. Return to older shells as passive support archives while the live shell grows.
-12. Expand into managers, daily dungeons, tournaments, and social play.
+11. Equip farmed Layer 2 components to Threat Map areas, upgrade standout rolls
+   with Component Scrolls from Layer 2+ boss clears, and dismantle bad rolls
+   into more scrolls.
+12. Return to older shells as passive support archives while the live shell grows.
+13. Expand into managers, daily dungeons, tournaments, and social play.
 
 ## Feature Inventory
 
@@ -92,6 +95,11 @@ climbing.
 - Layer 1 now exposes a Component Forecast in battle, tower management, and the
   Layer 2 Components screen so players can see current projectile odds, payload
   odds, best wave, stat tier, and expected subtraits before merging.
+- Layer 2 Components now have a production inventory: players can sort farmed
+  rolls, favorite keepers, assign one component per revealed Threat Map area,
+  upgrade them with Component Scrolls, and dismantle unwanted rolls.
+- Layer 2+ Apex clears award Component Scrolls alongside boss rewards, tying
+  active boss farming to long-term region output without adding prestige.
 - The post-upgrade threat prompt explains the payoff and highlights the
   Challenge button directly, including harder-enemy framing and the Lumen
   reward preview, so the next step reads as an earned push instead of a menu

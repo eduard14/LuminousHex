@@ -703,9 +703,12 @@ extension LightcoreControllerCombatDamage on LightcoreController {
         activeLayer.tier + (enemy.config.rarity.index ~/ 2),
       );
       enemyTickets += gainedThreatScans;
+      final gainedComponentScrolls = _awardLayer2ComponentScrollsForBoss(enemy);
       final bossRewardParts = <String>[
         LightcoreCurrencyLabels.rewardLumens(lumenDrop + bountyLumenDrop),
         LightcoreCurrencyLabels.rewardThreatScans(gainedThreatScans),
+        if (gainedComponentScrolls > 0)
+          '$gainedComponentScrolls Component Scroll${gainedComponentScrolls == 1 ? '' : 's'}',
         if (fluxDrop > 0) LightcoreCurrencyLabels.rewardFlux(fluxDrop),
         if (threatScanDrop > 0)
           LightcoreCurrencyLabels.rewardThreatScans(threatScanDrop),
@@ -719,6 +722,18 @@ extension LightcoreControllerCombatDamage on LightcoreController {
       }
     }
     _syncTutorialStep(showBanner: false);
+  }
+
+  int _awardLayer2ComponentScrollsForBoss(EnemyState enemy) {
+    if (!enemy.config.isBoss || activeLayer.tier < 2) {
+      return 0;
+    }
+    final amount = max(
+      1,
+      activeLayer.tier + enemy.config.rarity.index + (enemy.cardLevel ~/ 4),
+    );
+    componentScrolls += amount;
+    return amount;
   }
 
   PlayerEquipmentItem? _awardEquipmentDropIfRolled(EnemyState enemy) {

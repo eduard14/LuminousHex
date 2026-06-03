@@ -1641,6 +1641,7 @@ class LightcoreController extends ChangeNotifier {
   int managerShards = 0;
   int managerPowerLevel = 0;
   int shellCores = 0;
+  int componentScrolls = 0;
   int enemyTickets = 18;
   int bossTickets = 0;
   int bossCores = 0;

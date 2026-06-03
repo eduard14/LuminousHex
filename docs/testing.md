@@ -17,7 +17,9 @@ flutter test
 This covers cloud save and restore behavior, currency invariants, basic menu
 and screen smoke checks, data/catalog integrity, asset references, rewarded-ad
 disclosure, Layer 2 component generation, forecast labels, farm-wave locking,
-and the lightweight Layer 2 component UI smoke. The suite is meant to answer
+component inventory actions, Component Scroll persistence, region assignment
+output scaling, boss scroll rewards, and the lightweight Layer 2 component UI
+smoke. The suite is meant to answer
 “does the app still broadly work?” rather than “did gameplay tuning stay exactly
 the same?” Deleted gameplay tests can be recovered from git history if a
 mechanic becomes stable enough to protect again.
@@ -56,7 +58,7 @@ flutter test integration_test/layer2_ui_smoke_test.dart -d <deviceId>
 
 The Layer 2 smoke test starts from a deterministic merge-ready state, opens the
 component UI, creates a Layer 2 component through the actual UI, and verifies
-the app records the component.
+the app records the component and renders the inventory controls.
 
 Flutter's `integration_test` runner currently requires a supported device target;
 if the local device toolchain is unavailable, run the equivalent fast regression:

@@ -2,6 +2,8 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import '../models/lightcore_config.dart';
+import '../models/lightcore_state.dart';
 import '../models/lightcore_types.dart';
 import '../state/lightcore_controller.dart';
 import '../theme/lightcore_palette.dart';
@@ -10,7 +12,7 @@ import '../widgets/layer_one_component_forecast_panel.dart';
 import '../widgets/lightcore_info_button.dart';
 import '../widgets/meter_bar.dart';
 
-class AdvancementScreen extends StatelessWidget {
+class AdvancementScreen extends StatefulWidget {
   const AdvancementScreen({
     super.key,
     required this.controller,
@@ -25,10 +27,20 @@ class AdvancementScreen extends StatelessWidget {
   final VoidCallback? onPromotionRequested;
 
   @override
+  State<AdvancementScreen> createState() => _AdvancementScreenState();
+}
+
+enum _ComponentSortMode { newest, wave, scroll }
+
+class _AdvancementScreenState extends State<AdvancementScreen> {
+  _ComponentSortMode _componentSortMode = _ComponentSortMode.wave;
+
+  @override
   Widget build(BuildContext context) {
+    final controller = widget.controller;
     final textTheme = Theme.of(context).textTheme;
 
-    if (!isActive) {
+    if (!widget.isActive) {
       return const SizedBox.shrink();
     }
 
@@ -42,7 +54,7 @@ class AdvancementScreen extends StatelessWidget {
 
         return ListView(
           key: const PageStorageKey<String>('advancement-scroll'),
-          controller: scrollController,
+          controller: widget.scrollController,
           padding: const EdgeInsets.only(bottom: 28),
           children: [
             AuroraPanel(
@@ -164,7 +176,8 @@ class AdvancementScreen extends StatelessWidget {
                       label: controller.promotionActionLabel,
                       controller: controller,
                       onPressed:
-                          onPromotionRequested ?? controller.unlockLayer2Tower,
+                          widget.onPromotionRequested ??
+                          controller.unlockLayer2Tower,
                     )
                   else if (controller.activeLayerPromotedIntoParentSlot)
                     FilledButton.icon(
@@ -206,6 +219,14 @@ class AdvancementScreen extends StatelessWidget {
                 ],
               ),
             ),
+            const SizedBox(height: 14),
+            _Layer2ComponentInventoryPanel(
+              controller: controller,
+              sortMode: _componentSortMode,
+              onSortModeChanged: (mode) {
+                setState(() => _componentSortMode = mode);
+              },
+            ),
           ],
         );
       },
@@ -218,6 +239,385 @@ const String _advancementPathHelp =
 
 const String _promotionRulesHelp =
     'Component merges require all six edge towers at max level. Pure tower mixes produce pure projectile and payload odds; mixed colors can create combinations such as one color projectile with another color payload. Higher Layer 1 waves improve the generated component tier.';
+
+class _Layer2ComponentInventoryPanel extends StatelessWidget {
+  const _Layer2ComponentInventoryPanel({
+    required this.controller,
+    required this.sortMode,
+    required this.onSortModeChanged,
+  });
+
+  final LightcoreController controller;
+  final _ComponentSortMode sortMode;
+  final ValueChanged<_ComponentSortMode> onSortModeChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    final components = controller.layer2Components.toList(growable: false);
+    final sorted = components.toList(growable: true);
+    sorted.sort((left, right) {
+      final equippedCompare = (right.equippedRegionId != null ? 1 : 0)
+          .compareTo(left.equippedRegionId != null ? 1 : 0);
+      if (equippedCompare != 0) {
+        return equippedCompare;
+      }
+      return switch (sortMode) {
+        _ComponentSortMode.newest => right.createdAtMillis.compareTo(
+          left.createdAtMillis,
+        ),
+        _ComponentSortMode.wave => right.reachedWave.compareTo(
+          left.reachedWave,
+        ),
+        _ComponentSortMode.scroll => right.scrollLevel.compareTo(
+          left.scrollLevel,
+        ),
+      };
+    });
+
+    return AuroraPanel(
+      tint: LightcorePalette.layer2,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text('Component Inventory', style: textTheme.titleLarge),
+              ),
+              const LightcoreInfoButton(
+                title: 'Layer 2 Component Inventory',
+                message:
+                    'Components are the farmable output of Layer 1 merges. Equip one component to each revealed map area to raise its idle farm output. Bosses from Layer 2 and higher award Component Scrolls, which upgrade good rolls. Favorite components cannot be dismantled.',
+                tint: LightcorePalette.layer2,
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 10,
+            runSpacing: 10,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              _BenefitChip(
+                label: '${controller.componentScrolls} Component Scrolls',
+              ),
+              _BenefitChip(label: '${components.length} stored rolls'),
+              SizedBox(
+                width: 185,
+                child: DropdownButtonFormField<_ComponentSortMode>(
+                  initialValue: sortMode,
+                  isExpanded: true,
+                  decoration: const InputDecoration(
+                    labelText: 'Sort',
+                    isDense: true,
+                  ),
+                  items: const [
+                    DropdownMenuItem(
+                      value: _ComponentSortMode.wave,
+                      child: Text('Best wave'),
+                    ),
+                    DropdownMenuItem(
+                      value: _ComponentSortMode.scroll,
+                      child: Text('Scroll level'),
+                    ),
+                    DropdownMenuItem(
+                      value: _ComponentSortMode.newest,
+                      child: Text('Newest'),
+                    ),
+                  ],
+                  onChanged: (value) {
+                    if (value != null) {
+                      onSortModeChanged(value);
+                    }
+                  },
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          if (sorted.isEmpty)
+            Text(
+              'Create a Layer 2 component from a completed Layer 1 shell to begin assigning area farm traits.',
+              style: textTheme.bodyMedium?.copyWith(
+                color: LightcorePalette.mist.withValues(alpha: 0.78),
+              ),
+            )
+          else
+            ...sorted.map(
+              (component) => Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: _Layer2ComponentInventoryCard(
+                  controller: controller,
+                  component: component,
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _Layer2ComponentInventoryCard extends StatelessWidget {
+  const _Layer2ComponentInventoryCard({
+    required this.controller,
+    required this.component,
+  });
+
+  final LightcoreController controller;
+  final Layer2ComponentState component;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    final equippedRegion = component.equippedRegionId == null
+        ? null
+        : controller.threatRegionConfigById(component.equippedRegionId!);
+    final revealedRegions = controller.threatRegions
+        .where((state) => state.revealed)
+        .map((state) => controller.threatRegionConfigById(state.regionId))
+        .whereType<ThreatRegionConfig>()
+        .toList(growable: false);
+    final upgradeCost = controller.componentScrollUpgradeCost(component);
+    final canUpgrade = controller.canUpgradeLayer2Component(component.id);
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: LightcorePalette.panelRaised.withValues(alpha: 0.58),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: component.favorite
+              ? LightcorePalette.solar.withValues(alpha: 0.5)
+              : LightcorePalette.stroke.withValues(alpha: 0.45),
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        component.signatureLabel,
+                        style: textTheme.titleMedium?.copyWith(
+                          color: LightcorePalette.layer2,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Wave ${component.reachedWave} • Tier ${component.statTier} • Scroll ${component.scrollLevel}',
+                        style: textTheme.bodySmall?.copyWith(
+                          color: LightcorePalette.mist.withValues(alpha: 0.72),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  tooltip: component.favorite
+                      ? 'Unfavorite component'
+                      : 'Favorite component',
+                  onPressed: () =>
+                      controller.toggleLayer2ComponentFavorite(component.id),
+                  icon: Icon(
+                    component.favorite
+                        ? Icons.star_rounded
+                        : Icons.star_outline_rounded,
+                    color: component.favorite
+                        ? LightcorePalette.solar
+                        : LightcorePalette.mist,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                _ComponentStatChip(
+                  label: controller.layer2ComponentOutputLabel(component),
+                ),
+                _ComponentStatChip(
+                  label: equippedRegion == null
+                      ? 'Unassigned'
+                      : 'Assigned: ${equippedRegion.name}',
+                ),
+                _ComponentStatChip(
+                  label:
+                      '${component.projectileType.label} / ${component.payloadType.label}',
+                ),
+              ],
+            ),
+            if (component.subtraits.isNotEmpty) ...[
+              const SizedBox(height: 10),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: component.subtraits
+                    .map(
+                      (trait) => _ComponentStatChip(
+                        label:
+                            '${trait.type.label} +${(trait.value * 100).toStringAsFixed(1)}%',
+                      ),
+                    )
+                    .toList(growable: false),
+              ),
+            ],
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                PopupMenuButton<String>(
+                  tooltip: 'Assign component to an area',
+                  onSelected: (value) {
+                    if (value.isEmpty) {
+                      controller.unequipLayer2Component(component.id);
+                    } else {
+                      controller.equipLayer2ComponentToRegion(
+                        componentId: component.id,
+                        regionId: value,
+                      );
+                    }
+                  },
+                  itemBuilder: (context) => [
+                    if (component.equippedRegionId != null)
+                      const PopupMenuItem(value: '', child: Text('Unassign')),
+                    for (final region in revealedRegions)
+                      PopupMenuItem(value: region.id, child: Text(region.name)),
+                  ],
+                  child: _ComponentActionShell(
+                    icon: Icons.public_rounded,
+                    label: equippedRegion == null
+                        ? 'Assign Area'
+                        : 'Change Area',
+                  ),
+                ),
+                FilledButton.icon(
+                  onPressed: canUpgrade
+                      ? () => controller.upgradeLayer2Component(component.id)
+                      : null,
+                  icon: const Icon(Icons.upgrade_rounded),
+                  label: Text('Upgrade • $upgradeCost'),
+                ),
+                OutlinedButton.icon(
+                  onPressed: component.favorite
+                      ? null
+                      : () => _confirmScrap(context, controller, component),
+                  icon: const Icon(Icons.delete_outline_rounded),
+                  label: Text(
+                    'Dismantle • ${controller.componentScrapScrollValue(component)}',
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _confirmScrap(
+    BuildContext context,
+    LightcoreController controller,
+    Layer2ComponentState component,
+  ) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Dismantle Component?'),
+        content: Text(
+          'This removes ${component.signatureLabel} and returns ${controller.componentScrapScrollValue(component)} Component Scrolls.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Dismantle'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true) {
+      controller.scrapLayer2Component(component.id);
+    }
+  }
+}
+
+class _ComponentStatChip extends StatelessWidget {
+  const _ComponentStatChip({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: LightcorePalette.abyss.withValues(alpha: 0.6),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: LightcorePalette.stroke.withValues(alpha: 0.38),
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        child: Text(
+          label,
+          style: Theme.of(context).textTheme.labelMedium?.copyWith(
+            color: LightcorePalette.mist,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ComponentActionShell extends StatelessWidget {
+  const _ComponentActionShell({required this.icon, required this.label});
+
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: LightcorePalette.stroke),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 18),
+            const SizedBox(width: 8),
+            Text(
+              label,
+              style: Theme.of(
+                context,
+              ).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w800),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
 
 class _PromotionActionButton extends StatefulWidget {
   const _PromotionActionButton({

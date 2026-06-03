@@ -1,6 +1,8 @@
 part of '../lightcore_controller.dart';
 
 extension LightcoreControllerProgressionLayers on LightcoreController {
+  static const int maxLayer2ComponentScrollLevel = 30;
+
   int _boostedExperienceReward(int baseExperience) {
     if (baseExperience <= 0) {
       return 0;
@@ -37,6 +39,232 @@ extension LightcoreControllerProgressionLayers on LightcoreController {
   bool _layerHasDescendants(String layerId) => _layers.any(
     (layer) => layer.parentLayerId == layerId || layer.sourceLayerId == layerId,
   );
+
+  Layer2ComponentState? layer2ComponentById(String componentId) {
+    final matches = _layer2Components.where(
+      (component) => component.id == componentId,
+    );
+    return matches.isEmpty ? null : matches.first;
+  }
+
+  Layer2ComponentState? equippedLayer2ComponentForRegion(String regionId) {
+    final matches = _layer2Components.where(
+      (component) => component.equippedRegionId == regionId,
+    );
+    return matches.isEmpty ? null : matches.first;
+  }
+
+  bool isLayer2ComponentEquipped(String componentId) =>
+      layer2ComponentById(componentId)?.equippedRegionId != null;
+
+  int componentScrollUpgradeCost(Layer2ComponentState component) =>
+      3 + (component.scrollLevel * 2) + (component.statTier ~/ 12);
+
+  int componentScrapScrollValue(Layer2ComponentState component) =>
+      max(1, 1 + component.subtraits.length + (component.scrollLevel * 2));
+
+  bool canUpgradeLayer2Component(String componentId) {
+    final component = layer2ComponentById(componentId);
+    if (component == null ||
+        component.scrollLevel >= maxLayer2ComponentScrollLevel) {
+      return false;
+    }
+    return componentScrolls >= componentScrollUpgradeCost(component);
+  }
+
+  bool upgradeLayer2Component(String componentId) {
+    final index = _layer2Components.indexWhere(
+      (component) => component.id == componentId,
+    );
+    if (index == -1) {
+      return false;
+    }
+    final component = _layer2Components[index];
+    if (component.scrollLevel >= maxLayer2ComponentScrollLevel) {
+      return false;
+    }
+    final cost = componentScrollUpgradeCost(component);
+    if (componentScrolls < cost) {
+      return false;
+    }
+    componentScrolls -= cost;
+    _layer2Components[index] = component.copyWith(
+      scrollLevel: component.scrollLevel + 1,
+    );
+    _refreshValidatedFarmComponentOutput(component.equippedRegionId);
+    _showBanner(
+      '${component.signatureLabel} raised to Scroll ${component.scrollLevel + 1}.',
+      category: LightcoreNotificationCategory.action,
+    );
+    _notifyNow();
+    return true;
+  }
+
+  bool toggleLayer2ComponentFavorite(String componentId) {
+    final index = _layer2Components.indexWhere(
+      (component) => component.id == componentId,
+    );
+    if (index == -1) {
+      return false;
+    }
+    final component = _layer2Components[index];
+    _layer2Components[index] = component.copyWith(
+      favorite: !component.favorite,
+    );
+    _notifyNow();
+    return true;
+  }
+
+  bool equipLayer2ComponentToRegion({
+    required String componentId,
+    required String regionId,
+  }) {
+    final regionState = threatRegionStateById(regionId);
+    if (regionState == null || !regionState.revealed) {
+      return false;
+    }
+    final targetIndex = _layer2Components.indexWhere(
+      (component) => component.id == componentId,
+    );
+    if (targetIndex == -1) {
+      return false;
+    }
+    final previousRegionId = _layer2Components[targetIndex].equippedRegionId;
+    for (var index = 0; index < _layer2Components.length; index += 1) {
+      final component = _layer2Components[index];
+      if (component.equippedRegionId == regionId ||
+          component.id == componentId) {
+        _layer2Components[index] = component.copyWith(
+          equippedRegionId: component.id == componentId ? regionId : null,
+          clearEquippedRegion: component.id != componentId,
+        );
+      }
+    }
+    _refreshValidatedFarmComponentOutput(previousRegionId);
+    _refreshValidatedFarmComponentOutput(regionId);
+    _showBanner(
+      '${_layer2Components[targetIndex].signatureLabel} assigned to ${threatRegionConfigById(regionId)?.name ?? 'region farm'}.',
+      category: LightcoreNotificationCategory.action,
+    );
+    _notifyNow();
+    return true;
+  }
+
+  bool unequipLayer2Component(String componentId) {
+    final index = _layer2Components.indexWhere(
+      (component) => component.id == componentId,
+    );
+    if (index == -1 || _layer2Components[index].equippedRegionId == null) {
+      return false;
+    }
+    final previousRegionId = _layer2Components[index].equippedRegionId;
+    _layer2Components[index] = _layer2Components[index].copyWith(
+      clearEquippedRegion: true,
+    );
+    _refreshValidatedFarmComponentOutput(previousRegionId);
+    _notifyNow();
+    return true;
+  }
+
+  bool scrapLayer2Component(String componentId) {
+    final index = _layer2Components.indexWhere(
+      (component) => component.id == componentId,
+    );
+    if (index == -1) {
+      return false;
+    }
+    final component = _layer2Components[index];
+    if (component.favorite) {
+      return false;
+    }
+    final previousRegionId = component.equippedRegionId;
+    final scrolls = componentScrapScrollValue(component);
+    componentScrolls += scrolls;
+    _layer2Components.removeAt(index);
+    _refreshValidatedFarmComponentOutput(previousRegionId);
+    _showBanner(
+      'Component dismantled for $scrolls Component Scroll${scrolls == 1 ? '' : 's'}.',
+      category: LightcoreNotificationCategory.action,
+    );
+    _notifyNow();
+    return true;
+  }
+
+  double layer2ComponentOutputMultiplier(Layer2ComponentState component) {
+    final baseStatScale =
+        (component.basePowerMultiplier +
+            component.baseFinalDamageMultiplier +
+            component.baseNormalDamageMultiplier +
+            component.baseBossDamageMultiplier) /
+        4;
+    final traitScale = component.subtraits.fold<double>(
+      0,
+      (total, trait) => total + trait.value.abs().clamp(0.0, 0.3),
+    );
+    return (1 +
+            ((baseStatScale - 1) * 0.45) +
+            (component.scrollLevel * 0.045) +
+            (traitScale * 0.2))
+        .clamp(1.0, 2.5)
+        .toDouble();
+  }
+
+  String layer2ComponentOutputLabel(Layer2ComponentState component) =>
+      '+${((layer2ComponentOutputMultiplier(component) - 1) * 100).toStringAsFixed(1)}% farm output';
+
+  void _normalizeLayer2ComponentRegionAssignments() {
+    final occupiedRegions = <String>{};
+    for (var index = 0; index < _layer2Components.length; index += 1) {
+      final component = _layer2Components[index];
+      final regionId = component.equippedRegionId;
+      if (regionId == null) {
+        continue;
+      }
+      final state = threatRegionStateById(regionId);
+      if (state == null ||
+          !state.revealed ||
+          occupiedRegions.contains(regionId)) {
+        _layer2Components[index] = component.copyWith(
+          clearEquippedRegion: true,
+        );
+        continue;
+      }
+      occupiedRegions.add(regionId);
+    }
+  }
+
+  double _layer2ComponentFarmOutputMultiplierForRegion(String? regionId) {
+    if (regionId == null) {
+      return 1;
+    }
+    final component = equippedLayer2ComponentForRegion(regionId);
+    return component == null ? 1 : layer2ComponentOutputMultiplier(component);
+  }
+
+  void _refreshValidatedFarmComponentOutput(String? regionId) {
+    if (regionId == null || _validatedFarmRegionId != regionId) {
+      return;
+    }
+    final config = threatRegionConfigById(regionId);
+    final state = threatRegionStateById(regionId);
+    if (config == null || state == null || _validatedFarmStabilizedLevel <= 0) {
+      return;
+    }
+    _validatedFarmKillsPerHour = _estimateThreatRegionFarmKillsPerHour(
+      config: config,
+      stabilizedLevel: _validatedFarmStabilizedLevel,
+      farmSwarmSize: _validatedFarmSwarmSize,
+      threatDirectorId: _validatedFarmThreatDirectorId,
+      efficiency: _validatedFarmEfficiency <= 0 ? 1 : _validatedFarmEfficiency,
+    );
+    _validatedFarmLumensPerHour = _estimateThreatRegionFarmLumensPerHour(
+      config: config,
+      stabilizedLevel: _validatedFarmStabilizedLevel,
+      farmSwarmSize: _validatedFarmSwarmSize,
+      threatDirectorId: _validatedFarmThreatDirectorId,
+      efficiency: _validatedFarmEfficiency <= 0 ? 1 : _validatedFarmEfficiency,
+    );
+  }
 
   double _layerPriceMultiplier(TowerLayerSnapshot layer) {
     final parentId = layer.parentLayerId;

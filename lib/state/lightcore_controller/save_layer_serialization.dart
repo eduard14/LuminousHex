@@ -490,6 +490,7 @@ extension LightcoreControllerSaveLayerSerialization on LightcoreController {
           .toList(growable: false),
       'scrollLevel': component.scrollLevel,
       'equippedRegionId': component.equippedRegionId,
+      'favorite': component.favorite,
     };
   }
 
@@ -561,6 +562,7 @@ extension LightcoreControllerSaveLayerSerialization on LightcoreController {
           .toList(growable: false),
       scrollLevel: max(0, _intValue(data['scrollLevel'])),
       equippedRegionId: _stringOrNull(data['equippedRegionId']),
+      favorite: _boolValue(data['favorite']),
     );
   }
 

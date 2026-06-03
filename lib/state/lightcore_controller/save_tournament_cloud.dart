@@ -730,6 +730,7 @@ extension LightcoreControllerSaveTournamentCloud on LightcoreController {
         'managerShards': managerShards,
         'managerPowerLevel': managerPowerLevel,
         'shellCores': shellCores,
+        'componentScrolls': componentScrolls,
         'enemyTickets': enemyTickets,
         'bossTickets': bossTickets,
         'bossCores': 0,
