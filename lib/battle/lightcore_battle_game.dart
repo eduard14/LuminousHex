@@ -55,11 +55,12 @@ class LightcoreBattleGame extends FlameGame with ScaleDetector {
   static const double _shellPromotionCollapseDuration = 1.15;
   static const double _shellPromotionWhiteoutDuration = 0.72;
   static const double _shellPromotionRevealDuration = 0.78;
-  static const double _minViewScale = 0.72;
+  static const double _defaultViewScale = 0.72;
+  static const double _minViewScale = 0.48;
   static const double _maxViewScale = 1.22;
 
   double _accumulator = 0;
-  double _viewScale = 1.0;
+  double _viewScale = _defaultViewScale;
   ShellPromotionPresentation? _shellPromotion;
   double _shellPromotionElapsed = 0;
   String? _slotVisualLayerId;

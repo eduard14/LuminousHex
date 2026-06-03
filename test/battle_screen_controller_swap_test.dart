@@ -54,6 +54,7 @@ void main() {
         .widget<GameWidget<LightcoreBattleGame>>(gameFinder)
         .game!;
     expect(firstGame.controller, same(firstController));
+    expect(firstGame.viewScale, closeTo(0.72, 0.001));
 
     await _pumpBattleScreen(tester, secondController);
 
