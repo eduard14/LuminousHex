@@ -40,10 +40,7 @@ extension LightcoreControllerSaveRestorePayload on LightcoreController {
       settingsData['battleNotificationBannersEnabled'],
       fallback: _battleNotificationBannersEnabled,
     );
-    _tutorialPromptsEnabled = _boolValue(
-      settingsData['tutorialPromptsEnabled'],
-      fallback: _tutorialPromptsEnabled,
-    );
+    _tutorialPromptsEnabled = false;
     _sharedRelayCenterPieceId = _stringOrNull(
       playerData['sharedRelayCenterPieceId'],
     );

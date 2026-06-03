@@ -3,12 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:lightcore/battle/lightcore_battle_game.dart';
-import 'package:lightcore/data/enemy_configs.dart';
 import 'package:lightcore/data/tower_configs.dart';
 import 'package:lightcore/screens/battle_screen.dart';
 import 'package:lightcore/state/lightcore_controller.dart';
 import 'package:lightcore/theme/lightcore_theme.dart';
-import 'package:lightcore/widgets/lightcore_quest_card.dart';
 
 void main() {
   testWidgets('battle canvas replaces its game when controller changes', (
@@ -49,25 +47,7 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('collapsed guide shows the next action', (tester) async {
-    addTearDown(() async {
-      await tester.binding.setSurfaceSize(null);
-    });
-    await tester.binding.setSurfaceSize(const Size(430, 780));
-    final controller = LightcoreController();
-    addTearDown(controller.dispose);
-
-    controller.selectCenter();
-    expect(controller.tutorialCompactPrompt, 'Click Hex 1');
-
-    await _pumpBattleScreen(tester, controller);
-
-    expect(find.text('Click Hex 1'), findsOneWidget);
-    expect(find.text('View guide'), findsNothing);
-    expect(tester.takeException(), isNull);
-  });
-
-  testWidgets('collapsed guide stays short when detail override is long', (
+  testWidgets('battle screen does not show tutorial guide chrome', (
     tester,
   ) async {
     addTearDown(() async {
@@ -78,30 +58,17 @@ void main() {
     addTearDown(controller.dispose);
 
     controller.selectCenter();
-    const longOverride =
-        'Hex 1 build controls are open. Choose Comet Mortar or Rayline Spire to bring the first tower online.';
+    expect(controller.hasActiveTutorial, isFalse);
+    expect(controller.tutorialCompactPrompt, isNull);
 
-    await tester.pumpWidget(
-      MaterialApp(
-        debugShowCheckedModeBanner: false,
-        theme: buildLightcoreTheme(),
-        home: Scaffold(
-          body: LightcoreQuestCard(
-            controller: controller,
-            compact: true,
-            instructionOverride: longOverride,
-          ),
-        ),
-      ),
-    );
-    await tester.pump();
+    await _pumpBattleScreen(tester, controller);
 
-    expect(find.text('Click Hex 1'), findsOneWidget);
-    expect(find.text(longOverride), findsNothing);
+    expect(find.text('Click Hex 1'), findsNothing);
+    expect(find.text('View guide'), findsNothing);
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('opening battle hides overdrive until it is taught', (
+  testWidgets('battle no longer hides overdrive behind tutorial state', (
     tester,
   ) async {
     addTearDown(() async {
@@ -114,17 +81,9 @@ void main() {
     controller.selectCenter();
     expect(controller.buildTowerAt(0, TowerLibrary.redPrism), isTrue);
     expect(controller.canUseManualOverdrive, isTrue);
-    expect(controller.showManualOverdriveHud, isFalse);
+    expect(controller.showManualOverdriveHud, isTrue);
 
     await _pumpBattleScreen(tester, controller);
-
-    expect(
-      find.byKey(const ValueKey<String>('manual-overdrive-hud')),
-      findsNothing,
-    );
-
-    controller.debugDisableTutorial();
-    await tester.pump();
 
     expect(
       find.byKey(const ValueKey<String>('manual-overdrive-hud')),
@@ -133,7 +92,7 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('opening core panel hides ready-shot capacity controls', (
+  testWidgets('core panel exposes persistent queue controls without tutorial', (
     tester,
   ) async {
     addTearDown(() async {
@@ -145,15 +104,14 @@ void main() {
 
     controller.selectCenter();
     await _pumpBattleScreen(tester, controller);
+    await tester.tap(find.byType(GameWidget<LightcoreBattleGame>));
     await tester.pump();
 
-    expect(controller.tutorialUsesBattleOnlyNavigation, isTrue);
-    expect(find.textContaining('Ready Shots'), findsNothing);
-    expect(find.text('Ready'), findsNothing);
+    expect(controller.tutorialUsesBattleOnlyNavigation, isFalse);
+    expect(find.textContaining('Persistent core upgrades'), findsOneWidget);
+    expect(find.textContaining('Charge Buffer'), findsWidgets);
     expect(find.text('Ring'), findsNothing);
     expect(find.text('Slots'), findsNothing);
-    expect(find.text('TS'), findsNothing);
-    expect(find.text('EXP'), findsNothing);
     expect(find.text('Crit'), findsNothing);
     expect(find.text('Final'), findsNothing);
     expect(find.text('Normal'), findsNothing);
@@ -161,7 +119,7 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('challenge prompt does not reserve hidden overdrive space', (
+  testWidgets('challenge prompt stays above bottom browser chrome', (
     tester,
   ) async {
     addTearDown(() async {
@@ -172,8 +130,7 @@ void main() {
     addTearDown(controller.dispose);
 
     _prepareOpeningChallengePrompt(controller);
-    expect(controller.tutorialStep, LightcoreTutorialStep.raiseThreat);
-    expect(controller.showManualOverdriveHud, isFalse);
+    expect(controller.tutorialStep, LightcoreTutorialStep.none);
 
     await _pumpBattleScreen(tester, controller);
 
@@ -181,13 +138,11 @@ void main() {
       const ValueKey<String>('battle-raise-threat-prompt'),
     );
     expect(prompt, findsOneWidget);
-    expect(tester.getBottomLeft(prompt).dy, greaterThan(730));
+    expect(tester.getBottomLeft(prompt).dy, lessThan(700));
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('active opening challenge explains the pressure upgrade loop', (
-    tester,
-  ) async {
+  testWidgets('active wave hides lower start prompt', (tester) async {
     addTearDown(() async {
       await tester.binding.setSurfaceSize(null);
     });
@@ -201,10 +156,10 @@ void main() {
 
     await _pumpBattleScreen(tester, controller);
 
-    expect(find.text('Challenge live'), findsOneWidget);
-    expect(find.text('Push Wave 5'), findsOneWidget);
-    expect(find.textContaining('Enemy Lv 2'), findsOneWidget);
-    expect(find.textContaining('upgrade Hex 1'), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey<String>('battle-raise-threat-prompt')),
+      findsNothing,
+    );
     expect(find.text('Challenge ready'), findsNothing);
     expect(tester.takeException(), isNull);
   });
@@ -234,9 +189,10 @@ void main() {
     );
     expect(find.text('Best Wave'), findsOneWidget);
     expect(find.text('Wave 10'), findsOneWidget);
-    expect(find.text('Layer 2 Lv 1 seed'), findsOneWidget);
-    expect(find.text('Rolled Stat Upgrades'), findsOneWidget);
-    expect(find.textContaining('Tower Level'), findsOneWidget);
+    expect(find.textContaining('Layer 2 Lv 1 seed'), findsOneWidget);
+    expect(find.textContaining('6/6 hexes unlocked'), findsOneWidget);
+    expect(find.text('Layer 1 Stat Upgrades'), findsOneWidget);
+    expect(find.textContaining('Layer 1 Tower Level'), findsOneWidget);
     expect(find.textContaining('Charge Rate'), findsWidgets);
     expect(tester.takeException(), isNull);
   });
@@ -284,48 +240,12 @@ void main() {
 void _prepareOpeningChallengePrompt(LightcoreController controller) {
   controller.selectCenter();
   expect(controller.buildTowerAt(0, TowerLibrary.redPrism), isTrue);
-  final starter = controller.debugSpawnEnemyFromCard(
-    EnemyLibrary.starterDefault.id,
-    angle: 0,
-    radius: 120,
-    healthFraction: 1,
-  );
-  expect(starter, isNotNull);
-  expect(
-    controller.debugSetTowerCharge(0, charge: 1, cooldownRemaining: 0),
-    isTrue,
-  );
-  expect(controller.queuedCorePackets, 0);
-  expect(controller.focusBattleEnemyForNextShot(starter!.id), isTrue);
-  _advanceUntil(
-    controller,
-    () =>
-        controller.tutorialStep ==
-        LightcoreTutorialStep.upgradeFirstTowerToLevel3,
-    reason: 'opening focus click did not auto-fire the next generated shot',
-  );
-  expect(controller.queuedCorePackets, 0);
   final upgradeCost = controller.upgradeCost(controller.slots[0]);
   if (controller.lumens < upgradeCost) {
     controller.lumens = upgradeCost;
   }
   expect(controller.upgradeTower(0), isTrue);
-}
-
-void _advanceUntil(
-  LightcoreController controller,
-  bool Function() condition, {
-  required String reason,
-  int steps = 160,
-  double dt = 0.5,
-}) {
-  for (var index = 0; index < steps; index++) {
-    if (condition()) {
-      return;
-    }
-    controller.tick(dt);
-  }
-  fail(reason);
+  controller.selectCenter();
 }
 
 Future<void> _pumpBattleScreen(

@@ -782,11 +782,12 @@ extension LightcoreControllerProgressionLayers on LightcoreController {
   }
 
   String lockedOuterSlotSummary(int slotIndex) {
-    final requirement = _outerSlotUnlockExperienceForProgression(slotIndex);
-    final remaining = max(0, requirement - progressionExperience);
+    final requirement = _outerSlotUnlockWaveForProgression(slotIndex);
+    final currentWave = max(1, activeLayer.bestWaveReached);
+    final remaining = max(0, requirement - currentWave);
     return remaining <= 0
         ? 'Hex ${slotIndex + 1} is stable. Anchor a prism relay when ready.'
-        : 'Hex ${slotIndex + 1} stabilizes at $requirement total EXP. $remaining more EXP needed.';
+        : 'Hex ${slotIndex + 1} opens at Wave $requirement. Clear $remaining more wave${remaining == 1 ? '' : 's'} to unlock it.';
   }
 
   String get outerSlotUnlockStatusLabel {
@@ -794,7 +795,7 @@ extension LightcoreControllerProgressionLayers on LightcoreController {
     if (slotIndex == null) {
       return 'All $slotCount prism anchors are stable.';
     }
-    return 'Prism anchors $unlockedOuterSlotCount/$slotCount stable • Hex ${slotIndex + 1} opens at ${_outerSlotUnlockExperienceForProgression(slotIndex)} EXP.';
+    return 'Prism anchors $unlockedOuterSlotCount/$slotCount stable • Hex ${slotIndex + 1} opens at Wave ${_outerSlotUnlockWaveForProgression(slotIndex)}.';
   }
 
   String get promotionStatusLabel {
@@ -1891,8 +1892,6 @@ extension LightcoreControllerProgressionLayers on LightcoreController {
       activeLayer.bossReady = false;
       activeLayer.normalKillsSinceBoss = 0;
     }
-    _tutorialPulseTarget = null;
-    _tutorialPulseSignal = 0;
     _rewardedTutorialSteps
       ..clear()
       ..addAll(LightcoreTutorialStep.values);

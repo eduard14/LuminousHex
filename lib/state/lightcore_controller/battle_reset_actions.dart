@@ -226,8 +226,6 @@ extension LightcoreControllerBattleResetActions on LightcoreController {
     _tutorialSafeScanDefeats = 0;
     _tutorialManagerAutoAimShots = 0;
     _tutorialTrackedBossEnemyId = null;
-    _tutorialPulseTarget = null;
-    _tutorialPulseSignal = 0;
     _rewardedTutorialSteps.clear();
     _armStarterBossForOpening();
     _showBanner(

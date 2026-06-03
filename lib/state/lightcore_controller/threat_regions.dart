@@ -660,6 +660,10 @@ extension LightcoreControllerThreatRegions on LightcoreController {
     final completedWave = _farmWaveForRegionLevel(
       challenge.targetStabilizationLevel,
     );
+    activeLayer.bestWaveReached = max(
+      activeLayer.bestWaveReached,
+      completedWave,
+    );
     final nextState = state.copyWith(
       stabilizedLevel: challenge.targetStabilizationLevel,
       bestCompletedWave: max(state.bestCompletedWave, completedWave),

@@ -48,12 +48,11 @@ climbing.
 
 1. Enter a hex shell built around the central Lightcore.
 2. Reveal the first perimeter hex immediately and build the opening relay.
-3. Click a highlighted starter anomaly to focus fire while the core and relay
-   towers auto-charge shots.
-4. Upgrade the first tower from its controls as the next action, keeping stats
-   optional instead of a required tutorial stop.
-5. Build the remaining perimeter relay towers while tower clicks stay reserved for
-   tower controls.
+3. Click anomalies to focus fire while the core and relay towers auto-charge
+   shots.
+4. Upgrade the first tower from its controls as the next action.
+5. Clear wave milestones to unlock the remaining perimeter relay towers:
+   Hex 1 at Wave 1, Hexes 2-3 after Wave 5, and Hexes 4-6 after Wave 10.
 6. Upgrade towers, core stats, and encounter capacity with earned resources.
 7. Roll Threat Scans into Knowledge Cards that make enemy families easier
    to understand and farm.
@@ -76,22 +75,19 @@ climbing.
 - Relay towers charge shots into the Lightcore instead of asking the player to
   manually queue or drag ammo.
 - Opening combat is low-friction: shots auto-charge after the Lightcore wakes,
-  Hex 1 is immediately selectable, then the player clicks an anomaly to focus
-  fire while the next generated shot fires there.
-- The first focus-fire lesson guarantees a visible starter anomaly so the
-  player can act immediately after the first relay comes online.
+  Hex 1 is immediately selectable, and anomaly clicks focus the next generated
+  shots without a tap-to-queue requirement.
 - The first tower/focus/upgrade loop grants enough starter Lumens to move from
   build to focus fire to the first upgrade without idle grinding.
-- The first five minutes demonstrate the repeat loop directly: anomalies dent
-  Hex 1, Output Efficiency drops, upgrading restores flow, Push Wave 5 hits
-  harder, the next upgrade holds the route, then Push Wave 10 repeats
-  the overwhelm-and-upgrade beat before Hex 2 opens.
-- The scripted guided loop is regression-tested against a five-minute simulated
-  budget and a click-before-ready focus shot, so pacing changes cannot quietly
-  push Hex 2 beyond the opening window or reintroduce queued-shot waiting.
-- Guided Push Wave 5 and Wave 10 feedback uses battle-loop language ("harder
-  enemies dented Hex 1, upgrade to hold the lane") instead of region/farm jargon
-  while the player is still learning the opening loop.
+- The opening shell is wave-gated instead of tutorial-gated: the player starts
+  with Hex 1, unlocks Hexes 2-3 after Wave 5, and has all six perimeter hexes
+  available after Wave 10.
+- Wave 10 creates the Layer 2 level 1 seed target, but the player still needs a
+  full shell before merge: all six outer towers built and maxed.
+- Challenge prompts and active challenge HUD now show the harder enemy level,
+  active swarm count, and Lumen reward preview; starter challenge waves raise
+  both enemy level and active enemy pressure so the "new area is harder" beat is
+  mechanical, not tutorial copy.
 - Layer 1 now exposes a Component Forecast in battle, tower management, and the
   Layer 2 Components screen so players can see current projectile odds, payload
   odds, best wave, Layer 2 level, and expected subtraits before merging.
@@ -100,9 +96,16 @@ climbing.
   3-subtrait rolls.
 - The battlefield now keeps a compact wave HUD visible, including the early
   `Wave 10 -> Layer 2 Lv 1` seed goal, so the Layer 1 push has a clear target.
+- The wave HUD also shows unlocked hex coverage and the full-shell merge
+  requirement so Wave 10 cannot be mistaken for an instant merge.
 - Selecting a built tower now opens its level and rolled stat upgrade board on
   the battlefield, making fire-rate, damage, range, multishot-adjacent, and
   other wave-by-wave upgrades visible without hunting through a detail modal.
+- Selecting the Lightcore opens persistent core upgrades directly and separates
+  shell-wide core growth from Layer 1 tower stat rolls.
+- The Lightcore control panel can expose charged-shot queue order controls when
+  shots are waiting, letting active players move generated shots earlier or
+  later before firing.
 - Layer 1 merges now hand the created Layer 2 component into the promotion
   result surface, showing the rolled projectile, payload, Layer 2 level,
   source wave, farm-output value, subtraits, favorite action, and area
@@ -112,31 +115,16 @@ climbing.
   upgrade them with Component Scrolls, and dismantle unwanted rolls.
 - Layer 2+ Apex clears award Component Scrolls alongside boss rewards, tying
   active boss farming to long-term region output without adding prestige.
-- The post-upgrade threat prompt explains the payoff and highlights the
-  Challenge button directly, including harder-enemy framing and the Lumen
-  reward preview, so the next step reads as an earned push instead of a menu
-  hunt.
-- Challenge prompts and active challenge HUD now show the harder enemy level,
-  active swarm count, and Lumen reward preview; starter challenge waves raise
-  both enemy level and active enemy pressure so the "new area is harder" beat
-  is mechanical, not only tutorial copy.
-- Completing Push Wave 5 satisfies the opening Output Efficiency lesson,
-  keeping the player in the fight-and-upgrade loop instead of forcing a stats
-  panel detour.
+- The post-upgrade threat prompt explains the payoff and highlights the push
+  action directly, including harder-enemy framing and the Lumen reward preview,
+  so the next step reads as an earned push instead of a menu hunt.
+- Tutorial systems are intentionally disabled while the first two layers are
+  being rebuilt; production teaching will be redesigned after the core loop is
+  stable.
 - Unspent Radiance points stay available in Profile without blocking the first
-  tower-upgrade-to-second-tower expansion loop.
-- Radiance, Store, and pass tutorials wait until the shell has at least three
-  towers, a child shell, or boss-hunt progression, keeping the opening guide on
-  combat instead of sidecar economy surfaces.
-- Locked bottom navigation destinations stay hidden during the guided opening
-  loop, so the first-session chrome does not advertise unavailable systems.
-- Store, Passes, and header menu actions also stay hidden during the guided
-  opening, keeping the top chrome focused on battle state instead of side
-  systems.
-- The opening resource rail collapses to the guide badge, Lumens, and Output
-  Efficiency only; profile, rank, Tower Strength, and Flux return after the
-  guided opening so meta progression does not compete with the first combat
-  loop.
+  tower-upgrade-to-wave-push expansion loop.
+- The opening resource rail keeps Lumens and Output Efficiency legible while
+  battle state stays focused on wave, selected tower, challenge, and upgrades.
 - Tower badges use projectile color and hex-edge level progress only; payload
   tinting is kept out of the first-session visual language until payload traits
   are explicitly taught later.
@@ -151,39 +139,20 @@ climbing.
   keeping the early combat read focused on projectile choice, wave progress,
   tower upgrades, and anomaly focus.
 - Manager-less shells now call the opening state Focus Fire instead of Manual
-  Command, and core stats separate charge-buffer capacity from ring completion.
+  Command, and core stats separate charge-buffer capacity from shell completion.
 - The first tower timer is presented as Building and Online instead of
   fabrication jargon, keeping the opening loop action-oriented.
-- The guided first tower comes online immediately after selection, so the
-  opening flow moves straight from tower choice into focus fire.
-- Tutorial guidance appears as a compact battlefield notification with the
-  active task highlighted in-world; players expand the guide only when they
-  want more detail.
-- Player-facing guidance consistently uses click language for battlefield,
-  tower, quest, and detail interactions so the opening does not read like an
-  old tap-to-queue mobile chore loop.
-- Collapsed tutorial notifications stay lightweight: they show the quest title
-  plus a short action like "Click Hex 1" or "Push Wave 5", while the
-  detailed instruction lives in the optional guide sheet.
-- Opening battle tutorial steps no longer raise transient prompt banners; the
-  battlefield highlight, click cue, and compact guide own that instruction lane.
-- Manual Overdrive stays out of the battle HUD during the guided opening loop,
-  keeping aim, tower controls, upgrades, and challenge prompts from competing.
+- Player-facing guidance uses click/focus language for battlefield, tower, and
+  detail interactions so the opening does not read like an old tap-to-queue
+  mobile chore loop.
+- Manual Overdrive appears from the underlying combat unlocks instead of being
+  hidden behind tutorial state.
 - Clearing starter Push Wave 5 pays enough Lumens for the next anchor-tower
   upgrade, so the first combat loop chains directly into a stronger lane
   instead of asking for a grind pause.
-- Hex 2 waits until the player clears Push Wave 10 and reinforces Hex 1
-  again, keeping the second tower decision connected to the core
-  pressure-upgrade-repeat loop instead of interrupting it.
-- Hex 2 now has its own compact expansion guide after the repeat loop, so the
-  second tower choice is taught in-world instead of silently relying on the
-  restricted tower palette.
-- The first Hex 2 starter choice is also funded and brought online instantly,
-  letting the opening loop move from the second pressure payoff into a second tower
-  decision without a 45-second fabrication wait.
-- Bringing Hex 2 online ends the guided battle-only opening instead of pushing
-  an immediate Map, Anomaly, or side-system chore; broader systems return after
-  the player has completed the pressure-upgrade-repeat loop.
+- Hexes 2 and 3 wait until Wave 5 is cleared; Hexes 4-6 wait until Wave 10 is
+  cleared, keeping tower expansion connected to the pressure-upgrade-repeat
+  loop instead of allowing a full shell immediately.
 - Tower body clicks are reserved for tower controls, upgrades, stats, and
   targeting tools, keeping build/stat actions distinct from anomaly aiming.
 - Enemy focus clicks automatically close open battle control panels so aiming
@@ -196,17 +165,14 @@ climbing.
   promotion moments, not orbiting marker dots around the active core.
 - The battlefield no longer shows a ready-shot counter during normal Layer 1
   play; the visible combat read is wave, focus, and tower upgrades.
-- Core controls hide charge-buffer rows and upgrades during the guided
-  opening, keeping the first-session panel focused on range, fire speed,
-  output, and stability rather than queue management.
-- Guided-opening core stats suppress meta/buildcraft rows such as Ring, Slots,
-  TS, EXP, crit, final damage, and penetration so the first panel stays readable.
+- Opening core controls suppress meta/buildcraft rows such as Ring, Slots, TS,
+  EXP, crit, final damage, and penetration so the first panel stays readable.
 - Opening area-push challenges keep a compact live battle HUD on screen that
   names the harder enemy wave, shows progress, and points the player back to
   upgrading Hex 1 after the wave clears.
-- The first two guided area-push challenges are shortened into brisk
-  pressure spikes so the opening loop reaches Hex 2 quickly instead of asking
-  the player to wait through full-length region timers.
+- The first two area-push challenges are shortened into brisk pressure spikes
+  so the opening loop reaches the Wave 5 and Wave 10 milestones quickly instead
+  of asking the player to wait through full-length region timers.
 - Shell visibility is an explicit HUD toggle, keeping battlefield taps from
   folding the active battlefield or opening tower placement.
 - Manager automation upgrades core fire into hands-off target routing while
@@ -217,14 +183,11 @@ climbing.
 - Manual Overdrive accelerates the live shell battle.
 - Focus Target lets players briefly prioritize a dangerous anomaly during active
   challenges and live farming.
-- First-session guidance stays lightweight: collapsed guide flags, explicit
-  target labels, transient top notifications, and bottom action prompts keep the
-  battlefield visible during early clicks.
-- Lumo/Luma guide callouts appear on loading interstitials with strategic tips
-  such as balancing growth, flow, and Output Efficiency.
+- Lumo/Luma loading interstitials can show short non-blocking flavor tips such
+  as balancing growth, flow, and Output Efficiency.
 - Screen transitions, event-run loading, and major shell area transitions use the
   same fullscreen branded Lightcore loading interstitial with generic loading
-  status, Lumo/Luma background art, and Lumo/Luma guide tips. App startup shows
+  status, Lumo/Luma background art, and short tip text. App startup shows
   only the Lemon Goose Games Inc. splash before revealing the LumiHex main menu.
 
 ### Towers And Builds
@@ -276,9 +239,9 @@ climbing.
   behavior.
 - Apex Anomalies spawn after normal anomaly progress and grant larger rewards.
 - Threat Map and regional challenge surfaces frame anomaly pressure by region.
-- The starter-region Push Wave 5 prompt appears as a bottom battle action
-  after early overmatch, turning the first tower upgrade into immediate added
-  pressure without covering the first tower hex.
+- The starter-region Push Wave 5 prompt appears as a compact battle action after
+  early overmatch, turning the first tower upgrade into immediate added pressure
+  without covering the first tower hex or bottom browser chrome.
 - The compact battle Component Forecast appears once the shell has useful
   Layer 1 context, and the full forecast is available on Tower Management and
   Layer 2 Components for deliberate build planning.

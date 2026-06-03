@@ -68,6 +68,28 @@ extension LightcoreControllerBattleActions on LightcoreController {
     return true;
   }
 
+  bool moveQueuedAmmoPacketEarlier(String packetId) {
+    final index = _ammoQueue.indexWhere((packet) => packet.id == packetId);
+    if (index <= 0) {
+      return false;
+    }
+    final packet = _ammoQueue.removeAt(index);
+    _ammoQueue.insert(index - 1, packet);
+    _notifyNow();
+    return true;
+  }
+
+  bool moveQueuedAmmoPacketLater(String packetId) {
+    final index = _ammoQueue.indexWhere((packet) => packet.id == packetId);
+    if (index < 0 || index >= _ammoQueue.length - 1) {
+      return false;
+    }
+    final packet = _ammoQueue.removeAt(index);
+    _ammoQueue.insert(index + 1, packet);
+    _notifyNow();
+    return true;
+  }
+
   bool debugAdvancePulseToCore(String pulseId) {
     final index = _pulses.indexWhere((pulse) => pulse.id == pulseId);
     if (index == -1) {

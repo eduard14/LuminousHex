@@ -94,25 +94,7 @@ extension LightcoreControllerBattleUnlocks on LightcoreController {
     int previousExperience,
     int currentExperience,
   ) {
-    final previouslyUnlocked = unlockedOuterSlotCountForExperience(
-      previousExperience,
-    );
-    final currentlyUnlocked = unlockedOuterSlotCountForExperience(
-      currentExperience,
-    );
-    if (currentlyUnlocked <= previouslyUnlocked) {
-      return null;
-    }
-
-    if (currentlyUnlocked >= slotCount) {
-      return 'All $slotCount prism anchors are now stable.';
-    }
-
-    final unlockedCount = currentlyUnlocked - previouslyUnlocked;
-    final unlockedLabel = unlockedCount == 1
-        ? 'Hex $currentlyUnlocked stabilized.'
-        : 'Hexes ${previouslyUnlocked + 1}-$currentlyUnlocked stabilized.';
-    return '$unlockedLabel Next anchor opens at ${unlockExperienceForOuterSlot(currentlyUnlocked)} EXP.';
+    return null;
   }
 
   String? _grantBossUnlockIfNeeded() {

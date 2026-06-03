@@ -16,13 +16,13 @@ void _preparePureRing(
     LightcoreController.slotCount - 1,
   );
   controller.lumens = 1000000;
+  controller.activeLayer.bestWaveReached = bestWave;
   for (var index = 0; index < LightcoreController.slotCount; index += 1) {
     expect(controller.buildTowerAt(index, config), isTrue);
     while (controller.slots[index].level < LightcoreController.maxTowerLevel) {
       expect(controller.upgradeTower(index), isTrue);
     }
   }
-  controller.activeLayer.bestWaveReached = bestWave;
 }
 
 void main() {
@@ -58,7 +58,7 @@ void main() {
     addTearDown(shallow.dispose);
     addTearDown(deep.dispose);
 
-    _preparePureRing(shallow, TowerLibrary.cyanPrism, bestWave: 5);
+    _preparePureRing(shallow, TowerLibrary.cyanPrism, bestWave: 10);
     _preparePureRing(deep, TowerLibrary.cyanPrism, bestWave: 30);
 
     shallow.unlockLayer2Tower();
@@ -67,8 +67,8 @@ void main() {
     final shallowComponent = shallow.latestLayer2Component!;
     final deepComponent = deep.latestLayer2Component!;
 
-    expect(shallowComponent.statTier, 5);
-    expect(shallowComponent.subtraits, hasLength(1));
+    expect(shallowComponent.statTier, 10);
+    expect(shallowComponent.subtraits, hasLength(2));
     expect(deepComponent.statTier, 30);
     expect(deepComponent.subtraits, hasLength(3));
     expect(

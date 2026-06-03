@@ -9,6 +9,7 @@ typedef _Layer3TrialSpawn = ({
 });
 
 extension LightcoreControllerCombatEnemies on LightcoreController {
+  // ignore: unused_element
   void _ensureTutorialFocusEnemy() {
     if (_tutorialStep != LightcoreTutorialStep.focusFirstEnemy ||
         _tutorialFocusFireLearned ||

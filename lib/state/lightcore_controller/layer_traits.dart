@@ -118,6 +118,17 @@ extension LightcoreControllerLayerTraits on LightcoreController {
     return unlockExperienceForOuterSlot(slotIndex);
   }
 
+  int _outerSlotUnlockWaveForProgression(int slotIndex) {
+    if (slotIndex < 0) {
+      return 1;
+    }
+    if (slotIndex < LightcoreController.outerSlotUnlockWaveThresholds.length) {
+      return LightcoreController.outerSlotUnlockWaveThresholds[slotIndex];
+    }
+    return LightcoreController.outerSlotUnlockWaveThresholds.last +
+        ((slotIndex + 1) * 5);
+  }
+
   bool get _currentLayerEarlyTutorialComplete {
     final tower = _firstTutorialTower;
     if (builtTowerCount > 1) {
@@ -577,6 +588,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
     return null;
   }
 
+  // ignore: unused_element
   LightcoreTutorialStep _deriveTutorialStep() {
     final candidate = _deriveTutorialStepCandidate();
     return _tutorialStepAlreadyComplete(candidate)
@@ -658,38 +670,15 @@ extension LightcoreControllerLayerTraits on LightcoreController {
   }
 
   void _syncTutorialStep({bool showBanner = true}) {
-    if (!_tutorialEarlyQuestChainCompleted &&
-        _currentLayerEarlyTutorialComplete) {
-      _tutorialEarlyQuestChainCompleted = true;
-    }
-    final previousStep = _tutorialStep;
-    var nextStep = _deriveTutorialStep();
-    if (nextStep == _tutorialStep) {
-      return;
-    }
-    final completedPrevious =
-        previousStep != LightcoreTutorialStep.none &&
-        _isTutorialStepComplete(previousStep);
-    final completionMessage = completedPrevious
-        ? _grantTutorialCompletionReward(previousStep)
-        : null;
-    if (completedPrevious) {
-      nextStep = _deriveTutorialStep();
-    }
-    _tutorialStep = nextStep;
-    _ensureTutorialFocusEnemy();
-    final prompt = tutorialPrompt;
-    if (completionMessage != null) {
-      _showBanner(completionMessage, duration: 3.4);
-    } else if (showBanner &&
-        _tutorialPromptsEnabled &&
-        _tutorialStepAllowsPromptBanner(nextStep) &&
-        prompt != null &&
-        prompt.isNotEmpty) {
-      _showBanner(prompt, duration: 4.2);
+    _tutorialEarlyQuestChainCompleted = true;
+    _tutorialPromptsEnabled = false;
+    if (_tutorialStep != LightcoreTutorialStep.none) {
+      _tutorialStep = LightcoreTutorialStep.none;
+      _needsNotify = true;
     }
   }
 
+  // ignore: unused_element
   bool _tutorialStepAllowsPromptBanner(LightcoreTutorialStep step) {
     if (step == LightcoreTutorialStep.none) {
       return false;
@@ -711,6 +700,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
     };
   }
 
+  // ignore: unused_element
   String? _grantTutorialCompletionReward(LightcoreTutorialStep step) {
     if (step == LightcoreTutorialStep.none ||
         !_rewardedTutorialSteps.add(step)) {
@@ -2341,16 +2331,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
     return '${projectile.label}: ${projectile.summary}';
   }
 
-  bool showcaseCurrentTutorialTarget() {
-    final target = tutorialShowcaseTarget;
-    if (target == null) {
-      return false;
-    }
-    _tutorialPulseTarget = target;
-    _tutorialPulseSignal += 1;
-    _notifyNow();
-    return true;
-  }
+  bool showcaseCurrentTutorialTarget() => false;
 
   void enterSourceLayer() {
     final sourceId = activeLayer.sourceLayerId;

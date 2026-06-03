@@ -5,6 +5,7 @@ import 'package:lightcore/state/lightcore_controller.dart';
 
 void _completeLayer1Coverage(LightcoreController controller) {
   controller.lumens = 100000000;
+  controller.activeLayer.bestWaveReached = 10;
   controller.kills = LightcoreController.unlockKillsForOuterSlot(
     LightcoreController.slotCount - 1,
   );
@@ -46,42 +47,17 @@ void main() {
     expect(manifest.versionGateFor('1.3.0'), LightcoreVersionGate.ok);
   });
 
-  test('opening tutorial definitions use click language', () {
-    const openingQuestIds = <String>{
-      'TUT-001',
-      'TUT-002',
-      'TUT-003',
-      'TUT-004',
-      'TUT-007',
-      'TUT-009',
-      'TUT-010A',
-      'TUT-010B',
-      'TUT-011',
-      'TUT-013',
-      'TUT-013B',
-      'TUT-013C',
-      'TUT-019',
-      'TUT-020',
-      'TUT-024',
-    };
+  test('tutorial system is inert while first layers are rebuilt', () {
+    final controller = LightcoreController();
+    addTearDown(controller.dispose);
 
-    for (final quest in LightcoreController.tutorialQuestLibrary) {
-      if (!openingQuestIds.contains(quest.id)) {
-        continue;
-      }
-      final visibleCopy = <String>[
-        quest.primaryClickTarget,
-        quest.coachCopy,
-        quest.completionCondition,
-        quest.failureHelpState,
-      ].join('\n');
-
-      expect(
-        visibleCopy,
-        isNot(contains(RegExp(r'\b[Tt]ap\b'))),
-        reason: '${quest.id} should not use stale tap copy.',
-      );
-    }
+    expect(controller.tutorialPromptsEnabled, isFalse);
+    expect(controller.tutorialStep, LightcoreTutorialStep.none);
+    expect(controller.hasActiveTutorial, isFalse);
+    expect(controller.tutorialQuestDefinition, isNull);
+    expect(controller.tutorialHighlightsBattleCore, isFalse);
+    expect(controller.tutorialHighlightsThreatChallengeButton, isFalse);
+    expect(controller.tutorialShowcaseTarget, isNull);
   });
 
   test('content manifest can gate same-version build numbers', () {
@@ -388,7 +364,7 @@ void main() {
     );
     controller.setNotificationBannersEnabled(false);
     controller.setBattleNotificationBannersEnabled(true);
-    controller.setTutorialPromptsEnabled(false);
+    controller.setTutorialPromptsEnabled(true);
 
     expect(controller.buildTowerAt(0, TowerLibrary.all.first), isTrue);
 
@@ -412,125 +388,39 @@ void main() {
     expect(restored.buildCloudSavePayload()['schemaVersion'], 1);
   });
 
-  test('restore does not replay a fresh tutorial reward', () {
+  test('restore keeps tutorial prompts disabled from saved settings', () {
     final controller = LightcoreController();
     addTearDown(controller.dispose);
 
     final payload = controller.buildCloudSavePayload();
-    final resources = payload['resources'] as Map<String, dynamic>;
-    final layers = payload['layers'] as Map<String, dynamic>;
-    final layer =
-        (layers['items'] as List<dynamic>).first as Map<String, dynamic>;
-    final tutorial = payload['tutorial'] as Map<String, dynamic>;
-    resources['enemyTickets'] = 4;
-    layer['outerRingRevealed'] = true;
-    tutorial['earlyQuestChainCompleted'] = true;
-    tutorial.remove('rewardedSteps');
+    final settings = payload['settings'] as Map<String, dynamic>;
+    settings['tutorialPromptsEnabled'] = true;
 
     final restored = LightcoreController.fromCloudSavePayload(payload);
     addTearDown(restored.dispose);
 
-    expect(restored.enemyTickets, 4);
+    expect(restored.tutorialPromptsEnabled, isFalse);
+    expect(restored.showManualOverdriveHud, isTrue);
   });
 
-  test('restore migrates server-sanitized early tutorial state', () {
-    final controller = LightcoreController();
-    addTearDown(controller.dispose);
-
-    final payload = controller.buildCloudSavePayload();
-    final resources = payload['resources'] as Map<String, dynamic>;
-    final layers = payload['layers'] as Map<String, dynamic>;
-    final layer =
-        (layers['items'] as List<dynamic>).first as Map<String, dynamic>;
-    final core = layer['core'] as Map<String, dynamic>;
-    final slots = layer['slots'] as List<dynamic>;
-    final firstSlot = slots.first as Map<String, dynamic>;
-    final tutorial = payload['tutorial'] as Map<String, dynamic>;
-
-    resources['enemyPullCount'] = 1;
-    resources['kills'] = LightcoreController.unlockKillsForOuterSlot(0);
-    layer['outerRingRevealed'] = true;
-    core['rangeUpgradeLevel'] = 1;
-    firstSlot['configId'] = TowerLibrary.redPrism.id;
-    firstSlot['level'] = 3;
-    firstSlot['fireSequence'] = 3;
-    tutorial['earlyQuestChainCompleted'] = false;
-    tutorial.remove('stabilityPanelOpened');
-    tutorial.remove('managerAutoAimShots');
-    tutorial.remove('rewardedSteps');
-
-    final restored = LightcoreController.fromCloudSavePayload(payload);
-    addTearDown(restored.dispose);
-
-    final restoredTutorial =
-        restored.buildCloudSavePayload()['tutorial'] as Map<String, dynamic>;
-    expect(restoredTutorial['earlyQuestChainCompleted'], isTrue);
-    expect(restoredTutorial['stabilityPanelOpened'], isTrue);
-    expect(restoredTutorial['managerAutoAimShots'], greaterThanOrEqualTo(5));
-    expect(restored.managerAssignmentUnlocked, isFalse);
-    expect(restored.tutorialStep, isNot(LightcoreTutorialStep.unfoldShell));
-  });
-
-  test('restore accepts legacy auto queue tutorial save fields', () {
-    final controller = LightcoreController();
-    addTearDown(controller.dispose);
-
-    final payload = controller.buildCloudSavePayload();
-    final tutorial = payload['tutorial'] as Map<String, dynamic>;
-    tutorial.remove('managerAutoAimShots');
-    tutorial.remove('focusFireLearned');
-    tutorial.remove('secondShellTowerInspected');
-    tutorial['autoQueuedPulses'] = 5;
-    tutorial['manualAimFireLearned'] = true;
-    tutorial['secondShellShotTapLearned'] = true;
-    tutorial['rewardedSteps'] = <String>[
-      'autoQueueCheck',
-      'tapFirstTower',
-      'tapSecondShellTower',
-    ];
-
-    final restored = LightcoreController.fromCloudSavePayload(payload);
-    addTearDown(restored.dispose);
-
-    final restoredTutorial =
-        restored.buildCloudSavePayload()['tutorial'] as Map<String, dynamic>;
-    expect(restoredTutorial['managerAutoAimShots'], 5);
-    expect(restoredTutorial['focusFireLearned'], isTrue);
-    expect(restoredTutorial['secondShellTowerInspected'], isTrue);
-    expect(restoredTutorial.containsKey('autoQueuedPulses'), isFalse);
-    expect(restoredTutorial.containsKey('manualAimFireLearned'), isFalse);
-    expect(restoredTutorial.containsKey('secondShellShotTapLearned'), isFalse);
-    expect(
-      restoredTutorial['rewardedSteps'],
-      contains(LightcoreTutorialStep.managerAutoAim.name),
-    );
-    expect(
-      restoredTutorial['rewardedSteps'],
-      contains(LightcoreTutorialStep.focusFirstEnemy.name),
-    );
-    expect(
-      restoredTutorial['rewardedSteps'],
-      contains(LightcoreTutorialStep.inspectSecondShellTower.name),
-    );
-  });
-
-  test('outer slots unlock from cumulative kill milestones', () {
+  test('outer slots unlock from wave milestones', () {
     final controller = LightcoreController();
     controller.lumens = 1000;
 
     expect(controller.unlockedOuterSlotCount, 1);
     expect(controller.buildTowerAt(1, TowerLibrary.all[1]), isFalse);
 
-    controller.kills = LightcoreController.unlockKillsForOuterSlot(1);
-
-    expect(controller.unlockedOuterSlotCount, 2);
-    expect(controller.buildTowerAt(0, TowerLibrary.all.first), isTrue);
-    expect(controller.buildTowerAt(1, TowerLibrary.all[1]), isTrue);
-    expect(controller.buildTowerAt(2, TowerLibrary.all[2]), isFalse);
-
-    controller.kills = LightcoreController.unlockKillsForOuterSlot(2);
+    controller.activeLayer.bestWaveReached = 5;
 
     expect(controller.unlockedOuterSlotCount, 3);
+    expect(controller.buildTowerAt(0, TowerLibrary.all.first), isTrue);
+    expect(controller.buildTowerAt(1, TowerLibrary.all[1]), isTrue);
     expect(controller.buildTowerAt(2, TowerLibrary.all[2]), isTrue);
+    expect(controller.buildTowerAt(3, TowerLibrary.all[3]), isFalse);
+
+    controller.activeLayer.bestWaveReached = 10;
+
+    expect(controller.unlockedOuterSlotCount, LightcoreController.slotCount);
+    expect(controller.buildTowerAt(3, TowerLibrary.all[3]), isTrue);
   });
 }

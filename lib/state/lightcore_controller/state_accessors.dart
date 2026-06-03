@@ -25,20 +25,6 @@ extension LightcoreControllerStateAccessors on LightcoreController {
     _totalUpgradesBought += 1;
   }
 
-  String _tutorialTowerShotGuideLabel(int slotIndex) {
-    if (slotIndex < 0 || slotIndex >= _slots.length) {
-      return 'WAIT';
-    }
-    final tower = _slots[slotIndex];
-    if (_pulses.any((pulse) => pulse.sourceSlotIndex == slotIndex)) {
-      return 'TAP TOWER';
-    }
-    if (tower.cooldownRemaining > 0) {
-      return 'COOLDOWN';
-    }
-    return 'CHARGING';
-  }
-
   double get _radianceMightPowerBonus =>
       radianceStatRank(LightcoreRadianceStat.might) * 0.006;
 
@@ -258,7 +244,7 @@ extension LightcoreControllerStateAccessors on LightcoreController {
   bool get battleNotificationBannersEnabled =>
       _battleNotificationBannersEnabled;
 
-  bool get tutorialPromptsEnabled => _tutorialPromptsEnabled;
+  bool get tutorialPromptsEnabled => false;
 
   bool get localhostAutoTapperEnabled => _localhostAutoTapperEnabled;
 
@@ -303,11 +289,10 @@ extension LightcoreControllerStateAccessors on LightcoreController {
   }
 
   void setTutorialPromptsEnabled(bool enabled) {
-    if (_tutorialPromptsEnabled == enabled) {
-      return;
+    if (_tutorialPromptsEnabled) {
+      _tutorialPromptsEnabled = false;
+      _notifyNow();
     }
-    _tutorialPromptsEnabled = enabled;
-    _notifyNow();
   }
 
   void setLocalhostAutoTapperEnabled(bool enabled) {
@@ -607,7 +592,15 @@ extension LightcoreControllerStateAccessors on LightcoreController {
           .clamp(0.0, 1.0);
 
   int get unlockedOuterSlotCount {
-    return unlockedOuterSlotCountForExperience(progressionExperience);
+    var unlocked = 0;
+    final wave = max(1, activeLayer.bestWaveReached);
+    for (var index = 0; index < slotCount; index++) {
+      if (wave < _outerSlotUnlockWaveForProgression(index)) {
+        break;
+      }
+      unlocked += 1;
+    }
+    return unlocked;
   }
 
   int get bossKillsIntoCycle => activeLayer.bossReady
@@ -623,10 +616,9 @@ extension LightcoreControllerStateAccessors on LightcoreController {
 
   bool get bossAlive => _enemies.any((enemy) => enemy.config.isBoss);
 
-  LightcoreTutorialStep get tutorialStep => _tutorialStep;
+  LightcoreTutorialStep get tutorialStep => LightcoreTutorialStep.none;
 
-  LightcoreTutorialQuestDefinition? get tutorialQuestDefinition =>
-      _tutorialQuestDefinitions[_tutorialStep];
+  LightcoreTutorialQuestDefinition? get tutorialQuestDefinition => null;
 
   String? get tutorialQuestId => tutorialQuestDefinition?.id;
 
@@ -640,219 +632,80 @@ extension LightcoreControllerStateAccessors on LightcoreController {
 
   String? get tutorialFailureHelp => tutorialQuestDefinition?.failureHelpState;
 
-  bool get hasActiveTutorial => _tutorialStep != LightcoreTutorialStep.none;
+  bool get hasActiveTutorial => false;
 
-  bool get tutorialUsesBattlefieldClickPiece =>
-      _tutorialStep == LightcoreTutorialStep.unfoldShell ||
-      _tutorialStep == LightcoreTutorialStep.selectFirstHex ||
-      _tutorialStep == LightcoreTutorialStep.buildFirstRedTower ||
-      _tutorialStep == LightcoreTutorialStep.focusFirstEnemy ||
-      _tutorialStep == LightcoreTutorialStep.inspectSecondShellTower ||
-      _tutorialStep == LightcoreTutorialStep.upgradeFirstTowerToLevel3 ||
-      _tutorialStep == LightcoreTutorialStep.upgradeFirstTowerToLevel4 ||
-      _tutorialStep == LightcoreTutorialStep.upgradeFirstTowerToLevel5 ||
-      _tutorialStep == LightcoreTutorialStep.buildSecondStarterTower;
+  bool get tutorialUsesBattlefieldClickPiece => false;
 
-  bool get tutorialNeedsTowerPaletteGate {
-    if (_earlyTutorialComplete || _currentLayerEarlyTutorialComplete) {
-      return false;
-    }
-    return true;
-  }
+  bool get tutorialNeedsTowerPaletteGate => false;
 
-  bool get tutorialUsesBattleOnlyNavigation =>
-      _tutorialPromptsEnabled &&
-      !_earlyTutorialComplete &&
-      activeLayer.tier == 1 &&
-      _layer2Components.isEmpty;
+  bool get tutorialUsesBattleOnlyNavigation => false;
 
-  bool get tutorialShowsStarterProjectileChoices =>
-      _earlyTutorialComplete &&
-      _totalTowersBuilt <= 1 &&
-      builtTowerCount == 1 &&
-      activeLayer.parentLayerId == null &&
-      activeLayer.tier == 1 &&
-      _layer2Components.isEmpty;
+  bool get tutorialShowsStarterProjectileChoices => false;
 
-  bool get tutorialHighlightsBattleCore =>
-      _tutorialStep == LightcoreTutorialStep.unfoldShell;
+  bool get tutorialHighlightsBattleCore => false;
 
   String? get tutorialBattleCoreGuideLabel => null;
 
-  bool get tutorialHighlightsCoreStats =>
-      _tutorialStep == LightcoreTutorialStep.readEffectiveGain ||
-      _tutorialStep == LightcoreTutorialStep.managerAutoAim;
+  bool get tutorialHighlightsCoreStats => false;
 
-  bool tutorialHighlightsBattleSlot(int slotIndex) {
-    if (slotIndex == 0 &&
-        (_tutorialStep == LightcoreTutorialStep.selectFirstHex ||
-            ((_tutorialStep == LightcoreTutorialStep.buildFirstRedTower ||
-                    _tutorialStep ==
-                        LightcoreTutorialStep.upgradeFirstTowerToLevel3 ||
-                    _tutorialStep ==
-                        LightcoreTutorialStep.upgradeFirstTowerToLevel4 ||
-                    _tutorialStep ==
-                        LightcoreTutorialStep.upgradeFirstTowerToLevel5) &&
-                selectedSlotIndex != 0))) {
-      return true;
-    }
-    if (slotIndex == 1 &&
-        _tutorialStep == LightcoreTutorialStep.buildSecondStarterTower &&
-        selectedSlotIndex != 1) {
-      return true;
-    }
-    final shotTutorialSlotIndex = _secondShellShotTutorialSlotIndex();
-    return _tutorialStep == LightcoreTutorialStep.inspectSecondShellTower &&
-        shotTutorialSlotIndex == slotIndex;
-  }
+  bool tutorialHighlightsBattleSlot(int slotIndex) => false;
 
-  String? tutorialBattleSlotGuideLabel(int slotIndex) {
-    if (!tutorialHighlightsBattleSlot(slotIndex)) {
-      return null;
-    }
-    return switch (_tutorialStep) {
-      LightcoreTutorialStep.selectFirstHex => 'BUILD HERE',
-      LightcoreTutorialStep.buildFirstRedTower => 'CHOOSE TOWER',
-      LightcoreTutorialStep.buildSecondStarterTower => 'BUILD HEX 2',
-      LightcoreTutorialStep.upgradeFirstTowerToLevel3 ||
-      LightcoreTutorialStep.upgradeFirstTowerToLevel4 ||
-      LightcoreTutorialStep.upgradeFirstTowerToLevel5 => 'UPGRADE',
-      LightcoreTutorialStep.inspectSecondShellTower =>
-        _tutorialTowerShotGuideLabel(slotIndex),
-      _ => null,
-    };
-  }
+  String? tutorialBattleSlotGuideLabel(int slotIndex) => null;
 
-  bool get tutorialHighlightsPullsButton =>
-      _tutorialStep == LightcoreTutorialStep.openBossPulls;
+  bool get tutorialHighlightsPullsButton => false;
 
-  bool get tutorialHighlightsStoreButton =>
-      _tutorialStep == LightcoreTutorialStep.openStore;
+  bool get tutorialHighlightsStoreButton => false;
 
-  bool get tutorialHighlightsBattlePassButton =>
-      _tutorialStep == LightcoreTutorialStep.claimBattlePassReward;
+  bool get tutorialHighlightsBattlePassButton => false;
 
-  bool get tutorialHighlightsFriendsButton =>
-      _tutorialStep == LightcoreTutorialStep.openFriends;
+  bool get tutorialHighlightsFriendsButton => false;
 
-  bool get tutorialHighlightsHeaderMenuButton =>
-      _tutorialStep == LightcoreTutorialStep.setScreenName ||
-      _tutorialStep == LightcoreTutorialStep.openFriends ||
-      _tutorialStep == LightcoreTutorialStep.openMentees ||
-      _tutorialStep == LightcoreTutorialStep.openMentors ||
-      _tutorialStep == LightcoreTutorialStep.inspectEnemyBlitz ||
-      _tutorialStep == LightcoreTutorialStep.inspectHexGauntlet ||
-      _tutorialStep == LightcoreTutorialStep.inspectArenaFlow;
+  bool get tutorialHighlightsHeaderMenuButton => false;
 
-  bool get tutorialHighlightsEnemySinglePullButton =>
-      fullThreatMapUnlocked &&
-      (_tutorialStep == LightcoreTutorialStep.pullFirstWhiteEnemy ||
-          _tutorialStep == LightcoreTutorialStep.pullFirstRedEnemy);
+  bool get tutorialHighlightsEnemySinglePullButton => false;
 
-  bool get tutorialHighlightsBossSinglePullButton =>
-      fullThreatMapUnlocked &&
-      _tutorialStep == LightcoreTutorialStep.openBossPulls;
+  bool get tutorialHighlightsBossSinglePullButton => false;
 
-  bool get tutorialHighlightsThreatChallengeButton =>
-      _tutorialStep == LightcoreTutorialStep.raiseThreat ||
-      _tutorialStep == LightcoreTutorialStep.pushNextArea ||
-      _tutorialStep == LightcoreTutorialStep.openBossPulls;
+  bool get tutorialHighlightsThreatChallengeButton => false;
 
-  bool get tutorialShowsBattleThreatPrompt =>
-      _tutorialStep == LightcoreTutorialStep.raiseThreat ||
-      _tutorialStep == LightcoreTutorialStep.pushNextArea;
+  bool get tutorialShowsBattleThreatPrompt => false;
 
-  bool get tutorialHighlightsTowersNav =>
-      _tutorialStep == LightcoreTutorialStep.openTowerMatrix;
+  bool get tutorialHighlightsTowersNav => false;
 
-  bool get tutorialHighlightsThreatMapNav =>
-      _tutorialStep == LightcoreTutorialStep.pullFirstWhiteEnemy ||
-      _tutorialStep == LightcoreTutorialStep.pullFirstRedEnemy ||
-      _tutorialStep == LightcoreTutorialStep.adjustEnemyCount ||
-      _tutorialStep == LightcoreTutorialStep.openBossPulls;
+  bool get tutorialHighlightsThreatMapNav => false;
 
-  bool get tutorialHighlightsEnemiesNav =>
-      _tutorialStep == LightcoreTutorialStep.armFirstBoss;
+  bool get tutorialHighlightsEnemiesNav => false;
 
-  bool get tutorialHighlightsManagersNav =>
-      _tutorialStep == LightcoreTutorialStep.openManagers ||
-      _tutorialStep == LightcoreTutorialStep.forgeTowerManager ||
-      _tutorialStep == LightcoreTutorialStep.assignTowerManager ||
-      _tutorialStep == LightcoreTutorialStep.forgeEnemyManager ||
-      _tutorialStep == LightcoreTutorialStep.assignEnemyManager;
+  bool get tutorialHighlightsManagersNav => false;
 
-  bool get tutorialHighlightsMenteesNav =>
-      _tutorialStep == LightcoreTutorialStep.openMentees ||
-      _tutorialStep == LightcoreTutorialStep.openMentors;
+  bool get tutorialHighlightsMenteesNav => false;
 
-  bool get tutorialHighlightsMentorsNav =>
-      _tutorialStep == LightcoreTutorialStep.openMentees ||
-      _tutorialStep == LightcoreTutorialStep.openMentors;
+  bool get tutorialHighlightsMentorsNav => false;
 
-  bool get tutorialHighlightsTournamentsNav =>
-      _tutorialStep == LightcoreTutorialStep.inspectEnemyBlitz ||
-      _tutorialStep == LightcoreTutorialStep.inspectHexGauntlet ||
-      _tutorialStep == LightcoreTutorialStep.inspectArenaFlow;
+  bool get tutorialHighlightsTournamentsNav => false;
 
-  bool get tutorialHighlightsOverlayBackButton =>
-      _tutorialStep == LightcoreTutorialStep.defeatFirstBoss;
+  bool get tutorialHighlightsOverlayBackButton => false;
 
-  bool get tutorialHighlightsBossBar =>
-      _tutorialStep == LightcoreTutorialStep.openEquipment;
+  bool get tutorialHighlightsBossBar => false;
 
-  bool get tutorialHighlightsPlayerManagerButton =>
-      _tutorialStep == LightcoreTutorialStep.openEquipment ||
-      _tutorialStep == LightcoreTutorialStep.upgradeCoreRange ||
-      _tutorialStep == LightcoreTutorialStep.setScreenName;
+  bool get tutorialHighlightsPlayerManagerButton => false;
 
-  bool get tutorialHighlightsOverdriveButton =>
-      _tutorialStep == LightcoreTutorialStep.holdOverdrive;
+  bool get tutorialHighlightsOverdriveButton => false;
 
-  bool get tutorialHighlightsBattleBoss =>
-      _tutorialStep == LightcoreTutorialStep.defeatFirstBoss &&
-      _tutorialTrackedBossEnemyId != null;
+  bool get tutorialHighlightsBattleBoss => false;
 
-  String? get tutorialHighlightedEnemyId {
-    if (_tutorialStep == LightcoreTutorialStep.focusFirstEnemy &&
-        _enemies.isNotEmpty) {
-      return _enemies.first.id;
-    }
-    return tutorialHighlightsBattleBoss ? _tutorialTrackedBossEnemyId : null;
-  }
+  String? get tutorialHighlightedEnemyId => null;
 
-  LightcoreTutorialPulseTarget? get tutorialShowcaseTarget =>
-      switch (_tutorialStep) {
-        LightcoreTutorialStep.pullFirstWhiteEnemy ||
-        LightcoreTutorialStep.pullFirstRedEnemy ||
-        LightcoreTutorialStep.openBossPulls =>
-          LightcoreTutorialPulseTarget.pullsButton,
-        LightcoreTutorialStep.openEquipment ||
-        LightcoreTutorialStep.upgradeCoreRange ||
-        LightcoreTutorialStep.setScreenName =>
-          LightcoreTutorialPulseTarget.playerManagerButton,
-        LightcoreTutorialStep.holdOverdrive =>
-          LightcoreTutorialPulseTarget.overdriveButton,
-        _ => null,
-      };
+  LightcoreTutorialPulseTarget? get tutorialShowcaseTarget => null;
 
   bool get canShowcaseCurrentTutorialTarget => tutorialShowcaseTarget != null;
 
-  LightcoreTournamentModeId? get tutorialTournamentModeTarget =>
-      switch (_tutorialStep) {
-        LightcoreTutorialStep.inspectEnemyBlitz =>
-          LightcoreTournamentModeId.enemyBlitz,
-        LightcoreTutorialStep.inspectHexGauntlet =>
-          LightcoreTournamentModeId.hexGauntlet,
-        LightcoreTutorialStep.inspectArenaFlow =>
-          LightcoreTournamentModeId.arenaFlow,
-        _ => null,
-      };
+  LightcoreTournamentModeId? get tutorialTournamentModeTarget => null;
 
   bool tutorialHighlightsTournamentModeCard(LightcoreTournamentModeId mode) =>
       tutorialTournamentModeTarget == mode;
 
-  int tutorialPulseSignalFor(LightcoreTutorialPulseTarget target) =>
-      _tutorialPulseTarget == target ? _tutorialPulseSignal : 0;
+  int tutorialPulseSignalFor(LightcoreTutorialPulseTarget target) => 0;
 
   double get promotionProgress => promotionReadyTowerCount / slotCount;
 

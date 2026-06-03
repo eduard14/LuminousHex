@@ -5,27 +5,23 @@ import 'package:lightcore/models/lightcore_social_state.dart';
 import 'package:lightcore/state/lightcore_controller.dart';
 
 void main() {
-  test('progression EXP unlocks slots without requiring raw kill count', () {
+  test('wave milestones unlock slots without requiring raw kill count', () {
     final controller = LightcoreController();
     addTearDown(controller.dispose);
 
     expect(controller.unlockedOuterSlotCount, 1);
 
-    controller.grantRewardedResources(
-      experienceGranted: LightcoreController.unlockExperienceForOuterSlot(1),
-      sourceLabel: 'Test',
-    );
+    controller.activeLayer.bestWaveReached = 5;
 
     expect(controller.kills, 0);
-    expect(controller.progressionExperience, 100);
-    expect(controller.unlockedOuterSlotCount, 2);
+    expect(controller.unlockedOuterSlotCount, 3);
   });
 
   test('completed shared relay produces borrowers and alliance bonuses', () {
     final controller = LightcoreController();
     addTearDown(controller.dispose);
 
-    controller.experience = LightcoreController.unlockExperienceForOuterSlot(5);
+    controller.activeLayer.bestWaveReached = 10;
     controller.lumens = 100000;
     for (var index = 0; index < LightcoreController.slotCount; index++) {
       expect(controller.buildTowerAt(index, TowerLibrary.all[index]), isTrue);

@@ -15,9 +15,7 @@ import '../services/lightcore_audio.dart';
 import '../state/lightcore_controller.dart';
 import '../theme/lightcore_palette.dart';
 import '../widgets/aurora_panel.dart';
-import '../widgets/guided_focus_frame.dart';
 import '../widgets/layer_one_component_forecast_panel.dart';
-import '../widgets/lightcore_quest_card.dart';
 import '../widgets/meter_bar.dart';
 import '../widgets/symbol_grid_tile.dart';
 import '../widgets/tower_ring_icon.dart';
@@ -476,8 +474,6 @@ class _BattleScreenState extends State<BattleScreen> {
     _logBattle('center-tap');
     LightcoreAudio.instance.playSfx(LightcoreSfx.uiTap);
     final controller = widget.controller;
-    final wasCorePanelOpen =
-        _panelFocus == _BattlePanelFocus.core && _selectionControlsVisible;
     controller.handleBattleCenterTap();
     if (controller.activeThreatRegionChallenge != null) {
       setState(() {
@@ -489,13 +485,8 @@ class _BattleScreenState extends State<BattleScreen> {
     }
     setState(() {
       _statsTarget = const _BattleStatsTarget.core();
-      if (wasCorePanelOpen) {
-        _panelFocus = _BattlePanelFocus.core;
-        _selectionControlsVisible = true;
-      } else {
-        _panelFocus = _BattlePanelFocus.none;
-        _selectionControlsVisible = false;
-      }
+      _panelFocus = _BattlePanelFocus.core;
+      _selectionControlsVisible = true;
     });
   }
 
@@ -519,12 +510,7 @@ class _BattleScreenState extends State<BattleScreen> {
     final target = slot != null && !slot.isLayerProject
         ? _BattleStatsTarget.slot(slotIndex)
         : null;
-    final opensControls =
-        slot != null &&
-        !slot.isLayerProject &&
-        (!slot.isBuilt ||
-            slot.isFabricating ||
-            controller.activeLayerPassiveOnly);
+    final opensControls = slot != null && !slot.isLayerProject;
     final defersControls =
         slot != null &&
         slot.isBuilt &&
@@ -533,6 +519,8 @@ class _BattleScreenState extends State<BattleScreen> {
         !controller.activeLayerPassiveOnly;
     if (!defersControls) {
       controller.handleBattleSlotTap(slotIndex);
+    } else {
+      controller.selectSlot(slotIndex);
     }
     if (controller.activeThreatRegionChallenge != null) {
       setState(() {
@@ -576,8 +564,8 @@ class _BattleScreenState extends State<BattleScreen> {
     }
   }
 
-  bool _buildTutorialTowerAt(int slotIndex, TowerConfig config) {
-    final started = widget.controller.tutorialStartTowerFabricationAt(
+  bool _buildTowerAt(int slotIndex, TowerConfig config) {
+    final started = widget.controller.startTowerFabricationAt(
       slotIndex,
       config,
     );
@@ -858,51 +846,6 @@ class _BattleScreenState extends State<BattleScreen> {
     return null;
   }
 
-  bool _selectionButtonHighlighted(
-    LightcoreController controller,
-    _BattleStatsTarget target,
-  ) {
-    if (_tutorialOpenPanelBlocksCurrentStep(controller) &&
-        _isStatsTargetOpen(target)) {
-      return true;
-    }
-    switch (target.kind) {
-      case _BattleStatsTargetKind.core:
-        return controller.tutorialHighlightsCoreStats;
-      case _BattleStatsTargetKind.slot:
-        final slotIndex = target.slotIndex;
-        return slotIndex != null &&
-            controller.tutorialHighlightsUpgradeButton(slotIndex);
-    }
-  }
-
-  String? _selectionButtonTapCueLabel(
-    LightcoreController controller,
-    _BattleStatsTarget target,
-  ) {
-    final targetOpen = _isStatsTargetOpen(target) && _selectionControlsVisible;
-    if (_tutorialOpenPanelBlocksCurrentStep(controller) && targetOpen) {
-      return 'Close panel';
-    }
-    switch (target.kind) {
-      case _BattleStatsTargetKind.core:
-        return controller.tutorialHighlightsCoreStats
-            ? targetOpen
-                  ? 'Core stats'
-                  : 'Open stats'
-            : null;
-      case _BattleStatsTargetKind.slot:
-        final slotIndex = target.slotIndex;
-        if (slotIndex == null) {
-          return null;
-        }
-        if (controller.tutorialHighlightsUpgradeButton(slotIndex)) {
-          return targetOpen ? 'Upgrade' : 'Open upgrades';
-        }
-        return null;
-    }
-  }
-
   IconData _statsTargetIcon(_BattleStatsTarget target) {
     switch (target.kind) {
       case _BattleStatsTargetKind.core:
@@ -936,7 +879,7 @@ class _BattleScreenState extends State<BattleScreen> {
       controller: controller,
       selected: selected,
       panelFocus: panelFocus,
-      onBuildTower: _buildTutorialTowerAt,
+      onBuildTower: _buildTowerAt,
     );
 
     final tint = _selectionTint(controller, selected, panelFocus);
@@ -944,7 +887,7 @@ class _BattleScreenState extends State<BattleScreen> {
     return ConstrainedBox(
       constraints: BoxConstraints(
         maxWidth: compact ? MediaQuery.sizeOf(context).width - 24 : 460,
-        maxHeight: MediaQuery.sizeOf(context).height * (compact ? 0.42 : 0.5),
+        maxHeight: MediaQuery.sizeOf(context).height * (compact ? 0.56 : 0.58),
       ),
       child: AuroraPanel(
         tint: tint,
@@ -1002,28 +945,7 @@ class _BattleScreenState extends State<BattleScreen> {
       tooltip: tooltip,
       icon: icon,
       selected: targetOpen && _selectionControlsVisible,
-      highlighted: _selectionButtonHighlighted(controller, target),
-      tapCueLabel: _selectionButtonTapCueLabel(controller, target),
       onPressed: () => _toggleSelectionControlsFor(context, target),
-    );
-  }
-
-  Widget? _buildQuestPanel(
-    LightcoreController controller, {
-    required bool compact,
-    String? instructionOverride,
-  }) {
-    if (!widget.showBattleHud ||
-        !widget.showQuestPanel ||
-        !widget.showBattleGuides ||
-        !controller.hasActiveTutorial) {
-      return null;
-    }
-
-    return LightcoreQuestCard(
-      controller: controller,
-      compact: compact,
-      instructionOverride: instructionOverride,
     );
   }
 
@@ -1032,37 +954,21 @@ class _BattleScreenState extends State<BattleScreen> {
     required bool compact,
   }) {
     final activeChallenge = controller.activeThreatRegionChallenge;
-    final openingChallengeLive =
-        activeChallenge != null &&
-        activeChallenge.targetStabilizationLevel <= 2 &&
-        controller.tutorialUsesBattleOnlyNavigation;
     if (!widget.showBattleHud ||
-        (!controller.tutorialShowsBattleThreatPrompt &&
-            !openingChallengeLive)) {
+        activeChallenge != null ||
+        !controller.canStartFirstThreatChallenge) {
       return null;
     }
-    final challengeWave = (activeChallenge?.targetStabilizationLevel ?? 0) * 5;
     return _RaiseThreatPrompt(
       compact: compact,
-      label: openingChallengeLive
-          ? 'Push Wave $challengeWave'
-          : controller.firstThreatChallengeLabel,
-      rewardLabel: openingChallengeLive
-          ? controller.activeThreatRegionChallengeRewardLabel
-          : controller.firstThreatChallengeRewardLabel,
-      pressureLabel: openingChallengeLive
-          ? controller.activeThreatRegionChallengePressureLabel
-          : controller.firstThreatChallengePressurePreviewLabel,
-      enabled: !openingChallengeLive && controller.canStartFirstThreatChallenge,
-      active: openingChallengeLive,
-      progress: openingChallengeLive
-          ? controller.activeThreatRegionChallengeProgress
-          : 0,
-      loopInstruction: openingChallengeLive
-          ? challengeWave == 5
-                ? 'Harder enemies are attacking. Clear the wave, then upgrade Hex 1 to hold the lane.'
-                : 'The next area is harder again. Hold the wave, then reinforce Hex 1.'
-          : 'Start the harder wave when Hex 1 is stable.',
+      label: controller.firstThreatChallengeLabel,
+      rewardLabel: controller.firstThreatChallengeRewardLabel,
+      pressureLabel: controller.firstThreatChallengePressurePreviewLabel,
+      enabled: controller.canStartFirstThreatChallenge,
+      active: false,
+      progress: 0,
+      loopInstruction:
+          'Start the next wave when your current tower plan is ready.',
       onPressed: () {
         LightcoreAudio.instance.playSfx(LightcoreSfx.uiConfirm);
         final started = controller.startFirstThreatChallenge();
@@ -1094,86 +1000,6 @@ class _BattleScreenState extends State<BattleScreen> {
     );
   }
 
-  bool _tutorialOpenPanelBlocksCurrentStep(LightcoreController controller) {
-    if (!_selectionControlsVisible) {
-      return false;
-    }
-    return switch (controller.tutorialStep) {
-      LightcoreTutorialStep.focusFirstEnemy ||
-      LightcoreTutorialStep.inspectSecondShellTower ||
-      LightcoreTutorialStep.pullFirstWhiteEnemy ||
-      LightcoreTutorialStep.pullFirstRedEnemy ||
-      LightcoreTutorialStep.setFirstEnemyTarget ||
-      LightcoreTutorialStep.adjustEnemyCount ||
-      LightcoreTutorialStep.openTowerMatrix ||
-      LightcoreTutorialStep.openStore ||
-      LightcoreTutorialStep.claimBattlePassReward ||
-      LightcoreTutorialStep.openBossPulls ||
-      LightcoreTutorialStep.armFirstBoss ||
-      LightcoreTutorialStep.defeatFirstBoss ||
-      LightcoreTutorialStep.openEquipment ||
-      LightcoreTutorialStep.openManagers ||
-      LightcoreTutorialStep.forgeTowerManager ||
-      LightcoreTutorialStep.assignTowerManager ||
-      LightcoreTutorialStep.forgeEnemyManager ||
-      LightcoreTutorialStep.assignEnemyManager ||
-      LightcoreTutorialStep.setScreenName ||
-      LightcoreTutorialStep.openFriends ||
-      LightcoreTutorialStep.openMentees ||
-      LightcoreTutorialStep.openMentors ||
-      LightcoreTutorialStep.inspectEnemyBlitz ||
-      LightcoreTutorialStep.inspectHexGauntlet ||
-      LightcoreTutorialStep.inspectArenaFlow => true,
-      _ => false,
-    };
-  }
-
-  String? _tutorialInstructionOverride({
-    required LightcoreController controller,
-    required OuterTowerState? selected,
-    required bool selectionOverlayVisible,
-  }) {
-    if (!selectionOverlayVisible) {
-      return null;
-    }
-    final selectedSlotIndex = selected?.slotIndex;
-    switch (controller.tutorialStep) {
-      case LightcoreTutorialStep.buildFirstRedTower:
-        if (selectedSlotIndex == 0 && selected?.isBuilt == false) {
-          return 'Hex 1 build controls are open. Choose Comet Mortar or Rayline Spire to bring the first tower online.';
-        }
-      case LightcoreTutorialStep.upgradeFirstTowerToLevel3:
-        if (selectedSlotIndex == 0 && selected?.isBuilt == true) {
-          return 'Use the Upgrade button in the open Hex 1 controls once.';
-        }
-      case LightcoreTutorialStep.upgradeFirstTowerToLevel4:
-        if (selectedSlotIndex == 0 && selected?.isBuilt == true) {
-          return 'Use the Tower Level button in the open Hex 1 controls one more time before expanding.';
-        }
-      case LightcoreTutorialStep.upgradeFirstTowerToLevel5:
-        if (selectedSlotIndex == 0 && selected?.isBuilt == true) {
-          return 'Upgrade Hex 1 once more to hold Wave 10 pressure before opening Hex 2.';
-        }
-      case LightcoreTutorialStep.buildSecondStarterTower:
-        if (selectedSlotIndex == 1 && selected?.isBuilt == false) {
-          return 'Hex 2 build controls are open. Choose Thread Beam or Shield Halo to add coverage after the pressure loop.';
-        }
-      case LightcoreTutorialStep.focusFirstEnemy:
-        if (_tutorialOpenPanelBlocksCurrentStep(controller)) {
-          return 'Close the open tower controls, then click a visible anomaly to focus fire. Tower clicks reopen tower controls.';
-        }
-      case LightcoreTutorialStep.inspectSecondShellTower:
-        if (_tutorialOpenPanelBlocksCurrentStep(controller)) {
-          return 'Close the open tower controls, then click the charged child-shell tower on the battlefield.';
-        }
-      default:
-        if (_tutorialOpenPanelBlocksCurrentStep(controller)) {
-          return 'Close the open battle controls, then continue this quest.';
-        }
-    }
-    return null;
-  }
-
   Widget _buildBattleLayout({
     required BuildContext context,
     required LightcoreController controller,
@@ -1193,17 +1019,6 @@ class _BattleScreenState extends State<BattleScreen> {
       context: context,
       controller: controller,
       selected: selected,
-    );
-    final selectionOverlayVisible = selectionOverlay != null;
-    final tutorialInstructionOverride = _tutorialInstructionOverride(
-      controller: controller,
-      selected: selected,
-      selectionOverlayVisible: selectionOverlayVisible,
-    );
-    final questPanel = _buildQuestPanel(
-      controller,
-      compact: compact,
-      instructionOverride: tutorialInstructionOverride,
     );
     final raiseThreatPrompt = _buildRaiseThreatPrompt(
       controller,
@@ -1249,9 +1064,7 @@ class _BattleScreenState extends State<BattleScreen> {
             bottom: bottomInset + bottomControlClearance,
             child: selectionOverlay,
           ),
-        if (questPanel != null)
-          Positioned(top: topInset, left: inset, child: questPanel),
-        if (raiseThreatPrompt != null)
+        if (raiseThreatPrompt != null && selectionOverlay == null)
           Positioned(
             left: inset,
             right: inset,
@@ -1328,9 +1141,11 @@ class _LayerOneWaveHud extends StatelessWidget {
     final layer2SeedLabel = controller.activeLayerComponentLevel <= 0
         ? 'Wave 10 -> Layer 2 Lv 1'
         : '${controller.activeLayerComponentLevelLabel} seed';
+    final towerUnlockLabel =
+        '${controller.unlockedOuterSlotCount}/${LightcoreController.slotCount} hexes unlocked';
     final subtitle = challenge == null
-        ? layer2SeedLabel
-        : 'Round ${challenge.waveIndex + 1}/${LightcoreController.threatRegionChallengeWaveCount} • $layer2SeedLabel';
+        ? '$layer2SeedLabel • $towerUnlockLabel'
+        : 'Round ${challenge.waveIndex + 1}/${LightcoreController.threatRegionChallengeWaveCount} • $towerUnlockLabel';
     final progress = challenge == null
         ? (controller.activeLayer.bestWaveReached / 10)
               .clamp(0.0, 1.0)
@@ -1338,7 +1153,7 @@ class _LayerOneWaveHud extends StatelessWidget {
         : controller.activeThreatRegionChallengeWaveProgress;
     return SizedBox(
       key: const ValueKey<String>('battle-wave-hud'),
-      width: compact ? 172 : 210,
+      width: compact ? 188 : 230,
       child: DecoratedBox(
         decoration: BoxDecoration(
           color: LightcorePalette.panel.withValues(alpha: 0.9),
@@ -1398,6 +1213,17 @@ class _LayerOneWaveHud extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
                 style: textTheme.labelSmall?.copyWith(
                   color: LightcorePalette.mist.withValues(alpha: 0.78),
+                  fontWeight: FontWeight.w800,
+                  height: 1.1,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Merge needs all 6 towers maxed',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: textTheme.labelSmall?.copyWith(
+                  color: LightcorePalette.solar.withValues(alpha: 0.82),
                   fontWeight: FontWeight.w800,
                   height: 1.1,
                 ),
@@ -1746,20 +1572,13 @@ class _RaiseThreatPrompt extends StatelessWidget {
                   if (!active) ...[
                     const SizedBox(width: 8),
                     Flexible(
-                      child: GuidedFocusFrame(
-                        active: enabled,
-                        tint: LightcorePalette.quest,
-                        radius: 999,
-                        padding: const EdgeInsets.all(3),
-                        tapCueLabel: 'Start',
-                        child: FilledButton.icon(
-                          onPressed: enabled ? onPressed : null,
-                          icon: const Icon(Icons.play_arrow_rounded),
-                          label: Text(
-                            label,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
+                      child: FilledButton.icon(
+                        onPressed: enabled ? onPressed : null,
+                        icon: const Icon(Icons.play_arrow_rounded),
+                        label: Text(
+                          label,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
                     ),
@@ -1889,7 +1708,7 @@ class _LiveTowerUpgradePanel extends StatelessWidget {
                   ),
                   const SizedBox(height: 3),
                   Text(
-                    'Wave upgrades shape this Layer 1 tower before it becomes a Layer 2 component.',
+                    'Layer 1 tower upgrades shape this shell before merge. They are part of this tower roll.',
                     style: textTheme.bodySmall?.copyWith(
                       color: LightcorePalette.mist.withValues(alpha: 0.78),
                       fontWeight: FontWeight.w700,
@@ -1945,13 +1764,15 @@ class _LiveTowerUpgradePanel extends StatelessWidget {
                 : null,
             icon: const Icon(Icons.keyboard_double_arrow_up_rounded),
             label: Text(
-              isMaxed ? 'Tower Level Maxed' : 'Tower Level • ${levelCost}L',
+              isMaxed
+                  ? 'Layer 1 Tower Maxed'
+                  : 'Layer 1 Tower Level • ${levelCost}L',
             ),
           ),
         ),
         const SizedBox(height: 12),
         Text(
-          'Rolled Stat Upgrades',
+          'Layer 1 Stat Upgrades',
           style: textTheme.titleSmall?.copyWith(
             color: LightcorePalette.mist,
             fontWeight: FontWeight.w900,
@@ -2267,6 +2088,14 @@ class _CoreStatsPanel extends StatelessWidget {
                       color: LightcorePalette.solar,
                     ),
                   ),
+                  const SizedBox(height: 3),
+                  Text(
+                    'Persistent core upgrades for this shell.',
+                    style: textTheme.bodySmall?.copyWith(
+                      color: LightcorePalette.mist.withValues(alpha: 0.72),
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -2433,6 +2262,45 @@ class _CoreStatsPanel extends StatelessWidget {
             ],
           ),
         ],
+        if (controller.queuedAmmoPackets.isNotEmpty) ...[
+          const SizedBox(height: 16),
+          Text(
+            'Shot Queue',
+            style: textTheme.titleSmall?.copyWith(
+              color: LightcorePalette.mist,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Click anomalies to auto-target. Reorder charged shots before they fire.',
+            style: textTheme.bodySmall?.copyWith(
+              color: LightcorePalette.mist.withValues(alpha: 0.72),
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Column(
+            children: [
+              for (
+                var index = 0;
+                index < controller.queuedAmmoPackets.length;
+                index += 1
+              )
+                _QueuedAmmoPacketRow(
+                  packet: controller.queuedAmmoPackets[index],
+                  index: index,
+                  total: controller.queuedAmmoPackets.length,
+                  onMoveEarlier: () => controller.moveQueuedAmmoPacketEarlier(
+                    controller.queuedAmmoPackets[index].id,
+                  ),
+                  onMoveLater: () => controller.moveQueuedAmmoPacketLater(
+                    controller.queuedAmmoPackets[index].id,
+                  ),
+                ),
+            ],
+          ),
+        ],
         const SizedBox(height: 16),
         Text(
           'Core Stats',
@@ -2441,19 +2309,7 @@ class _CoreStatsPanel extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 8),
-        GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTap: controller.markTutorialStabilityPanelOpened,
-          child: GuidedFocusFrame(
-            active: controller.tutorialHighlightsCoreStats,
-            tint: LightcorePalette.quest,
-            label:
-                controller.tutorialStep == LightcoreTutorialStep.managerAutoAim
-                ? 'AUTO'
-                : 'OUTPUT',
-            child: _InlineStatList(rows: coreStats),
-          ),
-        ),
+        _InlineStatList(rows: coreStats),
         const SizedBox(height: 12),
         Text(coreTraitLabel, style: textTheme.bodyMedium),
         if (showComponentForecast) ...[
@@ -2541,6 +2397,105 @@ class _CoreUpgradeStatCard extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _QueuedAmmoPacketRow extends StatelessWidget {
+  const _QueuedAmmoPacketRow({
+    required this.packet,
+    required this.index,
+    required this.total,
+    required this.onMoveEarlier,
+    required this.onMoveLater,
+  });
+
+  final AmmoPacket packet;
+  final int index;
+  final int total;
+  final VoidCallback onMoveEarlier;
+  final VoidCallback onMoveLater;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    final tint = packet.affinity.color;
+    final payloadLabel = packet.payloadType == PayloadType.none
+        ? 'No payload'
+        : packet.payloadType.label;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 7),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: LightcorePalette.abyss.withValues(alpha: 0.48),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: tint.withValues(alpha: 0.3)),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 7),
+          child: Row(
+            children: [
+              DecoratedBox(
+                decoration: BoxDecoration(
+                  color: tint.withValues(alpha: 0.18),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 7,
+                    vertical: 5,
+                  ),
+                  child: Text(
+                    '#${index + 1}',
+                    style: textTheme.labelMedium?.copyWith(
+                      color: tint,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      packet.projectileType.label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: textTheme.labelLarge?.copyWith(
+                        color: LightcorePalette.mist,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    Text(
+                      payloadLabel,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: textTheme.labelSmall?.copyWith(
+                        color: LightcorePalette.mist.withValues(alpha: 0.7),
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              IconButton(
+                tooltip: 'Move earlier',
+                visualDensity: VisualDensity.compact,
+                onPressed: index == 0 ? null : onMoveEarlier,
+                icon: const Icon(Icons.keyboard_arrow_up_rounded),
+              ),
+              IconButton(
+                tooltip: 'Move later',
+                visualDensity: VisualDensity.compact,
+                onPressed: index >= total - 1 ? null : onMoveLater,
+                icon: const Icon(Icons.keyboard_arrow_down_rounded),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -2691,9 +2646,6 @@ class _EmptySlotPanel extends StatelessWidget {
                       enabled:
                           controller.lumens >=
                           controller.buildCostForConfig(config),
-                      highlighted: controller.tutorialHighlightsBuildButton(
-                        config,
-                      ),
                       onPressed: () => onBuildTower(slot.slotIndex, config),
                     ),
                 ],
@@ -2769,8 +2721,6 @@ class _BattleSelectionHud extends StatelessWidget {
     required this.tooltip,
     required this.icon,
     required this.selected,
-    required this.highlighted,
-    required this.tapCueLabel,
     required this.onPressed,
   });
 
@@ -2778,50 +2728,42 @@ class _BattleSelectionHud extends StatelessWidget {
   final String tooltip;
   final IconData icon;
   final bool selected;
-  final bool highlighted;
-  final String? tapCueLabel;
   final VoidCallback onPressed;
 
   @override
   Widget build(BuildContext context) {
     return Tooltip(
       message: selected ? 'Hide $tooltip' : 'Show $tooltip',
-      child: GuidedFocusFrame(
-        active: highlighted,
-        tint: LightcorePalette.quest,
-        label: 'TUNE',
-        tapCueLabel: tapCueLabel,
-        child: Semantics(
-          button: true,
-          toggled: selected,
-          label: tooltip,
-          child: Material(
-            color: Colors.transparent,
-            child: InkWell(
-              key: const ValueKey<String>('battle-tower-selection-button'),
-              borderRadius: BorderRadius.circular(22),
-              onTap: onPressed,
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 160),
-                width: 66,
-                height: 66,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(22),
-                  color: LightcorePalette.panelRaised.withValues(alpha: 0.92),
-                  border: Border.all(
-                    color: tint.withValues(alpha: selected ? 0.92 : 0.64),
-                    width: selected ? 1.8 : 1.4,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: tint.withValues(alpha: selected ? 0.28 : 0.16),
-                      blurRadius: selected ? 22 : 16,
-                      spreadRadius: selected ? 2 : 0,
-                    ),
-                  ],
+      child: Semantics(
+        button: true,
+        toggled: selected,
+        label: tooltip,
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            key: const ValueKey<String>('battle-tower-selection-button'),
+            borderRadius: BorderRadius.circular(22),
+            onTap: onPressed,
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 160),
+              width: 66,
+              height: 66,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(22),
+                color: LightcorePalette.panelRaised.withValues(alpha: 0.92),
+                border: Border.all(
+                  color: tint.withValues(alpha: selected ? 0.92 : 0.64),
+                  width: selected ? 1.8 : 1.4,
                 ),
-                child: Icon(icon, size: 34, color: tint),
+                boxShadow: [
+                  BoxShadow(
+                    color: tint.withValues(alpha: selected ? 0.28 : 0.16),
+                    blurRadius: selected ? 22 : 16,
+                    spreadRadius: selected ? 2 : 0,
+                  ),
+                ],
               ),
+              child: Icon(icon, size: 34, color: tint),
             ),
           ),
         ),
@@ -2905,7 +2847,6 @@ class _ManualOverdriveHudState extends State<_ManualOverdriveHud> {
     final enabled = controller.canUseManualOverdrive;
     final held = controller.isManualOverdriveHeld;
     final charge = controller.manualOverdriveCharge;
-    final tutorialHighlighted = controller.tutorialHighlightsOverdriveButton;
     final tint = permanentOwned
         ? LightcorePalette.solar
         : !enabled
@@ -2938,40 +2879,28 @@ class _ManualOverdriveHudState extends State<_ManualOverdriveHud> {
           onPointerDown: enabled ? _handlePointerDown : null,
           onPointerUp: enabled ? (_) => _handlePointerEnd() : null,
           onPointerCancel: enabled ? _handlePointerCancel : null,
-          child: GuidedFocusFrame(
-            key: const ValueKey<String>('battle-overdrive-frame'),
-            active: tutorialHighlighted,
-            tint: LightcorePalette.quest,
-            pulseSignal: controller.tutorialPulseSignalFor(
-              LightcoreTutorialPulseTarget.overdriveButton,
-            ),
-            child: Opacity(
-              opacity: permanentOwned || enabled ? 1 : 0.76,
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 160),
-                width: 66,
-                height: 66,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(22),
-                  color: LightcorePalette.panelRaised.withValues(alpha: 0.92),
-                  border: Border.all(
-                    color: tint.withValues(
-                      alpha: permanentActive ? 0.92 : 0.75,
-                    ),
-                    width: permanentOwned ? 1.8 : 1.4,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: tint.withValues(
-                        alpha: permanentActive ? 0.34 : 0.2,
-                      ),
-                      blurRadius: permanentActive ? 22 : 16,
-                      spreadRadius: permanentActive ? 2 : 0,
-                    ),
-                  ],
+          child: Opacity(
+            opacity: permanentOwned || enabled ? 1 : 0.76,
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 160),
+              width: 66,
+              height: 66,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(22),
+                color: LightcorePalette.panelRaised.withValues(alpha: 0.92),
+                border: Border.all(
+                  color: tint.withValues(alpha: permanentActive ? 0.92 : 0.75),
+                  width: permanentOwned ? 1.8 : 1.4,
                 ),
-                child: Icon(Icons.flash_on_rounded, size: 34, color: tint),
+                boxShadow: [
+                  BoxShadow(
+                    color: tint.withValues(alpha: permanentActive ? 0.34 : 0.2),
+                    blurRadius: permanentActive ? 22 : 16,
+                    spreadRadius: permanentActive ? 2 : 0,
+                  ),
+                ],
               ),
+              child: Icon(Icons.flash_on_rounded, size: 34, color: tint),
             ),
           ),
         ),
@@ -2987,7 +2916,6 @@ class _BuildButton extends StatelessWidget {
     required this.fabricationDuration,
     required this.traitBias,
     required this.enabled,
-    required this.highlighted,
     required this.onPressed,
   });
 
@@ -2996,55 +2924,49 @@ class _BuildButton extends StatelessWidget {
   final String fabricationDuration;
   final String traitBias;
   final bool enabled;
-  final bool highlighted;
   final VoidCallback onPressed;
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
       width: 164,
-      child: GuidedFocusFrame(
-        active: highlighted,
-        tint: LightcorePalette.quest,
-        tapCueLabel: highlighted ? 'CLICK' : null,
-        child: FilledButton(
-          style: FilledButton.styleFrom(
-            backgroundColor: config.affinity.color.withValues(alpha: 0.92),
-            foregroundColor: LightcorePalette.night,
-            disabledBackgroundColor: LightcorePalette.panelRaised,
-          ),
-          onPressed: enabled ? onPressed : null,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(config.name, textAlign: TextAlign.center),
-              const SizedBox(height: 4),
-              Text(
-                '$buildCost Lumens • $fabricationDuration',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: LightcorePalette.night.withValues(alpha: 0.72),
-                  fontWeight: FontWeight.w700,
-                ),
+      child: FilledButton(
+        style: FilledButton.styleFrom(
+          backgroundColor: config.affinity.color.withValues(alpha: 0.92),
+          foregroundColor: LightcorePalette.night,
+          disabledBackgroundColor: LightcorePalette.panelRaised,
+        ),
+        onPressed: enabled ? onPressed : null,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(config.name, textAlign: TextAlign.center),
+            const SizedBox(height: 4),
+            Text(
+              '$buildCost Lumens • $fabricationDuration',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: LightcorePalette.night.withValues(alpha: 0.72),
+                fontWeight: FontWeight.w700,
               ),
-              const SizedBox(height: 4),
-              Text(
-                config.passiveLabel,
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: LightcorePalette.night.withValues(alpha: 0.7),
-                  fontWeight: FontWeight.w700,
-                ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              config.passiveLabel,
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: LightcorePalette.night.withValues(alpha: 0.7),
+                fontWeight: FontWeight.w700,
               ),
-              const SizedBox(height: 4),
-              Text(
-                traitBias,
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: LightcorePalette.night.withValues(alpha: 0.62),
-                ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              traitBias,
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: LightcorePalette.night.withValues(alpha: 0.62),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

@@ -1557,6 +1557,14 @@ class LightcoreController extends ChangeNotifier {
   static const double _emptyLaneLumenHarvestDamageScale = 18;
   static const int tutorialFirstHexUnlockExperience = 8;
   static const int firstOuterSlotKillRequirement = 100;
+  static const List<int> outerSlotUnlockWaveThresholds = <int>[
+    1,
+    5,
+    5,
+    10,
+    10,
+    10,
+  ];
   static const List<int> outerSlotUnlockExperienceThresholds = <int>[
     0,
     100,
@@ -1725,7 +1733,7 @@ class LightcoreController extends ChangeNotifier {
   LightcoreGraphicsQuality _graphicsQuality;
   bool _notificationBannersEnabled = true;
   bool _battleNotificationBannersEnabled = false;
-  bool _tutorialPromptsEnabled = true;
+  bool _tutorialPromptsEnabled = false;
   bool _localhostAutoTapperEnabled = false;
   bool _needsNotify = false;
   bool _notifyPostFrameScheduled = false;
@@ -1765,8 +1773,6 @@ class LightcoreController extends ChangeNotifier {
   int _tutorialSafeScanDefeats = 0;
   int _tutorialManagerAutoAimShots = 0;
   String? _tutorialTrackedBossEnemyId;
-  LightcoreTutorialPulseTarget? _tutorialPulseTarget;
-  int _tutorialPulseSignal = 0;
   final Set<LightcoreTutorialStep> _rewardedTutorialSteps =
       <LightcoreTutorialStep>{};
   final Set<LightcoreTournamentModeId> _reviewedTournamentTutorialModes =

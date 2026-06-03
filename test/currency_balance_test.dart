@@ -11,6 +11,7 @@ void _completeLayer1Coverage(LightcoreController controller) {
   controller.kills = LightcoreController.unlockKillsForOuterSlot(
     LightcoreController.slotCount - 1,
   );
+  controller.activeLayer.bestWaveReached = 10;
   for (var index = 0; index < LightcoreController.slotCount; index++) {
     final config = TowerLibrary.all[index % TowerLibrary.all.length];
     expect(controller.buildTowerAt(index, config), isTrue);
@@ -99,55 +100,18 @@ void main() {
     );
   });
 
-  test('opening loop pressures upgrade and repeats before Hex 2', () {
+  test('wave milestones gate full Layer 1 tower coverage before merge', () {
     final controller = LightcoreController();
     addTearDown(controller.dispose);
-    var guidedElapsedSeconds = 0.0;
-
-    void recordGuidedClick([double seconds = 2.0]) {
-      guidedElapsedSeconds += seconds;
-    }
 
     controller.selectSlot(0);
-    recordGuidedClick();
     expect(controller.buildTowerAt(0, TowerLibrary.redPrism), isTrue);
-    recordGuidedClick();
     expect(controller.builtTowerCount, 1);
+    expect(controller.activeLayer.bestWaveReached, 1);
+    expect(controller.unlockedOuterSlotCount, 1);
+    expect(controller.isOuterSlotUnlocked(1), isFalse);
+    expect(controller.buildTowerAt(1, TowerLibrary.cyanPrism), isFalse);
 
-    final starter = controller.debugSpawnEnemyFromCard(
-      EnemyLibrary.starterDefault.id,
-      angle: 0,
-      radius: 120,
-      healthFraction: 1,
-    );
-    expect(starter, isNotNull);
-    expect(
-      controller.debugSetTowerCharge(0, charge: 1, cooldownRemaining: 0),
-      isTrue,
-    );
-    expect(controller.queuedCorePackets, 0);
-    expect(controller.focusBattleEnemyForNextShot(starter!.id), isTrue);
-    recordGuidedClick();
-    expect(controller.focusedEnemyId, starter.id);
-    guidedElapsedSeconds += _advanceUntil(
-      controller,
-      () =>
-          controller.tutorialStep ==
-          LightcoreTutorialStep.upgradeFirstTowerToLevel3,
-      reason: 'opening focus click did not auto-fire the next generated shot',
-    );
-    expect(
-      controller.tutorialStep,
-      LightcoreTutorialStep.upgradeFirstTowerToLevel3,
-    );
-    expect(controller.queuedCorePackets, 0);
-    expect(controller.outputEfficiencyMultiplier, lessThan(0.95));
-
-    _fundNextTowerUpgrade(controller, 0);
-    expect(controller.upgradeTower(0), isTrue);
-    recordGuidedClick();
-    expect(controller.slots[0].level, 2);
-    expect(controller.outputEfficiencyMultiplier, greaterThanOrEqualTo(0.98));
     expect(controller.canStartFirstThreatChallenge, isTrue);
     expect(
       controller.firstThreatChallengePressurePreviewLabel,
@@ -158,44 +122,26 @@ void main() {
       contains('8 active'),
     );
     expect(controller.startFirstThreatChallenge(), isTrue);
-    recordGuidedClick();
-    expect(controller.bannerMessage, contains('Threat raised'));
-    expect(controller.bannerMessage, isNot(contains('stabilization')));
     expect(controller.activeThreatRegionChallenge?.targetStabilizationLevel, 1);
-    expect(
-      controller.activeThreatRegionChallengeTotalRemainingSeconds,
-      lessThanOrEqualTo(30),
-      reason: 'The first guided challenge should be a brisk action beat.',
-    );
-    expect(
-      controller.enemyTargetCount,
-      LightcoreController.initialEnemyTarget + 2,
-    );
-    expect(
-      controller.activeEnemyDeck.map((card) => card.level),
-      everyElement(2),
-    );
 
-    guidedElapsedSeconds += _advanceActiveOpeningChallenge(controller);
+    _advanceActiveOpeningChallenge(controller);
     expect(controller.bannerMessage, contains('Push Wave 5 cleared'));
-    expect(controller.bannerMessage, contains('upgrade the tower'));
     expect(controller.bannerMessage, isNot(contains('Live farm unlocked')));
     final starterRegion = controller.threatRegionConfigs.first;
     expect(
       controller.threatRegionStateById(starterRegion.id)?.stabilizedLevel,
       1,
     );
-    expect(controller.outputEfficiencyMultiplier, lessThan(0.9));
-    expect(
-      controller.tutorialStep,
-      LightcoreTutorialStep.upgradeFirstTowerToLevel4,
-    );
+    expect(controller.activeLayer.bestWaveReached, 5);
+    expect(controller.unlockedOuterSlotCount, 3);
+    expect(controller.isOuterSlotUnlocked(1), isTrue);
+    expect(controller.isOuterSlotUnlocked(2), isTrue);
+    expect(controller.isOuterSlotUnlocked(3), isFalse);
 
-    _fundNextTowerUpgrade(controller, 0);
-    expect(controller.upgradeTower(0), isTrue);
-    recordGuidedClick();
-    expect(controller.slots[0].level, 3);
-    expect(controller.outputEfficiencyMultiplier, greaterThanOrEqualTo(0.98));
+    controller.lumens = 1000000;
+    expect(controller.buildTowerAt(1, TowerLibrary.cyanPrism), isTrue);
+    expect(controller.buildTowerAt(2, TowerLibrary.greenPrism), isTrue);
+    expect(controller.builtTowerCount, 3);
     expect(controller.canStartFirstThreatChallenge, isTrue);
     expect(
       controller.firstThreatChallengePressurePreviewLabel,
@@ -206,63 +152,33 @@ void main() {
       contains('10 active'),
     );
     expect(controller.startFirstThreatChallenge(), isTrue);
-    recordGuidedClick();
     expect(controller.bannerMessage, contains('Push Wave 10 started'));
-    expect(controller.bannerMessage, isNot(contains('stabilization')));
     expect(controller.activeThreatRegionChallenge?.targetStabilizationLevel, 2);
-    expect(
-      controller.activeThreatRegionChallengeTotalRemainingSeconds,
-      lessThanOrEqualTo(30),
-      reason: 'The repeat guided challenge should not become a waiting chore.',
-    );
-    expect(
-      controller.enemyTargetCount,
-      LightcoreController.initialEnemyTarget + 4,
-    );
-    expect(
-      controller.activeEnemyDeck.map((card) => card.level),
-      everyElement(3),
-    );
 
-    guidedElapsedSeconds += _advanceActiveOpeningChallenge(controller);
+    _advanceActiveOpeningChallenge(controller);
     expect(controller.bannerMessage, contains('Push Wave 10 cleared'));
-    expect(controller.bannerMessage, contains('open Hex 2'));
     expect(controller.bannerMessage, isNot(contains('Live farm unlocked')));
     expect(
       controller.threatRegionStateById(starterRegion.id)?.stabilizedLevel,
       2,
     );
-    expect(controller.outputEfficiencyMultiplier, lessThan(0.9));
-    expect(
-      controller.tutorialStep,
-      LightcoreTutorialStep.upgradeFirstTowerToLevel5,
-    );
+    expect(controller.activeLayer.bestWaveReached, 10);
+    expect(controller.unlockedOuterSlotCount, LightcoreController.slotCount);
 
-    _fundNextTowerUpgrade(controller, 0);
-    expect(controller.upgradeTower(0), isTrue);
-    recordGuidedClick();
-    expect(controller.slots[0].level, 4);
-    expect(controller.isOuterSlotUnlocked(1), isTrue);
-    expect(
-      controller.tutorialStep,
-      LightcoreTutorialStep.buildSecondStarterTower,
-    );
+    expect(controller.buildTowerAt(3, TowerLibrary.orangePrism), isTrue);
+    expect(controller.buildTowerAt(4, TowerLibrary.yellowPrism), isTrue);
+    expect(controller.buildTowerAt(5, TowerLibrary.purplePrism), isTrue);
+    expect(controller.builtTowerCount, LightcoreController.slotCount);
+    expect(controller.canUnlockLayer2, isFalse);
 
-    controller.selectSlot(1);
-    recordGuidedClick();
-    expect(controller.buildTowerAt(1, TowerLibrary.cyanPrism), isTrue);
-    recordGuidedClick();
-    expect(controller.builtTowerCount, 2);
-    expect(controller.tutorialStep, LightcoreTutorialStep.none);
-    expect(controller.tutorialPromptsEnabled, isTrue);
-    expect(controller.tutorialUsesBattleOnlyNavigation, isFalse);
-    expect(controller.tutorialNeedsTowerPaletteGate, isFalse);
-    expect(
-      guidedElapsedSeconds,
-      lessThanOrEqualTo(90),
-      reason:
-          'The guided pressure-upgrade-repeat loop should reach Hex 2 well before the first five minutes turn into waiting.',
-    );
+    for (var index = 0; index < LightcoreController.slotCount; index += 1) {
+      while (controller.slots[index].level <
+          LightcoreController.maxTowerLevel) {
+        _fundNextTowerUpgrade(controller, index);
+        expect(controller.upgradeTower(index), isTrue);
+      }
+    }
+    expect(controller.canUnlockLayer2, isTrue);
   });
 
   test('bulk manager forging grants pack bonuses and a rarity floor', () {
