@@ -622,6 +622,10 @@ class LightcoreBattleGame extends FlameGame with ScaleDetector {
       spawnRingPaint,
     );
 
+    if (!controller.outerRingRevealed) {
+      _renderPreBattleRouteEnergy(canvas);
+    }
+
     final boardLinkPaint = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.4
@@ -649,6 +653,98 @@ class LightcoreBattleGame extends FlameGame with ScaleDetector {
         ..strokeWidth = 1.8
         ..color = LightcorePalette.stroke.withValues(alpha: 0.42),
     );
+  }
+
+  void _renderPreBattleRouteEnergy(Canvas canvas) {
+    final center = Offset(_center.x, _center.y);
+    final glowAlphaScale = _battleGlowAlphaScale;
+    final effectAlphaScale = _battleEffectAlphaScale;
+    final time = controller.elapsed;
+    final pulse = 0.5 + (math.sin(time * 2.6) * 0.5);
+
+    if (glowAlphaScale > 0) {
+      canvas.drawCircle(
+        center,
+        _coreRadius * (3.1 + (pulse * 0.22)),
+        Paint()
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 32)
+          ..color = LightcorePalette.aether.withValues(
+            alpha: 0.08 * glowAlphaScale,
+          ),
+      );
+    }
+
+    final routeRadius = _spawnRadiusVisual * 0.72;
+    final routeRect = Rect.fromCircle(center: center, radius: routeRadius);
+    final routePaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round
+      ..strokeWidth = math.max(1.8, _coreRadius * 0.035)
+      ..color = LightcorePalette.aether.withValues(
+        alpha: (0.2 + (pulse * 0.16)) * effectAlphaScale,
+      );
+    final warningPaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round
+      ..strokeWidth = math.max(1.5, _coreRadius * 0.026)
+      ..color = LightcorePalette.warning.withValues(
+        alpha: (0.26 + (pulse * 0.12)) * effectAlphaScale,
+      );
+
+    for (var index = 0; index < 4; index += 1) {
+      final start =
+          (time * 0.34) + (index * math.pi / 2) + (pulse * math.pi / 32);
+      canvas.drawArc(routeRect, start, math.pi / 4.8, false, routePaint);
+    }
+
+    final innerRouteRect = Rect.fromCircle(
+      center: center,
+      radius: routeRadius * 0.72,
+    );
+    for (var index = 0; index < 3; index += 1) {
+      final start = (-time * 0.42) + (index * math.pi * 2 / 3);
+      canvas.drawArc(innerRouteRect, start, math.pi / 5.6, false, warningPaint);
+    }
+
+    final anomalyCount = _qualityScaledCount(6, balanced: 4, lowPower: 3);
+    for (var index = 0; index < anomalyCount; index += 1) {
+      final seed = index / math.max(1, anomalyCount);
+      final angle = (seed * math.pi * 2) + (time * (0.18 + seed * 0.12));
+      final wobble = math.sin((time * 1.8) + (index * 1.7));
+      final radius = routeRadius * (0.82 + (wobble * 0.035));
+      final anomalyCenter = center.translate(
+        math.cos(angle) * radius,
+        math.sin(angle) * radius,
+      );
+      final anomalySize = _coreRadius * (0.06 + (0.018 * (1 + wobble)));
+      final anomalyAlpha = (0.3 + (0.22 * (1 + wobble) / 2)) * effectAlphaScale;
+      canvas.drawCircle(
+        anomalyCenter,
+        anomalySize * 2.6,
+        Paint()
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8)
+          ..color = LightcorePalette.warning.withValues(
+            alpha: anomalyAlpha * 0.24,
+          ),
+      );
+      canvas.drawCircle(
+        anomalyCenter,
+        anomalySize,
+        Paint()
+          ..style = PaintingStyle.fill
+          ..color = LightcorePalette.mist.withValues(alpha: anomalyAlpha),
+      );
+      canvas.drawCircle(
+        anomalyCenter,
+        anomalySize * 1.9,
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1
+          ..color = LightcorePalette.warning.withValues(
+            alpha: anomalyAlpha * 0.62,
+          ),
+      );
+    }
   }
 
   void _updateScreenShake(double dt) {

@@ -35,17 +35,24 @@ class _ShellNotificationOverlayState extends State<_ShellNotificationOverlay> {
           animation: widget.controller,
           builder: (context, _) {
             final message = widget.controller.bannerMessage.trim();
+            final openingPrompt =
+                !widget.controller.swarmActivated &&
+                message.toLowerCase().startsWith('press play');
             final visible =
                 _shown &&
                 widget.controller.notificationBannersEnabled &&
                 widget.controller.activeThreatRegionChallenge == null &&
                 message.isNotEmpty;
             return Align(
-              alignment: Alignment.topCenter,
+              alignment: openingPrompt
+                  ? const Alignment(0, -0.72)
+                  : Alignment.topCenter,
               child: IgnorePointer(
                 ignoring: !visible,
                 child: AnimatedSlide(
-                  offset: visible ? Offset.zero : const Offset(0, -0.55),
+                  offset: visible
+                      ? Offset.zero
+                      : Offset(0, openingPrompt ? -0.18 : -0.55),
                   duration: const Duration(milliseconds: 230),
                   curve: Curves.easeOutCubic,
                   child: AnimatedOpacity(
@@ -54,6 +61,7 @@ class _ShellNotificationOverlayState extends State<_ShellNotificationOverlay> {
                     curve: visible ? Curves.easeOutCubic : Curves.easeInCubic,
                     child: _ShellNotificationBanner(
                       message: message,
+                      openingPrompt: openingPrompt,
                       onDismiss: widget.controller.dismissBanner,
                     ),
                   ),
@@ -70,10 +78,12 @@ class _ShellNotificationOverlayState extends State<_ShellNotificationOverlay> {
 class _ShellNotificationBanner extends StatelessWidget {
   const _ShellNotificationBanner({
     required this.message,
+    required this.openingPrompt,
     required this.onDismiss,
   });
 
   final String message;
+  final bool openingPrompt;
   final VoidCallback onDismiss;
 
   @override
@@ -88,32 +98,45 @@ class _ShellNotificationBanner extends StatelessWidget {
           behavior: HitTestBehavior.opaque,
           onTap: onDismiss,
           child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 460),
+            constraints: BoxConstraints(maxWidth: openingPrompt ? 300 : 460),
             child: DecoratedBox(
               key: const ValueKey<String>('shell-notification-banner'),
               decoration: BoxDecoration(
-                color: LightcorePalette.night.withValues(alpha: 0.88),
-                borderRadius: BorderRadius.circular(16),
+                color: LightcorePalette.night.withValues(
+                  alpha: openingPrompt ? 0.76 : 0.88,
+                ),
+                borderRadius: BorderRadius.circular(openingPrompt ? 999 : 16),
                 border: Border.all(
-                  color: LightcorePalette.aether.withValues(alpha: 0.28),
+                  color: LightcorePalette.aether.withValues(
+                    alpha: openingPrompt ? 0.48 : 0.28,
+                  ),
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: LightcorePalette.aether.withValues(alpha: 0.14),
-                    blurRadius: 18,
+                    color: LightcorePalette.aether.withValues(
+                      alpha: openingPrompt ? 0.22 : 0.14,
+                    ),
+                    blurRadius: openingPrompt ? 24 : 18,
                     offset: const Offset(0, 8),
                   ),
                 ],
               ),
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(12, 9, 10, 9),
+                padding: EdgeInsets.fromLTRB(
+                  openingPrompt ? 14 : 12,
+                  openingPrompt ? 8 : 9,
+                  10,
+                  openingPrompt ? 8 : 9,
+                ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(
-                      Icons.notifications_active_rounded,
+                      openingPrompt
+                          ? Icons.play_arrow_rounded
+                          : Icons.notifications_active_rounded,
                       color: LightcorePalette.aether,
-                      size: 17,
+                      size: openingPrompt ? 20 : 17,
                     ),
                     const SizedBox(width: 8),
                     Flexible(

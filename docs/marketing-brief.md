@@ -1,6 +1,6 @@
 # LumiHex Marketing Brief
 
-Last updated: 2026-06-03
+Last updated: 2026-06-04
 
 This is the source-of-truth marketing handoff for LumiHex. Update it whenever
 player-facing features, naming, story, monetization, screenshots, or asset needs
@@ -77,6 +77,9 @@ climbing.
 - Opening combat is low-friction: shots auto-charge after the player presses Play,
   Hex 1 is immediately selectable, and generated shots auto-target anomalies
   without a tap-to-queue requirement.
+- The first battle view now opens with focused pre-Play chrome: a centered
+  animated Start Route control, a compact play prompt, reduced top/bottom HUD
+  noise, and pre-battle route/anomaly energy on the canvas.
 - Anomalies enter from randomized points outside the battle radius instead of
   uniform lanes, then move inward faster with a subtler spiral.
 - The first tower/auto-target/upgrade loop grants enough starter Lumens to move

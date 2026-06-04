@@ -994,8 +994,16 @@ class _LightcoreShellState extends State<LightcoreShell> {
         effectiveOverlay == _ShellOverlayDestination.tournaments;
     final battleHudVisible = !overlayActive && !_shellPromotionHudSuppressed;
     final battleChromeVisible = battleHudVisible && !challengeActive;
+    final openingBattlePreview =
+        battleChromeVisible && !controller.swarmActivated;
     final shellPadding = isCompactLayout ? 12.0 : 16.0;
     final sectionGap = isCompactLayout ? 8.0 : 16.0;
+    final battleTopInset = openingBattlePreview
+        ? (isCompactLayout ? 78.0 : 92.0)
+        : _battleHeaderOverlayInset(isCompactLayout);
+    final battleBottomInset = openingBattlePreview
+        ? (isCompactLayout ? 18.0 : 22.0)
+        : _battleFooterOverlayInset(isCompactLayout);
 
     return SizedBox.expand(
       child: DecoratedBox(
@@ -1057,10 +1065,10 @@ class _LightcoreShellState extends State<LightcoreShell> {
                               onPromotionPresentationComplete:
                                   _handleShellPromotionComplete,
                               topOverlayInset: battleChromeVisible
-                                  ? _battleHeaderOverlayInset(isCompactLayout)
+                                  ? battleTopInset
                                   : 0,
                               bottomOverlayInset: battleChromeVisible
-                                  ? _battleFooterOverlayInset(isCompactLayout)
+                                  ? battleBottomInset
                                   : 0,
                             ),
                           ),
@@ -1136,7 +1144,9 @@ class _LightcoreShellState extends State<LightcoreShell> {
                                     ? '9+'
                                     : friendAlertCount.toString();
                                 final headerActions =
-                                    controller.tutorialUsesBattleOnlyNavigation
+                                    openingBattlePreview ||
+                                        controller
+                                            .tutorialUsesBattleOnlyNavigation
                                     ? const <Widget>[]
                                     : <Widget>[
                                         _HeaderActionButton(
@@ -1200,8 +1210,10 @@ class _LightcoreShellState extends State<LightcoreShell> {
                                             ),
                                         showNotificationBadge: controller
                                             .hasUnspentRadianceStatPoints,
-                                        openingMode: controller
-                                            .tutorialUsesBattleOnlyNavigation,
+                                        openingMode:
+                                            openingBattlePreview ||
+                                            controller
+                                                .tutorialUsesBattleOnlyNavigation,
                                         onProfilePressed: () =>
                                             _openPlayerManager(context),
                                       ),
@@ -1254,7 +1266,7 @@ class _LightcoreShellState extends State<LightcoreShell> {
                               },
                             ),
                           ),
-                        if (battleChromeVisible)
+                        if (battleChromeVisible && !openingBattlePreview)
                           Positioned(
                             left: 0,
                             right: 0,

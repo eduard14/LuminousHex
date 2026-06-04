@@ -904,13 +904,14 @@ class _BattleScreenState extends State<BattleScreen> {
     required LightcoreController controller,
     required bool compact,
   }) {
-    if (!widget.enableBattlefieldTaps || _activePromotionSequence != null) {
+    if (!widget.enableBattlefieldTaps ||
+        _activePromotionSequence != null ||
+        !controller.swarmActivated) {
       return null;
     }
     return _BattleShellVisibilityHud(
       compact: compact,
       expanded: controller.outerRingRevealed,
-      started: controller.swarmActivated,
       onPressed: _toggleShellVisibility,
     );
   }
@@ -1013,7 +1014,8 @@ class _BattleScreenState extends State<BattleScreen> {
             child: shellVisibilityHud,
           ),
         if (widget.showBattleHud && !controller.swarmActivated)
-          Center(
+          Align(
+            alignment: const Alignment(0, -0.08),
             child: _BattlePlayButton(
               compact: compact,
               onPressed: () {
@@ -2323,26 +2325,18 @@ class _BattleShellVisibilityHud extends StatelessWidget {
   const _BattleShellVisibilityHud({
     required this.compact,
     required this.expanded,
-    required this.started,
     required this.onPressed,
   });
 
   final bool compact;
   final bool expanded;
-  final bool started;
   final VoidCallback onPressed;
 
   @override
   Widget build(BuildContext context) {
     final size = compact ? 42.0 : 46.0;
-    final label = !started
-        ? 'Play'
-        : expanded
-        ? 'Collapse shell'
-        : 'Expand shell';
-    final icon = !started
-        ? Icons.play_arrow_rounded
-        : expanded
+    final label = expanded ? 'Collapse shell' : 'Expand shell';
+    final icon = expanded
         ? Icons.unfold_less_double_rounded
         : Icons.unfold_more_double_rounded;
     return Tooltip(
@@ -2387,61 +2381,222 @@ class _BattleShellVisibilityHud extends StatelessWidget {
   }
 }
 
-class _BattlePlayButton extends StatelessWidget {
+class _BattlePlayButton extends StatefulWidget {
   const _BattlePlayButton({required this.compact, required this.onPressed});
 
   final bool compact;
   final VoidCallback onPressed;
 
   @override
+  State<_BattlePlayButton> createState() => _BattlePlayButtonState();
+}
+
+class _BattlePlayButtonState extends State<_BattlePlayButton>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1800),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final size = compact ? 74.0 : 88.0;
+    final size = widget.compact ? 82.0 : 96.0;
+    final stageSize = widget.compact ? 156.0 : 178.0;
     return Tooltip(
-      message: 'Play',
+      message: 'Start route',
       child: Semantics(
         button: true,
-        label: 'Play',
-        child: Material(
-          color: Colors.transparent,
-          child: InkWell(
-            key: const ValueKey<String>('battle-play-button'),
-            borderRadius: BorderRadius.circular(size / 2),
-            onTap: onPressed,
-            child: Container(
-              width: size,
-              height: size,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: LightcorePalette.aether.withValues(alpha: 0.92),
-                border: Border.all(
-                  color: LightcorePalette.mist.withValues(alpha: 0.7),
-                  width: 1.4,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: LightcorePalette.aether.withValues(alpha: 0.34),
-                    blurRadius: 28,
-                    spreadRadius: 2,
+        label: 'Start route',
+        child: SizedBox(
+          width: stageSize,
+          height: stageSize,
+          child: AnimatedBuilder(
+            animation: _controller,
+            builder: (context, _) {
+              final pulse = Curves.easeInOut.transform(
+                0.5 + (math.sin(_controller.value * math.pi * 2) * 0.5),
+              );
+              return Stack(
+                alignment: Alignment.center,
+                clipBehavior: Clip.none,
+                children: [
+                  _BattlePlayRing(
+                    size: stageSize * (0.74 + (pulse * 0.1)),
+                    alpha: 0.16 + (pulse * 0.16),
+                    strokeWidth: 1.4,
                   ),
-                  BoxShadow(
-                    color: LightcorePalette.night.withValues(alpha: 0.28),
-                    blurRadius: 22,
-                    spreadRadius: -8,
-                    offset: const Offset(0, 12),
+                  Transform.rotate(
+                    angle: _controller.value * math.pi * 2,
+                    child: SizedBox(
+                      width: stageSize * 0.9,
+                      height: stageSize * 0.9,
+                      child: CustomPaint(
+                        painter: _BattlePlayOrbitPainter(progress: pulse),
+                      ),
+                    ),
+                  ),
+                  Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      key: const ValueKey<String>('battle-play-button'),
+                      borderRadius: BorderRadius.circular(size / 2),
+                      onTap: widget.onPressed,
+                      child: Container(
+                        width: size,
+                        height: size,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          gradient: RadialGradient(
+                            colors: [
+                              LightcorePalette.mist.withValues(alpha: 0.98),
+                              LightcorePalette.aether,
+                              LightcorePalette.aether.withValues(alpha: 0.84),
+                            ],
+                            stops: const [0, 0.46, 1],
+                          ),
+                          border: Border.all(
+                            color: LightcorePalette.mist.withValues(alpha: 0.9),
+                            width: 1.8,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: LightcorePalette.aether.withValues(
+                                alpha: 0.54 + (pulse * 0.18),
+                              ),
+                              blurRadius: 34 + (pulse * 16),
+                              spreadRadius: 3 + (pulse * 2),
+                            ),
+                            BoxShadow(
+                              color: LightcorePalette.night.withValues(
+                                alpha: 0.36,
+                              ),
+                              blurRadius: 22,
+                              spreadRadius: -8,
+                              offset: const Offset(0, 12),
+                            ),
+                          ],
+                        ),
+                        child: Icon(
+                          Icons.play_arrow_rounded,
+                          color: LightcorePalette.night,
+                          size: widget.compact ? 52 : 62,
+                        ),
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    bottom: widget.compact ? 2 : 0,
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: LightcorePalette.night.withValues(alpha: 0.66),
+                        borderRadius: BorderRadius.circular(999),
+                        border: Border.all(
+                          color: LightcorePalette.aether.withValues(
+                            alpha: 0.42,
+                          ),
+                        ),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 5,
+                        ),
+                        child: Text(
+                          'START ROUTE',
+                          style: Theme.of(context).textTheme.labelSmall
+                              ?.copyWith(
+                                color: LightcorePalette.mist,
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: 0,
+                              ),
+                        ),
+                      ),
+                    ),
                   ),
                 ],
-              ),
-              child: Icon(
-                Icons.play_arrow_rounded,
-                color: LightcorePalette.night,
-                size: compact ? 46 : 56,
-              ),
-            ),
+              );
+            },
           ),
         ),
       ),
     );
   }
+}
+
+class _BattlePlayRing extends StatelessWidget {
+  const _BattlePlayRing({
+    required this.size,
+    required this.alpha,
+    required this.strokeWidth,
+  });
+
+  final double size;
+  final double alpha;
+  final double strokeWidth;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        border: Border.all(
+          color: LightcorePalette.aether.withValues(alpha: alpha),
+          width: strokeWidth,
+        ),
+      ),
+    );
+  }
+}
+
+class _BattlePlayOrbitPainter extends CustomPainter {
+  const _BattlePlayOrbitPainter({required this.progress});
+
+  final double progress;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = size.shortestSide * 0.42;
+    final paint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.2
+      ..strokeCap = StrokeCap.round
+      ..color = LightcorePalette.aether.withValues(alpha: 0.34);
+    final rect = Rect.fromCircle(center: center, radius: radius);
+    for (var index = 0; index < 3; index += 1) {
+      final start = (index * math.pi * 2 / 3) + (progress * 0.28);
+      canvas.drawArc(rect, start, math.pi / 5.2, false, paint);
+    }
+    final sparkPaint = Paint()
+      ..style = PaintingStyle.fill
+      ..color = LightcorePalette.mist.withValues(alpha: 0.5);
+    for (var index = 0; index < 3; index += 1) {
+      final angle = index * math.pi * 2 / 3;
+      canvas.drawCircle(
+        center.translate(math.cos(angle) * radius, math.sin(angle) * radius),
+        2.2,
+        sparkPaint,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _BattlePlayOrbitPainter oldDelegate) =>
+      oldDelegate.progress != progress;
 }
 
 class _BattleSelectionHud extends StatelessWidget {

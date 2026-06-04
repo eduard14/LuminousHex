@@ -1239,10 +1239,7 @@ class LightcoreController extends ChangeNotifier {
     _storeOfferPurchaseWeekKey = _currentWeekKey();
     _sharedRelayOuterPieceIds = List<String?>.filled(slotCount, null);
     _initializeSharedRelayLoadout();
-    _showBanner(
-      'Press Play to start the route. The core will charge shots and target anomalies automatically.',
-      duration: 3.2,
-    );
+    _showBanner('Press Play to start the route.', duration: 3.2);
     _syncTutorialStep(showBanner: false);
   }
 
