@@ -587,21 +587,18 @@ extension LightcoreControllerStateAccessors on LightcoreController {
 
   int get totalPullsOpened => enemyPullCount + bossPullCount;
 
+  int get activeLayerRoundCurrency => activeLayer.roundCurrency;
+
   double get overallLevelProgress =>
       (experienceIntoCurrentOverallLevel /
               experienceNeededForCurrentOverallLevel)
           .clamp(0.0, 1.0);
 
   int get unlockedOuterSlotCount {
-    var unlocked = 0;
-    final wave = max(1, activeLayer.bestWaveReached);
-    for (var index = 0; index < slotCount; index++) {
-      if (wave < _outerSlotUnlockWaveForProgression(index)) {
-        break;
-      }
-      unlocked += 1;
-    }
-    return unlocked;
+    return max(
+      _unlockedOuterSlotCountForRoundCurrency(activeLayer.roundCurrency),
+      _unlockedOuterSlotCountForWaveProgress(activeLayer.bestWaveReached),
+    );
   }
 
   int get bossKillsIntoCycle => activeLayer.bossReady

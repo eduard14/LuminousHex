@@ -153,6 +153,52 @@ void main() {
     );
   });
 
+  test('wave 1 round currency persists and unlocks Layer 1 towers', () {
+    final controller = LightcoreController(spawnRandom: Random(19));
+    addTearDown(controller.dispose);
+    controller.debugDisableTutorial();
+
+    expect(controller.activeLayerRoundCurrency, 0);
+    expect(controller.unlockedOuterSlotCount, 1);
+
+    for (
+      var index = 0;
+      index < LightcoreController.initialEnemyTarget;
+      index++
+    ) {
+      final enemy = controller.debugSpawnEnemyFromCard(
+        EnemyLibrary.basicWhite.id,
+        angle: 0,
+        radius: 360,
+      );
+      expect(enemy, isNotNull);
+      expect(controller.debugDefeatEnemy(enemy!.id), isTrue);
+    }
+
+    expect(controller.activeLayerWaveNumber, 2);
+    expect(
+      controller.activeLayerRoundCurrency,
+      LightcoreController.layer1RoundCurrencyPerWave,
+    );
+    expect(controller.unlockedOuterSlotCount, LightcoreController.slotCount);
+
+    final restored = LightcoreController.fromCloudSavePayload(
+      controller.buildCloudSavePayload(),
+    );
+    addTearDown(restored.dispose);
+
+    expect(
+      restored.activeLayerRoundCurrency,
+      LightcoreController.layer1RoundCurrencyPerWave,
+    );
+    expect(restored.unlockedOuterSlotCount, LightcoreController.slotCount);
+
+    restored.lumens = 100000;
+    for (var index = 0; index < LightcoreController.slotCount; index++) {
+      expect(restored.buildTowerAt(index, TowerLibrary.all[index]), isTrue);
+    }
+  });
+
   test('retired apex scan labels display as threat scans', () {
     expect(LightcoreCurrencyLabels.bossScanCount(1), '1 Threat Scan');
     expect(LightcoreCurrencyLabels.bossScanCount(2), '2 Threat Scans');

@@ -1855,6 +1855,7 @@ class TowerLayerSnapshot {
     this.promotedIntoParentSlot = false,
     this.promotionTraitRoll = 0,
     this.bestWaveReached = 1,
+    this.roundCurrency = 0,
     this.layer3TrialCleared = false,
     this.layer3TrialActive = false,
     this.layer3TrialSpawnIndex = 0,
@@ -1897,6 +1898,7 @@ class TowerLayerSnapshot {
   bool promotedIntoParentSlot;
   int promotionTraitRoll;
   int bestWaveReached;
+  int roundCurrency;
   bool layer3TrialCleared;
   bool layer3TrialActive;
   int layer3TrialSpawnIndex;

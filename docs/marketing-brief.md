@@ -87,9 +87,11 @@ climbing.
 - Opening waves now escalate mechanically: Wave 2 strengthens normal anomalies
   and bruises Hex 1 plus Output Efficiency if the first tower is still
   unupgraded, making the first upgrade feel necessary instead of decorative.
-- The opening shell is wave-gated instead of tutorial-gated: the player starts
-  with Hex 1, unlocks Hexes 2-3 after Wave 5, and has all six perimeter hexes
-  available after Wave 10.
+- Clearing Wave 1 now grants persistent Layer 1 round currency. That first
+  payout opens the remaining five Layer 1 tower slots, so early expansion comes
+  from a persistent round reward instead of waiting on later milestone gates.
+- The opening shell starts with Hex 1, then uses the Wave 1 round-currency
+  payout to open Hexes 2-6 for the rest of Layer 1.
 - Wave 10 creates the Layer 2 level 1 seed target, but the player still needs a
   full shell before merge: all six outer towers built and stat boards tuned.
 - Challenge prompts and active challenge HUD now show the harder enemy level,

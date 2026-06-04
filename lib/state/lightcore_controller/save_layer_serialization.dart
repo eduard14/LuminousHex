@@ -48,6 +48,7 @@ extension LightcoreControllerSaveLayerSerialization on LightcoreController {
       'promotedIntoParentSlot': layer.promotedIntoParentSlot,
       'promotionTraitRoll': layer.promotionTraitRoll,
       'bestWaveReached': layer.bestWaveReached,
+      'roundCurrency': layer.roundCurrency,
       'layer3TrialCleared': layer.layer3TrialCleared,
     };
   }
@@ -128,6 +129,13 @@ extension LightcoreControllerSaveLayerSerialization on LightcoreController {
       promotedIntoParentSlot: _boolValue(data['promotedIntoParentSlot']),
       promotionTraitRoll: _intValue(data['promotionTraitRoll']),
       bestWaveReached: max(1, _intValue(data['bestWaveReached'], fallback: 1)),
+      roundCurrency: _intValue(
+        data['roundCurrency'],
+        fallback: _roundCurrencyForReachedWave(
+          max(1, _intValue(data['bestWaveReached'], fallback: 1)),
+          tier: tier,
+        ),
+      ),
       layer3TrialCleared: _boolValue(data['layer3TrialCleared']),
     );
   }

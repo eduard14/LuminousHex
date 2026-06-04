@@ -1125,6 +1125,7 @@ extension LightcoreControllerProgressionLayers on LightcoreController {
       promotedParentLayerId: promotedParentLayerId,
       promotedIntoParentSlot: promotedIntoParentSlot,
       promotionTraitRoll: source.promotionTraitRoll,
+      roundCurrency: source.roundCurrency,
     );
   }
 

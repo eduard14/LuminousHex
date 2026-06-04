@@ -1105,6 +1105,8 @@ const double _emptyLaneLumenHarvestDamageScale =
     LightcoreController._emptyLaneLumenHarvestDamageScale;
 const int firstOuterSlotKillRequirement =
     LightcoreController.firstOuterSlotKillRequirement;
+const int layer1RoundCurrencyPerWave =
+    LightcoreController.layer1RoundCurrencyPerWave;
 const List<int> outerSlotUnlockExperienceThresholds =
     LightcoreController.outerSlotUnlockExperienceThresholds;
 const double maxOfflineKillsPerHour =
@@ -1543,6 +1545,7 @@ class LightcoreController extends ChangeNotifier {
   static const double _emptyLaneLumenHarvestDamageScale = 18;
   static const int tutorialFirstHexUnlockExperience = 8;
   static const int firstOuterSlotKillRequirement = 100;
+  static const int layer1RoundCurrencyPerWave = slotCount - 1;
   static const List<int> outerSlotUnlockWaveThresholds = <int>[
     1,
     5,

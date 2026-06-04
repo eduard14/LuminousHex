@@ -129,6 +129,42 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         ((slotIndex + 1) * 5);
   }
 
+  int _roundCurrencyForCompletedWave(int completedWave, {int? tier}) {
+    if (completedWave < 1 || (tier ?? activeLayer.tier) != 1) {
+      return 0;
+    }
+    return min(slotCount - 1, completedWave * layer1RoundCurrencyPerWave);
+  }
+
+  int _roundCurrencyForReachedWave(int reachedWave, {int? tier}) =>
+      _roundCurrencyForCompletedWave(max(0, reachedWave - 1), tier: tier);
+
+  int _unlockedOuterSlotCountForRoundCurrency(int roundCurrency) =>
+      1 + max(0, min(slotCount - 1, roundCurrency));
+
+  int _unlockedOuterSlotCountForWaveProgress(int reachedWave) {
+    var unlocked = 0;
+    final wave = max(1, reachedWave);
+    for (var index = 0; index < slotCount; index++) {
+      if (wave < _outerSlotUnlockWaveForProgression(index)) {
+        break;
+      }
+      unlocked += 1;
+    }
+    return unlocked;
+  }
+
+  void _grantRoundCurrencyForReachedWave() {
+    if (activeLayer.tier != 1 || activeLayer.parentLayerId != null) {
+      return;
+    }
+    final earned = _roundCurrencyForReachedWave(activeLayerWaveNumber);
+    if (earned <= activeLayer.roundCurrency) {
+      return;
+    }
+    activeLayer.roundCurrency = earned;
+  }
+
   bool get _currentLayerEarlyTutorialComplete {
     final tower = _firstTutorialTower;
     if (builtTowerCount > 1) {

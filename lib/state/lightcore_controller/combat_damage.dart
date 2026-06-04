@@ -622,6 +622,7 @@ extension LightcoreControllerCombatDamage on LightcoreController {
         activeLayer.bestWaveReached,
         1 + (_spawnSequence ~/ max(1, initialEnemyTarget)),
       );
+      _grantRoundCurrencyForReachedWave();
       if (activeLayer.normalKillsSinceBoss >= bossSpawnKillRequirement) {
         activeLayer.bossReady = true;
         _showBanner(
