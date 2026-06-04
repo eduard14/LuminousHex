@@ -133,8 +133,8 @@ void main() {
     await tester.pump();
 
     expect(controller.tutorialUsesBattleOnlyNavigation, isFalse);
-    expect(find.textContaining('Persistent core upgrades'), findsOneWidget);
-    expect(find.textContaining('Charge Buffer'), findsWidgets);
+    expect(find.textContaining('Root Shell Core'), findsOneWidget);
+    expect(find.textContaining('Buffer'), findsWidgets);
     expect(find.text('Ring'), findsNothing);
     expect(find.text('Slots'), findsNothing);
     expect(find.text('Crit'), findsNothing);
@@ -211,10 +211,10 @@ void main() {
 
     expect(find.byKey(const ValueKey<String>('battle-wave-hud')), findsNothing);
     expect(find.text('Best Wave'), findsNothing);
-    expect(find.textContaining('Persistent Stats 0/'), findsOneWidget);
+    expect(find.textContaining('Stats 0/'), findsOneWidget);
     expect(find.textContaining('Layer 2 Lv 1'), findsOneWidget);
     expect(find.text('Tower Health'), findsOneWidget);
-    expect(find.text('Persistent Stat Upgrades'), findsOneWidget);
+    expect(find.text('Persistent Stat Upgrades'), findsNothing);
     expect(find.textContaining('Layer 1 Tower Level'), findsNothing);
     expect(find.textContaining('Charge Rate'), findsWidgets);
     expect(tester.takeException(), isNull);

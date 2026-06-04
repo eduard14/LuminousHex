@@ -111,6 +111,9 @@ climbing.
 - Selecting a built tower now opens its level and rolled stat upgrade board on
   the battlefield, making fire-rate, damage, range, multishot-adjacent, and
   other wave-by-wave upgrades visible without hunting through a detail modal.
+- Battlefield upgrade controls now use compact command docks with stat chips
+  and grid actions, keeping tower/core tuning readable while leaving more of
+  the active battle visible.
 - Selecting the Lightcore opens persistent core upgrades directly and separates
   shell-wide core growth from Layer 1 tower stat rolls.
 - The Lightcore control panel can expose charged-shot queue order controls when
