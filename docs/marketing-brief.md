@@ -84,6 +84,9 @@ climbing.
   uniform lanes, then move inward faster with a subtler spiral.
 - The first tower/auto-target/upgrade loop grants enough starter Lumens to move
   from build to the first upgrade without idle grinding.
+- Opening waves now escalate mechanically: Wave 2 strengthens normal anomalies
+  and bruises Hex 1 plus Output Efficiency if the first tower is still
+  unupgraded, making the first upgrade feel necessary instead of decorative.
 - The opening shell is wave-gated instead of tutorial-gated: the player starts
   with Hex 1, unlocks Hexes 2-3 after Wave 5, and has all six perimeter hexes
   available after Wave 10.

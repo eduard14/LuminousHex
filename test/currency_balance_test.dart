@@ -85,6 +85,74 @@ void main() {
     expect(controller.focusedEnemyId, isNull);
   });
 
+  test('opening wave 2 pressures enemies and unupgraded Hex 1', () {
+    final controller = LightcoreController(spawnRandom: Random(11));
+    addTearDown(controller.dispose);
+    controller.debugDisableTutorial();
+
+    final waveOneEnemy = controller.debugSpawnEnemyFromCard(
+      EnemyLibrary.basicWhite.id,
+      angle: 0,
+      radius: 360,
+    );
+    expect(waveOneEnemy, isNotNull);
+
+    controller.activeLayer.normalKillsSinceBoss =
+        LightcoreController.initialEnemyTarget;
+    final waveTwoEnemy = controller.debugSpawnEnemyFromCard(
+      EnemyLibrary.basicWhite.id,
+      angle: 0,
+      radius: 360,
+    );
+    expect(waveTwoEnemy, isNotNull);
+    expect(waveTwoEnemy!.maxHealth, greaterThan(waveOneEnemy!.maxHealth));
+    expect(waveTwoEnemy.speed, greaterThan(waveOneEnemy.speed));
+    expect(waveTwoEnemy.jamStrength, greaterThan(waveOneEnemy.jamStrength));
+
+    final pressureController = LightcoreController(spawnRandom: Random(13));
+    addTearDown(pressureController.dispose);
+    pressureController.debugDisableTutorial();
+    expect(pressureController.buildTowerAt(0, TowerLibrary.redPrism), isTrue);
+    pressureController.activeLayer.normalKillsSinceBoss =
+        LightcoreController.initialEnemyTarget;
+
+    final startingHealth = pressureController.towerHealthFraction(
+      pressureController.slots[0],
+    );
+    expect(startingHealth, 1.0);
+    expect(pressureController.outputEfficiencyMultiplier, 1.0);
+
+    pressureController.tick(0.1);
+
+    expect(
+      pressureController.towerHealthFraction(pressureController.slots[0]),
+      lessThan(startingHealth),
+    );
+    expect(pressureController.outputEfficiencyMultiplier, lessThan(1.0));
+  });
+
+  test('opening wave 2 pressure waits when Hex 1 has been upgraded', () {
+    final controller = LightcoreController(spawnRandom: Random(17));
+    addTearDown(controller.dispose);
+    controller.debugDisableTutorial();
+    controller.lumens = 100000;
+
+    expect(controller.buildTowerAt(0, TowerLibrary.redPrism), isTrue);
+    final upgrade = controller.slots[0].towerUpgradeOptions.first;
+    expect(controller.upgradeTowerStat(0, upgrade.type), isTrue);
+
+    controller.activeLayer.normalKillsSinceBoss =
+        LightcoreController.initialEnemyTarget;
+    controller.tick(0.1);
+
+    expect(controller.towerHealthFraction(controller.slots[0]), 1.0);
+    expect(controller.outputEfficiencyMultiplier, 1.0);
+    expect(
+      controller.bannerMessage,
+      isNot(contains('Anomaly pressure bruised Hex 1')),
+    );
+  });
+
   test('retired apex scan labels display as threat scans', () {
     expect(LightcoreCurrencyLabels.bossScanCount(1), '1 Threat Scan');
     expect(LightcoreCurrencyLabels.bossScanCount(2), '2 Threat Scans');

@@ -180,10 +180,11 @@ extension LightcoreControllerLayerTraits on LightcoreController {
   void _applyOpeningPressureLessonIfNeeded() {
     final firstTower = _firstTutorialTower;
     if (_tutorialOpeningPressureHitApplied ||
-        _earlyTutorialComplete ||
         _firstThreatChallengeStarted ||
+        activeLayer.tier != 1 ||
+        activeLayer.parentLayerId != null ||
+        activeLayerWaveNumber < 2 ||
         firstTower == null ||
-        !_isOpeningStarterTower(firstTower.config) ||
         towerUpgradePointsSpent(firstTower) > 0) {
       return;
     }
@@ -320,6 +321,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
   }
 
   void _advanceOpeningAutoEscalation() {
+    _applyOpeningPressureLessonIfNeeded();
     if (_openingThreatEscalationReady || _openingRepeatEscalationReady) {
       startFirstThreatChallenge();
     }

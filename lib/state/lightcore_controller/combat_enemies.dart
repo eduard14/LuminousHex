@@ -737,6 +737,10 @@ extension LightcoreControllerCombatEnemies on LightcoreController {
     final levelLumenScale = _enemyCardLumenScale(source);
     final levelSpeedScale = _enemyCardLevelSpeedScale(source.level);
     final layerScale = 1 + ((activeLayer.tier - 1) * 0.42);
+    final openingHealthScale = _openingWaveEnemyHealthMultiplier(config);
+    final openingDefenseScale = _openingWaveEnemyDefenseMultiplier(config);
+    final openingSpeedScale = _openingWaveEnemySpeedMultiplier(config);
+    final openingJamScale = _openingWaveEnemyJamMultiplier(config);
     final worldPressureScale = config.isBoss
         ? 1 +
               min(
@@ -763,12 +767,14 @@ extension LightcoreControllerCombatEnemies on LightcoreController {
         levelHealthScale *
         worldHealthScale *
         splitScale *
+        openingHealthScale *
         tutorialHealthMultiplier *
         _managerValue(1, manager?.healthMultiplier ?? 1, managerEffect);
     final defense =
         _balancedEnemyStat(config, 'baseDefense', config.baseDefense) *
         _enemyCardDefenseScale(source) *
         layerScale *
+        openingDefenseScale *
         (config.isBoss
             ? _bossBaseDefenseScale +
                   ((activeLayer.tier - 1) * _bossTierDefenseScaleStep)
@@ -781,6 +787,7 @@ extension LightcoreControllerCombatEnemies on LightcoreController {
         (splitDepth > 0 ? 1.18 : 1.0) *
         (config.isBoss ? _bossSpeedScale : 1.0) *
         _managerValue(1, manager?.speedMultiplier ?? 1, managerEffect) *
+        openingSpeedScale *
         _enemyMovementSpeedMultiplier;
     final reward = max(
       1,
@@ -799,7 +806,8 @@ extension LightcoreControllerCombatEnemies on LightcoreController {
     );
     final jamStrength =
         _balancedEnemyStat(config, 'jamStrength', config.jamStrength) *
-        (1 + ((source.level - 1) * 0.08));
+        (1 + ((source.level - 1) * 0.08)) *
+        openingJamScale;
     final angularVelocity = _enemySpiralMovementEnabled
         ? max(
                 0.12,
@@ -838,6 +846,61 @@ extension LightcoreControllerCombatEnemies on LightcoreController {
           ? 0.62
           : 0.36,
     );
+  }
+
+  bool _openingWaveEnemyScalingApplies(EnemyConfig config) {
+    return !config.isBoss &&
+        _threatRegionChallenge == null &&
+        activeLayer.tier == 1 &&
+        activeLayer.parentLayerId == null;
+  }
+
+  int get _openingWavePressureStep => max(0, activeLayerWaveNumber - 1);
+
+  int get _openingUnmatchedWavePressure {
+    final firstTower = _firstTutorialTower;
+    final upgradeRanks = firstTower == null
+        ? 0
+        : towerUpgradePointsSpent(firstTower);
+    return max(0, _openingWavePressureStep - upgradeRanks);
+  }
+
+  double _openingWaveEnemyHealthMultiplier(EnemyConfig config) {
+    if (!_openingWaveEnemyScalingApplies(config)) {
+      return 1.0;
+    }
+    final wavePressure = _openingWavePressureStep;
+    final unmetPressure = _openingUnmatchedWavePressure;
+    return 1 + min(1.15, wavePressure * 0.12) + min(0.9, unmetPressure * 0.32);
+  }
+
+  double _openingWaveEnemyDefenseMultiplier(EnemyConfig config) {
+    if (!_openingWaveEnemyScalingApplies(config)) {
+      return 1.0;
+    }
+    final wavePressure = _openingWavePressureStep;
+    final unmetPressure = _openingUnmatchedWavePressure;
+    return 1 + min(0.48, wavePressure * 0.05) + min(0.35, unmetPressure * 0.12);
+  }
+
+  double _openingWaveEnemySpeedMultiplier(EnemyConfig config) {
+    if (!_openingWaveEnemyScalingApplies(config)) {
+      return 1.0;
+    }
+    final wavePressure = _openingWavePressureStep;
+    final unmetPressure = _openingUnmatchedWavePressure;
+    return 1 +
+        min(0.34, wavePressure * 0.035) +
+        min(0.32, unmetPressure * 0.08);
+  }
+
+  double _openingWaveEnemyJamMultiplier(EnemyConfig config) {
+    if (!_openingWaveEnemyScalingApplies(config)) {
+      return 1.0;
+    }
+    final wavePressure = _openingWavePressureStep;
+    final unmetPressure = _openingUnmatchedWavePressure;
+    return 1 + min(0.7, wavePressure * 0.08) + min(0.85, unmetPressure * 0.2);
   }
 
   double _sampleDamageRangeMultiplier(
