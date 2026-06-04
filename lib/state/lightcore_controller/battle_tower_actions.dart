@@ -458,7 +458,9 @@ extension LightcoreControllerBattleTowerActions on LightcoreController {
       return false;
     }
     final cost = buildCostForConfig(config);
-    if (_slots[slotIndex].isBuilt || lumens < cost) {
+    final usesLayerOneWaveBuild = _usesLayerOneWaveCurrencyForBuild(slotIndex);
+    if (_slots[slotIndex].isBuilt ||
+        (!usesLayerOneWaveBuild && lumens < cost)) {
       return false;
     }
 
@@ -467,15 +469,17 @@ extension LightcoreControllerBattleTowerActions on LightcoreController {
     final serverCompletesAtMillis = serverStartedAtMillis == null
         ? null
         : serverStartedAtMillis + (duration * 1000).ceil();
-    lumens -= cost;
-    _recordLumenSpend(cost);
+    if (!usesLayerOneWaveBuild) {
+      lumens -= cost;
+      _recordLumenSpend(cost);
+    }
     _outerRingRevealed = true;
     _swarmActivated = true;
     _slots[slotIndex] =
         _buildRolledTowerState(
           slotIndex: slotIndex,
           config: config,
-          investedLumens: cost,
+          investedLumens: usesLayerOneWaveBuild ? 0 : cost,
         ).copyWith(
           charge: 0,
           fabricationTotalSeconds: duration,
@@ -513,19 +517,23 @@ extension LightcoreControllerBattleTowerActions on LightcoreController {
       return false;
     }
     final cost = buildCostForConfig(config);
-    if (_slots[slotIndex].isBuilt || lumens < cost) {
+    final usesLayerOneWaveBuild = _usesLayerOneWaveCurrencyForBuild(slotIndex);
+    if (_slots[slotIndex].isBuilt ||
+        (!usesLayerOneWaveBuild && lumens < cost)) {
       return false;
     }
 
-    lumens -= cost;
-    _recordLumenSpend(cost);
+    if (!usesLayerOneWaveBuild) {
+      lumens -= cost;
+      _recordLumenSpend(cost);
+    }
     _totalTowersBuilt += 1;
     _outerRingRevealed = true;
     _swarmActivated = true;
     _slots[slotIndex] = _buildRolledTowerState(
       slotIndex: slotIndex,
       config: config,
-      investedLumens: cost,
+      investedLumens: usesLayerOneWaveBuild ? 0 : cost,
     );
     final rolledOptions = _slots[slotIndex].towerUpgradeOptions
         .map(
@@ -550,6 +558,11 @@ extension LightcoreControllerBattleTowerActions on LightcoreController {
     _notifyNow();
     return true;
   }
+
+  bool _usesLayerOneWaveCurrencyForBuild(int slotIndex) =>
+      activeLayer.tier == 1 &&
+      activeLayer.parentLayerId == null &&
+      slotIndex < unlockedOuterSlotCount;
 
   bool upgradeSelectedTower() {
     final slotIndex = selectedSlotIndex;

@@ -94,7 +94,7 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('battle no longer hides overdrive behind tutorial state', (
+  testWidgets('battle hides overdrive while upgrade dock is open', (
     tester,
   ) async {
     addTearDown(() async {
@@ -113,7 +113,7 @@ void main() {
 
     expect(
       find.byKey(const ValueKey<String>('manual-overdrive-hud')),
-      findsOneWidget,
+      findsNothing,
     );
     expect(tester.takeException(), isNull);
   });
@@ -135,7 +135,10 @@ void main() {
 
     expect(controller.tutorialUsesBattleOnlyNavigation, isFalse);
     expect(find.textContaining('Root Shell Core'), findsOneWidget);
-    expect(find.textContaining('Buffer'), findsWidgets);
+    expect(find.textContaining('Buffer'), findsNothing);
+    expect(find.textContaining('Wave Cores'), findsOneWidget);
+    expect(find.textContaining('Kill Lumens'), findsOneWidget);
+    expect(find.textContaining('Power'), findsWidgets);
     expect(find.text('Stats'), findsNothing);
     expect(find.text('Core Stat Board'), findsNothing);
     expect(find.text('Ring'), findsNothing);
@@ -172,7 +175,14 @@ void main() {
     controller.debugDisableTutorial();
     controller.selectCenter();
     await _pumpBattleScreen(tester, controller);
-    await tester.tap(find.byType(GameWidget<LightcoreBattleGame>));
+    final game = tester
+        .widget<GameWidget<LightcoreBattleGame>>(
+          find.byType(GameWidget<LightcoreBattleGame>),
+        )
+        .game!;
+    final coreCenter = game.debugCoreCenter;
+    expect(coreCenter, isNotNull);
+    await tester.tapAt(coreCenter!);
     await tester.pump();
 
     expect(controller.activeLayer.tier, 2);

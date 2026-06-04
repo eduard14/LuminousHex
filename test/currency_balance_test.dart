@@ -193,10 +193,11 @@ void main() {
     );
     expect(restored.unlockedOuterSlotCount, LightcoreController.slotCount);
 
-    restored.lumens = 100000;
+    restored.lumens = 0;
     for (var index = 0; index < LightcoreController.slotCount; index++) {
       expect(restored.buildTowerAt(index, TowerLibrary.all[index]), isTrue);
     }
+    expect(restored.lumens, 0);
   });
 
   test('retired apex scan labels display as threat scans', () {

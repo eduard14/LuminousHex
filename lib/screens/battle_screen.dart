@@ -134,7 +134,6 @@ class _BattleStatsTarget {
 }
 
 class _BattleScreenState extends State<BattleScreen> {
-  static const double _overdriveHudHeight = 92;
   static const double _canvasTapSlop = 12;
 
   late LightcoreBattleGame _game;
@@ -366,8 +365,8 @@ class _BattleScreenState extends State<BattleScreen> {
     return null;
   }
 
-  Widget _buildGameCanvas(double radius, {required bool towerSelected}) {
-    _game.setUiFocusMode(towerSelected: towerSelected);
+  Widget _buildGameCanvas(double radius, {required bool dockOpen}) {
+    _game.setUiFocusMode(dockOpen: dockOpen);
     return ClipRRect(
       borderRadius: BorderRadius.circular(radius),
       child: Stack(
@@ -980,11 +979,14 @@ class _BattleScreenState extends State<BattleScreen> {
       selected: selected,
       compact: compact,
     );
-    final selectionHud = _buildSelectionHud(
-      context: context,
-      controller: controller,
-      selected: selected,
-    );
+    final dockOpen = selectionOverlay != null;
+    final selectionHud = dockOpen
+        ? null
+        : _buildSelectionHud(
+            context: context,
+            controller: controller,
+            selected: selected,
+          );
     final promotionResultCard = _buildPromotionResultCard(
       controller: controller,
       compact: compact,
@@ -994,18 +996,12 @@ class _BattleScreenState extends State<BattleScreen> {
       compact: compact,
     );
     final overdriveHudVisible =
-        widget.showBattleHud && controller.showManualOverdriveHud;
-    final bottomControlClearance = overdriveHudVisible
-        ? _overdriveHudHeight
-        : 0.0;
+        !dockOpen && widget.showBattleHud && controller.showManualOverdriveHud;
 
     return Stack(
       children: [
         Positioned.fill(
-          child: _buildGameCanvas(
-            compact ? 20 : 0,
-            towerSelected: selected != null && selected.isBuilt,
-          ),
+          child: _buildGameCanvas(compact ? 20 : 0, dockOpen: dockOpen),
         ),
         if (widget.showBattleHud && shellVisibilityHud != null)
           Positioned(
@@ -1041,7 +1037,7 @@ class _BattleScreenState extends State<BattleScreen> {
           Positioned(
             left: inset,
             right: compact ? inset : null,
-            bottom: bottomInset + bottomControlClearance,
+            bottom: bottomInset,
             child: selectionOverlay,
           ),
         if (promotionResultCard != null)
@@ -1375,6 +1371,9 @@ class _LiveTowerUpgradePanel extends StatelessWidget {
     final cap = controller.towerUpgradePointsCap(tower);
     final healthLabel = controller.towerHealthLabel(tower);
     final healthValue = controller.towerHealthFraction(tower);
+    final showLayerOneEconomy =
+        controller.activeLayer.tier == 1 &&
+        !controller.activeLayerHasParentSlot;
     final levelLabel = tower.hasTowerProgression
         ? 'Lv ${tower.level}/${LightcoreController.maxTowerLevel}'
         : 'Layer ${tower.childLayerTier ?? controller.activeLayer.tier}';
@@ -1411,6 +1410,10 @@ class _LiveTowerUpgradePanel extends StatelessWidget {
           color: tint,
           height: 8,
         ),
+        if (showLayerOneEconomy) ...[
+          const SizedBox(height: 8),
+          _LayerOneCurrencyStrip(controller: controller),
+        ],
         const SizedBox(height: 8),
         Wrap(
           spacing: 6,
@@ -1569,6 +1572,33 @@ class _BattleUpgradeChip extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _LayerOneCurrencyStrip extends StatelessWidget {
+  const _LayerOneCurrencyStrip({required this.controller});
+
+  final LightcoreController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    return Wrap(
+      spacing: 6,
+      runSpacing: 6,
+      children: [
+        _BattleUpgradeChip(
+          label: 'Wave Cores',
+          value:
+              '${controller.activeLayerRoundCurrency}/${LightcoreController.slotCount - 1}',
+          tint: LightcorePalette.solar,
+        ),
+        _BattleUpgradeChip(
+          label: 'Kill Lumens',
+          value: '${controller.lumens}',
+          tint: LightcorePalette.aether,
+        ),
+      ],
     );
   }
 }
@@ -1736,7 +1766,10 @@ class _CoreStatsPanel extends StatelessWidget {
     final showComponentForecast =
         controller.builtTowerCount > 0 &&
         (!openingCorePanel || showOpeningForecast);
-    final showChargeBufferControls = !openingCorePanel;
+    final isLayerOneRoot =
+        controller.activeLayer.tier == 1 &&
+        !controller.activeLayerHasParentSlot;
+    final showChargeBufferControls = !openingCorePanel && !isLayerOneRoot;
     final showCoreStatUpgrades =
         controller.activeLayer.tier >= 2 &&
         controller.canTrainCoreStats &&
@@ -1788,7 +1821,7 @@ class _CoreStatsPanel extends StatelessWidget {
       if (controller.canTrainCoreStats)
         _CoreCommandButton(
           icon: Icons.keyboard_double_arrow_up_rounded,
-          label: 'Shell',
+          label: isLayerOneRoot ? 'Power' : 'Shell',
           value: controller.canUpgradeCoreLevel
               ? '${controller.coreLevelUpgradeCost}L'
               : 'Max',
@@ -1915,6 +1948,10 @@ class _CoreStatsPanel extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         Wrap(spacing: 6, runSpacing: 6, children: metricChips),
+        if (isLayerOneRoot) ...[
+          const SizedBox(height: 8),
+          _LayerOneCurrencyStrip(controller: controller),
+        ],
         const SizedBox(height: 8),
         _BattleUpgradeGrid(children: coreActions),
         if (showCoreStatUpgrades) ...[
@@ -2270,6 +2307,9 @@ class _EmptySlotPanel extends StatelessWidget {
     final childLayerBlockedLabel = controller.isCompositeLayer
         ? controller.childLayerCreationBlockedLabelForSlot(slot.slotIndex)
         : null;
+    final usesLayerOneWaveBuild =
+        controller.activeLayer.tier == 1 &&
+        !controller.activeLayerHasParentSlot;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -2286,6 +2326,10 @@ class _EmptySlotPanel extends StatelessWidget {
               : 'Pick one of the unlocked color prisms to activate this surrounding slot.',
           style: textTheme.bodyMedium,
         ),
+        if (usesLayerOneWaveBuild) ...[
+          const SizedBox(height: 10),
+          _LayerOneCurrencyStrip(controller: controller),
+        ],
         const SizedBox(height: 14),
         controller.isCompositeLayer
             ? Column(
@@ -2317,13 +2361,16 @@ class _EmptySlotPanel extends StatelessWidget {
                   for (final config in controller.tutorialTowerChoices)
                     _BuildButton(
                       config: config,
-                      buildCost: controller.buildCostForConfig(config),
+                      costLabel: usesLayerOneWaveBuild
+                          ? 'Wave Core build'
+                          : '${controller.buildCostForConfig(config)} Lumens',
                       fabricationDuration: controller
                           .towerFabricationDurationLabelForConfig(config),
                       traitBias: controller.traitBiasSummary(config),
                       enabled:
+                          usesLayerOneWaveBuild ||
                           controller.lumens >=
-                          controller.buildCostForConfig(config),
+                              controller.buildCostForConfig(config),
                       onPressed: () => onBuildTower(slot.slotIndex, config),
                     ),
                 ],
@@ -2808,7 +2855,7 @@ class _ManualOverdriveHudState extends State<_ManualOverdriveHud> {
 class _BuildButton extends StatelessWidget {
   const _BuildButton({
     required this.config,
-    required this.buildCost,
+    required this.costLabel,
     required this.fabricationDuration,
     required this.traitBias,
     required this.enabled,
@@ -2816,7 +2863,7 @@ class _BuildButton extends StatelessWidget {
   });
 
   final TowerConfig config;
-  final int buildCost;
+  final String costLabel;
   final String fabricationDuration;
   final String traitBias;
   final bool enabled;
@@ -2839,7 +2886,7 @@ class _BuildButton extends StatelessWidget {
             Text(config.name, textAlign: TextAlign.center),
             const SizedBox(height: 4),
             Text(
-              '$buildCost Lumens • $fabricationDuration',
+              '$costLabel • $fabricationDuration',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: LightcorePalette.night.withValues(alpha: 0.72),
                 fontWeight: FontWeight.w700,

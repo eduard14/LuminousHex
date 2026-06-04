@@ -53,8 +53,9 @@ climbing.
 4. Upgrade the first tower from its controls as the next action.
 5. Clear wave milestones to unlock the remaining perimeter relay towers:
    Hex 1 at Wave 1, Hexes 2-3 after Wave 5, and Hexes 4-6 after Wave 10.
-6. Upgrade towers, Layer 1 core tuning, and encounter capacity with earned
-   resources, then move core stat boards into Layer 2 progression.
+6. Spend wave-earned Layer 1 Wave Cores to open/build the shell, then spend
+   kill-earned Lumens on combat upgrades like range, fire speed, multi-shot,
+   and tower damage tuning.
 7. Roll Threat Scans into Knowledge Cards that make enemy families easier
    to understand and farm.
 8. Follow the fixed Threat Map route, clear higher waves in each area, then lock
@@ -115,6 +116,9 @@ climbing.
 - Battlefield upgrade controls now use compact command docks with stat chips
   and grid actions, keeping tower/core tuning readable while leaving more of
   the active battle visible.
+- Layer 1 battle docks now expose Wave Cores beside Kill Lumens, remove the
+  ambiguous Buffer control from the first shell, and hide side controls while
+  the selected upgrade dock is open.
 - Selecting the Lightcore opens persistent core upgrades directly and separates
   shell-wide core growth from Layer 1 tower stat rolls.
 - The Lightcore control panel can expose charged-shot queue order controls when

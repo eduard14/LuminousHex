@@ -110,9 +110,9 @@ class LightcoreBattleGame extends FlameGame with ScaleDetector {
     _recomputeLayout();
   }
 
-  void setUiFocusMode({required bool towerSelected}) {
-    final nextLift = towerSelected ? -0.12 : 0.0;
-    final nextScale = towerSelected ? 0.9 : 1.0;
+  void setUiFocusMode({required bool dockOpen}) {
+    final nextLift = dockOpen ? -0.22 : 0.0;
+    final nextScale = dockOpen ? 0.78 : 1.0;
     if ((nextLift - _uiFocusLift).abs() < 0.001 &&
         (nextScale - _uiFocusScale).abs() < 0.001) {
       return;
