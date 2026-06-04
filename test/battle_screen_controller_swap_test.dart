@@ -5,8 +5,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:lightcore/battle/lightcore_battle_game.dart';
 import 'package:lightcore/data/tower_configs.dart';
 import 'package:lightcore/screens/battle_screen.dart';
-import 'package:lightcore/state/lightcore_controller.dart';
 import 'package:lightcore/theme/lightcore_theme.dart';
+
+import 'helpers/lightcore_test_fixtures.dart';
 
 void main() {
   testWidgets('first inactive battle screen shows play button', (tester) async {
@@ -135,12 +136,49 @@ void main() {
     expect(controller.tutorialUsesBattleOnlyNavigation, isFalse);
     expect(find.textContaining('Root Shell Core'), findsOneWidget);
     expect(find.textContaining('Buffer'), findsWidgets);
+    expect(find.text('Stats'), findsNothing);
+    expect(find.text('Core Stat Board'), findsNothing);
     expect(find.text('Ring'), findsNothing);
     expect(find.text('Slots'), findsNothing);
     expect(find.text('Crit'), findsNothing);
     expect(find.text('Final'), findsNothing);
     expect(find.text('Normal'), findsNothing);
     expect(find.text('Pen'), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('core stat board is reserved for Layer 2 and higher', (
+    tester,
+  ) async {
+    addTearDown(() async {
+      await tester.binding.setSurfaceSize(null);
+    });
+    await tester.binding.setSurfaceSize(const Size(430, 780));
+    final controller = createDeterministicController();
+    addTearDown(controller.dispose);
+
+    controller.debugDisableTutorial();
+    controller.selectCenter();
+    await _pumpBattleScreen(tester, controller);
+    await tester.tap(find.byType(GameWidget<LightcoreBattleGame>));
+    await tester.pump();
+
+    expect(controller.activeLayer.tier, 1);
+    expect(find.textContaining('Root Shell Core'), findsOneWidget);
+    expect(find.text('Stats'), findsNothing);
+    expect(find.text('Core Stat Board'), findsNothing);
+
+    forgeLayer2(controller);
+    controller.debugDisableTutorial();
+    controller.selectCenter();
+    await _pumpBattleScreen(tester, controller);
+    await tester.tap(find.byType(GameWidget<LightcoreBattleGame>));
+    await tester.pump();
+
+    expect(controller.activeLayer.tier, 2);
+    expect(find.textContaining('Prism Shell Core'), findsOneWidget);
+    expect(find.text('Stats'), findsOneWidget);
+    expect(find.text('Core Stat Board'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 

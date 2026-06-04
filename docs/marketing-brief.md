@@ -53,7 +53,8 @@ climbing.
 4. Upgrade the first tower from its controls as the next action.
 5. Clear wave milestones to unlock the remaining perimeter relay towers:
    Hex 1 at Wave 1, Hexes 2-3 after Wave 5, and Hexes 4-6 after Wave 10.
-6. Upgrade towers, core stats, and encounter capacity with earned resources.
+6. Upgrade towers, Layer 1 core tuning, and encounter capacity with earned
+   resources, then move core stat boards into Layer 2 progression.
 7. Roll Threat Scans into Knowledge Cards that make enemy families easier
    to understand and farm.
 8. Follow the fixed Threat Map route, clear higher waves in each area, then lock

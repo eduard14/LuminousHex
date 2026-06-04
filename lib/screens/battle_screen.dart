@@ -1737,6 +1737,10 @@ class _CoreStatsPanel extends StatelessWidget {
         controller.builtTowerCount > 0 &&
         (!openingCorePanel || showOpeningForecast);
     final showChargeBufferControls = !openingCorePanel;
+    final showCoreStatUpgrades =
+        controller.activeLayer.tier >= 2 &&
+        controller.canTrainCoreStats &&
+        controller.coreUpgradeOptions.isNotEmpty;
     final coreLevelLabel = controller.canTrainCoreStats
         ? '${controller.coreState.level}/${LightcoreController.maxCoreLevel}'
         : '${controller.coreState.level}';
@@ -1746,12 +1750,13 @@ class _CoreStatsPanel extends StatelessWidget {
         value: coreLevelLabel,
         tint: LightcorePalette.solar,
       ),
-      _CoreMetricChip(
-        label: 'Stats',
-        value:
-            '${controller.coreUpgradePointsSpent}/${controller.coreUpgradePointsCap}',
-        tint: LightcorePalette.solar,
-      ),
+      if (showCoreStatUpgrades)
+        _CoreMetricChip(
+          label: 'Stats',
+          value:
+              '${controller.coreUpgradePointsSpent}/${controller.coreUpgradePointsCap}',
+          tint: LightcorePalette.solar,
+        ),
       _CoreMetricChip(
         label: 'Output',
         value: controller.outputEfficiencyLabel,
@@ -1912,8 +1917,7 @@ class _CoreStatsPanel extends StatelessWidget {
         Wrap(spacing: 6, runSpacing: 6, children: metricChips),
         const SizedBox(height: 8),
         _BattleUpgradeGrid(children: coreActions),
-        if (controller.canTrainCoreStats &&
-            controller.coreUpgradeOptions.isNotEmpty) ...[
+        if (showCoreStatUpgrades) ...[
           const SizedBox(height: 10),
           Text(
             'Core Stat Board',
