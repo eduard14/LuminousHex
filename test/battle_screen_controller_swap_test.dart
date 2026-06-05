@@ -34,6 +34,39 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('active battle keeps shell expanded for tower readability', (
+    tester,
+  ) async {
+    addTearDown(() async {
+      await tester.binding.setSurfaceSize(null);
+    });
+    await tester.binding.setSurfaceSize(const Size(430, 780));
+    final controller = LightcoreController();
+    addTearDown(controller.dispose);
+    controller.debugDisableTutorial();
+
+    controller.selectCenter();
+
+    await _pumpBattleScreen(tester, controller);
+
+    expect(controller.swarmActivated, isTrue);
+    expect(controller.outerRingRevealed, isTrue);
+    expect(
+      find.byKey(const ValueKey<String>('battle-shell-collapse-button')),
+      findsNothing,
+    );
+
+    controller.toggleShellVisibility();
+    await tester.pump();
+
+    expect(controller.outerRingRevealed, isTrue);
+    expect(
+      find.byKey(const ValueKey<String>('battle-shell-collapse-button')),
+      findsNothing,
+    );
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('battle canvas replaces its game when controller changes', (
     tester,
   ) async {

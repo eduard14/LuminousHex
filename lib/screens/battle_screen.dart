@@ -912,7 +912,8 @@ class _BattleScreenState extends State<BattleScreen> {
   }) {
     if (!widget.enableBattlefieldTaps ||
         _activePromotionSequence != null ||
-        !controller.swarmActivated) {
+        !controller.swarmActivated ||
+        controller.outerRingRevealed) {
       return null;
     }
     return _BattleShellVisibilityHud(

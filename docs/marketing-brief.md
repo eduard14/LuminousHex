@@ -179,6 +179,9 @@ climbing.
   keeping build/stat actions distinct from automated combat targeting.
 - Battlefield hex slots now render as subdued HUD frames underneath anomalies,
   so enemy bodies remain the top combat read when they cross the tower grid.
+- Active waves keep the relay shell expanded so tower collision footprints,
+  lanes, and hex slots stay visible; the folded shell view is reserved for
+  non-combat inspection instead of live defense.
 - Battle tower center glyphs now show projectile shape while using payload
   color; no-payload Layer 1 towers fall back to the tower color, and the basic
   projectile reads as a simple circle instead of an abstract slash.
