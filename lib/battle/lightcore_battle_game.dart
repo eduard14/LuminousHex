@@ -335,6 +335,8 @@ class LightcoreBattleGame extends FlameGame with ScaleDetector {
         _renderSelectedTowerRange(canvas);
         _renderPersistentShieldRings(canvas);
         _renderLinks(canvas);
+        _renderSlots(canvas);
+        _renderRelayImpactRing(canvas);
       }
     }
     _renderShotFireBursts(canvas);
@@ -344,12 +346,6 @@ class LightcoreBattleGame extends FlameGame with ScaleDetector {
       _renderLevelUpRadiance(canvas);
     }
     _renderEnemies(canvas);
-    if (controller.outerRingRevealed && showArenaSlots) {
-      _renderSlots(canvas);
-    }
-    if (showArenaSlots) {
-      _renderRelayImpactRing(canvas);
-    }
     if (showTutorialGuides) {
       if (controller.outerRingRevealed && showArenaSlots) {
         _renderTutorialSlotGuides(canvas);

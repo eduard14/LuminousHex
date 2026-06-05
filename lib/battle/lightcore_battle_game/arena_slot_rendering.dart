@@ -261,7 +261,7 @@ extension LightcoreBattleGameArenaSlotRendering on LightcoreBattleGame {
               slot.childAffinity ?? PrototypeAffinity.solar,
               slot.childSecondaryAffinity,
             ).withValues(alpha: 0.16)
-          : LightcorePalette.stroke.withValues(alpha: unlocked ? 0.14 : 0.06);
+          : LightcorePalette.stroke.withValues(alpha: unlocked ? 0.1 : 0.04);
       final width = controller.selectedSlotIndex == index ? 3.2 : 2.0;
       canvas.drawPath(
         _curvedLinkPath(start, end, bend: slot.isChildLayerNode ? 0.2 : 0.12),
@@ -596,25 +596,14 @@ extension LightcoreBattleGameArenaSlotRendering on LightcoreBattleGame {
           ? LightcorePalette.panelRaised
           : LightcorePalette.stroke.withValues(alpha: 0.32);
 
-      final hex = _hexPath(center, _slotRadius);
-      canvas.drawPath(
-        hex,
-        Paint()
-          ..style = PaintingStyle.fill
-          ..color = slot.isBuilt
-              ? slotColor.withValues(alpha: 0.2)
-              : LightcorePalette.panel.withValues(
-                  alpha: unlocked ? 0.88 : 0.44,
-                ),
-      );
-      canvas.drawPath(
-        hex,
-        Paint()
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = selected ? 4 : 2.6
-          ..color = selected
-              ? LightcorePalette.layer2
-              : slotColor.withValues(alpha: unlocked ? 0.92 : 0.48),
+      _renderSlotHudFrame(
+        canvas,
+        center,
+        color: slotColor,
+        selected: selected,
+        unlocked: unlocked,
+        activeTower: activeTower,
+        projectShell: projectShell,
       );
 
       if (slot.isBuilt) {
@@ -765,6 +754,99 @@ extension LightcoreBattleGameArenaSlotRendering on LightcoreBattleGame {
           );
         }
       }
+    }
+  }
+
+  void _renderSlotHudFrame(
+    Canvas canvas,
+    Offset center, {
+    required Color color,
+    required bool selected,
+    required bool unlocked,
+    required bool activeTower,
+    required bool projectShell,
+  }) {
+    final pulse = 0.5 + (math.sin(controller.elapsed * 2.6) * 0.5);
+    final baseAlpha = !unlocked
+        ? 0.18
+        : activeTower || projectShell
+        ? 0.46
+        : 0.34;
+    final frameColor = selected ? LightcorePalette.layer2 : color;
+    final outerRadius = _slotRadius * 0.98;
+    final innerRadius = _slotRadius * 0.78;
+    final hex = _hexPath(center, outerRadius);
+
+    if (selected && _battleGlowAlphaScale > 0) {
+      canvas.drawPath(
+        _hexPath(center, outerRadius * 1.04),
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = math.max(4, _slotRadius * 0.1)
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10)
+          ..color = LightcorePalette.layer2.withValues(
+            alpha: 0.28 * _battleGlowAlphaScale,
+          ),
+      );
+    }
+
+    canvas.drawPath(
+      hex,
+      Paint()
+        ..style = PaintingStyle.fill
+        ..color = (activeTower || projectShell ? color : LightcorePalette.panel)
+            .withValues(alpha: unlocked ? 0.07 : 0.025),
+    );
+    canvas.drawPath(
+      _hexPath(center, innerRadius),
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = selected ? 1.8 : 1.05
+        ..color = LightcorePalette.mist.withValues(
+          alpha: selected ? 0.34 : baseAlpha * 0.28,
+        ),
+    );
+    canvas.drawPath(
+      hex,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = selected ? 2.6 : 1.45
+        ..color = frameColor.withValues(
+          alpha: selected ? 0.9 : baseAlpha + (pulse * 0.08),
+        ),
+    );
+
+    final tickPaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = selected ? 2.2 : 1.35
+      ..strokeCap = StrokeCap.round
+      ..color = frameColor.withValues(
+        alpha: selected ? 0.88 : (baseAlpha * 0.72),
+      );
+    final points = _polygonPoints(center, outerRadius, 6, math.pi / 6);
+    for (var index = 0; index < points.length; index++) {
+      final previous = points[(index - 1 + points.length) % points.length];
+      final current = points[index];
+      final next = points[(index + 1) % points.length];
+      final start = Offset.lerp(current, previous, 0.2)!;
+      final end = Offset.lerp(current, next, 0.2)!;
+      canvas.drawLine(start, end, tickPaint);
+    }
+
+    if (!unlocked) {
+      _drawPolygonPerimeterProgress(
+        canvas,
+        center: center,
+        radius: outerRadius * 0.86,
+        sides: 6,
+        rotation: math.pi / 6,
+        progress: 0.5,
+        paint: Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.15
+          ..strokeCap = StrokeCap.round
+          ..color = LightcorePalette.stroke.withValues(alpha: 0.18),
+      );
     }
   }
 
