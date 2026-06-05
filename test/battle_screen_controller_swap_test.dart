@@ -168,7 +168,7 @@ void main() {
 
     expect(controller.tutorialUsesBattleOnlyNavigation, isFalse);
     expect(find.textContaining('Root Shell Core'), findsOneWidget);
-    expect(find.text('Current Wave'), findsOneWidget);
+    expect(find.text('Current Wave'), findsNothing);
     expect(find.text('Full Stats'), findsOneWidget);
     expect(find.textContaining('Buffer'), findsNothing);
     expect(find.textContaining('Wave Cores'), findsOneWidget);
@@ -305,8 +305,10 @@ void main() {
 
     expect(find.byKey(const ValueKey<String>('battle-wave-hud')), findsNothing);
     expect(find.text('Best Wave'), findsNothing);
-    expect(find.textContaining('Stats 0/'), findsOneWidget);
-    expect(find.textContaining('Layer 2 Lv 1'), findsOneWidget);
+    expect(find.textContaining('Stats 0/'), findsNothing);
+    expect(find.textContaining('Layer 2 Lv 1'), findsNothing);
+    expect(find.textContaining('Hex 1'), findsOneWidget);
+    expect(find.text('Full Stats'), findsOneWidget);
     expect(find.text('Tower Health'), findsOneWidget);
     expect(find.text('Persistent Stat Upgrades'), findsNothing);
     expect(find.textContaining('Layer 1 Tower Level'), findsNothing);

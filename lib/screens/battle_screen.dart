@@ -882,7 +882,7 @@ class _BattleScreenState extends State<BattleScreen> {
     final tint = _selectionTint(controller, selected, panelFocus);
     final mediaSize = MediaQuery.sizeOf(context);
     final dockHeight = compact
-        ? math.min(286.0, math.max(246.0, mediaSize.height * 0.31))
+        ? math.min(238.0, math.max(208.0, mediaSize.height * 0.24))
         : null;
 
     final panel = ConstrainedBox(
@@ -1375,8 +1375,6 @@ class _LiveTowerUpgradePanel extends StatelessWidget {
         tower.childAffinity?.color ??
         LightcorePalette.layer2;
     final upgradeOptions = controller.towerUpgradeOptionsFor(tower);
-    final spent = controller.towerUpgradePointsSpent(tower);
-    final cap = controller.towerUpgradePointsCap(tower);
     final healthLabel = controller.towerHealthLabel(tower);
     final healthValue = controller.towerHealthFraction(tower);
     final showLayerOneEconomy =
@@ -1400,14 +1398,22 @@ class _LiveTowerUpgradePanel extends StatelessWidget {
                 style: textTheme.titleLarge?.copyWith(color: tint),
               ),
             ),
-            IconButton.filledTonal(
-              tooltip: 'Full tower detail',
-              onPressed: () => showTowerDetailOverlay(
-                context: context,
-                controller: controller,
-                slotIndex: slotIndex,
+            Tooltip(
+              message: 'Full tower stats',
+              child: TextButton.icon(
+                key: ValueKey<String>('tower-$slotIndex-full-stats-button'),
+                onPressed: () => showTowerDetailOverlay(
+                  context: context,
+                  controller: controller,
+                  slotIndex: slotIndex,
+                ),
+                icon: const Icon(Icons.assessment_rounded, size: 18),
+                label: const Text('Full Stats'),
+                style: TextButton.styleFrom(
+                  visualDensity: VisualDensity.compact,
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                ),
               ),
-              icon: const Icon(Icons.open_in_full_rounded),
             ),
           ],
         ),
@@ -1422,22 +1428,17 @@ class _LiveTowerUpgradePanel extends StatelessWidget {
           const SizedBox(height: 8),
           _LayerOneCurrencyStrip(controller: controller),
         ],
-        const SizedBox(height: 8),
+        const SizedBox(height: 6),
         Wrap(
           spacing: 6,
           runSpacing: 6,
           children: [
+            _BattleUpgradeChip(
+              label: 'Hex',
+              value: '${slotIndex + 1}',
+              tint: tint,
+            ),
             _BattleUpgradeChip(label: 'Tower', value: levelLabel, tint: tint),
-            _BattleUpgradeChip(
-              label: 'Stats',
-              value: '$spent/$cap',
-              tint: LightcorePalette.solar,
-            ),
-            _BattleUpgradeChip(
-              label: 'Layer 2',
-              value: 'Lv ${controller.activeLayerComponentLevel}',
-              tint: LightcorePalette.violet,
-            ),
           ],
         ),
         const SizedBox(height: 8),
@@ -1969,38 +1970,8 @@ class _CoreStatsPanel extends StatelessWidget {
         controller.activeLayer.tier >= 2 &&
         controller.canTrainCoreStats &&
         controller.coreUpgradeOptions.isNotEmpty;
-    final coreLevelLabel = controller.canTrainCoreStats
-        ? '${controller.coreState.level}/${LightcoreController.maxCoreLevel}'
-        : '${controller.coreState.level}';
     final summaryItems = <_CoreSummaryItem>[
-      _CoreSummaryItem(
-        label: 'Current Wave',
-        value: '${controller.activeLayerWaveNumber}',
-        tint: LightcorePalette.solar,
-      ),
-      _CoreSummaryItem(
-        label: 'Core Level',
-        value: coreLevelLabel,
-        tint: LightcorePalette.solar,
-      ),
-      _CoreSummaryItem(
-        label: 'Output',
-        value: controller.outputEfficiencyLabel,
-        tint: LightcorePalette.verdant,
-      ),
-      if (isLayerOneRoot) ...[
-        _CoreSummaryItem(
-          label: 'Wave Cores',
-          value:
-              '${controller.activeLayerRoundCurrency}/${LightcoreController.slotCount - 1}',
-          tint: LightcorePalette.solar,
-        ),
-        _CoreSummaryItem(
-          label: 'Kill Lumens',
-          value: '${controller.lumens}',
-          tint: LightcorePalette.aether,
-        ),
-      ] else ...[
+      if (!isLayerOneRoot) ...[
         _CoreSummaryItem(
           label: 'Range',
           value: rangePreview,
@@ -2167,8 +2138,11 @@ class _CoreStatsPanel extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 8),
-        _CoreSummaryGrid(items: summaryItems),
-        const SizedBox(height: 8),
+        if (isLayerOneRoot)
+          _LayerOneCurrencyStrip(controller: controller)
+        else
+          _CoreSummaryGrid(items: summaryItems),
+        const SizedBox(height: 10),
         _BattleUpgradeGrid(children: coreActions),
         if (showCoreStatUpgrades) ...[
           const SizedBox(height: 10),
