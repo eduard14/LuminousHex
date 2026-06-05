@@ -179,6 +179,9 @@ climbing.
   keeping build/stat actions distinct from automated combat targeting.
 - Battlefield hex slots now render as subdued HUD frames underneath anomalies,
   so enemy bodies remain the top combat read when they cross the tower grid.
+- Battle tower center glyphs now show projectile shape while using payload
+  color; no-payload Layer 1 towers fall back to the tower color, and the basic
+  projectile reads as a simple circle instead of an abstract slash.
 - Core shots do not orbit as collectible-looking field objects; only brief
   handoff effects appear when a relay charges the core.
 - Payload-colored orbit dots are kept out of shot, relay, and fire-burst

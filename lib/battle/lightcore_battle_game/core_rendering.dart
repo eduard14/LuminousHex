@@ -78,6 +78,7 @@ extension LightcoreBattleGameCoreRendering on LightcoreBattleGame {
       level: level,
       maxLevel: LightcoreController.maxTowerLevel,
       projectileType: controller.towerProjectileType(slot),
+      payloadType: controller.towerPayloadType(slot),
       tint: tint,
       size: size,
       opacity: opacity,
@@ -101,6 +102,7 @@ extension LightcoreBattleGameCoreRendering on LightcoreBattleGame {
       level: controller.coreState.level,
       maxLevel: LightcoreController.maxTowerLevel,
       projectileType: _coreProjectileTypeForBadge,
+      payloadType: _corePayloadTypeForBadge,
       tint: tint,
       size: size,
       opacity: 1,
@@ -118,12 +120,21 @@ extension LightcoreBattleGameCoreRendering on LightcoreBattleGame {
     return loadout[controller.coreState.fireSequence % loadout.length];
   }
 
+  PayloadType get _corePayloadTypeForBadge {
+    final loadout = controller.corePayloadArsenal;
+    if (loadout.isEmpty) {
+      return controller.coreState.payloadType;
+    }
+    return loadout[controller.coreState.fireSequence % loadout.length];
+  }
+
   void _paintTraitBadge(
     Canvas canvas,
     Offset center, {
     required int level,
     required int maxLevel,
     required ProjectileType projectileType,
+    required PayloadType payloadType,
     required Color tint,
     required double size,
     required double opacity,
@@ -180,26 +191,14 @@ extension LightcoreBattleGameCoreRendering on LightcoreBattleGame {
       }
     }
 
-    canvas.drawCircle(
-      center,
-      size * 0.24,
-      Paint()
-        ..color = projectileColor.withValues(alpha: 0.22 * resolvedOpacity),
-    );
-    canvas.drawCircle(
-      center,
-      size * 0.24,
-      Paint()
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = math.max(1.0, size * 0.025)
-        ..color = projectileColor.withValues(alpha: 0.66 * resolvedOpacity),
-    );
-    _paintProjectileGlyph(
+    _paintLoadoutGlyph(
       canvas,
       center,
-      projectileType,
-      size: size * 0.28,
-      color: projectileColor.withValues(alpha: resolvedOpacity),
+      projectileType: projectileType,
+      payloadType: payloadType,
+      fallbackColor: tint,
+      size: size * 0.58,
+      opacity: resolvedOpacity,
     );
 
     if (complete) {
@@ -261,6 +260,11 @@ extension LightcoreBattleGameCoreRendering on LightcoreBattleGame {
       ..style = PaintingStyle.fill
       ..color = color;
     final radius = size * 0.5;
+
+    if (projectileType == ProjectileType.starBolt) {
+      canvas.drawCircle(center, radius * 0.46, fill);
+      return;
+    }
 
     if (projectileType == ProjectileType.shieldHalo) {
       canvas.drawPath(_hexPath(center, radius * 0.72), paint);
@@ -386,6 +390,41 @@ extension LightcoreBattleGameCoreRendering on LightcoreBattleGame {
           );
         }
     }
+  }
+
+  void _paintLoadoutGlyph(
+    Canvas canvas,
+    Offset center, {
+    required ProjectileType projectileType,
+    required PayloadType payloadType,
+    required Color fallbackColor,
+    required double size,
+    double opacity = 1,
+  }) {
+    final resolvedOpacity = opacity.clamp(0.0, 1.0).toDouble();
+    final payloadColor = payloadType.affinity?.color ?? fallbackColor;
+    final radius = size * 0.42;
+
+    canvas.drawCircle(
+      center,
+      radius,
+      Paint()..color = payloadColor.withValues(alpha: 0.2 * resolvedOpacity),
+    );
+    canvas.drawCircle(
+      center,
+      radius,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = math.max(1.0, size * 0.04)
+        ..color = payloadColor.withValues(alpha: 0.72 * resolvedOpacity),
+    );
+    _paintProjectileGlyph(
+      canvas,
+      center,
+      projectileType,
+      size: size * 0.48,
+      color: payloadColor.withValues(alpha: resolvedOpacity),
+    );
   }
 
   void _paintIconGlyph(

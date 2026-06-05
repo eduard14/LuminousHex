@@ -715,8 +715,14 @@ extension LightcoreBattleGameArenaSlotRendering on LightcoreBattleGame {
             phase: controller.elapsed,
           );
         } else {
-          final coreGlyph = _hexPath(center, _slotRadius * 0.21);
-          canvas.drawPath(coreGlyph, Paint()..color = slotColor);
+          _paintLoadoutGlyph(
+            canvas,
+            center,
+            projectileType: controller.towerProjectileType(slot),
+            payloadType: controller.towerPayloadType(slot),
+            fallbackColor: slotColor,
+            size: _slotRadius * 0.64,
+          );
         }
 
         if (activeTower && slot.disruption > 0) {
