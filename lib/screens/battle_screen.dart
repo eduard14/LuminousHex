@@ -882,13 +882,13 @@ class _BattleScreenState extends State<BattleScreen> {
     final tint = _selectionTint(controller, selected, panelFocus);
     final mediaSize = MediaQuery.sizeOf(context);
     final dockHeight = compact
-        ? math.min(238.0, math.max(208.0, mediaSize.height * 0.24))
+        ? math.min(360.0, math.max(280.0, mediaSize.height * 0.38))
         : null;
 
     final panel = ConstrainedBox(
       constraints: BoxConstraints(
         maxWidth: compact ? mediaSize.width - 20 : 500,
-        maxHeight: mediaSize.height * (compact ? 0.34 : 0.42),
+        maxHeight: mediaSize.height * (compact ? 0.46 : 0.42),
       ),
       child: AuroraPanel(
         tint: tint,
@@ -2479,7 +2479,7 @@ class _TowerFabricationPanel extends StatelessWidget {
   }
 }
 
-class _EmptySlotPanel extends StatelessWidget {
+class _EmptySlotPanel extends StatefulWidget {
   const _EmptySlotPanel({
     required this.controller,
     required this.slot,
@@ -2491,10 +2491,21 @@ class _EmptySlotPanel extends StatelessWidget {
   final bool Function(int slotIndex, TowerConfig config) onBuildTower;
 
   @override
+  State<_EmptySlotPanel> createState() => _EmptySlotPanelState();
+}
+
+class _EmptySlotPanelState extends State<_EmptySlotPanel> {
+  String? _selectedConfigId;
+
+  @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
-    final childLayerBlockedLabel = controller.isCompositeLayer
-        ? controller.childLayerCreationBlockedLabelForSlot(slot.slotIndex)
+    final controller = widget.controller;
+    final slot = widget.slot;
+    final childLayerBlockedLabel = widget.controller.isCompositeLayer
+        ? widget.controller.childLayerCreationBlockedLabelForSlot(
+            widget.slot.slotIndex,
+          )
         : null;
     final usesLayerOneWaveBuild =
         controller.activeLayer.tier == 1 &&
@@ -2543,26 +2554,18 @@ class _EmptySlotPanel extends StatelessWidget {
                   ],
                 ],
               )
-            : Wrap(
-                spacing: 10,
-                runSpacing: 10,
-                children: [
-                  for (final config in controller.tutorialTowerChoices)
-                    _BuildButton(
-                      config: config,
-                      costLabel: usesLayerOneWaveBuild
-                          ? 'Wave Core build'
-                          : '${controller.buildCostForConfig(config)} Lumens',
-                      fabricationDuration: controller
-                          .towerFabricationDurationLabelForConfig(config),
-                      traitBias: controller.traitBiasSummary(config),
-                      enabled:
-                          usesLayerOneWaveBuild ||
-                          controller.lumens >=
-                              controller.buildCostForConfig(config),
-                      onPressed: () => onBuildTower(slot.slotIndex, config),
-                    ),
-                ],
+            : _TowerBuildPicker(
+                choices: controller.tutorialTowerChoices,
+                selectedConfigId: _selectedConfigId,
+                usesLayerOneWaveBuild: usesLayerOneWaveBuild,
+                controller: controller,
+                onSelect: (config) {
+                  setState(() {
+                    _selectedConfigId = config.id;
+                  });
+                },
+                onBuildTower: (config) =>
+                    widget.onBuildTower(slot.slotIndex, config),
               ),
       ],
     );
@@ -3041,61 +3044,222 @@ class _ManualOverdriveHudState extends State<_ManualOverdriveHud> {
   }
 }
 
-class _BuildButton extends StatelessWidget {
-  const _BuildButton({
+class _TowerBuildPicker extends StatelessWidget {
+  const _TowerBuildPicker({
+    required this.choices,
+    required this.selectedConfigId,
+    required this.usesLayerOneWaveBuild,
+    required this.controller,
+    required this.onSelect,
+    required this.onBuildTower,
+  });
+
+  final List<TowerConfig> choices;
+  final String? selectedConfigId;
+  final bool usesLayerOneWaveBuild;
+  final LightcoreController controller;
+  final ValueChanged<TowerConfig> onSelect;
+  final bool Function(TowerConfig config) onBuildTower;
+
+  @override
+  Widget build(BuildContext context) {
+    TowerConfig? selected;
+    for (final choice in choices) {
+      if (choice.id == selectedConfigId) {
+        selected = choice;
+        break;
+      }
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: [
+              for (var index = 0; index < choices.length; index++) ...[
+                SizedBox(
+                  width: 132,
+                  height: 76,
+                  child: _TowerPrismChoiceTile(
+                    config: choices[index],
+                    selected: choices[index].id == selectedConfigId,
+                    onPressed: () => onSelect(choices[index]),
+                  ),
+                ),
+                if (index < choices.length - 1) const SizedBox(width: 10),
+              ],
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
+        if (selected == null)
+          Text(
+            'Select a prism to inspect its projectile style.',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: LightcorePalette.mist.withValues(alpha: 0.72),
+            ),
+          )
+        else
+          _SelectedTowerBuildDetails(
+            config: selected,
+            controller: controller,
+            usesLayerOneWaveBuild: usesLayerOneWaveBuild,
+            onBuildTower: () => onBuildTower(selected!),
+          ),
+      ],
+    );
+  }
+}
+
+class _TowerPrismChoiceTile extends StatelessWidget {
+  const _TowerPrismChoiceTile({
     required this.config,
-    required this.costLabel,
-    required this.fabricationDuration,
-    required this.traitBias,
-    required this.enabled,
+    required this.selected,
     required this.onPressed,
   });
 
   final TowerConfig config;
-  final String costLabel;
-  final String fabricationDuration;
-  final String traitBias;
-  final bool enabled;
+  final bool selected;
   final VoidCallback onPressed;
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: 164,
-      child: FilledButton(
-        style: FilledButton.styleFrom(
-          backgroundColor: config.affinity.color.withValues(alpha: 0.92),
-          foregroundColor: LightcorePalette.night,
-          disabledBackgroundColor: LightcorePalette.panelRaised,
+    final tint = config.affinity.color;
+    final textTheme = Theme.of(context).textTheme;
+    return OutlinedButton(
+      onPressed: onPressed,
+      style: OutlinedButton.styleFrom(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        foregroundColor: selected ? LightcorePalette.night : tint,
+        backgroundColor: tint.withValues(alpha: selected ? 0.92 : 0.2),
+        side: BorderSide(
+          color: selected
+              ? LightcorePalette.mist.withValues(alpha: 0.92)
+              : tint.withValues(alpha: 0.48),
+          width: selected ? 2 : 1,
         ),
-        onPressed: enabled ? onPressed : null,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            _projectileIconFor(config.defaultProjectileType),
+            size: 24,
+            color: selected ? LightcorePalette.night : tint,
+          ),
+          const SizedBox(height: 5),
+          Text(
+            config.name,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
+            style: textTheme.labelLarge?.copyWith(
+              color: selected ? LightcorePalette.night : LightcorePalette.mist,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SelectedTowerBuildDetails extends StatelessWidget {
+  const _SelectedTowerBuildDetails({
+    required this.config,
+    required this.controller,
+    required this.usesLayerOneWaveBuild,
+    required this.onBuildTower,
+  });
+
+  final TowerConfig config;
+  final LightcoreController controller;
+  final bool usesLayerOneWaveBuild;
+  final VoidCallback onBuildTower;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    final tint = config.affinity.color;
+    final costLabel = usesLayerOneWaveBuild
+        ? 'Wave Core'
+        : '${controller.buildCostForConfig(config)}L';
+    final enabled =
+        usesLayerOneWaveBuild ||
+        controller.lumens >= controller.buildCostForConfig(config);
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: LightcorePalette.panelRaised.withValues(alpha: 0.56),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: tint.withValues(alpha: 0.34)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
         child: Column(
-          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(config.name, textAlign: TextAlign.center),
-            const SizedBox(height: 4),
-            Text(
-              '$costLabel • $fabricationDuration',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: LightcorePalette.night.withValues(alpha: 0.72),
-                fontWeight: FontWeight.w700,
-              ),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: tint.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: tint.withValues(alpha: 0.42)),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(8),
+                    child: Icon(
+                      _projectileIconFor(config.defaultProjectileType),
+                      color: tint,
+                      size: 24,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        config.name,
+                        style: textTheme.titleMedium?.copyWith(
+                          color: tint,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        '${config.defaultProjectileType.label} • ${config.passiveLabel} • ${controller.towerFabricationDurationLabelForConfig(config)}',
+                        style: textTheme.bodySmall?.copyWith(
+                          color: LightcorePalette.mist.withValues(alpha: 0.74),
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 10),
+                FilledButton.icon(
+                  onPressed: enabled ? onBuildTower : null,
+                  icon: const Icon(Icons.add_rounded, size: 18),
+                  label: Text('Build $costLabel'),
+                  style: FilledButton.styleFrom(
+                    visualDensity: VisualDensity.compact,
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 8),
             Text(
-              config.passiveLabel,
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: LightcorePalette.night.withValues(alpha: 0.7),
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              traitBias,
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: LightcorePalette.night.withValues(alpha: 0.62),
+              config.summary,
+              style: textTheme.bodyMedium?.copyWith(
+                color: LightcorePalette.mist.withValues(alpha: 0.86),
               ),
             ),
           ],
@@ -3103,6 +3267,20 @@ class _BuildButton extends StatelessWidget {
       ),
     );
   }
+}
+
+IconData _projectileIconFor(ProjectileType projectileType) {
+  return switch (projectileType.behaviorProfile) {
+    ProjectileBehaviorProfile.thread => Icons.radio_button_checked_rounded,
+    ProjectileBehaviorProfile.pulse => Icons.bolt_rounded,
+    ProjectileBehaviorProfile.burst => Icons.scatter_plot_rounded,
+    ProjectileBehaviorProfile.chain => Icons.cable_rounded,
+    ProjectileBehaviorProfile.split => Icons.call_split_rounded,
+    ProjectileBehaviorProfile.lance => Icons.arrow_upward_rounded,
+    ProjectileBehaviorProfile.explosion => Icons.blur_on_rounded,
+    ProjectileBehaviorProfile.wave => Icons.waves_rounded,
+    ProjectileBehaviorProfile.nova => Icons.flare_rounded,
+  };
 }
 
 class _InlineStatList extends StatelessWidget {

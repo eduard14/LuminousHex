@@ -185,6 +185,8 @@ climbing.
   so enemy bodies remain the top combat read when they cross the tower grid.
 - Tower slot collision plus core and selected-tower range previews now use the
   same hex geometry as the HUD frames instead of circular tower footprints.
+- Empty Hex build panels now start from equal-size prism choices, then reveal a
+  single description and build action for the selected tower color.
 - Active waves default to the expanded relay shell so tower collision
   footprints, lanes, and hex slots stay visible.
 - Active battle also supports a manual folded-shell long-run view from the
