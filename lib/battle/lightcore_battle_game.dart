@@ -90,6 +90,8 @@ class LightcoreBattleGame extends FlameGame with ScaleDetector {
   Vector2 _panOffset = Vector2.zero();
   double _uiFocusLift = 0;
   double _uiFocusScale = 1;
+  double _targetUiFocusLift = 0;
+  double _targetUiFocusScale = 1;
   Vector2? _lastGestureFocalPoint;
   double _lastGestureScaleSignal = 1.0;
   int _gesturePointerCount = 0;
@@ -113,15 +115,12 @@ class LightcoreBattleGame extends FlameGame with ScaleDetector {
   void setUiFocusMode({required bool dockOpen}) {
     final nextLift = dockOpen ? -0.22 : 0.0;
     final nextScale = dockOpen ? 0.78 : 1.0;
-    if ((nextLift - _uiFocusLift).abs() < 0.001 &&
-        (nextScale - _uiFocusScale).abs() < 0.001) {
+    if ((nextLift - _targetUiFocusLift).abs() < 0.001 &&
+        (nextScale - _targetUiFocusScale).abs() < 0.001) {
       return;
     }
-    _uiFocusLift = nextLift;
-    _uiFocusScale = nextScale;
-    if (_layoutReady) {
-      _recomputeLayout();
-    }
+    _targetUiFocusLift = nextLift;
+    _targetUiFocusScale = nextScale;
   }
 
   double get viewScale => _viewScale;
@@ -257,6 +256,7 @@ class LightcoreBattleGame extends FlameGame with ScaleDetector {
   void update(double dt) {
     super.update(dt);
     final clamped = dt.clamp(0, 0.05).toDouble();
+    _updateUiFocus(clamped);
     if (_shellPromotion != null) {
       _shellPromotionElapsed = math.min(
         shellPromotionStatsDelay,
@@ -282,6 +282,29 @@ class LightcoreBattleGame extends FlameGame with ScaleDetector {
     _updateEnemyFaceVisuals(clamped);
     _updateShotFireBursts(clamped);
     _updateScreenShake(clamped);
+  }
+
+  void _updateUiFocus(double dt) {
+    final liftDelta = _targetUiFocusLift - _uiFocusLift;
+    final scaleDelta = _targetUiFocusScale - _uiFocusScale;
+    if (liftDelta.abs() < 0.0005 && scaleDelta.abs() < 0.0005) {
+      if (_uiFocusLift != _targetUiFocusLift ||
+          _uiFocusScale != _targetUiFocusScale) {
+        _uiFocusLift = _targetUiFocusLift;
+        _uiFocusScale = _targetUiFocusScale;
+        if (_layoutReady) {
+          _recomputeLayout();
+        }
+      }
+      return;
+    }
+
+    final blend = (1 - math.pow(0.001, dt / 0.28)).clamp(0.0, 1.0).toDouble();
+    _uiFocusLift += liftDelta * blend;
+    _uiFocusScale += scaleDelta * blend;
+    if (_layoutReady) {
+      _recomputeLayout();
+    }
   }
 
   void _retainLivePulseVisualState() {
