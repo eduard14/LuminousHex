@@ -26,7 +26,15 @@ void _completeLayer1Coverage(LightcoreController controller) {
 }
 
 void _fundNextTowerUpgrade(LightcoreController controller, int slotIndex) {
-  final cost = controller.upgradeCost(controller.slots[slotIndex]);
+  final tower = controller.slots[slotIndex];
+  final cost = controller.towerLevelUpgradeCost(tower);
+  if (controller.towerLevelUsesWaveMarks(tower)) {
+    controller.activeLayer.roundCurrency = max(
+      controller.activeLayer.roundCurrency,
+      cost,
+    );
+    return;
+  }
   if (controller.lumens < cost) {
     controller.lumens = cost;
   }
@@ -180,7 +188,7 @@ void main() {
       controller.activeLayerRoundCurrency,
       LightcoreController.layer1RoundCurrencyPerWave,
     );
-    expect(controller.unlockedOuterSlotCount, LightcoreController.slotCount);
+    expect(controller.unlockedOuterSlotCount, 2);
 
     final restored = LightcoreController.fromCloudSavePayload(
       controller.buildCloudSavePayload(),
@@ -191,10 +199,16 @@ void main() {
       restored.activeLayerRoundCurrency,
       LightcoreController.layer1RoundCurrencyPerWave,
     );
-    expect(restored.unlockedOuterSlotCount, LightcoreController.slotCount);
+    expect(restored.unlockedOuterSlotCount, 2);
 
     restored.lumens = 0;
-    for (var index = 0; index < LightcoreController.slotCount; index++) {
+    expect(restored.buildTowerAt(1, TowerLibrary.all[1]), isTrue);
+    expect(restored.buildTowerAt(2, TowerLibrary.all[2]), isFalse);
+    expect(restored.lumens, 0);
+
+    restored.activeLayer.roundCurrency = LightcoreController.slotCount - 1;
+    expect(restored.unlockedOuterSlotCount, LightcoreController.slotCount);
+    for (var index = 2; index < LightcoreController.slotCount; index++) {
       expect(restored.buildTowerAt(index, TowerLibrary.all[index]), isTrue);
     }
     expect(restored.lumens, 0);

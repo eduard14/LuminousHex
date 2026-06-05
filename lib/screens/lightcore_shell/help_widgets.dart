@@ -107,9 +107,9 @@ const List<_HelpSectionData> _baseHelpSections = <_HelpSectionData>[
   _HelpSectionData(
     id: 'currencies',
     title: 'Resources',
-    summary: 'What Lumens, Flux, and Threat Scans are for.',
+    summary: 'What Wave Marks, Lumens, Flux, and Threat Scans are for.',
     body:
-        'Lumens are your main tower-building currency. Use them to anchor new prisms and upgrade existing ones. Lumen income scales hardest with active-shell progress, so it is your main growth curve.\n\n'
+        'Layer 1 Wave Marks come from completed waves and handle shell expansion: opening slots, building source towers, and leveling those towers. Lumens come from kills and handle active stat tuning such as range, fire rate, and damage. Lumen income scales hardest with active-shell progress, so it remains the main growth curve after the shell is online.\n\n'
         'Flux feeds the foundries. The foundry unlocks when a Layer 1 shell has all ${LightcoreController.slotCount} outer towers online, so early Flux is intentionally banked until managers enter the run.\n\n'
         'Threat Scans let you resolve anomaly signatures. Scan income starts slower than Lumen income, so each scan matters more.',
   ),

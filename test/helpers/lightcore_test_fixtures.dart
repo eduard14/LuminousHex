@@ -142,6 +142,7 @@ void preparePromotionReadyRing(LightcoreController controller) {
   controller.flux = 12000;
   controller.debugAddEnemyTickets(12);
   controller.activeLayer.bestWaveReached = 10;
+  controller.activeLayer.roundCurrency = LightcoreController.slotCount - 1;
 
   for (var index = 0; index < LightcoreController.slotCount; index++) {
     final config = TowerLibrary.all[index % TowerLibrary.all.length];

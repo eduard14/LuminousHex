@@ -490,7 +490,7 @@ extension LightcoreControllerBattleTowerActions on LightcoreController {
     selectedSlotIndex = slotIndex;
     _towerRangePreviewSlotIndex = null;
     _showBanner(
-      '${config.name} building on Hex ${slotIndex + 1}. Online in ${duration.ceil()}s.',
+      '${config.name} building on Slot ${slotIndex + 1}. Online in ${duration.ceil()}s.',
     );
     _syncTutorialStep(showBanner: false);
     _notifyNow();
@@ -549,8 +549,11 @@ extension LightcoreControllerBattleTowerActions on LightcoreController {
         'Ring complete. Component merge still needs all $slotCount Source Tower stat boards tuned.',
       );
     } else {
+      final buildCostLabel = usesLayerOneWaveBuild
+          ? '1 Wave Mark'
+          : '$cost Lumens';
       _showBanner(
-        '${config.name} fabricated on hex ${slotIndex + 1} for $cost Lumens. Trainable stats: $rolledOptions.',
+        '${config.name} built on Slot ${slotIndex + 1} for $buildCostLabel. Trainable stats: $rolledOptions.',
       );
     }
     _updateFlowEfficiency();
@@ -563,6 +566,53 @@ extension LightcoreControllerBattleTowerActions on LightcoreController {
       activeLayer.tier == 1 &&
       activeLayer.parentLayerId == null &&
       slotIndex < unlockedOuterSlotCount;
+
+  bool towerLevelUsesWaveMarks(OuterTowerState tower) =>
+      _usesLayerOneWaveCurrencyForTowerLevel(tower);
+
+  int towerLevelUpgradeCost(OuterTowerState tower) {
+    if (!tower.isBuilt ||
+        tower.isFabricating ||
+        !tower.hasTowerProgression ||
+        tower.level >= maxTowerLevel) {
+      return 0;
+    }
+    if (_usesLayerOneWaveCurrencyForTowerLevel(tower)) {
+      return _layerOneTowerLevelWaveMarkCost(tower);
+    }
+    return upgradeCost(tower);
+  }
+
+  bool canUpgradeTowerLevel(int slotIndex) {
+    if (slotIndex < 0 || slotIndex >= _slots.length) {
+      return false;
+    }
+    if (_threatRegionChallenge != null || activeLayerPassiveOnly) {
+      return false;
+    }
+    final tower = _slots[slotIndex];
+    if (!tower.isBuilt ||
+        tower.isFabricating ||
+        !tower.hasTowerProgression ||
+        tower.level >= maxTowerLevel) {
+      return false;
+    }
+    final cost = towerLevelUpgradeCost(tower);
+    if (_usesLayerOneWaveCurrencyForTowerLevel(tower)) {
+      return activeLayerRoundCurrency >= cost;
+    }
+    return lumens >= cost;
+  }
+
+  bool _usesLayerOneWaveCurrencyForTowerLevel(OuterTowerState tower) {
+    return activeLayer.tier == 1 &&
+        activeLayer.parentLayerId == null &&
+        tower.config != null;
+  }
+
+  int _layerOneTowerLevelWaveMarkCost(OuterTowerState tower) {
+    return max(1, tower.level);
+  }
 
   bool upgradeSelectedTower() {
     final slotIndex = selectedSlotIndex;
@@ -594,21 +644,35 @@ extension LightcoreControllerBattleTowerActions on LightcoreController {
       return false;
     }
 
-    final cost = upgradeCost(tower);
-    if (lumens < cost) {
+    final usesWaveMarks = _usesLayerOneWaveCurrencyForTowerLevel(tower);
+    final cost = towerLevelUpgradeCost(tower);
+    if (usesWaveMarks) {
+      if (activeLayerRoundCurrency < cost) {
+        return false;
+      }
+    } else if (lumens < cost) {
       return false;
     }
 
-    lumens -= cost;
-    _recordLumenSpend(cost);
+    if (!usesWaveMarks) {
+      lumens -= cost;
+      _recordLumenSpend(cost);
+    }
     _recordUpgradePurchase();
     final nextLevel = tower.level + 1;
     _slots[slotIndex] = tower.copyWith(
       level: nextLevel,
-      investedLumens: tower.investedLumens + cost,
+      investedLumens: usesWaveMarks
+          ? tower.investedLumens
+          : tower.investedLumens + cost,
     );
     _recoverOpeningPressureOnTutorialUpgrade(slotIndex, nextLevel);
-    _showBanner('${towerDisplayName(tower)} pushed to level $nextLevel.');
+    final costLabel = usesWaveMarks
+        ? '$cost Wave Mark${cost == 1 ? '' : 's'}'
+        : '$cost Lumens';
+    _showBanner(
+      '${towerDisplayName(tower)} pushed to level $nextLevel for $costLabel.',
+    );
     _syncTutorialStep(showBanner: false);
     _notifyNow();
     return true;

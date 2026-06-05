@@ -53,9 +53,9 @@ climbing.
 4. Upgrade the first tower from its controls as the next action.
 5. Clear wave milestones to unlock the remaining perimeter relay towers:
    Hex 1 at Wave 1, Hexes 2-3 after Wave 5, and Hexes 4-6 after Wave 10.
-6. Spend wave-earned Layer 1 Wave Cores to open/build the shell, then spend
-   kill-earned Lumens on combat upgrades like range, fire speed, multi-shot,
-   and tower damage tuning.
+6. Earn Layer 1 Wave Marks from completed waves to open, build, and level the
+   shell, then spend kill-earned Lumens on combat upgrades like range, fire
+   speed, multi-shot, and tower damage tuning.
 7. Roll Threat Scans into Knowledge Cards that make enemy families easier
    to understand and farm.
 8. Follow the fixed Threat Map route, clear higher waves in each area, then lock
@@ -116,9 +116,10 @@ climbing.
 - Battlefield upgrade controls now use compact command docks with stat chips
   and grid actions, keeping tower/core tuning readable while leaving more of
   the active battle visible.
-- Layer 1 battle docks now expose Wave Cores beside Kill Lumens, remove the
-  ambiguous Buffer control from the first shell, and hide side controls while
-  the selected upgrade dock is open.
+- Layer 1 battle docks now expose Wave Marks beside Lumens, reserve Wave Marks
+  for build/level actions, reserve Lumens for stat tuning, remove the ambiguous
+  Buffer control from the first shell, and hide side controls while the selected
+  upgrade dock is open.
 - Core upgrade docks now hold a stable compact height and move dense combat
   values into a Full Stats popup so live wave progress does not make the menu
   bounce.
@@ -189,7 +190,7 @@ climbing.
 - Impact damage radii render as segmented blast markers instead of full
   range-like circles, so splash damage does not read as tower range or tower
   collision.
-- Empty Hex build panels now start from equal-size prism choices, then reveal a
+- Empty slot build panels now start from equal-size prism choices, then reveal a
   single description and build action for the selected tower color.
 - Tower build choices show projectile-specific background symbols inside each
   prism button, making tower roles scannable before the player opens details.

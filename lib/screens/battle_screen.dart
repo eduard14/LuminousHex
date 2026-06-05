@@ -764,7 +764,7 @@ class _BattleScreenState extends State<BattleScreen> {
           : 'Tower controls';
     }
     if (!selected.isBuilt) {
-      return 'Build Hex ${selected.slotIndex + 1}';
+      return 'Build Slot ${selected.slotIndex + 1}';
     }
     if (selected.isFabricating) {
       return '${controller.towerDisplayName(selected)} building';
@@ -1434,14 +1434,27 @@ class _LiveTowerUpgradePanel extends StatelessWidget {
           runSpacing: 6,
           children: [
             _BattleUpgradeChip(
-              label: 'Hex',
+              label: 'Selected Slot',
               value: '${slotIndex + 1}',
               tint: tint,
             ),
-            _BattleUpgradeChip(label: 'Tower', value: levelLabel, tint: tint),
+            _BattleUpgradeChip(
+              label: 'Tower Level',
+              value: levelLabel,
+              tint: tint,
+            ),
           ],
         ),
         const SizedBox(height: 8),
+        if (tower.hasTowerProgression) ...[
+          _TowerLevelUpgradeButton(
+            controller: controller,
+            tower: tower,
+            slotIndex: slotIndex,
+            tint: tint,
+          ),
+          const SizedBox(height: 8),
+        ],
         _BattleUpgradeGrid(
           children: [
             for (final upgrade in upgradeOptions)
@@ -1455,6 +1468,98 @@ class _LiveTowerUpgradePanel extends StatelessWidget {
           ],
         ),
       ],
+    );
+  }
+}
+
+class _TowerLevelUpgradeButton extends StatelessWidget {
+  const _TowerLevelUpgradeButton({
+    required this.controller,
+    required this.tower,
+    required this.slotIndex,
+    required this.tint,
+  });
+
+  final LightcoreController controller;
+  final OuterTowerState tower;
+  final int slotIndex;
+  final Color tint;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    final maxed = tower.level >= LightcoreController.maxTowerLevel;
+    final cost = controller.towerLevelUpgradeCost(tower);
+    final usesWaveMarks = controller.towerLevelUsesWaveMarks(tower);
+    final canUpgrade = controller.canUpgradeTowerLevel(slotIndex);
+    final nextLevel = (tower.level + 1).clamp(
+      1,
+      LightcoreController.maxTowerLevel,
+    );
+    final costLabel = maxed
+        ? 'Max'
+        : usesWaveMarks
+        ? '$cost Wave Mark${cost == 1 ? '' : 's'}'
+        : '$cost Lumens';
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: tint.withValues(alpha: 0.14),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: tint.withValues(alpha: 0.42)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(8),
+        child: Row(
+          children: [
+            Icon(Icons.keyboard_double_arrow_up_rounded, color: tint, size: 22),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Level Tower',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: textTheme.labelLarge?.copyWith(
+                      color: LightcorePalette.mist,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                  Text(
+                    maxed
+                        ? 'Lv ${tower.level}/5'
+                        : 'Lv ${tower.level} -> $nextLevel',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: textTheme.labelSmall?.copyWith(
+                      color: tint,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(
+              height: 36,
+              child: FilledButton(
+                onPressed: canUpgrade
+                    ? () => controller.upgradeTower(slotIndex)
+                    : null,
+                style: FilledButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                ),
+                child: Text(
+                  costLabel,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -1539,7 +1644,7 @@ class _BattleTowerStatUpgradeButton extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 8),
                 ),
                 child: Text(
-                  statMaxed ? 'Max' : '${cost}L',
+                  statMaxed ? 'Max' : '$cost Lumens',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -1592,22 +1697,101 @@ class _LayerOneCurrencyStrip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Wrap(
-      spacing: 6,
-      runSpacing: 6,
+    return Row(
       children: [
-        _BattleUpgradeChip(
-          label: 'Wave Cores',
-          value:
-              '${controller.activeLayerRoundCurrency}/${LightcoreController.slotCount - 1}',
-          tint: LightcorePalette.solar,
+        Expanded(
+          child: _LayerOneCurrencyCard(
+            icon: Icons.hexagon_rounded,
+            label: 'Wave Marks',
+            value:
+                '${controller.activeLayerRoundCurrency}/${LightcoreController.slotCount - 1}',
+            helper: 'Wave-earned build + level',
+            tint: LightcorePalette.solar,
+          ),
         ),
-        _BattleUpgradeChip(
-          label: 'Kill Lumens',
-          value: '${controller.lumens}',
-          tint: LightcorePalette.aether,
+        const SizedBox(width: 8),
+        Expanded(
+          child: _LayerOneCurrencyCard(
+            icon: Icons.bolt_rounded,
+            label: 'Lumens',
+            value: '${controller.lumens}',
+            helper: 'Kill-earned stat tuning',
+            tint: LightcorePalette.aether,
+          ),
         ),
       ],
+    );
+  }
+}
+
+class _LayerOneCurrencyCard extends StatelessWidget {
+  const _LayerOneCurrencyCard({
+    required this.icon,
+    required this.label,
+    required this.value,
+    required this.helper,
+    required this.tint,
+  });
+
+  final IconData icon;
+  final String label;
+  final String value;
+  final String helper;
+  final Color tint;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: tint.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: tint.withValues(alpha: 0.34)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 7),
+        child: Row(
+          children: [
+            Icon(icon, color: tint, size: 18),
+            const SizedBox(width: 7),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: textTheme.labelMedium?.copyWith(
+                      color: LightcorePalette.mist,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                  Text(
+                    helper,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: textTheme.labelSmall?.copyWith(
+                      color: LightcorePalette.mist.withValues(alpha: 0.64),
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 6),
+            Text(
+              value,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: textTheme.labelLarge?.copyWith(
+                color: tint,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -1755,11 +1939,11 @@ void _showCoreFullStatsDialog(
         ],
         [
           _InlineStatEntry(
-            label: 'Wave Cores',
+            label: 'Wave Marks',
             value:
                 '${controller.activeLayerRoundCurrency}/${LightcoreController.slotCount - 1}',
           ),
-          _InlineStatEntry(label: 'Kill Lumens', value: '${controller.lumens}'),
+          _InlineStatEntry(label: 'Lumens', value: '${controller.lumens}'),
         ],
         [
           _InlineStatEntry(
@@ -2439,7 +2623,7 @@ class _TowerFabricationPanel extends StatelessWidget {
           ),
       ],
       [
-        _InlineStatEntry(label: 'Hex', value: '${tower.slotIndex + 1}'),
+        _InlineStatEntry(label: 'Slot', value: '${tower.slotIndex + 1}'),
         const _InlineStatEntry(label: 'Status', value: 'Building'),
       ],
     ];
@@ -2515,7 +2699,7 @@ class _EmptySlotPanelState extends State<_EmptySlotPanel> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Empty Hex ${slot.slotIndex + 1}', style: textTheme.titleLarge),
+        Text('Empty Slot ${slot.slotIndex + 1}', style: textTheme.titleLarge),
         const SizedBox(height: 4),
         Text(
           controller.isCompositeLayer
@@ -3257,8 +3441,8 @@ class _SelectedTowerBuildDetails extends StatelessWidget {
     final textTheme = Theme.of(context).textTheme;
     final tint = config.affinity.color;
     final costLabel = usesLayerOneWaveBuild
-        ? 'Wave Core'
-        : '${controller.buildCostForConfig(config)}L';
+        ? 'Wave Mark'
+        : '${controller.buildCostForConfig(config)} Lumens';
     final enabled =
         usesLayerOneWaveBuild ||
         controller.lumens >= controller.buildCostForConfig(config);

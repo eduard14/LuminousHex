@@ -1545,7 +1545,7 @@ class LightcoreController extends ChangeNotifier {
   static const double _emptyLaneLumenHarvestDamageScale = 18;
   static const int tutorialFirstHexUnlockExperience = 8;
   static const int firstOuterSlotKillRequirement = 100;
-  static const int layer1RoundCurrencyPerWave = slotCount - 1;
+  static const int layer1RoundCurrencyPerWave = 1;
   static const List<int> outerSlotUnlockWaveThresholds = <int>[
     1,
     5,

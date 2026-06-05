@@ -185,6 +185,7 @@ void _preparePromotionReadyRootShell(LightcoreController controller) {
   );
   controller.lumens = 1000000;
   controller.activeLayer.bestWaveReached = 10;
+  controller.activeLayer.roundCurrency = LightcoreController.slotCount - 1;
 
   for (var index = 0; index < LightcoreController.slotCount; index += 1) {
     final config = TowerLibrary.all[index % TowerLibrary.all.length];

@@ -171,8 +171,8 @@ void main() {
     expect(find.text('Current Wave'), findsNothing);
     expect(find.text('Full Stats'), findsOneWidget);
     expect(find.textContaining('Buffer'), findsNothing);
-    expect(find.textContaining('Wave Cores'), findsOneWidget);
-    expect(find.textContaining('Kill Lumens'), findsOneWidget);
+    expect(find.textContaining('Wave Marks'), findsOneWidget);
+    expect(find.textContaining('Lumens'), findsOneWidget);
     expect(find.textContaining('Power'), findsWidgets);
     expect(find.text('Stats'), findsNothing);
     expect(find.text('Core Stat Board'), findsNothing);
@@ -307,7 +307,7 @@ void main() {
     expect(find.text('Best Wave'), findsNothing);
     expect(find.textContaining('Stats 0/'), findsNothing);
     expect(find.textContaining('Layer 2 Lv 1'), findsNothing);
-    expect(find.textContaining('Hex 1'), findsOneWidget);
+    expect(find.textContaining('Selected Slot 1'), findsOneWidget);
     expect(find.text('Full Stats'), findsOneWidget);
     expect(find.text('Tower Health'), findsOneWidget);
     expect(find.text('Persistent Stat Upgrades'), findsNothing);
@@ -368,10 +368,7 @@ void main() {
 void _prepareOpeningChallengePrompt(LightcoreController controller) {
   controller.selectCenter();
   expect(controller.buildTowerAt(0, TowerLibrary.redPrism), isTrue);
-  final upgradeCost = controller.upgradeCost(controller.slots[0]);
-  if (controller.lumens < upgradeCost) {
-    controller.lumens = upgradeCost;
-  }
+  controller.activeLayer.roundCurrency = 1;
   expect(controller.upgradeTower(0), isTrue);
   controller.selectCenter();
 }
