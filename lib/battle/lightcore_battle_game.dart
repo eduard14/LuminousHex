@@ -138,6 +138,7 @@ class LightcoreBattleGame extends FlameGame with ScaleDetector {
   Offset? get debugCoreCenter => _layoutReady ? _center.toOffset() : null;
   double get debugCoreTapRadius => _coreTapRadius;
   double get debugTowerCoreGuardRadius => _towerCoreGuardRadius;
+  double get debugSlotRadius => _slotRadius;
   Offset? debugSlotCenter(int slotIndex) =>
       _layoutReady && slotIndex >= 0 && slotIndex < _slotPositions.length
       ? _slotPositions[slotIndex].toOffset()

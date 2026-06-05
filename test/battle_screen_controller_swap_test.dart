@@ -352,6 +352,15 @@ void main() {
     expect(game.debugWouldHitAnySlotAt(slotCenter), isTrue);
     expect(game.debugWouldHitAnySlotAt(coreSidePoint), isFalse);
     expect(game.debugWouldHitTowerAt(coreSidePoint), isFalse);
+
+    final hexCornerMiss =
+        slotCenter + const Offset(0.70, 0.50) * game.debugSlotRadius;
+    expect(
+      (hexCornerMiss - slotCenter).distance,
+      lessThan(game.debugSlotRadius),
+    );
+    expect(game.debugWouldHitAnySlotAt(hexCornerMiss), isFalse);
+    expect(game.debugWouldHitTowerAt(hexCornerMiss), isFalse);
     expect(tester.takeException(), isNull);
   });
 }

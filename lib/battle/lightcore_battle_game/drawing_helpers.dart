@@ -209,7 +209,11 @@ extension LightcoreBattleGameDrawingHelpers on LightcoreBattleGame {
       final hitScale = controller.tutorialHighlightsBattleSlot(index)
           ? 1.22
           : 0.86;
-      if (pointer.distanceTo(_slotPositions[index]) <= _slotRadius * hitScale) {
+      if (_pointInHex(
+        pointer.toOffset(),
+        _slotPositions[index].toOffset(),
+        _slotRadius * hitScale,
+      )) {
         return index;
       }
     }
@@ -221,7 +225,11 @@ extension LightcoreBattleGameDrawingHelpers on LightcoreBattleGame {
       return null;
     }
     for (var index = 0; index < _slotPositions.length; index++) {
-      if (pointer.distanceTo(_slotPositions[index]) <= _slotRadius * 0.68) {
+      if (_pointInHex(
+        pointer.toOffset(),
+        _slotPositions[index].toOffset(),
+        _slotRadius * 0.68,
+      )) {
         return index;
       }
     }
@@ -673,6 +681,10 @@ extension LightcoreBattleGameDrawingHelpers on LightcoreBattleGame {
 
   Path _hexPath(Offset center, double radius) {
     return _polygonPath(center, radius, 6, math.pi / 6);
+  }
+
+  bool _pointInHex(Offset point, Offset center, double radius) {
+    return _hexPath(center, radius).contains(point);
   }
 
   List<Offset> _polygonPoints(
