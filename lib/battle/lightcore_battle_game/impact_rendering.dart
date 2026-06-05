@@ -133,13 +133,14 @@ extension _LightcoreBattleGameImpactRendering on LightcoreBattleGame {
                 Rect.fromCircle(center: position, radius: radius * 1.12),
               ),
       );
-      canvas.drawCircle(
-        position,
-        radius,
-        Paint()
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = impact.towerHit ? 5 : 3
-          ..color = baseColor.withValues(alpha: fade),
+      _drawDamageRadiusMarker(
+        canvas,
+        position: position,
+        radius: radius,
+        color: baseColor,
+        alpha: fade,
+        heavy: impact.towerHit,
+        seed: impact.id.hashCode * 0.0007,
       );
       canvas.drawCircle(
         position,
@@ -149,13 +150,14 @@ extension _LightcoreBattleGameImpactRendering on LightcoreBattleGame {
 
       if (impact.projectileType.behaviorProfile ==
           ProjectileBehaviorProfile.explosion) {
-        canvas.drawCircle(
-          position,
-          radius * 1.36,
-          Paint()
-            ..style = PaintingStyle.stroke
-            ..strokeWidth = 3.2
-            ..color = LightcorePalette.flare.withValues(alpha: 0.44 * fade),
+        _drawDamageRadiusMarker(
+          canvas,
+          position: position,
+          radius: radius * 1.36,
+          color: LightcorePalette.flare,
+          alpha: 0.72 * fade,
+          heavy: true,
+          seed: impact.id.hashCode * 0.0011 + math.pi / 8,
         );
         final rayCount = _qualityScaledCount(6, balanced: 4, lowPower: 2);
         for (var index = 0; index < rayCount; index++) {
@@ -304,6 +306,52 @@ extension _LightcoreBattleGameImpactRendering on LightcoreBattleGame {
           );
       }
     }
+  }
+
+  void _drawDamageRadiusMarker(
+    Canvas canvas, {
+    required Offset position,
+    required double radius,
+    required Color color,
+    required double alpha,
+    required bool heavy,
+    required double seed,
+  }) {
+    if (alpha <= 0) {
+      return;
+    }
+    final segmentCount = heavy ? 8 : 6;
+    final sweep = heavy ? math.pi / 8.4 : math.pi / 10;
+    final rect = Rect.fromCircle(center: position, radius: radius);
+    final markerPaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = heavy ? 3.0 : 2.0
+      ..strokeCap = StrokeCap.round
+      ..color = color.withValues(alpha: (heavy ? 0.72 : 0.56) * alpha);
+    final tickPaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = heavy ? 1.8 : 1.3
+      ..strokeCap = StrokeCap.round
+      ..color = LightcorePalette.mist.withValues(alpha: 0.28 * alpha);
+
+    for (var index = 0; index < segmentCount; index++) {
+      final angle = seed + (index * math.pi * 2 / segmentCount);
+      canvas.drawArc(rect, angle - (sweep / 2), sweep, false, markerPaint);
+      if (index.isEven) {
+        final direction = Offset(math.cos(angle), math.sin(angle));
+        canvas.drawLine(
+          position + direction * (radius * 0.72),
+          position + direction * (radius * 0.92),
+          tickPaint,
+        );
+      }
+    }
+
+    canvas.drawCircle(
+      position,
+      math.max(2.0, radius * 0.08),
+      Paint()..color = color.withValues(alpha: 0.16 * alpha),
+    );
   }
 
   void _renderChainArcImpact(

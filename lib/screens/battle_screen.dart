@@ -17,6 +17,7 @@ import '../theme/lightcore_palette.dart';
 import '../widgets/aurora_panel.dart';
 import '../widgets/layer_one_component_forecast_panel.dart';
 import '../widgets/meter_bar.dart';
+import '../widgets/projectile_symbol_glyph.dart';
 import '../widgets/symbol_grid_tile.dart';
 import '../widgets/tower_health_bar.dart';
 import '../widgets/tower_ring_icon.dart';
@@ -3165,19 +3166,10 @@ class _TowerPrismChoiceTile extends StatelessWidget {
               ),
             ),
             Positioned.fill(
-              child: Center(
-                child: Icon(
-                  _projectileIconFor(config.defaultProjectileType),
-                  size: 56,
-                  color: foreground.withValues(alpha: selected ? 0.2 : 0.16),
-                ),
-              ),
-            ),
-            Positioned.fill(
               child: CustomPaint(
                 painter: _ProjectileSymbolAccentPainter(
                   projectileType: config.defaultProjectileType,
-                  color: foreground.withValues(alpha: selected ? 0.24 : 0.2),
+                  color: foreground.withValues(alpha: selected ? 0.38 : 0.3),
                 ),
               ),
             ),
@@ -3229,142 +3221,15 @@ class _ProjectileSymbolAccentPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final center = Offset(size.width / 2, size.height / 2 - 4);
+    final center = Offset(size.width / 2, size.height / 2 - 7);
     final unit = math.min(size.width, size.height);
-    final paint = Paint()
-      ..color = color
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = math.max(1.2, unit * 0.035)
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round;
-    final fill = Paint()
-      ..color = color.withValues(alpha: 0.72)
-      ..style = PaintingStyle.fill;
-
-    switch (projectileType.behaviorProfile) {
-      case ProjectileBehaviorProfile.thread:
-        canvas.drawLine(
-          center.translate(-unit * 0.28, unit * 0.1),
-          center.translate(unit * 0.28, -unit * 0.1),
-          paint,
-        );
-        canvas.drawCircle(center, unit * 0.055, fill);
-        break;
-      case ProjectileBehaviorProfile.pulse:
-        for (final radius in <double>[0.15, 0.28]) {
-          canvas.drawCircle(center, unit * radius, paint);
-        }
-        break;
-      case ProjectileBehaviorProfile.burst:
-        for (var index = 0; index < 6; index++) {
-          final angle = index * math.pi / 3;
-          final start = center.translate(
-            math.cos(angle) * unit * 0.1,
-            math.sin(angle) * unit * 0.1,
-          );
-          final end = center.translate(
-            math.cos(angle) * unit * 0.3,
-            math.sin(angle) * unit * 0.3,
-          );
-          canvas.drawLine(start, end, paint);
-        }
-        break;
-      case ProjectileBehaviorProfile.chain:
-        final points = <Offset>[
-          center.translate(-unit * 0.28, unit * 0.1),
-          center.translate(-unit * 0.1, -unit * 0.16),
-          center.translate(unit * 0.1, unit * 0.06),
-          center.translate(unit * 0.28, -unit * 0.16),
-        ];
-        for (var index = 0; index < points.length - 1; index++) {
-          canvas.drawLine(points[index], points[index + 1], paint);
-        }
-        for (final point in points) {
-          canvas.drawCircle(point, unit * 0.035, fill);
-        }
-        break;
-      case ProjectileBehaviorProfile.split:
-        canvas.drawLine(
-          center.translate(-unit * 0.26, unit * 0.16),
-          center,
-          paint,
-        );
-        canvas.drawLine(
-          center,
-          center.translate(unit * 0.25, -unit * 0.18),
-          paint,
-        );
-        canvas.drawLine(
-          center,
-          center.translate(unit * 0.28, unit * 0.18),
-          paint,
-        );
-        break;
-      case ProjectileBehaviorProfile.lance:
-        final path = Path()
-          ..moveTo(center.dx, center.dy - unit * 0.33)
-          ..lineTo(center.dx + unit * 0.15, center.dy + unit * 0.22)
-          ..lineTo(center.dx, center.dy + unit * 0.12)
-          ..lineTo(center.dx - unit * 0.15, center.dy + unit * 0.22)
-          ..close();
-        canvas.drawPath(path, paint);
-        break;
-      case ProjectileBehaviorProfile.explosion:
-        for (var index = 0; index < 8; index++) {
-          final angle = index * math.pi / 4;
-          canvas.drawLine(
-            center.translate(
-              math.cos(angle) * unit * 0.12,
-              math.sin(angle) * unit * 0.12,
-            ),
-            center.translate(
-              math.cos(angle) * unit * 0.31,
-              math.sin(angle) * unit * 0.31,
-            ),
-            paint,
-          );
-        }
-        canvas.drawCircle(center, unit * 0.075, fill);
-        break;
-      case ProjectileBehaviorProfile.wave:
-        for (var row = -1; row <= 1; row++) {
-          final path = Path();
-          for (var step = 0; step <= 24; step++) {
-            final t = step / 24;
-            final x = center.dx - unit * 0.3 + (unit * 0.6 * t);
-            final y =
-                center.dy +
-                (row * unit * 0.11) +
-                math.sin(t * math.pi * 2) * unit * 0.035;
-            if (step == 0) {
-              path.moveTo(x, y);
-            } else {
-              path.lineTo(x, y);
-            }
-          }
-          canvas.drawPath(path, paint);
-        }
-        break;
-      case ProjectileBehaviorProfile.nova:
-        canvas.drawCircle(center, unit * 0.18, paint);
-        for (var index = 0; index < 4; index++) {
-          final angle = (index * math.pi / 2) + (math.pi / 4);
-          canvas.drawCircle(
-            center.translate(
-              math.cos(angle) * unit * 0.29,
-              math.sin(angle) * unit * 0.29,
-            ),
-            unit * 0.035,
-            fill,
-          );
-        }
-        break;
-    }
-
-    final tierMarks = projectileType.tier.clamp(1, 3).toInt();
-    for (var index = 0; index < tierMarks; index++) {
-      canvas.drawCircle(Offset(size.width - 14 - (index * 8), 12), 2.0, fill);
-    }
+    paintProjectileSymbolGlyph(
+      canvas,
+      center,
+      projectileType: projectileType,
+      size: unit * 0.86,
+      color: color,
+    );
   }
 
   @override
@@ -3420,10 +3285,14 @@ class _SelectedTowerBuildDetails extends StatelessWidget {
                   ),
                   child: Padding(
                     padding: const EdgeInsets.all(8),
-                    child: Icon(
-                      _projectileIconFor(config.defaultProjectileType),
-                      color: tint,
-                      size: 24,
+                    child: SizedBox.square(
+                      dimension: 24,
+                      child: CustomPaint(
+                        painter: _ProjectileSymbolAccentPainter(
+                          projectileType: config.defaultProjectileType,
+                          color: tint,
+                        ),
+                      ),
                     ),
                   ),
                 ),
@@ -3474,57 +3343,6 @@ class _SelectedTowerBuildDetails extends StatelessWidget {
       ),
     );
   }
-}
-
-IconData _projectileIconFor(ProjectileType projectileType) {
-  return switch (projectileType) {
-    ProjectileType.starBolt => Icons.gps_fixed_rounded,
-    ProjectileType.threadBeam => Icons.timeline_rounded,
-    ProjectileType.heavyShot => Icons.trip_origin_rounded,
-    ProjectileType.coreBomb => Icons.blur_on_rounded,
-    ProjectileType.chainArc => Icons.device_hub_rounded,
-    ProjectileType.pulseRing => Icons.radar_rounded,
-    ProjectileType.orbitNode => Icons.hub_rounded,
-    ProjectileType.shieldHalo => Icons.shield_moon_rounded,
-    ProjectileType.rapidBolt => Icons.bolt_rounded,
-    ProjectileType.twinBolt => Icons.offline_bolt_rounded,
-    ProjectileType.pulseBeam => Icons.horizontal_rule_rounded,
-    ProjectileType.splitBeam => Icons.call_split_rounded,
-    ProjectileType.breakerShot => Icons.adjust_rounded,
-    ProjectileType.crushShot => Icons.compress_rounded,
-    ProjectileType.pulseBomb => Icons.filter_tilt_shift_rounded,
-    ProjectileType.clusterBomb => Icons.scatter_plot_rounded,
-    ProjectileType.forkArc => Icons.alt_route_rounded,
-    ProjectileType.arcNode => Icons.account_tree_rounded,
-    ProjectileType.echoRing => Icons.radio_button_checked_rounded,
-    ProjectileType.collapseRing => Icons.donut_large_rounded,
-    ProjectileType.sweepNode => Icons.waves_rounded,
-    ProjectileType.slingNode => Icons.change_history_rounded,
-    ProjectileType.sweepBeam => Icons.view_stream_rounded,
-    ProjectileType.lanceBeam => Icons.arrow_upward_rounded,
-    ProjectileType.prismBeam => Icons.flare_rounded,
-    ProjectileType.sentinelBeam => Icons.remove_red_eye_rounded,
-    ProjectileType.siegeShot => Icons.my_location_rounded,
-    ProjectileType.drillShot => Icons.keyboard_double_arrow_up_rounded,
-    ProjectileType.ricochetShot => Icons.shortcut_rounded,
-    ProjectileType.hunterShip => Icons.near_me_rounded,
-    ProjectileType.novaBomb => Icons.auto_awesome_rounded,
-    ProjectileType.cascadeBomb => Icons.waterfall_chart_rounded,
-    ProjectileType.fieldBomb => Icons.blur_circular_rounded,
-    ProjectileType.bomberShip => Icons.rocket_launch_rounded,
-    ProjectileType.stormArc => Icons.thunderstorm_rounded,
-    ProjectileType.webArc => Icons.polyline_rounded,
-    ProjectileType.skyArc => Icons.filter_drama_rounded,
-    ProjectileType.interceptorShip => Icons.flight_rounded,
-    ProjectileType.haloWave => Icons.wifi_tethering_rounded,
-    ProjectileType.spiralWave => Icons.cyclone_rounded,
-    ProjectileType.warpWave => Icons.track_changes_rounded,
-    ProjectileType.shadeSatellite => Icons.satellite_alt_rounded,
-    ProjectileType.haloNodes => Icons.bubble_chart_rounded,
-    ProjectileType.anchorNode => Icons.anchor_rounded,
-    ProjectileType.flailNode => Icons.share_rounded,
-    ProjectileType.familiarShip => Icons.navigation_rounded,
-  };
 }
 
 class _InlineStatList extends StatelessWidget {

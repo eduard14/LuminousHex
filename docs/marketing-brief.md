@@ -158,8 +158,9 @@ climbing.
 - Tower hit zones now stay tighter around the visible relay bodies and avoid the
   central Lightcore edge, so core clicks near the center do not accidentally
   open tower controls.
-- Red tower badges use a comet-shaped projectile glyph, not a circular marker
-  that can read as a numeric level.
+- First-layer projectile glyphs use a custom icon family: red explosions,
+  orange weights, yellow lightning, blue rayline bursts, purple ripples, white
+  circles, and green shields.
 - First-session battle HUD panels hide empty payload rows and payload sub-pips,
   keeping the early combat read focused on projectile choice, wave progress,
   tower upgrades, and auto-targeted anomaly pressure.
@@ -183,8 +184,11 @@ climbing.
   keeping build/stat actions distinct from automated combat targeting.
 - Battlefield hex slots now render as subdued HUD frames underneath anomalies,
   so enemy bodies remain the top combat read when they cross the tower grid.
-- Tower slot collision plus core and selected-tower range previews now use the
-  same hex geometry as the HUD frames instead of circular tower footprints.
+- Tower slot collision uses the same hex geometry as the HUD frames, while core
+  and selected-tower range previews remain circular range guides.
+- Impact damage radii render as segmented blast markers instead of full
+  range-like circles, so splash damage does not read as tower range or tower
+  collision.
 - Empty Hex build panels now start from equal-size prism choices, then reveal a
   single description and build action for the selected tower color.
 - Tower build choices show projectile-specific background symbols inside each

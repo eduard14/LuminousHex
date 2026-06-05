@@ -94,14 +94,16 @@ extension LightcoreBattleGameArenaSlotRendering on LightcoreBattleGame {
     final center = Offset(_center.x, _center.y);
     final pulse = ((math.sin(controller.elapsed * 2.1) + 1) / 2);
 
-    canvas.drawPath(
-      _hexPath(center, rangeVisual),
+    canvas.drawCircle(
+      center,
+      rangeVisual,
       Paint()
         ..style = PaintingStyle.fill
         ..color = coreColor.withValues(alpha: 0.04),
     );
-    canvas.drawPath(
-      _hexPath(center, rangeVisual),
+    canvas.drawCircle(
+      center,
+      rangeVisual,
       Paint()
         ..style = PaintingStyle.stroke
         ..strokeWidth = 2.2
@@ -148,14 +150,16 @@ extension LightcoreBattleGameArenaSlotRendering on LightcoreBattleGame {
       arenaCenter.dy + (math.sin(angle) * rangeVisual),
     );
 
-    canvas.drawPath(
-      _hexPath(arenaCenter, rangeVisual),
+    canvas.drawCircle(
+      arenaCenter,
+      rangeVisual,
       Paint()
         ..style = PaintingStyle.fill
         ..color = towerColor.withValues(alpha: 0.06),
     );
-    canvas.drawPath(
-      _hexPath(arenaCenter, rangeVisual),
+    canvas.drawCircle(
+      arenaCenter,
+      rangeVisual,
       Paint()
         ..style = PaintingStyle.stroke
         ..strokeWidth = 2.6

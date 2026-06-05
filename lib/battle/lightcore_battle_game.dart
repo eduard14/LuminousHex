@@ -10,6 +10,7 @@ import '../services/lightcore_audio.dart';
 import '../state/lightcore_controller.dart';
 import '../theme/lightcore_palette.dart';
 import '../widgets/lightcore_projectile_fx.dart';
+import '../widgets/projectile_symbol_glyph.dart';
 import 'shell_promotion_presentation.dart';
 
 part 'lightcore_battle_game/projectile_rendering.dart';

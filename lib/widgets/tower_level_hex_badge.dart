@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../models/lightcore_types.dart';
 import '../theme/lightcore_palette.dart';
+import 'projectile_symbol_glyph.dart';
 
 class TowerLevelHexBadge extends StatelessWidget {
   const TowerLevelHexBadge({
@@ -58,10 +59,11 @@ class TowerLevelHexBadge extends StatelessWidget {
                   width: math.max(1.0, size * 0.025),
                 ),
               ),
-              child: Icon(
-                towerProjectileIcon(projectileType),
-                size: size * 0.28,
-                color: projectileColor,
+              child: CustomPaint(
+                painter: _TowerProjectileSymbolPainter(
+                  projectileType: projectileType,
+                  color: projectileColor,
+                ),
               ),
             ),
             if (complete)
@@ -90,6 +92,33 @@ class TowerLevelHexBadge extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+class _TowerProjectileSymbolPainter extends CustomPainter {
+  const _TowerProjectileSymbolPainter({
+    required this.projectileType,
+    required this.color,
+  });
+
+  final ProjectileType projectileType;
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    paintProjectileSymbolGlyph(
+      canvas,
+      Offset(size.width / 2, size.height / 2),
+      projectileType: projectileType,
+      size: size.shortestSide * 0.72,
+      color: color,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _TowerProjectileSymbolPainter oldDelegate) {
+    return oldDelegate.projectileType != projectileType ||
+        oldDelegate.color != color;
   }
 }
 
