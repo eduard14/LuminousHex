@@ -880,11 +880,15 @@ class _BattleScreenState extends State<BattleScreen> {
     );
 
     final tint = _selectionTint(controller, selected, panelFocus);
+    final mediaSize = MediaQuery.sizeOf(context);
+    final dockHeight = compact
+        ? math.min(286.0, math.max(246.0, mediaSize.height * 0.31))
+        : null;
 
-    return ConstrainedBox(
+    final panel = ConstrainedBox(
       constraints: BoxConstraints(
-        maxWidth: compact ? MediaQuery.sizeOf(context).width - 20 : 500,
-        maxHeight: MediaQuery.sizeOf(context).height * (compact ? 0.3 : 0.42),
+        maxWidth: compact ? mediaSize.width - 20 : 500,
+        maxHeight: mediaSize.height * (compact ? 0.34 : 0.42),
       ),
       child: AuroraPanel(
         tint: tint,
@@ -893,6 +897,9 @@ class _BattleScreenState extends State<BattleScreen> {
         child: SingleChildScrollView(child: overlayContent),
       ),
     );
+    return dockHeight == null
+        ? panel
+        : SizedBox(height: dockHeight, child: panel);
   }
 
   Widget _buildOverdriveHud() {
@@ -1615,7 +1622,7 @@ class _BattleUpgradeGrid extends StatelessWidget {
     }
     return LayoutBuilder(
       builder: (context, constraints) {
-        final columns = constraints.maxWidth >= 460 ? 3 : 2;
+        final columns = constraints.maxWidth >= 390 ? 3 : 2;
         const spacing = 8.0;
         final itemWidth =
             (constraints.maxWidth - (spacing * (columns - 1))) / columns;
@@ -1632,8 +1639,8 @@ class _BattleUpgradeGrid extends StatelessWidget {
   }
 }
 
-class _CoreMetricChip extends StatelessWidget {
-  const _CoreMetricChip({
+class _CoreSummaryItem {
+  const _CoreSummaryItem({
     required this.label,
     required this.value,
     required this.tint,
@@ -1642,41 +1649,228 @@ class _CoreMetricChip extends StatelessWidget {
   final String label;
   final String value;
   final Color tint;
+}
+
+class _CoreSummaryGrid extends StatelessWidget {
+  const _CoreSummaryGrid({required this.items});
+
+  final List<_CoreSummaryItem> items;
 
   @override
   Widget build(BuildContext context) {
+    if (items.isEmpty) {
+      return const SizedBox.shrink();
+    }
     final textTheme = Theme.of(context).textTheme;
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: tint.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: tint.withValues(alpha: 0.28)),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final columns = constraints.maxWidth >= 460 ? 3 : 2;
+        const spacing = 8.0;
+        final itemWidth =
+            (constraints.maxWidth - (spacing * (columns - 1))) / columns;
+        return Wrap(
+          spacing: spacing,
+          runSpacing: spacing,
           children: [
-            Text(
-              label,
-              style: textTheme.labelSmall?.copyWith(
-                color: LightcorePalette.mist.withValues(alpha: 0.68),
-                fontWeight: FontWeight.w800,
+            for (final item in items)
+              SizedBox(
+                width: itemWidth,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: LightcorePalette.abyss.withValues(alpha: 0.42),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: item.tint.withValues(alpha: 0.24),
+                    ),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 6,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          item.label,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: textTheme.labelSmall?.copyWith(
+                            color: LightcorePalette.mist.withValues(
+                              alpha: 0.64,
+                            ),
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        const SizedBox(height: 1),
+                        Text(
+                          item.value,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: textTheme.labelLarge?.copyWith(
+                            color: item.tint,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               ),
-            ),
-            const SizedBox(width: 5),
-            Text(
-              value,
-              style: textTheme.labelMedium?.copyWith(
-                color: tint,
-                fontWeight: FontWeight.w900,
-              ),
-            ),
           ],
-        ),
-      ),
+        );
+      },
     );
   }
+}
+
+void _showCoreFullStatsDialog(
+  BuildContext context,
+  LightcoreController controller, {
+  required String rangePreview,
+  required String fireSpeedPreview,
+  required String chargeBufferPreview,
+  required String multiShotPreview,
+}) {
+  final isLayerOneRoot =
+      controller.activeLayer.tier == 1 && !controller.activeLayerHasParentSlot;
+  showDialog<void>(
+    context: context,
+    builder: (context) {
+      final mediaSize = MediaQuery.sizeOf(context);
+      final textTheme = Theme.of(context).textTheme;
+      final rows = <List<_InlineStatEntry>>[
+        [
+          _InlineStatEntry(
+            label: 'Current Wave',
+            value: '${controller.activeLayerWaveNumber}',
+          ),
+          _InlineStatEntry(
+            label: 'Wave Progress',
+            value:
+                '${(controller.activeLayerWaveProgress * 100).toStringAsFixed(0)}%',
+          ),
+        ],
+        [
+          _InlineStatEntry(
+            label: 'Wave Cores',
+            value:
+                '${controller.activeLayerRoundCurrency}/${LightcoreController.slotCount - 1}',
+          ),
+          _InlineStatEntry(label: 'Kill Lumens', value: '${controller.lumens}'),
+        ],
+        [
+          _InlineStatEntry(
+            label: 'Core Level',
+            value:
+                '${controller.coreState.level}/${LightcoreController.maxCoreLevel}',
+          ),
+          _InlineStatEntry(
+            label: 'Output',
+            value: controller.outputEfficiencyLabel,
+          ),
+        ],
+        [
+          _InlineStatEntry(label: 'Range', value: rangePreview),
+          _InlineStatEntry(label: 'Fire Rate', value: fireSpeedPreview),
+        ],
+        [
+          _InlineStatEntry(label: 'Multi Shot', value: multiShotPreview),
+          _InlineStatEntry(label: 'Power', value: controller.corePowerLabel),
+        ],
+        [
+          _InlineStatEntry(
+            label: 'Cooldown',
+            value: controller.coreCooldownLabel,
+          ),
+          _InlineStatEntry(label: 'Crit', value: controller.coreCritLabel),
+        ],
+        [
+          _InlineStatEntry(
+            label: 'Final Damage',
+            value: controller.coreFinalDamageLabel,
+          ),
+          _InlineStatEntry(
+            label: 'Apex Damage',
+            value: controller.coreBossDamageLabel,
+          ),
+        ],
+        [
+          _InlineStatEntry(
+            label: 'Normal Damage',
+            value: controller.coreNormalDamageLabel,
+          ),
+          _InlineStatEntry(
+            label: 'Defense Pen',
+            value: controller.coreDefensePenetrationLabel,
+          ),
+        ],
+        [
+          _InlineStatEntry(
+            label: 'Min Damage',
+            value: controller.coreMinDamageLabel,
+          ),
+          _InlineStatEntry(
+            label: 'Max Damage',
+            value: controller.coreMaxDamageLabel,
+          ),
+        ],
+        if (!isLayerOneRoot)
+          [
+            _InlineStatEntry(label: 'Buffer', value: chargeBufferPreview),
+            _InlineStatEntry(
+              label: 'Queue',
+              value: controller.coreQueueLoadLabel,
+            ),
+          ],
+      ];
+
+      return Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.all(18),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxWidth: 460,
+            maxHeight: mediaSize.height - 48,
+          ),
+          child: AuroraPanel(
+            tint: LightcorePalette.solar,
+            radius: 18,
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        '${controller.activeLayerLabel} Full Stats',
+                        style: textTheme.titleLarge?.copyWith(
+                          color: LightcorePalette.solar,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      tooltip: 'Close',
+                      onPressed: () => Navigator.of(context).pop(),
+                      icon: const Icon(Icons.close_rounded),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                Flexible(
+                  child: SingleChildScrollView(
+                    child: _InlineStatList(rows: rows),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    },
+  );
 }
 
 class _CoreCommandButton extends StatelessWidget {
@@ -1777,45 +1971,58 @@ class _CoreStatsPanel extends StatelessWidget {
     final coreLevelLabel = controller.canTrainCoreStats
         ? '${controller.coreState.level}/${LightcoreController.maxCoreLevel}'
         : '${controller.coreState.level}';
-    final metricChips = <Widget>[
-      _CoreMetricChip(
-        label: 'Level',
+    final summaryItems = <_CoreSummaryItem>[
+      _CoreSummaryItem(
+        label: 'Current Wave',
+        value: '${controller.activeLayerWaveNumber}',
+        tint: LightcorePalette.solar,
+      ),
+      _CoreSummaryItem(
+        label: 'Core Level',
         value: coreLevelLabel,
         tint: LightcorePalette.solar,
       ),
-      if (showCoreStatUpgrades)
-        _CoreMetricChip(
-          label: 'Stats',
-          value:
-              '${controller.coreUpgradePointsSpent}/${controller.coreUpgradePointsCap}',
-          tint: LightcorePalette.solar,
-        ),
-      _CoreMetricChip(
+      _CoreSummaryItem(
         label: 'Output',
         value: controller.outputEfficiencyLabel,
         tint: LightcorePalette.verdant,
       ),
-      _CoreMetricChip(
-        label: 'Range',
-        value: rangePreview,
-        tint: LightcorePalette.aether,
-      ),
-      _CoreMetricChip(
-        label: 'Fire',
-        value: fireSpeedPreview,
-        tint: LightcorePalette.aether,
-      ),
-      if (showChargeBufferControls)
-        _CoreMetricChip(
-          label: 'Buffer',
-          value: chargeBufferPreview,
+      if (isLayerOneRoot) ...[
+        _CoreSummaryItem(
+          label: 'Wave Cores',
+          value:
+              '${controller.activeLayerRoundCurrency}/${LightcoreController.slotCount - 1}',
+          tint: LightcorePalette.solar,
+        ),
+        _CoreSummaryItem(
+          label: 'Kill Lumens',
+          value: '${controller.lumens}',
           tint: LightcorePalette.aether,
         ),
-      _CoreMetricChip(
-        label: 'Multi',
+      ] else ...[
+        _CoreSummaryItem(
+          label: 'Range',
+          value: rangePreview,
+          tint: LightcorePalette.aether,
+        ),
+        _CoreSummaryItem(
+          label: 'Fire Rate',
+          value: fireSpeedPreview,
+          tint: LightcorePalette.aether,
+        ),
+      ],
+      _CoreSummaryItem(
+        label: 'Multi Shot',
         value: multiShotPreview,
         tint: LightcorePalette.aether,
       ),
+      if (showCoreStatUpgrades)
+        _CoreSummaryItem(
+          label: 'Stat Board',
+          value:
+              '${controller.coreUpgradePointsSpent}/${controller.coreUpgradePointsCap}',
+          tint: LightcorePalette.solar,
+        ),
     ];
     final coreActions = <Widget>[
       if (controller.canTrainCoreStats)
@@ -1939,19 +2146,27 @@ class _CoreStatsPanel extends StatelessWidget {
                 ),
               ),
             ),
-            _CoreMetricChip(
-              label: 'Wave',
-              value: '${controller.activeLayerWaveNumber}',
-              tint: LightcorePalette.solar,
+            TextButton.icon(
+              key: const ValueKey<String>('core-full-stats-button'),
+              onPressed: () => _showCoreFullStatsDialog(
+                context,
+                controller,
+                rangePreview: rangePreview,
+                fireSpeedPreview: fireSpeedPreview,
+                chargeBufferPreview: chargeBufferPreview,
+                multiShotPreview: multiShotPreview,
+              ),
+              icon: const Icon(Icons.assessment_rounded, size: 18),
+              label: const Text('Full Stats'),
+              style: TextButton.styleFrom(
+                visualDensity: VisualDensity.compact,
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+              ),
             ),
           ],
         ),
         const SizedBox(height: 8),
-        Wrap(spacing: 6, runSpacing: 6, children: metricChips),
-        if (isLayerOneRoot) ...[
-          const SizedBox(height: 8),
-          _LayerOneCurrencyStrip(controller: controller),
-        ],
+        _CoreSummaryGrid(items: summaryItems),
         const SizedBox(height: 8),
         _BattleUpgradeGrid(children: coreActions),
         if (showCoreStatUpgrades) ...[

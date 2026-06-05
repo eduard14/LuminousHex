@@ -119,6 +119,9 @@ climbing.
 - Layer 1 battle docks now expose Wave Cores beside Kill Lumens, remove the
   ambiguous Buffer control from the first shell, and hide side controls while
   the selected upgrade dock is open.
+- Core upgrade docks now hold a stable compact height, label Current Wave
+  explicitly, and move dense combat values into a Full Stats popup so live wave
+  progress does not make the menu bounce.
 - Selecting the Lightcore opens persistent core upgrades directly and separates
   shell-wide core growth from Layer 1 tower stat rolls.
 - The Lightcore control panel can expose charged-shot queue order controls when

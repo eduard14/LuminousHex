@@ -135,6 +135,8 @@ void main() {
 
     expect(controller.tutorialUsesBattleOnlyNavigation, isFalse);
     expect(find.textContaining('Root Shell Core'), findsOneWidget);
+    expect(find.text('Current Wave'), findsOneWidget);
+    expect(find.text('Full Stats'), findsOneWidget);
     expect(find.textContaining('Buffer'), findsNothing);
     expect(find.textContaining('Wave Cores'), findsOneWidget);
     expect(find.textContaining('Kill Lumens'), findsOneWidget);
@@ -147,6 +149,16 @@ void main() {
     expect(find.text('Final'), findsNothing);
     expect(find.text('Normal'), findsNothing);
     expect(find.text('Pen'), findsNothing);
+
+    await tester.tap(
+      find.byKey(const ValueKey<String>('core-full-stats-button')),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 250));
+
+    expect(find.text('Root Shell Full Stats'), findsOneWidget);
+    expect(find.textContaining('Wave Progress'), findsOneWidget);
+    expect(find.textContaining('Defense Pen'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
@@ -169,6 +181,7 @@ void main() {
     expect(controller.activeLayer.tier, 1);
     expect(find.textContaining('Root Shell Core'), findsOneWidget);
     expect(find.text('Stats'), findsNothing);
+    expect(find.text('Full Stats'), findsOneWidget);
     expect(find.text('Core Stat Board'), findsNothing);
 
     forgeLayer2(controller);
@@ -187,7 +200,7 @@ void main() {
 
     expect(controller.activeLayer.tier, 2);
     expect(find.textContaining('Prism Shell Core'), findsOneWidget);
-    expect(find.text('Stats'), findsOneWidget);
+    expect(find.text('Full Stats'), findsOneWidget);
     expect(find.text('Core Stat Board'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
