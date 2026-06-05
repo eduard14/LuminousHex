@@ -187,6 +187,8 @@ climbing.
   same hex geometry as the HUD frames instead of circular tower footprints.
 - Empty Hex build panels now start from equal-size prism choices, then reveal a
   single description and build action for the selected tower color.
+- Tower build choices show projectile-specific background symbols inside each
+  prism button, making tower roles scannable before the player opens details.
 - Active waves default to the expanded relay shell so tower collision
   footprints, lanes, and hex slots stay visible.
 - Active battle also supports a manual folded-shell long-run view from the
