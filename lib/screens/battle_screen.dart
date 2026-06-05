@@ -625,7 +625,7 @@ class _BattleScreenState extends State<BattleScreen> {
     widget.controller.toggleShellVisibility();
     setState(() {
       _statsTarget = null;
-      _selectionControlsVisible = true;
+      _selectionControlsVisible = false;
       _panelFocus = _BattlePanelFocus.none;
     });
   }
@@ -912,8 +912,7 @@ class _BattleScreenState extends State<BattleScreen> {
   }) {
     if (!widget.enableBattlefieldTaps ||
         _activePromotionSequence != null ||
-        !controller.swarmActivated ||
-        controller.outerRingRevealed) {
+        !controller.swarmActivated) {
       return null;
     }
     return _BattleShellVisibilityHud(

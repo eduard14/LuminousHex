@@ -264,13 +264,6 @@ extension LightcoreControllerBattleTowerActions on LightcoreController {
 
   void toggleShellVisibility() {
     if (_outerRingRevealed) {
-      if (_swarmActivated || _enemies.isNotEmpty) {
-        _showBanner(
-          'Shell relays stay expanded during active waves so tower lanes stay visible.',
-        );
-        _notifyNow();
-        return;
-      }
       _outerRingRevealed = false;
       selectedSlotIndex = null;
       _towerRangePreviewSlotIndex = null;

@@ -26,10 +26,6 @@ extension LightcoreControllerCombatLoop on LightcoreController {
           fabricationAdvanced: false,
         );
       }
-      if (!_outerRingRevealed && (_swarmActivated || _enemies.isNotEmpty)) {
-        _outerRingRevealed = true;
-        _needsNotify = true;
-      }
       if (foreground) {
         _prepareLocalhostAutoTapper();
       }

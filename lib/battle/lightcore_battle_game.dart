@@ -641,7 +641,9 @@ class LightcoreBattleGame extends FlameGame with ScaleDetector {
       spawnRingPaint,
     );
 
-    if (!controller.outerRingRevealed) {
+    if (!controller.outerRingRevealed &&
+        !controller.swarmActivated &&
+        controller.enemyCount == 0) {
       _renderPreBattleRouteEnergy(canvas);
     }
 

@@ -34,7 +34,7 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('active battle keeps shell expanded for tower readability', (
+  testWidgets('active battle can fold shell for long-run readability', (
     tester,
   ) async {
     addTearDown(() async {
@@ -53,16 +53,16 @@ void main() {
     expect(controller.outerRingRevealed, isTrue);
     expect(
       find.byKey(const ValueKey<String>('battle-shell-collapse-button')),
-      findsNothing,
+      findsOneWidget,
     );
 
     controller.toggleShellVisibility();
     await tester.pump();
 
-    expect(controller.outerRingRevealed, isTrue);
+    expect(controller.outerRingRevealed, isFalse);
     expect(
       find.byKey(const ValueKey<String>('battle-shell-collapse-button')),
-      findsNothing,
+      findsOneWidget,
     );
     expect(tester.takeException(), isNull);
   });
