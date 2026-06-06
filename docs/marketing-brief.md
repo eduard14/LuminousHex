@@ -1,6 +1,6 @@
 # LumiHex Marketing Brief
 
-Last updated: 2026-06-04
+Last updated: 2026-06-06
 
 This is the source-of-truth marketing handoff for LumiHex. Update it whenever
 player-facing features, naming, story, monetization, screenshots, or asset needs
@@ -83,7 +83,8 @@ climbing.
   animated Start Route control, a compact play prompt, reduced top/bottom HUD
   noise, and pre-battle route/anomaly energy on the canvas.
 - Anomalies enter from randomized points outside the battle radius instead of
-  uniform lanes, then move inward faster with a subtler spiral.
+  uniform lanes, then move inward faster on the current brisker pressure curve
+  with a subtler spiral.
 - The first tower/auto-target/upgrade loop grants enough starter Lumens to move
   from build to the first upgrade without idle grinding.
 - Opening waves now escalate mechanically: Wave 2 strengthens normal anomalies

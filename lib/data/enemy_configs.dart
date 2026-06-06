@@ -5,6 +5,8 @@ import '../models/lightcore_types.dart';
 // downloaded manifests so drop tables and balance can change without a client
 // redeploy.
 class EnemyLibrary {
+  static const double _baseSpeedPaceMultiplier = 1.15;
+
   static const EnemyConfig starterDefault = EnemyConfig(
     id: 'starter_default',
     name: 'Driftling Basic',
@@ -284,7 +286,8 @@ class EnemyLibrary {
       rarity: rarity.rarity,
       baseHealth: rarity.baseHealth * color.healthMultiplier,
       baseDefense: rarity.baseDefense * color.defenseMultiplier,
-      baseSpeed: rarity.baseSpeed * color.speedMultiplier,
+      baseSpeed:
+          rarity.baseSpeed * color.speedMultiplier * _baseSpeedPaceMultiplier,
       reward: (rarity.reward * color.rewardMultiplier).round(),
       baseExperience: (rarity.baseExperience * color.experienceMultiplier)
           .round(),
@@ -366,6 +369,8 @@ class _EnemyRaritySeed {
 }
 
 class BossEnemyLibrary {
+  static const double _baseSpeedPaceMultiplier = 1.15;
+
   static const List<_BossRaritySeed> _rarities = <_BossRaritySeed>[
     _BossRaritySeed(
       rarity: EnemyCardRarity.basic,
@@ -738,7 +743,10 @@ class BossEnemyLibrary {
           seed.defenseMultiplier *
           (legendary ? 1.08 : 1.0),
       baseSpeed:
-          rarity.baseSpeed * seed.speedMultiplier * (legendary ? 1.02 : 1.0),
+          rarity.baseSpeed *
+          seed.speedMultiplier *
+          _baseSpeedPaceMultiplier *
+          (legendary ? 1.02 : 1.0),
       reward: (rarity.reward * seed.rewardMultiplier * (legendary ? 1.18 : 1.0))
           .round(),
       baseExperience:
