@@ -1,6 +1,6 @@
 # LumiHex Marketing Brief
 
-Last updated: 2026-06-06
+Last updated: 2026-06-08
 
 This is the source-of-truth marketing handoff for LumiHex. Update it whenever
 player-facing features, naming, story, monetization, screenshots, or asset needs
@@ -82,6 +82,9 @@ climbing.
 - The first battle view now opens with focused pre-Play chrome: a centered
   animated Start Route control, a compact play prompt, reduced top/bottom HUD
   noise, and pre-battle route/anomaly energy on the canvas.
+- Clean first launch now goes from Play into neutral guide voice selection
+  before any save-recovery prompt, keeping the opening path focused on entering
+  the first battle.
 - Anomalies enter from randomized points outside the battle radius instead of
   uniform lanes, then move inward faster on the current brisker pressure curve
   with a subtler spiral.
@@ -193,6 +196,11 @@ climbing.
   collision.
 - Empty slot build panels now start from equal-size prism choices, then reveal a
   single description and build action for the selected tower color.
+- First relay discovery avoids early locked-slot dead ends: before the first
+  tower is built, mistaken locked-slot taps route into the first buildable Hex 1
+  relay instead of showing an unlock warning.
+- Layer 1 empty slot panels now use player-facing relay labels and Build Relay
+  copy instead of system slot/currency phrasing.
 - Tower build choices show projectile-specific background symbols inside each
   prism button, making tower roles scannable before the player opens details.
 - Active waves default to the expanded relay shell so tower collision

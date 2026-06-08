@@ -569,6 +569,7 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
 
+    expect(find.text('Save Recovery'), findsNothing);
     expect(find.text('Choose Guide'), findsOneWidget);
 
     await tester.pumpWidget(const SizedBox.shrink());

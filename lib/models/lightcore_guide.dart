@@ -23,16 +23,16 @@ class LightcoreGuideProfile {
   static const lumo = LightcoreGuideProfile(
     id: LightcoreGuideId.lumo,
     displayName: 'Lumo',
-    playerProfileLabel: 'Boy profile',
-    summary: 'Relay guide for the default pilot profile.',
+    playerProfileLabel: 'Default voice',
+    summary: 'Relay guide for a steady first launch.',
     assetPath: 'assets/guides/lumo.png',
   );
 
   static const luma = LightcoreGuideProfile(
     id: LightcoreGuideId.luma,
     displayName: 'Luma',
-    playerProfileLabel: 'Girl profile',
-    summary: 'Relay guide for the alternate pilot profile.',
+    playerProfileLabel: 'Alternate voice',
+    summary: 'Relay guide for a brighter first launch.',
     assetPath: 'assets/guides/luna.png',
   );
 

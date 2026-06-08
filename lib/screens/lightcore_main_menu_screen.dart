@@ -274,6 +274,7 @@ class _LightcoreMainMenuScreenState extends State<LightcoreMainMenuScreen>
       final shouldShowGuestPrompt =
           report != null &&
           report.profile.isAnonymous &&
+          widget.guideProfile != null &&
           !widget.skipGuestSignInPrompt &&
           !widget.guestSignInPromptShownThisSession &&
           !_guestSignInPromptShownThisSession &&

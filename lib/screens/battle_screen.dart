@@ -500,6 +500,18 @@ class _BattleScreenState extends State<BattleScreen> {
     });
   }
 
+  int _resolveBattleSlotTapIndex(int slotIndex) {
+    final controller = widget.controller;
+    final shouldRouteToFirstRelay =
+        controller.activeLayer.tier == 1 &&
+        !controller.activeLayerHasParentSlot &&
+        controller.builtTowerCount == 0 &&
+        controller.unlockedOuterSlotCount > 0 &&
+        slotIndex != 0 &&
+        !controller.isOuterSlotUnlocked(slotIndex);
+    return shouldRouteToFirstRelay ? 0 : slotIndex;
+  }
+
   void _handleSlotTap(int slotIndex) {
     if (!widget.enableBattlefieldTaps) {
       return;
@@ -511,14 +523,19 @@ class _BattleScreenState extends State<BattleScreen> {
       });
       return;
     }
-    _logBattle('slot-tap', <String, Object?>{'slot': slotIndex});
+    final resolvedSlotIndex = _resolveBattleSlotTapIndex(slotIndex);
+    _logBattle('slot-tap', <String, Object?>{
+      'slot': slotIndex,
+      'resolvedSlot': resolvedSlotIndex,
+    });
     LightcoreAudio.instance.playSfx(LightcoreSfx.uiTap);
     final controller = widget.controller;
-    final slot = slotIndex >= 0 && slotIndex < controller.slots.length
-        ? controller.slots[slotIndex]
+    final slot =
+        resolvedSlotIndex >= 0 && resolvedSlotIndex < controller.slots.length
+        ? controller.slots[resolvedSlotIndex]
         : null;
     final target = slot != null && !slot.isLayerProject
-        ? _BattleStatsTarget.slot(slotIndex)
+        ? _BattleStatsTarget.slot(resolvedSlotIndex)
         : null;
     final opensControls = slot != null && !slot.isLayerProject;
     final defersControls =
@@ -528,9 +545,9 @@ class _BattleScreenState extends State<BattleScreen> {
         !slot.isLayerProject &&
         !controller.activeLayerPassiveOnly;
     if (!defersControls) {
-      controller.handleBattleSlotTap(slotIndex);
+      controller.handleBattleSlotTap(resolvedSlotIndex);
     } else {
-      controller.selectSlot(slotIndex);
+      controller.selectSlot(resolvedSlotIndex);
     }
     if (controller.activeThreatRegionChallenge != null) {
       setState(() {
@@ -2695,11 +2712,16 @@ class _EmptySlotPanelState extends State<_EmptySlotPanel> {
     final usesLayerOneWaveBuild =
         controller.activeLayer.tier == 1 &&
         !controller.activeLayerHasParentSlot;
+    final slotTitle = usesLayerOneWaveBuild
+        ? slot.slotIndex == 0 && controller.builtTowerCount == 0
+              ? 'First Relay'
+              : 'Hex ${slot.slotIndex + 1} Relay'
+        : 'Empty Slot ${slot.slotIndex + 1}';
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Empty Slot ${slot.slotIndex + 1}', style: textTheme.titleLarge),
+        Text(slotTitle, style: textTheme.titleLarge),
         const SizedBox(height: 4),
         Text(
           controller.isCompositeLayer
@@ -2708,6 +2730,8 @@ class _EmptySlotPanelState extends State<_EmptySlotPanel> {
               ? 'Choose one of two starter projectile styles. Comet Mortar is slower area pressure; Rayline Spire is steadier beam pressure.'
               : controller.tutorialShowsStarterProjectileChoices
               ? 'Choose one of two starter projectile styles. Thread Beam is steady single-target pressure; Shield Halo is a persistent guard ring.'
+              : usesLayerOneWaveBuild
+              ? 'Pick a prism style to activate this relay.'
               : 'Pick one of the unlocked color prisms to activate this surrounding slot.',
           style: textTheme.bodyMedium,
         ),
@@ -3259,24 +3283,32 @@ class _TowerBuildPicker extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(
-            children: [
-              for (var index = 0; index < choices.length; index++) ...[
-                SizedBox(
-                  width: 132,
-                  height: 76,
-                  child: _TowerPrismChoiceTile(
-                    config: choices[index],
-                    selected: choices[index].id == selectedConfigId,
-                    onPressed: () => onSelect(choices[index]),
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final columns = choices.length >= 3 ? 3 : choices.length;
+            final tileWidth = columns <= 0
+                ? constraints.maxWidth
+                : ((constraints.maxWidth - (10 * (columns - 1))) / columns)
+                      .clamp(104.0, 132.0)
+                      .toDouble();
+            final tileHeight = choices.length > 6 ? 58.0 : 76.0;
+            return Wrap(
+              spacing: 10,
+              runSpacing: 10,
+              children: [
+                for (final choice in choices)
+                  SizedBox(
+                    width: tileWidth,
+                    height: tileHeight,
+                    child: _TowerPrismChoiceTile(
+                      config: choice,
+                      selected: choice.id == selectedConfigId,
+                      onPressed: () => onSelect(choice),
+                    ),
                   ),
-                ),
-                if (index < choices.length - 1) const SizedBox(width: 10),
               ],
-            ],
-          ),
+            );
+          },
         ),
         const SizedBox(height: 12),
         if (selected == null)
@@ -3441,8 +3473,9 @@ class _SelectedTowerBuildDetails extends StatelessWidget {
     final textTheme = Theme.of(context).textTheme;
     final tint = config.affinity.color;
     final costLabel = usesLayerOneWaveBuild
-        ? 'Wave Mark'
+        ? 'Requires Wave Marks'
         : '${controller.buildCostForConfig(config)} Lumens';
+    final buttonLabel = usesLayerOneWaveBuild ? 'Build Relay' : 'Build Tower';
     final enabled =
         usesLayerOneWaveBuild ||
         controller.lumens >= controller.buildCostForConfig(config);
@@ -3494,7 +3527,7 @@ class _SelectedTowerBuildDetails extends StatelessWidget {
                       ),
                       const SizedBox(height: 3),
                       Text(
-                        '${config.defaultProjectileType.label} • ${config.passiveLabel} • ${controller.towerFabricationDurationLabelForConfig(config)}',
+                        '$costLabel • ${config.defaultProjectileType.label} • ${config.passiveLabel} • ${controller.towerFabricationDurationLabelForConfig(config)}',
                         style: textTheme.bodySmall?.copyWith(
                           color: LightcorePalette.mist.withValues(alpha: 0.74),
                           fontWeight: FontWeight.w800,
@@ -3507,7 +3540,7 @@ class _SelectedTowerBuildDetails extends StatelessWidget {
                 FilledButton.icon(
                   onPressed: enabled ? onBuildTower : null,
                   icon: const Icon(Icons.add_rounded, size: 18),
-                  label: Text('Build $costLabel'),
+                  label: Text(buttonLabel),
                   style: FilledButton.styleFrom(
                     visualDensity: VisualDensity.compact,
                     padding: const EdgeInsets.symmetric(horizontal: 12),
