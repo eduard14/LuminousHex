@@ -407,6 +407,18 @@ extension LightcoreControllerLayerRebuild on LightcoreController {
     _layerPersistentProgress = _layerPersistentProgress.copyWith(
       bestWave: max(_layerPersistentProgress.bestWave, clampedWave),
     );
+    final runUpgradeTotal = LayerRunUpgradeType.values.fold<int>(
+      0,
+      (sum, type) => sum + _layerRun.rankFor(type),
+    );
+    if (_layerRun.active &&
+        clampedWave == 2 &&
+        previousCompleted == 0 &&
+        runUpgradeTotal == 0) {
+      // L1L2_REBUILD_SAFE: Untouched Layer 1 runs should hit the first wall at Wave 2, teaching Sparks upgrades before Wave 10.
+      endLayer1RunFromCoreBreak();
+      return;
+    }
     if (clampedWave >= LightcoreController.layer1CompletionWave) {
       _completeLayer1ShellIfNeeded();
     }

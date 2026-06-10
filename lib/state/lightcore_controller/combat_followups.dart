@@ -308,7 +308,23 @@ extension LightcoreControllerCombatFollowups on LightcoreController {
         directorMultiplier *
         apexMultiplier *
         emptyLaneMultiplier *
+        _layerRunStabilityPressureMultiplier() *
         (1 - _stabilityGuardReduction()).clamp(0.35, 1.0);
+  }
+
+  double _layerRunStabilityPressureMultiplier() {
+    if (!_layerRun.active) {
+      return 1.0;
+    }
+    final wavePressure = max(0, activeLayerWaveNumber - 1);
+    final runPressureCoverage =
+        _layerRun.rankFor(LayerRunUpgradeType.damage) +
+        _layerRun.rankFor(LayerRunUpgradeType.fireRate) +
+        (_layerRun.rankFor(LayerRunUpgradeType.multishot) * 2) +
+        _layerRun.rankFor(LayerRunUpgradeType.queueSize);
+    final unmetPressure = max(0, (wavePressure * 5) - runPressureCoverage);
+    // L1L2_REBUILD_SAFE: Rebuilt Layer 1 health is a fail-state clock; no-upgrade runs should collapse around Wave 2.
+    return 1 + min(4.0, unmetPressure * 0.8);
   }
 
   double _stabilityGuardReduction() {

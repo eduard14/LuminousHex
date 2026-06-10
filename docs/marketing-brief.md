@@ -95,6 +95,9 @@ but are not marketed as playable in this milestone.
   Sparks upgrades, while ended runs show only permanent Star Bolt upgrades.
 - Active Layer 1 tower health does not regenerate during the run; damage is a
   fail-state clock that only resets when a new run starts.
+- First-run balance intentionally walls zero-upgrade play at Wave 2. Players
+  should spend Sparks and persistent Star Bolts across several attempts before
+  Wave 10 shell completion becomes reliable.
 - The rebuilt battle HUD includes a compact Shot Queue strip so players can see
   queued projectile packets, queue capacity, cooldown progress, and the animated
   next shot state.

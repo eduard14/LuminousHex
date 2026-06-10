@@ -95,6 +95,43 @@ void main() {
     expect(controller.coreState.coreStability, damagedStability);
   });
 
+  test('unupgraded Layer 1 run collapses before Wave 3', () {
+    final controller = LightcoreController();
+    addTearDown(controller.dispose);
+    controller.debugDisableTutorial();
+
+    controller.startLayer1Run();
+    _advanceLayer1Run(
+      controller,
+      until: () => !controller.layerRunState.active,
+      maxSeconds: 160,
+    );
+
+    expect(controller.layerRunState.active, isFalse);
+    expect(controller.layerRunState.wave, lessThanOrEqualTo(2));
+  });
+
+  test('early Sparks upgrades push a Layer 1 run past the first wall', () {
+    final controller = LightcoreController();
+    addTearDown(controller.dispose);
+    controller.debugDisableTutorial();
+
+    controller.startLayer1Run();
+    expect(controller.buyRunUpgrade(LayerRunUpgradeType.damage), isTrue);
+    expect(controller.buyRunUpgrade(LayerRunUpgradeType.fireRate), isTrue);
+    expect(controller.buyRunUpgrade(LayerRunUpgradeType.multishot), isTrue);
+
+    _advanceLayer1Run(
+      controller,
+      until: () =>
+          !controller.layerRunState.active ||
+          controller.layerRunState.completedWave >= 2,
+      maxSeconds: 160,
+    );
+
+    expect(controller.layerRunState.completedWave, greaterThanOrEqualTo(2));
+  });
+
   test('persistent Star Bolt upgrades are blocked during active runs', () {
     final controller = LightcoreController();
     addTearDown(controller.dispose);
@@ -183,4 +220,24 @@ void main() {
     expect(restored.layerPersistentProgress.bestWave, 10);
     expect(restored.layer2BaseBoard.filledSlotCount, 1);
   });
+}
+
+void _advanceLayer1Run(
+  LightcoreController controller, {
+  required bool Function() until,
+  double maxSeconds = 120,
+  double dt = 0.2,
+}) {
+  final steps = (maxSeconds / dt).ceil();
+  for (var index = 0; index < steps; index += 1) {
+    if (until()) {
+      return;
+    }
+    controller.tick(dt);
+  }
+  fail(
+    'Layer 1 run did not reach expected state after ${maxSeconds.toStringAsFixed(1)}s. '
+    'wave=${controller.layerRunState.wave}, completed=${controller.layerRunState.completedWave}, '
+    'active=${controller.layerRunState.active}, core=${controller.coreState.coreStability.round()}',
+  );
 }

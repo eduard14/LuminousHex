@@ -857,7 +857,25 @@ extension LightcoreControllerCombatEnemies on LightcoreController {
 
   int get _openingWavePressureStep => max(0, activeLayerWaveNumber - 1);
 
+  int get _layerRunUpgradePressureCoverage {
+    if (!_layerRun.active) {
+      return 0;
+    }
+    final damageRanks = _layerRun.rankFor(LayerRunUpgradeType.damage);
+    final fireRateRanks = _layerRun.rankFor(LayerRunUpgradeType.fireRate);
+    final multishotRanks = _layerRun.rankFor(LayerRunUpgradeType.multishot);
+    final queueRanks = _layerRun.rankFor(LayerRunUpgradeType.queueSize);
+    return damageRanks + fireRateRanks + (multishotRanks * 2) + queueRanks;
+  }
+
   int get _openingUnmatchedWavePressure {
+    if (_layerRun.active) {
+      // L1L2_REBUILD_SAFE: Rebuilt Layer 1 should wall no-upgrade runs early while letting Sparks upgrades buy wave depth.
+      return max(
+        0,
+        (_openingWavePressureStep * 5) - _layerRunUpgradePressureCoverage,
+      );
+    }
     final firstTower = _firstTutorialTower;
     final upgradeRanks = firstTower == null
         ? 0
@@ -871,6 +889,9 @@ extension LightcoreControllerCombatEnemies on LightcoreController {
     }
     final wavePressure = _openingWavePressureStep;
     final unmetPressure = _openingUnmatchedWavePressure;
+    if (_layerRun.active) {
+      return 1 + min(1.6, wavePressure * 0.18) + min(4.6, unmetPressure * 0.72);
+    }
     return 1 + min(1.15, wavePressure * 0.12) + min(0.9, unmetPressure * 0.32);
   }
 
@@ -880,6 +901,9 @@ extension LightcoreControllerCombatEnemies on LightcoreController {
     }
     final wavePressure = _openingWavePressureStep;
     final unmetPressure = _openingUnmatchedWavePressure;
+    if (_layerRun.active) {
+      return 1 + min(0.9, wavePressure * 0.07) + min(1.8, unmetPressure * 0.26);
+    }
     return 1 + min(0.48, wavePressure * 0.05) + min(0.35, unmetPressure * 0.12);
   }
 
@@ -889,6 +913,11 @@ extension LightcoreControllerCombatEnemies on LightcoreController {
     }
     final wavePressure = _openingWavePressureStep;
     final unmetPressure = _openingUnmatchedWavePressure;
+    if (_layerRun.active) {
+      return 1 +
+          min(0.58, wavePressure * 0.055) +
+          min(1.18, unmetPressure * 0.2);
+    }
     return 1 +
         min(0.34, wavePressure * 0.035) +
         min(0.32, unmetPressure * 0.08);
@@ -900,6 +929,9 @@ extension LightcoreControllerCombatEnemies on LightcoreController {
     }
     final wavePressure = _openingWavePressureStep;
     final unmetPressure = _openingUnmatchedWavePressure;
+    if (_layerRun.active) {
+      return 1 + min(1.2, wavePressure * 0.12) + min(3.0, unmetPressure * 0.5);
+    }
     return 1 + min(0.7, wavePressure * 0.08) + min(0.85, unmetPressure * 0.2);
   }
 
