@@ -4,37 +4,14 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:lightcore/battle/lightcore_battle_game.dart';
 import 'package:lightcore/data/tower_configs.dart';
+import 'package:lightcore/models/lightcore_state.dart';
 import 'package:lightcore/screens/battle_screen.dart';
 import 'package:lightcore/theme/lightcore_theme.dart';
 
 import 'helpers/lightcore_test_fixtures.dart';
 
 void main() {
-  testWidgets('first inactive battle screen shows play button', (tester) async {
-    addTearDown(() async {
-      await tester.binding.setSurfaceSize(null);
-    });
-    await tester.binding.setSurfaceSize(const Size(430, 780));
-    final controller = LightcoreController();
-    addTearDown(controller.dispose);
-    controller.debugDisableTutorial();
-
-    await _pumpBattleScreen(tester, controller);
-
-    final playButton = find.byKey(const ValueKey<String>('battle-play-button'));
-    expect(playButton, findsOneWidget);
-    expect(controller.swarmActivated, isFalse);
-
-    await tester.tap(playButton);
-    await tester.pump();
-
-    expect(controller.swarmActivated, isTrue);
-    expect(controller.outerRingRevealed, isTrue);
-    expect(playButton, findsNothing);
-    expect(tester.takeException(), isNull);
-  });
-
-  testWidgets('active battle can fold shell for long-run readability', (
+  testWidgets('first battle screen shows rebuilt Layer 1 action dock', (
     tester,
   ) async {
     addTearDown(() async {
@@ -45,7 +22,40 @@ void main() {
     addTearDown(controller.dispose);
     controller.debugDisableTutorial();
 
-    controller.selectCenter();
+    await _pumpBattleScreen(tester, controller);
+
+    final startButton = find.text('Start Layer 1');
+    expect(startButton, findsOneWidget);
+    expect(find.textContaining('Sparks'), findsWidgets);
+    expect(find.textContaining('Star Bolts'), findsWidgets);
+    expect(find.textContaining('Shell 1/10'), findsOneWidget);
+    expect(find.text('Damage Lv. 0\n18 Sparks'), findsOneWidget);
+    expect(find.textContaining('Fire Rate Lv. 0'), findsOneWidget);
+    expect(find.textContaining('Multishot Lv. 0'), findsOneWidget);
+    expect(find.textContaining('Queue Size Lv. 0'), findsOneWidget);
+    expect(controller.swarmActivated, isFalse);
+
+    await tester.tap(startButton);
+    await tester.pump();
+
+    expect(controller.swarmActivated, isTrue);
+    expect(controller.outerRingRevealed, isTrue);
+    expect(find.text('Reset Run'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('rebuilt battle keeps shell visible for seven-hex readability', (
+    tester,
+  ) async {
+    addTearDown(() async {
+      await tester.binding.setSurfaceSize(null);
+    });
+    await tester.binding.setSurfaceSize(const Size(430, 780));
+    final controller = LightcoreController();
+    addTearDown(controller.dispose);
+    controller.debugDisableTutorial();
+
+    controller.startLayer1Run();
 
     await _pumpBattleScreen(tester, controller);
 
@@ -53,7 +63,7 @@ void main() {
     expect(controller.outerRingRevealed, isTrue);
     expect(
       find.byKey(const ValueKey<String>('battle-shell-collapse-button')),
-      findsOneWidget,
+      findsNothing,
     );
 
     controller.toggleShellVisibility();
@@ -62,7 +72,7 @@ void main() {
     expect(controller.outerRingRevealed, isFalse);
     expect(
       find.byKey(const ValueKey<String>('battle-shell-collapse-button')),
-      findsOneWidget,
+      findsNothing,
     );
     expect(tester.takeException(), isNull);
   });
@@ -98,7 +108,7 @@ void main() {
     expect(secondGame, isNot(same(firstGame)));
     expect(secondGame.controller, same(secondController));
 
-    await tester.tapAt(tester.getCenter(gameFinder));
+    secondController.startLayer1Run();
     await tester.pump();
 
     expect(firstController.outerRingRevealed, isFalse);
@@ -151,51 +161,44 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('core panel exposes persistent queue controls without tutorial', (
-    tester,
-  ) async {
-    addTearDown(() async {
-      await tester.binding.setSurfaceSize(null);
-    });
-    await tester.binding.setSurfaceSize(const Size(430, 780));
-    final controller = LightcoreController();
-    addTearDown(controller.dispose);
+  testWidgets(
+    'rebuilt dock exposes Layer 1 run upgrades without legacy labels',
+    (tester) async {
+      addTearDown(() async {
+        await tester.binding.setSurfaceSize(null);
+      });
+      await tester.binding.setSurfaceSize(const Size(430, 780));
+      final controller = LightcoreController();
+      addTearDown(controller.dispose);
 
-    controller.selectCenter();
-    await _pumpBattleScreen(tester, controller);
-    await tester.tap(find.byType(GameWidget<LightcoreBattleGame>));
-    await tester.pump();
+      controller.startLayer1Run();
+      await _pumpBattleScreen(tester, controller);
 
-    expect(controller.tutorialUsesBattleOnlyNavigation, isFalse);
-    expect(find.textContaining('Root Shell Core'), findsOneWidget);
-    expect(find.text('Current Wave'), findsNothing);
-    expect(find.text('Full Stats'), findsOneWidget);
-    expect(find.textContaining('Buffer'), findsNothing);
-    expect(find.textContaining('Wave Marks'), findsOneWidget);
-    expect(find.textContaining('Lumens'), findsOneWidget);
-    expect(find.textContaining('Power'), findsWidgets);
-    expect(find.text('Stats'), findsNothing);
-    expect(find.text('Core Stat Board'), findsNothing);
-    expect(find.text('Ring'), findsNothing);
-    expect(find.text('Slots'), findsNothing);
-    expect(find.text('Crit'), findsNothing);
-    expect(find.text('Final'), findsNothing);
-    expect(find.text('Normal'), findsNothing);
-    expect(find.text('Pen'), findsNothing);
+      expect(controller.tutorialUsesBattleOnlyNavigation, isFalse);
+      expect(find.text('Damage Lv. 0\n18 Sparks'), findsOneWidget);
+      expect(find.textContaining('Fire Rate Lv. 0'), findsOneWidget);
+      expect(find.textContaining('Multishot Lv. 0'), findsOneWidget);
+      expect(find.textContaining('Queue Size Lv. 0'), findsOneWidget);
+      expect(find.textContaining('Buffer'), findsNothing);
+      expect(find.textContaining('Wave Marks'), findsNothing);
+      expect(find.textContaining('Lumens'), findsNothing);
+      expect(find.textContaining('Flux'), findsNothing);
+      expect(find.text('Stats'), findsNothing);
+      expect(find.text('Core Stat Board'), findsNothing);
+      expect(find.text('Crit'), findsNothing);
+      expect(find.text('Final'), findsNothing);
+      expect(find.text('Normal'), findsNothing);
+      expect(find.text('Pen'), findsNothing);
 
-    await tester.tap(
-      find.byKey(const ValueKey<String>('core-full-stats-button')),
-    );
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 250));
+      await tester.tap(find.text('Damage Lv. 0\n18 Sparks'));
+      await tester.pump();
 
-    expect(find.text('Root Shell Full Stats'), findsOneWidget);
-    expect(find.textContaining('Wave Progress'), findsOneWidget);
-    expect(find.textContaining('Defense Pen'), findsOneWidget);
-    expect(tester.takeException(), isNull);
-  });
+      expect(controller.layerRunState.rankFor(LayerRunUpgradeType.damage), 1);
+      expect(tester.takeException(), isNull);
+    },
+  );
 
-  testWidgets('core stat board is reserved for Layer 2 and higher', (
+  testWidgets('legacy core stat board is hidden during Layer 1/2 rebuild', (
     tester,
   ) async {
     addTearDown(() async {
@@ -206,35 +209,15 @@ void main() {
     addTearDown(controller.dispose);
 
     controller.debugDisableTutorial();
-    controller.selectCenter();
+    controller.startLayer1Run();
     await _pumpBattleScreen(tester, controller);
-    await tester.tap(find.byType(GameWidget<LightcoreBattleGame>));
-    await tester.pump();
 
     expect(controller.activeLayer.tier, 1);
-    expect(find.textContaining('Root Shell Core'), findsOneWidget);
+    expect(find.text('Start Layer 1'), findsNothing);
+    expect(find.text('Reset Run'), findsOneWidget);
     expect(find.text('Stats'), findsNothing);
-    expect(find.text('Full Stats'), findsOneWidget);
+    expect(find.text('Full Stats'), findsNothing);
     expect(find.text('Core Stat Board'), findsNothing);
-
-    forgeLayer2(controller);
-    controller.debugDisableTutorial();
-    controller.selectCenter();
-    await _pumpBattleScreen(tester, controller);
-    final game = tester
-        .widget<GameWidget<LightcoreBattleGame>>(
-          find.byType(GameWidget<LightcoreBattleGame>),
-        )
-        .game!;
-    final coreCenter = game.debugCoreCenter;
-    expect(coreCenter, isNotNull);
-    await tester.tapAt(coreCenter!);
-    await tester.pump();
-
-    expect(controller.activeLayer.tier, 2);
-    expect(find.textContaining('Prism Shell Core'), findsOneWidget);
-    expect(find.text('Full Stats'), findsOneWidget);
-    expect(find.text('Core Stat Board'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 

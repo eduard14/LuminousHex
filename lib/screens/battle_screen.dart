@@ -1020,21 +1020,37 @@ class _BattleScreenState extends State<BattleScreen> {
       controller: controller,
       compact: compact,
     );
+    final rebuildHudVisible =
+        widget.showBattleHud && controller.layerRebuildEnabled;
     final overdriveHudVisible =
-        !dockOpen && widget.showBattleHud && controller.showManualOverdriveHud;
+        !rebuildHudVisible &&
+        !dockOpen &&
+        widget.showBattleHud &&
+        controller.showManualOverdriveHud;
 
     return Stack(
       children: [
         Positioned.fill(
           child: _buildGameCanvas(compact ? 20 : 0, dockOpen: dockOpen),
         ),
-        if (widget.showBattleHud && shellVisibilityHud != null)
+        if (!rebuildHudVisible &&
+            widget.showBattleHud &&
+            shellVisibilityHud != null)
           Positioned(
             right: inset,
             top: math.max(inset, topInset - (compact ? 22 : 10)),
             child: shellVisibilityHud,
           ),
-        if (widget.showBattleHud && !controller.swarmActivated)
+        if (rebuildHudVisible)
+          Positioned(
+            left: inset,
+            right: inset,
+            top: topInset,
+            child: _LayerRebuildTopHud(controller: controller),
+          ),
+        if (widget.showBattleHud &&
+            !controller.swarmActivated &&
+            !rebuildHudVisible)
           Align(
             alignment: const Alignment(0, -0.08),
             child: _BattlePlayButton(
@@ -1050,7 +1066,7 @@ class _BattleScreenState extends State<BattleScreen> {
               },
             ),
           ),
-        if (widget.showBattleHud && selectionHud != null)
+        if (widget.showBattleHud && selectionHud != null && !rebuildHudVisible)
           Positioned(left: inset, bottom: bottomInset, child: selectionHud),
         if (overdriveHudVisible)
           Positioned(
@@ -1062,8 +1078,15 @@ class _BattleScreenState extends State<BattleScreen> {
           Positioned(
             left: inset,
             right: compact ? inset : null,
-            bottom: bottomInset,
+            bottom: rebuildHudVisible ? bottomInset + 214 : bottomInset,
             child: selectionOverlay,
+          ),
+        if (rebuildHudVisible)
+          Positioned(
+            left: inset,
+            right: inset,
+            bottom: bottomInset,
+            child: _LayerRebuildActionDock(controller: controller),
           ),
         if (promotionResultCard != null)
           Positioned(
@@ -1110,6 +1133,393 @@ class _BattleScreenState extends State<BattleScreen> {
             );
           },
         ),
+      ),
+    );
+  }
+}
+
+// L1L2_REBUILD_SAFE: Always-visible Layer 1 HUD replaces old currency-forward battle chrome.
+class _LayerRebuildTopHud extends StatelessWidget {
+  const _LayerRebuildTopHud({required this.controller});
+
+  final LightcoreController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    final shellProgress =
+        controller.layer1ShellProgressWave /
+        LightcoreController.layer1CompletionWave;
+    return AuroraPanel(
+      radius: 12,
+      padding: const EdgeInsets.all(10),
+      tint: LightcorePalette.solar,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              _LayerRebuildHudChip(
+                icon: Icons.radar_rounded,
+                label: 'Wave',
+                value: '${controller.layerRunState.wave}',
+                tint: LightcorePalette.aether,
+              ),
+              _LayerRebuildHudChip(
+                icon: Icons.bolt_rounded,
+                label: controller.sparksLabel,
+                value: '${controller.sparks}',
+                tint: LightcorePalette.solar,
+              ),
+              _LayerRebuildHudChip(
+                icon: Icons.auto_awesome_rounded,
+                label: controller.starBoltsLabel,
+                value: '${controller.starBolts}',
+                tint: LightcorePalette.violet,
+              ),
+              _LayerRebuildHudChip(
+                icon: Icons.favorite_rounded,
+                label: 'Core',
+                value: '${controller.coreState.coreStability.round()}%',
+                tint: LightcorePalette.verdant,
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  controller.layer1ShellProgressLabel,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: textTheme.titleSmall?.copyWith(
+                    color: LightcorePalette.mist,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ),
+              Text(
+                '${controller.layer2BaseBoard.filledSlotCount}/7 Layer 2',
+                style: textTheme.labelLarge?.copyWith(
+                  color: LightcorePalette.solar,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(999),
+            child: LinearProgressIndicator(
+              minHeight: 8,
+              value: shellProgress.clamp(0.0, 1.0),
+              backgroundColor: LightcorePalette.abyss.withValues(alpha: 0.8),
+              color: LightcorePalette.solar,
+            ),
+          ),
+          if (controller.layer2BoardVisible) ...[
+            const SizedBox(height: 10),
+            _Layer2RebuildBoard(controller: controller),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+// L1L2_REBUILD_SAFE: Compact chip for rebuilt HUD resources and status.
+class _LayerRebuildHudChip extends StatelessWidget {
+  const _LayerRebuildHudChip({
+    required this.icon,
+    required this.label,
+    required this.value,
+    required this.tint,
+  });
+
+  final IconData icon;
+  final String label;
+  final String value;
+  final Color tint;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: Color.alphaBlend(
+          tint.withValues(alpha: 0.14),
+          LightcorePalette.panelRaised,
+        ),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: tint.withValues(alpha: 0.36)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 7),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, color: tint, size: 17),
+            const SizedBox(width: 6),
+            Text(
+              '$label ',
+              style: textTheme.labelMedium?.copyWith(
+                color: LightcorePalette.mist.withValues(alpha: 0.72),
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            Text(
+              value,
+              style: textTheme.labelLarge?.copyWith(
+                color: LightcorePalette.mist,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// L1L2_REBUILD_SAFE: Shows the seven Layer 2 slots without exposing legacy Layer 2 combat systems.
+class _Layer2RebuildBoard extends StatelessWidget {
+  const _Layer2RebuildBoard({required this.controller});
+
+  final LightcoreController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    final board = controller.layer2BaseBoard;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                'Layer 2 Base',
+                style: textTheme.labelLarge?.copyWith(
+                  color: LightcorePalette.mist,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+            ),
+            Text(
+              'Storage ${board.storage.length}',
+              style: textTheme.labelMedium?.copyWith(
+                color: LightcorePalette.mist.withValues(alpha: 0.72),
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 6),
+        Wrap(
+          spacing: 6,
+          runSpacing: 6,
+          children: [
+            for (var index = 0; index < board.slots.length; index += 1)
+              _Layer2SlotChip(index: index, shell: board.slots[index]),
+          ],
+        ),
+        if (board.storage.isNotEmpty) ...[
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  board.storage.first.summaryLabel,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: textTheme.labelMedium?.copyWith(
+                    color: LightcorePalette.mist.withValues(alpha: 0.76),
+                  ),
+                ),
+              ),
+              TextButton(
+                onPressed: () =>
+                    controller.discardStoredShell(board.storage.first.id),
+                child: const Text('Discard Stored'),
+              ),
+            ],
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+// L1L2_REBUILD_SAFE: Seven-slot visual contract matches the future merge geometry.
+class _Layer2SlotChip extends StatelessWidget {
+  const _Layer2SlotChip({required this.index, required this.shell});
+
+  final int index;
+  final CompletedLayer1Shell? shell;
+
+  @override
+  Widget build(BuildContext context) {
+    final filled = shell != null;
+    final tint = filled ? LightcorePalette.solar : LightcorePalette.stroke;
+    return Tooltip(
+      message: filled
+          ? '${shell!.summaryLabel}\n${shell!.colorOddsLabel}'
+          : 'Open Layer 2 shell slot ${index + 1}',
+      child: Container(
+        width: 38,
+        height: 34,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: Color.alphaBlend(
+            tint.withValues(alpha: filled ? 0.20 : 0.08),
+            LightcorePalette.abyss,
+          ),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: tint.withValues(alpha: filled ? 0.8 : 0.32),
+          ),
+        ),
+        child: Text(
+          filled ? shell!.coreAffinity.shortLabel : '${index + 1}',
+          style: Theme.of(context).textTheme.labelMedium?.copyWith(
+            color: filled
+                ? LightcorePalette.mist
+                : LightcorePalette.mist.withValues(alpha: 0.45),
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// L1L2_REBUILD_SAFE: Main rebuilt action dock exposes only Layer 1 active upgrades and Layer 2-safe actions.
+class _LayerRebuildActionDock extends StatelessWidget {
+  const _LayerRebuildActionDock({required this.controller});
+
+  final LightcoreController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    return AuroraPanel(
+      radius: 12,
+      padding: const EdgeInsets.all(10),
+      tint: LightcorePalette.aether,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: FilledButton.icon(
+                  onPressed: controller.layerRunState.active
+                      ? controller.resetLayer1Run
+                      : controller.startLayer1Run,
+                  icon: Icon(
+                    controller.layerRunState.active
+                        ? Icons.restart_alt_rounded
+                        : Icons.play_arrow_rounded,
+                  ),
+                  label: Text(
+                    controller.layerRunState.active
+                        ? 'Reset Run'
+                        : 'Start Layer 1',
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: controller.canBuildNextLayer1Feeder
+                      ? controller.buildNextLayer1Feeder
+                      : null,
+                  icon: const Icon(Icons.hub_rounded),
+                  label: Text(
+                    'Build Feeder ${controller.layer1BuiltFeederCount}/${controller.layer1UnlockedFeederSlots}',
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (final type in LayerRunUpgradeType.values)
+                _LayerRunUpgradeButton(controller: controller, type: type),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (final type in <LayerPersistentUpgradeType>[
+                LayerPersistentUpgradeType.feederSlots,
+                LayerPersistentUpgradeType.startingSparks,
+                LayerPersistentUpgradeType.baseCoreDamage,
+              ])
+                _LayerPersistentUpgradeButton(
+                  controller: controller,
+                  type: type,
+                ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// L1L2_REBUILD_SAFE: Sparks purchase button for rebuilt per-run combat upgrades.
+class _LayerRunUpgradeButton extends StatelessWidget {
+  const _LayerRunUpgradeButton({required this.controller, required this.type});
+
+  final LightcoreController controller;
+  final LayerRunUpgradeType type;
+
+  @override
+  Widget build(BuildContext context) {
+    final rank = controller.layerRunState.rankFor(type);
+    final cost = controller.layerRunUpgradeCost(type);
+    return SizedBox(
+      width: 156,
+      child: OutlinedButton(
+        onPressed: controller.canBuyRunUpgrade(type)
+            ? () => controller.buyRunUpgrade(type)
+            : null,
+        child: Text('${type.label} Lv. $rank\n$cost Sparks'),
+      ),
+    );
+  }
+}
+
+// L1L2_REBUILD_SAFE: Star Bolt purchase button for rebuilt persistent Layer 1 upgrades.
+class _LayerPersistentUpgradeButton extends StatelessWidget {
+  const _LayerPersistentUpgradeButton({
+    required this.controller,
+    required this.type,
+  });
+
+  final LightcoreController controller;
+  final LayerPersistentUpgradeType type;
+
+  @override
+  Widget build(BuildContext context) {
+    final rank = controller.layerPersistentProgress.rankFor(type);
+    final cost = controller.layerPersistentUpgradeCost(type);
+    return SizedBox(
+      width: 156,
+      child: TextButton(
+        onPressed: controller.canBuyPersistentUpgrade(type)
+            ? () => controller.buyPersistentUpgrade(type)
+            : null,
+        child: Text('${type.label} Lv. $rank\n$cost Star Bolts'),
       ),
     );
   }

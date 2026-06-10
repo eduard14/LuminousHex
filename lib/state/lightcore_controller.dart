@@ -42,6 +42,7 @@ part 'lightcore_controller/rewards_economy_store.dart';
 part 'lightcore_controller/rewards_patterns.dart';
 part 'lightcore_controller/progression_layers.dart';
 part 'lightcore_controller/layer_traits.dart';
+part 'lightcore_controller/layer_rebuild.dart';
 part 'lightcore_controller/battle_actions.dart';
 part 'lightcore_controller/battle_unlocks.dart';
 part 'lightcore_controller/battle_tower_actions.dart';
@@ -1235,6 +1236,7 @@ class LightcoreController extends ChangeNotifier {
     _viewLayerId = rootLayer.id;
     _runtimeLayerId = rootLayer.id;
     _loadLayer(rootLayer);
+    _applyLayerRebuildCoreUpgrades();
     _armStarterBossForOpening();
     _battlePasses = _createBattlePassMap();
     _timeWarpPurchaseWeekKey = _currentWeekKey();
@@ -1546,6 +1548,10 @@ class LightcoreController extends ChangeNotifier {
   static const int tutorialFirstHexUnlockExperience = 8;
   static const int firstOuterSlotKillRequirement = 100;
   static const int layer1RoundCurrencyPerWave = 1;
+  static const int layer1CompletionWave = 10;
+  static const int layer1BaseStartingSparks = 75;
+  static const int layer1SparksPerWave = 18;
+  static const int layer1CompletionStarBolts = 25;
   static const List<int> outerSlotUnlockWaveThresholds = <int>[
     1,
     5,
@@ -1628,6 +1634,18 @@ class LightcoreController extends ChangeNotifier {
   bool _enemySpiralMovementEnabled = true;
   double _enemyMovementSpeedMultiplier = _defaultEnemyMovementSpeedMultiplier;
   bool _battleKillRewardsEnabled = true;
+
+  // L1L2_REBUILD_SAFE: New Layer 1/2 progression state lives beside legacy combat while saves can be purged.
+  LayerRunState _layerRun = LayerRunState.initial(
+    startingSparks: layer1BaseStartingSparks,
+  );
+  // L1L2_REBUILD_SAFE: Star Bolts and persistent upgrade ranks replace old player-facing currencies for rebuilt progression.
+  LayerPersistentProgress _layerPersistentProgress =
+      LayerPersistentProgress.initial();
+  // L1L2_REBUILD_SAFE: Layer 2 first pass is a visible board of installed/stored completed Layer 1 shells.
+  Layer2BaseBoard _layer2BaseBoard = Layer2BaseBoard.empty();
+  // L1L2_REBUILD_SAFE: Monotonic local id counter keeps completed shells addressable for replace/discard actions.
+  int _layer1ShellSequence = 0;
 
   // TODO(authority): Move persistent player state behind a repository backed by
   // local cache plus backend sync. Client-owned mutable state keeps local play

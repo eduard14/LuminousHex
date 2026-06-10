@@ -10,6 +10,7 @@ extension LightcoreControllerSaveRestorePayload on LightcoreController {
     final dailyDungeonData = _coerceMap(payload['dailyDungeons']);
     final inventoryData = _coerceMap(payload['inventory']);
     final layerData = _coerceMap(payload['layers']);
+    final layerRebuildData = _coerceMap(payload['layerRebuild']);
     final tutorialData = _coerceMap(payload['tutorial']);
 
     _playerId = _stringOrNull(playerData['playerId']) ?? _playerId;
@@ -119,6 +120,24 @@ extension LightcoreControllerSaveRestorePayload on LightcoreController {
       resourceData['equipmentDropCounter'],
       fallback: _equipmentDropCounter,
     );
+    // L1L2_REBUILD_SAFE: Restore rebuilt progression independently from legacy resources because old saves can be purged.
+    if (layerRebuildData.isNotEmpty) {
+      _layerPersistentProgress = LayerPersistentProgress.fromMap(
+        _coerceMap(layerRebuildData['persistent']),
+      );
+      _layerRun = LayerRunState.fromMap(
+        _coerceMap(layerRebuildData['run']),
+        fallbackStartingSparks: layer1StartingSparks,
+      );
+      _layer2BaseBoard = Layer2BaseBoard.fromMap(
+        _coerceMap(layerRebuildData['layer2Board']),
+      );
+      _layer1ShellSequence = _intValue(
+        layerRebuildData['shellSequence'],
+        fallback: _layer1ShellSequence,
+      );
+      _applyLayerRebuildCoreUpgrades();
+    }
 
     _totalBattleSeconds = _doubleValue(
       metricData['totalBattleSeconds'],
@@ -275,6 +294,8 @@ extension LightcoreControllerSaveRestorePayload on LightcoreController {
       _runtimeLayerId = _liveLayerForLayer(requestedRuntimeLayer).id;
       final restoredEnemyTargetCount = resolvedActiveLayer.enemyTargetCount;
       _loadLayer(resolvedActiveLayer);
+      // L1L2_REBUILD_SAFE: Layer restore loads legacy core state, then rebuilt ranks reassert safe-forward combat stats.
+      _applyLayerRebuildCoreUpgrades();
       _applyFarmSwarmPressure();
       if (restoredEnemyTargetCount > _enemyTargetCount) {
         _enemyTargetCount = _normalizeEnemyTargetCount(

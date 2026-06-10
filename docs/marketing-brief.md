@@ -1,6 +1,6 @@
 # LumiHex Marketing Brief
 
-Last updated: 2026-06-08
+Last updated: 2026-06-10
 
 This is the source-of-truth marketing handoff for LumiHex. Update it whenever
 player-facing features, naming, story, monetization, screenshots, or asset needs
@@ -17,7 +17,7 @@ materials would become stale.
 | Developer / splash credit | Lemon Goose Games Inc. |
 | Genre | Mobile idle tower defense with hex-shell progression |
 | Platforms | iOS and Android planned; web is a staging/test surface |
-| Monetization model | Free-to-play with rewarded ads, Prism Shard packs, capped bundles, battle-pass style tracks, and premium membership scaffolding |
+| Monetization model | First rebuilt milestone has no player-facing monetization; store, passes, social, dungeons, tournaments, managers, and equipment are hidden until the Layer 1/2 base loop is stable. |
 | Brand rule | LumiHex is the public game name. Lightcore is the in-world core object. Lumicore should be treated as backend/project residue, not a public brand. |
 
 ## One-Line Pitch
@@ -27,10 +27,11 @@ and promoting each completed shell into a deeper prism lattice.
 
 ## Short Description
 
-LumiHex is a mobile-first idle tower-defense game where the battlefield is a
-six-relay hex shell around a central Lightcore. Towers auto-charge shots,
-focus anomaly encounters, collect managers, and
-promote Root Shells into Prism, Nexus, and Ascendant structures.
+LumiHex is a mobile-first tower-defense and idle progression game where black
+hole anomalies collapse from the perimeter into a central Lightcore. The player
+builds six feeder towers around the core, spends run currency on active combat
+upgrades, completes Wave 10 Layer 1 shells, and installs those shells into a
+visible Layer 2 base board.
 
 ## Player Fantasy
 
@@ -40,34 +41,39 @@ relay at a time, turns enemy pressure into progression, and forges completed
 shells into higher-order prism structures.
 
 Marketing tone should be clear and energetic, not lore-heavy. The story exists
-to explain the loop: build relays, defend the core, shape anomalies, merge
-Layer 1 towers into Layer 2 components, lock better farm waves, and keep
-climbing.
+to explain the loop: build feeders, defend the core, complete Layer 1 shells,
+install those shells into Layer 2, and repeat for better color and projectile
+odds.
 
 ## Core Gameplay Loop
 
 1. Enter a hex shell built around the central Lightcore.
-2. Reveal the first perimeter hex immediately and build the opening relay.
+2. Start a Layer 1 run at Wave 1 with Sparks as the per-run currency.
 3. Let the core and relay towers auto-charge shots while the shell chooses
    anomaly targets automatically.
-4. Upgrade the first tower from its controls as the next action.
-5. Clear wave milestones to unlock the remaining perimeter relay towers:
-   Hex 1 at Wave 1, Hexes 2-3 after Wave 5, and Hexes 4-6 after Wave 10.
-6. Earn Layer 1 Wave Marks from completed waves to open, build, and level the
-   shell, then spend kill-earned Lumens on combat upgrades like range, fire
-   speed, multi-shot, and tower damage tuning.
-7. Roll Threat Scans into Knowledge Cards that make enemy families easier
-   to understand and farm.
-8. Follow the fixed Threat Map route, clear higher waves in each area, then lock
-   the best completed farm wave for offline rewards.
-9. Defeat normal anomalies to prime Apex Anomaly encounters.
-10. Merge completed Layer 1 shells into Layer 2 components with independent
-   projectile and payload rolls, wave-based Layer 2 levels, and random subtraits.
-11. Equip farmed Layer 2 components to Threat Map areas, upgrade standout rolls
-   with Component Scrolls from Layer 2+ boss clears, and dismantle bad rolls
-   into more scrolls.
-12. Return to older shells as passive support archives while the live shell grows.
-13. Expand into managers, daily dungeons, tournaments, and social play.
+4. Build feeder towers on the six outer hexes; the feeders modify the central
+   core instead of reading as independent lane defenders.
+5. Spend Sparks during the run on Damage, Fire Rate, Multishot, and Queue Size.
+6. Reach Wave 10 to create a completed Layer 1 shell.
+7. Auto-install the completed shell into the first open Layer 2 base slot, or
+   store it if the seven-slot board is full.
+8. Spend persistent Star Bolts on feeder slot unlocks, starting Sparks, base
+   core damage, base core fire rate, base queue size, and future color unlocks.
+9. Start a fresh Layer 1 run from the main battlefield even when Layer 2 is full.
+
+## Layer 1/2 Rebuild Direction
+
+The separate `prototypes/lumihex_layer1_lab/` experiment has been removed from
+the product path. The main app is the rebuild target because its centered
+seven-hex battlefield, tower visuals, projectiles, and collapsing anomaly combat
+already communicate the game better than the lab did.
+
+The current rebuilt milestone is intentionally narrow: Layer 1 active play plus
+a visible Layer 2 base board. Sparks and Star Bolts replace Wave Marks, Lumens,
+Flux, Shell Cores, Prism Shards, Threat Scans, manager shards, and Component
+Scrolls in the first-pass UI. Managers, equipment, dungeons, tournaments, store,
+battle pass, social, guilds, and threat-map gameplay are not marketed for this
+milestone.
 
 ## Feature Inventory
 

@@ -1,6 +1,380 @@
 import 'lightcore_config.dart';
 import 'lightcore_types.dart';
 
+// L1L2_REBUILD_SAFE: Safe-forward Layer 1 run upgrade surface for the rebuilt active loop.
+enum LayerRunUpgradeType {
+  damage,
+  fireRate,
+  multishot,
+  queueSize;
+
+  String get label => switch (this) {
+    LayerRunUpgradeType.damage => 'Damage',
+    LayerRunUpgradeType.fireRate => 'Fire Rate',
+    LayerRunUpgradeType.multishot => 'Multishot',
+    LayerRunUpgradeType.queueSize => 'Queue Size',
+  };
+}
+
+// L1L2_REBUILD_SAFE: Safe-forward persistent upgrade surface for Layer 1 account growth.
+enum LayerPersistentUpgradeType {
+  feederSlots,
+  towerColors,
+  startingSparks,
+  baseCoreDamage,
+  baseCoreFireRate,
+  baseQueueSize;
+
+  String get label => switch (this) {
+    LayerPersistentUpgradeType.feederSlots => 'Feeder Slots',
+    LayerPersistentUpgradeType.towerColors => 'Tower Colors',
+    LayerPersistentUpgradeType.startingSparks => 'Starting Sparks',
+    LayerPersistentUpgradeType.baseCoreDamage => 'Base Damage',
+    LayerPersistentUpgradeType.baseCoreFireRate => 'Base Fire Rate',
+    LayerPersistentUpgradeType.baseQueueSize => 'Base Queue',
+  };
+}
+
+// L1L2_REBUILD_SAFE: Describes the current active Layer 1 attempt without depending on legacy currencies.
+class LayerRunState {
+  const LayerRunState({
+    required this.wave,
+    required this.active,
+    required this.sparks,
+    required this.completedWave,
+    required this.shellReady,
+    this.upgradeRanks = const <LayerRunUpgradeType, int>{},
+  });
+
+  factory LayerRunState.initial({required int startingSparks}) => LayerRunState(
+    wave: 1,
+    active: false,
+    sparks: startingSparks,
+    completedWave: 0,
+    shellReady: false,
+    upgradeRanks: <LayerRunUpgradeType, int>{
+      for (final type in LayerRunUpgradeType.values) type: 0,
+    },
+  );
+
+  final int wave;
+  final bool active;
+  final int sparks;
+  final int completedWave;
+  final bool shellReady;
+  final Map<LayerRunUpgradeType, int> upgradeRanks;
+
+  int rankFor(LayerRunUpgradeType type) => upgradeRanks[type] ?? 0;
+
+  LayerRunState copyWith({
+    int? wave,
+    bool? active,
+    int? sparks,
+    int? completedWave,
+    bool? shellReady,
+    Map<LayerRunUpgradeType, int>? upgradeRanks,
+  }) {
+    return LayerRunState(
+      wave: wave ?? this.wave,
+      active: active ?? this.active,
+      sparks: sparks ?? this.sparks,
+      completedWave: completedWave ?? this.completedWave,
+      shellReady: shellReady ?? this.shellReady,
+      upgradeRanks:
+          upgradeRanks ?? Map<LayerRunUpgradeType, int>.from(this.upgradeRanks),
+    );
+  }
+
+  Map<String, dynamic> toMap() => <String, dynamic>{
+    'wave': wave,
+    'active': active,
+    'sparks': sparks,
+    'completedWave': completedWave,
+    'shellReady': shellReady,
+    'upgradeRanks': <String, int>{
+      for (final entry in upgradeRanks.entries) entry.key.name: entry.value,
+    },
+  };
+
+  factory LayerRunState.fromMap(
+    Map<String, dynamic> data, {
+    required int fallbackStartingSparks,
+  }) {
+    final ranks = <LayerRunUpgradeType, int>{
+      for (final type in LayerRunUpgradeType.values) type: 0,
+    };
+    final rawRanks = data['upgradeRanks'];
+    if (rawRanks is Map) {
+      for (final type in LayerRunUpgradeType.values) {
+        final value = rawRanks[type.name];
+        if (value is num) {
+          ranks[type] = value.toInt();
+        }
+      }
+    }
+    int intValue(String key, int fallback) {
+      final value = data[key];
+      return value is num ? value.toInt() : fallback;
+    }
+
+    return LayerRunState(
+      wave: intValue('wave', 1).clamp(1, 10).toInt(),
+      active: data['active'] == true,
+      sparks: intValue('sparks', fallbackStartingSparks),
+      completedWave: intValue('completedWave', 0).clamp(0, 10).toInt(),
+      shellReady: data['shellReady'] == true,
+      upgradeRanks: ranks,
+    );
+  }
+}
+
+// L1L2_REBUILD_SAFE: Persistent Layer 1 progression that replaces player-facing Lumens/Flux in the rebuilt loop.
+class LayerPersistentProgress {
+  const LayerPersistentProgress({
+    required this.starBolts,
+    required this.bestWave,
+    this.upgradeRanks = const <LayerPersistentUpgradeType, int>{},
+  });
+
+  factory LayerPersistentProgress.initial() => LayerPersistentProgress(
+    starBolts: 0,
+    bestWave: 1,
+    upgradeRanks: <LayerPersistentUpgradeType, int>{
+      for (final type in LayerPersistentUpgradeType.values) type: 0,
+    },
+  );
+
+  final int starBolts;
+  final int bestWave;
+  final Map<LayerPersistentUpgradeType, int> upgradeRanks;
+
+  int rankFor(LayerPersistentUpgradeType type) => upgradeRanks[type] ?? 0;
+
+  LayerPersistentProgress copyWith({
+    int? starBolts,
+    int? bestWave,
+    Map<LayerPersistentUpgradeType, int>? upgradeRanks,
+  }) {
+    return LayerPersistentProgress(
+      starBolts: starBolts ?? this.starBolts,
+      bestWave: bestWave ?? this.bestWave,
+      upgradeRanks:
+          upgradeRanks ??
+          Map<LayerPersistentUpgradeType, int>.from(this.upgradeRanks),
+    );
+  }
+
+  Map<String, dynamic> toMap() => <String, dynamic>{
+    'starBolts': starBolts,
+    'bestWave': bestWave,
+    'upgradeRanks': <String, int>{
+      for (final entry in upgradeRanks.entries) entry.key.name: entry.value,
+    },
+  };
+
+  factory LayerPersistentProgress.fromMap(Map<String, dynamic> data) {
+    final ranks = <LayerPersistentUpgradeType, int>{
+      for (final type in LayerPersistentUpgradeType.values) type: 0,
+    };
+    final rawRanks = data['upgradeRanks'];
+    if (rawRanks is Map) {
+      for (final type in LayerPersistentUpgradeType.values) {
+        final value = rawRanks[type.name];
+        if (value is num) {
+          ranks[type] = value.toInt();
+        }
+      }
+    }
+    int intValue(String key, int fallback) {
+      final value = data[key];
+      return value is num ? value.toInt() : fallback;
+    }
+
+    return LayerPersistentProgress(
+      starBolts: intValue('starBolts', 0),
+      bestWave: intValue('bestWave', 1).clamp(1, 10).toInt(),
+      upgradeRanks: ranks,
+    );
+  }
+}
+
+// L1L2_REBUILD_SAFE: Captures one finished seven-piece Layer 1 shell for the visible Layer 2 base board.
+class CompletedLayer1Shell {
+  const CompletedLayer1Shell({
+    required this.id,
+    required this.bestWave,
+    required this.coreAffinity,
+    required this.feederAffinities,
+    required this.colorDistribution,
+    required this.projectileOddsLabel,
+    required this.payloadOddsLabel,
+    required this.createdAtMillis,
+  });
+
+  final String id;
+  final int bestWave;
+  final PrototypeAffinity coreAffinity;
+  final List<PrototypeAffinity> feederAffinities;
+  final Map<PrototypeAffinity, double> colorDistribution;
+  final String projectileOddsLabel;
+  final String payloadOddsLabel;
+  final int createdAtMillis;
+
+  String get summaryLabel => '${coreAffinity.label} core • Wave $bestWave';
+
+  String get colorOddsLabel {
+    final entries = colorDistribution.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+    return entries
+        .map(
+          (entry) => '${entry.key.shortLabel} ${(entry.value * 100).round()}%',
+        )
+        .join(' / ');
+  }
+
+  Map<String, dynamic> toMap() => <String, dynamic>{
+    'id': id,
+    'bestWave': bestWave,
+    'coreAffinity': coreAffinity.name,
+    'feederAffinities': feederAffinities
+        .map((affinity) => affinity.name)
+        .toList(growable: false),
+    'colorDistribution': <String, double>{
+      for (final entry in colorDistribution.entries)
+        entry.key.name: entry.value,
+    },
+    'projectileOddsLabel': projectileOddsLabel,
+    'payloadOddsLabel': payloadOddsLabel,
+    'createdAtMillis': createdAtMillis,
+  };
+
+  factory CompletedLayer1Shell.fromMap(Map<String, dynamic> data) {
+    PrototypeAffinity affinityFrom(dynamic value, PrototypeAffinity fallback) {
+      if (value is String) {
+        for (final affinity in PrototypeAffinity.values) {
+          if (affinity.name == value) {
+            return affinity;
+          }
+        }
+      }
+      return fallback;
+    }
+
+    final feeders = <PrototypeAffinity>[];
+    final rawFeeders = data['feederAffinities'];
+    if (rawFeeders is List) {
+      for (final value in rawFeeders) {
+        feeders.add(affinityFrom(value, PrototypeAffinity.neutral));
+      }
+    }
+    final distribution = <PrototypeAffinity, double>{};
+    final rawDistribution = data['colorDistribution'];
+    if (rawDistribution is Map) {
+      for (final affinity in PrototypeAffinity.values) {
+        final value = rawDistribution[affinity.name];
+        if (value is num) {
+          distribution[affinity] = value.toDouble();
+        }
+      }
+    }
+    int intValue(String key, int fallback) {
+      final value = data[key];
+      return value is num ? value.toInt() : fallback;
+    }
+
+    return CompletedLayer1Shell(
+      id: data['id'] is String
+          ? data['id'] as String
+          : 'shell-${intValue('createdAtMillis', 0)}',
+      bestWave: intValue('bestWave', 10),
+      coreAffinity: affinityFrom(
+        data['coreAffinity'],
+        PrototypeAffinity.neutral,
+      ),
+      feederAffinities: List<PrototypeAffinity>.unmodifiable(feeders),
+      colorDistribution: Map<PrototypeAffinity, double>.unmodifiable(
+        distribution,
+      ),
+      projectileOddsLabel: data['projectileOddsLabel'] is String
+          ? data['projectileOddsLabel'] as String
+          : 'Core projectile odds',
+      payloadOddsLabel: data['payloadOddsLabel'] is String
+          ? data['payloadOddsLabel'] as String
+          : 'Core payload odds',
+      createdAtMillis: intValue('createdAtMillis', 0),
+    );
+  }
+}
+
+// L1L2_REBUILD_SAFE: The visible Layer 2 board is storage and placement only in the first rebuild milestone.
+class Layer2BaseBoard {
+  const Layer2BaseBoard({required this.slots, required this.storage});
+
+  factory Layer2BaseBoard.empty() => Layer2BaseBoard(
+    slots: List<CompletedLayer1Shell?>.filled(7, null, growable: false),
+    storage: const <CompletedLayer1Shell>[],
+  );
+
+  final List<CompletedLayer1Shell?> slots;
+  final List<CompletedLayer1Shell> storage;
+
+  bool get hasAnyShell =>
+      slots.any((shell) => shell != null) || storage.isNotEmpty;
+
+  int get filledSlotCount => slots.where((shell) => shell != null).length;
+
+  int get firstOpenSlotIndex => slots.indexWhere((shell) => shell == null);
+
+  Layer2BaseBoard copyWith({
+    List<CompletedLayer1Shell?>? slots,
+    List<CompletedLayer1Shell>? storage,
+  }) {
+    return Layer2BaseBoard(
+      slots: List<CompletedLayer1Shell?>.unmodifiable(slots ?? this.slots),
+      storage: List<CompletedLayer1Shell>.unmodifiable(storage ?? this.storage),
+    );
+  }
+
+  Map<String, dynamic> toMap() => <String, dynamic>{
+    'slots': slots.map((shell) => shell?.toMap()).toList(growable: false),
+    'storage': storage.map((shell) => shell.toMap()).toList(growable: false),
+  };
+
+  factory Layer2BaseBoard.fromMap(Map<String, dynamic> data) {
+    final slots = List<CompletedLayer1Shell?>.filled(7, null, growable: false);
+    final rawSlots = data['slots'];
+    if (rawSlots is List) {
+      for (
+        var index = 0;
+        index < slots.length && index < rawSlots.length;
+        index += 1
+      ) {
+        final rawShell = rawSlots[index];
+        if (rawShell is Map) {
+          slots[index] = CompletedLayer1Shell.fromMap(
+            Map<String, dynamic>.from(rawShell),
+          );
+        }
+      }
+    }
+    final storage = <CompletedLayer1Shell>[];
+    final rawStorage = data['storage'];
+    if (rawStorage is List) {
+      for (final rawShell in rawStorage) {
+        if (rawShell is Map) {
+          storage.add(
+            CompletedLayer1Shell.fromMap(Map<String, dynamic>.from(rawShell)),
+          );
+        }
+      }
+    }
+    return Layer2BaseBoard(
+      slots: List<CompletedLayer1Shell?>.unmodifiable(slots),
+      storage: List<CompletedLayer1Shell>.unmodifiable(storage),
+    );
+  }
+}
+
 /// Read-only projection for the active anomaly deck pressure loop.
 ///
 /// The active anomaly deck, active region Threat Director, core stability, and

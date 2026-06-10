@@ -622,6 +622,8 @@ extension LightcoreControllerCombatDamage on LightcoreController {
         activeLayer.bestWaveReached,
         1 + (_spawnSequence ~/ max(1, initialEnemyTarget)),
       );
+      // L1L2_REBUILD_SAFE: Existing enemy collapse combat drives rebuilt Layer 1 wave and shell completion state.
+      _syncLayerRebuildWaveProgress(activeLayer.bestWaveReached);
       _grantRoundCurrencyForReachedWave();
       if (activeLayer.normalKillsSinceBoss >= bossSpawnKillRequirement) {
         activeLayer.bossReady = true;

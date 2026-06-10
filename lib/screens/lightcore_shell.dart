@@ -101,7 +101,10 @@ class _LightcoreShellState extends State<LightcoreShell> {
   ];
 
   List<_ShellOverlayDestination> get _visibleNavigationDestinations =>
-      widget.controller.tutorialUsesBattleOnlyNavigation
+      widget.controller.layerRebuildEnabled
+      // L1L2_LEGACY_REVISIT: Legacy managers, threat map, archives, advancement, store, and social nav stay hidden during Layer 1/2 rebuild.
+      ? const <_ShellOverlayDestination>[_ShellOverlayDestination.battle]
+      : widget.controller.tutorialUsesBattleOnlyNavigation
       ? const <_ShellOverlayDestination>[_ShellOverlayDestination.battle]
       : _navigationDestinations
             .where(
@@ -744,6 +747,12 @@ class _LightcoreShellState extends State<LightcoreShell> {
   }
 
   void _openOverlayDestination(_ShellOverlayDestination destination) {
+    // L1L2_LEGACY_REVISIT: Rebuild milestone exposes battle-only navigation while legacy systems are reviewed one by one.
+    if (widget.controller.layerRebuildEnabled &&
+        destination != _ShellOverlayDestination.battle) {
+      _closeOverlay();
+      return;
+    }
     final tutorialStep = widget.controller.tutorialStep;
     if (tutorialStep == LightcoreTutorialStep.armFirstBoss &&
         destination != _ShellOverlayDestination.enemies &&
@@ -1143,11 +1152,15 @@ class _LightcoreShellState extends State<LightcoreShell> {
                                     : friendAlertCount > 9
                                     ? '9+'
                                     : friendAlertCount.toString();
+                                final rebuildMode =
+                                    controller.layerRebuildEnabled;
                                 final headerActions =
-                                    openingBattlePreview ||
+                                    rebuildMode ||
+                                        openingBattlePreview ||
                                         controller
                                             .tutorialUsesBattleOnlyNavigation
                                     ? const <Widget>[]
+                                    // L1L2_LEGACY_REVISIT: Store, battle pass, and social/header menu actions are hidden while the rebuild loop is scoped to Layer 1/2.
                                     : <Widget>[
                                         _HeaderActionButton(
                                           icon: Icons.storefront_rounded,
@@ -1194,30 +1207,34 @@ class _LightcoreShellState extends State<LightcoreShell> {
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
                                     children: [
-                                      _ShellProfileHeaderHud(
-                                        key: const ValueKey<String>(
-                                          'battle-resource-rail',
+                                      if (!rebuildMode)
+                                        _ShellProfileHeaderHud(
+                                          key: const ValueKey<String>(
+                                            'battle-resource-rail',
+                                          ),
+                                          controller: controller,
+                                          compact: isCompactLayout,
+                                          tooltip: managerTooltip,
+                                          highlighted: controller
+                                              .tutorialHighlightsPlayerManagerButton,
+                                          pulseSignal: controller
+                                              .tutorialPulseSignalFor(
+                                                LightcoreTutorialPulseTarget
+                                                    .playerManagerButton,
+                                              ),
+                                          showNotificationBadge: controller
+                                              .hasUnspentRadianceStatPoints,
+                                          openingMode:
+                                              openingBattlePreview ||
+                                              controller
+                                                  .tutorialUsesBattleOnlyNavigation,
+                                          onProfilePressed: () =>
+                                              _openPlayerManager(context),
                                         ),
-                                        controller: controller,
-                                        compact: isCompactLayout,
-                                        tooltip: managerTooltip,
-                                        highlighted: controller
-                                            .tutorialHighlightsPlayerManagerButton,
-                                        pulseSignal: controller
-                                            .tutorialPulseSignalFor(
-                                              LightcoreTutorialPulseTarget
-                                                  .playerManagerButton,
-                                            ),
-                                        showNotificationBadge: controller
-                                            .hasUnspentRadianceStatPoints,
-                                        openingMode:
-                                            openingBattlePreview ||
-                                            controller
-                                                .tutorialUsesBattleOnlyNavigation,
-                                        onProfilePressed: () =>
-                                            _openPlayerManager(context),
-                                      ),
-                                      SizedBox(width: isCompactLayout ? 6 : 12),
+                                      if (!rebuildMode)
+                                        SizedBox(
+                                          width: isCompactLayout ? 6 : 12,
+                                        ),
                                       Expanded(
                                         child: Align(
                                           alignment: Alignment.topRight,
