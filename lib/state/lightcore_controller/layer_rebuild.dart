@@ -171,6 +171,26 @@ extension LightcoreControllerLayerRebuild on LightcoreController {
     if (slotIndex == null) {
       return false;
     }
+    return buildLayer1FeederAt(slotIndex);
+  }
+
+  bool buildLayer1FeederAt(int slotIndex) {
+    // L1L2_REBUILD_SAFE: Empty hex taps build the chosen feeder slot with Sparks, replacing the removed Build Feeder button.
+    if (!_layerRun.active ||
+        slotIndex < 0 ||
+        slotIndex >= LightcoreController.slotCount ||
+        slotIndex >= layer1UnlockedFeederSlots) {
+      _showBanner('Start Layer 1 or unlock this feeder slot first.');
+      _notifyNow();
+      return false;
+    }
+    final current = _slots[slotIndex];
+    if (current.isBuilt || current.isFabricating) {
+      selectedSlotIndex = slotIndex;
+      _towerRangePreviewSlotIndex = slotIndex;
+      _notifyNow();
+      return true;
+    }
     const feederConfigs = <TowerConfig>[
       TowerLibrary.greenPrism,
       TowerLibrary.bluePrism,
@@ -268,6 +288,15 @@ extension LightcoreControllerLayerRebuild on LightcoreController {
     _layer2BaseBoard = _layer2BaseBoard.copyWith(storage: storage);
     _notifyNow();
     return true;
+  }
+
+  void clearLayerRebuildBattleSelection({bool notify = true}) {
+    // L1L2_REBUILD_SAFE: Rebuilt battle opens on the tower field; tower panels appear only after a player taps a hex.
+    selectedSlotIndex = null;
+    _towerRangePreviewSlotIndex = null;
+    if (notify) {
+      _notifyNow();
+    }
   }
 
   @visibleForTesting

@@ -286,20 +286,33 @@ void main() {
     expect(controller.buildTowerAt(0, TowerLibrary.redPrism), isTrue);
     controller.tick(controller.slots[0].fabricationRemainingSeconds + 0.1);
     controller.activeLayer.bestWaveReached = 10;
-    controller.selectSlot(0);
-
     await _pumpBattleScreen(tester, controller);
 
     expect(find.byKey(const ValueKey<String>('battle-wave-hud')), findsNothing);
     expect(find.text('Best Wave'), findsNothing);
     expect(find.textContaining('Stats 0/'), findsNothing);
     expect(find.textContaining('Layer 2 Lv 1'), findsNothing);
-    expect(find.textContaining('Selected Slot 1'), findsOneWidget);
-    expect(find.text('Full Stats'), findsOneWidget);
-    expect(find.text('Tower Health'), findsOneWidget);
+    expect(find.textContaining('Feeder Slot 1'), findsNothing);
+
+    final game = tester
+        .widget<GameWidget<LightcoreBattleGame>>(
+          find.byType(GameWidget<LightcoreBattleGame>),
+        )
+        .game!;
+    final slotCenter = game.debugSlotCenter(0);
+    expect(slotCenter, isNotNull);
+    await tester.tapAt(slotCenter!);
+    await tester.pump();
+
+    expect(find.textContaining('Feeder Slot 1'), findsOneWidget);
+    expect(find.text('Feeder Integrity'), findsOneWidget);
+    expect(find.text('Full Stats'), findsNothing);
     expect(find.text('Persistent Stat Upgrades'), findsNothing);
     expect(find.textContaining('Layer 1 Tower Level'), findsNothing);
-    expect(find.textContaining('Charge Rate'), findsWidgets);
+    expect(find.textContaining('Wave Marks'), findsNothing);
+    expect(find.textContaining('Lumens'), findsNothing);
+    expect(find.textContaining('Damage'), findsWidgets);
+    expect(find.textContaining('Fire Rate'), findsWidgets);
     expect(tester.takeException(), isNull);
   });
 

@@ -153,6 +153,9 @@ class _BattleScreenState extends State<BattleScreen> {
   @override
   void initState() {
     super.initState();
+    if (widget.controller.layerRebuildEnabled) {
+      widget.controller.clearLayerRebuildBattleSelection(notify: false);
+    }
     _appLifecycleListener = AppLifecycleListener(
       onHide: _handleLifecycleInterrupted,
       onInactive: _handleLifecycleInterrupted,
@@ -175,6 +178,9 @@ class _BattleScreenState extends State<BattleScreen> {
     super.didUpdateWidget(oldWidget);
     if (!identical(oldWidget.controller, widget.controller)) {
       oldWidget.controller.stopManualOverdrive();
+      if (widget.controller.layerRebuildEnabled) {
+        widget.controller.clearLayerRebuildBattleSelection(notify: false);
+      }
       _promotionStatsTimer?.cancel();
       _promotionStatsTimer = null;
       _activePromotionSequence = null;
@@ -537,6 +543,19 @@ class _BattleScreenState extends State<BattleScreen> {
     final target = slot != null && !slot.isLayerProject
         ? _BattleStatsTarget.slot(resolvedSlotIndex)
         : null;
+    if (controller.layerRebuildEnabled &&
+        slot != null &&
+        !slot.isBuilt &&
+        !slot.isFabricating &&
+        !slot.isLayerProject) {
+      final built = controller.buildLayer1FeederAt(resolvedSlotIndex);
+      setState(() {
+        _statsTarget = built ? target : null;
+        _panelFocus = _BattlePanelFocus.none;
+        _selectionControlsVisible = built;
+      });
+      return;
+    }
     final opensControls = slot != null && !slot.isLayerProject;
     final defersControls =
         slot != null &&
@@ -1615,6 +1634,13 @@ class _BattleControlPanel extends StatelessWidget {
     }
 
     if (selected!.isBuilt) {
+      if (controller.layerRebuildEnabled) {
+        return _LayerRebuildFeederPanel(
+          controller: controller,
+          tower: selected!,
+          slotIndex: selected!.slotIndex,
+        );
+      }
       return _LiveTowerUpgradePanel(
         controller: controller,
         tower: selected!,
@@ -1626,6 +1652,195 @@ class _BattleControlPanel extends StatelessWidget {
       controller: controller,
       slot: selected!,
       onBuildTower: onBuildTower,
+    );
+  }
+}
+
+// L1L2_REBUILD_SAFE: Selected feeders use rebuilt Sparks copy/actions instead of legacy Wave Marks and Lumens.
+class _LayerRebuildFeederPanel extends StatelessWidget {
+  const _LayerRebuildFeederPanel({
+    required this.controller,
+    required this.tower,
+    required this.slotIndex,
+  });
+
+  final LightcoreController controller;
+  final OuterTowerState tower;
+  final int slotIndex;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    final config = tower.config;
+    final affinity = config?.affinity ?? PrototypeAffinity.neutral;
+    final tint = affinity.color;
+    final projectile = config?.defaultProjectileType.label ?? 'Core Shot';
+    final payload = config?.defaultPayloadType.label ?? PayloadType.none.label;
+    final healthValue = controller.towerHealthFraction(tower);
+    final feedLevel = tower.hasTowerProgression ? tower.level : 1;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(Icons.hub_rounded, color: tint, size: 22),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                'Feeder Slot ${slotIndex + 1}',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: textTheme.titleMedium?.copyWith(
+                  color: tint,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+            ),
+            Text(
+              'Feeds Core',
+              style: textTheme.labelMedium?.copyWith(
+                color: LightcorePalette.mist.withValues(alpha: 0.72),
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        TowerHealthBar(
+          value: healthValue,
+          label: 'Feeder Integrity',
+          color: tint,
+          height: 8,
+        ),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 6,
+          runSpacing: 6,
+          children: [
+            _BattleUpgradeChip(
+              label: 'Color',
+              value: affinity.shortLabel,
+              tint: tint,
+            ),
+            _BattleUpgradeChip(
+              label: 'Feed Level',
+              value: 'Lv $feedLevel',
+              tint: tint,
+            ),
+            _BattleUpgradeChip(
+              label: 'Projectile',
+              value: projectile,
+              tint: tint,
+            ),
+            _BattleUpgradeChip(label: 'Payload', value: payload, tint: tint),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'This feeder adds its color, projectile, and payload to the Layer 1 shell odds.',
+          style: textTheme.labelSmall?.copyWith(
+            color: LightcorePalette.mist.withValues(alpha: 0.72),
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        const SizedBox(height: 8),
+        _BattleUpgradeGrid(
+          children: [
+            _LayerFeederTuneButton(
+              controller: controller,
+              type: LayerRunUpgradeType.damage,
+              tint: tint,
+            ),
+            _LayerFeederTuneButton(
+              controller: controller,
+              type: LayerRunUpgradeType.fireRate,
+              tint: tint,
+            ),
+            _LayerFeederTuneButton(
+              controller: controller,
+              type: LayerRunUpgradeType.multishot,
+              tint: tint,
+            ),
+            _LayerFeederTuneButton(
+              controller: controller,
+              type: LayerRunUpgradeType.queueSize,
+              tint: tint,
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+// L1L2_REBUILD_SAFE: Tower-selection tuning mirrors global core upgrades and spends Sparks only.
+class _LayerFeederTuneButton extends StatelessWidget {
+  const _LayerFeederTuneButton({
+    required this.controller,
+    required this.type,
+    required this.tint,
+  });
+
+  final LightcoreController controller;
+  final LayerRunUpgradeType type;
+  final Color tint;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    final rank = controller.layerRunState.rankFor(type);
+    final cost = controller.layerRunUpgradeCost(type);
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: LightcorePalette.abyss.withValues(alpha: 0.62),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: tint.withValues(alpha: 0.34)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(8),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              type.label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: textTheme.labelLarge?.copyWith(
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+            const SizedBox(height: 3),
+            Text(
+              'Core Lv. $rank',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: textTheme.labelSmall?.copyWith(
+                color: tint,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+            const SizedBox(height: 6),
+            SizedBox(
+              width: double.infinity,
+              height: 34,
+              child: FilledButton(
+                onPressed: controller.canBuyRunUpgrade(type)
+                    ? () => controller.buyRunUpgrade(type)
+                    : null,
+                style: FilledButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                ),
+                child: Text(
+                  '$cost Sparks',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
