@@ -23,6 +23,7 @@ void main() {
     expect(find.text('Anomaly'), findsNothing);
     expect(find.byTooltip('Open Store'), findsNothing);
     expect(find.byTooltip('Open Passes'), findsNothing);
+    expect(find.byTooltip('Open Settings'), findsOneWidget);
     expect(find.byTooltip('Open Menu'), findsNothing);
     expect(find.byTooltip('Open Profile'), findsNothing);
     expect(find.byTooltip('Opening guide'), findsNothing);
@@ -38,15 +39,16 @@ void main() {
       ),
       findsNothing,
     );
-    expect(find.text('Start Layer 1'), findsOneWidget);
+    expect(find.text('Start Run'), findsOneWidget);
     expect(find.textContaining('Sparks'), findsWidgets);
     expect(find.textContaining('Star Bolts'), findsWidgets);
+    expect(find.textContaining('Build Feeder'), findsNothing);
 
-    await tester.tap(find.text('Start Layer 1'));
+    await tester.tap(find.text('Start Run'));
     await tester.pump(const Duration(milliseconds: 320));
 
     expect(controller.swarmActivated, isTrue);
-    expect(find.text('Reset Run'), findsOneWidget);
+    expect(find.text('Reset'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 }

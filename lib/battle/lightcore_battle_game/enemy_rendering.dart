@@ -11,7 +11,9 @@ extension _LightcoreBattleGameEnemyRendering on LightcoreBattleGame {
       final radius = _enemyRadius(enemy) * (0.82 + (0.18 * revealProgress));
       final color = enemy.config.affinity.color;
       final isBoss = enemy.config.isBoss;
-      final healthRatio = (enemy.health / enemy.maxHealth).clamp(0.08, 1.0);
+      final healthRatio = (enemy.health / enemy.maxHealth)
+          .clamp(0.0, 1.0)
+          .toDouble();
       final spawnFadeRemaining = 1 - revealProgress;
       final spawnPulse = revealProgress < 1
           ? 0.5 +
@@ -104,36 +106,38 @@ extension _LightcoreBattleGameEnemyRendering on LightcoreBattleGame {
         radius,
         Paint()
           ..style = PaintingStyle.fill
-          ..color = color.withValues(alpha: 0.9 * revealProgress),
+          ..color = LightcorePalette.abyss.withValues(
+            alpha: 0.95 * revealProgress,
+          ),
       );
+      if (healthRatio > 0) {
+        canvas.drawCircle(
+          position,
+          radius * 0.68 * math.sqrt(healthRatio),
+          Paint()
+            ..style = PaintingStyle.fill
+            ..color = LightcorePalette.mist.withValues(
+              alpha: 0.92 * revealProgress,
+            ),
+        );
+      }
       canvas.drawCircle(
         position,
         radius,
         Paint()
           ..style = PaintingStyle.stroke
           ..strokeWidth = isBoss ? 3 : 2
-          ..color = (isBoss ? LightcorePalette.solar : LightcorePalette.mist)
-              .withValues(alpha: 0.42 * revealProgress),
+          ..color = LightcorePalette.mist.withValues(
+            alpha: (isBoss ? 0.9 : 0.72) * revealProgress,
+          ),
       );
       _renderEnemyFace(
         canvas,
         enemy,
         position,
         radius,
+        healthRatio: healthRatio,
         revealProgress: revealProgress,
-      );
-
-      canvas.drawArc(
-        Rect.fromCircle(center: position, radius: radius * 1.24),
-        -math.pi / 2,
-        math.pi * 2 * healthRatio,
-        false,
-        Paint()
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = isBoss ? 4.6 : 3
-          ..strokeCap = StrokeCap.round
-          ..color = (isBoss ? LightcorePalette.layer2 : LightcorePalette.mist)
-              .withValues(alpha: 0.75 * revealProgress),
       );
 
       if (enemy.burnRemaining > 0) {
@@ -236,6 +240,7 @@ extension _LightcoreBattleGameEnemyRendering on LightcoreBattleGame {
     EnemyState enemy,
     Offset position,
     double radius, {
+    required double healthRatio,
     required double revealProgress,
   }) {
     if (radius < 5 || revealProgress <= 0) {
@@ -244,14 +249,13 @@ extension _LightcoreBattleGameEnemyRendering on LightcoreBattleGame {
 
     final hitProgress = _enemyHitFaceProgress(enemy.id);
     final hitEase = Curves.easeOutCubic.transform(hitProgress);
-    final bodyColor = enemy.config.affinity.color;
-    final bodyIsLight = bodyColor.computeLuminance() > 0.52;
     final usesDarkEyeFill = enemy.config.affinity == PrototypeAffinity.neutral;
     final faceAlpha = revealProgress.clamp(0.0, 1.0).toDouble();
-    final inkColor = bodyIsLight
+    final healthFillUnderFace = healthRatio >= 0.42;
+    final inkColor = healthFillUnderFace
         ? LightcorePalette.abyss
         : LightcorePalette.mist;
-    final eyeFill = usesDarkEyeFill
+    final eyeFill = healthFillUnderFace || usesDarkEyeFill
         ? LightcorePalette.abyss
         : LightcorePalette.layer2;
     final pupilFill = LightcorePalette.abyss;
@@ -354,7 +358,9 @@ extension _LightcoreBattleGameEnemyRendering on LightcoreBattleGame {
         mouthRect,
         Paint()
           ..color =
-              (bodyIsLight ? LightcorePalette.abyss : LightcorePalette.warning)
+              (healthFillUnderFace
+                      ? LightcorePalette.abyss
+                      : LightcorePalette.warning)
                   .withValues(alpha: 0.86 * faceAlpha),
       );
       canvas.drawOval(mouthRect, mouthStroke);

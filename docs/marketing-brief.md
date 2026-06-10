@@ -195,6 +195,8 @@ milestone.
   keeping build/stat actions distinct from automated combat targeting.
 - Battlefield hex slots now render as subdued HUD frames underneath anomalies,
   so enemy bodies remain the top combat read when they cross the tower grid.
+- Active battle anomalies render as black discs with white rings, and their
+  remaining health fills from the center as a white core.
 - Tower slot collision uses the same hex geometry as the HUD frames, while core
   and selected-tower range previews remain circular range guides.
 - Impact damage radii render as segmented blast markers instead of full

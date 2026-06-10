@@ -1154,11 +1154,20 @@ class _LightcoreShellState extends State<LightcoreShell> {
                                     : friendAlertCount.toString();
                                 final rebuildMode =
                                     controller.layerRebuildEnabled;
-                                final headerActions =
-                                    rebuildMode ||
-                                        openingBattlePreview ||
-                                        controller
-                                            .tutorialUsesBattleOnlyNavigation
+                                final headerActions = rebuildMode
+                                    ? <Widget>[
+                                        _HeaderActionButton(
+                                          icon: Icons.settings_rounded,
+                                          tooltip: 'Open Settings',
+                                          highlighted: false,
+                                          highlightTint: LightcorePalette.quest,
+                                          onPressed: () =>
+                                              _openSettings(context),
+                                        ),
+                                      ]
+                                    : openingBattlePreview ||
+                                          controller
+                                              .tutorialUsesBattleOnlyNavigation
                                     ? const <Widget>[]
                                     // L1L2_LEGACY_REVISIT: Store, battle pass, and social/header menu actions are hidden while the rebuild loop is scoped to Layer 1/2.
                                     : <Widget>[

@@ -24,7 +24,7 @@ void main() {
 
     await _pumpBattleScreen(tester, controller);
 
-    final startButton = find.text('Start Layer 1');
+    final startButton = find.text('Start Run');
     expect(startButton, findsOneWidget);
     expect(find.textContaining('Sparks'), findsWidgets);
     expect(find.textContaining('Star Bolts'), findsWidgets);
@@ -33,6 +33,8 @@ void main() {
     expect(find.textContaining('Fire Rate Lv. 0'), findsOneWidget);
     expect(find.textContaining('Multishot Lv. 0'), findsOneWidget);
     expect(find.textContaining('Queue Size Lv. 0'), findsOneWidget);
+    expect(find.textContaining('Build Feeder'), findsNothing);
+    expect(find.text('Global Tower Upgrades'), findsOneWidget);
     expect(controller.swarmActivated, isFalse);
 
     await tester.tap(startButton);
@@ -40,7 +42,7 @@ void main() {
 
     expect(controller.swarmActivated, isTrue);
     expect(controller.outerRingRevealed, isTrue);
-    expect(find.text('Reset Run'), findsOneWidget);
+    expect(find.text('Reset'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
@@ -179,6 +181,8 @@ void main() {
       expect(find.textContaining('Fire Rate Lv. 0'), findsOneWidget);
       expect(find.textContaining('Multishot Lv. 0'), findsOneWidget);
       expect(find.textContaining('Queue Size Lv. 0'), findsOneWidget);
+      expect(find.textContaining('Build Feeder'), findsNothing);
+      expect(find.text('Global Tower Upgrades'), findsOneWidget);
       expect(find.textContaining('Buffer'), findsNothing);
       expect(find.textContaining('Wave Marks'), findsNothing);
       expect(find.textContaining('Lumens'), findsNothing);
@@ -213,8 +217,8 @@ void main() {
     await _pumpBattleScreen(tester, controller);
 
     expect(controller.activeLayer.tier, 1);
-    expect(find.text('Start Layer 1'), findsNothing);
-    expect(find.text('Reset Run'), findsOneWidget);
+    expect(find.text('Start Run'), findsNothing);
+    expect(find.text('Reset'), findsOneWidget);
     expect(find.text('Stats'), findsNothing);
     expect(find.text('Full Stats'), findsNothing);
     expect(find.text('Core Stat Board'), findsNothing);
