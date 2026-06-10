@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:lightcore/battle/lightcore_battle_game.dart';
 import 'package:lightcore/data/tower_configs.dart';
 import 'package:lightcore/models/lightcore_state.dart';
+import 'package:lightcore/models/lightcore_types.dart';
 import 'package:lightcore/screens/battle_screen.dart';
 import 'package:lightcore/theme/lightcore_theme.dart';
 
@@ -29,6 +30,7 @@ void main() {
     expect(find.textContaining('Sparks'), findsWidgets);
     expect(find.textContaining('Star Bolts'), findsWidgets);
     expect(find.textContaining('Shell 1/10'), findsOneWidget);
+    expect(find.text('Shot Queue 0/8'), findsOneWidget);
     expect(find.text('Damage Lv. 0\n18 Sparks'), findsNothing);
     expect(find.textContaining('Fire Rate Lv. 0'), findsNothing);
     expect(find.textContaining('Multishot Lv. 0'), findsNothing);
@@ -45,6 +47,38 @@ void main() {
     expect(find.text('Reset'), findsOneWidget);
     expect(find.text('Run Upgrades'), findsOneWidget);
     expect(find.text('Damage Lv. 0\n18 Sparks'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('rebuilt HUD visualizes queued projectiles and ready state', (
+    tester,
+  ) async {
+    addTearDown(() async {
+      await tester.binding.setSurfaceSize(null);
+    });
+    await tester.binding.setSurfaceSize(const Size(430, 780));
+    final controller = LightcoreController();
+    addTearDown(controller.dispose);
+    controller.debugDisableTutorial();
+
+    controller.startLayer1Run();
+    controller.debugSetAmmoQueue([
+      _testAmmoPacket(
+        id: 'queued-star',
+        affinity: PrototypeAffinity.solar,
+        projectileType: ProjectileType.chainArc,
+      ),
+      _testAmmoPacket(
+        id: 'queued-blue',
+        affinity: PrototypeAffinity.aether,
+        projectileType: ProjectileType.threadBeam,
+      ),
+    ]);
+
+    await _pumpBattleScreen(tester, controller);
+
+    expect(find.text('Shot Queue 2/8'), findsOneWidget);
+    expect(find.text('Ready'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
@@ -498,6 +532,31 @@ void _prepareOpeningChallengePrompt(LightcoreController controller) {
   controller.activeLayer.roundCurrency = 1;
   expect(controller.upgradeTower(0), isTrue);
   controller.selectCenter();
+}
+
+AmmoPacket _testAmmoPacket({
+  required String id,
+  required PrototypeAffinity affinity,
+  required ProjectileType projectileType,
+}) {
+  return AmmoPacket(
+    id: id,
+    sourceSlotIndex: null,
+    affinity: affinity,
+    power: 12,
+    advantageMultiplier: 1,
+    projectileType: projectileType,
+    payloadType: PayloadType.none,
+    range: 420,
+    critChance: 0.05,
+    critMultiplier: 1.5,
+    finalDamageMultiplier: 1,
+    bossDamageMultiplier: 1,
+    normalDamageMultiplier: 1,
+    defensePenetration: 0,
+    minDamageMultiplier: 1,
+    maxDamageMultiplier: 1,
+  );
 }
 
 Future<void> _pumpBattleScreen(
