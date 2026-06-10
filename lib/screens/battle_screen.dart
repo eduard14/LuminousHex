@@ -1463,12 +1463,17 @@ class _LayerRebuildActionDock extends StatefulWidget {
 }
 
 class _LayerRebuildActionDockState extends State<_LayerRebuildActionDock> {
-  bool _starBoltUpgradesOpen = false;
-
   @override
   Widget build(BuildContext context) {
     final controller = widget.controller;
     final textTheme = Theme.of(context).textTheme;
+    final runActive = controller.layerRunState.active;
+    final showPersistent = controller.layer1PersistentUpgradeWindowVisible;
+    final title = runActive
+        ? 'Run Upgrades'
+        : showPersistent
+        ? 'Permanent Star Bolt Upgrades'
+        : 'Layer 1 Run';
     return DecoratedBox(
       decoration: BoxDecoration(
         color: LightcorePalette.panel.withValues(alpha: 0.86),
@@ -1510,7 +1515,7 @@ class _LayerRebuildActionDockState extends State<_LayerRebuildActionDock> {
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    'Global Tower Upgrades',
+                    title,
                     style: textTheme.labelLarge?.copyWith(
                       color: LightcorePalette.mist,
                       fontWeight: FontWeight.w900,
@@ -1525,39 +1530,25 @@ class _LayerRebuildActionDockState extends State<_LayerRebuildActionDock> {
                 ),
               ],
             ),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                for (final type in LayerRunUpgradeType.values)
-                  _LayerRunUpgradeButton(controller: controller, type: type),
-              ],
-            ),
-            const SizedBox(height: 8),
-            OutlinedButton.icon(
-              onPressed: () => setState(
-                () => _starBoltUpgradesOpen = !_starBoltUpgradesOpen,
+            if (runActive) ...[
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  for (final type in LayerRunUpgradeType.values)
+                    _LayerRunUpgradeButton(controller: controller, type: type),
+                ],
               ),
-              icon: Icon(
-                _starBoltUpgradesOpen
-                    ? Icons.expand_more_rounded
-                    : Icons.chevron_right_rounded,
-                size: 18,
-              ),
-              label: Text(
-                'Star Bolt Upgrades (${controller.starBolts})',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-              style: OutlinedButton.styleFrom(
-                alignment: Alignment.centerLeft,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
+            ] else if (showPersistent) ...[
+              const SizedBox(height: 8),
+              Text(
+                controller.layer1PostRunPersistentUpgradeLabel,
+                style: textTheme.labelSmall?.copyWith(
+                  color: LightcorePalette.mist.withValues(alpha: 0.72),
+                  fontWeight: FontWeight.w700,
                 ),
               ),
-            ),
-            if (_starBoltUpgradesOpen) ...[
               const SizedBox(height: 8),
               Wrap(
                 spacing: 8,
@@ -1569,6 +1560,15 @@ class _LayerRebuildActionDockState extends State<_LayerRebuildActionDock> {
                       type: type,
                     ),
                 ],
+              ),
+            ] else ...[
+              const SizedBox(height: 8),
+              Text(
+                'Start a Layer 1 run to earn Sparks and build toward permanent Star Bolt upgrades.',
+                style: textTheme.labelSmall?.copyWith(
+                  color: LightcorePalette.mist.withValues(alpha: 0.72),
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ],
           ],

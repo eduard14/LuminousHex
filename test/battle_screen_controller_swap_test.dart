@@ -29,12 +29,12 @@ void main() {
     expect(find.textContaining('Sparks'), findsWidgets);
     expect(find.textContaining('Star Bolts'), findsWidgets);
     expect(find.textContaining('Shell 1/10'), findsOneWidget);
-    expect(find.text('Damage Lv. 0\n18 Sparks'), findsOneWidget);
-    expect(find.textContaining('Fire Rate Lv. 0'), findsOneWidget);
-    expect(find.textContaining('Multishot Lv. 0'), findsOneWidget);
-    expect(find.textContaining('Queue Size Lv. 0'), findsOneWidget);
+    expect(find.text('Damage Lv. 0\n18 Sparks'), findsNothing);
+    expect(find.textContaining('Fire Rate Lv. 0'), findsNothing);
+    expect(find.textContaining('Multishot Lv. 0'), findsNothing);
+    expect(find.textContaining('Queue Size Lv. 0'), findsNothing);
     expect(find.textContaining('Build Feeder'), findsNothing);
-    expect(find.text('Global Tower Upgrades'), findsOneWidget);
+    expect(find.text('Layer 1 Run'), findsOneWidget);
     expect(controller.swarmActivated, isFalse);
 
     await tester.tap(startButton);
@@ -43,6 +43,8 @@ void main() {
     expect(controller.swarmActivated, isTrue);
     expect(controller.outerRingRevealed, isTrue);
     expect(find.text('Reset'), findsOneWidget);
+    expect(find.text('Run Upgrades'), findsOneWidget);
+    expect(find.text('Damage Lv. 0\n18 Sparks'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
@@ -182,9 +184,9 @@ void main() {
       expect(find.textContaining('Multishot Lv. 0'), findsOneWidget);
       expect(find.textContaining('Queue Size Lv. 0'), findsOneWidget);
       expect(find.textContaining('Build Feeder'), findsNothing);
-      expect(find.textContaining('Star Bolt Upgrades'), findsOneWidget);
+      expect(find.textContaining('Star Bolt Upgrades'), findsNothing);
       expect(find.textContaining('Feeder Slots Lv. 0'), findsNothing);
-      expect(find.text('Global Tower Upgrades'), findsOneWidget);
+      expect(find.text('Run Upgrades'), findsOneWidget);
       expect(find.textContaining('Buffer'), findsNothing);
       expect(find.textContaining('Wave Marks'), findsNothing);
       expect(find.textContaining('Lumens'), findsNothing);
@@ -200,12 +202,46 @@ void main() {
       await tester.pump();
 
       expect(controller.layerRunState.rankFor(LayerRunUpgradeType.damage), 1);
+      expect(tester.takeException(), isNull);
+    },
+  );
 
-      await tester.tap(find.textContaining('Star Bolt Upgrades'));
-      await tester.pump();
+  testWidgets(
+    'rebuilt dock shows persistent Star Bolt upgrades after run ends',
+    (tester) async {
+      addTearDown(() async {
+        await tester.binding.setSurfaceSize(null);
+      });
+      await tester.binding.setSurfaceSize(const Size(430, 780));
+      final controller = LightcoreController();
+      addTearDown(controller.dispose);
 
+      controller.startLayer1Run();
+      controller.debugSetLayer1WaveForTest(6);
+      expect(controller.endLayer1RunFromCoreBreak(), isTrue);
+      await _pumpBattleScreen(tester, controller);
+
+      expect(controller.layerRunState.active, isFalse);
+      expect(controller.starBolts, greaterThan(0));
+      expect(find.text('Permanent Star Bolt Upgrades'), findsOneWidget);
+      expect(
+        find.textContaining('Star Bolt upgrades persist into every new run'),
+        findsOneWidget,
+      );
       expect(find.textContaining('Feeder Slots Lv. 0'), findsOneWidget);
       expect(find.textContaining('Starting Sparks Lv. 0'), findsOneWidget);
+      expect(find.text('Damage Lv. 0\n18 Sparks'), findsNothing);
+      expect(find.text('Fire Rate Lv. 0\n22 Sparks'), findsNothing);
+
+      await tester.tap(find.textContaining('Feeder Slots Lv. 0'));
+      await tester.pump();
+
+      expect(
+        controller.layerPersistentProgress.rankFor(
+          LayerPersistentUpgradeType.feederSlots,
+        ),
+        1,
+      );
       expect(tester.takeException(), isNull);
     },
   );

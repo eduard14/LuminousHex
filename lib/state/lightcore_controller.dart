@@ -1551,6 +1551,7 @@ class LightcoreController extends ChangeNotifier {
   static const int layer1CompletionWave = 10;
   static const int layer1BaseStartingSparks = 75;
   static const int layer1SparksPerWave = 18;
+  static const int layer1StarBoltsPerCompletedWave = 4;
   static const int layer1CompletionStarBolts = 25;
   static const List<int> outerSlotUnlockWaveThresholds = <int>[
     1,

@@ -60,6 +60,23 @@ extension LightcoreControllerLayerRebuild on LightcoreController {
       _layerPersistentProgress.bestWave >=
           LightcoreController.layer1CompletionWave;
 
+  bool get layer1PersistentUpgradeWindowVisible =>
+      !_layerRun.active &&
+      (_layerRun.completedWave > 0 ||
+          _layerRun.shellReady ||
+          _layerPersistentProgress.bestWave > 1);
+
+  String get layer1PostRunPersistentUpgradeLabel {
+    if (_layerRun.shellReady) {
+      return 'Shell complete. Star Bolt upgrades persist into every new run.';
+    }
+    final completed = max(0, _layerRun.completedWave);
+    if (completed <= 0) {
+      return 'Start a run to earn Star Bolts for permanent upgrades.';
+    }
+    return 'Run ended after Wave $completed. Star Bolt upgrades persist into every new run.';
+  }
+
   int layerRunUpgradeCost(LayerRunUpgradeType type) {
     final rank = _layerRun.rankFor(type);
     return switch (type) {
@@ -101,6 +118,7 @@ extension LightcoreControllerLayerRebuild on LightcoreController {
       _layerRun.active && _layerRun.sparks >= layerRunUpgradeCost(type);
 
   bool canBuyPersistentUpgrade(LayerPersistentUpgradeType type) =>
+      !_layerRun.active &&
       _layerPersistentProgress.starBolts >= layerPersistentUpgradeCost(type);
 
   int get layer1StartingSparks =>
@@ -191,7 +209,7 @@ extension LightcoreControllerLayerRebuild on LightcoreController {
   bool buyPersistentUpgrade(LayerPersistentUpgradeType type) {
     // L1L2_REBUILD_SAFE: Star Bolts are the only persistent spend exposed in the rebuilt Layer 1/2 loop.
     final cost = layerPersistentUpgradeCost(type);
-    if (_layerPersistentProgress.starBolts < cost) {
+    if (_layerRun.active || _layerPersistentProgress.starBolts < cost) {
       return false;
     }
     final ranks = Map<LayerPersistentUpgradeType, int>.from(
@@ -204,6 +222,35 @@ extension LightcoreControllerLayerRebuild on LightcoreController {
     );
     _applyLayerRebuildCoreUpgrades();
     _showBanner('${type.label} improved with Star Bolts.');
+    _notifyNow();
+    return true;
+  }
+
+  bool endLayer1RunFromCoreBreak() {
+    // L1L2_REBUILD_SAFE: Death ends the run and opens the persistent Star Bolt upgrade window.
+    if (!_layerRun.active || _layerRun.shellReady) {
+      return false;
+    }
+    final completedWave = max(0, _layerRun.completedWave);
+    final payoutWave = max(completedWave, max(0, _layerRun.wave - 1));
+    final starBoltsEarned = max(
+      1,
+      payoutWave * LightcoreController.layer1StarBoltsPerCompletedWave,
+    );
+    _layerRun = _layerRun.copyWith(active: false, completedWave: completedWave);
+    _layerPersistentProgress = _layerPersistentProgress.copyWith(
+      starBolts: _layerPersistentProgress.starBolts + starBoltsEarned,
+      bestWave: max(_layerPersistentProgress.bestWave, _layerRun.wave),
+    );
+    _enemies = <EnemyState>[];
+    _shots = <CoreShotState>[];
+    _pulses = <EnergyPulseState>[];
+    _impacts = <ImpactState>[];
+    _ammoQueue = <AmmoPacket>[];
+    _showBanner(
+      'Layer 1 run ended. Earned $starBoltsEarned Star Bolts for permanent upgrades.',
+      category: LightcoreNotificationCategory.battle,
+    );
     _notifyNow();
     return true;
   }

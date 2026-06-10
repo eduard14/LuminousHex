@@ -60,6 +60,50 @@ void main() {
     expect(controller.sparks, 51);
   });
 
+  test('core break ends run and awards persistent Star Bolts', () {
+    final controller = LightcoreController();
+    addTearDown(controller.dispose);
+
+    controller.startLayer1Run();
+    controller.debugSetLayer1WaveForTest(6);
+
+    expect(controller.endLayer1RunFromCoreBreak(), isTrue);
+    expect(controller.layerRunState.active, isFalse);
+    expect(controller.layer1PersistentUpgradeWindowVisible, isTrue);
+    expect(
+      controller.starBolts,
+      5 * LightcoreController.layer1StarBoltsPerCompletedWave,
+    );
+
+    expect(
+      controller.buyPersistentUpgrade(LayerPersistentUpgradeType.feederSlots),
+      isTrue,
+    );
+  });
+
+  test('persistent Star Bolt upgrades are blocked during active runs', () {
+    final controller = LightcoreController();
+    addTearDown(controller.dispose);
+
+    controller.startLayer1Run();
+    controller.debugSetLayer1WaveForTest(10);
+    expect(controller.starBolts, LightcoreController.layer1CompletionStarBolts);
+
+    controller.startLayer1Run();
+
+    expect(controller.layerRunState.active, isTrue);
+    expect(
+      controller.canBuyPersistentUpgrade(
+        LayerPersistentUpgradeType.feederSlots,
+      ),
+      isFalse,
+    );
+    expect(
+      controller.buyPersistentUpgrade(LayerPersistentUpgradeType.feederSlots),
+      isFalse,
+    );
+  });
+
   test(
     'Wave 10 creates one shell and auto-installs into first Layer 2 slot',
     () {

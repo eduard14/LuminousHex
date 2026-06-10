@@ -335,6 +335,9 @@ extension LightcoreControllerCombatFollowups on LightcoreController {
       0.0,
       _maxLumenHarvestSlowdown,
     );
+    if (_layerRun.active && stability <= 0) {
+      endLayer1RunFromCoreBreak();
+    }
   }
 
   void _recoverLumenHarvest(double dt) {

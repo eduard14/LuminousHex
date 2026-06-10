@@ -55,13 +55,15 @@ projectile odds.
    tower; feeders modify the central core instead of reading as independent
    lane defenders.
 5. Spend Sparks during the run on Damage, Fire Rate, Multishot, and Queue Size.
-6. Reach Wave 10 to create a completed Layer 1 shell.
-7. Show a Wave 10 completion card with shell color/projectile/payload odds,
+6. When the run ends, hide the Sparks upgrades and show permanent Star Bolt
+   upgrades.
+7. Reach Wave 10 to create a completed Layer 1 shell.
+8. Show a Wave 10 completion card with shell color/projectile/payload odds,
    then auto-install the shell into the first open Layer 2 slot or store it if
    the seven-slot board is full.
-8. Spend persistent Star Bolts on feeder slot unlocks, starting Sparks, base
+9. Spend persistent Star Bolts on feeder slot unlocks, starting Sparks, base
    core damage, base core fire rate, base queue size, and future color unlocks.
-9. Start a fresh Layer 1 run from the main battlefield even when Layer 2 is full.
+10. Start a fresh Layer 1 run from the main battlefield even when Layer 2 is full.
 
 ## Layer 1/2 Rebuild Direction
 
@@ -89,6 +91,8 @@ but are not marketed as playable in this milestone.
   currencies stay at the top, future systems remain visible as locked chrome,
   and the bottom global upgrade dock can collapse so the tower field can become
   the focus.
+- The bottom upgrade dock separates timing clearly: active runs show only
+  Sparks upgrades, while ended runs show only permanent Star Bolt upgrades.
 - Relay towers charge shots into the Lightcore instead of asking the player to
   manually queue or drag ammo.
 - Opening combat is low-friction: shots auto-charge after the player presses Play,
