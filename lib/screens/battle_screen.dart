@@ -1041,6 +1041,12 @@ class _BattleScreenState extends State<BattleScreen> {
     );
     final rebuildHudVisible =
         widget.showBattleHud && controller.layerRebuildEnabled;
+    final layer1ShellCompleteCard =
+        rebuildHudVisible &&
+            controller.layerRunState.shellReady &&
+            controller.latestCompletedLayer1Shell != null
+        ? _Layer1ShellCompleteCard(controller: controller)
+        : null;
     final overdriveHudVisible =
         !rebuildHudVisible &&
         !dockOpen &&
@@ -1066,6 +1072,13 @@ class _BattleScreenState extends State<BattleScreen> {
             right: inset,
             top: topInset,
             child: _LayerRebuildTopHud(controller: controller),
+          ),
+        if (layer1ShellCompleteCard != null)
+          Positioned(
+            left: inset,
+            right: inset,
+            top: topInset + (compact ? 64 : 72),
+            child: layer1ShellCompleteCard,
           ),
         if (widget.showBattleHud &&
             !controller.swarmActivated &&
@@ -1157,6 +1170,128 @@ class _BattleScreenState extends State<BattleScreen> {
   }
 }
 
+// L1L2_REBUILD_SAFE: Wave 10 completion is explicit without exposing a playable Layer 2 board yet.
+class _Layer1ShellCompleteCard extends StatelessWidget {
+  const _Layer1ShellCompleteCard({required this.controller});
+
+  final LightcoreController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final shell = controller.latestCompletedLayer1Shell;
+    if (shell == null) {
+      return const SizedBox.shrink();
+    }
+    final textTheme = Theme.of(context).textTheme;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: LightcorePalette.panel.withValues(alpha: 0.92),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: LightcorePalette.solar.withValues(alpha: 0.72),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: LightcorePalette.solar.withValues(alpha: 0.16),
+            blurRadius: 18,
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(
+                  Icons.hexagon_rounded,
+                  color: LightcorePalette.solar,
+                  size: 22,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Layer 1 Shell Complete',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: textTheme.titleMedium?.copyWith(
+                      color: LightcorePalette.solar,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ),
+                Text(
+                  controller.latestCompletedLayer1ShellLocationLabel,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: textTheme.labelMedium?.copyWith(
+                    color: LightcorePalette.mist.withValues(alpha: 0.74),
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              shell.summaryLabel,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: textTheme.labelLarge?.copyWith(
+                color: LightcorePalette.mist,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              'Colors: ${shell.colorOddsLabel}',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: textTheme.labelMedium?.copyWith(
+                color: LightcorePalette.mist.withValues(alpha: 0.74),
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            Text(
+              'Projectile: ${shell.projectileOddsLabel}',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: textTheme.labelMedium?.copyWith(
+                color: LightcorePalette.aether,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            Text(
+              'Payload: ${shell.payloadOddsLabel}',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: textTheme.labelMedium?.copyWith(
+                color: LightcorePalette.violet,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            const SizedBox(height: 10),
+            Align(
+              alignment: Alignment.centerRight,
+              child: FilledButton.icon(
+                onPressed: controller.startLayer1Run,
+                icon: const Icon(Icons.replay_rounded, size: 18),
+                label: const Text('Start New Run'),
+                style: FilledButton.styleFrom(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 // L1L2_REBUILD_SAFE: Always-visible Layer 1 HUD replaces old currency-forward battle chrome.
 class _LayerRebuildTopHud extends StatelessWidget {
   const _LayerRebuildTopHud({required this.controller});
@@ -1183,51 +1318,45 @@ class _LayerRebuildTopHud extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
+            Wrap(
+              spacing: 14,
+              runSpacing: 6,
               children: [
-                Expanded(
-                  child: Wrap(
-                    spacing: 14,
-                    runSpacing: 6,
-                    children: [
-                      _LayerRebuildHudChip(
-                        icon: Icons.radar_rounded,
-                        label: 'Wave',
-                        value: '${controller.layerRunState.wave}',
-                        tint: LightcorePalette.aether,
-                      ),
-                      _LayerRebuildHudChip(
-                        icon: Icons.bolt_rounded,
-                        label: controller.sparksLabel,
-                        value: '${controller.sparks}',
-                        tint: LightcorePalette.solar,
-                      ),
-                      _LayerRebuildHudChip(
-                        icon: Icons.auto_awesome_rounded,
-                        label: controller.starBoltsLabel,
-                        value: '${controller.starBolts}',
-                        tint: LightcorePalette.violet,
-                      ),
-                      _LayerRebuildHudChip(
-                        icon: Icons.favorite_rounded,
-                        label: 'Core',
-                        value: '${controller.coreState.coreStability.round()}%',
-                        tint: LightcorePalette.verdant,
-                      ),
-                    ],
-                  ),
+                _LayerRebuildHudChip(
+                  icon: Icons.radar_rounded,
+                  label: 'Wave',
+                  value: '${controller.layerRunState.wave}',
+                  tint: LightcorePalette.aether,
                 ),
-                const SizedBox(width: 10),
-                Text(
-                  controller.layer1ShellProgressLabel,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: textTheme.labelLarge?.copyWith(
-                    color: LightcorePalette.mist,
-                    fontWeight: FontWeight.w900,
-                  ),
+                _LayerRebuildHudChip(
+                  icon: Icons.bolt_rounded,
+                  label: controller.sparksLabel,
+                  value: '${controller.sparks}',
+                  tint: LightcorePalette.solar,
+                ),
+                _LayerRebuildHudChip(
+                  icon: Icons.auto_awesome_rounded,
+                  label: controller.starBoltsLabel,
+                  value: '${controller.starBolts}',
+                  tint: LightcorePalette.violet,
+                ),
+                _LayerRebuildHudChip(
+                  icon: Icons.favorite_rounded,
+                  label: 'Core',
+                  value: '${controller.coreState.coreStability.round()}%',
+                  tint: LightcorePalette.verdant,
                 ),
               ],
+            ),
+            const SizedBox(height: 6),
+            Text(
+              controller.layer1ShellProgressLabel,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: textTheme.labelLarge?.copyWith(
+                color: LightcorePalette.mist,
+                fontWeight: FontWeight.w900,
+              ),
             ),
             const SizedBox(height: 7),
             ClipRRect(
@@ -1289,13 +1418,22 @@ class _LayerRebuildHudChip extends StatelessWidget {
 }
 
 // L1L2_REBUILD_SAFE: Main rebuilt action dock exposes global upgrades while tower-specific actions remain on tower selection.
-class _LayerRebuildActionDock extends StatelessWidget {
+class _LayerRebuildActionDock extends StatefulWidget {
   const _LayerRebuildActionDock({required this.controller});
 
   final LightcoreController controller;
 
   @override
+  State<_LayerRebuildActionDock> createState() =>
+      _LayerRebuildActionDockState();
+}
+
+class _LayerRebuildActionDockState extends State<_LayerRebuildActionDock> {
+  bool _starBoltUpgradesOpen = false;
+
+  @override
   Widget build(BuildContext context) {
+    final controller = widget.controller;
     final textTheme = Theme.of(context).textTheme;
     return DecoratedBox(
       decoration: BoxDecoration(
@@ -1356,8 +1494,76 @@ class _LayerRebuildActionDock extends StatelessWidget {
                   _LayerRunUpgradeButton(controller: controller, type: type),
               ],
             ),
+            const SizedBox(height: 8),
+            OutlinedButton.icon(
+              onPressed: () => setState(
+                () => _starBoltUpgradesOpen = !_starBoltUpgradesOpen,
+              ),
+              icon: Icon(
+                _starBoltUpgradesOpen
+                    ? Icons.expand_more_rounded
+                    : Icons.chevron_right_rounded,
+                size: 18,
+              ),
+              label: Text(
+                'Star Bolt Upgrades (${controller.starBolts})',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              style: OutlinedButton.styleFrom(
+                alignment: Alignment.centerLeft,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+            ),
+            if (_starBoltUpgradesOpen) ...[
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  for (final type in LayerPersistentUpgradeType.values)
+                    _LayerPersistentUpgradeButton(
+                      controller: controller,
+                      type: type,
+                    ),
+                ],
+              ),
+            ],
           ],
         ),
+      ),
+    );
+  }
+}
+
+// L1L2_REBUILD_SAFE: Collapsed persistent upgrade drawer gives Star Bolts a rebuild-only spend surface.
+class _LayerPersistentUpgradeButton extends StatelessWidget {
+  const _LayerPersistentUpgradeButton({
+    required this.controller,
+    required this.type,
+  });
+
+  final LightcoreController controller;
+  final LayerPersistentUpgradeType type;
+
+  @override
+  Widget build(BuildContext context) {
+    final rank = controller.layerPersistentProgress.rankFor(type);
+    final cost = controller.layerPersistentUpgradeCost(type);
+    return SizedBox(
+      width: 144,
+      child: OutlinedButton(
+        onPressed: controller.canBuyPersistentUpgrade(type)
+            ? () => controller.buyPersistentUpgrade(type)
+            : null,
+        style: OutlinedButton.styleFrom(
+          alignment: Alignment.centerLeft,
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        ),
+        child: Text('${type.label} Lv. $rank\n$cost Star Bolts'),
       ),
     );
   }

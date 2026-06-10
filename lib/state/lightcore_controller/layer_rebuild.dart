@@ -11,6 +11,34 @@ extension LightcoreControllerLayerRebuild on LightcoreController {
 
   Layer2BaseBoard get layer2BaseBoard => _layer2BaseBoard;
 
+  CompletedLayer1Shell? get latestCompletedLayer1Shell {
+    // L1L2_REBUILD_SAFE: Wave 10 completion UI reads the newest shell without exposing Layer 2 as playable.
+    final shells = <CompletedLayer1Shell>[
+      ..._layer2BaseBoard.slots.whereType<CompletedLayer1Shell>(),
+      ..._layer2BaseBoard.storage,
+    ];
+    if (shells.isEmpty) {
+      return null;
+    }
+    shells.sort((a, b) => b.createdAtMillis.compareTo(a.createdAtMillis));
+    return shells.first;
+  }
+
+  String get latestCompletedLayer1ShellLocationLabel {
+    // L1L2_REBUILD_SAFE: Completion copy explains whether the shell auto-installed or entered storage.
+    final shell = latestCompletedLayer1Shell;
+    if (shell == null) {
+      return 'No completed shell yet';
+    }
+    final slotIndex = _layer2BaseBoard.slots.indexWhere(
+      (candidate) => candidate?.id == shell.id,
+    );
+    if (slotIndex != -1) {
+      return 'Installed into Layer 2 slot ${slotIndex + 1}';
+    }
+    return 'Stored for Layer 2 replacement';
+  }
+
   int get sparks => _layerRun.sparks;
 
   int get starBolts => _layerPersistentProgress.starBolts;
@@ -53,6 +81,8 @@ extension LightcoreControllerLayerRebuild on LightcoreController {
       LayerPersistentUpgradeType.baseQueueSize => 36 + (rank * 30),
     };
   }
+
+  int layer1FeederBuildCost(int slotIndex) => 24 + (slotIndex * 12);
 
   bool canBuyRunUpgrade(LayerRunUpgradeType type) =>
       _layerRun.active && _layerRun.sparks >= layerRunUpgradeCost(type);
@@ -200,7 +230,7 @@ extension LightcoreControllerLayerRebuild on LightcoreController {
       TowerLibrary.orangePrism,
     ];
     final config = feederConfigs[slotIndex % feederConfigs.length];
-    final cost = 24 + (slotIndex * 12);
+    final cost = layer1FeederBuildCost(slotIndex);
     if (_layerRun.sparks < cost) {
       _showBanner('Need $cost Sparks to build the next feeder.');
       _notifyNow();

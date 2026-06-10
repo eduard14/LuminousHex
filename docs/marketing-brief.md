@@ -29,9 +29,9 @@ and promoting each completed shell into a deeper prism lattice.
 
 LumiHex is a mobile-first tower-defense and idle progression game where black
 hole anomalies collapse from the perimeter into a central Lightcore. The player
-builds six feeder towers around the core, spends run currency on active combat
-upgrades, completes Wave 10 Layer 1 shells, and installs those shells into a
-visible Layer 2 base board.
+taps unlocked outer hexes to build six feeder towers around the core, spends run
+currency on active combat upgrades, completes Wave 10 Layer 1 shells, and banks
+those shells for the Layer 2 base.
 
 ## Player Fantasy
 
@@ -51,12 +51,13 @@ odds.
 2. Start a Layer 1 run at Wave 1 with Sparks as the per-run currency.
 3. Let the core and relay towers auto-charge shots while the shell chooses
    anomaly targets automatically.
-4. Build feeder towers on the six outer hexes; the feeders modify the central
-   core instead of reading as independent lane defenders.
+4. Tap unlocked empty outer hexes to build feeder towers; the feeders modify
+   the central core instead of reading as independent lane defenders.
 5. Spend Sparks during the run on Damage, Fire Rate, Multishot, and Queue Size.
 6. Reach Wave 10 to create a completed Layer 1 shell.
-7. Auto-install the completed shell into the first open Layer 2 base slot, or
-   store it if the seven-slot board is full.
+7. Show a Wave 10 completion card with shell color/projectile/payload odds,
+   then auto-install the shell into the first open Layer 2 slot or store it if
+   the seven-slot board is full.
 8. Spend persistent Star Bolts on feeder slot unlocks, starting Sparks, base
    core damage, base core fire rate, base queue size, and future color unlocks.
 9. Start a fresh Layer 1 run from the main battlefield even when Layer 2 is full.
@@ -69,11 +70,12 @@ seven-hex battlefield, tower visuals, projectiles, and collapsing anomaly combat
 already communicate the game better than the lab did.
 
 The current rebuilt milestone is intentionally narrow: Layer 1 active play plus
-a visible Layer 2 base board. Sparks and Star Bolts replace Wave Marks, Lumens,
-Flux, Shell Cores, Prism Shards, Threat Scans, manager shards, and Component
-Scrolls in the first-pass UI. Managers, equipment, dungeons, tournaments, store,
-battle pass, social, guilds, and threat-map gameplay are not marketed for this
-milestone.
+completed shells that auto-install into or store for the Layer 2 base. The
+Layer 2 board is not shown on the active battle surface. Sparks and Star Bolts
+replace Wave Marks, Lumens, Flux, Shell Cores, Prism Shards, Threat Scans,
+manager shards, and Component Scrolls in the first-pass UI. Managers,
+equipment, dungeons, tournaments, store, battle pass, social, guilds, and
+threat-map gameplay are not marketed for this milestone.
 
 ## Feature Inventory
 

@@ -173,6 +173,42 @@ const List<_HelpSectionData> _baseHelpSections = <_HelpSectionData>[
   ),
 ];
 
+// L1L2_REBUILD_SAFE: Settings help uses only the scoped Layer 1/2 rebuild terms while legacy systems are hidden.
+const List<_HelpSectionData> _rebuildHelpSections = <_HelpSectionData>[
+  _HelpSectionData(
+    id: 'rebuild-layer-1-loop',
+    title: 'Layer 1 Run',
+    summary: 'Start at Wave 1, spend Sparks, and complete a shell at Wave 10.',
+    body:
+        'Layer 1 is the active run. Start Run begins Wave 1 with Sparks, then the central Lightcore fires while black-hole anomalies collapse inward from the perimeter.\n\n'
+        'Sparks are reset each run. Spend them on Damage, Fire Rate, Multishot, and Queue Size to push toward Wave 10. Wave 10 completes one Layer 1 Shell.',
+  ),
+  _HelpSectionData(
+    id: 'rebuild-feeders',
+    title: 'Feeders',
+    summary: 'The six outer hexes feed the central tower.',
+    body:
+        'The center tower is still a tower, and the six outer hexes are feeder towers. Together they make the seven-piece hex shell.\n\n'
+        'After a run starts, tap an unlocked empty hex to build that feeder with Sparks. Tap a built feeder to inspect its color, projectile family, payload family, and contribution to the completed Layer 1 shell odds.',
+  ),
+  _HelpSectionData(
+    id: 'rebuild-resources',
+    title: 'Sparks and Star Bolts',
+    summary: 'Sparks are run currency. Star Bolts are persistent upgrades.',
+    body:
+        'Sparks are the per-run currency used for active combat upgrades and feeder builds. They reset when you start a new Layer 1 run.\n\n'
+        'Star Bolts persist. Spend them in Star Bolt Upgrades for feeder slots, tower color access, starting Sparks, base core damage, base fire rate, and base queue size.',
+  ),
+  _HelpSectionData(
+    id: 'rebuild-wave-10',
+    title: 'Wave 10 Shell',
+    summary: 'Wave 10 creates the Layer 1 shell used by Layer 2.',
+    body:
+        'Reaching Wave 10 creates exactly one completed Layer 1 Shell from the center tower and six feeders. The completed shell records color distribution plus projected projectile and payload odds.\n\n'
+        'If Layer 2 has an open slot, the shell installs there. If Layer 2 is full, the shell goes to storage. Layer 2 is not playable in this first rebuilt milestone.',
+  ),
+];
+
 List<_HelpSectionData> get _helpSections => <_HelpSectionData>[
   ..._baseHelpSections,
   _HelpSectionData(

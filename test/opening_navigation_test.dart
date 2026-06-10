@@ -43,6 +43,8 @@ void main() {
     expect(find.textContaining('Sparks'), findsWidgets);
     expect(find.textContaining('Star Bolts'), findsWidgets);
     expect(find.textContaining('Build Feeder'), findsNothing);
+    expect(find.textContaining('AR '), findsNothing);
+    expect(find.textContaining('TS '), findsNothing);
 
     await tester.tap(find.text('Start Run'));
     await tester.pump(const Duration(milliseconds: 320));

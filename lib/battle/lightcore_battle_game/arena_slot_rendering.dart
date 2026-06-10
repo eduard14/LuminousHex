@@ -759,8 +759,65 @@ extension LightcoreBattleGameArenaSlotRendering on LightcoreBattleGame {
             Paint()..color = LightcorePalette.solar,
           );
         }
+      } else if (controller.layerRebuildEnabled &&
+          controller.layerRunState.active &&
+          unlocked &&
+          index < controller.layer1UnlockedFeederSlots) {
+        _renderLayerRebuildEmptyFeederCue(canvas, center, slotIndex: index);
       }
     }
+  }
+
+  void _renderLayerRebuildEmptyFeederCue(
+    Canvas canvas,
+    Offset center, {
+    required int slotIndex,
+  }) {
+    // L1L2_REBUILD_SAFE: Empty unlocked hexes show the rebuild build affordance now that the global Build Feeder button is gone.
+    final pulse = 0.5 + (math.sin(controller.elapsed * 3.2) * 0.5);
+    final tint = LightcorePalette.aether;
+    final radius = _slotRadius * (0.72 + (pulse * 0.06));
+    canvas.drawCircle(
+      center,
+      radius,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2.2
+        ..color = tint.withValues(alpha: 0.34 + (pulse * 0.2)),
+    );
+    final plusPaint = Paint()
+      ..strokeWidth = 3
+      ..strokeCap = StrokeCap.round
+      ..color = LightcorePalette.mist.withValues(alpha: 0.86);
+    final half = _slotRadius * 0.18;
+    canvas.drawLine(
+      center.translate(-half, 0),
+      center.translate(half, 0),
+      plusPaint,
+    );
+    canvas.drawLine(
+      center.translate(0, -half),
+      center.translate(0, half),
+      plusPaint,
+    );
+
+    final painter = TextPainter(
+      text: TextSpan(
+        text: '${controller.layer1FeederBuildCost(slotIndex)} Sparks',
+        style: TextStyle(
+          color: LightcorePalette.solar.withValues(alpha: 0.92),
+          fontSize: math.max(9, _slotRadius * 0.2),
+          fontWeight: FontWeight.w900,
+        ),
+      ),
+      textAlign: TextAlign.center,
+      textDirection: TextDirection.ltr,
+      maxLines: 1,
+    )..layout(maxWidth: _slotRadius * 1.5);
+    painter.paint(
+      canvas,
+      center.translate(-painter.width / 2, _slotRadius * 0.34),
+    );
   }
 
   void _renderSlotHudFrame(

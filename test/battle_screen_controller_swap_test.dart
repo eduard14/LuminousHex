@@ -182,6 +182,8 @@ void main() {
       expect(find.textContaining('Multishot Lv. 0'), findsOneWidget);
       expect(find.textContaining('Queue Size Lv. 0'), findsOneWidget);
       expect(find.textContaining('Build Feeder'), findsNothing);
+      expect(find.textContaining('Star Bolt Upgrades'), findsOneWidget);
+      expect(find.textContaining('Feeder Slots Lv. 0'), findsNothing);
       expect(find.text('Global Tower Upgrades'), findsOneWidget);
       expect(find.textContaining('Buffer'), findsNothing);
       expect(find.textContaining('Wave Marks'), findsNothing);
@@ -198,9 +200,49 @@ void main() {
       await tester.pump();
 
       expect(controller.layerRunState.rankFor(LayerRunUpgradeType.damage), 1);
+
+      await tester.tap(find.textContaining('Star Bolt Upgrades'));
+      await tester.pump();
+
+      expect(find.textContaining('Feeder Slots Lv. 0'), findsOneWidget);
+      expect(find.textContaining('Starting Sparks Lv. 0'), findsOneWidget);
       expect(tester.takeException(), isNull);
     },
   );
+
+  testWidgets('empty feeder hex builds from a tower tap in rebuild mode', (
+    tester,
+  ) async {
+    addTearDown(() async {
+      await tester.binding.setSurfaceSize(null);
+    });
+    await tester.binding.setSurfaceSize(const Size(430, 780));
+    final controller = LightcoreController();
+    addTearDown(controller.dispose);
+
+    controller.debugDisableTutorial();
+    controller.startLayer1Run();
+    await _pumpBattleScreen(tester, controller);
+
+    final game = tester
+        .widget<GameWidget<LightcoreBattleGame>>(
+          find.byType(GameWidget<LightcoreBattleGame>),
+        )
+        .game!;
+    final slotCenter = game.debugSlotCenter(0);
+    expect(slotCenter, isNotNull);
+    expect(controller.slots[0].isBuilt, isFalse);
+
+    await tester.tapAt(slotCenter!);
+    await tester.pump();
+
+    expect(controller.slots[0].isBuilt, isTrue);
+    expect(controller.sparks, 51);
+    expect(find.textContaining('Feeder Slot 1'), findsOneWidget);
+    expect(find.textContaining('24 Sparks'), findsNothing);
+    expect(find.textContaining('Lumens'), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
 
   testWidgets('legacy core stat board is hidden during Layer 1/2 rebuild', (
     tester,
@@ -222,6 +264,41 @@ void main() {
     expect(find.text('Stats'), findsNothing);
     expect(find.text('Full Stats'), findsNothing);
     expect(find.text('Core Stat Board'), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('Wave 10 shell completion is explicit without Layer 2 board', (
+    tester,
+  ) async {
+    addTearDown(() async {
+      await tester.binding.setSurfaceSize(null);
+    });
+    await tester.binding.setSurfaceSize(const Size(430, 780));
+    final controller = LightcoreController();
+    addTearDown(controller.dispose);
+
+    controller.debugDisableTutorial();
+    controller.startLayer1Run();
+    controller.debugSetLayer1WaveForTest(10);
+
+    await _pumpBattleScreen(tester, controller);
+
+    expect(find.text('Layer 1 Shell Complete'), findsOneWidget);
+    expect(
+      find.textContaining('Installed into Layer 2 slot 1'),
+      findsOneWidget,
+    );
+    expect(find.textContaining('Colors:'), findsOneWidget);
+    expect(find.textContaining('Projectile:'), findsOneWidget);
+    expect(find.textContaining('Payload:'), findsOneWidget);
+    expect(find.text('Layer 2 Base'), findsNothing);
+    expect(find.text('Start New Run'), findsOneWidget);
+
+    await tester.tap(find.text('Start New Run'));
+    await tester.pump();
+
+    expect(controller.layerRunState.active, isTrue);
+    expect(find.text('Layer 1 Shell Complete'), findsNothing);
     expect(tester.takeException(), isNull);
   });
 

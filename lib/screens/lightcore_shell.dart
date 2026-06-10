@@ -1081,7 +1081,8 @@ class _LightcoreShellState extends State<LightcoreShell> {
                                   : 0,
                             ),
                           ),
-                        if (battleChromeVisible)
+                        if (battleChromeVisible &&
+                            !controller.layerRebuildEnabled)
                           Positioned.fill(
                             child: AnimatedBuilder(
                               animation: controller,
@@ -1261,7 +1262,8 @@ class _LightcoreShellState extends State<LightcoreShell> {
                               },
                             ),
                           ),
-                        if (battleChromeVisible)
+                        if (battleChromeVisible &&
+                            !controller.layerRebuildEnabled)
                           Positioned.fill(
                             child: _BattleResourceFlyoutLayer(
                               controller: controller,
@@ -1292,7 +1294,9 @@ class _LightcoreShellState extends State<LightcoreShell> {
                               },
                             ),
                           ),
-                        if (battleChromeVisible && !openingBattlePreview)
+                        if (battleChromeVisible &&
+                            !openingBattlePreview &&
+                            !controller.layerRebuildEnabled)
                           Positioned(
                             left: 0,
                             right: 0,
@@ -1765,11 +1769,13 @@ class _LightcoreShellState extends State<LightcoreShell> {
             animation: widget.controller,
             builder: (context, _) {
               final controller = widget.controller;
+              final rebuildMode = controller.layerRebuildEnabled;
 
               return _SelectorDialog(
                 title: 'Settings',
-                subtitle:
-                    'Account sync, audio, notifications, stats, help, and reset controls stay here.',
+                subtitle: rebuildMode
+                    ? 'Account sync, audio, notifications, help, and reset controls stay here.'
+                    : 'Account sync, audio, notifications, stats, help, and reset controls stay here.',
                 tint: controller.activeLayer.core.affinity.color,
                 child: Column(
                   children: [
@@ -1793,7 +1799,9 @@ class _LightcoreShellState extends State<LightcoreShell> {
                                   ),
                                   const SizedBox(height: 6),
                                   Text(
-                                    'Use Account Sync to link this save to Google, Audio to tune music and effects, Notifications to tune in-game banners, Change Name for your tournament callsign, Stats for the save ledger, and Help for Lightcore terms. Full reset restarts Lumens, Flux, Threat Scans, managers, outfit gear, Knowledge Cards, towers, EXP, and advancement progress.',
+                                    rebuildMode
+                                        ? 'Use Account Sync to link this save, Audio to tune music and effects, Notifications to tune in-game banners, and Help for the Layer 1 rebuild terms. Full reset restarts Sparks, Star Bolts, feeder unlocks, completed Layer 1 shells, and Layer 2 shell slots.'
+                                        : 'Use Account Sync to link this save to Google, Audio to tune music and effects, Notifications to tune in-game banners, Change Name for your tournament callsign, Stats for the save ledger, and Help for Lightcore terms. Full reset restarts Lumens, Flux, Threat Scans, managers, outfit gear, Knowledge Cards, towers, EXP, and advancement progress.',
                                     style: Theme.of(
                                       context,
                                     ).textTheme.bodyMedium,
@@ -1817,11 +1825,12 @@ class _LightcoreShellState extends State<LightcoreShell> {
                               spacing: 10,
                               runSpacing: 10,
                               children: [
-                                FilledButton.tonalIcon(
-                                  onPressed: () => _openStats(dialogContext),
-                                  icon: const Icon(Icons.query_stats_rounded),
-                                  label: const Text('Stats'),
-                                ),
+                                if (!rebuildMode)
+                                  FilledButton.tonalIcon(
+                                    onPressed: () => _openStats(dialogContext),
+                                    icon: const Icon(Icons.query_stats_rounded),
+                                    label: const Text('Stats'),
+                                  ),
                                 GuidedFocusFrame(
                                   active:
                                       controller.tutorialStep ==
@@ -1957,6 +1966,7 @@ class _LightcoreShellState extends State<LightcoreShell> {
 
   void _openHelp(BuildContext context) {
     final controller = widget.controller;
+    final rebuildMode = controller.layerRebuildEnabled;
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
@@ -1965,7 +1975,9 @@ class _LightcoreShellState extends State<LightcoreShell> {
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setSheetState) {
-            final helpSections = _helpSections;
+            final helpSections = rebuildMode
+                ? _rebuildHelpSections
+                : _helpSections;
             return SafeArea(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
@@ -2006,7 +2018,9 @@ class _LightcoreShellState extends State<LightcoreShell> {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Open any briefing below. The first time you review one, command grants ${LightcoreController.helpSectionTicketReward} Threat Scans.',
+                        rebuildMode
+                            ? 'Open any briefing below for the current Layer 1 rebuild rules.'
+                            : 'Open any briefing below. The first time you review one, command grants ${LightcoreController.helpSectionTicketReward} Threat Scans.',
                         style: Theme.of(context).textTheme.bodyMedium,
                       ),
                       const SizedBox(height: 16),
@@ -2051,9 +2065,12 @@ class _LightcoreShellState extends State<LightcoreShell> {
                                   if (!expanded) {
                                     return;
                                   }
-                                  if (controller.markHelpSectionRead(
-                                    section.id,
-                                  )) {
+                                  final changed = rebuildMode
+                                      ? false
+                                      : controller.markHelpSectionRead(
+                                          section.id,
+                                        );
+                                  if (changed) {
                                     setSheetState(() {});
                                   }
                                 },
