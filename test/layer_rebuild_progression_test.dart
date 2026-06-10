@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:lightcore/data/tower_configs.dart';
 import 'package:lightcore/models/lightcore_state.dart';
 import 'package:lightcore/models/lightcore_types.dart';
 import 'package:lightcore/state/lightcore_controller.dart';
@@ -42,6 +43,21 @@ void main() {
       controller.sparks,
       lessThan(LightcoreController.layer1BaseStartingSparks),
     );
+  });
+
+  test('feeder construction uses the player selected color', () {
+    final controller = LightcoreController();
+    addTearDown(controller.dispose);
+
+    controller.startLayer1Run();
+
+    expect(
+      controller.buildLayer1FeederAt(0, config: TowerLibrary.redPrism),
+      isTrue,
+    );
+    expect(controller.slots[0].config?.id, TowerLibrary.redPrism.id);
+    expect(controller.slots[0].config?.affinity, PrototypeAffinity.ember);
+    expect(controller.sparks, 51);
   });
 
   test(

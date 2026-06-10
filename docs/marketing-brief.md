@@ -41,9 +41,9 @@ relay at a time, turns enemy pressure into progression, and forges completed
 shells into higher-order prism structures.
 
 Marketing tone should be clear and energetic, not lore-heavy. The story exists
-to explain the loop: build feeders, defend the core, complete Layer 1 shells,
-install those shells into Layer 2, and repeat for better color and projectile
-odds.
+to explain the loop: choose feeder colors, defend the core, complete Layer 1
+shells, install those shells into Layer 2, and repeat for better color and
+projectile odds.
 
 ## Core Gameplay Loop
 
@@ -51,8 +51,9 @@ odds.
 2. Start a Layer 1 run at Wave 1 with Sparks as the per-run currency.
 3. Let the core and relay towers auto-charge shots while the shell chooses
    anomaly targets automatically.
-4. Tap unlocked empty outer hexes to build feeder towers; the feeders modify
-   the central core instead of reading as independent lane defenders.
+4. Tap unlocked empty outer hexes, choose the feeder color, and install that
+   tower; feeders modify the central core instead of reading as independent
+   lane defenders.
 5. Spend Sparks during the run on Damage, Fire Rate, Multishot, and Queue Size.
 6. Reach Wave 10 to create a completed Layer 1 shell.
 7. Show a Wave 10 completion card with shell color/projectile/payload odds,
@@ -81,7 +82,8 @@ threat-map gameplay are not marketed for this milestone.
 
 ### Battle And Defense
 
-- Real-time hex battlefield with one central Lightcore and six relay towers.
+- Real-time hex battlefield with one central Lightcore and six player-chosen
+  feeder towers.
 - Relay towers charge shots into the Lightcore instead of asking the player to
   manually queue or drag ammo.
 - Opening combat is low-friction: shots auto-charge after the player presses Play,

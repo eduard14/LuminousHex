@@ -210,7 +210,7 @@ void main() {
     },
   );
 
-  testWidgets('empty feeder hex builds from a tower tap in rebuild mode', (
+  testWidgets('empty feeder hex opens player color choice in rebuild mode', (
     tester,
   ) async {
     addTearDown(() async {
@@ -236,7 +236,21 @@ void main() {
     await tester.tapAt(slotCenter!);
     await tester.pump();
 
+    expect(controller.slots[0].isBuilt, isFalse);
+    expect(find.text('Choose Feeder 1'), findsOneWidget);
+    expect(find.text('Comet Mortar'), findsOneWidget);
+    expect(find.textContaining('Build Feeder'), findsNothing);
+
+    await tester.tap(find.text('Comet Mortar'));
+    await tester.pump();
+
+    expect(find.text('Install Red'), findsOneWidget);
+
+    await tester.tap(find.text('Install Red'));
+    await tester.pump();
+
     expect(controller.slots[0].isBuilt, isTrue);
+    expect(controller.slots[0].config?.id, TowerLibrary.redPrism.id);
     expect(controller.sparks, 51);
     expect(find.textContaining('Feeder Slot 1'), findsOneWidget);
     expect(find.textContaining('24 Sparks'), findsNothing);

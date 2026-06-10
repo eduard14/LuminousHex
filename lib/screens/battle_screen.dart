@@ -548,11 +548,11 @@ class _BattleScreenState extends State<BattleScreen> {
         !slot.isBuilt &&
         !slot.isFabricating &&
         !slot.isLayerProject) {
-      final built = controller.buildLayer1FeederAt(resolvedSlotIndex);
+      controller.selectSlot(resolvedSlotIndex);
       setState(() {
-        _statsTarget = built ? target : null;
+        _statsTarget = target;
         _panelFocus = _BattlePanelFocus.none;
-        _selectionControlsVisible = built;
+        _selectionControlsVisible = true;
       });
       return;
     }
@@ -1110,10 +1110,10 @@ class _BattleScreenState extends State<BattleScreen> {
           Positioned(
             left: inset,
             right: compact ? inset : null,
-            bottom: rebuildHudVisible ? bottomInset + 148 : bottomInset,
+            bottom: bottomInset,
             child: selectionOverlay,
           ),
-        if (rebuildHudVisible)
+        if (rebuildHudVisible && selectionOverlay == null)
           Positioned(
             left: inset,
             right: inset,
@@ -1854,10 +1854,189 @@ class _BattleControlPanel extends StatelessWidget {
       );
     }
 
+    if (controller.layerRebuildEnabled) {
+      return _LayerRebuildFeederBuildPanel(
+        key: ValueKey<String>(
+          'layer-rebuild-feeder-choice-${selected!.slotIndex}',
+        ),
+        controller: controller,
+        slot: selected!,
+      );
+    }
+
     return _EmptySlotPanel(
       controller: controller,
       slot: selected!,
       onBuildTower: onBuildTower,
+    );
+  }
+}
+
+// L1L2_REBUILD_SAFE: Empty feeder hexes require player-selected color before spending Sparks.
+class _LayerRebuildFeederBuildPanel extends StatefulWidget {
+  const _LayerRebuildFeederBuildPanel({
+    super.key,
+    required this.controller,
+    required this.slot,
+  });
+
+  final LightcoreController controller;
+  final OuterTowerState slot;
+
+  @override
+  State<_LayerRebuildFeederBuildPanel> createState() =>
+      _LayerRebuildFeederBuildPanelState();
+}
+
+class _LayerRebuildFeederBuildPanelState
+    extends State<_LayerRebuildFeederBuildPanel> {
+  String? _selectedConfigId;
+
+  @override
+  Widget build(BuildContext context) {
+    final controller = widget.controller;
+    final slotIndex = widget.slot.slotIndex;
+    final textTheme = Theme.of(context).textTheme;
+    final choices = controller.layer1FeederBuildChoices;
+    final selected = choices
+        .where((choice) => choice.id == _selectedConfigId)
+        .firstOrNull;
+    final cost = controller.layer1FeederBuildCost(slotIndex);
+    final canBuild =
+        selected != null &&
+        controller.layerRunState.active &&
+        controller.sparks >= cost;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            const Icon(
+              Icons.add_circle_rounded,
+              color: LightcorePalette.aether,
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                'Choose Feeder ${slotIndex + 1}',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: textTheme.titleMedium?.copyWith(
+                  color: LightcorePalette.mist,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+            ),
+            Text(
+              '$cost Sparks',
+              style: textTheme.labelLarge?.copyWith(
+                color: LightcorePalette.solar,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 6),
+        Text(
+          'Choose this feeder color. The selected color, projectile, and payload are added to the completed Layer 1 shell odds.',
+          style: textTheme.labelSmall?.copyWith(
+            color: LightcorePalette.mist.withValues(alpha: 0.72),
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        const SizedBox(height: 10),
+        SizedBox(
+          height: 62,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            itemCount: choices.length,
+            separatorBuilder: (context, index) => const SizedBox(width: 8),
+            itemBuilder: (context, index) {
+              final choice = choices[index];
+              return SizedBox(
+                width: 116,
+                child: _TowerPrismChoiceTile(
+                  config: choice,
+                  selected: choice.id == _selectedConfigId,
+                  onPressed: () =>
+                      setState(() => _selectedConfigId = choice.id),
+                ),
+              );
+            },
+          ),
+        ),
+        const SizedBox(height: 10),
+        if (selected == null)
+          Text(
+            'Select a color to install this feeder.',
+            style: textTheme.bodyMedium?.copyWith(
+              color: LightcorePalette.mist.withValues(alpha: 0.72),
+            ),
+          )
+        else
+          DecoratedBox(
+            decoration: BoxDecoration(
+              color: selected.affinity.color.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: selected.affinity.color.withValues(alpha: 0.38),
+              ),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(10),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          selected.name,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: textTheme.labelLarge?.copyWith(
+                            color: selected.affinity.color,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          '${selected.affinity.label} • ${selected.defaultProjectileType.label} • ${selected.defaultPayloadType.label}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: textTheme.labelMedium?.copyWith(
+                            color: LightcorePalette.mist.withValues(
+                              alpha: 0.78,
+                            ),
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  FilledButton.icon(
+                    onPressed: canBuild
+                        ? () => controller.buildLayer1FeederAt(
+                            slotIndex,
+                            config: selected,
+                          )
+                        : null,
+                    icon: const Icon(Icons.hexagon_rounded, size: 18),
+                    label: Text('Install ${selected.affinity.label}'),
+                    style: FilledButton.styleFrom(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+      ],
     );
   }
 }

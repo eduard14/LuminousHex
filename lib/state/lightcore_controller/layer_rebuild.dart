@@ -84,6 +84,19 @@ extension LightcoreControllerLayerRebuild on LightcoreController {
 
   int layer1FeederBuildCost(int slotIndex) => 24 + (slotIndex * 12);
 
+  List<TowerConfig> get layer1FeederBuildChoices {
+    // L1L2_REBUILD_SAFE: Feeder color is an explicit player choice in the rebuilt Layer 1 loop.
+    return const <TowerConfig>[
+      TowerLibrary.whitePrism,
+      TowerLibrary.redPrism,
+      TowerLibrary.orangePrism,
+      TowerLibrary.yellowPrism,
+      TowerLibrary.greenPrism,
+      TowerLibrary.bluePrism,
+      TowerLibrary.purplePrism,
+    ];
+  }
+
   bool canBuyRunUpgrade(LayerRunUpgradeType type) =>
       _layerRun.active && _layerRun.sparks >= layerRunUpgradeCost(type);
 
@@ -204,8 +217,8 @@ extension LightcoreControllerLayerRebuild on LightcoreController {
     return buildLayer1FeederAt(slotIndex);
   }
 
-  bool buildLayer1FeederAt(int slotIndex) {
-    // L1L2_REBUILD_SAFE: Empty hex taps build the chosen feeder slot with Sparks, replacing the removed Build Feeder button.
+  bool buildLayer1FeederAt(int slotIndex, {TowerConfig? config}) {
+    // L1L2_REBUILD_SAFE: Empty hex taps open color choice; this action spends Sparks on the selected feeder.
     if (!_layerRun.active ||
         slotIndex < 0 ||
         slotIndex >= LightcoreController.slotCount ||
@@ -221,15 +234,8 @@ extension LightcoreControllerLayerRebuild on LightcoreController {
       _notifyNow();
       return true;
     }
-    const feederConfigs = <TowerConfig>[
-      TowerLibrary.greenPrism,
-      TowerLibrary.bluePrism,
-      TowerLibrary.yellowPrism,
-      TowerLibrary.purplePrism,
-      TowerLibrary.redPrism,
-      TowerLibrary.orangePrism,
-    ];
-    final config = feederConfigs[slotIndex % feederConfigs.length];
+    final selectedConfig =
+        config ?? _defaultLayer1FeederConfigForSlot(slotIndex);
     final cost = layer1FeederBuildCost(slotIndex);
     if (_layerRun.sparks < cost) {
       _showBanner('Need $cost Sparks to build the next feeder.');
@@ -239,7 +245,7 @@ extension LightcoreControllerLayerRebuild on LightcoreController {
     _layerRun = _layerRun.copyWith(sparks: _layerRun.sparks - cost);
     _slots[slotIndex] = _buildRolledTowerState(
       slotIndex: slotIndex,
-      config: config,
+      config: selectedConfig,
       investedLumens: 0,
     );
     selectedSlotIndex = slotIndex;
@@ -248,7 +254,7 @@ extension LightcoreControllerLayerRebuild on LightcoreController {
     _swarmActivated = true;
     _totalTowersBuilt += 1;
     _updateFlowEfficiency();
-    _showBanner('${config.name} installed as feeder ${slotIndex + 1}.');
+    _showBanner('${selectedConfig.name} installed as feeder ${slotIndex + 1}.');
     _notifyNow();
     return true;
   }
@@ -459,6 +465,19 @@ extension LightcoreControllerLayerRebuild on LightcoreController {
       }
     }
     return null;
+  }
+
+  TowerConfig _defaultLayer1FeederConfigForSlot(int slotIndex) {
+    // L1L2_REBUILD_SAFE: Non-UI callers retain the old deterministic fallback; player builds pass an explicit choice.
+    const feederConfigs = <TowerConfig>[
+      TowerLibrary.greenPrism,
+      TowerLibrary.bluePrism,
+      TowerLibrary.yellowPrism,
+      TowerLibrary.purplePrism,
+      TowerLibrary.redPrism,
+      TowerLibrary.orangePrism,
+    ];
+    return feederConfigs[slotIndex % feederConfigs.length];
   }
 
   void _applyLayerRebuildCoreUpgrades() {
