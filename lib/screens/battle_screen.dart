@@ -145,6 +145,7 @@ class _BattleScreenState extends State<BattleScreen> {
   Timer? _promotionStatsTimer;
   int? _activePromotionSequence;
   Layer2ComponentState? _promotionResultComponent;
+  bool _layerRebuildActionDockVisible = true;
   int? _canvasTapPointer;
   Offset? _canvasTapStart;
   bool _canvasTapCanceled = false;
@@ -1113,12 +1114,41 @@ class _BattleScreenState extends State<BattleScreen> {
             bottom: bottomInset,
             child: selectionOverlay,
           ),
-        if (rebuildHudVisible && selectionOverlay == null)
+        if (rebuildHudVisible &&
+            selectionOverlay == null &&
+            _layerRebuildActionDockVisible)
           Positioned(
             left: inset,
             right: inset,
             bottom: bottomInset,
-            child: _LayerRebuildActionDock(controller: controller),
+            child: _LayerRebuildActionDock(
+              controller: controller,
+              onHide: () => setState(() {
+                _layerRebuildActionDockVisible = false;
+              }),
+            ),
+          ),
+        if (rebuildHudVisible &&
+            selectionOverlay == null &&
+            !_layerRebuildActionDockVisible)
+          Positioned(
+            right: inset,
+            bottom: bottomInset,
+            child: Tooltip(
+              message: 'Show global upgrades',
+              child: FilledButton.icon(
+                onPressed: () => setState(() {
+                  _layerRebuildActionDockVisible = true;
+                }),
+                icon: const Icon(Icons.keyboard_arrow_up_rounded, size: 18),
+                label: const Text('Upgrades'),
+                style: FilledButton.styleFrom(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+              ),
+            ),
           ),
         if (promotionResultCard != null)
           Positioned(
@@ -1419,9 +1449,13 @@ class _LayerRebuildHudChip extends StatelessWidget {
 
 // L1L2_REBUILD_SAFE: Main rebuilt action dock exposes global upgrades while tower-specific actions remain on tower selection.
 class _LayerRebuildActionDock extends StatefulWidget {
-  const _LayerRebuildActionDock({required this.controller});
+  const _LayerRebuildActionDock({
+    required this.controller,
+    required this.onHide,
+  });
 
   final LightcoreController controller;
+  final VoidCallback onHide;
 
   @override
   State<_LayerRebuildActionDock> createState() =>
@@ -1482,6 +1516,12 @@ class _LayerRebuildActionDockState extends State<_LayerRebuildActionDock> {
                       fontWeight: FontWeight.w900,
                     ),
                   ),
+                ),
+                IconButton(
+                  tooltip: 'Hide global upgrades',
+                  visualDensity: VisualDensity.compact,
+                  onPressed: widget.onHide,
+                  icon: const Icon(Icons.keyboard_arrow_down_rounded),
                 ),
               ],
             ),

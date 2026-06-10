@@ -102,8 +102,8 @@ class _LightcoreShellState extends State<LightcoreShell> {
 
   List<_ShellOverlayDestination> get _visibleNavigationDestinations =>
       widget.controller.layerRebuildEnabled
-      // L1L2_LEGACY_REVISIT: Legacy managers, threat map, archives, advancement, store, and social nav stay hidden during Layer 1/2 rebuild.
-      ? const <_ShellOverlayDestination>[_ShellOverlayDestination.battle]
+      // L1L2_REBUILD_SAFE: Future systems stay visible as locked navigation so the app chrome remains intact during the rebuild.
+      ? _navigationDestinations
       : widget.controller.tutorialUsesBattleOnlyNavigation
       ? const <_ShellOverlayDestination>[_ShellOverlayDestination.battle]
       : _navigationDestinations
@@ -747,12 +747,6 @@ class _LightcoreShellState extends State<LightcoreShell> {
   }
 
   void _openOverlayDestination(_ShellOverlayDestination destination) {
-    // L1L2_LEGACY_REVISIT: Rebuild milestone exposes battle-only navigation while legacy systems are reviewed one by one.
-    if (widget.controller.layerRebuildEnabled &&
-        destination != _ShellOverlayDestination.battle) {
-      _closeOverlay();
-      return;
-    }
     final tutorialStep = widget.controller.tutorialStep;
     if (tutorialStep == LightcoreTutorialStep.armFirstBoss &&
         destination != _ShellOverlayDestination.enemies &&
@@ -901,6 +895,14 @@ class _LightcoreShellState extends State<LightcoreShell> {
     setState(() => _eventBattleSurfaceActive = active);
   }
 
+  void _showRebuildLockedFeature(String label) {
+    // L1L2_REBUILD_SAFE: Locked future chrome stays visible but cannot open unfinished systems.
+    widget.controller.pushNotification(
+      '$label is locked while the Layer 1/2 base loop is rebuilt.',
+      duration: 3.2,
+    );
+  }
+
   Future<void> _openStats(BuildContext context) {
     return showDialog<void>(
       context: context,
@@ -1003,8 +1005,9 @@ class _LightcoreShellState extends State<LightcoreShell> {
         effectiveOverlay == _ShellOverlayDestination.tournaments;
     final battleHudVisible = !overlayActive && !_shellPromotionHudSuppressed;
     final battleChromeVisible = battleHudVisible && !challengeActive;
+    final rebuildMode = controller.layerRebuildEnabled;
     final openingBattlePreview =
-        battleChromeVisible && !controller.swarmActivated;
+        battleChromeVisible && !controller.swarmActivated && !rebuildMode;
     final shellPadding = isCompactLayout ? 12.0 : 16.0;
     final sectionGap = isCompactLayout ? 8.0 : 16.0;
     final battleTopInset = openingBattlePreview
@@ -1153,10 +1156,37 @@ class _LightcoreShellState extends State<LightcoreShell> {
                                     : friendAlertCount > 9
                                     ? '9+'
                                     : friendAlertCount.toString();
-                                final rebuildMode =
-                                    controller.layerRebuildEnabled;
                                 final headerActions = rebuildMode
                                     ? <Widget>[
+                                        _HeaderActionButton(
+                                          icon: Icons.storefront_rounded,
+                                          tooltip: 'Store Locked',
+                                          locked: true,
+                                          onPressed: () =>
+                                              _showRebuildLockedFeature(
+                                                'Store',
+                                              ),
+                                        ),
+                                        _HeaderActionButton(
+                                          icon: Icons.workspace_premium_rounded,
+                                          tooltip: 'Passes Locked',
+                                          locked: true,
+                                          onPressed: () =>
+                                              _showRebuildLockedFeature(
+                                                'Passes',
+                                              ),
+                                        ),
+                                        _HeaderMenuButton(
+                                          controller: controller,
+                                          friendBadgeLabel: friendBadgeLabel,
+                                          highlighted: false,
+                                          highlightTint: LightcorePalette.quest,
+                                          onSelected: (action) =>
+                                              _selectHeaderMenuAction(
+                                                context,
+                                                action,
+                                              ),
+                                        ),
                                         _HeaderActionButton(
                                           icon: Icons.settings_rounded,
                                           tooltip: 'Open Settings',
@@ -1217,34 +1247,35 @@ class _LightcoreShellState extends State<LightcoreShell> {
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
                                     children: [
-                                      if (!rebuildMode)
-                                        _ShellProfileHeaderHud(
-                                          key: const ValueKey<String>(
-                                            'battle-resource-rail',
-                                          ),
-                                          controller: controller,
-                                          compact: isCompactLayout,
-                                          tooltip: managerTooltip,
-                                          highlighted: controller
-                                              .tutorialHighlightsPlayerManagerButton,
-                                          pulseSignal: controller
-                                              .tutorialPulseSignalFor(
-                                                LightcoreTutorialPulseTarget
-                                                    .playerManagerButton,
-                                              ),
-                                          showNotificationBadge: controller
-                                              .hasUnspentRadianceStatPoints,
-                                          openingMode:
-                                              openingBattlePreview ||
-                                              controller
-                                                  .tutorialUsesBattleOnlyNavigation,
-                                          onProfilePressed: () =>
-                                              _openPlayerManager(context),
+                                      _ShellProfileHeaderHud(
+                                        key: const ValueKey<String>(
+                                          'battle-resource-rail',
                                         ),
-                                      if (!rebuildMode)
-                                        SizedBox(
-                                          width: isCompactLayout ? 6 : 12,
-                                        ),
+                                        controller: controller,
+                                        compact: isCompactLayout,
+                                        tooltip: managerTooltip,
+                                        highlighted:
+                                            !rebuildMode &&
+                                            controller
+                                                .tutorialHighlightsPlayerManagerButton,
+                                        pulseSignal: controller
+                                            .tutorialPulseSignalFor(
+                                              LightcoreTutorialPulseTarget
+                                                  .playerManagerButton,
+                                            ),
+                                        showNotificationBadge:
+                                            !rebuildMode &&
+                                            controller
+                                                .hasUnspentRadianceStatPoints,
+                                        openingMode:
+                                            !rebuildMode &&
+                                            (openingBattlePreview ||
+                                                controller
+                                                    .tutorialUsesBattleOnlyNavigation),
+                                        onProfilePressed: () =>
+                                            _openPlayerManager(context),
+                                      ),
+                                      SizedBox(width: isCompactLayout ? 6 : 12),
                                       Expanded(
                                         child: Align(
                                           alignment: Alignment.topRight,
@@ -1294,9 +1325,7 @@ class _LightcoreShellState extends State<LightcoreShell> {
                               },
                             ),
                           ),
-                        if (battleChromeVisible &&
-                            !openingBattlePreview &&
-                            !controller.layerRebuildEnabled)
+                        if (battleChromeVisible && !openingBattlePreview)
                           Positioned(
                             left: 0,
                             right: 0,
@@ -1304,25 +1333,27 @@ class _LightcoreShellState extends State<LightcoreShell> {
                             child: Column(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                AnimatedBuilder(
-                                  animation: controller,
-                                  builder: (context, _) {
-                                    return GuidedFocusFrame(
-                                      active:
-                                          controller.tutorialHighlightsBossBar,
-                                      tint: LightcorePalette.quest,
-                                      showTapCue: false,
-                                      child: _OverallProgressBarPanel(
-                                        controller: controller,
-                                        compact: isCompactLayout,
-                                        towerSelected:
-                                            controller.selectedSlotOrNull !=
-                                            null,
-                                      ),
-                                    );
-                                  },
-                                ),
-                                SizedBox(height: sectionGap),
+                                if (!rebuildMode) ...[
+                                  AnimatedBuilder(
+                                    animation: controller,
+                                    builder: (context, _) {
+                                      return GuidedFocusFrame(
+                                        active: controller
+                                            .tutorialHighlightsBossBar,
+                                        tint: LightcorePalette.quest,
+                                        showTapCue: false,
+                                        child: _OverallProgressBarPanel(
+                                          controller: controller,
+                                          compact: isCompactLayout,
+                                          towerSelected:
+                                              controller.selectedSlotOrNull !=
+                                              null,
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                  SizedBox(height: sectionGap),
+                                ],
                                 AnimatedBuilder(
                                   animation: controller,
                                   builder: (context, _) {

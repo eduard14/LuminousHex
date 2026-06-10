@@ -73,10 +73,11 @@ already communicate the game better than the lab did.
 The current rebuilt milestone is intentionally narrow: Layer 1 active play plus
 completed shells that auto-install into or store for the Layer 2 base. The
 Layer 2 board is not shown on the active battle surface. Sparks and Star Bolts
-replace Wave Marks, Lumens, Flux, Shell Cores, Prism Shards, Threat Scans,
-manager shards, and Component Scrolls in the first-pass UI. Managers,
-equipment, dungeons, tournaments, store, battle pass, social, guilds, and
-threat-map gameplay are not marketed for this milestone.
+drive Layer 1 spending, while the main shell chrome still shows profile,
+Lumens, Flux, Threat Scans, Store, Passes, menu, and bottom navigation as
+locked future context. Managers, equipment, dungeons, tournaments, store, battle
+pass, social, guilds, and threat-map gameplay are visible as locked surfaces
+but are not marketed as playable in this milestone.
 
 ## Feature Inventory
 
@@ -84,6 +85,10 @@ threat-map gameplay are not marketed for this milestone.
 
 - Real-time hex battlefield with one central Lightcore and six player-chosen
   feeder towers.
+- The battle surface keeps the main app shell anchored: profile and global
+  currencies stay at the top, future systems remain visible as locked chrome,
+  and the bottom global upgrade dock can collapse so the tower field can become
+  the focus.
 - Relay towers charge shots into the Lightcore instead of asking the player to
   manually queue or drag ammo.
 - Opening combat is low-friction: shots auto-charge after the player presses Play,

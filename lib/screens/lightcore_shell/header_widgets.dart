@@ -140,6 +140,15 @@ class _ShellProfileHeaderHud extends StatelessWidget {
                       tint: LightcorePalette.aether,
                       compact: compact,
                     ),
+                  if (!openingMode)
+                    _ShellHeaderStatRow(
+                      // L1L2_REBUILD_SAFE: Threat Scans remain visible as a locked future-system currency during the Layer 1/2 rebuild.
+                      tooltip: controller.enemyTicketLabel,
+                      icon: LightcoreIcons.threatScan,
+                      value: _formatMetricCount(controller.enemyTickets),
+                      tint: LightcorePalette.scanGlow,
+                      compact: compact,
+                    ),
                   _ShellHeaderStatRow(
                     tooltip:
                         'Output Efficiency: $outputEfficiency • Core Stability ${controller.coreStabilityLabel}',
@@ -306,6 +315,7 @@ class _HeaderActionButton extends StatelessWidget {
     this.badgeLabel,
     this.highlighted = false,
     this.highlightTint = LightcorePalette.aether,
+    this.locked = false,
   });
 
   final IconData icon;
@@ -314,21 +324,45 @@ class _HeaderActionButton extends StatelessWidget {
   final String? badgeLabel;
   final bool highlighted;
   final Color highlightTint;
+  final bool locked;
 
   @override
   Widget build(BuildContext context) {
-    Widget button = IconButton(
-      tooltip: tooltip,
-      visualDensity: VisualDensity.compact,
-      style: IconButton.styleFrom(
-        foregroundColor: LightcorePalette.layer2,
-        backgroundColor: Colors.transparent,
-        padding: const EdgeInsets.all(8),
-        minimumSize: const Size(36, 36),
-        maximumSize: const Size(36, 36),
+    Widget button = SizedBox(
+      width: 36,
+      height: 36,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Positioned.fill(
+            child: IconButton(
+              tooltip: tooltip,
+              visualDensity: VisualDensity.compact,
+              style: IconButton.styleFrom(
+                foregroundColor: locked
+                    ? LightcorePalette.warning
+                    : LightcorePalette.layer2,
+                backgroundColor: Colors.transparent,
+                padding: const EdgeInsets.all(8),
+                minimumSize: const Size(36, 36),
+                maximumSize: const Size(36, 36),
+              ),
+              onPressed: onPressed,
+              icon: Icon(icon, size: 17),
+            ),
+          ),
+          if (locked)
+            const Positioned(
+              right: -1,
+              bottom: -1,
+              child: Icon(
+                Icons.lock_rounded,
+                size: 13,
+                color: LightcorePalette.warning,
+              ),
+            ),
+        ],
       ),
-      onPressed: onPressed,
-      icon: Icon(icon, size: 17),
     );
 
     if (badgeLabel != null) {
@@ -654,6 +688,10 @@ extension on _ShellOverlayDestination {
   };
 
   String? lockedMessage(LightcoreController controller) => switch (this) {
+    _
+        when controller.layerRebuildEnabled &&
+            this != _ShellOverlayDestination.battle =>
+      _rebuildDestinationLockMessage(this),
     _ShellOverlayDestination.towers => _towerArchiveLockMessage(controller),
     _ShellOverlayDestination.managers => _managerLockMessage(controller),
     _ShellOverlayDestination.threatMap => _threatMapLockMessage(controller),
@@ -668,10 +706,36 @@ extension on _ShellOverlayDestination {
 
   bool visibleInBottomNavigation(LightcoreController controller) =>
       switch (this) {
+        _ when controller.layerRebuildEnabled => true,
         _ShellOverlayDestination.advancement =>
           _advancementLockMessage(controller) == null,
         _ => true,
       };
+}
+
+String _rebuildDestinationLockMessage(_ShellOverlayDestination destination) {
+  return switch (destination) {
+    _ShellOverlayDestination.towers =>
+      'Tower archive is locked for this milestone. Build Layer 1 feeders from the battlefield first.',
+    _ShellOverlayDestination.managers =>
+      'Managers are locked while the Layer 1/2 base loop is rebuilt.',
+    _ShellOverlayDestination.threatMap =>
+      'Threat Scans are visible in the header, but Threat Map play unlocks after the Layer 1/2 base loop is stable.',
+    _ShellOverlayDestination.enemies =>
+      'Anomaly cards are locked until the rebuilt Layer 1 shell loop is stable.',
+    _ShellOverlayDestination.dungeons =>
+      'Dungeons are locked until Layer 2 has a playable base.',
+    _ShellOverlayDestination.tournaments =>
+      'Tournaments are locked until Layer 2 has a playable base.',
+    _ShellOverlayDestination.advancement =>
+      'Layer advancement is locked until completed Layer 1 shells are ready to feed Layer 2.',
+    _ShellOverlayDestination.friends ||
+    _ShellOverlayDestination.mentees ||
+    _ShellOverlayDestination.mentors ||
+    _ShellOverlayDestination.spaceRoom =>
+      '${destination.label} is locked while the Layer 1/2 base loop is rebuilt.',
+    _ShellOverlayDestination.battle => '',
+  };
 }
 
 String? _threatMapLockMessage(LightcoreController controller) {
