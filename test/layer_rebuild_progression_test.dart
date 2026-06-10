@@ -81,6 +81,20 @@ void main() {
     );
   });
 
+  test('active Layer 1 tower health does not recover during a run', () {
+    final controller = LightcoreController();
+    addTearDown(controller.dispose);
+
+    controller.startLayer1Run();
+    controller.debugApplyLumenHarvestDamage(35);
+    final damagedStability = controller.coreState.coreStability;
+
+    controller.debugAdvanceLumenHarvestRecovery(120);
+
+    expect(controller.layerRunState.active, isTrue);
+    expect(controller.coreState.coreStability, damagedStability);
+  });
+
   test('persistent Star Bolt upgrades are blocked during active runs', () {
     final controller = LightcoreController();
     addTearDown(controller.dispose);

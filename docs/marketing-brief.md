@@ -93,6 +93,8 @@ but are not marketed as playable in this milestone.
   the focus.
 - The bottom upgrade dock separates timing clearly: active runs show only
   Sparks upgrades, while ended runs show only permanent Star Bolt upgrades.
+- Active Layer 1 tower health does not regenerate during the run; damage is a
+  fail-state clock that only resets when a new run starts.
 - Relay towers charge shots into the Lightcore instead of asking the player to
   manually queue or drag ammo.
 - Opening combat is low-friction: shots auto-charge after the player presses Play,
