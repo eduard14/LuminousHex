@@ -1710,37 +1710,6 @@ extension LightcoreControllerStateAccessors on LightcoreController {
       .where((layer) => layer.id != runtimeLayer.id)
       .fold(0.0, (sum, layer) => sum + _passiveLumenBaseForLayer(layer));
 
-  bool get hasLumenHarvestPressure => _core.coreStability < 99.5;
-
-  String get lumenHarvestRecoveryLabel {
-    if (!hasLumenHarvestPressure) {
-      return 'Stable';
-    }
-    final remainingSeconds =
-        ((_maxCoreStability - _core.coreStability) /
-                max(0.001, coreStabilityRecoveryPerSecond))
-            .ceil();
-    final recovery = Duration(seconds: max(1, remainingSeconds));
-    if (recovery.inHours >= 1) {
-      return '${recovery.inHours}h ${recovery.inMinutes.remainder(60)}m';
-    }
-    return '${max(1, recovery.inMinutes)}m';
-  }
-
-  double get coreStabilityRecoveryPerSecond {
-    final built = _slots.where(_slotCountsTowardRing).toList();
-    final greenRecovery =
-        built
-            .where((slot) => _slotAffinity(slot) == PrototypeAffinity.verdant)
-            .length *
-        0.06;
-    final managerRecovery = _managedTowerCountForLayer(activeLayer) * 0.025;
-    final coreRecovery = max(0, _core.level - 1) * 0.02;
-    return _baseCoreStabilityRecoveryPerSecond *
-            (1 + greenRecovery + coreRecovery) +
-        managerRecovery;
-  }
-
   double get offlineKillsPerHour {
     return threatRegionOfflineKillsPerHour *
         _economyBalanceMultiplier('offlineKills');

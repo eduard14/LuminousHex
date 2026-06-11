@@ -93,16 +93,16 @@ playable in this milestone.
   the focus. In rebuild mode, the battlefield background is full-bleed instead
   of sitting inside a second rounded app panel.
 - The bottom upgrade dock separates timing clearly: active runs show only
-  Sparks upgrades plus Tower Health and a Reset Run action, while ended
-  runs show only permanent Nova Shard upgrades and the next Start New Run action.
-- The always-visible wave footer carries current Tower Health beside the wave
-  controls so the survival clock remains readable even when the upgrade dock is
-  hidden.
+  Sparks upgrades plus a Reset Run action, while ended runs show only permanent
+  Nova Shard upgrades and the next Start New Run action.
+- Tower Health is anchored as a top battle bar, while the wave footer stays
+  focused on current-wave progress with the release-wave chevron on the right.
 - Restarting or starting a fresh Layer 1 run clears all Spark purchases from
   the previous attempt, including active upgrade ranks and run-built Relay Hexes,
   then begins again at Wave 1 with persistent unlocks intact.
-- Active Layer 1 tower health does not regenerate during the run; damage is a
-  fail-state clock that only resets when a new run starts.
+- Active Layer 1 tower damage shows as cracks across the core and Relay Hexes;
+  damaged pieces rebuild at the next wave start, while a 0% core shatters and
+  hard-ends the run.
 - When the Lightcore dies, the Layer 1 run hard-ends: active wave pressure
   resets to Wave 0, the core stays dead at 0% until the next run starts, and
   built Relay Hexes remain installed instead of being disabled by anomaly hits.

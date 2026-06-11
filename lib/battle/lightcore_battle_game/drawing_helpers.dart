@@ -292,6 +292,133 @@ extension LightcoreBattleGameDrawingHelpers on LightcoreBattleGame {
     return (math.sin(seed + (index * 12.9898) + (salt * 78.233)) + 1) * 0.5;
   }
 
+  // L1L2_REBUILD_SAFE: Layer 1 tower damage is visualized on the actual hex
+  // bodies so health loss feels like tower failure, not just a HUD number.
+  void _renderTowerDamageState(
+    Canvas canvas,
+    Offset center, {
+    required double radius,
+    required Color tint,
+    required double healthRatio,
+    required double seed,
+  }) {
+    if (!controller.layerRebuildEnabled) {
+      return;
+    }
+    final clampedHealth = healthRatio.clamp(0.0, 1.0).toDouble();
+    final damage = (1 - clampedHealth).clamp(0.0, 1.0).toDouble();
+    if (damage <= 0.06) {
+      return;
+    }
+    final destroyed = clampedHealth <= 0.001;
+    final pulse = 0.5 + (math.sin(controller.elapsed * 8.2 + seed) * 0.5);
+
+    canvas.save();
+    canvas.clipPath(_hexPath(center, radius * 1.03));
+    canvas.drawPath(
+      _hexPath(center, radius),
+      Paint()
+        ..style = PaintingStyle.fill
+        ..color = Colors.black.withValues(
+          alpha: destroyed ? 0.46 : 0.24 * damage,
+        ),
+    );
+    final crackPaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round
+      ..strokeWidth = math.max(1.1, radius * (destroyed ? 0.044 : 0.032))
+      ..color = LightcorePalette.mist.withValues(
+        alpha: destroyed ? 0.92 : (0.36 + (damage * 0.34)),
+      );
+    final hotCrackPaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round
+      ..strokeWidth = math.max(0.8, radius * 0.018)
+      ..color = LightcorePalette.warning.withValues(
+        alpha: destroyed ? 0.78 : (0.22 + (damage * 0.34)),
+      );
+    final crackCount = destroyed ? 7 : (2 + (damage * 4)).round();
+    for (var index = 0; index < crackCount; index++) {
+      final baseAngle =
+          seed +
+          (index * math.pi * 0.63) +
+          (_deathNoise(seed, index, 0.4) * 0.5);
+      final startRadius =
+          radius * (0.12 + (_deathNoise(seed, index, 0.8) * 0.22));
+      final midRadius =
+          radius * (0.34 + (_deathNoise(seed, index, 1.3) * 0.24));
+      final endRadius =
+          radius * (0.62 + (_deathNoise(seed, index, 1.9) * 0.26));
+      final start = Offset(
+        center.dx + math.cos(baseAngle) * startRadius,
+        center.dy + math.sin(baseAngle) * startRadius,
+      );
+      final mid = Offset(
+        center.dx + math.cos(baseAngle + 0.2) * midRadius,
+        center.dy + math.sin(baseAngle + 0.2) * midRadius,
+      );
+      final end = Offset(
+        center.dx + math.cos(baseAngle - 0.16) * endRadius,
+        center.dy + math.sin(baseAngle - 0.16) * endRadius,
+      );
+      final path = Path()
+        ..moveTo(start.dx, start.dy)
+        ..lineTo(mid.dx, mid.dy)
+        ..lineTo(end.dx, end.dy);
+      canvas.drawPath(path, crackPaint);
+      canvas.drawPath(path, hotCrackPaint);
+    }
+    canvas.restore();
+
+    if (!destroyed) {
+      return;
+    }
+    canvas.drawPath(
+      _hexPath(center, radius * (1.08 + (pulse * 0.08))),
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = math.max(2.2, radius * 0.06)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8)
+        ..color = LightcorePalette.warning.withValues(
+          alpha: 0.42 + pulse * 0.24,
+        ),
+    );
+    for (var index = 0; index < 12; index++) {
+      final angle =
+          seed + (index * math.pi / 6) + (_deathNoise(seed, index, 2.6) * 0.22);
+      final distance = radius * (0.58 + ((index % 4) * 0.12) + (pulse * 0.1));
+      final shardCenter = Offset(
+        center.dx + math.cos(angle) * distance,
+        center.dy + math.sin(angle) * distance,
+      );
+      final shardRadius =
+          radius * (0.09 + (_deathNoise(seed, index, 3.1) * 0.06));
+      final shard = _polygonPath(
+        shardCenter,
+        shardRadius,
+        3,
+        angle + controller.elapsed * (index.isEven ? 1.8 : -1.4),
+      );
+      canvas.drawPath(
+        shard,
+        Paint()
+          ..style = PaintingStyle.fill
+          ..color = Color.lerp(
+            tint,
+            LightcorePalette.mist,
+            0.58,
+          )!.withValues(alpha: 0.84),
+      );
+      canvas.drawPath(
+        shard,
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.1
+          ..color = LightcorePalette.warning.withValues(alpha: 0.82),
+      );
+    }
+  }
+
   Path _organicBlobPath(
     Offset center,
     double radius, {

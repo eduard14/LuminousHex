@@ -759,6 +759,14 @@ extension LightcoreBattleGameArenaSlotRendering on LightcoreBattleGame {
             Paint()..color = LightcorePalette.solar,
           );
         }
+        _renderTowerDamageState(
+          canvas,
+          center,
+          radius: _slotRadius,
+          tint: slotColor,
+          healthRatio: controller.coreState.coreStability / 100,
+          seed: index + 1.17,
+        );
       } else if (controller.layerRebuildEnabled &&
           controller.layerRunState.active &&
           unlocked &&

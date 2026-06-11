@@ -1079,12 +1079,20 @@ class _BattleScreenState extends State<BattleScreen> {
             dockOpen: dockOpen,
           ),
         ),
-        if (widget.showBattleHud && shellVisibilityHud != null)
+        if (rebuildHudVisible)
           Positioned(
-            right: inset,
-            top: math.max(inset, topInset - (compact ? 22 : 10)),
-            child: shellVisibilityHud,
+            left: inset,
+            right: shellVisibilityHud == null
+                ? inset
+                : inset + (compact ? 54 : 68),
+            top: topInset,
+            child: _LayerRebuildTopHealthBar(
+              controller: controller,
+              compact: compact,
+            ),
           ),
+        if (widget.showBattleHud && shellVisibilityHud != null)
+          Positioned(right: inset, top: topInset, child: shellVisibilityHud),
         if (widget.showBattleHud &&
             !controller.swarmActivated &&
             !rebuildHudVisible)
@@ -1299,8 +1307,6 @@ class _LayerRebuildActionDockState extends State<_LayerRebuildActionDock> {
                 ),
               ],
             ),
-            const SizedBox(height: 8),
-            _LayerTowerHealthReadout(controller: controller),
             if (controller.layer1CanCompleteShell) ...[
               const SizedBox(height: 9),
               SizedBox(
@@ -1381,42 +1387,49 @@ class _LayerRebuildActionDockState extends State<_LayerRebuildActionDock> {
   }
 }
 
-// L1L2_REBUILD_SAFE: Active rebuild runs need tower health visible without
-// reintroducing the old oversized health card/bar treatment.
-class _LayerTowerHealthReadout extends StatelessWidget {
-  const _LayerTowerHealthReadout({required this.controller});
+// L1L2_REBUILD_SAFE: Tower health is battle-critical, so it stays anchored at
+// the top of the playfield instead of competing with the wave footer controls.
+class _LayerRebuildTopHealthBar extends StatelessWidget {
+  const _LayerRebuildTopHealthBar({
+    required this.controller,
+    required this.compact,
+  });
 
   final LightcoreController controller;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
     final health = controller.coreState.coreStability.round().clamp(0, 100);
     final critical = health <= 25;
     final tint = critical ? LightcorePalette.warning : LightcorePalette.success;
     return Semantics(
       label: 'Tower Health $health%',
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.favorite_rounded, size: 17, color: tint),
-          const SizedBox(width: 7),
-          Text(
-            'Tower Health',
-            style: textTheme.labelMedium?.copyWith(
-              color: LightcorePalette.mist.withValues(alpha: 0.78),
-              fontWeight: FontWeight.w800,
+      child: DecoratedBox(
+        key: const ValueKey<String>('layer-rebuild-top-health-bar'),
+        decoration: BoxDecoration(
+          color: LightcorePalette.panel.withValues(alpha: 0.68),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: tint.withValues(alpha: 0.34)),
+          boxShadow: [
+            BoxShadow(
+              color: tint.withValues(alpha: critical ? 0.2 : 0.08),
+              blurRadius: critical ? 16 : 10,
             ),
+          ],
+        ),
+        child: Padding(
+          padding: EdgeInsets.symmetric(
+            horizontal: compact ? 9 : 11,
+            vertical: compact ? 7 : 8,
           ),
-          const SizedBox(width: 6),
-          Text(
-            '$health%',
-            style: textTheme.labelLarge?.copyWith(
-              color: tint,
-              fontWeight: FontWeight.w900,
-            ),
+          child: TowerHealthBar(
+            value: health / 100,
+            label: '$health%',
+            color: LightcorePalette.success,
+            height: compact ? 8 : 10,
           ),
-        ],
+        ),
       ),
     );
   }

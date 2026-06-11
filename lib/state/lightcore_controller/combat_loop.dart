@@ -30,7 +30,6 @@ extension LightcoreControllerCombatLoop on LightcoreController {
         _prepareLocalhostAutoTapper();
       }
       _recoverCoreEnergy(dt);
-      _recoverLumenHarvest(dt);
       elapsed += battleDt;
       _advanceShots(battleDt);
       _advanceImpacts(battleDt);
@@ -631,10 +630,5 @@ extension LightcoreControllerCombatLoop on LightcoreController {
   @visibleForTesting
   void debugApplyLumenHarvestDamage(double damage) {
     _applyLumenHarvestDamage(damage);
-  }
-
-  @visibleForTesting
-  void debugAdvanceLumenHarvestRecovery(double dt) {
-    _recoverLumenHarvest(dt);
   }
 }

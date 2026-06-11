@@ -365,22 +365,6 @@ extension LightcoreControllerCombatFollowups on LightcoreController {
     }
   }
 
-  void _recoverLumenHarvest(double dt) {
-    if (_layerRun.active) {
-      // L1L2_REBUILD_SAFE: Layer 1 tower health is a run-fail resource, not a self-healing stability meter.
-      return;
-    }
-    if (dt <= 0 || _core.coreStability >= _maxCoreStability) {
-      return;
-    }
-    _setCoreStability(
-      _core.coreStability +
-          (coreStabilityRecoveryPerSecond *
-              _coreEnergyStabilityRecoveryMultiplier *
-              dt),
-    );
-  }
-
   void _recoverCoreEnergy(double dt) {
     if (!coreEnergyUnlocked || dt <= 0) {
       return;

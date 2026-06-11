@@ -155,21 +155,9 @@ class _LayerOneWaveProgressPanel extends StatelessWidget {
     final waveNumber = controller.activeLayerWaveNumber;
     final releaseEnabled = controller.canReleaseLayer1Wave;
     final transitionActive = controller.layer1WaveTransitionActive;
-    final towerHealth = controller.coreState.coreStability.round().clamp(
-      0,
-      100,
-    );
-    final towerHealthCritical = towerHealth <= 25;
-    final towerHealthColor = towerHealthCritical
-        ? LightcorePalette.warning
-        : LightcorePalette.success;
 
     return Semantics(
-      label: [
-        'Wave $waveNumber progress',
-        'Tower Health $towerHealth%',
-        'release wave control',
-      ].join(', '),
+      label: ['Wave $waveNumber progress', 'release wave control'].join(', '),
       child: DecoratedBox(
         decoration: BoxDecoration(
           color: LightcorePalette.panel.withValues(alpha: 0.86),
@@ -202,10 +190,20 @@ class _LayerOneWaveProgressPanel extends StatelessWidget {
                   fontWeight: FontWeight.w900,
                 ),
               ),
-              const SizedBox(width: 4),
+              SizedBox(width: compact ? 8 : 10),
+              Expanded(
+                child: _AnimatedWaveMeter(
+                  key: const ValueKey<String>('layer-wave-footer-meter'),
+                  value: waveProgress,
+                  compact: compact,
+                  transitionActive: transitionActive,
+                ),
+              ),
+              SizedBox(width: compact ? 6 : 8),
               Tooltip(
                 message: 'Release full wave',
                 child: IconButton(
+                  key: const ValueKey<String>('layer-wave-release-button'),
                   onPressed: releaseEnabled
                       ? controller.releaseLayer1Wave
                       : null,
@@ -223,32 +221,6 @@ class _LayerOneWaveProgressPanel extends StatelessWidget {
                   disabledColor: LightcorePalette.mist.withValues(alpha: 0.28),
                 ),
               ),
-              SizedBox(width: compact ? 4 : 7),
-              Expanded(
-                child: _AnimatedWaveMeter(
-                  value: waveProgress,
-                  compact: compact,
-                  transitionActive: transitionActive,
-                ),
-              ),
-              SizedBox(width: compact ? 8 : 10),
-              Icon(Icons.favorite_rounded, size: 17, color: towerHealthColor),
-              const SizedBox(width: 5),
-              Flexible(
-                flex: 0,
-                child: Text(
-                  key: const ValueKey<String>('layer-wave-footer-tower-health'),
-                  compact
-                      ? 'Tower $towerHealth%'
-                      : 'Tower Health $towerHealth%',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: textTheme.labelMedium?.copyWith(
-                    color: towerHealthColor,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-              ),
             ],
           ),
         ),
@@ -259,6 +231,7 @@ class _LayerOneWaveProgressPanel extends StatelessWidget {
 
 class _AnimatedWaveMeter extends StatefulWidget {
   const _AnimatedWaveMeter({
+    super.key,
     required this.value,
     required this.compact,
     required this.transitionActive,

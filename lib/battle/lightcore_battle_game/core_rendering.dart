@@ -615,6 +615,15 @@ extension LightcoreBattleGameCoreRendering on LightcoreBattleGame {
       showLevelLabel: false,
     );
 
+    _renderTowerDamageState(
+      canvas,
+      center,
+      radius: _coreRadius,
+      tint: coreColor,
+      healthRatio: controller.coreState.coreStability / 100,
+      seed: 0.31,
+    );
+
     if (showTutorialGuides && controller.tutorialHighlightsBattleCore) {
       _renderGuidePulse(
         canvas,
