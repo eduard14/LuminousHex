@@ -136,8 +136,6 @@ class _BattleStatsTarget {
 
 class _BattleScreenState extends State<BattleScreen> {
   static const double _canvasTapSlop = 12;
-  static const String _battleBackgroundAsset =
-      'assets/Images/battle_space_background.png';
 
   late LightcoreBattleGame _game;
   late final FocusNode _shortcutFocusNode;
@@ -382,12 +380,6 @@ class _BattleScreenState extends State<BattleScreen> {
       child: Stack(
         fit: StackFit.expand,
         children: [
-          Image.asset(
-            _battleBackgroundAsset,
-            fit: BoxFit.cover,
-            alignment: Alignment.center,
-            filterQuality: FilterQuality.high,
-          ),
           IgnorePointer(
             ignoring: !widget.enableBattlefieldTaps,
             child: GameWidget(
@@ -1074,10 +1066,7 @@ class _BattleScreenState extends State<BattleScreen> {
     return Stack(
       children: [
         Positioned.fill(
-          child: _buildGameCanvas(
-            rebuildHudVisible ? 0 : (compact ? 20 : 0),
-            dockOpen: dockOpen,
-          ),
+          child: _buildGameCanvas(compact ? 20 : 0, dockOpen: dockOpen),
         ),
         if (rebuildHudVisible)
           Positioned(

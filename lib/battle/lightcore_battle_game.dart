@@ -641,14 +641,6 @@ class LightcoreBattleGame extends FlameGame with ScaleDetector {
 
   void _renderBackground(Canvas canvas) {
     final rect = Offset.zero & Size(size.x, size.y);
-    final backgroundPaint = Paint()
-      ..shader = const LinearGradient(
-        colors: [Color(0xCC05090F), Color(0xB0020810), Color(0xD20B2230)],
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-      ).createShader(rect);
-    canvas.drawRect(rect, backgroundPaint);
-
     final glowAlphaScale = _battleGlowAlphaScale;
     if (glowAlphaScale > 0) {
       final upperGlow = Paint()
@@ -755,11 +747,7 @@ class LightcoreBattleGame extends FlameGame with ScaleDetector {
   }
 
   void _renderFallbackBackground(Canvas canvas) {
-    final rect = Offset.zero & Size(math.max(size.x, 1), math.max(size.y, 1));
-    canvas.drawRect(
-      rect,
-      Paint()..color = LightcorePalette.night.withValues(alpha: 0.72),
-    );
+    return;
   }
 
   void _renderArena(Canvas canvas) {
