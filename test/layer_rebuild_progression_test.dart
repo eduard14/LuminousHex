@@ -25,10 +25,18 @@ void main() {
     expect(controller.coreState.level, 2);
     expect(controller.coreState.coreStability, lessThan(100));
 
+    controller.debugSetLayer1SparksForTest(1000);
+    expect(
+      controller.buildLayer1FeederAt(0, config: TowerLibrary.bluePrism),
+      isTrue,
+    );
+    expect(controller.layer1BuiltFeederCount, 1);
+
     controller.resetLayer1Run();
     expect(controller.layerRunState.active, isTrue);
     expect(controller.layerRunState.wave, 1);
     expect(controller.layerRunState.rankFor(LayerRunUpgradeType.damage), 0);
+    expect(controller.layer1BuiltFeederCount, 0);
     expect(controller.sparks, LightcoreController.layer1BaseStartingSparks);
     expect(controller.coreState.coreStability, 100);
     expect(controller.starBolts, 0);

@@ -95,6 +95,9 @@ playable in this milestone.
 - The bottom upgrade dock separates timing clearly: active runs show only
   Sparks upgrades plus Tower Health and a Restart Wave 1 action, while ended
   runs show only permanent Nova Shard upgrades and the next Start New Run action.
+- Restarting or starting a fresh Layer 1 run clears all Spark purchases from
+  the previous attempt, including active upgrade ranks and run-built Relay Hexes,
+  then begins again at Wave 1 with persistent unlocks intact.
 - Active Layer 1 tower health does not regenerate during the run; damage is a
   fail-state clock that only resets when a new run starts.
 - When the Lightcore dies, the Layer 1 run hard-ends: active wave pressure

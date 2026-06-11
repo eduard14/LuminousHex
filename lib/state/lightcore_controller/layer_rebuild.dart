@@ -197,12 +197,7 @@ extension LightcoreControllerLayerRebuild on LightcoreController {
     _outerRingRevealed = true;
     _swarmActivated = true;
     _battleSpawnPolicy = LightcoreBattleSpawnPolicy.automatic;
-    _slots = _slots
-        .map(
-          (slot) =>
-              slot.copyWith(charge: 0, cooldownRemaining: 0, disruption: 0),
-        )
-        .toList();
+    _resetLayer1RunPurchasedState();
     _core = _core.copyWith(
       coreStability: _maxCoreStability,
       flowEfficiency: _maxFlowEfficiency,
@@ -235,12 +230,7 @@ extension LightcoreControllerLayerRebuild on LightcoreController {
     _outerRingRevealed = true;
     _swarmActivated = true;
     _battleSpawnPolicy = LightcoreBattleSpawnPolicy.automatic;
-    _slots = _slots
-        .map(
-          (slot) =>
-              slot.copyWith(charge: 0, cooldownRemaining: 0, disruption: 0),
-        )
-        .toList();
+    _resetLayer1RunPurchasedState();
     _core = _core.copyWith(
       coreStability: _maxCoreStability,
       flowEfficiency: _maxFlowEfficiency,
@@ -250,6 +240,18 @@ extension LightcoreControllerLayerRebuild on LightcoreController {
       'Layer 1 restarted at Wave 1. Nova Shards and shells are kept.',
     );
     _notifyNow();
+  }
+
+  void _resetLayer1RunPurchasedState() {
+    // L1L2_REBUILD_SAFE: Relay Hexes are bought with Sparks inside a Layer 1
+    // run, so starting/restarting a run clears those purchases along with
+    // Spark upgrade ranks while preserving persistent unlocks and stored shells.
+    _slots = List<OuterTowerState>.generate(
+      LightcoreController.slotCount,
+      (index) => OuterTowerState(slotIndex: index),
+    );
+    selectedSlotIndex = null;
+    _towerRangePreviewSlotIndex = null;
   }
 
   bool buyRunUpgrade(LayerRunUpgradeType type) {
