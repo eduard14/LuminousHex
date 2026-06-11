@@ -683,6 +683,7 @@ class _BattleScreenState extends State<BattleScreen> {
     }
     LightcoreAudio.instance.playSfx(LightcoreSfx.uiCancel);
     widget.controller.toggleShellVisibility();
+    _game.focusShellVisibility(expanded: widget.controller.outerRingRevealed);
     setState(() {
       _statsTarget = null;
       _selectionControlsVisible = false;
@@ -1075,9 +1076,7 @@ class _BattleScreenState extends State<BattleScreen> {
         Positioned.fill(
           child: _buildGameCanvas(compact ? 20 : 0, dockOpen: dockOpen),
         ),
-        if (!rebuildHudVisible &&
-            widget.showBattleHud &&
-            shellVisibilityHud != null)
+        if (widget.showBattleHud && shellVisibilityHud != null)
           Positioned(
             right: inset,
             top: math.max(inset, topInset - (compact ? 22 : 10)),

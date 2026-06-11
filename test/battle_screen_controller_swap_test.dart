@@ -88,38 +88,56 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('rebuilt battle keeps shell visible for seven-hex readability', (
-    tester,
-  ) async {
-    addTearDown(() async {
-      await tester.binding.setSurfaceSize(null);
-    });
-    await tester.binding.setSurfaceSize(const Size(430, 780));
-    final controller = LightcoreController();
-    addTearDown(controller.dispose);
-    controller.debugDisableTutorial();
+  testWidgets(
+    'rebuilt battle can collapse to core collision and expand towers',
+    (tester) async {
+      addTearDown(() async {
+        await tester.binding.setSurfaceSize(null);
+      });
+      await tester.binding.setSurfaceSize(const Size(430, 780));
+      final controller = LightcoreController();
+      addTearDown(controller.dispose);
+      controller.debugDisableTutorial();
 
-    controller.startLayer1Run();
+      controller.startLayer1Run();
 
-    await _pumpBattleScreen(tester, controller);
+      await _pumpBattleScreen(tester, controller);
 
-    expect(controller.swarmActivated, isTrue);
-    expect(controller.outerRingRevealed, isTrue);
-    expect(
-      find.byKey(const ValueKey<String>('battle-shell-collapse-button')),
-      findsNothing,
-    );
+      expect(controller.swarmActivated, isTrue);
+      expect(controller.outerRingRevealed, isTrue);
+      expect(
+        find.byKey(const ValueKey<String>('battle-shell-collapse-button')),
+        findsOneWidget,
+      );
 
-    controller.toggleShellVisibility();
-    await tester.pump();
+      final gameFinder = find.byType(GameWidget<LightcoreBattleGame>);
+      final game = tester
+          .widget<GameWidget<LightcoreBattleGame>>(gameFinder)
+          .game!;
+      expect(game.viewScale, closeTo(0.72, 0.001));
 
-    expect(controller.outerRingRevealed, isFalse);
-    expect(
-      find.byKey(const ValueKey<String>('battle-shell-collapse-button')),
-      findsNothing,
-    );
-    expect(tester.takeException(), isNull);
-  });
+      await tester.tap(
+        find.byKey(const ValueKey<String>('battle-shell-collapse-button')),
+      );
+      await tester.pump();
+
+      expect(controller.outerRingRevealed, isFalse);
+      expect(game.viewScale, greaterThan(1.0));
+      expect(
+        find.byKey(const ValueKey<String>('battle-shell-collapse-button')),
+        findsOneWidget,
+      );
+
+      await tester.tap(
+        find.byKey(const ValueKey<String>('battle-shell-collapse-button')),
+      );
+      await tester.pump();
+
+      expect(controller.outerRingRevealed, isTrue);
+      expect(game.viewScale, closeTo(0.72, 0.001));
+      expect(tester.takeException(), isNull);
+    },
+  );
 
   testWidgets('battle canvas replaces its game when controller changes', (
     tester,

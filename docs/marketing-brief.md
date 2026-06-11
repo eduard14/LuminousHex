@@ -105,6 +105,9 @@ playable in this milestone.
   a simple uncapped wave number, inline double-chevron wave release,
   next-wave timing, and an always-moving current-wave meter. Wave 10 is the
   minimum shell-merge eligibility milestone, not the run cap.
+- The battle view keeps a compact shell collapse control in the Layer 1 rebuild:
+  collapse focuses the core collision read, and expand restores the full 7-hex
+  tower layout.
 - Relay towers charge shots into the Lightcore instead of asking the player to
   manually queue or drag ammo.
 - Opening combat is low-friction: shots auto-charge after the player presses Play,

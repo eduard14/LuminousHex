@@ -207,6 +207,23 @@ class LightcoreBattleGame extends FlameGame with ScaleDetector {
     );
   }
 
+  // L1L2_REBUILD_SAFE: The rebuilt battle HUD needs an explicit shell focus
+  // toggle: collapsed frames the core collision, expanded restores the 7-hex
+  // tower read.
+  void focusShellVisibility({required bool expanded}) {
+    if (size.x == 0 || size.y == 0) {
+      return;
+    }
+    final nextViewScale = expanded ? _defaultViewScale : _maxViewScale;
+    if ((nextViewScale - _viewScale).abs() < 0.0001 &&
+        _panOffset.length < 0.01) {
+      return;
+    }
+    _viewScale = nextViewScale;
+    _panOffset = Vector2.zero();
+    _recomputeLayout();
+  }
+
   bool isTowerHitAt(Offset localPosition) {
     if (!_layoutReady || !enableBattlefieldTaps || _shellPromotion != null) {
       return false;
