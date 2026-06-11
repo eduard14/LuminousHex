@@ -216,9 +216,9 @@ surfaces but are not marketed as playable in this milestone.
   keeping build/stat actions distinct from automated combat targeting.
 - Battlefield hex slots now render as subdued HUD frames underneath anomalies,
   so enemy bodies remain the top combat read when they cross the tower grid.
-- The battle canvas now sits over dark space background art with edge nebulae
-  and faint hex circuitry, while the center stays subdued for Lightcore
-  readability.
+- The battle canvas now sits over dark space background art with edge nebulae,
+  faint hex circuitry, and subtle animated star particles, while the center
+  stays subdued for Lightcore readability.
 - Active battle anomalies render as black discs with white rings, and their
   remaining health fills from the center as a white core.
 - Tower slot collision uses the same hex geometry as the HUD frames, while core

@@ -87,6 +87,7 @@ class LightcoreBattleGame extends FlameGame with ScaleDetector {
   double _screenShakeRemaining = 0;
   double _screenShakeAmplitude = 0;
   Vector2 _screenShakeOffset = Vector2.zero();
+  double _backgroundPhase = 0;
   Vector2 _baseCenter = Vector2.zero();
   Vector2 _panOffset = Vector2.zero();
   double _uiFocusLift = 0;
@@ -301,6 +302,7 @@ class LightcoreBattleGame extends FlameGame with ScaleDetector {
   void update(double dt) {
     super.update(dt);
     final clamped = dt.clamp(0, 0.05).toDouble();
+    _backgroundPhase = (_backgroundPhase + clamped) % 240.0;
     _updateUiFocus(clamped);
     if (_shellPromotion != null) {
       _shellPromotionElapsed = math.min(
@@ -648,6 +650,90 @@ class LightcoreBattleGame extends FlameGame with ScaleDetector {
               ),
             );
       canvas.drawRect(rect, upperGlow);
+    }
+    _renderBackgroundParticles(canvas, rect);
+  }
+
+  void _renderBackgroundParticles(Canvas canvas, Rect rect) {
+    final particleCount = _qualityScaledCount(36, balanced: 24, lowPower: 10);
+    final width = math.max(size.x, 1.0);
+    final height = math.max(size.y, 1.0);
+    final center = Offset(_center.x, _center.y);
+    final calmRadius = math.min(width, height) * 0.34;
+    final edgeFadeStart = math.min(width, height) * 0.18;
+    final phase = _backgroundPhase;
+
+    for (var index = 0; index < particleCount; index += 1) {
+      final seed = (index + 1) * 97.137;
+      final baseX = ((math.sin(seed * 12.9898) * 43758.5453) % 1).abs();
+      final baseY = ((math.sin(seed * 78.233) * 24634.6345) % 1).abs();
+      final driftAngle = seed % (math.pi * 2);
+      final driftSpeed = 3.0 + ((index % 7) * 0.42);
+      final driftX = math.cos(driftAngle) * phase * driftSpeed;
+      final driftY = math.sin(driftAngle) * phase * driftSpeed * 0.72;
+      final x = (baseX * width + driftX) % width;
+      final y = (baseY * height + driftY) % height;
+      final point = Offset(x < 0 ? x + width : x, y < 0 ? y + height : y);
+      final distanceFromCenter = (point - center).distance;
+      final centerFade =
+          ((distanceFromCenter - edgeFadeStart) /
+                  math.max(1, calmRadius - edgeFadeStart))
+              .clamp(0.22, 1.0)
+              .toDouble();
+      final pulse =
+          (math.sin((phase * (0.55 + ((index % 5) * 0.08))) + seed) + 1) / 2;
+      final radius = 0.65 + ((index % 4) * 0.18) + (pulse * 0.28);
+      final tint = index % 9 == 0
+          ? LightcorePalette.solar
+          : index % 4 == 0
+          ? LightcorePalette.violet
+          : LightcorePalette.aether;
+      final alpha =
+          (0.08 + (pulse * 0.13)) *
+          centerFade *
+          _battleEffectAlphaScale *
+          (index % 6 == 0 ? 1.35 : 1.0);
+
+      canvas.drawCircle(
+        point,
+        radius,
+        Paint()..color = tint.withValues(alpha: alpha.clamp(0.0, 0.24)),
+      );
+    }
+
+    if (_lowPowerBattleEffects) {
+      return;
+    }
+
+    final streakCount = _qualityScaledCount(7, balanced: 4, lowPower: 0);
+    for (var index = 0; index < streakCount; index += 1) {
+      final seed = (index + 1) * 211.73;
+      final baseX = ((math.sin(seed * 18.17) * 19341.77) % 1).abs();
+      final baseY = ((math.sin(seed * 31.41) * 9273.31) % 1).abs();
+      final speed = 5.5 + (index * 0.9);
+      final x = (baseX * width + phase * speed) % width;
+      final y = (baseY * height + math.sin(phase * 0.12 + seed) * 14) % height;
+      final point = Offset(x < 0 ? x + width : x, y < 0 ? y + height : y);
+      final distanceFromCenter = (point - center).distance;
+      final centerFade =
+          ((distanceFromCenter - edgeFadeStart) /
+                  math.max(1, calmRadius - edgeFadeStart))
+              .clamp(0.0, 1.0)
+              .toDouble();
+      if (centerFade <= 0.02) {
+        continue;
+      }
+      final tail = Offset(22 + (index * 2.5), 5 + (index % 3) * 2.0);
+      canvas.drawLine(
+        point - tail,
+        point,
+        Paint()
+          ..strokeWidth = 0.75
+          ..strokeCap = StrokeCap.round
+          ..color = LightcorePalette.aether.withValues(
+            alpha: 0.08 * centerFade * _battleGlowAlphaScale,
+          ),
+      );
     }
   }
 
