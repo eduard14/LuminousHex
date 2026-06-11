@@ -342,14 +342,10 @@ extension LightcoreControllerCombatFollowups on LightcoreController {
 
   void _setCoreStability(double value) {
     final stability = value.clamp(0.0, _maxCoreStability).toDouble();
-    final outputEfficiency = _outputEfficiencyPercentForStability(stability);
+    // L1L2_REBUILD_SAFE: Core pressure can end Layer 1 runs, but no longer throttles output rewards.
     _core = _core.copyWith(
       coreStability: stability,
-      flowEfficiency: outputEfficiency,
-    );
-    _lumenHarvestSlowdown = (1 - (outputEfficiency / 100)).clamp(
-      0.0,
-      _maxLumenHarvestSlowdown,
+      flowEfficiency: _maxFlowEfficiency,
     );
     if (_layerRun.active && stability <= 0) {
       endLayer1RunFromCoreBreak();

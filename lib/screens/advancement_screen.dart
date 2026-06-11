@@ -157,7 +157,7 @@ class _AdvancementScreenState extends State<AdvancementScreen> {
                       ),
                       _BenefitChip(
                         label:
-                            'Lower shells: ${controller.passiveLumenPerSecond.toStringAsFixed(1)} passive L/s${controller.hasLumenHarvestPressure ? ' • Output ${controller.lumenHarvestEfficiencyLabel}' : ''}',
+                            'Lower shells: ${controller.passiveLumenPerSecond.toStringAsFixed(1)} passive L/s',
                       ),
                       _BenefitChip(label: controller.payloadUnlockLabel),
                       _BenefitChip(label: controller.managerUnlockLabel),

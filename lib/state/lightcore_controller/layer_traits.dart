@@ -326,7 +326,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         !canStartFirstThreatChallenge) {
       return false;
     }
-    if (_core.coreStability < 96 || outputEfficiencyMultiplier < 0.96) {
+    if (_core.coreStability < 96) {
       return false;
     }
     final stats = activeThreatAssignmentGroupStats;
@@ -350,7 +350,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         !canStartFirstThreatChallenge) {
       return false;
     }
-    if (_core.coreStability < 96 || outputEfficiencyMultiplier < 0.96) {
+    if (_core.coreStability < 96) {
       return false;
     }
     return true;
@@ -845,7 +845,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
     LightcoreTutorialStep.pullFirstWhiteEnemy =>
       'Safe signature added. Threat Scans shape the encounter, not your tower roster.',
     LightcoreTutorialStep.readEffectiveGain =>
-      'Tower Health mapped. Better threats only matter when Output Efficiency stays healthy.',
+      'Core pressure mapped. Better threats only matter when the tower stays alive.',
     LightcoreTutorialStep.assignTowerManager =>
       'Manager assigned. Core fire now runs with better automation.',
     LightcoreTutorialStep.managerAutoAim =>
@@ -861,7 +861,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
     LightcoreTutorialStep.setFirstEnemyTarget =>
       'Red pressure reviewed. Same-color resistance is active in the deck.',
     LightcoreTutorialStep.adjustEnemyCount =>
-      'Region pressure reviewed. Higher pressure can pay more, but watch Output Efficiency.',
+      'Region pressure reviewed. Higher pressure can pay more, but watch Core Health.',
     LightcoreTutorialStep.openBossPulls =>
       'Starter region stabilized. The next route region opens after every region is fully stabilized.',
     LightcoreTutorialStep.upgradeCoreRange =>
@@ -1670,7 +1670,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         LightcoreTutorialStep.pullFirstWhiteEnemy =>
           'Click Map and run 1 threat scan.',
         LightcoreTutorialStep.readEffectiveGain =>
-          'Click Output Efficiency when you want to inspect Effective Gain.',
+          'Review Core Health before pushing pressure higher.',
         LightcoreTutorialStep.managerAutoAim =>
           'Watch your manager fire 5 automated shots.',
         LightcoreTutorialStep.upgradeFirstTowerToLevel4 =>
@@ -1742,7 +1742,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
     LightcoreTutorialStep.raiseThreat => 'Wave 5',
     LightcoreTutorialStep.pushNextArea => 'Wave 10',
     LightcoreTutorialStep.pullFirstWhiteEnemy => 'Run 1 scan',
-    LightcoreTutorialStep.readEffectiveGain => 'Open Output Efficiency',
+    LightcoreTutorialStep.readEffectiveGain => 'Check Core Health',
     LightcoreTutorialStep.managerAutoAim => 'Watch auto-fire',
     LightcoreTutorialStep.buildSecondStarterTower => 'Build Hex 2',
     LightcoreTutorialStep.pullFirstRedEnemy => 'Start next challenge',
@@ -1788,7 +1788,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         LightcoreTutorialStep.inspectSecondShellTower =>
           'Second-shell lanes use the same tower-click rule: tower bodies open tower controls while firing stays automatic.',
         LightcoreTutorialStep.upgradeFirstTowerToLevel3 =>
-          'The first stat rank is the recovery beat: enemies pressure the lane, Output Efficiency slips, and persistent tuning restores Tower Health.',
+          'The first stat rank is the recovery beat: enemies pressure the lane, Tower Health slips, and persistent tuning restores control.',
         LightcoreTutorialStep.raiseThreat =>
           'The upgraded tower is ready for more pressure. Start the starter-region challenge so stronger waves turn into better rewards.',
         LightcoreTutorialStep.pushNextArea =>
@@ -1796,7 +1796,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         LightcoreTutorialStep.pullFirstWhiteEnemy =>
           'Threat scans add real anomalies to the live deck. White anomalies establish the neutral baseline before color counters appear.',
         LightcoreTutorialStep.readEffectiveGain =>
-          'Output Efficiency turns threat pressure into a visible gain multiplier, so the best scan is the one your core can keep stable.',
+          'Core Health turns threat pressure into a survival decision, so the best push is the one your core can actually hold.',
         LightcoreTutorialStep.managerAutoAim =>
           'Automation proves an assigned manager can fire the core without taking enemy focus control away from the player.',
         LightcoreTutorialStep.upgradeFirstTowerToLevel4 =>
@@ -1810,7 +1810,7 @@ extension LightcoreControllerLayerTraits on LightcoreController {
         LightcoreTutorialStep.setFirstEnemyTarget =>
           'Basic Red is already live in the anomaly deck. The next step is reading how region pressure changes the shell.',
         LightcoreTutorialStep.adjustEnemyCount =>
-          'Anomaly count controls live pressure. More active anomalies can pay faster, but crowded lanes slow Output Efficiency if your towers cannot keep up.',
+          'Anomaly count controls live pressure. More active anomalies can pay faster, but crowded lanes break the run if your towers cannot keep up.',
         LightcoreTutorialStep.openTowerMatrix =>
           'The tower archive stores completed Layer 1 sets and unlocks once the Prism Shell is online.',
         LightcoreTutorialStep.upgradeCoreRange =>

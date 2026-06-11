@@ -498,7 +498,6 @@ extension LightcoreControllerBattleEnemyActions on LightcoreController {
     return max(
       1,
       (enemyCardPreviewReward(card) *
-              outputEfficiencyMultiplier *
               lumenTierMultiplier *
               friendAllianceRewardMultiplier *
               _gearLumenMultiplier *

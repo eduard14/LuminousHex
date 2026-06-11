@@ -160,7 +160,6 @@ extension LightcoreControllerBattleResetActions on LightcoreController {
     _resetRadianceStats();
     _resetLevelUpRadiance();
     totalHelpSectionsRead = 0;
-    _lumenHarvestSlowdown = 0;
     _enemyTicketBuffer = 0;
     _bossUnlockGrantClaimed = false;
     _readHelpSections.clear();

@@ -653,7 +653,6 @@ extension LightcoreControllerCombatDamage on LightcoreController {
         1,
         (enemy.reward *
                 enemy.bountyMultiplier *
-                outputEfficiencyMultiplier *
                 lumenTierMultiplier *
                 friendAllianceRewardMultiplier *
                 _gearLumenMultiplier *

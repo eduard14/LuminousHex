@@ -108,10 +108,6 @@ extension LightcoreControllerSaveRestorePayload on LightcoreController {
       resourceData['totalHelpSectionsRead'],
       fallback: totalHelpSectionsRead,
     );
-    _lumenHarvestSlowdown = _doubleValue(
-      resourceData['lumenHarvestSlowdown'],
-      fallback: _lumenHarvestSlowdown,
-    );
     _enemyTicketBuffer = _doubleValue(
       resourceData['enemyTicketBuffer'],
       fallback: _enemyTicketBuffer,

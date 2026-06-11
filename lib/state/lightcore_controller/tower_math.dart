@@ -1188,7 +1188,6 @@ extension LightcoreControllerTowerMath on LightcoreController {
     return max(
       1,
       (enemy.reward *
-                  outputEfficiencyMultiplier *
                   lumenTierMultiplier *
                   friendAllianceRewardMultiplier *
                   _gearLumenMultiplier *

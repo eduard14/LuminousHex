@@ -75,11 +75,11 @@ already communicate the game better than the lab did.
 The current rebuilt milestone is intentionally narrow: Layer 1 active play plus
 player-confirmed completed shells that install into or store for the Layer 2
 base. The Layer 2 board is not shown on the active battle surface. Sparks and
-Star Bolts drive Layer 1 spending from the profile header, while Threat Scans,
-Store, Passes, menu, and bottom navigation remain visible as locked or
-persistent app context. Managers, equipment, dungeons, tournaments, store,
-battle pass, social, guilds, and threat-map gameplay are visible as locked
-surfaces but are not marketed as playable in this milestone.
+Star Bolts drive Layer 1 spending from the profile header, while Store, Passes,
+menu, and bottom navigation remain visible as locked or persistent app context.
+Managers, equipment, dungeons, tournaments, store, battle pass, social, guilds,
+and threat-map gameplay are visible as locked surfaces but are not marketed as
+playable in this milestone.
 
 ## Feature Inventory
 
@@ -118,8 +118,8 @@ surfaces but are not marketed as playable in this milestone.
 - The first tower/auto-target/upgrade loop grants enough starter Lumens to move
   from build to the first upgrade without idle grinding.
 - Opening waves now escalate mechanically: Wave 2 strengthens normal anomalies
-  and bruises Hex 1 plus Output Efficiency if the first tower is still
-  unupgraded, making the first upgrade feel necessary instead of decorative.
+  and bruises Hex 1 if the first tower is still unupgraded, making the first
+  upgrade feel necessary instead of decorative.
 - Clearing Wave 1 now grants persistent Layer 1 round currency. That first
   payout opens the remaining five Layer 1 tower slots, so early expansion comes
   from a persistent round reward instead of waiting on later milestone gates.
@@ -180,8 +180,8 @@ surfaces but are not marketed as playable in this milestone.
   stable.
 - Unspent Radiance points stay available in Profile without blocking the first
   tower-upgrade-to-wave-push expansion loop.
-- The opening resource rail keeps Lumens and Output Efficiency legible while
-  battle state stays focused on wave, selected tower, challenge, and upgrades.
+- The opening resource rail now prioritizes Layer 1 currencies while battle
+  state stays focused on wave, selected tower, challenge, and upgrades.
 - Tower badges use projectile color and hex-edge level progress only; payload
   tinting is kept out of the first-session visual language until payload traits
   are explicitly taught later.
@@ -264,13 +264,14 @@ surfaces but are not marketed as playable in this milestone.
 - Manager automation upgrades core fire into hands-off target routing without
   adding manual target overrides.
 - Combat rewards charge cadence, tower placement, and keeping lanes stable.
-- Output Efficiency pressure system replaces a simple health-loss fail state.
-- Lane disruption reduces rewards and Tower Health when anomalies reach the ring.
+- Core Health and Core Stability now carry the Layer 1 pressure model instead
+  of a separate reward-output throttle.
+- Lane disruption pressures Tower Health when anomalies reach the ring.
 - Manual Overdrive accelerates the live shell battle.
 - Automatic targeting briefly prioritizes dangerous anomalies during active
   challenges and live farming.
 - Lumo/Luma loading interstitials can show short non-blocking flavor tips such
-  as balancing growth, Tower Health, and Output Efficiency.
+  as balancing growth, Tower Health, and Layer 1 currencies.
 - Screen transitions, event-run loading, and major shell area transitions use the
   same fullscreen branded Lightcore loading interstitial with generic loading
   status, Lumo/Luma background art, and short tip text. App startup shows

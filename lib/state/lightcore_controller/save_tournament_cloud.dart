@@ -743,7 +743,6 @@ extension LightcoreControllerSaveTournamentCloud on LightcoreController {
         'experience': experience,
         'echoSeeds': echoSeeds,
         'totalHelpSectionsRead': totalHelpSectionsRead,
-        'lumenHarvestSlowdown': _lumenHarvestSlowdown,
         'enemyTicketBuffer': _enemyTicketBuffer,
         'equipmentDropCounter': _equipmentDropCounter,
       },

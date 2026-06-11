@@ -1,44 +1,10 @@
 part of '../lightcore_controller.dart';
 
 extension LightcoreControllerStatusBattlePass on LightcoreController {
-  double get outputEfficiencyMultiplier =>
-      (_core.flowEfficiency / 100).clamp(_minimumOutputEfficiency, 1.0);
-
-  double get effectiveExperienceEfficiencyMultiplier =>
-      max(0.35, pow(outputEfficiencyMultiplier, 0.65).toDouble());
+  // L1L2_REBUILD_SAFE: Experience rewards no longer inherit removed output pressure.
+  double get effectiveExperienceEfficiencyMultiplier => 1.0;
 
   String get coreStabilityLabel => '${_core.coreStability.round()}/100';
-
-  String get outputEfficiencyLabel =>
-      '${_core.flowEfficiency.clamp(0, 100).round()}%';
-
-  String get outputEfficiencyStatusLabel {
-    final efficiency = outputEfficiencyMultiplier;
-    if (efficiency >= 0.80) {
-      return 'Stable';
-    }
-    if (efficiency >= 0.55) {
-      return 'Strained';
-    }
-    if (efficiency >= 0.30) {
-      return 'Overloaded';
-    }
-    return 'Collapsed';
-  }
-
-  String get outputEfficiencyTip {
-    final efficiency = outputEfficiencyMultiplier;
-    if (efficiency >= 0.80) {
-      return 'Setup is stable. Raise the Threat Scan if rewards feel low.';
-    }
-    if (efficiency >= 0.55) {
-      return 'Acceptable farming zone. Improve control before pushing harder.';
-    }
-    if (efficiency >= 0.30) {
-      return 'Threat is too high for the current cluster. Lower the scan or add slows, guard, and queue control.';
-    }
-    return 'Core Stability collapsed. Use lower threat and recovery tools until output returns.';
-  }
 
   bool get hasPermanentOverdrive => _hasPermanentOverdrive;
 

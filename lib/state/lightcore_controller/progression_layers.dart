@@ -1262,7 +1262,7 @@ extension LightcoreControllerProgressionLayers on LightcoreController {
   }
 
   String get flowSummary =>
-      'Output Efficiency is the visible multiplier from hidden Core Stability. Effective Gain = Base Gain x Threat Reward x Output Efficiency.';
+      'Core Stability is the pressure value from enemy leaks. Rebuilt rewards no longer use a separate output multiplier.';
 
   int boostedExperienceRewardFor(int baseExperience) =>
       _boostedExperienceReward(baseExperience);

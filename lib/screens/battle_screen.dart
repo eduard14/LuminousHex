@@ -2997,8 +2997,8 @@ void _showCoreFullStatsDialog(
                 '${controller.coreState.level}/${LightcoreController.maxCoreLevel}',
           ),
           _InlineStatEntry(
-            label: 'Output',
-            value: controller.outputEfficiencyLabel,
+            label: 'Stability',
+            value: controller.coreStabilityLabel,
           ),
         ],
         [

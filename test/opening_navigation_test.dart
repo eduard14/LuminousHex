@@ -40,14 +40,9 @@ void main() {
     );
     expect(
       find.byTooltip('${controller.enemyTicketLabel} (locked)'),
-      findsOneWidget,
+      findsNothing,
     );
-    expect(
-      find.byTooltip(
-        'Output Efficiency: ${controller.outputEfficiencyLabel} • Core Stability ${controller.coreStabilityLabel}',
-      ),
-      findsOneWidget,
-    );
+    expect(find.textContaining('Output Efficiency'), findsNothing);
     expect(find.text('Start Run'), findsOneWidget);
     expect(find.textContaining('Sparks'), findsWidgets);
     expect(find.textContaining('Build Feeder'), findsNothing);

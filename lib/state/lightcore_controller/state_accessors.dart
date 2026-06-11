@@ -1614,8 +1614,8 @@ extension LightcoreControllerStateAccessors on LightcoreController {
         deck.length;
   }
 
-  double get activeEffectiveGainMultiplier =>
-      activeThreatRewardMultiplier * outputEfficiencyMultiplier;
+  // L1L2_REBUILD_SAFE: Effective gain now follows threat reward directly.
+  double get activeEffectiveGainMultiplier => activeThreatRewardMultiplier;
 
   String get activeThreatRewardLabel =>
       'x${activeThreatRewardMultiplier.toStringAsFixed(2)}';
@@ -1629,7 +1629,8 @@ extension LightcoreControllerStateAccessors on LightcoreController {
     final directorNames = _activeThreatDirectorNames(deck);
     final threatReward = activeThreatRewardMultiplier;
     final stabilityPressure = activeThreatStabilityMultiplier;
-    final outputEfficiency = outputEfficiencyMultiplier;
+    // L1L2_LEGACY_REVISIT: Threat bundle UI is hidden in the rebuild, but the snapshot remains stable for old screens/tests.
+    const outputEfficiency = 1.0;
     return ThreatScanBundleSnapshot(
       id: _threatScanBundleId(deck),
       name: _threatScanBundleName(deck, primaryAffinity),
@@ -1660,24 +1661,18 @@ extension LightcoreControllerStateAccessors on LightcoreController {
       threatRewardMultiplier: threatReward,
       stabilityPressureMultiplier: stabilityPressure,
       outputEfficiencyMultiplier: outputEfficiency,
-      effectiveGainMultiplier: threatReward * outputEfficiency,
+      effectiveGainMultiplier: threatReward,
     );
   }
 
   double get passiveLumenPerSecond =>
-      passiveLumenBasePerSecond *
-      lumenHarvestEfficiency *
-      _economyBalanceMultiplier('passiveLumens');
+      passiveLumenBasePerSecond * _economyBalanceMultiplier('passiveLumens');
 
   double get passiveLumenBasePerSecond => _layers
       .where((layer) => layer.id != runtimeLayer.id)
       .fold(0.0, (sum, layer) => sum + _passiveLumenBaseForLayer(layer));
 
-  double get lumenHarvestEfficiency => outputEfficiencyMultiplier;
-
   bool get hasLumenHarvestPressure => _core.coreStability < 99.5;
-
-  String get lumenHarvestEfficiencyLabel => outputEfficiencyLabel;
 
   String get lumenHarvestRecoveryLabel {
     if (!hasLumenHarvestPressure) {

@@ -375,7 +375,7 @@ class _SwarmPressurePanel extends StatelessWidget {
           Text('Knowledge Book Pressure', style: textTheme.titleLarge),
           const SizedBox(height: 6),
           Text(
-            '${bundle.name}: built from the active region, Knowledge Book, and Threat Director tuning. Directors adjust current spawn cadence and enemy strength for reward bonuses. Effective Gain is Threat Reward multiplied by Output Efficiency. ${bundle.counterplayLabel}',
+            '${bundle.name}: built from the active region, Knowledge Book, and Threat Director tuning. Directors adjust current spawn cadence and enemy strength for reward bonuses. Effective Gain now follows Threat Reward directly. ${bundle.counterplayLabel}',
             style: textTheme.bodyMedium,
           ),
           const SizedBox(height: 14),
@@ -398,7 +398,6 @@ class _SwarmPressurePanel extends StatelessWidget {
               _InfoChip(
                 label: 'Budget ${controller.activeLayerMaxDpsPerEnemyLabel}',
               ),
-              _InfoChip(label: 'Output ${controller.outputEfficiencyLabel}'),
               _InfoChip(label: 'Gain ${bundle.effectiveGainLabel}'),
               if (groupStats.hasAnomalies)
                 _InfoChip(
@@ -417,16 +416,14 @@ class _SwarmPressurePanel extends StatelessWidget {
                 ),
               if (groupStats.isDpsLimited)
                 const _InfoChip(label: 'DPS limited'),
-              _InfoChip(label: controller.outputEfficiencyStatusLabel),
+              const _InfoChip(label: 'Rewards direct'),
             ],
           ),
           const SizedBox(height: 8),
           Text(
-            controller.outputEfficiencyTip,
+            'Core pressure affects survival, not reward output, in the Layer 1 rebuild.',
             style: textTheme.bodySmall?.copyWith(
-              color: controller.outputEfficiencyMultiplier >= 0.55
-                  ? LightcorePalette.mist.withValues(alpha: 0.82)
-                  : LightcorePalette.warning,
+              color: LightcorePalette.mist.withValues(alpha: 0.82),
               fontWeight: FontWeight.w700,
             ),
           ),

@@ -9,7 +9,7 @@ import 'cosmic_guide_avatar.dart';
 
 const List<String> _defaultLoadingTips = <String>[
   'The optimal growth strategy may not be 100% damage.',
-  'Output Efficiency can beat raw reward boosts when stability starts slipping.',
+  'Core Health is the run clock when anomalies start reaching the tower.',
   'Threat Scans are safer when your tower colors already counter the region.',
 ];
 

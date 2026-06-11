@@ -406,7 +406,7 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
     id: 'TUT-009',
     title: 'Reinforce Hex 1',
     teachGoal:
-        'When anomalies push through, Output Efficiency drops. Upgrading the active tower restores Tower Health and holds the lane.',
+        'When anomalies push through, Tower Health drops. Upgrading the active tower restores the lane and keeps the run alive.',
     trigger: 'First anomaly pressure dents the opening lane',
     primaryClickTarget: 'Tower Stats pop-out > Upgrade',
     coachCopy:
@@ -463,16 +463,16 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
   ),
   LightcoreTutorialStep.readEffectiveGain: LightcoreTutorialQuestDefinition(
     id: 'TUT-011',
-    title: 'Check Efficiency',
+    title: 'Check Core Pressure',
     teachGoal:
-        'Output Efficiency is the real farming limiter. Bigger threats only help when your shell stays stable enough to cash them in.',
+        'Core Stability and Tower Health are the pressure limiters. Bigger threats only help when the shell survives them.',
     trigger: 'After first research scan',
-    primaryClickTarget: 'Left stat stack > Output Efficiency %',
+    primaryClickTarget: 'Battlefield > Core Health',
     coachCopy:
-        'Open Output Efficiency when you want the income formula: Base Gain x Threat Reward x Output Efficiency.',
+        'Watch Core Health when deciding whether the current shell can handle more pressure.',
     completionCondition: 'Open stability panel',
     reward: 'Small Lumen boost',
-    failureHelpState: 'Click Output Efficiency to show the formula again.',
+    failureHelpState: 'Review Core Health before pushing pressure higher.',
     analyticsEvent: 'tutorial_read_effective_gain',
   ),
   LightcoreTutorialStep.managerAutoAim: LightcoreTutorialQuestDefinition(
@@ -725,7 +725,7 @@ _tutorialQuestDefinitions = <LightcoreTutorialStep, LightcoreTutorialQuestDefini
     title: 'Assign a Core Manager',
     teachGoal:
         'A Core Manager assigns to the shell and turns core charge into steady auto-fire.',
-    trigger: 'After Output Efficiency shown',
+    trigger: 'After core pressure shown',
     primaryClickTarget: 'Managers > Core Manager > Assign to Shell',
     coachCopy:
         'Assign the Core Manager to the shell. Managers fire automatically and add tower-wide bonuses.',
@@ -963,8 +963,6 @@ const int maxEnemyTargetUpgradeLevel =
     LightcoreController.maxEnemyTargetUpgradeLevel;
 const double _maxFlowEfficiency = LightcoreController._maxFlowEfficiency;
 const double _maxCoreStability = LightcoreController._maxCoreStability;
-const double _minimumOutputEfficiency =
-    LightcoreController._minimumOutputEfficiency;
 const double _baseCoreStabilityRecoveryPerSecond =
     LightcoreController._baseCoreStabilityRecoveryPerSecond;
 const int _coreEnergyUnlockLayer = LightcoreController._coreEnergyUnlockLayer;
@@ -1098,8 +1096,6 @@ const double _baseBattleSpeedMultiplier =
     LightcoreController._baseBattleSpeedMultiplier;
 const double _manualOverdriveMaxMultiplier =
     LightcoreController._manualOverdriveMaxMultiplier;
-const double _maxLumenHarvestSlowdown =
-    LightcoreController._maxLumenHarvestSlowdown;
 const double _relayHitLumenHarvestDamageScale =
     LightcoreController._relayHitLumenHarvestDamageScale;
 const double _emptyLaneLumenHarvestDamageScale =
@@ -1345,8 +1341,6 @@ class LightcoreController extends ChangeNotifier {
   static const double _farmValidationBaseWaveSeconds = 30;
   static const double _maxFlowEfficiency = 100;
   static const double _maxCoreStability = 100;
-  static const double _minimumOutputEfficiency = 0.15;
-  static const double _outputEfficiencyGamma = 1.10;
   static const double _baseCoreStabilityRecoveryPerSecond = 0.8;
   static const int _coreEnergyUnlockLayer = 3;
   static const int _maxCoreEnergyUpgradeLevel = 5;
@@ -1542,7 +1536,6 @@ class LightcoreController extends ChangeNotifier {
   static const double _manualOverdriveDecayPerSecond = 0.45;
   static const double _baseBattleSpeedMultiplier = 0.75;
   static const double _manualOverdriveMaxMultiplier = 1.5;
-  static const double _maxLumenHarvestSlowdown = 0.24;
   static const double _relayHitLumenHarvestDamageScale = 12;
   static const double _emptyLaneLumenHarvestDamageScale = 18;
   static const int tutorialFirstHexUnlockExperience = 8;
@@ -1713,7 +1706,6 @@ class LightcoreController extends ChangeNotifier {
   double _bannerTimer = 0;
   double _levelUpRadianceProgress = 1;
   double _notifyAccumulator = 0;
-  double _lumenHarvestSlowdown = 0;
   double _enemyTicketBuffer = 0;
   double _eventOfflineLumenBuffer = 0;
   double _eventOfflineKillBuffer = 0;
@@ -1869,23 +1861,13 @@ class LightcoreController extends ChangeNotifier {
   }
 
   static double _outputEfficiencyPercentForStability(double stability) {
-    final normalized = (stability.clamp(0.0, _maxCoreStability) / 100).clamp(
-      0.0,
-      1.0,
-    );
-    return max(
-          _minimumOutputEfficiency,
-          pow(normalized, _outputEfficiencyGamma).toDouble(),
-        ) *
-        100;
+    // L1L2_REBUILD_SAFE: Retired output pressure normalizes legacy persistence paths to full output.
+    return _maxFlowEfficiency;
   }
 
   static double _stabilityForLegacyOutputEfficiency(double flowEfficiency) {
-    final normalized = (flowEfficiency / 100).clamp(
-      _minimumOutputEfficiency,
-      1.0,
-    );
-    return pow(normalized, 1 / _outputEfficiencyGamma).toDouble() * 100;
+    // L1L2_REBUILD_SAFE: Old saves with reduced flow efficiency no longer restore reduced output.
+    return _maxCoreStability;
   }
 
   static int summoningLevelForPullCount(int pullCount) {

@@ -128,7 +128,6 @@ void main() {
       pressureController.slots[0],
     );
     expect(startingHealth, 1.0);
-    expect(pressureController.outputEfficiencyMultiplier, 1.0);
 
     pressureController.tick(0.1);
 
@@ -136,7 +135,6 @@ void main() {
       pressureController.towerHealthFraction(pressureController.slots[0]),
       lessThan(startingHealth),
     );
-    expect(pressureController.outputEfficiencyMultiplier, lessThan(1.0));
   });
 
   test('opening wave 2 pressure waits when Hex 1 has been upgraded', () {
@@ -154,7 +152,6 @@ void main() {
     controller.tick(0.1);
 
     expect(controller.towerHealthFraction(controller.slots[0]), 1.0);
-    expect(controller.outputEfficiencyMultiplier, 1.0);
     expect(
       controller.bannerMessage,
       isNot(contains('Anomaly pressure bruised Hex 1')),

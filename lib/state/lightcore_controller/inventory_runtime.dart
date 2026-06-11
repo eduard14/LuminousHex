@@ -93,7 +93,6 @@ extension LightcoreControllerInventoryRuntime on LightcoreController {
         .fold<double>(0, (sum, tower) => sum + _towerStrengthForTower(tower));
     final coreScore =
         (coreState.level * 125) +
-        (coreState.flowEfficiency * 5.2) +
         (coreEffectiveRange * 0.34) +
         (coreEffectiveShotsPerSecond * 180);
     final equipmentScore = EquipmentLoadoutSlot.values.fold<double>(0, (
@@ -1292,9 +1291,8 @@ extension LightcoreControllerInventoryRuntime on LightcoreController {
   }
 
   void _updateFlowEfficiency() {
-    _core = _core.copyWith(
-      flowEfficiency: _outputEfficiencyPercentForStability(_core.coreStability),
-    );
+    // L1L2_REBUILD_SAFE: Retired output pressure keeps legacy state normalized.
+    _core = _core.copyWith(flowEfficiency: _maxFlowEfficiency);
   }
 
   void _drainBanner(double dt) {

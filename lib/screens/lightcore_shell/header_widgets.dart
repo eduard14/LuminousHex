@@ -36,7 +36,6 @@ class _ShellProfileHeaderHud extends StatelessWidget {
         : compact
         ? 128.0
         : 218.0;
-    final outputEfficiency = controller.outputEfficiencyLabel;
     final guideLoadout = LightcoreController.equipmentReleaseEnabled
         ? CosmicEquipmentLoadout.fromItems(<PlayerEquipmentItem?>[
             for (final slot in EquipmentLoadoutSlot.values)
@@ -146,14 +145,6 @@ class _ShellProfileHeaderHud extends StatelessWidget {
                       tint: LightcorePalette.violet,
                       compact: compact,
                     ),
-                    _ShellHeaderStatRow(
-                      // L1L2_REBUILD_SAFE: Threat Scans remain visible as a locked future-system currency during the Layer 1/2 rebuild.
-                      tooltip: '${controller.enemyTicketLabel} (locked)',
-                      icon: LightcoreIcons.threatScan,
-                      value: _formatMetricCount(controller.enemyTickets),
-                      tint: LightcorePalette.scanGlow,
-                      compact: compact,
-                    ),
                   ] else ...[
                     _ShellHeaderStatRow(
                       tooltip: 'Lumen: ${controller.lumens}',
@@ -171,28 +162,7 @@ class _ShellProfileHeaderHud extends StatelessWidget {
                         tint: LightcorePalette.aether,
                         compact: compact,
                       ),
-                    if (!openingMode)
-                      _ShellHeaderStatRow(
-                        // L1L2_REBUILD_SAFE: Threat Scans remain visible as a locked future-system currency during the Layer 1/2 rebuild.
-                        tooltip: controller.enemyTicketLabel,
-                        icon: LightcoreIcons.threatScan,
-                        value: _formatMetricCount(controller.enemyTickets),
-                        tint: LightcorePalette.scanGlow,
-                        compact: compact,
-                      ),
                   ],
-                  _ShellHeaderStatRow(
-                    tooltip:
-                        'Output Efficiency: $outputEfficiency • Core Stability ${controller.coreStabilityLabel}',
-                    icon: Icons.blur_circular_rounded,
-                    value: outputEfficiency,
-                    tint: controller.outputEfficiencyMultiplier >= 0.55
-                        ? LightcorePalette.success
-                        : LightcorePalette.warning,
-                    compact: compact,
-                    highlighted: controller.tutorialHighlightsCoreStats,
-                    onTap: controller.markTutorialStabilityPanelOpened,
-                  ),
                 ],
               ),
             ),
@@ -210,9 +180,7 @@ class _ShellHeaderStatRow extends StatefulWidget {
     required this.value,
     required this.tint,
     required this.compact,
-    this.highlighted = false,
     this.glowSignal,
-    this.onTap,
   });
 
   final String tooltip;
@@ -220,9 +188,7 @@ class _ShellHeaderStatRow extends StatefulWidget {
   final String value;
   final Color tint;
   final bool compact;
-  final bool highlighted;
   final int? glowSignal;
-  final VoidCallback? onTap;
 
   @override
   State<_ShellHeaderStatRow> createState() => _ShellHeaderStatRowState();
@@ -323,19 +289,7 @@ class _ShellHeaderStatRowState extends State<_ShellHeaderStatRow>
         );
       },
     );
-    return Tooltip(
-      message: widget.tooltip,
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: widget.onTap,
-        child: GuidedFocusFrame(
-          active: widget.highlighted,
-          tint: LightcorePalette.quest,
-          label: 'OUTPUT',
-          child: row,
-        ),
-      ),
-    );
+    return Tooltip(message: widget.tooltip, child: row);
   }
 }
 
@@ -695,8 +649,8 @@ extension on _ShellOverlayDestination {
       'Promotion carries build history forward into the next shell class.',
     ],
     _ => const [
-      'Output Efficiency can beat raw reward boosts when stability starts slipping.',
-      'Threat Scans become Knowledge Cards that improve anomaly matchups.',
+      'Tower Health pressure decides how long the current run can keep going.',
+      'Sparks reset each run while Star Bolts carry permanent Layer 1 progress.',
     ],
   };
 
@@ -752,7 +706,7 @@ String _rebuildDestinationLockMessage(_ShellOverlayDestination destination) {
     _ShellOverlayDestination.managers =>
       'Managers are locked while the Layer 1/2 base loop is rebuilt.',
     _ShellOverlayDestination.threatMap =>
-      'Threat Scans are visible in the header, but Threat Map play unlocks after the Layer 1/2 base loop is stable.',
+      'Threat Map play unlocks after the Layer 1/2 base loop is stable.',
     _ShellOverlayDestination.enemies =>
       'Anomaly cards are locked until the rebuilt Layer 1 shell loop is stable.',
     _ShellOverlayDestination.dungeons =>
