@@ -136,6 +136,8 @@ class _BattleStatsTarget {
 
 class _BattleScreenState extends State<BattleScreen> {
   static const double _canvasTapSlop = 12;
+  static const String _battleBackgroundAsset =
+      'assets/Images/battle_space_background.png';
 
   late LightcoreBattleGame _game;
   late final FocusNode _shortcutFocusNode;
@@ -380,6 +382,12 @@ class _BattleScreenState extends State<BattleScreen> {
       child: Stack(
         fit: StackFit.expand,
         children: [
+          Image.asset(
+            _battleBackgroundAsset,
+            fit: BoxFit.cover,
+            alignment: Alignment.center,
+            filterQuality: FilterQuality.high,
+          ),
           IgnorePointer(
             ignoring: !widget.enableBattlefieldTaps,
             child: GameWidget(
@@ -1073,7 +1081,6 @@ class _BattleScreenState extends State<BattleScreen> {
               controller: controller,
               game: _game,
               compact: compact,
-              dockOpen: dockOpen || _layerRebuildActionDockVisible,
             ),
           ),
         if (!rebuildHudVisible &&
@@ -1212,19 +1219,17 @@ class _BattleScreenState extends State<BattleScreen> {
   }
 }
 
-// L1L2_REBUILD_SAFE: Projectile queue is now visualized in the battlefield orbit instead of a heavy HUD group.
+// L1L2_REBUILD_SAFE: Projectile queue is visualized as core-anchored spiral lanes instead of a heavy HUD group.
 class _LayerRebuildQueueOrbitOverlay extends StatefulWidget {
   const _LayerRebuildQueueOrbitOverlay({
     required this.controller,
     required this.game,
     required this.compact,
-    required this.dockOpen,
   });
 
   final LightcoreController controller;
   final LightcoreBattleGame game;
   final bool compact;
-  final bool dockOpen;
 
   @override
   State<_LayerRebuildQueueOrbitOverlay> createState() =>
@@ -1277,12 +1282,12 @@ class _LayerRebuildQueueOrbitOverlayState
               painter: _LayerRebuildQueueOrbitPainter(
                 queue: queue,
                 capacity: capacity,
+                laneCount: controller.coreMultiShotCount,
                 readyProgress: readyProgress,
                 pulseValue: _pulseController.value,
                 readyToFire: readyToFire,
                 coreCenter: widget.game.debugCoreCenter,
                 compact: widget.compact,
-                dockOpen: widget.dockOpen,
               ),
               size: Size.infinite,
             );
@@ -1297,22 +1302,22 @@ class _LayerRebuildQueueOrbitPainter extends CustomPainter {
   const _LayerRebuildQueueOrbitPainter({
     required this.queue,
     required this.capacity,
+    required this.laneCount,
     required this.readyProgress,
     required this.pulseValue,
     required this.readyToFire,
     required this.coreCenter,
     required this.compact,
-    required this.dockOpen,
   });
 
   final List<AmmoPacket> queue;
   final int capacity;
+  final int laneCount;
   final double readyProgress;
   final double pulseValue;
   final bool readyToFire;
   final Offset? coreCenter;
   final bool compact;
-  final bool dockOpen;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -1321,98 +1326,141 @@ class _LayerRebuildQueueOrbitPainter extends CustomPainter {
     }
     final fallbackY = size.height * (compact ? 0.48 : 0.50);
     final center = coreCenter ?? Offset(size.width / 2, fallbackY);
-    final verticalLift = dockOpen ? (compact ? 22.0 : 18.0) : 0.0;
-    final orbitCenter = Offset(center.dx, center.dy - verticalLift);
-    final safeRadius =
-        math.min(size.width, size.height) * (compact ? 0.18 : 0.16);
-    final orbitRadius = safeRadius.clamp(52.0, 88.0).toDouble();
-    final visibleSlots = math.min(capacity, 12);
+    final lanes = math.max(1, math.min(laneCount, 5));
+    final visibleSlots = math.min(capacity, 24);
     if (visibleSlots <= 0) {
       return;
     }
 
-    final orbitPaint = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.4
-      ..color = LightcorePalette.aether.withValues(alpha: 0.16);
-    canvas.drawCircle(orbitCenter, orbitRadius, orbitPaint);
-
     final pulse = math.sin(pulseValue * math.pi * 2) * 0.5 + 0.5;
+    final readyPulse = readyToFire ? pulse : 0.0;
+    final safeRadius =
+        math.min(size.width, size.height) * (compact ? 0.15 : 0.135);
+    final outerRadius = safeRadius.clamp(44.0, 74.0).toDouble();
+    final innerRadius = (compact ? 13.0 : 15.0);
+    final laneSpacing = compact ? 5.0 : 6.5;
+    final maxLaneSlots = (visibleSlots / lanes).ceil();
+    final laneTurns = compact ? 1.02 : 1.12;
+    final coreGlowPaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.1
+      ..color = LightcorePalette.mist.withValues(alpha: 0.18);
+    canvas.drawCircle(center, innerRadius + 5, coreGlowPaint);
+
+    for (var lane = lanes - 1; lane >= 0; lane -= 1) {
+      final laneRadius = math.max(32.0, outerRadius - (lane * laneSpacing));
+      final laneStartAngle = _laneStartAngle(lane, lanes);
+      final path = Path();
+      var started = false;
+      final samples = 42;
+      for (var sample = 0; sample <= samples; sample += 1) {
+        final t = sample / samples;
+        final point = _spiralPoint(
+          center: center,
+          startAngle: laneStartAngle,
+          laneTurns: laneTurns,
+          innerRadius: innerRadius,
+          outerRadius: laneRadius,
+          progress: t,
+        );
+        if (!started) {
+          path.moveTo(point.dx, point.dy);
+          started = true;
+        } else {
+          path.lineTo(point.dx, point.dy);
+        }
+      }
+      canvas.drawPath(
+        path,
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.15
+          ..color = LightcorePalette.aether.withValues(
+            alpha: lane == 0 ? 0.20 : 0.10,
+          ),
+      );
+    }
+
     final loadedCount = queue.length.clamp(0, visibleSlots);
     for (var index = 0; index < visibleSlots; index += 1) {
-      final slotAngle =
-          (-math.pi / 2) +
-          (index / visibleSlots * math.pi * 2) +
-          (pulseValue * 0.22);
-      final point = Offset(
-        orbitCenter.dx + math.cos(slotAngle) * orbitRadius,
-        orbitCenter.dy + math.sin(slotAngle) * orbitRadius,
+      final lane = index % lanes;
+      final laneIndex = index ~/ lanes;
+      final laneCapacity = math.max(
+        1,
+        (visibleSlots - lane + lanes - 1) ~/ lanes,
+      );
+      final laneStartAngle = _laneStartAngle(lane, lanes);
+      final denominator = math.max(1, math.max(maxLaneSlots, laneCapacity) - 1);
+      final progress = denominator == 0 ? 0.0 : laneIndex / denominator;
+      final point = _spiralPoint(
+        center: center,
+        startAngle: laneStartAngle,
+        laneTurns: laneTurns,
+        innerRadius: innerRadius,
+        outerRadius: math.max(32.0, outerRadius - (lane * laneSpacing)),
+        progress: progress.clamp(0.0, 1.0).toDouble(),
       );
       final packet = index < queue.length ? queue[index] : null;
       final isNext = index == 0 && packet != null;
       final tint = packet?.affinity.color ?? LightcorePalette.mist;
-      final radius = isNext ? 9.5 : 7.0;
+      final radius = isNext ? 6.2 : 4.2;
 
       canvas.drawCircle(
         point,
-        radius + (isNext && readyToFire ? pulse * 4.0 : 0.0),
+        radius + (isNext ? readyPulse * 5.0 : 0.0),
         Paint()
           ..style = PaintingStyle.fill
-          ..color = tint.withValues(alpha: packet == null ? 0.08 : 0.18),
+          ..color = tint.withValues(alpha: packet == null ? 0.06 : 0.30),
       );
       canvas.drawCircle(
         point,
         radius,
         Paint()
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = isNext ? 2.0 : 1.25
+          ..style = packet == null ? PaintingStyle.stroke : PaintingStyle.fill
+          ..strokeWidth = 1.1
           ..color = (isNext ? LightcorePalette.solar : tint).withValues(
-            alpha: packet == null ? 0.26 : 0.74,
+            alpha: packet == null ? 0.28 : 0.82,
           ),
       );
-      if (packet != null) {
+      if (isNext) {
         paintProjectileSymbolGlyph(
           canvas,
           point,
           projectileType: packet.projectileType,
-          size: radius * 1.35,
+          size: radius * 1.9,
           color: tint,
-          opacity: isNext ? 1 : 0.78,
+          opacity: 1,
         );
       }
     }
 
     final nextPacket = queue.isNotEmpty ? queue.first : null;
     final nextTint = nextPacket?.affinity.color ?? LightcorePalette.aether;
-    final chargeRadius = orbitRadius * 0.46;
-    final chargeCenter = Offset(
-      orbitCenter.dx,
-      orbitCenter.dy - (compact ? orbitRadius * 0.20 : orbitRadius * 0.24),
-    );
+    final chargeRadius = compact ? 21.0 : 24.0;
     canvas.drawCircle(
-      chargeCenter,
+      center,
       chargeRadius,
       Paint()
         ..style = PaintingStyle.fill
-        ..color = LightcorePalette.abyss.withValues(alpha: 0.44),
+        ..color = LightcorePalette.abyss.withValues(alpha: 0.30),
     );
     canvas.drawCircle(
-      chargeCenter,
+      center,
       chargeRadius,
       Paint()
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 1.5
+        ..strokeWidth = 1.35
         ..color = nextTint.withValues(alpha: nextPacket == null ? 0.22 : 0.48),
     );
     final chargeArc = Paint()
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round
-      ..strokeWidth = 4.2
+      ..strokeWidth = 3.8
       ..color = (readyToFire ? LightcorePalette.solar : nextTint).withValues(
         alpha: nextPacket == null ? 0.22 : 0.92,
       );
     canvas.drawArc(
-      Rect.fromCircle(center: chargeCenter, radius: chargeRadius),
+      Rect.fromCircle(center: center, radius: chargeRadius),
       -math.pi / 2,
       math.pi * 2 * readyProgress.clamp(0.0, 1.0),
       false,
@@ -1421,9 +1469,9 @@ class _LayerRebuildQueueOrbitPainter extends CustomPainter {
     if (nextPacket != null) {
       paintProjectileSymbolGlyph(
         canvas,
-        chargeCenter,
+        center,
         projectileType: nextPacket.projectileType,
-        size: chargeRadius * 0.72,
+        size: chargeRadius * 0.62,
         color: nextTint,
         opacity: 0.94,
       );
@@ -1431,8 +1479,8 @@ class _LayerRebuildQueueOrbitPainter extends CustomPainter {
 
     if (readyToFire && nextPacket != null) {
       canvas.drawCircle(
-        chargeCenter,
-        chargeRadius + 6 + (pulse * 7),
+        center,
+        chargeRadius + 5 + (pulse * 6),
         Paint()
           ..style = PaintingStyle.stroke
           ..strokeWidth = 2.0
@@ -1454,22 +1502,47 @@ class _LayerRebuildQueueOrbitPainter extends CustomPainter {
       textDirection: TextDirection.ltr,
     )..layout();
     final labelOffset = Offset(
-      chargeCenter.dx - labelPainter.width / 2,
-      chargeCenter.dy + chargeRadius + 7,
+      center.dx - labelPainter.width / 2,
+      center.dy + chargeRadius + 8,
     );
     labelPainter.paint(canvas, labelOffset);
+  }
+
+  static double _laneStartAngle(int lane, int lanes) {
+    if (lanes == 1) {
+      return -math.pi / 2;
+    }
+    final spread = math.pi * 0.72;
+    final start = -math.pi / 2 - (spread / 2);
+    return start + (lane / (lanes - 1)) * spread;
+  }
+
+  static Offset _spiralPoint({
+    required Offset center,
+    required double startAngle,
+    required double laneTurns,
+    required double innerRadius,
+    required double outerRadius,
+    required double progress,
+  }) {
+    final radius = innerRadius + (outerRadius - innerRadius) * progress;
+    final angle = startAngle + (progress * math.pi * 2 * laneTurns);
+    return Offset(
+      center.dx + math.cos(angle) * radius,
+      center.dy + math.sin(angle) * radius,
+    );
   }
 
   @override
   bool shouldRepaint(covariant _LayerRebuildQueueOrbitPainter oldDelegate) {
     return oldDelegate.queue != queue ||
         oldDelegate.capacity != capacity ||
+        oldDelegate.laneCount != laneCount ||
         oldDelegate.readyProgress != readyProgress ||
         oldDelegate.pulseValue != pulseValue ||
         oldDelegate.readyToFire != readyToFire ||
         oldDelegate.coreCenter != coreCenter ||
-        oldDelegate.compact != compact ||
-        oldDelegate.dockOpen != dockOpen;
+        oldDelegate.compact != compact;
   }
 }
 

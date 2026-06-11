@@ -108,6 +108,9 @@ class LightcoreBattleGame extends FlameGame with ScaleDetector {
   bool _layoutReady = false;
 
   @override
+  Color backgroundColor() => Colors.transparent;
+
+  @override
   void onGameResize(Vector2 size) {
     super.onGameResize(size);
     _recomputeLayout();
@@ -621,11 +624,7 @@ class LightcoreBattleGame extends FlameGame with ScaleDetector {
     final rect = Offset.zero & Size(size.x, size.y);
     final backgroundPaint = Paint()
       ..shader = const LinearGradient(
-        colors: [
-          LightcorePalette.night,
-          LightcorePalette.abyss,
-          Color(0xFF102B3E),
-        ],
+        colors: [Color(0xCC05090F), Color(0xB0020810), Color(0xD20B2230)],
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
       ).createShader(rect);
@@ -654,7 +653,10 @@ class LightcoreBattleGame extends FlameGame with ScaleDetector {
 
   void _renderFallbackBackground(Canvas canvas) {
     final rect = Offset.zero & Size(math.max(size.x, 1), math.max(size.y, 1));
-    canvas.drawRect(rect, Paint()..color = LightcorePalette.night);
+    canvas.drawRect(
+      rect,
+      Paint()..color = LightcorePalette.night.withValues(alpha: 0.72),
+    );
   }
 
   void _renderArena(Canvas canvas) {

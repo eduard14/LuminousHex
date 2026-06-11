@@ -99,8 +99,8 @@ surfaces but are not marketed as playable in this milestone.
   should spend Sparks and persistent Star Bolts across several attempts before
   Wave 10 plus a complete seven-hex shell becomes reliable.
 - The rebuilt battle surface removes duplicate resource cards while queued
-  projectile packets orbit the Lightcore, with a larger charge ring showing the
-  next shot and cooldown progress.
+  projectile packets spiral into the Lightcore from one or more multishot lanes,
+  with a core-centered charge ring showing the next shot and cooldown progress.
 - Relay towers charge shots into the Lightcore instead of asking the player to
   manually queue or drag ammo.
 - Opening combat is low-friction: shots auto-charge after the player presses Play,
@@ -216,6 +216,9 @@ surfaces but are not marketed as playable in this milestone.
   keeping build/stat actions distinct from automated combat targeting.
 - Battlefield hex slots now render as subdued HUD frames underneath anomalies,
   so enemy bodies remain the top combat read when they cross the tower grid.
+- The battle canvas now sits over dark space background art with edge nebulae
+  and faint hex circuitry, while the center stays subdued for Lightcore
+  readability.
 - Active battle anomalies render as black discs with white rings, and their
   remaining health fills from the center as a white core.
 - Tower slot collision uses the same hex geometry as the HUD frames, while core
