@@ -9,7 +9,7 @@ import 'package:lightcore/models/lightcore_types.dart';
 import 'package:lightcore/state/lightcore_controller.dart';
 
 void main() {
-  test('new Layer 1 run resets Sparks and run upgrades only', () {
+  test('reset Layer 1 run restarts Wave 1 and clears run upgrades only', () {
     final controller = LightcoreController();
     addTearDown(controller.dispose);
 
@@ -17,15 +17,20 @@ void main() {
     expect(controller.layerRunState.wave, 1);
     expect(controller.layerRunState.active, isTrue);
     expect(controller.sparks, LightcoreController.layer1BaseStartingSparks);
+    expect(controller.coreState.coreStability, 100);
 
     expect(controller.buyRunUpgrade(LayerRunUpgradeType.damage), isTrue);
+    controller.debugApplyLumenHarvestDamage(25);
     expect(controller.layerRunState.rankFor(LayerRunUpgradeType.damage), 1);
     expect(controller.coreState.level, 2);
+    expect(controller.coreState.coreStability, lessThan(100));
 
     controller.resetLayer1Run();
-    expect(controller.layerRunState.active, isFalse);
+    expect(controller.layerRunState.active, isTrue);
+    expect(controller.layerRunState.wave, 1);
     expect(controller.layerRunState.rankFor(LayerRunUpgradeType.damage), 0);
     expect(controller.sparks, LightcoreController.layer1BaseStartingSparks);
+    expect(controller.coreState.coreStability, 100);
     expect(controller.starBolts, 0);
   });
 

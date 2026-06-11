@@ -194,6 +194,10 @@ extension LightcoreControllerLayerRebuild on LightcoreController {
     _outerRingRevealed = true;
     _swarmActivated = true;
     _battleSpawnPolicy = LightcoreBattleSpawnPolicy.automatic;
+    _core = _core.copyWith(
+      coreStability: _maxCoreStability,
+      flowEfficiency: _maxFlowEfficiency,
+    );
     _applyLayerRebuildCoreUpgrades();
     _showBanner(
       'Layer 1 run started. Spend Sparks on Damage, Fire Rate, Multishot, and Queue Size before Wave 10.',
@@ -203,8 +207,11 @@ extension LightcoreControllerLayerRebuild on LightcoreController {
   }
 
   void resetLayer1Run() {
-    // L1L2_REBUILD_SAFE: Explicit reset clears active run economy without touching persistent rebuild state.
-    _layerRun = LayerRunState.initial(startingSparks: layer1StartingSparks);
+    // L1L2_REBUILD_SAFE: Explicit reset restarts the active Layer 1 run at
+    // Wave 1, clearing only Sparks purchases and active-wave state.
+    _layerRun = LayerRunState.initial(
+      startingSparks: layer1StartingSparks,
+    ).copyWith(active: true, wave: 1);
     activeLayer.bestWaveReached = 1;
     activeLayer.roundCurrency = 0;
     _enemies = <EnemyState>[];
@@ -212,8 +219,18 @@ extension LightcoreControllerLayerRebuild on LightcoreController {
     _pulses = <EnergyPulseState>[];
     _impacts = <ImpactState>[];
     _ammoQueue = <AmmoPacket>[];
+    _spawnTimer = 0.8;
+    _outerRingRevealed = true;
+    _swarmActivated = true;
+    _battleSpawnPolicy = LightcoreBattleSpawnPolicy.automatic;
+    _core = _core.copyWith(
+      coreStability: _maxCoreStability,
+      flowEfficiency: _maxFlowEfficiency,
+    );
     _applyLayerRebuildCoreUpgrades();
-    _showBanner('Layer 1 run reset. Nova Shards and Layer 2 shells are kept.');
+    _showBanner(
+      'Layer 1 restarted at Wave 1. Nova Shards and shells are kept.',
+    );
     _notifyNow();
   }
 

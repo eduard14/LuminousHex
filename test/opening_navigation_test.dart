@@ -57,7 +57,8 @@ void main() {
     await tester.pump(const Duration(milliseconds: 320));
 
     expect(controller.swarmActivated, isTrue);
-    expect(find.text('Reset'), findsOneWidget);
+    expect(find.text('Restart Wave 1'), findsOneWidget);
+    expect(find.text('Tower Health'), findsOneWidget);
     expect(find.textContaining('Next '), findsOneWidget);
     expect(tester.takeException(), isNull);
   });

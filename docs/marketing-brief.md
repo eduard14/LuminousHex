@@ -92,7 +92,8 @@ playable in this milestone.
   and the bottom global upgrade dock can collapse so the tower field can become
   the focus.
 - The bottom upgrade dock separates timing clearly: active runs show only
-  Sparks upgrades, while ended runs show only permanent Nova Shard upgrades.
+  Sparks upgrades plus Tower Health and a Restart Wave 1 action, while ended
+  runs show only permanent Nova Shard upgrades and the next Start New Run action.
 - Active Layer 1 tower health does not regenerate during the run; damage is a
   fail-state clock that only resets when a new run starts.
 - First-run balance intentionally walls zero-upgrade play at Wave 2. Players

@@ -47,7 +47,8 @@ void main() {
 
     expect(controller.swarmActivated, isTrue);
     expect(controller.outerRingRevealed, isTrue);
-    expect(find.text('Reset'), findsOneWidget);
+    expect(find.text('Restart Wave 1'), findsOneWidget);
+    expect(find.text('Tower Health'), findsOneWidget);
     expect(find.text('Global Tower Upgrades'), findsOneWidget);
     expect(find.text('Damage Lv. 0\n18 Sparks'), findsOneWidget);
     expect(tester.takeException(), isNull);
@@ -272,6 +273,8 @@ void main() {
       await _pumpBattleScreen(tester, controller);
 
       expect(controller.tutorialUsesBattleOnlyNavigation, isFalse);
+      expect(find.text('Restart Wave 1'), findsOneWidget);
+      expect(find.text('Tower Health'), findsOneWidget);
       expect(find.text('Damage Lv. 0\n18 Sparks'), findsOneWidget);
       expect(find.textContaining('Fire Rate Lv. 0'), findsOneWidget);
       expect(find.textContaining('Multishot Lv. 0'), findsOneWidget);
@@ -317,6 +320,7 @@ void main() {
       expect(controller.layerRunState.active, isFalse);
       expect(controller.starBolts, greaterThan(0));
       expect(find.text('Permanent Upgrades'), findsOneWidget);
+      expect(find.text('Start New Run'), findsOneWidget);
       expect(
         find.textContaining('Nova Shard upgrades persist into every new run'),
         findsOneWidget,
@@ -403,7 +407,8 @@ void main() {
 
     expect(controller.activeLayer.tier, 1);
     expect(find.text('Start Run'), findsNothing);
-    expect(find.text('Reset'), findsOneWidget);
+    expect(find.text('Restart Wave 1'), findsOneWidget);
+    expect(find.text('Tower Health'), findsOneWidget);
     expect(find.text('Stats'), findsNothing);
     expect(find.text('Full Stats'), findsNothing);
     expect(find.text('Core Stat Board'), findsNothing);

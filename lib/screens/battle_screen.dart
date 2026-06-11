@@ -1074,7 +1074,10 @@ class _BattleScreenState extends State<BattleScreen> {
     return Stack(
       children: [
         Positioned.fill(
-          child: _buildGameCanvas(compact ? 20 : 0, dockOpen: dockOpen),
+          child: _buildGameCanvas(
+            rebuildHudVisible ? 0 : (compact ? 20 : 0),
+            dockOpen: dockOpen,
+          ),
         ),
         if (widget.showBattleHud && shellVisibilityHud != null)
           Positioned(
@@ -1237,6 +1240,11 @@ class _LayerRebuildActionDockState extends State<_LayerRebuildActionDock> {
         : showPersistent
         ? 'Permanent Upgrades'
         : 'Layer 1 Run';
+    final actionLabel = runActive
+        ? 'Restart Wave 1'
+        : showPersistent
+        ? 'Start New Run'
+        : 'Start Run';
     return DecoratedBox(
       decoration: BoxDecoration(
         color: LightcorePalette.panel.withValues(alpha: 0.78),
@@ -1254,20 +1262,18 @@ class _LayerRebuildActionDockState extends State<_LayerRebuildActionDock> {
             Row(
               children: [
                 SizedBox(
-                  width: 132,
+                  width: runActive ? 156 : 132,
                   child: FilledButton.icon(
-                    onPressed: controller.layerRunState.active
+                    onPressed: runActive
                         ? controller.resetLayer1Run
                         : controller.startLayer1Run,
                     icon: Icon(
-                      controller.layerRunState.active
+                      runActive
                           ? Icons.restart_alt_rounded
                           : Icons.play_arrow_rounded,
                       size: 18,
                     ),
-                    label: Text(
-                      controller.layerRunState.active ? 'Reset' : 'Start Run',
-                    ),
+                    label: Text(actionLabel),
                     style: FilledButton.styleFrom(
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
@@ -1293,6 +1299,8 @@ class _LayerRebuildActionDockState extends State<_LayerRebuildActionDock> {
                 ),
               ],
             ),
+            const SizedBox(height: 8),
+            _LayerTowerHealthReadout(controller: controller),
             if (controller.layer1CanCompleteShell) ...[
               const SizedBox(height: 9),
               SizedBox(
@@ -1368,6 +1376,47 @@ class _LayerRebuildActionDockState extends State<_LayerRebuildActionDock> {
             ],
           ],
         ),
+      ),
+    );
+  }
+}
+
+// L1L2_REBUILD_SAFE: Active rebuild runs need tower health visible without
+// reintroducing the old oversized health card/bar treatment.
+class _LayerTowerHealthReadout extends StatelessWidget {
+  const _LayerTowerHealthReadout({required this.controller});
+
+  final LightcoreController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    final health = controller.coreState.coreStability.round().clamp(0, 100);
+    final critical = health <= 25;
+    final tint = critical ? LightcorePalette.warning : LightcorePalette.success;
+    return Semantics(
+      label: 'Tower Health $health%',
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.favorite_rounded, size: 17, color: tint),
+          const SizedBox(width: 7),
+          Text(
+            'Tower Health',
+            style: textTheme.labelMedium?.copyWith(
+              color: LightcorePalette.mist.withValues(alpha: 0.78),
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(width: 6),
+          Text(
+            '$health%',
+            style: textTheme.labelLarge?.copyWith(
+              color: tint,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -2089,7 +2138,9 @@ class _LayerFeederTuneButton extends StatelessWidget {
     final rank = controller.layerRunState.rankFor(type);
     final cost = controller.layerRunUpgradeCost(type);
     final canBuy = controller.canBuyRunUpgrade(type);
-    final label = type == LayerRunUpgradeType.queueSize ? 'Queue' : type.label;
+    final label = type == LayerRunUpgradeType.queueSize
+        ? 'Capacity'
+        : type.label;
     return SizedBox(
       height: 58,
       child: FilledButton(
