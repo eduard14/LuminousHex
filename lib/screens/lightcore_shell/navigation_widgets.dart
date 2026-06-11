@@ -75,6 +75,12 @@ class _OverallProgressBarPanel extends StatelessWidget {
     if (towerSelected) {
       return const SizedBox.shrink();
     }
+    if (controller.layerRebuildEnabled) {
+      return _LayerOneWaveProgressPanel(
+        controller: controller,
+        compact: compact,
+      );
+    }
     final waveProgress = controller.layerRebuildEnabled
         ? (controller.layer1ShellProgressWave /
                   LightcoreController.layer1CompletionWave)
@@ -135,6 +141,220 @@ class _OverallProgressBarPanel extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _LayerOneWaveProgressPanel extends StatelessWidget {
+  const _LayerOneWaveProgressPanel({
+    required this.controller,
+    required this.compact,
+  });
+
+  final LightcoreController controller;
+  final bool compact;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    final waveProgress = controller.activeLayerWaveProgress;
+    final waveNumber = controller.activeLayerWaveNumber;
+    final nextSeconds = controller.nextAutomaticEnemySpawnSeconds;
+    final showNextTimer =
+        controller.swarmActivated &&
+        controller.enemyCount < controller.enemyTargetCount;
+    final nextLabel = showNextTimer
+        ? 'Next ${nextSeconds.toStringAsFixed(1)}s'
+        : '';
+    final releaseEnabled = controller.canReleaseLayer1Wave;
+
+    return Semantics(
+      label: [
+        'Wave $waveNumber progress',
+        if (nextLabel.isNotEmpty) nextLabel,
+        'release wave control',
+      ].join(', '),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: LightcorePalette.panel.withValues(alpha: 0.86),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: LightcorePalette.solar.withValues(alpha: 0.26),
+          ),
+        ),
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(
+            compact ? 10 : 12,
+            compact ? 8 : 10,
+            compact ? 10 : 12,
+            compact ? 8 : 10,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const Icon(
+                    Icons.track_changes_rounded,
+                    size: 18,
+                    color: LightcorePalette.solar,
+                  ),
+                  const SizedBox(width: 7),
+                  Text(
+                    'Wave $waveNumber',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: textTheme.labelLarge?.copyWith(
+                      color: LightcorePalette.mist,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Tooltip(
+                    message: 'Release full wave',
+                    child: IconButton(
+                      onPressed: releaseEnabled
+                          ? controller.releaseLayer1Wave
+                          : null,
+                      visualDensity: VisualDensity.compact,
+                      padding: EdgeInsets.zero,
+                      constraints: BoxConstraints.tightFor(
+                        width: compact ? 30 : 34,
+                        height: compact ? 28 : 30,
+                      ),
+                      icon: Icon(
+                        Icons.keyboard_double_arrow_right_rounded,
+                        size: compact ? 22 : 24,
+                      ),
+                      color: LightcorePalette.solar,
+                      disabledColor: LightcorePalette.mist.withValues(
+                        alpha: 0.28,
+                      ),
+                    ),
+                  ),
+                  const Spacer(),
+                  if (nextLabel.isNotEmpty)
+                    Text(
+                      nextLabel,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: textTheme.labelSmall?.copyWith(
+                        color: LightcorePalette.mist.withValues(alpha: 0.72),
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 7),
+              _AnimatedWaveMeter(value: waveProgress, compact: compact),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _AnimatedWaveMeter extends StatefulWidget {
+  const _AnimatedWaveMeter({required this.value, required this.compact});
+
+  final double value;
+  final bool compact;
+
+  @override
+  State<_AnimatedWaveMeter> createState() => _AnimatedWaveMeterState();
+}
+
+class _AnimatedWaveMeterState extends State<_AnimatedWaveMeter>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1450),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final height = widget.compact ? 9.0 : 11.0;
+    final value = widget.value.clamp(0.0, 1.0).toDouble();
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(999),
+      child: SizedBox(
+        height: height,
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final width = constraints.maxWidth;
+            final glintWidth = math.max(42.0, width * 0.18);
+            return Stack(
+              fit: StackFit.expand,
+              children: [
+                ColoredBox(
+                  color: LightcorePalette.panelRaised.withValues(alpha: 0.74),
+                ),
+                TweenAnimationBuilder<double>(
+                  duration: const Duration(milliseconds: 240),
+                  curve: Curves.easeOutCubic,
+                  tween: Tween<double>(begin: value, end: value),
+                  builder: (context, animatedValue, child) {
+                    return FractionallySizedBox(
+                      alignment: Alignment.centerLeft,
+                      widthFactor: animatedValue,
+                      child: child,
+                    );
+                  },
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          LightcorePalette.solar.withValues(alpha: 0.72),
+                          LightcorePalette.warning,
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                AnimatedBuilder(
+                  animation: _controller,
+                  builder: (context, child) {
+                    final left =
+                        ((width + glintWidth) * _controller.value) - glintWidth;
+                    return Positioned(
+                      left: left,
+                      top: 0,
+                      bottom: 0,
+                      width: glintWidth,
+                      child: child!,
+                    );
+                  },
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          Colors.white.withValues(alpha: 0.0),
+                          Colors.white.withValues(alpha: 0.58),
+                          Colors.white.withValues(alpha: 0.0),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
+      ),
     );
   }
 }

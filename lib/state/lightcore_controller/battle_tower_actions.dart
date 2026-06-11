@@ -145,6 +145,41 @@ extension LightcoreControllerBattleTowerActions on LightcoreController {
     return true;
   }
 
+  // L1L2_REBUILD_SAFE: Gives Layer 1 players agency over pacing by releasing
+  // the current automatic wave pressure immediately instead of waiting on the
+  // spawn timer.
+  bool releaseLayer1Wave() {
+    if (!canReleaseLayer1Wave) {
+      _showBanner(
+        enemyCount >= enemyTargetCount
+            ? 'The full wave is already on the field.'
+            : 'Start the Layer 1 run before releasing wave pressure.',
+        category: LightcoreNotificationCategory.battle,
+      );
+      _notifyNow();
+      return false;
+    }
+    if (!_swarmActivated) {
+      startBattle(showBanner: false);
+    }
+    final openSlots = max(0, enemyTargetCount - _enemies.length);
+    var released = 0;
+    while (released < openSlots && _enemies.length < enemyTargetCount) {
+      _spawnEnemy();
+      released += 1;
+    }
+    _spawnTimer = _spawnInterval;
+    _showBanner(
+      released == 1
+          ? 'Released 1 anomaly into the current wave.'
+          : 'Released $released anomalies into the current wave.',
+      category: LightcoreNotificationCategory.battle,
+    );
+    _syncTutorialStep(showBanner: false);
+    _notifyNow();
+    return released > 0;
+  }
+
   void handleBattleCenterTap() {
     if (!_outerRingRevealed) {
       startBattle(showBanner: false);

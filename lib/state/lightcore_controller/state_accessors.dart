@@ -398,6 +398,34 @@ extension LightcoreControllerStateAccessors on LightcoreController {
 
   int get enemyTargetCount => _enemyTargetCount;
 
+  // L1L2_REBUILD_SAFE: The rebuilt wave footer needs live pressure counts
+  // without reading combat internals from UI code.
+  int get activeLayerWaveKills =>
+      activeLayer.normalKillsSinceBoss % activeLayerWaveTarget;
+
+  // L1L2_REBUILD_SAFE: Layer 1 wave UI treats each starter wave as the same
+  // kill packet used by the combat loop.
+  int get activeLayerWaveTarget => max(1, initialEnemyTarget);
+
+  // L1L2_REBUILD_SAFE: The footer exposes when the next automatic anomaly
+  // releases so the wave bar feels readable between kills.
+  double get nextAutomaticEnemySpawnSeconds {
+    if (!_swarmActivated ||
+        activeLayerPassiveOnly ||
+        _battleSpawnPolicy != LightcoreBattleSpawnPolicy.automatic ||
+        _enemies.length >= enemyTargetCount) {
+      return 0;
+    }
+    return max(0.0, _spawnTimer);
+  }
+
+  // L1L2_REBUILD_SAFE: Force-release is only useful while automatic Layer 1
+  // pressure can add more anomalies to the field.
+  bool get canReleaseLayer1Wave =>
+      !activeLayerPassiveOnly &&
+      _battleSpawnPolicy == LightcoreBattleSpawnPolicy.automatic &&
+      _enemies.length < enemyTargetCount;
+
   int get enemyTargetFloor => minEnemyTarget;
 
   int get enemyTargetMax => _enemyTargetMaxForLevel(_enemyTargetUpgradeLevel);

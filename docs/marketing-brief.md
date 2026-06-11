@@ -1,6 +1,6 @@
 # LumiHex Marketing Brief
 
-Last updated: 2026-06-10
+Last updated: 2026-06-11
 
 This is the source-of-truth marketing handoff for LumiHex. Update it whenever
 player-facing features, naming, story, monetization, screenshots, or asset needs
@@ -86,7 +86,7 @@ playable in this milestone.
 ### Battle And Defense
 
 - Real-time hex battlefield with one central Lightcore and six player-chosen
-  feeder towers.
+  Relay Hex towers.
 - The battle surface keeps the main app shell anchored: profile and global
   currencies stay at the top, future systems remain visible as locked chrome,
   and the bottom global upgrade dock can collapse so the tower field can become
@@ -101,6 +101,9 @@ playable in this milestone.
 - The rebuilt battle surface removes duplicate resource cards while queued
   projectile packets spiral into the Lightcore from one or more multishot lanes,
   with a core-centered charge ring showing the next shot and cooldown progress.
+- The bottom wave footer now stays readable on compact mobile screens with
+  a simple wave number, inline double-chevron wave release, next-wave timing,
+  and an always-moving wave meter.
 - Relay towers charge shots into the Lightcore instead of asking the player to
   manually queue or drag ammo.
 - Opening combat is low-friction: shots auto-charge after the player presses Play,

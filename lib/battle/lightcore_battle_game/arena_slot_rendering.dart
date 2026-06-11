@@ -773,7 +773,7 @@ extension LightcoreBattleGameArenaSlotRendering on LightcoreBattleGame {
     Offset center, {
     required int slotIndex,
   }) {
-    // L1L2_REBUILD_SAFE: Empty unlocked hexes show the rebuild build affordance now that the global Build Feeder button is gone.
+    // L1L2_REBUILD_SAFE: Empty unlocked hexes show the rebuild build affordance now that the old global build button is gone.
     final pulse = 0.5 + (math.sin(controller.elapsed * 3.2) * 0.5);
     final tint = LightcorePalette.aether;
     final radius = _slotRadius * (0.72 + (pulse * 0.06));

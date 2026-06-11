@@ -27,4 +27,20 @@ void main() {
     expect(controller.activeLayerWaveHudLabel, 'Wave 2');
     expect(controller.activeLayerWaveProgress, 0);
   });
+
+  test('release Layer 1 wave fills the active pressure cap', () {
+    final controller = LightcoreController();
+    addTearDown(controller.dispose);
+    controller.debugDisableTutorial();
+
+    expect(controller.swarmActivated, isFalse);
+    expect(controller.enemyCount, 0);
+    expect(controller.canReleaseLayer1Wave, isTrue);
+
+    expect(controller.releaseLayer1Wave(), isTrue);
+
+    expect(controller.swarmActivated, isTrue);
+    expect(controller.enemyCount, controller.enemyTargetCount);
+    expect(controller.canReleaseLayer1Wave, isFalse);
+  });
 }

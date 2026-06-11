@@ -181,15 +181,15 @@ const List<_HelpSectionData> _rebuildHelpSections = <_HelpSectionData>[
     summary: 'Start at Wave 1, spend Sparks, then choose when to complete.',
     body:
         'Layer 1 is the active run. Start Run begins Wave 1 with Sparks, then the central Lightcore fires while black-hole anomalies collapse inward from the perimeter.\n\n'
-        'Sparks are reset each run. Spend them on Damage, Fire Rate, Multishot, and Queue Size to push toward Wave 10. Wave 10 makes the run eligible, but the shell only completes after all six feeders are built and the player chooses Complete Shell.',
+        'Sparks are reset each run. Spend them on Damage, Fire Rate, Multishot, and Queue Size to push toward Wave 10. Wave 10 makes the run eligible, but the shell only completes after all six Relay Hexes are built and the player chooses Complete Shell.',
   ),
   _HelpSectionData(
     id: 'rebuild-feeders',
-    title: 'Feeders',
-    summary: 'The six outer hexes feed the central tower.',
+    title: 'Relay Hexes',
+    summary: 'The six outer hexes relay power into the central tower.',
     body:
-        'The center tower is still a tower, and the six outer hexes are feeder towers. Together they make the seven-piece hex shell.\n\n'
-        'After a run starts, tap an unlocked empty hex to build that feeder with Sparks. Tap a built feeder to inspect its color, projectile family, payload family, and contribution to the completed Layer 1 shell odds.',
+        'The center tower is still a tower, and the six outer hexes are Relay Hexes. Together they make the seven-piece hex shell.\n\n'
+        'After a run starts, tap an unlocked empty hex to build that Relay Hex with Sparks. Tap a built Relay Hex to inspect its color, projectile family, payload family, and contribution to the completed Layer 1 shell odds.',
   ),
   _HelpSectionData(
     id: 'rebuild-resources',

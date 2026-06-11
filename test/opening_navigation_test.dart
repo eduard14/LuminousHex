@@ -48,12 +48,17 @@ void main() {
     expect(find.textContaining('Build Feeder'), findsNothing);
     expect(find.textContaining('AR '), findsNothing);
     expect(find.byTooltip('Hide global upgrades'), findsOneWidget);
+    expect(find.text('Wave 1'), findsOneWidget);
+    expect(find.textContaining('Shell '), findsNothing);
+    expect(find.textContaining('Start run to release'), findsNothing);
+    expect(find.byTooltip('Release full wave'), findsOneWidget);
 
     await tester.tap(find.text('Start Run'));
     await tester.pump(const Duration(milliseconds: 320));
 
     expect(controller.swarmActivated, isTrue);
     expect(find.text('Reset'), findsOneWidget);
+    expect(find.textContaining('Next '), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 }
