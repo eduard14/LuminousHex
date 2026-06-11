@@ -514,6 +514,9 @@ extension LightcoreControllerCombatDamage on LightcoreController {
       (_, lockedEnemyId) => lockedEnemyId == enemy.id,
     );
 
+    var layer1SparkReward = 0;
+    var layer1NovaShardReward = 0;
+
     void addDefeatImpact() {
       _impacts.add(
         ImpactState(
@@ -548,6 +551,8 @@ extension LightcoreControllerCombatDamage on LightcoreController {
           chainSourceRadius: chainSourceRadius,
           defeatedEnemyAffinity: enemy.config.affinity,
           defeatedEnemySizeScale: enemy.sizeScale,
+          layer1SparkReward: layer1SparkReward,
+          layer1NovaShardReward: layer1NovaShardReward,
         ),
       );
     }
@@ -590,6 +595,9 @@ extension LightcoreControllerCombatDamage on LightcoreController {
     if (!challengeActive) {
       kills += killCredit;
       experience += _boostedExperienceReward(experienceReward);
+      final layer1CurrencyDrop = _grantLayer1EnemyCurrencyDrop(enemy);
+      layer1SparkReward = layer1CurrencyDrop.sparks;
+      layer1NovaShardReward = layer1CurrencyDrop.novaShards;
       _advanceBattlePass(BattlePassType.dailyKills, killCredit);
       bossUnlockBanner = _grantBossUnlockIfNeeded();
       tournamentUnlockBanner = _tournamentUnlockBannerFragment(

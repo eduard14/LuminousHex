@@ -746,7 +746,7 @@ extension LightcoreControllerSaveTournamentCloud on LightcoreController {
         'enemyTicketBuffer': _enemyTicketBuffer,
         'equipmentDropCounter': _equipmentDropCounter,
       },
-      // L1L2_REBUILD_SAFE: Safe-forward local/cloud payload for Sparks, Star Bolts, persistent upgrades, and Layer 2 shells.
+      // L1L2_REBUILD_SAFE: Safe-forward local/cloud payload for Sparks, Nova Shards, persistent upgrades, and Layer 2 shells.
       'layerRebuild': <String, dynamic>{
         'run': _layerRun.toMap(),
         'persistent': _layerPersistentProgress.toMap(),

@@ -277,7 +277,7 @@ void main() {
       expect(find.textContaining('Multishot Lv. 0'), findsOneWidget);
       expect(find.textContaining('Queue Size Lv. 0'), findsOneWidget);
       expect(find.textContaining('Build Feeder'), findsNothing);
-      expect(find.textContaining('Star Bolt Upgrades'), findsNothing);
+      expect(find.textContaining('Nova Shard Upgrades'), findsNothing);
       expect(find.textContaining('Relay Hexes Lv. 0'), findsNothing);
       expect(find.text('Global Tower Upgrades'), findsOneWidget);
       expect(find.textContaining('Buffer'), findsNothing);
@@ -300,7 +300,7 @@ void main() {
   );
 
   testWidgets(
-    'rebuilt dock shows persistent Star Bolt upgrades after run ends',
+    'rebuilt dock shows persistent Nova Shard upgrades after run ends',
     (tester) async {
       addTearDown(() async {
         await tester.binding.setSurfaceSize(null);
@@ -318,7 +318,7 @@ void main() {
       expect(controller.starBolts, greaterThan(0));
       expect(find.text('Permanent Upgrades'), findsOneWidget);
       expect(
-        find.textContaining('Star Bolt upgrades persist into every new run'),
+        find.textContaining('Nova Shard upgrades persist into every new run'),
         findsOneWidget,
       );
       expect(find.textContaining('Relay Hexes Lv. 0'), findsOneWidget);

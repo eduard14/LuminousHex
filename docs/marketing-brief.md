@@ -55,13 +55,13 @@ projectile odds.
    tower; relays modify the central core instead of reading as independent
    lane defenders.
 5. Spend Sparks during the run on Damage, Fire Rate, Multishot, and Queue Size.
-6. When the run ends, hide the Sparks upgrades and show permanent Star Bolt
+6. When the run ends, hide the Sparks upgrades and show permanent Nova Shard
    upgrades.
 7. Reach Wave 10 to make the run eligible for Layer 1 shell completion.
 8. Require the full seven-hex shell, then let the player choose Complete Shell;
    the completed shell installs into the first open Layer 2 slot or stores if
    the seven-slot board is full.
-9. Spend persistent Star Bolts on Relay Hex unlocks, starting Sparks, base
+9. Spend persistent Nova Shards on Relay Hex unlocks, starting Sparks, base
    core damage, base core fire rate, base queue size, and future color unlocks.
 10. Start a fresh Layer 1 run from the main battlefield even when Layer 2 is full.
 
@@ -75,7 +75,7 @@ already communicate the game better than the lab did.
 The current rebuilt milestone is intentionally narrow: Layer 1 active play plus
 player-confirmed completed shells that install into or store for the Layer 2
 base. The Layer 2 board is not shown on the active battle surface. Sparks and
-Star Bolts drive Layer 1 spending from the profile header, while Store, Passes,
+Nova Shards drive Layer 1 spending from the profile header, while Store, Passes,
 menu, and bottom navigation remain visible as locked or persistent app context.
 Managers, equipment, dungeons, tournaments, store, battle pass, social, guilds,
 and threat-map gameplay are visible as locked surfaces but are not marketed as
@@ -92,11 +92,11 @@ playable in this milestone.
   and the bottom global upgrade dock can collapse so the tower field can become
   the focus.
 - The bottom upgrade dock separates timing clearly: active runs show only
-  Sparks upgrades, while ended runs show only permanent Star Bolt upgrades.
+  Sparks upgrades, while ended runs show only permanent Nova Shard upgrades.
 - Active Layer 1 tower health does not regenerate during the run; damage is a
   fail-state clock that only resets when a new run starts.
 - First-run balance intentionally walls zero-upgrade play at Wave 2. Players
-  should spend Sparks and persistent Star Bolts across several attempts before
+  should spend Sparks and persistent Nova Shards across several attempts before
   Wave 10 plus a complete seven-hex shell becomes reliable.
 - The rebuilt battle surface removes duplicate resource cards and keeps queue
   mechanics functional without showing a dedicated queue visualization in the

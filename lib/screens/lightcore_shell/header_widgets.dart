@@ -137,13 +137,14 @@ class _ShellProfileHeaderHud extends StatelessWidget {
                       glowSignal: controller.sparks,
                     ),
                     _ShellHeaderStatRow(
-                      // L1L2_REBUILD_SAFE: Star Bolts are the persistent Layer 1 currency surfaced in the stable shell header.
+                      // L1L2_REBUILD_SAFE: Nova Shards are the persistent Layer 1 currency surfaced in the stable shell header.
                       tooltip:
                           '${controller.starBoltsLabel}: ${controller.starBolts}',
                       icon: Icons.auto_awesome_rounded,
                       value: _formatMetricCount(controller.starBolts),
                       tint: LightcorePalette.violet,
                       compact: compact,
+                      glowSignal: controller.starBolts,
                     ),
                   ] else ...[
                     _ShellHeaderStatRow(
@@ -650,7 +651,7 @@ extension on _ShellOverlayDestination {
     ],
     _ => const [
       'Tower Health pressure decides how long the current run can keep going.',
-      'Sparks reset each run while Star Bolts carry permanent Layer 1 progress.',
+      'Sparks reset each run while Nova Shards carry permanent Layer 1 progress.',
     ],
   };
 

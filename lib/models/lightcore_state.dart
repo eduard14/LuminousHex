@@ -1903,6 +1903,8 @@ class ImpactState {
     this.chainSourceRadius,
     this.defeatedEnemyAffinity,
     this.defeatedEnemySizeScale = 1,
+    this.layer1SparkReward = 0,
+    this.layer1NovaShardReward = 0,
   });
 
   final String id;
@@ -1933,6 +1935,8 @@ class ImpactState {
   final double? chainSourceRadius;
   final PrototypeAffinity? defeatedEnemyAffinity;
   final double defeatedEnemySizeScale;
+  final int layer1SparkReward;
+  final int layer1NovaShardReward;
 
   bool get hasLingeringField =>
       fieldRadius > 0 &&
@@ -1973,6 +1977,8 @@ class ImpactState {
       chainSourceRadius: chainSourceRadius,
       defeatedEnemyAffinity: defeatedEnemyAffinity,
       defeatedEnemySizeScale: defeatedEnemySizeScale,
+      layer1SparkReward: layer1SparkReward,
+      layer1NovaShardReward: layer1NovaShardReward,
     );
   }
 }

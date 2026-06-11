@@ -193,11 +193,11 @@ const List<_HelpSectionData> _rebuildHelpSections = <_HelpSectionData>[
   ),
   _HelpSectionData(
     id: 'rebuild-resources',
-    title: 'Sparks and Star Bolts',
-    summary: 'Sparks are run currency. Star Bolts are persistent upgrades.',
+    title: 'Sparks and Nova Shards',
+    summary: 'Sparks are run currency. Nova Shards are persistent upgrades.',
     body:
         'Sparks are the per-run currency used for active combat upgrades and feeder builds. They reset when you start a new Layer 1 run.\n\n'
-        'Star Bolts persist. Spend them in Star Bolt Upgrades for feeder slots, tower color access, starting Sparks, base core damage, base fire rate, and base queue size.',
+        'Nova Shards persist. Spend them in Nova Shard Upgrades for feeder slots, tower color access, starting Sparks, base core damage, base fire rate, and base queue size.',
   ),
   _HelpSectionData(
     id: 'rebuild-wave-10',

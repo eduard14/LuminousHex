@@ -1,5 +1,8 @@
+import 'dart:math';
+
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:lightcore/data/enemy_configs.dart';
 import 'package:lightcore/data/tower_configs.dart';
 import 'package:lightcore/models/lightcore_state.dart';
 import 'package:lightcore/models/lightcore_types.dart';
@@ -45,6 +48,27 @@ void main() {
     );
   });
 
+  test('Layer 1 enemy defeats drop Sparks immediately', () {
+    final controller = LightcoreController(spawnRandom: Random(23));
+    addTearDown(controller.dispose);
+    controller.debugDisableTutorial();
+
+    controller.startLayer1Run();
+    final beforeSparks = controller.sparks;
+    final enemy = controller.debugSpawnEnemyFromCard(
+      EnemyLibrary.basicWhite.id,
+      angle: 0,
+      radius: 360,
+    );
+
+    expect(enemy, isNotNull);
+    expect(controller.debugDefeatEnemy(enemy!.id), isTrue);
+    expect(
+      controller.sparks,
+      beforeSparks + LightcoreController.layer1SparksPerEnemy,
+    );
+  });
+
   test('feeder construction uses the player selected color', () {
     final controller = LightcoreController();
     addTearDown(controller.dispose);
@@ -60,7 +84,7 @@ void main() {
     expect(controller.sparks, 51);
   });
 
-  test('core break ends run and awards persistent Star Bolts', () {
+  test('core break ends run and awards persistent Nova Shards', () {
     final controller = LightcoreController();
     addTearDown(controller.dispose);
 
@@ -132,7 +156,7 @@ void main() {
     expect(controller.layerRunState.completedWave, greaterThanOrEqualTo(2));
   });
 
-  test('persistent Star Bolt upgrades are blocked during active runs', () {
+  test('persistent Nova Shard upgrades are blocked during active runs', () {
     final controller = LightcoreController();
     addTearDown(controller.dispose);
 
@@ -213,7 +237,7 @@ void main() {
     expect(controller.layer2BaseBoard.filledSlotCount, 7);
   });
 
-  test('Star Bolts and Layer 2 board survive controller restore', () {
+  test('Nova Shards and Layer 2 board survive controller restore', () {
     final controller = LightcoreController();
     addTearDown(controller.dispose);
 

@@ -45,7 +45,7 @@ extension LightcoreControllerLayerRebuild on LightcoreController {
 
   String get sparksLabel => 'Sparks';
 
-  String get starBoltsLabel => 'Star Bolts';
+  String get starBoltsLabel => 'Nova Shards';
 
   bool get layer1Wave10Ready =>
       _layerRun.wave >= LightcoreController.layer1CompletionWave;
@@ -97,13 +97,13 @@ extension LightcoreControllerLayerRebuild on LightcoreController {
 
   String get layer1PostRunPersistentUpgradeLabel {
     if (_layerRun.shellReady) {
-      return 'Shell complete. Star Bolt upgrades persist into every new run.';
+      return 'Shell complete. Nova Shard upgrades persist into every new run.';
     }
     final completed = max(0, _layerRun.completedWave);
     if (completed <= 0) {
-      return 'Start a run to earn Star Bolts for permanent upgrades.';
+      return 'Start a run to earn Nova Shards for permanent upgrades.';
     }
-    return 'Run ended after Wave $completed. Star Bolt upgrades persist into every new run.';
+    return 'Run ended after Wave $completed. Nova Shard upgrades persist into every new run.';
   }
 
   int layerRunUpgradeCost(LayerRunUpgradeType type) {
@@ -179,7 +179,7 @@ extension LightcoreControllerLayerRebuild on LightcoreController {
       _nextBuildableLayer1FeederSlotIndex() != null;
 
   void startLayer1Run() {
-    // L1L2_REBUILD_SAFE: New runs reset only run currency/upgrades and preserve Star Bolts, unlocks, shells, and visuals.
+    // L1L2_REBUILD_SAFE: New runs reset only run currency/upgrades and preserve Nova Shards, unlocks, shells, and visuals.
     _layerRun = LayerRunState.initial(
       startingSparks: layer1StartingSparks,
     ).copyWith(active: true, wave: 1);
@@ -213,7 +213,7 @@ extension LightcoreControllerLayerRebuild on LightcoreController {
     _impacts = <ImpactState>[];
     _ammoQueue = <AmmoPacket>[];
     _applyLayerRebuildCoreUpgrades();
-    _showBanner('Layer 1 run reset. Star Bolts and Layer 2 shells are kept.');
+    _showBanner('Layer 1 run reset. Nova Shards and Layer 2 shells are kept.');
     _notifyNow();
   }
 
@@ -236,7 +236,7 @@ extension LightcoreControllerLayerRebuild on LightcoreController {
   }
 
   bool buyPersistentUpgrade(LayerPersistentUpgradeType type) {
-    // L1L2_REBUILD_SAFE: Star Bolts are the only persistent spend exposed in the rebuilt Layer 1/2 loop.
+    // L1L2_REBUILD_SAFE: Nova Shards are the only persistent spend exposed in the rebuilt Layer 1/2 loop.
     final cost = layerPersistentUpgradeCost(type);
     if (_layerRun.active || _layerPersistentProgress.starBolts < cost) {
       return false;
@@ -250,13 +250,13 @@ extension LightcoreControllerLayerRebuild on LightcoreController {
       upgradeRanks: ranks,
     );
     _applyLayerRebuildCoreUpgrades();
-    _showBanner('${type.label} improved with Star Bolts.');
+    _showBanner('${type.label} improved with Nova Shards.');
     _notifyNow();
     return true;
   }
 
   bool endLayer1RunFromCoreBreak() {
-    // L1L2_REBUILD_SAFE: Death ends the run and opens the persistent Star Bolt upgrade window.
+    // L1L2_REBUILD_SAFE: Death ends the run and opens the persistent Nova Shard upgrade window.
     if (!_layerRun.active || _layerRun.shellReady) {
       return false;
     }
@@ -277,7 +277,7 @@ extension LightcoreControllerLayerRebuild on LightcoreController {
     _impacts = <ImpactState>[];
     _ammoQueue = <AmmoPacket>[];
     _showBanner(
-      'Layer 1 run ended. Earned $starBoltsEarned Star Bolts for permanent upgrades.',
+      'Layer 1 run ended. Earned $starBoltsEarned Nova Shards for permanent upgrades.',
       category: LightcoreNotificationCategory.battle,
     );
     _notifyNow();
@@ -458,6 +458,33 @@ extension LightcoreControllerLayerRebuild on LightcoreController {
       endLayer1RunFromCoreBreak();
       return;
     }
+  }
+
+  ({int sparks, int novaShards}) _grantLayer1EnemyCurrencyDrop(
+    EnemyState enemy,
+  ) {
+    // L1L2_REBUILD_SAFE: Every Layer 1 enemy kill drops run Sparks; Nova Shards
+    // are rarer persistent drops using the existing persistent balance bucket.
+    if (!_layerRun.active) {
+      return (sparks: 0, novaShards: 0);
+    }
+    final sparkReward =
+        (LightcoreController.layer1SparksPerEnemy *
+                max(1, enemy.config.isBoss ? 4 : enemy.sizeScale.round()))
+            .toInt();
+    final novaShardReward =
+        enemy.config.isBoss ||
+            _spawnRandom.nextDouble() <
+                LightcoreController.layer1NovaShardDropChance
+        ? 1
+        : 0;
+    _layerRun = _layerRun.copyWith(sparks: _layerRun.sparks + sparkReward);
+    if (novaShardReward > 0) {
+      _layerPersistentProgress = _layerPersistentProgress.copyWith(
+        starBolts: _layerPersistentProgress.starBolts + novaShardReward,
+      );
+    }
+    return (sparks: sparkReward, novaShards: novaShardReward);
   }
 
   bool _completeLayer1ShellIfNeeded() {

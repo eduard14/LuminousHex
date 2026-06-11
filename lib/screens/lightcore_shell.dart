@@ -1830,7 +1830,7 @@ class _LightcoreShellState extends State<LightcoreShell> {
                                   const SizedBox(height: 6),
                                   Text(
                                     rebuildMode
-                                        ? 'Use Account Sync to link this save, Audio to tune music and effects, Notifications to tune in-game banners, and Help for the Layer 1 rebuild terms. Full reset restarts Sparks, Star Bolts, feeder unlocks, completed Layer 1 shells, and Layer 2 shell slots.'
+                                        ? 'Use Account Sync to link this save, Audio to tune music and effects, Notifications to tune in-game banners, and Help for the Layer 1 rebuild terms. Full reset restarts Sparks, Nova Shards, feeder unlocks, completed Layer 1 shells, and Layer 2 shell slots.'
                                         : 'Use Account Sync to link this save to Google, Audio to tune music and effects, Notifications to tune in-game banners, Change Name for your tournament callsign, Stats for the save ledger, and Help for Lightcore terms. Full reset restarts Lumens, Flux, Threat Scans, managers, outfit gear, Knowledge Cards, towers, EXP, and advancement progress.',
                                     style: Theme.of(
                                       context,

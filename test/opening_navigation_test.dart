@@ -35,7 +35,7 @@ void main() {
     expect(find.byTooltip('Lumen: ${controller.lumens}'), findsNothing);
     expect(find.byTooltip('Sparks: ${controller.sparks}'), findsOneWidget);
     expect(
-      find.byTooltip('Star Bolts: ${controller.starBolts}'),
+      find.byTooltip('Nova Shards: ${controller.starBolts}'),
       findsOneWidget,
     );
     expect(

@@ -611,22 +611,68 @@ extension _LightcoreBattleGameImpactRendering on LightcoreBattleGame {
     required double radius,
   }) {
     final progress = impact.progress.clamp(0.0, 1.0).toDouble();
-    if (progress <= 0 || size.x <= 0) {
+    if (progress <= 0 ||
+        size.x <= 0 ||
+        (impact.layer1SparkReward <= 0 && impact.layer1NovaShardReward <= 0)) {
       return;
     }
 
+    if (impact.layer1SparkReward > 0) {
+      _renderLayer1SparkDrops(
+        canvas,
+        impact: impact,
+        position: position,
+        accentColor: accentColor,
+        radius: radius,
+        progress: progress,
+      );
+    }
+    if (impact.layer1NovaShardReward > 0) {
+      _renderLayer1NovaShardDrop(
+        canvas,
+        impact: impact,
+        position: position,
+        radius: radius,
+        progress: progress,
+      );
+    }
+  }
+
+  void _renderLayer1SparkDrops(
+    Canvas canvas, {
+    required ImpactState impact,
+    required Offset position,
+    required Color accentColor,
+    required double radius,
+    required double progress,
+  }) {
     final seed = impact.id.hashCode * 0.017;
-    final fullDropCount =
-        6 + (impact.defeatedEnemySizeScale * 2).round().clamp(0, 5);
+    final fullDropCount = (impact.layer1SparkReward * 3).clamp(5, 14).toInt();
     final dropCount = _qualityScaledCount(
       fullDropCount,
       balanced: math.max(4, (fullDropCount * 0.7).round()),
       lowPower: math.max(2, fullDropCount ~/ 2),
     );
-    final compact = size.x < 760 || size.y < 760;
-    final targetX = compact ? 106.0 : 184.0;
-    final targetY = compact ? 34.0 : 58.0;
-    final maxTargetX = math.max(12.0, size.x - 12.0);
+    final target = Offset(_center.x, _center.y);
+    final collectT = ((progress - 0.12) / 0.88).clamp(0.0, 1.0).toDouble();
+    if (collectT > 0.82) {
+      final glowT = ((collectT - 0.82) / 0.18).clamp(0.0, 1.0).toDouble();
+      final glow = math.sin(glowT * math.pi).clamp(0.0, 1.0).toDouble();
+      canvas.drawCircle(
+        target,
+        _coreRadius * (0.34 + (glow * 0.44)),
+        Paint()
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 14)
+          ..color = LightcorePalette.solar.withValues(alpha: 0.18 * glow),
+      );
+      canvas.drawPath(
+        _hexPath(target, _coreRadius * (0.22 + (glow * 0.18))),
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 2.0
+          ..color = LightcorePalette.solar.withValues(alpha: 0.48 * glow),
+      );
+    }
 
     for (var index = 0; index < dropCount; index++) {
       final noiseA = _deathNoise(seed, index, 0.19);
@@ -642,14 +688,7 @@ extension _LightcoreBattleGameImpactRendering on LightcoreBattleGame {
           position +
           (direction * radius * (0.78 + (noiseB * 0.7))) +
           Offset(0, radius * (0.34 + (noiseC * 0.34)));
-      final target = Offset(
-        (targetX + ((noiseA - 0.5) * (compact ? 22 : 28)))
-            .clamp(12.0, maxTargetX)
-            .toDouble(),
-        targetY + ((noiseB - 0.5) * (compact ? 8 : 10)),
-      );
       final scatterT = (progress / 0.22).clamp(0.0, 1.0).toDouble();
-      final collectT = ((progress - 0.18) / 0.82).clamp(0.0, 1.0).toDouble();
       final scatter = Offset.lerp(
         origin,
         scatterTarget,
@@ -657,19 +696,16 @@ extension _LightcoreBattleGameImpactRendering on LightcoreBattleGame {
       )!;
       final control = Offset(
         ((scatterTarget.dx + target.dx) / 2) + ((noiseC - 0.5) * radius * 1.4),
-        math.min(scatterTarget.dy, target.dy) - (radius * (1.4 + noiseB)),
+        math.min(scatterTarget.dy, target.dy) - (radius * (1.1 + noiseB)),
       );
+      final accelerated = _exponentialAcceleration(collectT);
       final lifted = _quadraticPoint(
         scatterTarget,
         control,
         target,
-        Curves.easeInOutCubic.transform(collectT),
+        accelerated,
       );
-      final center = Offset.lerp(
-        scatter,
-        lifted,
-        Curves.easeInCubic.transform(collectT),
-      )!;
+      final center = Offset.lerp(scatter, lifted, accelerated)!;
       final introAlpha = (progress / 0.08).clamp(0.0, 1.0).toDouble();
       final exitAlpha = ((1 - progress) / 0.16).clamp(0.0, 1.0).toDouble();
       final dropAlpha = introAlpha * exitAlpha * (0.74 + (noiseC * 0.2));
@@ -704,6 +740,91 @@ extension _LightcoreBattleGameImpactRendering on LightcoreBattleGame {
           ..color = LightcorePalette.layer2.withValues(alpha: 0.72 * dropAlpha),
       );
     }
+  }
+
+  void _renderLayer1NovaShardDrop(
+    Canvas canvas, {
+    required ImpactState impact,
+    required Offset position,
+    required double radius,
+    required double progress,
+  }) {
+    final compact = size.x < 760 || size.y < 760;
+    final target = Offset(compact ? 122.0 : 178.0, compact ? 58.0 : 74.0);
+    final seed = impact.id.hashCode * 0.023;
+    final noiseA = _deathNoise(seed, 0, 0.31);
+    final noiseB = _deathNoise(seed, 1, 0.67);
+    final angle = seed + (math.pi * 1.65) + ((noiseA - 0.5) * 0.72);
+    final direction = Offset(math.cos(angle), math.sin(angle));
+    final origin = position + (direction * radius * 0.44);
+    final scatterTarget =
+        position +
+        (direction * radius * (1.08 + noiseA)) -
+        Offset(0, radius * (0.28 + noiseB * 0.42));
+    final scatterT = (progress / 0.24).clamp(0.0, 1.0).toDouble();
+    final collectT = ((progress - 0.16) / 0.84).clamp(0.0, 1.0).toDouble();
+    final scatter = Offset.lerp(
+      origin,
+      scatterTarget,
+      Curves.easeOutBack.transform(scatterT),
+    )!;
+    final control = Offset(
+      ((scatterTarget.dx + target.dx) / 2) - (radius * (1.2 + noiseA)),
+      math.min(scatterTarget.dy, target.dy) - (radius * (1.7 + noiseB)),
+    );
+    final accelerated = _exponentialAcceleration(collectT);
+    final center = Offset.lerp(
+      scatter,
+      _quadraticPoint(scatterTarget, control, target, accelerated),
+      accelerated,
+    )!;
+    final introAlpha = (progress / 0.08).clamp(0.0, 1.0).toDouble();
+    final exitAlpha = ((1 - progress) / 0.14).clamp(0.0, 1.0).toDouble();
+    final alpha = introAlpha * exitAlpha;
+    final shardRadius = math.max(3.4, radius * 0.095 * (1 - collectT * 0.28));
+    final rotation = seed + (progress * math.pi * 4);
+
+    if (!_lowPowerBattleEffects) {
+      canvas.drawCircle(
+        center,
+        shardRadius * 3.6,
+        Paint()
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10)
+          ..color = LightcorePalette.violet.withValues(alpha: 0.2 * alpha),
+      );
+    }
+    canvas.drawPath(
+      _polygonPath(center, shardRadius, 4, rotation),
+      Paint()
+        ..shader =
+            RadialGradient(
+              colors: [
+                LightcorePalette.layer2.withValues(alpha: 0.94 * alpha),
+                LightcorePalette.violet.withValues(alpha: 0.86 * alpha),
+                LightcorePalette.solar.withValues(alpha: 0.58 * alpha),
+              ],
+            ).createShader(
+              Rect.fromCircle(center: center, radius: shardRadius * 1.4),
+            ),
+    );
+    canvas.drawPath(
+      _polygonPath(center, shardRadius * 1.25, 4, rotation),
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.4
+        ..color = LightcorePalette.solar.withValues(alpha: 0.82 * alpha),
+    );
+  }
+
+  double _exponentialAcceleration(double t) {
+    final clamped = t.clamp(0.0, 1.0).toDouble();
+    if (clamped <= 0) {
+      return 0;
+    }
+    if (clamped >= 1) {
+      return 1;
+    }
+    return math.pow(2, 10 * (clamped - 1)).toDouble();
   }
 
   void _renderDustEnemyDeathImpact(

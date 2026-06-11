@@ -1543,9 +1543,11 @@ class LightcoreController extends ChangeNotifier {
   static const int layer1RoundCurrencyPerWave = 1;
   static const int layer1CompletionWave = 10;
   static const int layer1BaseStartingSparks = 75;
+  static const int layer1SparksPerEnemy = 2;
   static const int layer1SparksPerWave = 18;
   static const int layer1StarBoltsPerCompletedWave = 4;
   static const int layer1CompletionStarBolts = 25;
+  static const double layer1NovaShardDropChance = 0.08;
   static const List<int> outerSlotUnlockWaveThresholds = <int>[
     1,
     5,
@@ -1633,7 +1635,7 @@ class LightcoreController extends ChangeNotifier {
   LayerRunState _layerRun = LayerRunState.initial(
     startingSparks: layer1BaseStartingSparks,
   );
-  // L1L2_REBUILD_SAFE: Star Bolts and persistent upgrade ranks replace old player-facing currencies for rebuilt progression.
+  // L1L2_REBUILD_SAFE: Nova Shards and persistent upgrade ranks replace old player-facing currencies for rebuilt progression.
   LayerPersistentProgress _layerPersistentProgress =
       LayerPersistentProgress.initial();
   // L1L2_REBUILD_SAFE: Layer 2 first pass is a visible board of installed/stored completed Layer 1 shells.

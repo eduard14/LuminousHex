@@ -1359,7 +1359,7 @@ class _LayerRebuildActionDockState extends State<_LayerRebuildActionDock> {
             ] else ...[
               const SizedBox(height: 8),
               Text(
-                'Start a Layer 1 run to earn Sparks and build toward permanent Star Bolt upgrades.',
+                'Start a Layer 1 run to earn Sparks and build toward permanent Nova Shard upgrades.',
                 style: textTheme.labelSmall?.copyWith(
                   color: LightcorePalette.mist.withValues(alpha: 0.72),
                   fontWeight: FontWeight.w700,
@@ -1373,7 +1373,7 @@ class _LayerRebuildActionDockState extends State<_LayerRebuildActionDock> {
   }
 }
 
-// L1L2_REBUILD_SAFE: Collapsed persistent upgrade drawer gives Star Bolts a rebuild-only spend surface.
+// L1L2_REBUILD_SAFE: Collapsed persistent upgrade drawer gives Nova Shards a rebuild-only spend surface.
 class _LayerPersistentUpgradeButton extends StatelessWidget {
   const _LayerPersistentUpgradeButton({
     required this.controller,
@@ -1398,7 +1398,7 @@ class _LayerPersistentUpgradeButton extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         ),
-        child: Text('${type.label} Lv. $rank\n$cost Star Bolts'),
+        child: Text('${type.label} Lv. $rank\n$cost Nova Shards'),
       ),
     );
   }
