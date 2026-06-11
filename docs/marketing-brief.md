@@ -90,7 +90,8 @@ playable in this milestone.
 - The battle surface keeps the main app shell anchored: profile and global
   currencies stay at the top, future systems remain visible as locked chrome,
   and the bottom global upgrade dock can collapse so the tower field can become
-  the focus.
+  the focus. In rebuild mode, the battlefield background is full-bleed instead
+  of sitting inside a second rounded app panel.
 - The bottom upgrade dock separates timing clearly: active runs show only
   Sparks upgrades plus Tower Health and a Restart Wave 1 action, while ended
   runs show only permanent Nova Shard upgrades and the next Start New Run action.

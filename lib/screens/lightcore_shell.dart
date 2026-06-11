@@ -1008,7 +1008,10 @@ class _LightcoreShellState extends State<LightcoreShell> {
     final rebuildMode = controller.layerRebuildEnabled;
     final openingBattlePreview =
         battleChromeVisible && !controller.swarmActivated && !rebuildMode;
-    final shellPadding = isCompactLayout ? 12.0 : 16.0;
+    // L1L2_REBUILD_SAFE: The rebuilt battle surface owns the viewport. Extra
+    // shell padding exposed a second background around the game and made the
+    // field look like a card inside another card.
+    final shellPadding = rebuildMode ? 0.0 : (isCompactLayout ? 12.0 : 16.0);
     final sectionGap = isCompactLayout ? 8.0 : 16.0;
     final battleTopInset = openingBattlePreview
         ? (isCompactLayout ? 78.0 : 92.0)
