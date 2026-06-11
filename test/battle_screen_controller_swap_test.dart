@@ -1,4 +1,7 @@
+import 'dart:ui';
+
 import 'package:flame/game.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -154,6 +157,38 @@ void main() {
 
     expect(firstController.outerRingRevealed, isFalse);
     expect(secondController.outerRingRevealed, isTrue);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('mouse wheel zooms the battle canvas like pinch zoom', (
+    tester,
+  ) async {
+    addTearDown(() async {
+      await tester.binding.setSurfaceSize(null);
+    });
+    await tester.binding.setSurfaceSize(const Size(430, 780));
+    final controller = LightcoreController();
+    addTearDown(controller.dispose);
+    controller.debugDisableTutorial();
+
+    await _pumpBattleScreen(tester, controller);
+
+    final gameFinder = find.byType(GameWidget<LightcoreBattleGame>);
+    final game = tester
+        .widget<GameWidget<LightcoreBattleGame>>(gameFinder)
+        .game!;
+    final startScale = game.viewScale;
+
+    tester.binding.handlePointerEvent(
+      PointerScrollEvent(
+        position: tester.getCenter(gameFinder),
+        scrollDelta: const Offset(0, -240),
+        kind: PointerDeviceKind.mouse,
+      ),
+    );
+    await tester.pump();
+
+    expect(game.viewScale, greaterThan(startScale));
     expect(tester.takeException(), isNull);
   });
 

@@ -190,6 +190,19 @@ class LightcoreBattleGame extends FlameGame with ScaleDetector {
     _handleTap(Vector2(localPosition.dx, localPosition.dy));
   }
 
+  // L1L2_REBUILD_SAFE: Browser mouse-wheel zoom mirrors the existing pinch zoom path.
+  void zoomAt(Offset localPosition, double scaleRatio) {
+    if (!enableBattlefieldTaps || size.x == 0 || size.y == 0) {
+      return;
+    }
+    final focalPoint = Vector2(localPosition.dx, localPosition.dy);
+    _applyViewportTransform(
+      previousFocalPoint: focalPoint,
+      currentFocalPoint: focalPoint,
+      scaleRatio: scaleRatio,
+    );
+  }
+
   bool isTowerHitAt(Offset localPosition) {
     if (!_layoutReady || !enableBattlefieldTaps || _shellPromotion != null) {
       return false;
@@ -252,6 +265,33 @@ class LightcoreBattleGame extends FlameGame with ScaleDetector {
       candidateCenter.y.clamp(0.0, size.y).toDouble(),
     );
     return clampedCenter - _baseCenter;
+  }
+
+  void _applyViewportTransform({
+    required Vector2 previousFocalPoint,
+    required Vector2 currentFocalPoint,
+    required double scaleRatio,
+  }) {
+    if (scaleRatio <= 0 || size.x == 0 || size.y == 0) {
+      return;
+    }
+    final previousViewScale = _viewScale;
+    final nextViewScale = (previousViewScale * scaleRatio).clamp(
+      _minViewScale,
+      _maxViewScale,
+    );
+    final effectiveScaleRatio = nextViewScale / previousViewScale;
+    final nextPanOffset =
+        currentFocalPoint -
+        _baseCenter -
+        ((previousFocalPoint - _baseCenter - _panOffset) * effectiveScaleRatio);
+    if ((nextViewScale - previousViewScale).abs() < 0.0001 &&
+        (nextPanOffset - _panOffset).length < 0.01) {
+      return;
+    }
+    _viewScale = nextViewScale;
+    _panOffset = _clampPanOffset(nextPanOffset);
+    _recomputeLayout();
   }
 
   @override
@@ -511,25 +551,22 @@ class LightcoreBattleGame extends FlameGame with ScaleDetector {
       return;
     }
 
-    final previousViewScale = _viewScale;
-    var nextViewScale = previousViewScale;
     if (info.pointerCount >= 2) {
       final scaleRatio = currentScaleSignal / _lastGestureScaleSignal;
-      nextViewScale = (previousViewScale * scaleRatio).clamp(
-        _minViewScale,
-        _maxViewScale,
+      _applyViewportTransform(
+        previousFocalPoint: previousFocalPoint,
+        currentFocalPoint: currentFocalPoint,
+        scaleRatio: scaleRatio,
+      );
+    } else {
+      _applyViewportTransform(
+        previousFocalPoint: previousFocalPoint,
+        currentFocalPoint: currentFocalPoint,
+        scaleRatio: 1,
       );
     }
-    final effectiveScaleRatio = nextViewScale / previousViewScale;
-    final nextPanOffset =
-        currentFocalPoint -
-        _baseCenter -
-        ((previousFocalPoint - _baseCenter - _panOffset) * effectiveScaleRatio);
-    _viewScale = nextViewScale;
-    _panOffset = _clampPanOffset(nextPanOffset);
     _lastGestureFocalPoint = currentFocalPoint;
     _lastGestureScaleSignal = currentScaleSignal;
-    _recomputeLayout();
   }
 
   @override

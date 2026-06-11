@@ -393,10 +393,24 @@ class _BattleScreenState extends State<BattleScreen> {
             onPointerMove: _handleCanvasPointerMove,
             onPointerUp: _handleCanvasPointerUp,
             onPointerCancel: _handleCanvasPointerCancel,
+            onPointerSignal: _handleCanvasPointerSignal,
           ),
         ],
       ),
     );
+  }
+
+  void _handleCanvasPointerSignal(PointerSignalEvent event) {
+    if (!widget.enableBattlefieldTaps || event is! PointerScrollEvent) {
+      return;
+    }
+    // L1L2_REBUILD_SAFE: Desktop browser wheel zoom uses the same viewport limits as pinch zoom.
+    final scrollDelta = event.scrollDelta.dy;
+    if (scrollDelta.abs() < 0.1) {
+      return;
+    }
+    final scaleRatio = math.exp((-scrollDelta / 420).clamp(-0.22, 0.22));
+    _game.zoomAt(event.localPosition, scaleRatio);
   }
 
   void _handleCanvasPointerDown(PointerDownEvent event) {
