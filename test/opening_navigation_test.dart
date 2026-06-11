@@ -64,7 +64,7 @@ void main() {
       find.byKey(const ValueKey<String>('layer-wave-footer-tower-health')),
       findsOneWidget,
     );
-    expect(find.textContaining('Next '), findsOneWidget);
+    expect(find.textContaining('Next '), findsNothing);
     expect(tester.takeException(), isNull);
   });
 }

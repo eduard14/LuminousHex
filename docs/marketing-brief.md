@@ -113,9 +113,11 @@ playable in this milestone.
   mechanics functional without showing a dedicated queue visualization in the
   first-pass HUD.
 - The bottom wave footer now stays readable on compact mobile screens with
-  a simple uncapped wave number, inline double-chevron wave release,
-  next-wave timing, and an always-moving current-wave meter. Wave 10 is the
-  minimum shell-merge eligibility milestone, not the run cap.
+  a simple uncapped wave number, inline double-chevron wave release, and the
+  current-wave meter on the same row. The meter stays gold during active wave
+  progress and shifts color briefly between waves to show the next wave is
+  about to begin. Wave 10 is the minimum shell-merge eligibility milestone, not
+  the run cap.
 - The battle view keeps a compact shell collapse control in the Layer 1 rebuild:
   collapse focuses the core collision read, and expand restores the full 7-hex
   tower layout.

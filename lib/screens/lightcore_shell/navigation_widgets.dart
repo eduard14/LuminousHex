@@ -153,14 +153,8 @@ class _LayerOneWaveProgressPanel extends StatelessWidget {
     final textTheme = Theme.of(context).textTheme;
     final waveProgress = controller.activeLayerWaveProgress;
     final waveNumber = controller.activeLayerWaveNumber;
-    final nextSeconds = controller.nextAutomaticEnemySpawnSeconds;
-    final showNextTimer =
-        controller.swarmActivated &&
-        controller.enemyCount < controller.enemyTargetCount;
-    final nextLabel = showNextTimer
-        ? 'Next ${nextSeconds.toStringAsFixed(1)}s'
-        : '';
     final releaseEnabled = controller.canReleaseLayer1Wave;
+    final transitionActive = controller.layer1WaveTransitionActive;
     final towerHealth = controller.coreState.coreStability.round().clamp(
       0,
       100,
@@ -174,7 +168,6 @@ class _LayerOneWaveProgressPanel extends StatelessWidget {
       label: [
         'Wave $waveNumber progress',
         'Tower Health $towerHealth%',
-        if (nextLabel.isNotEmpty) nextLabel,
         'release wave control',
       ].join(', '),
       child: DecoratedBox(
@@ -192,88 +185,70 @@ class _LayerOneWaveProgressPanel extends StatelessWidget {
             compact ? 10 : 12,
             compact ? 8 : 10,
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
+          child: Row(
             children: [
-              Row(
-                children: [
-                  const Icon(
-                    Icons.track_changes_rounded,
-                    size: 18,
-                    color: LightcorePalette.solar,
-                  ),
-                  const SizedBox(width: 7),
-                  Text(
-                    'Wave $waveNumber',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: textTheme.labelLarge?.copyWith(
-                      color: LightcorePalette.mist,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                  const SizedBox(width: 6),
-                  Tooltip(
-                    message: 'Release full wave',
-                    child: IconButton(
-                      onPressed: releaseEnabled
-                          ? controller.releaseLayer1Wave
-                          : null,
-                      visualDensity: VisualDensity.compact,
-                      padding: EdgeInsets.zero,
-                      constraints: BoxConstraints.tightFor(
-                        width: compact ? 30 : 34,
-                        height: compact ? 28 : 30,
-                      ),
-                      icon: Icon(
-                        Icons.keyboard_double_arrow_right_rounded,
-                        size: compact ? 22 : 24,
-                      ),
-                      color: LightcorePalette.solar,
-                      disabledColor: LightcorePalette.mist.withValues(
-                        alpha: 0.28,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Icon(
-                    Icons.favorite_rounded,
-                    size: 17,
-                    color: towerHealthColor,
-                  ),
-                  const SizedBox(width: 5),
-                  Flexible(
-                    child: Text(
-                      key: const ValueKey<String>(
-                        'layer-wave-footer-tower-health',
-                      ),
-                      compact
-                          ? 'Tower $towerHealth%'
-                          : 'Tower Health $towerHealth%',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: textTheme.labelMedium?.copyWith(
-                        color: towerHealthColor,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                  ),
-                  const Spacer(),
-                  if (nextLabel.isNotEmpty)
-                    Text(
-                      nextLabel,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: textTheme.labelSmall?.copyWith(
-                        color: LightcorePalette.mist.withValues(alpha: 0.72),
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                ],
+              const Icon(
+                Icons.track_changes_rounded,
+                size: 18,
+                color: LightcorePalette.solar,
               ),
-              const SizedBox(height: 7),
-              _AnimatedWaveMeter(value: waveProgress, compact: compact),
+              const SizedBox(width: 7),
+              Text(
+                'Wave $waveNumber',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: textTheme.labelLarge?.copyWith(
+                  color: LightcorePalette.mist,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              const SizedBox(width: 4),
+              Tooltip(
+                message: 'Release full wave',
+                child: IconButton(
+                  onPressed: releaseEnabled
+                      ? controller.releaseLayer1Wave
+                      : null,
+                  visualDensity: VisualDensity.compact,
+                  padding: EdgeInsets.zero,
+                  constraints: BoxConstraints.tightFor(
+                    width: compact ? 28 : 30,
+                    height: compact ? 26 : 28,
+                  ),
+                  icon: Icon(
+                    Icons.keyboard_double_arrow_right_rounded,
+                    size: compact ? 21 : 23,
+                  ),
+                  color: LightcorePalette.solar,
+                  disabledColor: LightcorePalette.mist.withValues(alpha: 0.28),
+                ),
+              ),
+              SizedBox(width: compact ? 4 : 7),
+              Expanded(
+                child: _AnimatedWaveMeter(
+                  value: waveProgress,
+                  compact: compact,
+                  transitionActive: transitionActive,
+                ),
+              ),
+              SizedBox(width: compact ? 8 : 10),
+              Icon(Icons.favorite_rounded, size: 17, color: towerHealthColor),
+              const SizedBox(width: 5),
+              Flexible(
+                flex: 0,
+                child: Text(
+                  key: const ValueKey<String>('layer-wave-footer-tower-health'),
+                  compact
+                      ? 'Tower $towerHealth%'
+                      : 'Tower Health $towerHealth%',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: textTheme.labelMedium?.copyWith(
+                    color: towerHealthColor,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ),
             ],
           ),
         ),
@@ -283,10 +258,15 @@ class _LayerOneWaveProgressPanel extends StatelessWidget {
 }
 
 class _AnimatedWaveMeter extends StatefulWidget {
-  const _AnimatedWaveMeter({required this.value, required this.compact});
+  const _AnimatedWaveMeter({
+    required this.value,
+    required this.compact,
+    required this.transitionActive,
+  });
 
   final double value;
   final bool compact;
+  final bool transitionActive;
 
   @override
   State<_AnimatedWaveMeter> createState() => _AnimatedWaveMeterState();
@@ -315,6 +295,15 @@ class _AnimatedWaveMeterState extends State<_AnimatedWaveMeter>
   Widget build(BuildContext context) {
     final height = widget.compact ? 9.0 : 11.0;
     final value = widget.value.clamp(0.0, 1.0).toDouble();
+    final colors = widget.transitionActive
+        ? [
+            LightcorePalette.aether.withValues(alpha: 0.74),
+            LightcorePalette.scanGlow,
+          ]
+        : [
+            LightcorePalette.solar.withValues(alpha: 0.72),
+            LightcorePalette.warning,
+          ];
     return ClipRRect(
       borderRadius: BorderRadius.circular(999),
       child: SizedBox(
@@ -327,7 +316,9 @@ class _AnimatedWaveMeterState extends State<_AnimatedWaveMeter>
               fit: StackFit.expand,
               children: [
                 ColoredBox(
-                  color: LightcorePalette.panelRaised.withValues(alpha: 0.74),
+                  color: widget.transitionActive
+                      ? LightcorePalette.aether.withValues(alpha: 0.18)
+                      : LightcorePalette.panelRaised.withValues(alpha: 0.74),
                 ),
                 TweenAnimationBuilder<double>(
                   duration: const Duration(milliseconds: 240),
@@ -336,18 +327,15 @@ class _AnimatedWaveMeterState extends State<_AnimatedWaveMeter>
                   builder: (context, animatedValue, child) {
                     return FractionallySizedBox(
                       alignment: Alignment.centerLeft,
-                      widthFactor: animatedValue,
+                      widthFactor: widget.transitionActive
+                          ? 1.0
+                          : animatedValue,
                       child: child,
                     );
                   },
                   child: DecoratedBox(
                     decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          LightcorePalette.solar.withValues(alpha: 0.72),
-                          LightcorePalette.warning,
-                        ],
-                      ),
+                      gradient: LinearGradient(colors: colors),
                     ),
                   ),
                 ),

@@ -407,17 +407,16 @@ extension LightcoreControllerStateAccessors on LightcoreController {
   // kill packet used by the combat loop.
   int get activeLayerWaveTarget => max(1, initialEnemyTarget);
 
-  // L1L2_REBUILD_SAFE: The footer exposes when the next automatic anomaly
-  // releases so the wave bar feels readable between kills.
-  double get nextAutomaticEnemySpawnSeconds {
-    if (!_swarmActivated ||
-        activeLayerPassiveOnly ||
-        _battleSpawnPolicy != LightcoreBattleSpawnPolicy.automatic ||
-        _enemies.length >= enemyTargetCount) {
-      return 0;
-    }
-    return max(0.0, _spawnTimer);
-  }
+  // L1L2_REBUILD_SAFE: The rebuilt footer uses color, not a timer label, to
+  // show the short transition after a wave is cleared and before the next wave
+  // starts spawning.
+  bool get layer1WaveTransitionActive =>
+      _layerRun.active &&
+      _swarmActivated &&
+      _battleSpawnPolicy == LightcoreBattleSpawnPolicy.automatic &&
+      activeLayerWaveNumber > 1 &&
+      activeLayerWaveKills == 0 &&
+      _enemies.isEmpty;
 
   // L1L2_REBUILD_SAFE: Force-release is only useful while automatic Layer 1
   // pressure can add more anomalies to the field.
