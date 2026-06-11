@@ -414,16 +414,17 @@ extension LightcoreControllerStateAccessors on LightcoreController {
       _layerRun.active &&
       _swarmActivated &&
       _battleSpawnPolicy == LightcoreBattleSpawnPolicy.automatic &&
-      activeLayerWaveNumber > 1 &&
-      activeLayerWaveKills == 0 &&
-      _enemies.isEmpty;
+      _layer1WaveCountdownRemaining > 0;
 
   // L1L2_REBUILD_SAFE: Force-release is only useful while automatic Layer 1
   // pressure can add more anomalies to the field.
   bool get canReleaseLayer1Wave =>
       !activeLayerPassiveOnly &&
+      _layerRun.active &&
       _battleSpawnPolicy == LightcoreBattleSpawnPolicy.automatic &&
-      _enemies.length < enemyTargetCount;
+      (_layer1WaveSpawning ||
+          _layer1WaveCountdownRemaining > 0 ||
+          (_layer1WaveSpawnedThisWave == 0 && _enemies.isEmpty));
 
   int get enemyTargetFloor => minEnemyTarget;
 
@@ -640,12 +641,10 @@ extension LightcoreControllerStateAccessors on LightcoreController {
       (bossKillsIntoCycle / bossSpawnKillRequirement).clamp(0.0, 1.0);
 
   int get activeLayerWaveNumber {
-    // L1L2_REBUILD_SAFE: A dead Layer 1 run should show zero active wave
-    // pressure until the player starts the next run.
-    if (layerRebuildEnabled &&
-        !_layerRun.active &&
-        activeLayer.bestWaveReached <= 0) {
-      return 0;
+    if (layerRebuildEnabled) {
+      // L1L2_REBUILD_SAFE: Rebuilt Layer 1 waves are explicit run state, not
+      // inferred from legacy kill counters. Inactive means no wave pressure.
+      return _layerRun.active ? max(1, _layerRun.wave) : 0;
     }
     return 1 + (activeLayer.normalKillsSinceBoss ~/ max(1, initialEnemyTarget));
   }
@@ -656,8 +655,22 @@ extension LightcoreControllerStateAccessors on LightcoreController {
     if (activeLayerWaveNumber <= 0) {
       return 0;
     }
-    if (activeLayer.bossReady) {
-      return 1.0;
+    if (layerRebuildEnabled && _layerRun.active) {
+      if (_layer1WaveCountdownRemaining > 0) {
+        return (1 -
+                (_layer1WaveCountdownRemaining /
+                    LightcoreController.layer1WaveCountdownSeconds))
+            .clamp(0.0, 1.0);
+      }
+      if (_layer1WaveSpawning) {
+        return (_layer1WaveSpawnElapsed /
+                LightcoreController.layer1WaveSpawnDurationSeconds)
+            .clamp(0.0, 1.0);
+      }
+      if (_layer1WaveSpawnedThisWave >= activeLayerWaveTarget) {
+        return 1.0;
+      }
+      return 0;
     }
     final waveEnemyCount = max(1, initialEnemyTarget);
     return ((activeLayer.normalKillsSinceBoss % waveEnemyCount) /

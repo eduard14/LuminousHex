@@ -117,11 +117,15 @@ class LayerRunState {
       return value is num ? value.toInt() : fallback;
     }
 
+    final restoredWave = intValue('wave', 1);
+    final restoredCompletedWave = intValue('completedWave', 0);
     return LayerRunState(
-      wave: intValue('wave', 1).clamp(1, 10).toInt(),
-      active: data['active'] == true,
+      wave: restoredWave < 1 ? 1 : restoredWave,
+      // L1L2_REBUILD_SAFE: Restored sessions should not silently resume wave
+      // spawning before the player explicitly starts the Layer 1 run.
+      active: false,
       sparks: intValue('sparks', fallbackStartingSparks),
-      completedWave: intValue('completedWave', 0).clamp(0, 10).toInt(),
+      completedWave: restoredCompletedWave < 0 ? 0 : restoredCompletedWave,
       shellReady: data['shellReady'] == true,
       upgradeRanks: ranks,
     );

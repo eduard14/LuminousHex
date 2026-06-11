@@ -26,6 +26,29 @@ extension LightcoreControllerCombatLoop on LightcoreController {
           fabricationAdvanced: false,
         );
       }
+      if (layerRebuildEnabled && !_layerRun.active) {
+        if (_swarmActivated ||
+            _enemies.isNotEmpty ||
+            _shots.isNotEmpty ||
+            _impacts.isNotEmpty ||
+            _pulses.isNotEmpty) {
+          _swarmActivated = false;
+          _enemies = <EnemyState>[];
+          _shots = <CoreShotState>[];
+          _impacts = <ImpactState>[];
+          _pulses = <EnergyPulseState>[];
+          _layer1WaveSpawnElapsed = 0;
+          _layer1WaveCountdownRemaining = 0;
+          _layer1WaveSpawnedThisWave = 0;
+          _layer1WaveSpawning = false;
+          _needsNotify = true;
+        }
+        final fabricationAdvanced = _advanceTowerFabrication(dt);
+        return (
+          busy: fabricationAdvanced,
+          fabricationAdvanced: fabricationAdvanced,
+        );
+      }
       if (foreground) {
         _prepareLocalhostAutoTapper();
       }
@@ -48,14 +71,18 @@ extension LightcoreControllerCombatLoop on LightcoreController {
         _advanceLayer3Trial(battleDt);
       } else if (_swarmActivated &&
           _battleSpawnPolicy == LightcoreBattleSpawnPolicy.automatic) {
-        _spawnTimer -= battleDt;
-        while (_spawnTimer <= 0) {
-          if (_enemies.length >= enemyTargetCount) {
-            _spawnTimer = 0.12;
-            break;
+        if (layerRebuildEnabled) {
+          _advanceLayer1WaveTiming(battleDt);
+        } else {
+          _spawnTimer -= battleDt;
+          while (_spawnTimer <= 0) {
+            if (_enemies.length >= enemyTargetCount) {
+              _spawnTimer = 0.12;
+              break;
+            }
+            _spawnEnemy();
+            _spawnTimer += _spawnInterval;
           }
-          _spawnEnemy();
-          _spawnTimer += _spawnInterval;
         }
       }
       _primeThreatChallengeFocusTarget();
@@ -96,8 +123,94 @@ extension LightcoreControllerCombatLoop on LightcoreController {
     }
   }
 
+  void _advanceLayer1WaveTiming(double dt) {
+    if (!_layerRun.active) {
+      return;
+    }
+    if (_layer1WaveSpawning) {
+      _layer1WaveSpawnElapsed = min(
+        LightcoreController.layer1WaveSpawnDurationSeconds,
+        _layer1WaveSpawnElapsed + max(0, dt),
+      );
+      final target = activeLayerWaveTarget;
+      final progress =
+          _layer1WaveSpawnElapsed /
+          LightcoreController.layer1WaveSpawnDurationSeconds;
+      final desiredSpawned = min(target, max(1, (progress * target).ceil()));
+      while (_layer1WaveSpawnedThisWave < desiredSpawned) {
+        if (!_spawnEnemy()) {
+          break;
+        }
+        _layer1WaveSpawnedThisWave += 1;
+      }
+      if (_layer1WaveSpawnElapsed >=
+              LightcoreController.layer1WaveSpawnDurationSeconds ||
+          _layer1WaveSpawnedThisWave >= target) {
+        _layer1WaveSpawnElapsed =
+            LightcoreController.layer1WaveSpawnDurationSeconds;
+        _layer1WaveSpawning = false;
+      }
+      return;
+    }
+
+    if (_layer1WaveCountdownRemaining > 0) {
+      _layer1WaveCountdownRemaining = max(
+        0,
+        _layer1WaveCountdownRemaining - max(0, dt),
+      );
+      if (_layer1WaveCountdownRemaining <= 0) {
+        _beginLayer1WaveSpawn();
+      }
+      return;
+    }
+
+    if (_layer1WaveSpawnedThisWave >= activeLayerWaveTarget &&
+        _enemies.isEmpty) {
+      _syncLayerRebuildWaveProgress(_layerRun.wave + 1);
+      if (!_layerRun.active) {
+        return;
+      }
+      _layer1WaveSpawnElapsed = 0;
+      _layer1WaveSpawnedThisWave = 0;
+      _layer1WaveCountdownRemaining =
+          LightcoreController.layer1WaveCountdownSeconds;
+    }
+  }
+
+  void _beginLayer1WaveSpawn() {
+    if (!_layerRun.active) {
+      return;
+    }
+    _layer1WaveCountdownRemaining = 0;
+    _layer1WaveSpawnElapsed = 0;
+    _layer1WaveSpawnedThisWave = 0;
+    _layer1WaveSpawning = true;
+  }
+
+  void _releaseLayer1WaveImmediately() {
+    if (!_layerRun.active) {
+      return;
+    }
+    if (!_layer1WaveSpawning) {
+      _beginLayer1WaveSpawn();
+    }
+    final target = activeLayerWaveTarget;
+    while (_layer1WaveSpawnedThisWave < target) {
+      if (!_spawnEnemy()) {
+        break;
+      }
+      _layer1WaveSpawnedThisWave += 1;
+    }
+    _layer1WaveSpawnElapsed =
+        LightcoreController.layer1WaveSpawnDurationSeconds;
+    _layer1WaveCountdownRemaining = 0;
+    _layer1WaveSpawning = false;
+  }
+
   void _prepareLocalhostAutoTapper() {
-    if (!_localhostAutoTapperEnabled || _outerRingRevealed) {
+    if (!_localhostAutoTapperEnabled ||
+        _outerRingRevealed ||
+        (layerRebuildEnabled && !_layerRun.active)) {
       return;
     }
     _outerRingRevealed = true;

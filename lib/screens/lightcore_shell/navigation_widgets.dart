@@ -270,8 +270,8 @@ class _AnimatedWaveMeterState extends State<_AnimatedWaveMeter>
     final value = widget.value.clamp(0.0, 1.0).toDouble();
     final colors = widget.transitionActive
         ? [
-            LightcorePalette.aether.withValues(alpha: 0.74),
-            LightcorePalette.scanGlow,
+            LightcorePalette.mist.withValues(alpha: 0.30),
+            LightcorePalette.mist.withValues(alpha: 0.58),
           ]
         : [
             LightcorePalette.solar.withValues(alpha: 0.72),
@@ -290,7 +290,7 @@ class _AnimatedWaveMeterState extends State<_AnimatedWaveMeter>
               children: [
                 ColoredBox(
                   color: widget.transitionActive
-                      ? LightcorePalette.aether.withValues(alpha: 0.18)
+                      ? LightcorePalette.mist.withValues(alpha: 0.10)
                       : LightcorePalette.panelRaised.withValues(alpha: 0.74),
                 ),
                 TweenAnimationBuilder<double>(
@@ -300,9 +300,7 @@ class _AnimatedWaveMeterState extends State<_AnimatedWaveMeter>
                   builder: (context, animatedValue, child) {
                     return FractionallySizedBox(
                       alignment: Alignment.centerLeft,
-                      widthFactor: widget.transitionActive
-                          ? 1.0
-                          : animatedValue,
+                      widthFactor: animatedValue,
                       child: child,
                     );
                   },

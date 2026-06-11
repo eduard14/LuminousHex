@@ -193,7 +193,11 @@ extension LightcoreControllerLayerRebuild on LightcoreController {
     _impacts = <ImpactState>[];
     _ammoQueue = <AmmoPacket>[];
     _spawnSequence = 0;
-    _spawnTimer = 0.8;
+    _spawnTimer = 0;
+    _layer1WaveSpawnElapsed = 0;
+    _layer1WaveCountdownRemaining = 0;
+    _layer1WaveSpawnedThisWave = 0;
+    _layer1WaveSpawning = true;
     _outerRingRevealed = true;
     _swarmActivated = true;
     _battleSpawnPolicy = LightcoreBattleSpawnPolicy.automatic;
@@ -226,7 +230,11 @@ extension LightcoreControllerLayerRebuild on LightcoreController {
     _impacts = <ImpactState>[];
     _ammoQueue = <AmmoPacket>[];
     _spawnSequence = 0;
-    _spawnTimer = 0.8;
+    _spawnTimer = 0;
+    _layer1WaveSpawnElapsed = 0;
+    _layer1WaveCountdownRemaining = 0;
+    _layer1WaveSpawnedThisWave = 0;
+    _layer1WaveSpawning = true;
     _outerRingRevealed = true;
     _swarmActivated = true;
     _battleSpawnPolicy = LightcoreBattleSpawnPolicy.automatic;
@@ -322,7 +330,11 @@ extension LightcoreControllerLayerRebuild on LightcoreController {
     _impacts = <ImpactState>[];
     _ammoQueue = <AmmoPacket>[];
     _spawnSequence = 0;
-    _spawnTimer = 0.8;
+    _spawnTimer = 0;
+    _layer1WaveSpawnElapsed = 0;
+    _layer1WaveCountdownRemaining = 0;
+    _layer1WaveSpawnedThisWave = 0;
+    _layer1WaveSpawning = false;
     _swarmActivated = false;
     _slots = _slots
         .map(
@@ -487,10 +499,7 @@ extension LightcoreControllerLayerRebuild on LightcoreController {
 
   void _syncLayerRebuildWaveProgress(int reachedWave) {
     // L1L2_REBUILD_SAFE: Bridges existing combat wave progression into the rebuilt run state.
-    final clampedWave = max(
-      1,
-      min(LightcoreController.layer1CompletionWave, reachedWave),
-    );
+    final clampedWave = max(1, reachedWave);
     final previousCompleted = _layerRun.completedWave;
     final completedWave = max(previousCompleted, max(0, clampedWave - 1));
     final earnedSparks =

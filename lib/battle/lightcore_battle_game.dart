@@ -400,7 +400,6 @@ class LightcoreBattleGame extends FlameGame with ScaleDetector {
         _renderPersistentShieldRings(canvas);
         _renderLinks(canvas);
         _renderSlots(canvas);
-        _renderRelayImpactRing(canvas);
       }
     }
     _renderShotFireBursts(canvas);

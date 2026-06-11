@@ -1548,6 +1548,8 @@ class LightcoreController extends ChangeNotifier {
   static const int layer1StarBoltsPerCompletedWave = 4;
   static const int layer1CompletionStarBolts = 25;
   static const double layer1NovaShardDropChance = 0.08;
+  static const double layer1WaveSpawnDurationSeconds = 5.0;
+  static const double layer1WaveCountdownSeconds = 3.0;
   static const List<int> outerSlotUnlockWaveThresholds = <int>[
     1,
     5,
@@ -1705,6 +1707,8 @@ class LightcoreController extends ChangeNotifier {
   int _threatChallengeAutoFocusedWaveIndex = -1;
 
   double _spawnTimer = 1.35;
+  double _layer1WaveSpawnElapsed = 0;
+  double _layer1WaveCountdownRemaining = 0;
   double _bannerTimer = 0;
   double _levelUpRadianceProgress = 1;
   double _notifyAccumulator = 0;
@@ -1714,6 +1718,7 @@ class LightcoreController extends ChangeNotifier {
   int _enemyTargetCount = initialEnemyTarget;
   int _enemyTargetUpgradeLevel = 0;
   int _spawnSequence = 0;
+  int _layer1WaveSpawnedThisWave = 0;
   int _enemyCounter = 0;
   int _pulseCounter = 0;
   int _shotCounter = 0;
@@ -1723,6 +1728,7 @@ class LightcoreController extends ChangeNotifier {
   int _lastLevelUpRadianceDestroyedEnemies = 0;
   int _equipmentDropCounter = 0;
   bool _manualOverdriveHeld = false;
+  bool _layer1WaveSpawning = false;
   double _manualOverdriveCharge = 0;
   bool _suppressRuntimeBanners = false;
   bool _hasPermanentOverdrive = false;

@@ -214,6 +214,11 @@ extension LightcoreControllerLayerTraits on LightcoreController {
       _firstThreatChallengeActive || _firstThreatChallengeCompleted;
 
   void _applyOpeningPressureLessonIfNeeded() {
+    if (layerRebuildEnabled) {
+      // L1L2_REBUILD_SAFE: Rebuilt Layer 1 health changes only from anomaly
+      // impacts and explicit run start/reset, not old tutorial pressure beats.
+      return;
+    }
     final firstTower = _firstTutorialTower;
     if (_tutorialOpeningPressureHitApplied ||
         _firstThreatChallengeStarted ||
@@ -240,6 +245,11 @@ extension LightcoreControllerLayerTraits on LightcoreController {
   void _applyOpeningChallengePressureLessonIfNeeded(
     ThreatRegionChallengeState challenge,
   ) {
+    if (layerRebuildEnabled) {
+      // L1L2_REBUILD_SAFE: Legacy tutorial stability nudges are disabled for
+      // the rebuilt wave-run loop.
+      return;
+    }
     final firstTower = _firstTutorialTower;
     if (_earlyTutorialComplete ||
         challenge.regionId != ThreatRegionLibrary.all.first.id ||
@@ -281,6 +291,11 @@ extension LightcoreControllerLayerTraits on LightcoreController {
   }
 
   void _recoverOpeningPressureOnTutorialUpgrade(int slotIndex, int nextRank) {
+    if (layerRebuildEnabled) {
+      // L1L2_REBUILD_SAFE: Spark/Nova upgrades must not heal the tower during
+      // a run; the next explicit run start is the rebuild point.
+      return;
+    }
     if (slotIndex != 0) {
       return;
     }

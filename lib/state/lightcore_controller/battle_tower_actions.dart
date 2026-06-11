@@ -119,6 +119,16 @@ extension LightcoreControllerBattleTowerActions on LightcoreController {
   }
 
   bool startBattle({bool showBanner = true}) {
+    if (layerRebuildEnabled && !_layerRun.active) {
+      if (showBanner) {
+        _showBanner(
+          'Start the Layer 1 run before releasing anomaly pressure.',
+          category: LightcoreNotificationCategory.battle,
+        );
+      }
+      _notifyNow();
+      return false;
+    }
     if (activeLayerPassiveOnly) {
       if (showBanner) {
         _showBanner(
@@ -162,22 +172,10 @@ extension LightcoreControllerBattleTowerActions on LightcoreController {
     if (!_swarmActivated) {
       startBattle(showBanner: false);
     }
-    final openSlots = max(0, enemyTargetCount - _enemies.length);
-    var released = 0;
-    while (released < openSlots && _enemies.length < enemyTargetCount) {
-      _spawnEnemy();
-      released += 1;
-    }
-    _spawnTimer = _spawnInterval;
-    _showBanner(
-      released == 1
-          ? 'Released 1 anomaly into the current wave.'
-          : 'Released $released anomalies into the current wave.',
-      category: LightcoreNotificationCategory.battle,
-    );
+    _releaseLayer1WaveImmediately();
     _syncTutorialStep(showBanner: false);
     _notifyNow();
-    return released > 0;
+    return true;
   }
 
   void handleBattleCenterTap() {

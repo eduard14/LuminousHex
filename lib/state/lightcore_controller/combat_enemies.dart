@@ -184,7 +184,7 @@ extension LightcoreControllerCombatEnemies on LightcoreController {
       );
       radius = blinkMovement.radius;
       angle = blinkMovement.angle;
-      if (radius <= _relayImpactRadius) {
+      if (_enemyInsideCoreHexCollision(radius: radius, angle: angle)) {
         _registerRelayHit(enemy.copyWith(health: health));
       } else {
         final advancedEnemy = enemy.copyWith(
@@ -220,6 +220,22 @@ extension LightcoreControllerCombatEnemies on LightcoreController {
         payloadType: PayloadType.overheat,
       );
     }
+  }
+
+  bool _enemyInsideCoreHexCollision({
+    required double radius,
+    required double angle,
+  }) {
+    // L1L2_REBUILD_SAFE: The rebuilt tower is a hex, so anomaly impact uses a
+    // matching hex mask instead of the old circular relay-impact radius.
+    const coreHexCircumradius = _relayImpactRadius * 0.56;
+    const sideArc = pi / 3;
+    const rotation = pi / 6;
+    final apothem = coreHexCircumradius * cos(pi / 6);
+    final localAngle =
+        ((angle - rotation + (sideArc / 2)) % sideArc) - (sideArc / 2);
+    final boundaryRadius = apothem / cos(localAngle).clamp(0.001, 1.0);
+    return radius <= boundaryRadius;
   }
 
   double _enemyAngularDriftStep(EnemyState enemy, double radius, double dt) {
@@ -350,9 +366,9 @@ extension LightcoreControllerCombatEnemies on LightcoreController {
     );
   }
 
-  void _spawnEnemy() {
+  bool _spawnEnemy() {
     if (_enemies.length >= enemyTargetCount) {
-      return;
+      return false;
     }
     final shouldSpawnBoss =
         activeLayer.bossReady && !_enemies.any((enemy) => enemy.config.isBoss);
@@ -377,7 +393,7 @@ extension LightcoreControllerCombatEnemies on LightcoreController {
               : '${regionBossCards.length} regional Apex bosses breached the shell perimeter.',
           category: LightcoreNotificationCategory.battle,
         );
-        return;
+        return true;
       }
       final bossCard = activeBossEnemyCard;
       if (bossCard != null) {
@@ -398,7 +414,7 @@ extension LightcoreControllerCombatEnemies on LightcoreController {
           '${bossCard.config.name} breached the shell perimeter.',
           category: LightcoreNotificationCategory.battle,
         );
-        return;
+        return true;
       }
     }
     final deck = activeEnemyDeck;
@@ -416,6 +432,7 @@ extension LightcoreControllerCombatEnemies on LightcoreController {
       ),
     );
     _spawnSequence += 1;
+    return true;
   }
 
   ({double angle, double radius}) _nextClusteredSpawnPoint() {

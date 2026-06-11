@@ -101,8 +101,8 @@ playable in this milestone.
   the previous attempt, including active upgrade ranks and run-built Relay Hexes,
   then begins again at Wave 1 with persistent unlocks intact.
 - Active Layer 1 tower damage shows as cracks across the core and Relay Hexes;
-  damaged pieces rebuild at the next wave start, while a 0% core shatters and
-  hard-ends the run.
+  health does not regenerate during a run, and a 0% core shatters and hard-ends
+  the run.
 - When the Lightcore dies, the Layer 1 run hard-ends: active wave pressure
   resets to Wave 0, the core stays dead at 0% until the next run starts, and
   built Relay Hexes remain installed instead of being disabled by anomaly hits.
@@ -114,10 +114,11 @@ playable in this milestone.
   first-pass HUD.
 - The bottom wave footer now stays readable on compact mobile screens with
   a simple uncapped wave number, inline double-chevron wave release, and the
-  current-wave meter on the same row. The meter stays gold during active wave
-  progress and shifts color briefly between waves to show the next wave is
-  about to begin. Wave 10 is the minimum shell-merge eligibility milestone, not
-  the run cap.
+  current-wave meter on the same row. The meter fills gold while the current
+  wave spawns, then restarts in grey during the next-wave countdown. The
+  chevron immediately releases the rest of the spawning wave or skips the
+  countdown. Wave 10 is the minimum shell-merge eligibility milestone, not the
+  run cap.
 - The battle view keeps a compact shell collapse control in the Layer 1 rebuild:
   collapse focuses the core collision read, and expand restores the full 7-hex
   tower layout.
