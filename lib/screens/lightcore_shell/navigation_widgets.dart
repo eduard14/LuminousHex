@@ -81,14 +81,8 @@ class _OverallProgressBarPanel extends StatelessWidget {
         compact: compact,
       );
     }
-    final waveProgress = controller.layerRebuildEnabled
-        ? (controller.layer1ShellProgressWave /
-                  LightcoreController.layer1CompletionWave)
-              .clamp(0.0, 1.0)
-        : controller.activeLayerWaveProgress;
-    final waveLabel = controller.layerRebuildEnabled
-        ? 'Wave ${controller.layer1ShellProgressWave}/${LightcoreController.layer1CompletionWave}'
-        : controller.activeLayerWaveHudLabel;
+    final waveProgress = controller.activeLayerWaveProgress;
+    final waveLabel = controller.activeLayerWaveHudLabel;
 
     return Column(
       children: [

@@ -28,6 +28,17 @@ void main() {
     expect(controller.activeLayerWaveProgress, 0);
   });
 
+  test('wave HUD progress is current wave progress past Wave 10', () {
+    final controller = LightcoreController();
+    addTearDown(controller.dispose);
+
+    controller.activeLayer.normalKillsSinceBoss =
+        (LightcoreController.initialEnemyTarget * 12) + 3;
+
+    expect(controller.activeLayerWaveHudLabel, 'Wave 13');
+    expect(controller.activeLayerWaveProgress, closeTo(0.5, 0.001));
+  });
+
   test('release Layer 1 wave fills the active pressure cap', () {
     final controller = LightcoreController();
     addTearDown(controller.dispose);

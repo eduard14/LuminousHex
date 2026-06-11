@@ -102,8 +102,9 @@ playable in this milestone.
   mechanics functional without showing a dedicated queue visualization in the
   first-pass HUD.
 - The bottom wave footer now stays readable on compact mobile screens with
-  a simple wave number, inline double-chevron wave release, next-wave timing,
-  and an always-moving wave meter.
+  a simple uncapped wave number, inline double-chevron wave release,
+  next-wave timing, and an always-moving current-wave meter. Wave 10 is the
+  minimum shell-merge eligibility milestone, not the run cap.
 - Relay towers charge shots into the Lightcore instead of asking the player to
   manually queue or drag ammo.
 - Opening combat is low-friction: shots auto-charge after the player presses Play,
