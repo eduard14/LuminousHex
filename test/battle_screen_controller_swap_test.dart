@@ -257,7 +257,7 @@ void main() {
       expect(find.textContaining('Queue Size Lv. 0'), findsOneWidget);
       expect(find.textContaining('Build Feeder'), findsNothing);
       expect(find.textContaining('Star Bolt Upgrades'), findsNothing);
-      expect(find.textContaining('Feeder Slots Lv. 0'), findsNothing);
+      expect(find.textContaining('Relay Hexes Lv. 0'), findsNothing);
       expect(find.text('Global Tower Upgrades'), findsOneWidget);
       expect(find.textContaining('Buffer'), findsNothing);
       expect(find.textContaining('Wave Marks'), findsNothing);
@@ -300,12 +300,12 @@ void main() {
         find.textContaining('Star Bolt upgrades persist into every new run'),
         findsOneWidget,
       );
-      expect(find.textContaining('Feeder Slots Lv. 0'), findsOneWidget);
+      expect(find.textContaining('Relay Hexes Lv. 0'), findsOneWidget);
       expect(find.textContaining('Starting Sparks Lv. 0'), findsOneWidget);
       expect(find.text('Damage Lv. 0\n18 Sparks'), findsNothing);
       expect(find.text('Fire Rate Lv. 0\n22 Sparks'), findsNothing);
 
-      await tester.tap(find.textContaining('Feeder Slots Lv. 0'));
+      await tester.tap(find.textContaining('Relay Hexes Lv. 0'));
       await tester.pump();
 
       expect(
@@ -345,7 +345,7 @@ void main() {
     await tester.pump();
 
     expect(controller.slots[0].isBuilt, isFalse);
-    expect(find.text('Choose Feeder 1'), findsOneWidget);
+    expect(find.text('Choose Relay Hex 1'), findsOneWidget);
     expect(find.text('Comet Mortar'), findsOneWidget);
     expect(find.textContaining('Build Feeder'), findsNothing);
 
@@ -360,7 +360,7 @@ void main() {
     expect(controller.slots[0].isBuilt, isTrue);
     expect(controller.slots[0].config?.id, TowerLibrary.redPrism.id);
     expect(controller.sparks, 51);
-    expect(find.textContaining('Feeder Slot 1'), findsOneWidget);
+    expect(find.textContaining('Relay Hex 1'), findsOneWidget);
     expect(find.textContaining('24 Sparks'), findsNothing);
     expect(find.textContaining('Lumens'), findsNothing);
     expect(tester.takeException(), isNull);
@@ -496,7 +496,7 @@ void main() {
     expect(find.text('Best Wave'), findsNothing);
     expect(find.textContaining('Stats 0/'), findsNothing);
     expect(find.textContaining('Layer 2 Lv 1'), findsNothing);
-    expect(find.textContaining('Feeder Slot 1'), findsNothing);
+    expect(find.textContaining('Relay Hex 1'), findsNothing);
 
     final game = tester
         .widget<GameWidget<LightcoreBattleGame>>(
@@ -508,8 +508,9 @@ void main() {
     await tester.tapAt(slotCenter!);
     await tester.pump();
 
-    expect(find.textContaining('Feeder Slot 1'), findsOneWidget);
-    expect(find.text('Feeder Integrity'), findsOneWidget);
+    expect(find.textContaining('Relay Hex 1'), findsOneWidget);
+    expect(find.text('Feeder Integrity'), findsNothing);
+    expect(find.byIcon(Icons.info_outline_rounded), findsWidgets);
     expect(find.text('Full Stats'), findsNothing);
     expect(find.text('Persistent Stat Upgrades'), findsNothing);
     expect(find.textContaining('Layer 1 Tower Level'), findsNothing);

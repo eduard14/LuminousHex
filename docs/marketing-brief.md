@@ -29,19 +29,19 @@ and promoting each completed shell into a deeper prism lattice.
 
 LumiHex is a mobile-first tower-defense and idle progression game where black
 hole anomalies collapse from the perimeter into a central Lightcore. The player
-taps unlocked outer hexes to build six feeder towers around the core, spends run
+taps unlocked outer hexes to build six Relay Hex towers around the core, spends run
 currency on active combat upgrades, completes Wave 10 Layer 1 shells, and banks
 those shells for the Layer 2 base.
 
 ## Player Fantasy
 
 The Lightcore has fractured into unstable hex shells. Anomalies spiral inward,
-draining stability and lowering output. The player rebuilds the lattice one
+pressuring Core Health and tower stability. The player rebuilds the lattice one
 relay at a time, turns enemy pressure into progression, and forges completed
 shells into higher-order prism structures.
 
 Marketing tone should be clear and energetic, not lore-heavy. The story exists
-to explain the loop: choose feeder colors, defend the core, complete Layer 1
+to explain the loop: choose Relay Hex colors, defend the core, complete Layer 1
 shells, install those shells into Layer 2, and repeat for better color and
 projectile odds.
 
@@ -51,8 +51,8 @@ projectile odds.
 2. Start a Layer 1 run at Wave 1 with Sparks as the per-run currency.
 3. Let the core and relay towers auto-charge shots while the shell chooses
    anomaly targets automatically.
-4. Tap unlocked empty outer hexes, choose the feeder color, and install that
-   tower; feeders modify the central core instead of reading as independent
+4. Tap unlocked empty outer hexes, choose the Relay Hex color, and install that
+   tower; relays modify the central core instead of reading as independent
    lane defenders.
 5. Spend Sparks during the run on Damage, Fire Rate, Multishot, and Queue Size.
 6. When the run ends, hide the Sparks upgrades and show permanent Star Bolt
@@ -61,7 +61,7 @@ projectile odds.
 8. Require the full seven-hex shell, then let the player choose Complete Shell;
    the completed shell installs into the first open Layer 2 slot or stores if
    the seven-slot board is full.
-9. Spend persistent Star Bolts on feeder slot unlocks, starting Sparks, base
+9. Spend persistent Star Bolts on Relay Hex unlocks, starting Sparks, base
    core damage, base core fire rate, base queue size, and future color unlocks.
 10. Start a fresh Layer 1 run from the main battlefield even when Layer 2 is full.
 
@@ -279,7 +279,8 @@ playable in this milestone.
 
 ### Towers And Builds
 
-- Seven Source Tower families: White, Red, Orange, Yellow, Green, Blue, Purple.
+- Seven Source Tower families: White, Red, Orange, Yellow, Verdant, Blue,
+  Purple.
 - Tower families support distinct projectile identities such as Starbolt,
   Burst, Impact, Arc, Shield, Rayline, and Wave.
 - Towers roll trainable stat boards and special upgrade traits.
@@ -447,7 +448,7 @@ Suggested first release order:
 - Show actual gameplay, not abstract gradients, whenever explaining the product.
 - Keep the central Lightcore and six-relay structure recognizable in key art.
 - Use color families as marketing shorthand: Red Burst, Blue Rayline, Purple
-  Wave, Green Shield, Yellow Arc, Orange Impact, White Starbolt.
+  Wave, Verdant Shield, Yellow Arc, Orange Impact, White Starbolt.
 - Avoid implying a traditional base-health survival game unless a true fail
   state is added.
 

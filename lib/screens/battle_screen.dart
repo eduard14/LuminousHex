@@ -2090,7 +2090,7 @@ class _LayerRebuildFeederBuildPanelState
             const SizedBox(width: 8),
             Expanded(
               child: Text(
-                'Choose Feeder ${slotIndex + 1}',
+                'Choose Relay Hex ${slotIndex + 1}',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: textTheme.titleMedium?.copyWith(
@@ -2110,7 +2110,7 @@ class _LayerRebuildFeederBuildPanelState
         ),
         const SizedBox(height: 6),
         Text(
-          'Choose this feeder color. The selected color, projectile, and payload are added to the completed Layer 1 shell odds.',
+          'Choose a relay color. Its color, projectile, and payload feed the completed Layer 1 shell odds.',
           style: textTheme.labelSmall?.copyWith(
             color: LightcorePalette.mist.withValues(alpha: 0.72),
             fontWeight: FontWeight.w700,
@@ -2140,7 +2140,7 @@ class _LayerRebuildFeederBuildPanelState
         const SizedBox(height: 10),
         if (selected == null)
           Text(
-            'Select a color to install this feeder.',
+            'Select a color to install this relay.',
             style: textTheme.bodyMedium?.copyWith(
               color: LightcorePalette.mist.withValues(alpha: 0.72),
             ),
@@ -2232,7 +2232,6 @@ class _LayerRebuildFeederPanel extends StatelessWidget {
     final tint = affinity.color;
     final projectile = config?.defaultProjectileType.label ?? 'Core Shot';
     final payload = config?.defaultPayloadType.label ?? PayloadType.none.label;
-    final healthValue = controller.towerHealthFraction(tower);
     final feedLevel = tower.hasTowerProgression ? tower.level : 1;
 
     return Column(
@@ -2244,7 +2243,7 @@ class _LayerRebuildFeederPanel extends StatelessWidget {
             const SizedBox(width: 8),
             Expanded(
               child: Text(
-                'Feeder Slot ${slotIndex + 1}',
+                'Relay Hex ${slotIndex + 1}',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: textTheme.titleMedium?.copyWith(
@@ -2253,52 +2252,25 @@ class _LayerRebuildFeederPanel extends StatelessWidget {
                 ),
               ),
             ),
-            Text(
-              'Feeds Core',
-              style: textTheme.labelMedium?.copyWith(
-                color: LightcorePalette.mist.withValues(alpha: 0.72),
-                fontWeight: FontWeight.w900,
+            Tooltip(
+              message: 'Relay details',
+              child: IconButton(
+                visualDensity: VisualDensity.compact,
+                icon: const Icon(Icons.info_outline_rounded),
+                color: LightcorePalette.mist.withValues(alpha: 0.82),
+                onPressed: () => _showRelayHexInfo(
+                  context,
+                  slotIndex: slotIndex,
+                  affinity: affinity,
+                  tint: tint,
+                  feedLevel: feedLevel,
+                  projectile: projectile,
+                  payload: payload,
+                  towerName: config?.name ?? 'Relay Hex ${slotIndex + 1}',
+                ),
               ),
             ),
           ],
-        ),
-        const SizedBox(height: 8),
-        TowerHealthBar(
-          value: healthValue,
-          label: 'Feeder Integrity',
-          color: tint,
-          height: 8,
-        ),
-        const SizedBox(height: 8),
-        Wrap(
-          spacing: 6,
-          runSpacing: 6,
-          children: [
-            _BattleUpgradeChip(
-              label: 'Color',
-              value: affinity.shortLabel,
-              tint: tint,
-            ),
-            _BattleUpgradeChip(
-              label: 'Feed Level',
-              value: 'Lv $feedLevel',
-              tint: tint,
-            ),
-            _BattleUpgradeChip(
-              label: 'Projectile',
-              value: projectile,
-              tint: tint,
-            ),
-            _BattleUpgradeChip(label: 'Payload', value: payload, tint: tint),
-          ],
-        ),
-        const SizedBox(height: 8),
-        Text(
-          'This feeder adds its color, projectile, and payload to the Layer 1 shell odds.',
-          style: textTheme.labelSmall?.copyWith(
-            color: LightcorePalette.mist.withValues(alpha: 0.72),
-            fontWeight: FontWeight.w700,
-          ),
         ),
         const SizedBox(height: 8),
         _BattleUpgradeGrid(
@@ -2328,6 +2300,111 @@ class _LayerRebuildFeederPanel extends StatelessWidget {
       ],
     );
   }
+
+  void _showRelayHexInfo(
+    BuildContext context, {
+    required int slotIndex,
+    required PrototypeAffinity affinity,
+    required Color tint,
+    required int feedLevel,
+    required String projectile,
+    required String payload,
+    required String towerName,
+  }) {
+    final textTheme = Theme.of(context).textTheme;
+    showDialog<void>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: LightcorePalette.abyss,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          title: Row(
+            children: [
+              Icon(Icons.hub_rounded, color: tint),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Relay Hex ${slotIndex + 1}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                towerName,
+                style: textTheme.titleSmall?.copyWith(
+                  color: tint,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              const SizedBox(height: 12),
+              _RelayInfoRow(label: 'Color', value: affinity.label),
+              _RelayInfoRow(label: 'Relay Level', value: 'Lv $feedLevel'),
+              _RelayInfoRow(label: 'Projectile', value: projectile),
+              _RelayInfoRow(label: 'Payload', value: payload),
+              const SizedBox(height: 12),
+              Text(
+                'This relay contributes its color, projectile, and payload to the completed Layer 1 shell odds.',
+                style: textTheme.bodySmall?.copyWith(
+                  color: LightcorePalette.mist.withValues(alpha: 0.76),
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Close'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _RelayInfoRow extends StatelessWidget {
+  const _RelayInfoRow({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 3),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 88,
+            child: Text(
+              label,
+              style: textTheme.labelMedium?.copyWith(
+                color: LightcorePalette.mist.withValues(alpha: 0.62),
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: textTheme.labelLarge?.copyWith(
+                color: LightcorePalette.mist,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 // L1L2_REBUILD_SAFE: Tower-selection tuning mirrors global core upgrades and spends Sparks only.
@@ -2347,52 +2424,60 @@ class _LayerFeederTuneButton extends StatelessWidget {
     final textTheme = Theme.of(context).textTheme;
     final rank = controller.layerRunState.rankFor(type);
     final cost = controller.layerRunUpgradeCost(type);
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: LightcorePalette.abyss.withValues(alpha: 0.62),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: tint.withValues(alpha: 0.34)),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(8),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+    final canBuy = controller.canBuyRunUpgrade(type);
+    final label = type == LayerRunUpgradeType.queueSize ? 'Queue' : type.label;
+    return SizedBox(
+      height: 58,
+      child: FilledButton(
+        onPressed: canBuy ? () => controller.buyRunUpgrade(type) : null,
+        style: FilledButton.styleFrom(
+          backgroundColor: tint.withValues(alpha: 0.20),
+          foregroundColor: LightcorePalette.mist,
+          disabledBackgroundColor: LightcorePalette.abyss.withValues(
+            alpha: 0.54,
+          ),
+          disabledForegroundColor: LightcorePalette.mist.withValues(
+            alpha: 0.34,
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+            side: BorderSide(
+              color: tint.withValues(alpha: canBuy ? 0.52 : 0.22),
+            ),
+          ),
+        ),
+        child: Row(
           children: [
+            Expanded(
+              child: Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: textTheme.labelLarge?.copyWith(
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
             Text(
-              type.label,
+              'Lv $rank  $cost',
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: textTheme.labelLarge?.copyWith(
+              style: textTheme.labelMedium?.copyWith(
+                color: canBuy
+                    ? LightcorePalette.solar
+                    : LightcorePalette.mist.withValues(alpha: 0.42),
                 fontWeight: FontWeight.w900,
               ),
             ),
-            const SizedBox(height: 3),
-            Text(
-              'Core Lv. $rank',
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: textTheme.labelSmall?.copyWith(
-                color: tint,
-                fontWeight: FontWeight.w900,
-              ),
-            ),
-            const SizedBox(height: 6),
-            SizedBox(
-              width: double.infinity,
-              height: 34,
-              child: FilledButton(
-                onPressed: controller.canBuyRunUpgrade(type)
-                    ? () => controller.buyRunUpgrade(type)
-                    : null,
-                style: FilledButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                ),
-                child: Text(
-                  '$cost Sparks',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
+            const SizedBox(width: 3),
+            Icon(
+              Icons.bolt_rounded,
+              size: 15,
+              color: canBuy
+                  ? LightcorePalette.solar
+                  : LightcorePalette.mist.withValues(alpha: 0.34),
             ),
           ],
         ),

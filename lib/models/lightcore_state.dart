@@ -26,7 +26,7 @@ enum LayerPersistentUpgradeType {
   baseQueueSize;
 
   String get label => switch (this) {
-    LayerPersistentUpgradeType.feederSlots => 'Feeder Slots',
+    LayerPersistentUpgradeType.feederSlots => 'Relay Hexes',
     LayerPersistentUpgradeType.towerColors => 'Tower Colors',
     LayerPersistentUpgradeType.startingSparks => 'Starting Sparks',
     LayerPersistentUpgradeType.baseCoreDamage => 'Base Damage',
@@ -226,9 +226,7 @@ class CompletedLayer1Shell {
     final entries = colorDistribution.entries.toList()
       ..sort((a, b) => b.value.compareTo(a.value));
     return entries
-        .map(
-          (entry) => '${entry.key.shortLabel} ${(entry.value * 100).round()}%',
-        )
+        .map((entry) => '${entry.key.label} ${(entry.value * 100).round()}%')
         .join(' / ');
   }
 

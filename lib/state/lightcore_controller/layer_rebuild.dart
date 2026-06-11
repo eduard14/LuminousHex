@@ -71,7 +71,7 @@ extension LightcoreControllerLayerRebuild on LightcoreController {
     }
     if (layer1BuiltFeederCount < LightcoreController.slotCount) {
       final remaining = LightcoreController.slotCount - layer1BuiltFeederCount;
-      return 'Wave ${LightcoreController.layer1CompletionWave} reached. Build $remaining more feeder${remaining == 1 ? '' : 's'} to complete the shell.';
+      return 'Wave ${LightcoreController.layer1CompletionWave} reached. Build $remaining more relay hex${remaining == 1 ? '' : 'es'} to complete the shell.';
     }
     return 'Shell complete. Choose when to install this Layer 1 shell into Layer 2.';
   }
@@ -299,7 +299,7 @@ extension LightcoreControllerLayerRebuild on LightcoreController {
         slotIndex < 0 ||
         slotIndex >= LightcoreController.slotCount ||
         slotIndex >= layer1UnlockedFeederSlots) {
-      _showBanner('Start Layer 1 or unlock this feeder slot first.');
+      _showBanner('Start Layer 1 or unlock this relay hex first.');
       _notifyNow();
       return false;
     }
@@ -314,7 +314,7 @@ extension LightcoreControllerLayerRebuild on LightcoreController {
         config ?? _defaultLayer1FeederConfigForSlot(slotIndex);
     final cost = layer1FeederBuildCost(slotIndex);
     if (_layerRun.sparks < cost) {
-      _showBanner('Need $cost Sparks to build the next feeder.');
+      _showBanner('Need $cost Sparks to build the next relay.');
       _notifyNow();
       return false;
     }
@@ -330,7 +330,9 @@ extension LightcoreControllerLayerRebuild on LightcoreController {
     _swarmActivated = true;
     _totalTowersBuilt += 1;
     _updateFlowEfficiency();
-    _showBanner('${selectedConfig.name} installed as feeder ${slotIndex + 1}.');
+    _showBanner(
+      '${selectedConfig.name} installed in Relay Hex ${slotIndex + 1}.',
+    );
     _notifyNow();
     return true;
   }
