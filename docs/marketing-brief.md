@@ -98,9 +98,9 @@ but are not marketed as playable in this milestone.
 - First-run balance intentionally walls zero-upgrade play at Wave 2. Players
   should spend Sparks and persistent Star Bolts across several attempts before
   Wave 10 shell completion becomes reliable.
-- The rebuilt battle HUD includes a compact Shot Queue strip so players can see
-  queued projectile packets, queue capacity, cooldown progress, and the animated
-  next shot state.
+- The rebuilt battle HUD keeps resources compact while queued projectile packets
+  orbit the Lightcore, with a larger charge ring showing the next shot and
+  cooldown progress.
 - Relay towers charge shots into the Lightcore instead of asking the player to
   manually queue or drag ammo.
 - Opening combat is low-friction: shots auto-charge after the player presses Play,

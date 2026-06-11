@@ -30,7 +30,10 @@ void main() {
     expect(find.textContaining('Sparks'), findsWidgets);
     expect(find.textContaining('Star Bolts'), findsWidgets);
     expect(find.textContaining('Shell 1/10'), findsOneWidget);
-    expect(find.text('Shot Queue 0/8'), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey<String>('layer-rebuild-queue-orbit')),
+      findsOneWidget,
+    );
     expect(find.text('Damage Lv. 0\n18 Sparks'), findsNothing);
     expect(find.textContaining('Fire Rate Lv. 0'), findsNothing);
     expect(find.textContaining('Multishot Lv. 0'), findsNothing);
@@ -45,7 +48,7 @@ void main() {
     expect(controller.swarmActivated, isTrue);
     expect(controller.outerRingRevealed, isTrue);
     expect(find.text('Reset'), findsOneWidget);
-    expect(find.text('Run Upgrades'), findsOneWidget);
+    expect(find.text('Global Tower Upgrades'), findsOneWidget);
     expect(find.text('Damage Lv. 0\n18 Sparks'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
@@ -77,8 +80,11 @@ void main() {
 
     await _pumpBattleScreen(tester, controller);
 
-    expect(find.text('Shot Queue 2/8'), findsOneWidget);
-    expect(find.text('Ready'), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey<String>('layer-rebuild-queue-orbit')),
+      findsOneWidget,
+    );
+    expect(find.bySemanticsLabel('Shot Queue 2/8 Ready'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
@@ -220,7 +226,7 @@ void main() {
       expect(find.textContaining('Build Feeder'), findsNothing);
       expect(find.textContaining('Star Bolt Upgrades'), findsNothing);
       expect(find.textContaining('Feeder Slots Lv. 0'), findsNothing);
-      expect(find.text('Run Upgrades'), findsOneWidget);
+      expect(find.text('Global Tower Upgrades'), findsOneWidget);
       expect(find.textContaining('Buffer'), findsNothing);
       expect(find.textContaining('Wave Marks'), findsNothing);
       expect(find.textContaining('Lumens'), findsNothing);
@@ -257,7 +263,7 @@ void main() {
 
       expect(controller.layerRunState.active, isFalse);
       expect(controller.starBolts, greaterThan(0));
-      expect(find.text('Permanent Star Bolt Upgrades'), findsOneWidget);
+      expect(find.text('Permanent Upgrades'), findsOneWidget);
       expect(
         find.textContaining('Star Bolt upgrades persist into every new run'),
         findsOneWidget,

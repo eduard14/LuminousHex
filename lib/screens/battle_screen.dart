@@ -1059,6 +1059,15 @@ class _BattleScreenState extends State<BattleScreen> {
         Positioned.fill(
           child: _buildGameCanvas(compact ? 20 : 0, dockOpen: dockOpen),
         ),
+        if (rebuildHudVisible)
+          Positioned.fill(
+            child: _LayerRebuildQueueOrbitOverlay(
+              controller: controller,
+              game: _game,
+              compact: compact,
+              dockOpen: dockOpen || _layerRebuildActionDockVisible,
+            ),
+          ),
         if (!rebuildHudVisible &&
             widget.showBattleHud &&
             shellVisibilityHud != null)
@@ -1336,14 +1345,14 @@ class _LayerRebuildTopHud extends StatelessWidget {
         LightcoreController.layer1CompletionWave;
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: LightcorePalette.panel.withValues(alpha: 0.82),
+        color: LightcorePalette.panel.withValues(alpha: 0.68),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: LightcorePalette.stroke.withValues(alpha: 0.72),
+          color: LightcorePalette.stroke.withValues(alpha: 0.52),
         ),
       ),
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(12, 9, 12, 10),
+        padding: const EdgeInsets.fromLTRB(11, 8, 11, 9),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1378,28 +1387,44 @@ class _LayerRebuildTopHud extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 6),
-            Text(
-              controller.layer1ShellProgressLabel,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: textTheme.labelLarge?.copyWith(
-                color: LightcorePalette.mist,
-                fontWeight: FontWeight.w900,
-              ),
-            ),
-            const SizedBox(height: 7),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(2),
-              child: LinearProgressIndicator(
-                minHeight: 4,
-                value: shellProgress.clamp(0.0, 1.0),
-                backgroundColor: LightcorePalette.abyss.withValues(alpha: 0.8),
-                color: LightcorePalette.solar,
-              ),
-            ),
             const SizedBox(height: 8),
-            _LayerRebuildShotQueueStrip(controller: controller),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    controller.layer1ShellProgressLabel,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: textTheme.labelLarge?.copyWith(
+                      color: LightcorePalette.mist,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ),
+                Text(
+                  '${(shellProgress.clamp(0.0, 1.0) * 100).round()}%',
+                  style: textTheme.labelSmall?.copyWith(
+                    color: LightcorePalette.solar,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 5),
+            SizedBox(
+              width: 182,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(2),
+                child: LinearProgressIndicator(
+                  minHeight: 4,
+                  value: shellProgress.clamp(0.0, 1.0),
+                  backgroundColor: LightcorePalette.abyss.withValues(
+                    alpha: 0.8,
+                  ),
+                  color: LightcorePalette.solar,
+                ),
+              ),
+            ),
           ],
         ),
       ),
@@ -1407,19 +1432,27 @@ class _LayerRebuildTopHud extends StatelessWidget {
   }
 }
 
-// L1L2_REBUILD_SAFE: The rebuilt active loop needs the core projectile queue visible without reopening legacy core stats.
-class _LayerRebuildShotQueueStrip extends StatefulWidget {
-  const _LayerRebuildShotQueueStrip({required this.controller});
+// L1L2_REBUILD_SAFE: Projectile queue is now visualized in the battlefield orbit instead of a heavy HUD group.
+class _LayerRebuildQueueOrbitOverlay extends StatefulWidget {
+  const _LayerRebuildQueueOrbitOverlay({
+    required this.controller,
+    required this.game,
+    required this.compact,
+    required this.dockOpen,
+  });
 
   final LightcoreController controller;
+  final LightcoreBattleGame game;
+  final bool compact;
+  final bool dockOpen;
 
   @override
-  State<_LayerRebuildShotQueueStrip> createState() =>
-      _LayerRebuildShotQueueStripState();
+  State<_LayerRebuildQueueOrbitOverlay> createState() =>
+      _LayerRebuildQueueOrbitOverlayState();
 }
 
-class _LayerRebuildShotQueueStripState
-    extends State<_LayerRebuildShotQueueStrip>
+class _LayerRebuildQueueOrbitOverlayState
+    extends State<_LayerRebuildQueueOrbitOverlay>
     with SingleTickerProviderStateMixin {
   late final AnimationController _pulseController;
 
@@ -1441,7 +1474,6 @@ class _LayerRebuildShotQueueStripState
   @override
   Widget build(BuildContext context) {
     final controller = widget.controller;
-    final textTheme = Theme.of(context).textTheme;
     final queue = controller.queuedAmmoPackets;
     final capacity = math.max(1, controller.coreQueueCapacity);
     final cooldown = math.max(0.001, controller.coreShotCooldown);
@@ -1451,246 +1483,213 @@ class _LayerRebuildShotQueueStripState
         .toDouble();
     final hasQueuedShots = queue.isNotEmpty;
     final readyToFire = hasQueuedShots && remaining <= 0.12;
-    final status = !hasQueuedShots
-        ? 'Waiting'
-        : readyToFire
-        ? 'Ready'
-        : '${remaining.toStringAsFixed(1)}s';
 
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Icon(
-              Icons.view_week_rounded,
-              color: LightcorePalette.aether,
-              size: 15,
-            ),
-            const SizedBox(width: 5),
-            Text(
-              'Shot Queue ${queue.length}/$capacity',
-              style: textTheme.labelMedium?.copyWith(
-                color: LightcorePalette.mist,
-                fontWeight: FontWeight.w900,
-              ),
-            ),
-            const Spacer(),
-            Text(
-              status,
-              style: textTheme.labelMedium?.copyWith(
-                color: readyToFire
-                    ? LightcorePalette.solar
-                    : LightcorePalette.mist.withValues(alpha: 0.64),
-                fontWeight: FontWeight.w900,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 6),
-        AnimatedBuilder(
+    return IgnorePointer(
+      child: Semantics(
+        container: true,
+        label:
+            'Shot Queue ${queue.length}/$capacity ${readyToFire ? 'Ready' : 'Charging'}',
+        child: AnimatedBuilder(
           animation: _pulseController,
           builder: (context, _) {
-            return LayoutBuilder(
-              builder: (context, constraints) {
-                const gap = 5.0;
-                final visibleSlots = math.min(capacity, 10);
-                final available = constraints.maxWidth.isFinite
-                    ? constraints.maxWidth
-                    : 320.0;
-                final cellSize =
-                    ((available - (gap * (visibleSlots - 1))) / visibleSlots)
-                        .clamp(24.0, 34.0)
-                        .toDouble();
-                return Row(
-                  children: [
-                    for (var index = 0; index < visibleSlots; index += 1) ...[
-                      SizedBox(
-                        width: cellSize,
-                        height: 30,
-                        child: _LayerRebuildQueueCell(
-                          packet: index < queue.length ? queue[index] : null,
-                          index: index,
-                          hiddenQueuedCount: index == visibleSlots - 1
-                              ? math.max(0, queue.length - visibleSlots)
-                              : 0,
-                          isNext: index == 0 && hasQueuedShots,
-                          readyProgress: index == 0 ? readyProgress : 0,
-                          pulseValue: _pulseController.value,
-                          readyToFire: index == 0 && readyToFire,
-                        ),
-                      ),
-                      if (index < visibleSlots - 1) const SizedBox(width: gap),
-                    ],
-                  ],
-                );
-              },
+            return CustomPaint(
+              key: const ValueKey<String>('layer-rebuild-queue-orbit'),
+              painter: _LayerRebuildQueueOrbitPainter(
+                queue: queue,
+                capacity: capacity,
+                readyProgress: readyProgress,
+                pulseValue: _pulseController.value,
+                readyToFire: readyToFire,
+                coreCenter: widget.game.debugCoreCenter,
+                compact: widget.compact,
+                dockOpen: widget.dockOpen,
+              ),
+              size: Size.infinite,
             );
           },
-        ),
-      ],
-    );
-  }
-}
-
-class _LayerRebuildQueueCell extends StatelessWidget {
-  const _LayerRebuildQueueCell({
-    required this.packet,
-    required this.index,
-    required this.hiddenQueuedCount,
-    required this.isNext,
-    required this.readyProgress,
-    required this.pulseValue,
-    required this.readyToFire,
-  });
-
-  final AmmoPacket? packet;
-  final int index;
-  final int hiddenQueuedCount;
-  final bool isNext;
-  final double readyProgress;
-  final double pulseValue;
-  final bool readyToFire;
-
-  @override
-  Widget build(BuildContext context) {
-    final packet = this.packet;
-    final tint = packet?.affinity.color ?? LightcorePalette.stroke;
-    final label = packet == null
-        ? 'Empty queue slot ${index + 1}'
-        : '${isNext ? 'Next ' : ''}${packet.projectileType.label}';
-    return Tooltip(
-      message: label,
-      child: CustomPaint(
-        painter: _LayerRebuildQueueCellPainter(
-          packet: packet,
-          tint: tint,
-          isNext: isNext,
-          readyProgress: readyProgress,
-          pulseValue: pulseValue,
-          readyToFire: readyToFire,
-          hiddenQueuedCount: hiddenQueuedCount,
-        ),
-        child: Center(
-          child: hiddenQueuedCount > 0
-              ? Text(
-                  '+$hiddenQueuedCount',
-                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: LightcorePalette.mist,
-                    fontWeight: FontWeight.w900,
-                  ),
-                )
-              : const SizedBox.shrink(),
         ),
       ),
     );
   }
 }
 
-class _LayerRebuildQueueCellPainter extends CustomPainter {
-  const _LayerRebuildQueueCellPainter({
-    required this.packet,
-    required this.tint,
-    required this.isNext,
+class _LayerRebuildQueueOrbitPainter extends CustomPainter {
+  const _LayerRebuildQueueOrbitPainter({
+    required this.queue,
+    required this.capacity,
     required this.readyProgress,
     required this.pulseValue,
     required this.readyToFire,
-    required this.hiddenQueuedCount,
+    required this.coreCenter,
+    required this.compact,
+    required this.dockOpen,
   });
 
-  final AmmoPacket? packet;
-  final Color tint;
-  final bool isNext;
+  final List<AmmoPacket> queue;
+  final int capacity;
   final double readyProgress;
   final double pulseValue;
   final bool readyToFire;
-  final int hiddenQueuedCount;
+  final Offset? coreCenter;
+  final bool compact;
+  final bool dockOpen;
 
   @override
   void paint(Canvas canvas, Size size) {
-    final rect = Offset.zero & size;
-    final radius = BorderRadius.circular(7).toRRect(rect);
-    final filled = packet != null;
-    final basePaint = Paint()
-      ..style = PaintingStyle.fill
-      ..color = filled
-          ? tint.withValues(alpha: 0.18)
-          : LightcorePalette.abyss.withValues(alpha: 0.52);
-    canvas.drawRRect(radius, basePaint);
+    if (size.isEmpty) {
+      return;
+    }
+    final fallbackY = size.height * (compact ? 0.48 : 0.50);
+    final center = coreCenter ?? Offset(size.width / 2, fallbackY);
+    final verticalLift = dockOpen ? (compact ? 22.0 : 18.0) : 0.0;
+    final orbitCenter = Offset(center.dx, center.dy - verticalLift);
+    final safeRadius =
+        math.min(size.width, size.height) * (compact ? 0.18 : 0.16);
+    final orbitRadius = safeRadius.clamp(52.0, 88.0).toDouble();
+    final visibleSlots = math.min(capacity, 12);
+    if (visibleSlots <= 0) {
+      return;
+    }
 
-    if (isNext && filled) {
-      final progressRect = Rect.fromLTWH(
-        rect.left,
-        rect.bottom - 3,
-        rect.width * readyProgress.clamp(0.0, 1.0),
-        3,
+    final orbitPaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.4
+      ..color = LightcorePalette.aether.withValues(alpha: 0.16);
+    canvas.drawCircle(orbitCenter, orbitRadius, orbitPaint);
+
+    final pulse = math.sin(pulseValue * math.pi * 2) * 0.5 + 0.5;
+    final loadedCount = queue.length.clamp(0, visibleSlots);
+    for (var index = 0; index < visibleSlots; index += 1) {
+      final slotAngle =
+          (-math.pi / 2) +
+          (index / visibleSlots * math.pi * 2) +
+          (pulseValue * 0.22);
+      final point = Offset(
+        orbitCenter.dx + math.cos(slotAngle) * orbitRadius,
+        orbitCenter.dy + math.sin(slotAngle) * orbitRadius,
       );
-      canvas.drawRRect(
-        BorderRadius.circular(4).toRRect(progressRect),
+      final packet = index < queue.length ? queue[index] : null;
+      final isNext = index == 0 && packet != null;
+      final tint = packet?.affinity.color ?? LightcorePalette.mist;
+      final radius = isNext ? 9.5 : 7.0;
+
+      canvas.drawCircle(
+        point,
+        radius + (isNext && readyToFire ? pulse * 4.0 : 0.0),
         Paint()
           ..style = PaintingStyle.fill
-          ..color = LightcorePalette.solar.withValues(alpha: 0.92),
+          ..color = tint.withValues(alpha: packet == null ? 0.08 : 0.18),
       );
+      canvas.drawCircle(
+        point,
+        radius,
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = isNext ? 2.0 : 1.25
+          ..color = (isNext ? LightcorePalette.solar : tint).withValues(
+            alpha: packet == null ? 0.26 : 0.74,
+          ),
+      );
+      if (packet != null) {
+        paintProjectileSymbolGlyph(
+          canvas,
+          point,
+          projectileType: packet.projectileType,
+          size: radius * 1.35,
+          color: tint,
+          opacity: isNext ? 1 : 0.78,
+        );
+      }
     }
 
-    final borderAlpha = filled ? 0.58 : 0.22;
-    canvas.drawRRect(
-      radius,
+    final nextPacket = queue.isNotEmpty ? queue.first : null;
+    final nextTint = nextPacket?.affinity.color ?? LightcorePalette.aether;
+    final chargeRadius = orbitRadius * 0.46;
+    final chargeCenter = Offset(
+      orbitCenter.dx,
+      orbitCenter.dy - (compact ? orbitRadius * 0.20 : orbitRadius * 0.24),
+    );
+    canvas.drawCircle(
+      chargeCenter,
+      chargeRadius,
+      Paint()
+        ..style = PaintingStyle.fill
+        ..color = LightcorePalette.abyss.withValues(alpha: 0.44),
+    );
+    canvas.drawCircle(
+      chargeCenter,
+      chargeRadius,
       Paint()
         ..style = PaintingStyle.stroke
-        ..strokeWidth = isNext ? 1.8 : 1.0
-        ..color = (isNext ? LightcorePalette.solar : tint).withValues(
-          alpha: borderAlpha,
-        ),
+        ..strokeWidth = 1.5
+        ..color = nextTint.withValues(alpha: nextPacket == null ? 0.22 : 0.48),
     );
-
-    if (filled && hiddenQueuedCount == 0) {
+    final chargeArc = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round
+      ..strokeWidth = 4.2
+      ..color = (readyToFire ? LightcorePalette.solar : nextTint).withValues(
+        alpha: nextPacket == null ? 0.22 : 0.92,
+      );
+    canvas.drawArc(
+      Rect.fromCircle(center: chargeCenter, radius: chargeRadius),
+      -math.pi / 2,
+      math.pi * 2 * readyProgress.clamp(0.0, 1.0),
+      false,
+      chargeArc,
+    );
+    if (nextPacket != null) {
       paintProjectileSymbolGlyph(
         canvas,
-        rect.center,
-        projectileType: packet!.projectileType,
-        size: math.min(size.width, size.height) * 0.48,
-        color: tint,
-        opacity: isNext ? 1 : 0.78,
+        chargeCenter,
+        projectileType: nextPacket.projectileType,
+        size: chargeRadius * 0.72,
+        color: nextTint,
+        opacity: 0.94,
       );
     }
 
-    if (isNext && filled) {
-      final pulse = math.sin(pulseValue * math.pi * 2) * 0.5 + 0.5;
-      final alpha = readyToFire ? 0.22 + (pulse * 0.34) : 0.10;
-      final pulseRect = rect.inflate(readyToFire ? 1.8 + (pulse * 1.8) : 0.8);
-      canvas.drawRRect(
-        BorderRadius.circular(8).toRRect(pulseRect),
+    if (readyToFire && nextPacket != null) {
+      canvas.drawCircle(
+        chargeCenter,
+        chargeRadius + 6 + (pulse * 7),
         Paint()
           ..style = PaintingStyle.stroke
-          ..strokeWidth = readyToFire ? 2.0 : 1.2
-          ..color = LightcorePalette.solar.withValues(alpha: alpha),
-      );
-
-      final sweepX = rect.left + (rect.width * pulseValue);
-      canvas.drawLine(
-        Offset(sweepX, rect.top + 4),
-        Offset(sweepX, rect.bottom - 4),
-        Paint()
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 1.2
-          ..color = LightcorePalette.mist.withValues(
-            alpha: readyToFire ? 0.44 : 0.20,
+          ..strokeWidth = 2.0
+          ..color = LightcorePalette.solar.withValues(
+            alpha: 0.22 + pulse * 0.26,
           ),
       );
     }
+
+    final labelPainter = TextPainter(
+      text: TextSpan(
+        text: '$loadedCount/$capacity',
+        style: const TextStyle(
+          color: LightcorePalette.mist,
+          fontSize: 11,
+          fontWeight: FontWeight.w900,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    )..layout();
+    final labelOffset = Offset(
+      chargeCenter.dx - labelPainter.width / 2,
+      chargeCenter.dy + chargeRadius + 7,
+    );
+    labelPainter.paint(canvas, labelOffset);
   }
 
   @override
-  bool shouldRepaint(covariant _LayerRebuildQueueCellPainter oldDelegate) {
-    return oldDelegate.packet != packet ||
-        oldDelegate.tint != tint ||
-        oldDelegate.isNext != isNext ||
+  bool shouldRepaint(covariant _LayerRebuildQueueOrbitPainter oldDelegate) {
+    return oldDelegate.queue != queue ||
+        oldDelegate.capacity != capacity ||
         oldDelegate.readyProgress != readyProgress ||
         oldDelegate.pulseValue != pulseValue ||
         oldDelegate.readyToFire != readyToFire ||
-        oldDelegate.hiddenQueuedCount != hiddenQueuedCount;
+        oldDelegate.coreCenter != coreCenter ||
+        oldDelegate.compact != compact ||
+        oldDelegate.dockOpen != dockOpen;
   }
 }
 
@@ -1759,16 +1758,16 @@ class _LayerRebuildActionDockState extends State<_LayerRebuildActionDock> {
     final runActive = controller.layerRunState.active;
     final showPersistent = controller.layer1PersistentUpgradeWindowVisible;
     final title = runActive
-        ? 'Run Upgrades'
+        ? 'Global Tower Upgrades'
         : showPersistent
-        ? 'Permanent Star Bolt Upgrades'
+        ? 'Permanent Upgrades'
         : 'Layer 1 Run';
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: LightcorePalette.panel.withValues(alpha: 0.86),
+        color: LightcorePalette.panel.withValues(alpha: 0.78),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: LightcorePalette.stroke.withValues(alpha: 0.72),
+          color: LightcorePalette.stroke.withValues(alpha: 0.50),
         ),
       ),
       child: Padding(
