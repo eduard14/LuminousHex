@@ -75,46 +75,55 @@ class _OverallProgressBarPanel extends StatelessWidget {
     if (towerSelected) {
       return const SizedBox.shrink();
     }
-    final waveProgress = controller.activeLayerWaveProgress;
+    final waveProgress = controller.layerRebuildEnabled
+        ? (controller.layer1ShellProgressWave /
+                  LightcoreController.layer1CompletionWave)
+              .clamp(0.0, 1.0)
+        : controller.activeLayerWaveProgress;
+    final waveLabel = controller.layerRebuildEnabled
+        ? 'Wave ${controller.layer1ShellProgressWave}/${LightcoreController.layer1CompletionWave}'
+        : controller.activeLayerWaveHudLabel;
 
     return Column(
       children: [
-        _ProgressStrip(
-          value: controller.overallLevelProgress,
-          color: LightcorePalette.aether,
-          compact: compact,
-          semanticsLabel: controller.overallLevelProgressLabel,
-          trailing: Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                'AR ${controller.accountRadianceLevel}',
-                style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                  color: LightcorePalette.mist,
-                  fontWeight: FontWeight.w800,
+        if (!controller.layerRebuildEnabled) ...[
+          _ProgressStrip(
+            value: controller.overallLevelProgress,
+            color: LightcorePalette.aether,
+            compact: compact,
+            semanticsLabel: controller.overallLevelProgressLabel,
+            trailing: Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'AR ${controller.accountRadianceLevel}',
+                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                    color: LightcorePalette.mist,
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
-              ),
-              Text(
-                'TS ${controller.towerStrengthCompactLabel}',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: LightcorePalette.aether,
-                  fontWeight: FontWeight.w700,
+                Text(
+                  'TS ${controller.towerStrengthCompactLabel}',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: LightcorePalette.aether,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
-        SizedBox(height: compact ? 6 : 8),
+          SizedBox(height: compact ? 6 : 8),
+        ],
         _ProgressStrip(
           value: waveProgress,
           color: LightcorePalette.solar,
           compact: compact,
-          semanticsLabel: controller.activeLayerWaveHudLabel,
+          semanticsLabel: waveLabel,
           trailing: SizedBox(
             width: compact ? 54 : 64,
             child: Text(
-              controller.activeLayerWaveHudLabel,
+              waveLabel,
               textAlign: TextAlign.end,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,

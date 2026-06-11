@@ -25,7 +25,7 @@ extension LightcoreControllerLayerRebuild on LightcoreController {
   }
 
   String get latestCompletedLayer1ShellLocationLabel {
-    // L1L2_REBUILD_SAFE: Completion copy explains whether the shell auto-installed or entered storage.
+    // L1L2_REBUILD_SAFE: Completion copy explains whether the manually completed shell installed or entered storage.
     final shell = latestCompletedLayer1Shell;
     if (shell == null) {
       return 'No completed shell yet';
@@ -46,6 +46,35 @@ extension LightcoreControllerLayerRebuild on LightcoreController {
   String get sparksLabel => 'Sparks';
 
   String get starBoltsLabel => 'Star Bolts';
+
+  bool get layer1Wave10Ready =>
+      _layerRun.wave >= LightcoreController.layer1CompletionWave;
+
+  int get layer1ShellHexCount => 1 + layer1BuiltFeederCount;
+
+  int get layer1RequiredShellHexCount => 1 + LightcoreController.slotCount;
+
+  String get layer1ShellCoverageLabel =>
+      '$layer1ShellHexCount/$layer1RequiredShellHexCount hexes';
+
+  bool get layer1CanCompleteShell =>
+      !_layerRun.shellReady &&
+      layer1Wave10Ready &&
+      layer1BuiltFeederCount >= LightcoreController.slotCount;
+
+  String get layer1ShellMergeStatusLabel {
+    if (_layerRun.shellReady) {
+      return 'Layer 1 shell installed. Start a new run for another roll.';
+    }
+    if (!layer1Wave10Ready) {
+      return 'Reach Wave ${LightcoreController.layer1CompletionWave} and complete all 7 hexes before merging.';
+    }
+    if (layer1BuiltFeederCount < LightcoreController.slotCount) {
+      final remaining = LightcoreController.slotCount - layer1BuiltFeederCount;
+      return 'Wave ${LightcoreController.layer1CompletionWave} reached. Build $remaining more feeder${remaining == 1 ? '' : 's'} to complete the shell.';
+    }
+    return 'Shell complete. Choose when to install this Layer 1 shell into Layer 2.';
+  }
 
   int get layer1ShellProgressWave => _layerRun.shellReady
       ? LightcoreController.layer1CompletionWave
@@ -307,9 +336,10 @@ extension LightcoreControllerLayerRebuild on LightcoreController {
   }
 
   bool claimCompletedLayer1Shell() {
-    // L1L2_REBUILD_SAFE: Public action for tests/UI; completion is idempotent so Wave 10 creates one shell.
-    if (!_layerRun.shellReady &&
-        _layerRun.wave < LightcoreController.layer1CompletionWave) {
+    // L1L2_REBUILD_SAFE: Player-controlled shell completion requires Wave 10 plus the full center+six-feeder hex.
+    if (!layer1CanCompleteShell) {
+      _showBanner(layer1ShellMergeStatusLabel);
+      _notifyNow();
       return false;
     }
     return _completeLayer1ShellIfNeeded();
@@ -388,6 +418,13 @@ extension LightcoreControllerLayerRebuild on LightcoreController {
     _syncLayerRebuildWaveProgress(wave);
   }
 
+  @visibleForTesting
+  void debugSetLayer1SparksForTest(int sparks) {
+    // L1L2_REBUILD_SAFE: Test hook avoids coupling shell-completion tests to temporary economy numbers.
+    _layerRun = _layerRun.copyWith(sparks: max(0, sparks));
+    _notifyNow();
+  }
+
   void _syncLayerRebuildWaveProgress(int reachedWave) {
     // L1L2_REBUILD_SAFE: Bridges existing combat wave progression into the rebuilt run state.
     final clampedWave = max(
@@ -418,9 +455,6 @@ extension LightcoreControllerLayerRebuild on LightcoreController {
       // L1L2_REBUILD_SAFE: Untouched Layer 1 runs should hit the first wall at Wave 2, teaching Sparks upgrades before Wave 10.
       endLayer1RunFromCoreBreak();
       return;
-    }
-    if (clampedWave >= LightcoreController.layer1CompletionWave) {
-      _completeLayer1ShellIfNeeded();
     }
   }
 
@@ -458,8 +492,8 @@ extension LightcoreControllerLayerRebuild on LightcoreController {
     );
     _showBanner(
       openIndex == -1
-          ? 'Complete Layer 1 Shell stored. Layer 2 is full.'
-          : 'Complete Layer 1 Shell installed into Layer 2 slot ${openIndex + 1}.',
+          ? 'Layer 1 Shell completed and stored. Layer 2 is full.'
+          : 'Layer 1 Shell completed and installed into Layer 2 slot ${openIndex + 1}.',
       category: LightcoreNotificationCategory.battle,
     );
     return true;

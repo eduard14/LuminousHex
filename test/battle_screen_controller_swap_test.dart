@@ -27,9 +27,6 @@ void main() {
 
     final startButton = find.text('Start Run');
     expect(startButton, findsOneWidget);
-    expect(find.textContaining('Sparks'), findsWidgets);
-    expect(find.textContaining('Star Bolts'), findsWidgets);
-    expect(find.textContaining('Shell 1/10'), findsOneWidget);
     expect(
       find.byKey(const ValueKey<String>('layer-rebuild-queue-orbit')),
       findsOneWidget,
@@ -370,24 +367,29 @@ void main() {
     controller.debugDisableTutorial();
     controller.startLayer1Run();
     controller.debugSetLayer1WaveForTest(10);
+    controller.debugSetLayer1SparksForTest(1000);
+    for (var index = 0; index < LightcoreController.slotCount; index += 1) {
+      expect(
+        controller.buildLayer1FeederAt(index, config: TowerLibrary.greenPrism),
+        isTrue,
+      );
+    }
 
     await _pumpBattleScreen(tester, controller);
 
-    expect(find.text('Layer 1 Shell Complete'), findsOneWidget);
+    expect(find.text('Layer 1 Shell Complete'), findsNothing);
+    expect(find.text('Complete Shell'), findsOneWidget);
     expect(
-      find.textContaining('Installed into Layer 2 slot 1'),
+      find.byKey(const ValueKey<String>('layer-rebuild-complete-shell-button')),
       findsOneWidget,
     );
-    expect(find.textContaining('Colors:'), findsOneWidget);
-    expect(find.textContaining('Projectile:'), findsOneWidget);
-    expect(find.textContaining('Payload:'), findsOneWidget);
     expect(find.text('Layer 2 Base'), findsNothing);
-    expect(find.text('Start New Run'), findsOneWidget);
 
-    await tester.tap(find.text('Start New Run'));
+    await tester.tap(find.text('Complete Shell'));
     await tester.pump();
 
-    expect(controller.layerRunState.active, isTrue);
+    expect(controller.layerRunState.shellReady, isTrue);
+    expect(controller.layer2BaseBoard.filledSlotCount, 1);
     expect(find.text('Layer 1 Shell Complete'), findsNothing);
     expect(tester.takeException(), isNull);
   });

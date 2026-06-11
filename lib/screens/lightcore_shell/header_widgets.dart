@@ -31,6 +31,8 @@ class _ShellProfileHeaderHud extends StatelessWidget {
         : 50.0;
     final width = openingMode
         ? (compact ? 112.0 : 156.0)
+        : controller.layerRebuildEnabled
+        ? (compact ? 150.0 : 228.0)
         : compact
         ? 128.0
         : 218.0;
@@ -124,31 +126,61 @@ class _ShellProfileHeaderHud extends StatelessWidget {
                       compact: compact,
                     ),
                   ],
-                  _ShellHeaderStatRow(
-                    tooltip: 'Lumen: ${controller.lumens}',
-                    icon: Icons.monetization_on_rounded,
-                    value: _formatMetricCount(controller.lumens),
-                    tint: LightcorePalette.solar,
-                    compact: compact,
-                    glowSignal: controller.lumens,
-                  ),
-                  if (!openingMode)
+                  if (controller.layerRebuildEnabled) ...[
                     _ShellHeaderStatRow(
-                      tooltip: 'Flux: ${controller.flux}',
-                      icon: Icons.diamond_rounded,
-                      value: _formatMetricCount(controller.flux),
-                      tint: LightcorePalette.aether,
+                      // L1L2_REBUILD_SAFE: Rebuilt Layer 1 currencies live beside the profile instead of inside battle panels.
+                      tooltip:
+                          '${controller.sparksLabel}: ${controller.sparks}',
+                      icon: Icons.bolt_rounded,
+                      value: _formatMetricCount(controller.sparks),
+                      tint: LightcorePalette.solar,
+                      compact: compact,
+                      glowSignal: controller.sparks,
+                    ),
+                    _ShellHeaderStatRow(
+                      // L1L2_REBUILD_SAFE: Star Bolts are the persistent Layer 1 currency surfaced in the stable shell header.
+                      tooltip:
+                          '${controller.starBoltsLabel}: ${controller.starBolts}',
+                      icon: Icons.auto_awesome_rounded,
+                      value: _formatMetricCount(controller.starBolts),
+                      tint: LightcorePalette.violet,
                       compact: compact,
                     ),
-                  if (!openingMode)
                     _ShellHeaderStatRow(
                       // L1L2_REBUILD_SAFE: Threat Scans remain visible as a locked future-system currency during the Layer 1/2 rebuild.
-                      tooltip: controller.enemyTicketLabel,
+                      tooltip: '${controller.enemyTicketLabel} (locked)',
                       icon: LightcoreIcons.threatScan,
                       value: _formatMetricCount(controller.enemyTickets),
                       tint: LightcorePalette.scanGlow,
                       compact: compact,
                     ),
+                  ] else ...[
+                    _ShellHeaderStatRow(
+                      tooltip: 'Lumen: ${controller.lumens}',
+                      icon: Icons.monetization_on_rounded,
+                      value: _formatMetricCount(controller.lumens),
+                      tint: LightcorePalette.solar,
+                      compact: compact,
+                      glowSignal: controller.lumens,
+                    ),
+                    if (!openingMode)
+                      _ShellHeaderStatRow(
+                        tooltip: 'Flux: ${controller.flux}',
+                        icon: Icons.diamond_rounded,
+                        value: _formatMetricCount(controller.flux),
+                        tint: LightcorePalette.aether,
+                        compact: compact,
+                      ),
+                    if (!openingMode)
+                      _ShellHeaderStatRow(
+                        // L1L2_REBUILD_SAFE: Threat Scans remain visible as a locked future-system currency during the Layer 1/2 rebuild.
+                        tooltip: controller.enemyTicketLabel,
+                        icon: LightcoreIcons.threatScan,
+                        value: _formatMetricCount(controller.enemyTickets),
+                        tint: LightcorePalette.scanGlow,
+                        compact: compact,
+                      ),
+                  ],
                   _ShellHeaderStatRow(
                     tooltip:
                         'Output Efficiency: $outputEfficiency • Core Stability ${controller.coreStabilityLabel}',

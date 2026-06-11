@@ -1042,12 +1042,6 @@ class _BattleScreenState extends State<BattleScreen> {
     );
     final rebuildHudVisible =
         widget.showBattleHud && controller.layerRebuildEnabled;
-    final layer1ShellCompleteCard =
-        rebuildHudVisible &&
-            controller.layerRunState.shellReady &&
-            controller.latestCompletedLayer1Shell != null
-        ? _Layer1ShellCompleteCard(controller: controller)
-        : null;
     final overdriveHudVisible =
         !rebuildHudVisible &&
         !dockOpen &&
@@ -1075,20 +1069,6 @@ class _BattleScreenState extends State<BattleScreen> {
             right: inset,
             top: math.max(inset, topInset - (compact ? 22 : 10)),
             child: shellVisibilityHud,
-          ),
-        if (rebuildHudVisible)
-          Positioned(
-            left: inset,
-            right: inset,
-            top: topInset,
-            child: _LayerRebuildTopHud(controller: controller),
-          ),
-        if (layer1ShellCompleteCard != null)
-          Positioned(
-            left: inset,
-            right: inset,
-            top: topInset + (compact ? 64 : 72),
-            child: layer1ShellCompleteCard,
           ),
         if (widget.showBattleHud &&
             !controller.swarmActivated &&
@@ -1144,13 +1124,22 @@ class _BattleScreenState extends State<BattleScreen> {
             right: inset,
             bottom: bottomInset,
             child: Tooltip(
-              message: 'Show global upgrades',
+              message: controller.layer1CanCompleteShell
+                  ? 'Complete Layer 1 shell'
+                  : 'Show global upgrades',
               child: FilledButton.icon(
                 onPressed: () => setState(() {
                   _layerRebuildActionDockVisible = true;
                 }),
-                icon: const Icon(Icons.keyboard_arrow_up_rounded, size: 18),
-                label: const Text('Upgrades'),
+                icon: Icon(
+                  controller.layer1CanCompleteShell
+                      ? Icons.hexagon_rounded
+                      : Icons.keyboard_arrow_up_rounded,
+                  size: 18,
+                ),
+                label: Text(
+                  controller.layer1CanCompleteShell ? 'Complete' : 'Upgrades',
+                ),
                 style: FilledButton.styleFrom(
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
@@ -1163,7 +1152,7 @@ class _BattleScreenState extends State<BattleScreen> {
           Positioned(
             left: inset,
             right: inset,
-            top: topInset + (compact ? 86 : 72),
+            top: topInset,
             child: Align(
               alignment: Alignment.topCenter,
               child: promotionResultCard,
@@ -1203,229 +1192,6 @@ class _BattleScreenState extends State<BattleScreen> {
               },
             );
           },
-        ),
-      ),
-    );
-  }
-}
-
-// L1L2_REBUILD_SAFE: Wave 10 completion is explicit without exposing a playable Layer 2 board yet.
-class _Layer1ShellCompleteCard extends StatelessWidget {
-  const _Layer1ShellCompleteCard({required this.controller});
-
-  final LightcoreController controller;
-
-  @override
-  Widget build(BuildContext context) {
-    final shell = controller.latestCompletedLayer1Shell;
-    if (shell == null) {
-      return const SizedBox.shrink();
-    }
-    final textTheme = Theme.of(context).textTheme;
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: LightcorePalette.panel.withValues(alpha: 0.92),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: LightcorePalette.solar.withValues(alpha: 0.72),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: LightcorePalette.solar.withValues(alpha: 0.16),
-            blurRadius: 18,
-          ),
-        ],
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                const Icon(
-                  Icons.hexagon_rounded,
-                  color: LightcorePalette.solar,
-                  size: 22,
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    'Layer 1 Shell Complete',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: textTheme.titleMedium?.copyWith(
-                      color: LightcorePalette.solar,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                ),
-                Text(
-                  controller.latestCompletedLayer1ShellLocationLabel,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: textTheme.labelMedium?.copyWith(
-                    color: LightcorePalette.mist.withValues(alpha: 0.74),
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Text(
-              shell.summaryLabel,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: textTheme.labelLarge?.copyWith(
-                color: LightcorePalette.mist,
-                fontWeight: FontWeight.w900,
-              ),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              'Colors: ${shell.colorOddsLabel}',
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: textTheme.labelMedium?.copyWith(
-                color: LightcorePalette.mist.withValues(alpha: 0.74),
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-            Text(
-              'Projectile: ${shell.projectileOddsLabel}',
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: textTheme.labelMedium?.copyWith(
-                color: LightcorePalette.aether,
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-            Text(
-              'Payload: ${shell.payloadOddsLabel}',
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: textTheme.labelMedium?.copyWith(
-                color: LightcorePalette.violet,
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-            const SizedBox(height: 10),
-            Align(
-              alignment: Alignment.centerRight,
-              child: FilledButton.icon(
-                onPressed: controller.startLayer1Run,
-                icon: const Icon(Icons.replay_rounded, size: 18),
-                label: const Text('Start New Run'),
-                style: FilledButton.styleFrom(
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// L1L2_REBUILD_SAFE: Always-visible Layer 1 HUD replaces old currency-forward battle chrome.
-class _LayerRebuildTopHud extends StatelessWidget {
-  const _LayerRebuildTopHud({required this.controller});
-
-  final LightcoreController controller;
-
-  @override
-  Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-    final shellProgress =
-        controller.layer1ShellProgressWave /
-        LightcoreController.layer1CompletionWave;
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: LightcorePalette.panel.withValues(alpha: 0.68),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: LightcorePalette.stroke.withValues(alpha: 0.52),
-        ),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(11, 8, 11, 9),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Wrap(
-              spacing: 14,
-              runSpacing: 6,
-              children: [
-                _LayerRebuildHudChip(
-                  icon: Icons.radar_rounded,
-                  label: 'Wave',
-                  value: '${controller.layerRunState.wave}',
-                  tint: LightcorePalette.aether,
-                ),
-                _LayerRebuildHudChip(
-                  icon: Icons.bolt_rounded,
-                  label: controller.sparksLabel,
-                  value: '${controller.sparks}',
-                  tint: LightcorePalette.solar,
-                ),
-                _LayerRebuildHudChip(
-                  icon: Icons.auto_awesome_rounded,
-                  label: controller.starBoltsLabel,
-                  value: '${controller.starBolts}',
-                  tint: LightcorePalette.violet,
-                ),
-                _LayerRebuildHudChip(
-                  icon: Icons.favorite_rounded,
-                  label: 'Core',
-                  value: '${controller.coreState.coreStability.round()}%',
-                  tint: LightcorePalette.verdant,
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    controller.layer1ShellProgressLabel,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: textTheme.labelLarge?.copyWith(
-                      color: LightcorePalette.mist,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                ),
-                Text(
-                  '${(shellProgress.clamp(0.0, 1.0) * 100).round()}%',
-                  style: textTheme.labelSmall?.copyWith(
-                    color: LightcorePalette.solar,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 5),
-            SizedBox(
-              width: 182,
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(2),
-                child: LinearProgressIndicator(
-                  minHeight: 4,
-                  value: shellProgress.clamp(0.0, 1.0),
-                  backgroundColor: LightcorePalette.abyss.withValues(
-                    alpha: 0.8,
-                  ),
-                  color: LightcorePalette.solar,
-                ),
-              ),
-            ),
-          ],
         ),
       ),
     );
@@ -1693,48 +1459,6 @@ class _LayerRebuildQueueOrbitPainter extends CustomPainter {
   }
 }
 
-// L1L2_REBUILD_SAFE: Compact chip for rebuilt HUD resources and status.
-class _LayerRebuildHudChip extends StatelessWidget {
-  const _LayerRebuildHudChip({
-    required this.icon,
-    required this.label,
-    required this.value,
-    required this.tint,
-  });
-
-  final IconData icon;
-  final String label;
-  final String value;
-  final Color tint;
-
-  @override
-  Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, color: tint, size: 16),
-        const SizedBox(width: 5),
-        Text(
-          label,
-          style: textTheme.labelMedium?.copyWith(
-            color: LightcorePalette.mist.withValues(alpha: 0.66),
-            fontWeight: FontWeight.w800,
-          ),
-        ),
-        const SizedBox(width: 5),
-        Text(
-          value,
-          style: textTheme.labelLarge?.copyWith(
-            color: LightcorePalette.mist,
-            fontWeight: FontWeight.w900,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
 // L1L2_REBUILD_SAFE: Main rebuilt action dock exposes global upgrades while tower-specific actions remain on tower selection.
 class _LayerRebuildActionDock extends StatefulWidget {
   const _LayerRebuildActionDock({
@@ -1818,6 +1542,38 @@ class _LayerRebuildActionDockState extends State<_LayerRebuildActionDock> {
                 ),
               ],
             ),
+            if (controller.layer1CanCompleteShell) ...[
+              const SizedBox(height: 9),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
+                  key: const ValueKey<String>(
+                    'layer-rebuild-complete-shell-button',
+                  ),
+                  onPressed: controller.claimCompletedLayer1Shell,
+                  icon: const Icon(Icons.hexagon_rounded, size: 18),
+                  label: const Text('Complete Shell'),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: LightcorePalette.solar,
+                    foregroundColor: LightcorePalette.night,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                ),
+              ),
+            ] else if (controller.layer1Wave10Ready || runActive) ...[
+              const SizedBox(height: 8),
+              Text(
+                controller.layer1ShellMergeStatusLabel,
+                style: textTheme.labelSmall?.copyWith(
+                  color: controller.layer1Wave10Ready
+                      ? LightcorePalette.solar
+                      : LightcorePalette.mist.withValues(alpha: 0.68),
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ],
             if (runActive) ...[
               const SizedBox(height: 8),
               Wrap(

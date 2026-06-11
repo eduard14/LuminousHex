@@ -178,10 +178,10 @@ const List<_HelpSectionData> _rebuildHelpSections = <_HelpSectionData>[
   _HelpSectionData(
     id: 'rebuild-layer-1-loop',
     title: 'Layer 1 Run',
-    summary: 'Start at Wave 1, spend Sparks, and complete a shell at Wave 10.',
+    summary: 'Start at Wave 1, spend Sparks, then choose when to complete.',
     body:
         'Layer 1 is the active run. Start Run begins Wave 1 with Sparks, then the central Lightcore fires while black-hole anomalies collapse inward from the perimeter.\n\n'
-        'Sparks are reset each run. Spend them on Damage, Fire Rate, Multishot, and Queue Size to push toward Wave 10. Wave 10 completes one Layer 1 Shell.',
+        'Sparks are reset each run. Spend them on Damage, Fire Rate, Multishot, and Queue Size to push toward Wave 10. Wave 10 makes the run eligible, but the shell only completes after all six feeders are built and the player chooses Complete Shell.',
   ),
   _HelpSectionData(
     id: 'rebuild-feeders',
@@ -202,10 +202,10 @@ const List<_HelpSectionData> _rebuildHelpSections = <_HelpSectionData>[
   _HelpSectionData(
     id: 'rebuild-wave-10',
     title: 'Wave 10 Shell',
-    summary: 'Wave 10 creates the Layer 1 shell used by Layer 2.',
+    summary: 'Wave 10 plus seven hexes readies the Layer 1 shell.',
     body:
-        'Reaching Wave 10 creates exactly one completed Layer 1 Shell from the center tower and six feeders. The completed shell records color distribution plus projected projectile and payload odds.\n\n'
-        'If Layer 2 has an open slot, the shell installs there. If Layer 2 is full, the shell goes to storage. Layer 2 is not playable in this first rebuilt milestone.',
+        'Reaching Wave 10 does not merge by itself. The center tower and all six feeder hexes must be online, then Complete Shell creates one Layer 1 Shell with color distribution plus projected projectile and payload odds.\n\n'
+        'If Layer 2 has an open slot, the completed shell installs there after the player confirms it. If Layer 2 is full, the shell goes to storage. Layer 2 is not playable in this first rebuilt milestone.',
   ),
 ];
 

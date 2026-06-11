@@ -1333,27 +1333,26 @@ class _LightcoreShellState extends State<LightcoreShell> {
                             child: Column(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                if (!rebuildMode) ...[
-                                  AnimatedBuilder(
-                                    animation: controller,
-                                    builder: (context, _) {
-                                      return GuidedFocusFrame(
-                                        active: controller
-                                            .tutorialHighlightsBossBar,
-                                        tint: LightcorePalette.quest,
-                                        showTapCue: false,
-                                        child: _OverallProgressBarPanel(
-                                          controller: controller,
-                                          compact: isCompactLayout,
-                                          towerSelected:
-                                              controller.selectedSlotOrNull !=
-                                              null,
-                                        ),
-                                      );
-                                    },
-                                  ),
-                                  SizedBox(height: sectionGap),
-                                ],
+                                AnimatedBuilder(
+                                  animation: controller,
+                                  builder: (context, _) {
+                                    return GuidedFocusFrame(
+                                      active:
+                                          !rebuildMode &&
+                                          controller.tutorialHighlightsBossBar,
+                                      tint: LightcorePalette.quest,
+                                      showTapCue: false,
+                                      child: _OverallProgressBarPanel(
+                                        controller: controller,
+                                        compact: isCompactLayout,
+                                        towerSelected:
+                                            controller.selectedSlotOrNull !=
+                                            null,
+                                      ),
+                                    );
+                                  },
+                                ),
+                                SizedBox(height: sectionGap),
                                 AnimatedBuilder(
                                   animation: controller,
                                   builder: (context, _) {

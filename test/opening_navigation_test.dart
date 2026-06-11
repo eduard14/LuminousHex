@@ -31,9 +31,17 @@ void main() {
       find.byTooltip('TS: ${controller.towerStrengthLabel}'),
       findsOneWidget,
     );
-    expect(find.byTooltip('Flux: ${controller.flux}'), findsOneWidget);
-    expect(find.byTooltip('Lumen: ${controller.lumens}'), findsOneWidget);
-    expect(find.byTooltip(controller.enemyTicketLabel), findsOneWidget);
+    expect(find.byTooltip('Flux: ${controller.flux}'), findsNothing);
+    expect(find.byTooltip('Lumen: ${controller.lumens}'), findsNothing);
+    expect(find.byTooltip('Sparks: ${controller.sparks}'), findsOneWidget);
+    expect(
+      find.byTooltip('Star Bolts: ${controller.starBolts}'),
+      findsOneWidget,
+    );
+    expect(
+      find.byTooltip('${controller.enemyTicketLabel} (locked)'),
+      findsOneWidget,
+    );
     expect(
       find.byTooltip(
         'Output Efficiency: ${controller.outputEfficiencyLabel} • Core Stability ${controller.coreStabilityLabel}',
@@ -42,7 +50,6 @@ void main() {
     );
     expect(find.text('Start Run'), findsOneWidget);
     expect(find.textContaining('Sparks'), findsWidgets);
-    expect(find.textContaining('Star Bolts'), findsWidgets);
     expect(find.textContaining('Build Feeder'), findsNothing);
     expect(find.textContaining('AR '), findsNothing);
     expect(find.byTooltip('Hide global upgrades'), findsOneWidget);
