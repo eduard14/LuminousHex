@@ -97,6 +97,9 @@ playable in this milestone.
   runs show only permanent Nova Shard upgrades and the next Start New Run action.
 - Active Layer 1 tower health does not regenerate during the run; damage is a
   fail-state clock that only resets when a new run starts.
+- When the Lightcore dies, the Layer 1 run hard-ends: active wave pressure
+  resets to Wave 0, the core stays dead at 0% until the next run starts, and
+  built Relay Hexes remain installed instead of being disabled by anomaly hits.
 - First-run balance intentionally walls zero-upgrade play at Wave 2. Players
   should spend Sparks and persistent Nova Shards across several attempts before
   Wave 10 plus a complete seven-hex shell becomes reliable.

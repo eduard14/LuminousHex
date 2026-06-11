@@ -640,12 +640,23 @@ extension LightcoreControllerStateAccessors on LightcoreController {
   double get bossSpawnProgress =>
       (bossKillsIntoCycle / bossSpawnKillRequirement).clamp(0.0, 1.0);
 
-  int get activeLayerWaveNumber =>
-      1 + (activeLayer.normalKillsSinceBoss ~/ max(1, initialEnemyTarget));
+  int get activeLayerWaveNumber {
+    // L1L2_REBUILD_SAFE: A dead Layer 1 run should show zero active wave
+    // pressure until the player starts the next run.
+    if (layerRebuildEnabled &&
+        !_layerRun.active &&
+        activeLayer.bestWaveReached <= 0) {
+      return 0;
+    }
+    return 1 + (activeLayer.normalKillsSinceBoss ~/ max(1, initialEnemyTarget));
+  }
 
   String get activeLayerWaveHudLabel => 'Wave $activeLayerWaveNumber';
 
   double get activeLayerWaveProgress {
+    if (activeLayerWaveNumber <= 0) {
+      return 0;
+    }
     if (activeLayer.bossReady) {
       return 1.0;
     }

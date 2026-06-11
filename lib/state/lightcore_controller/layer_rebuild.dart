@@ -184,16 +184,25 @@ extension LightcoreControllerLayerRebuild on LightcoreController {
       startingSparks: layer1StartingSparks,
     ).copyWith(active: true, wave: 1);
     activeLayer.bestWaveReached = 1;
+    activeLayer.normalKillsSinceBoss = 0;
+    activeLayer.bossReady = false;
     activeLayer.roundCurrency = 0;
     _enemies = <EnemyState>[];
     _shots = <CoreShotState>[];
     _pulses = <EnergyPulseState>[];
     _impacts = <ImpactState>[];
     _ammoQueue = <AmmoPacket>[];
+    _spawnSequence = 0;
     _spawnTimer = 0.8;
     _outerRingRevealed = true;
     _swarmActivated = true;
     _battleSpawnPolicy = LightcoreBattleSpawnPolicy.automatic;
+    _slots = _slots
+        .map(
+          (slot) =>
+              slot.copyWith(charge: 0, cooldownRemaining: 0, disruption: 0),
+        )
+        .toList();
     _core = _core.copyWith(
       coreStability: _maxCoreStability,
       flowEfficiency: _maxFlowEfficiency,
@@ -213,16 +222,25 @@ extension LightcoreControllerLayerRebuild on LightcoreController {
       startingSparks: layer1StartingSparks,
     ).copyWith(active: true, wave: 1);
     activeLayer.bestWaveReached = 1;
+    activeLayer.normalKillsSinceBoss = 0;
+    activeLayer.bossReady = false;
     activeLayer.roundCurrency = 0;
     _enemies = <EnemyState>[];
     _shots = <CoreShotState>[];
     _pulses = <EnergyPulseState>[];
     _impacts = <ImpactState>[];
     _ammoQueue = <AmmoPacket>[];
+    _spawnSequence = 0;
     _spawnTimer = 0.8;
     _outerRingRevealed = true;
     _swarmActivated = true;
     _battleSpawnPolicy = LightcoreBattleSpawnPolicy.automatic;
+    _slots = _slots
+        .map(
+          (slot) =>
+              slot.copyWith(charge: 0, cooldownRemaining: 0, disruption: 0),
+        )
+        .toList();
     _core = _core.copyWith(
       coreStability: _maxCoreStability,
       flowEfficiency: _maxFlowEfficiency,
@@ -279,20 +297,41 @@ extension LightcoreControllerLayerRebuild on LightcoreController {
     }
     final completedWave = max(0, _layerRun.completedWave);
     final payoutWave = max(completedWave, max(0, _layerRun.wave - 1));
+    final reachedWave = max(_layerRun.wave, completedWave);
     final starBoltsEarned = max(
       1,
       payoutWave * LightcoreController.layer1StarBoltsPerCompletedWave,
     );
-    _layerRun = _layerRun.copyWith(active: false, completedWave: completedWave);
+    _layerRun = _layerRun.copyWith(
+      active: false,
+      wave: 0,
+      completedWave: completedWave,
+    );
     _layerPersistentProgress = _layerPersistentProgress.copyWith(
       starBolts: _layerPersistentProgress.starBolts + starBoltsEarned,
-      bestWave: max(_layerPersistentProgress.bestWave, _layerRun.wave),
+      bestWave: max(_layerPersistentProgress.bestWave, reachedWave),
     );
+    activeLayer.bestWaveReached = 0;
+    activeLayer.normalKillsSinceBoss = 0;
+    activeLayer.bossReady = false;
     _enemies = <EnemyState>[];
     _shots = <CoreShotState>[];
     _pulses = <EnergyPulseState>[];
     _impacts = <ImpactState>[];
     _ammoQueue = <AmmoPacket>[];
+    _spawnSequence = 0;
+    _spawnTimer = 0.8;
+    _swarmActivated = false;
+    _slots = _slots
+        .map(
+          (slot) =>
+              slot.copyWith(charge: 0, cooldownRemaining: 0, disruption: 0),
+        )
+        .toList();
+    _core = _core.copyWith(
+      coreStability: 0,
+      flowEfficiency: _maxFlowEfficiency,
+    );
     _showBanner(
       'Layer 1 run ended. Earned $starBoltsEarned Nova Shards for permanent upgrades.',
       category: LightcoreNotificationCategory.battle,

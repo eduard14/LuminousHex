@@ -176,6 +176,19 @@ extension LightcoreControllerCombatFollowups on LightcoreController {
       ),
     );
 
+    if (_layerRun.active) {
+      // L1L2_REBUILD_SAFE: In the rebuilt Layer 1 loop, collapsing anomalies
+      // attack the Lightcore run health. Relay Hexes feed the core and should
+      // not be disabled or charge-drained by lane hits.
+      final emptyLane = !_slotCountsTowardRing(tower);
+      _applyLumenHarvestDamage(
+        emptyLane ? emptyLaneHitDamage : occupiedLaneHitDamage,
+        source: enemy,
+        emptyLane: emptyLane,
+      );
+      return;
+    }
+
     if (_slotCountsTowardRing(tower)) {
       final jamAmount =
           enemy.jamStrength *

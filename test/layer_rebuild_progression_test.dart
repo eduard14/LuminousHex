@@ -98,6 +98,10 @@ void main() {
 
     expect(controller.endLayer1RunFromCoreBreak(), isTrue);
     expect(controller.layerRunState.active, isFalse);
+    expect(controller.layerRunState.wave, 0);
+    expect(controller.activeLayerWaveNumber, 0);
+    expect(controller.activeLayerWaveProgress, 0);
+    expect(controller.coreState.coreStability, 0);
     expect(controller.layer1PersistentUpgradeWindowVisible, isTrue);
     expect(
       controller.starBolts,
@@ -108,6 +112,33 @@ void main() {
       controller.buyPersistentUpgrade(LayerPersistentUpgradeType.feederSlots),
       isTrue,
     );
+  });
+
+  test('Layer 1 collapse hits kill the core without disabling relay hexes', () {
+    final controller = LightcoreController(spawnRandom: Random(31));
+    addTearDown(controller.dispose);
+    controller.debugDisableTutorial();
+
+    controller.startLayer1Run();
+    controller.debugSetLayer1SparksForTest(1000);
+    expect(
+      controller.buildLayer1FeederAt(0, config: TowerLibrary.greenPrism),
+      isTrue,
+    );
+    expect(controller.towerHealthFraction(controller.slots[0]), 1.0);
+    final startingCoreHealth = controller.coreState.coreStability;
+
+    final enemy = controller.debugSpawnEnemyFromCard(
+      EnemyLibrary.basicWhite.id,
+      angle: -pi / 2,
+      radius: controller.relayImpactRadius - 1,
+    );
+    expect(enemy, isNotNull);
+
+    controller.tick(0.1);
+
+    expect(controller.coreState.coreStability, lessThan(startingCoreHealth));
+    expect(controller.towerHealthFraction(controller.slots[0]), 1.0);
   });
 
   test('active Layer 1 tower health does not recover during a run', () {
