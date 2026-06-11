@@ -108,6 +108,8 @@ playable in this milestone.
 - The battle view keeps a compact shell collapse control in the Layer 1 rebuild:
   collapse focuses the core collision read, and expand restores the full 7-hex
   tower layout.
+- Critical shots no longer surface as a separate queue/piece UI; the active
+  projectile itself receives a yellow solar outline.
 - Relay towers charge shots into the Lightcore instead of asking the player to
   manually queue or drag ammo.
 - Opening combat is low-friction: shots auto-charge after the player presses Play,

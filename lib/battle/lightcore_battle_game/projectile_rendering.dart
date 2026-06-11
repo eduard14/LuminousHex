@@ -104,17 +104,6 @@ extension _LightcoreBattleGameProjectileRendering on LightcoreBattleGame {
             ..color = color.withValues(alpha: 0.36 * burstFade),
         );
       }
-      if (pulse.criticalBoosted) {
-        canvas.drawPath(
-          _hexPath(coreOffset, _coreRadius * (0.34 + (0.08 * chargeAlpha))),
-          Paint()
-            ..style = PaintingStyle.stroke
-            ..strokeWidth = 1.7
-            ..color = LightcorePalette.solar.withValues(
-              alpha: 0.36 * chargeAlpha,
-            ),
-        );
-      }
     }
   }
 
@@ -158,6 +147,25 @@ extension _LightcoreBattleGameProjectileRendering on LightcoreBattleGame {
             (shot.layer2 ? 1.12 : 1.0),
       );
 
+      // L1L2_REBUILD_SAFE: Critical shots should read as the projectile itself,
+      // not as separate queued pieces or badges. Draw a solar underlay that
+      // follows the same projectile shape, then draw the normal projectile.
+      if (shot.critical || shot.criticalBoosted) {
+        LightcoreProjectileFx.drawProjectileTrail(
+          canvas,
+          projectileType: shot.projectileType,
+          start: start,
+          end: end,
+          current: current,
+          color: LightcorePalette.solar,
+          width: width + math.max(2.8, _coreRadius * 0.035),
+          seed: seed + 11.7,
+          alpha: _battleEffectAlphaScale * 0.72,
+          unit: _coreRadius,
+          progress: shot.progress,
+        );
+      }
+
       LightcoreProjectileFx.drawProjectileTrail(
         canvas,
         projectileType: shot.projectileType,
@@ -171,18 +179,6 @@ extension _LightcoreBattleGameProjectileRendering on LightcoreBattleGame {
         unit: _coreRadius,
         progress: shot.progress,
       );
-
-      if (shot.critical) {
-        canvas.drawPath(
-          _hexPath(current, _coreRadius * 0.14),
-          Paint()
-            ..style = PaintingStyle.stroke
-            ..strokeWidth = 2.2
-            ..color = LightcorePalette.solar.withValues(
-              alpha: 0.92 * _battleEffectAlphaScale,
-            ),
-        );
-      }
     }
   }
 }

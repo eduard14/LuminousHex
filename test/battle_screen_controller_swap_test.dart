@@ -85,6 +85,9 @@ void main() {
       findsNothing,
     );
     expect(find.bySemanticsLabel('Shot Queue 2/8 Ready'), findsNothing);
+    expect(find.text('Shot Queue'), findsNothing);
+    expect(find.text('Chain Arc'), findsNothing);
+    expect(find.text('Thread Beam'), findsNothing);
     expect(tester.takeException(), isNull);
   });
 
