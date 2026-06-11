@@ -93,8 +93,11 @@ playable in this milestone.
   the focus. In rebuild mode, the battlefield background is full-bleed instead
   of sitting inside a second rounded app panel.
 - The bottom upgrade dock separates timing clearly: active runs show only
-  Sparks upgrades plus Tower Health and a Restart Wave 1 action, while ended
+  Sparks upgrades plus Tower Health and a Reset Run action, while ended
   runs show only permanent Nova Shard upgrades and the next Start New Run action.
+- The always-visible wave footer carries current Tower Health beside the wave
+  controls so the survival clock remains readable even when the upgrade dock is
+  hidden.
 - Restarting or starting a fresh Layer 1 run clears all Spark purchases from
   the previous attempt, including active upgrade ranks and run-built Relay Hexes,
   then begins again at Wave 1 with persistent unlocks intact.

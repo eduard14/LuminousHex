@@ -1241,7 +1241,7 @@ class _LayerRebuildActionDockState extends State<_LayerRebuildActionDock> {
         ? 'Permanent Upgrades'
         : 'Layer 1 Run';
     final actionLabel = runActive
-        ? 'Restart Wave 1'
+        ? 'Reset Run'
         : showPersistent
         ? 'Start New Run'
         : 'Start Run';

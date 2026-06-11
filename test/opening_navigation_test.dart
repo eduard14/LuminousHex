@@ -1,3 +1,4 @@
+import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'helpers/lightcore_test_fixtures.dart';
@@ -57,8 +58,12 @@ void main() {
     await tester.pump(const Duration(milliseconds: 320));
 
     expect(controller.swarmActivated, isTrue);
-    expect(find.text('Restart Wave 1'), findsOneWidget);
+    expect(find.text('Reset Run'), findsOneWidget);
     expect(find.text('Tower Health'), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey<String>('layer-wave-footer-tower-health')),
+      findsOneWidget,
+    );
     expect(find.textContaining('Next '), findsOneWidget);
     expect(tester.takeException(), isNull);
   });

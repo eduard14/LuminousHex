@@ -161,10 +161,19 @@ class _LayerOneWaveProgressPanel extends StatelessWidget {
         ? 'Next ${nextSeconds.toStringAsFixed(1)}s'
         : '';
     final releaseEnabled = controller.canReleaseLayer1Wave;
+    final towerHealth = controller.coreState.coreStability.round().clamp(
+      0,
+      100,
+    );
+    final towerHealthCritical = towerHealth <= 25;
+    final towerHealthColor = towerHealthCritical
+        ? LightcorePalette.warning
+        : LightcorePalette.success;
 
     return Semantics(
       label: [
         'Wave $waveNumber progress',
+        'Tower Health $towerHealth%',
         if (nextLabel.isNotEmpty) nextLabel,
         'release wave control',
       ].join(', '),
@@ -224,6 +233,29 @@ class _LayerOneWaveProgressPanel extends StatelessWidget {
                       color: LightcorePalette.solar,
                       disabledColor: LightcorePalette.mist.withValues(
                         alpha: 0.28,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Icon(
+                    Icons.favorite_rounded,
+                    size: 17,
+                    color: towerHealthColor,
+                  ),
+                  const SizedBox(width: 5),
+                  Flexible(
+                    child: Text(
+                      key: const ValueKey<String>(
+                        'layer-wave-footer-tower-health',
+                      ),
+                      compact
+                          ? 'Tower $towerHealth%'
+                          : 'Tower Health $towerHealth%',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: textTheme.labelMedium?.copyWith(
+                        color: towerHealthColor,
+                        fontWeight: FontWeight.w900,
                       ),
                     ),
                   ),
