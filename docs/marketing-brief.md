@@ -98,9 +98,9 @@ playable in this milestone.
 - First-run balance intentionally walls zero-upgrade play at Wave 2. Players
   should spend Sparks and persistent Star Bolts across several attempts before
   Wave 10 plus a complete seven-hex shell becomes reliable.
-- The rebuilt battle surface removes duplicate resource cards while queued
-  projectile packets spiral into the Lightcore from one or more multishot lanes,
-  with a core-centered charge ring showing the next shot and cooldown progress.
+- The rebuilt battle surface removes duplicate resource cards and keeps queue
+  mechanics functional without showing a dedicated queue visualization in the
+  first-pass HUD.
 - The bottom wave footer now stays readable on compact mobile screens with
   a simple wave number, inline double-chevron wave release, next-wave timing,
   and an always-moving wave meter.

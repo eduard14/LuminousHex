@@ -32,7 +32,7 @@ void main() {
     expect(startButton, findsOneWidget);
     expect(
       find.byKey(const ValueKey<String>('layer-rebuild-queue-orbit')),
-      findsOneWidget,
+      findsNothing,
     );
     expect(find.text('Damage Lv. 0\n18 Sparks'), findsNothing);
     expect(find.textContaining('Fire Rate Lv. 0'), findsNothing);
@@ -53,7 +53,7 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('rebuilt HUD visualizes queued projectiles and ready state', (
+  testWidgets('rebuilt HUD hides queued projectile visuals for now', (
     tester,
   ) async {
     addTearDown(() async {
@@ -82,9 +82,9 @@ void main() {
 
     expect(
       find.byKey(const ValueKey<String>('layer-rebuild-queue-orbit')),
-      findsOneWidget,
+      findsNothing,
     );
-    expect(find.bySemanticsLabel('Shot Queue 2/8 Ready'), findsOneWidget);
+    expect(find.bySemanticsLabel('Shot Queue 2/8 Ready'), findsNothing);
     expect(tester.takeException(), isNull);
   });
 
