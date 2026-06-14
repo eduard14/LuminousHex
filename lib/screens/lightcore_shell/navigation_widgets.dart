@@ -72,14 +72,14 @@ class _OverallProgressBarPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (towerSelected) {
-      return const SizedBox.shrink();
-    }
     if (controller.layerRebuildEnabled) {
       return _LayerOneWaveProgressPanel(
         controller: controller,
         compact: compact,
       );
+    }
+    if (towerSelected) {
+      return const SizedBox.shrink();
     }
     final waveProgress = controller.activeLayerWaveProgress;
     final waveLabel = controller.activeLayerWaveHudLabel;
