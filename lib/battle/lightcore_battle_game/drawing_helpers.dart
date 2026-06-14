@@ -292,8 +292,8 @@ extension LightcoreBattleGameDrawingHelpers on LightcoreBattleGame {
     return (math.sin(seed + (index * 12.9898) + (salt * 78.233)) + 1) * 0.5;
   }
 
-  // L1L2_REBUILD_SAFE: Layer 1 tower damage is visualized on the actual hex
-  // bodies so health loss feels like tower failure, not just a HUD number.
+  // L1L2_REBUILD_SAFE: Show damage marks only on hit flashes. Persistent
+  // missing-health cracks read like random damage during unrelated combat beats.
   void _renderTowerDamageState(
     Canvas canvas,
     Offset center, {
@@ -306,16 +306,15 @@ extension LightcoreBattleGameDrawingHelpers on LightcoreBattleGame {
       return;
     }
     final clampedHealth = healthRatio.clamp(0.0, 1.0).toDouble();
-    final damage = (1 - clampedHealth).clamp(0.0, 1.0).toDouble();
-    if (damage <= 0.06) {
-      return;
-    }
     final destroyed = clampedHealth <= 0.001;
     final flashProgress =
         (_coreDamageFlashRemaining /
                 LightcoreBattleGame._coreDamageFlashDuration)
             .clamp(0.0, 1.0)
             .toDouble();
+    if (!destroyed && flashProgress <= 0) {
+      return;
+    }
     final pulse = 0.5 + (math.sin(controller.elapsed * 8.2 + seed) * 0.5);
 
     canvas.save();
@@ -325,24 +324,25 @@ extension LightcoreBattleGameDrawingHelpers on LightcoreBattleGame {
       Paint()
         ..style = PaintingStyle.fill
         ..color = Colors.black.withValues(
-          alpha: destroyed ? 0.46 : 0.24 * damage,
+          alpha: destroyed ? 0.46 : 0.16 * flashProgress,
         ),
     );
     final crackPaint = Paint()
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round
-      ..strokeWidth = math.max(0.9, radius * (destroyed ? 0.038 : 0.022))
+      ..strokeWidth = math.max(
+        0.9,
+        radius * (destroyed ? 0.038 : 0.026 * flashProgress),
+      )
       ..color = LightcorePalette.mist.withValues(
-        alpha: destroyed ? 0.82 : (0.22 + (damage * 0.24)),
+        alpha: destroyed ? 0.82 : 0.52 * flashProgress,
       );
     final hotCrackPaint = Paint()
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round
       ..strokeWidth = math.max(0.55, radius * 0.012)
-      ..color = tint.withValues(
-        alpha: destroyed ? 0.52 : (0.12 + (damage * 0.18)),
-      );
-    final crackCount = destroyed ? 6 : (1 + (damage * 3)).round();
+      ..color = tint.withValues(alpha: destroyed ? 0.52 : 0.44 * flashProgress);
+    final crackCount = destroyed ? 6 : 3;
     for (var index = 0; index < crackCount; index++) {
       final baseAngle =
           seed +
