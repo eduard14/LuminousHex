@@ -785,28 +785,33 @@ extension LightcoreBattleGameArenaSlotRendering on LightcoreBattleGame {
     final pulse = 0.5 + (math.sin(controller.elapsed * 3.2) * 0.5);
     final tint = LightcorePalette.aether;
     final radius = _slotRadius * (0.72 + (pulse * 0.06));
-    canvas.drawCircle(
-      center,
-      radius,
+    final cueHex = _hexPath(center, radius);
+    canvas.drawPath(
+      cueHex,
+      Paint()
+        ..style = PaintingStyle.fill
+        ..color = tint.withValues(alpha: 0.08 + (pulse * 0.04)),
+    );
+    canvas.drawPath(
+      cueHex,
       Paint()
         ..style = PaintingStyle.stroke
         ..strokeWidth = 2.2
         ..color = tint.withValues(alpha: 0.34 + (pulse * 0.2)),
     );
-    final plusPaint = Paint()
-      ..strokeWidth = 3
-      ..strokeCap = StrokeCap.round
-      ..color = LightcorePalette.mist.withValues(alpha: 0.86);
-    final half = _slotRadius * 0.18;
-    canvas.drawLine(
-      center.translate(-half, 0),
-      center.translate(half, 0),
-      plusPaint,
+    canvas.drawPath(
+      _hexPath(center, radius * 0.72),
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.2
+        ..color = LightcorePalette.layer2.withValues(alpha: 0.28),
     );
-    canvas.drawLine(
-      center.translate(0, -half),
-      center.translate(0, half),
-      plusPaint,
+    _paintIconGlyph(
+      canvas,
+      center.translate(0, -_slotRadius * 0.04),
+      Icons.add_rounded,
+      size: _slotRadius * 0.58,
+      color: LightcorePalette.mist.withValues(alpha: 0.9),
     );
 
     final painter = TextPainter(
