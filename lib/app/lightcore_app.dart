@@ -137,7 +137,8 @@ class _LightcoreAppState extends State<LightcoreApp>
     );
     _startupSocialInvite = LightcoreSocialInviteLink.maybeFromUri(Uri.base);
     _guestSession = createGuestSession();
-    _showStudioSplash = widget.showStudioSplash;
+    _showStudioSplash =
+        widget.showStudioSplash && !skipMainMenuForLayer1Testing;
     if (_showStudioSplash) {
       _studioSplashTimer = Timer(_studioSplashDuration, () {
         if (mounted) {
@@ -320,6 +321,9 @@ class _LightcoreAppState extends State<LightcoreApp>
         // Shared preferences are optional for tests and unsupported contexts.
       }
     }
+    if (skipMainMenuForLayer1Testing) {
+      guideProfile ??= LightcoreGuideProfile.lumo;
+    }
     try {
       await _sessionStore.writePlayerId(report.profile.playerId);
     } catch (error) {
@@ -364,6 +368,9 @@ class _LightcoreAppState extends State<LightcoreApp>
       ),
     );
     _syncMusicForCurrentScreen();
+    if (skipMainMenuForLayer1Testing) {
+      unawaited(_enterGameFromServer());
+    }
   }
 
   bool _isCurrentBootstrapRun(int runId) => runId == _bootstrapRunId;
@@ -452,7 +459,9 @@ class _LightcoreAppState extends State<LightcoreApp>
     _socialOverviewTimer?.cancel();
     _socialOverviewTimer = null;
     _lastSocialOverviewSyncAt = null;
-    unawaited(_syncSocialOverview(controller));
+    if (!bypassServerValidationForLayer1Testing) {
+      unawaited(_syncSocialOverview(controller));
+    }
     _observeController(controller);
     _missedServerSyncs = 0;
 
@@ -616,6 +625,9 @@ class _LightcoreAppState extends State<LightcoreApp>
   }
 
   void _startServerSyncTimer() {
+    if (bypassServerValidationForLayer1Testing) {
+      return;
+    }
     if (!_enteredGame || _controller == null) {
       return;
     }
@@ -915,6 +927,9 @@ class _LightcoreAppState extends State<LightcoreApp>
     LightcoreController controller, {
     bool force = false,
   }) async {
+    if (bypassServerValidationForLayer1Testing) {
+      return;
+    }
     if (_socialOverviewSyncInFlight) {
       if (!force) {
         _scheduleSocialOverviewSync(controller, _socialOverviewRefreshInterval);

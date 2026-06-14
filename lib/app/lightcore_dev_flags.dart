@@ -1,3 +1,8 @@
+// Temporary local Layer 1 iteration switches. Flip both off when the menu and
+// Firebase-backed startup flow should be exercised again.
+const bool bypassServerValidationForLayer1Testing = true;
+const bool skipMainMenuForLayer1Testing = true;
+
 bool shouldEnableLocalhostAutoTapper({required bool isWeb, required Uri uri}) {
   if (!isWeb) {
     return false;

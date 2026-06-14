@@ -8,6 +8,7 @@ import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 import '../app/lightcore_bootstrap.dart';
+import '../app/lightcore_dev_flags.dart';
 import '../models/lightcore_cloud_save.dart';
 import '../models/lightcore_global_chat.dart';
 import '../models/lightcore_social_state.dart';
@@ -146,6 +147,39 @@ class FirebaseLightcoreBackend {
     var offlineClaim = LightcoreOfflineClaimResult.empty(
       statusMessage: 'No offline rewards available yet.',
     );
+
+    if (bypassServerValidationForLayer1Testing) {
+      warnings.add(
+        'Temporary Layer 1 testing mode: Firebase startup and server validation are bypassed.',
+      );
+      _cachedCloudSave = null;
+      _activeSessionId = null;
+      return LightcoreBootstrapReport(
+        guestSession: guestSession,
+        clientVersion: clientVersion,
+        clientBuildNumber: clientBuildNumber,
+        manifest: manifest.copyWith(
+          backendMode: LightcoreBackendMode.localFallback,
+          usesRemoteContent: false,
+          appCheckRequired: false,
+          onlineFeaturesEnabled: false,
+          statusMessage:
+              'Temporary Layer 1 testing mode bypasses Firebase startup and server validation.',
+        ),
+        profile: profile,
+        offlineClaim: offlineClaim,
+        integrityLevel: LightcoreIntegrityLevel.localOnly,
+        firebaseReady: false,
+        serverValidated: false,
+        appCheckActive: false,
+        sessionId: null,
+        serverTime: null,
+        serverDayKey: null,
+        serverWeekKey: null,
+        cloudSave: null,
+        warnings: warnings,
+      );
+    }
 
     if (!runtimeConfig.canInitializeOnCurrentPlatform) {
       warnings.add(
@@ -918,6 +952,11 @@ class FirebaseLightcoreBackend {
   }
 
   Future<void> _ensureFirebaseInitialized() async {
+    if (bypassServerValidationForLayer1Testing) {
+      throw StateError(
+        'Temporary Layer 1 testing mode bypasses Firebase initialization.',
+      );
+    }
     if (Firebase.apps.isNotEmpty) {
       return;
     }

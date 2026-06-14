@@ -88,7 +88,6 @@ lib/
   state/      Local game authority and progression logic
   theme/      Visual system
   widgets/    Shared UI components
-test/         Widget and gameplay tests
 web/          Web shell assets
 ```
 
