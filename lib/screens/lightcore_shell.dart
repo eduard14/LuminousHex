@@ -31,6 +31,7 @@ import '../widgets/meta_progression_sheet.dart';
 import '../widgets/player_manager_sheet.dart';
 import '../widgets/profile_medals_sheet.dart';
 import '../widgets/status_pill.dart';
+import '../widgets/tower_health_bar.dart';
 import '../widgets/tower_ring_icon.dart';
 import 'battle_screen.dart';
 import 'card_management_screen.dart';

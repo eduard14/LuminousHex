@@ -189,88 +189,123 @@ class _LayerOneWaveProgressPanel extends StatelessWidget {
             compact ? 10 : 12,
             compact ? 8 : 10,
           ),
-          child: Row(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(
-                Icons.track_changes_rounded,
-                size: 18,
-                color: LightcorePalette.solar,
-              ),
-              const SizedBox(width: 7),
-              Text(
-                'Wave $waveNumber',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: textTheme.labelLarge?.copyWith(
-                  color: LightcorePalette.mist,
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
-              SizedBox(width: compact ? 8 : 10),
-              Expanded(
-                child: _AnimatedWaveMeter(
-                  key: const ValueKey<String>('layer-wave-footer-meter'),
-                  value: waveProgress,
-                  compact: compact,
-                  transitionActive: transitionActive,
-                ),
-              ),
-              SizedBox(width: compact ? 6 : 8),
-              SizedBox(
-                width: compact ? 116 : 136,
-                height: compact ? 32 : 34,
-                child: FilledButton.icon(
-                  key: const ValueKey<String>('layer-wave-run-button'),
-                  onPressed: () {
-                    LightcoreAudio.instance.playSfx(LightcoreSfx.uiTap);
-                    runAction();
-                  },
-                  icon: Icon(runActionIcon, size: compact ? 16 : 17),
-                  label: Text(
-                    runActionLabel,
+              _LayerOneTowerHealthBar(controller: controller, compact: compact),
+              SizedBox(height: compact ? 8 : 10),
+              Row(
+                children: [
+                  const Icon(
+                    Icons.track_changes_rounded,
+                    size: 18,
+                    color: LightcorePalette.solar,
+                  ),
+                  const SizedBox(width: 7),
+                  Text(
+                    'Wave $waveNumber',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                  ),
-                  style: FilledButton.styleFrom(
-                    backgroundColor: runActive
-                        ? LightcorePalette.warning
-                        : LightcorePalette.aether,
-                    foregroundColor: LightcorePalette.night,
-                    padding: EdgeInsets.symmetric(horizontal: compact ? 9 : 12),
-                    textStyle: textTheme.labelMedium?.copyWith(
+                    style: textTheme.labelLarge?.copyWith(
+                      color: LightcorePalette.mist,
                       fontWeight: FontWeight.w900,
                     ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
+                  ),
+                  SizedBox(width: compact ? 8 : 10),
+                  Expanded(
+                    child: _AnimatedWaveMeter(
+                      key: const ValueKey<String>('layer-wave-footer-meter'),
+                      value: waveProgress,
+                      compact: compact,
+                      transitionActive: transitionActive,
                     ),
                   ),
-                ),
-              ),
-              SizedBox(width: compact ? 4 : 6),
-              Tooltip(
-                message: 'Release full wave',
-                child: IconButton(
-                  key: const ValueKey<String>('layer-wave-release-button'),
-                  onPressed: releaseEnabled
-                      ? controller.releaseLayer1Wave
-                      : null,
-                  visualDensity: VisualDensity.compact,
-                  padding: EdgeInsets.zero,
-                  constraints: BoxConstraints.tightFor(
-                    width: compact ? 28 : 30,
-                    height: compact ? 26 : 28,
+                  SizedBox(width: compact ? 6 : 8),
+                  SizedBox(
+                    width: compact ? 116 : 136,
+                    height: compact ? 32 : 34,
+                    child: FilledButton.icon(
+                      key: const ValueKey<String>('layer-wave-run-button'),
+                      onPressed: () {
+                        LightcoreAudio.instance.playSfx(LightcoreSfx.uiTap);
+                        runAction();
+                      },
+                      icon: Icon(runActionIcon, size: compact ? 16 : 17),
+                      label: Text(
+                        runActionLabel,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: runActive
+                            ? LightcorePalette.warning
+                            : LightcorePalette.aether,
+                        foregroundColor: LightcorePalette.night,
+                        padding: EdgeInsets.symmetric(
+                          horizontal: compact ? 9 : 12,
+                        ),
+                        textStyle: textTheme.labelMedium?.copyWith(
+                          fontWeight: FontWeight.w900,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                    ),
                   ),
-                  icon: Icon(
-                    Icons.keyboard_double_arrow_right_rounded,
-                    size: compact ? 21 : 23,
+                  SizedBox(width: compact ? 4 : 6),
+                  Tooltip(
+                    message: 'Release full wave',
+                    child: IconButton(
+                      key: const ValueKey<String>('layer-wave-release-button'),
+                      onPressed: releaseEnabled
+                          ? controller.releaseLayer1Wave
+                          : null,
+                      visualDensity: VisualDensity.compact,
+                      padding: EdgeInsets.zero,
+                      constraints: BoxConstraints.tightFor(
+                        width: compact ? 28 : 30,
+                        height: compact ? 26 : 28,
+                      ),
+                      icon: Icon(
+                        Icons.keyboard_double_arrow_right_rounded,
+                        size: compact ? 21 : 23,
+                      ),
+                      color: LightcorePalette.solar,
+                      disabledColor: LightcorePalette.mist.withValues(
+                        alpha: 0.28,
+                      ),
+                    ),
                   ),
-                  color: LightcorePalette.solar,
-                  disabledColor: LightcorePalette.mist.withValues(alpha: 0.28),
-                ),
+                ],
               ),
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _LayerOneTowerHealthBar extends StatelessWidget {
+  const _LayerOneTowerHealthBar({
+    required this.controller,
+    required this.compact,
+  });
+
+  final LightcoreController controller;
+  final bool compact;
+
+  @override
+  Widget build(BuildContext context) {
+    final health = controller.coreState.coreStability.round().clamp(0, 100);
+    return Semantics(
+      label: 'Tower Health $health%',
+      child: TowerHealthBar(
+        value: health / 100,
+        label: '$health%',
+        color: LightcorePalette.success,
+        height: compact ? 8 : 10,
       ),
     );
   }

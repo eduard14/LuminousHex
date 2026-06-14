@@ -1068,18 +1068,6 @@ class _BattleScreenState extends State<BattleScreen> {
         Positioned.fill(
           child: _buildGameCanvas(compact ? 20 : 0, dockOpen: dockOpen),
         ),
-        if (rebuildHudVisible)
-          Positioned(
-            left: inset,
-            right: shellVisibilityHud == null
-                ? inset
-                : inset + (compact ? 54 : 68),
-            top: topInset,
-            child: _LayerRebuildTopHealthBar(
-              controller: controller,
-              compact: compact,
-            ),
-          ),
         if (widget.showBattleHud && shellVisibilityHud != null)
           Positioned(right: inset, top: topInset, child: shellVisibilityHud),
         if (widget.showBattleHud &&
@@ -1344,54 +1332,6 @@ class _LayerRebuildActionDockState extends State<_LayerRebuildActionDock> {
               ),
             ],
           ],
-        ),
-      ),
-    );
-  }
-}
-
-// L1L2_REBUILD_SAFE: Tower health is battle-critical, so it stays anchored at
-// the top of the playfield instead of competing with the wave footer controls.
-class _LayerRebuildTopHealthBar extends StatelessWidget {
-  const _LayerRebuildTopHealthBar({
-    required this.controller,
-    required this.compact,
-  });
-
-  final LightcoreController controller;
-  final bool compact;
-
-  @override
-  Widget build(BuildContext context) {
-    final health = controller.coreState.coreStability.round().clamp(0, 100);
-    final critical = health <= 25;
-    final tint = critical ? LightcorePalette.warning : LightcorePalette.success;
-    return Semantics(
-      label: 'Tower Health $health%',
-      child: DecoratedBox(
-        key: const ValueKey<String>('layer-rebuild-top-health-bar'),
-        decoration: BoxDecoration(
-          color: LightcorePalette.panel.withValues(alpha: 0.68),
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: tint.withValues(alpha: 0.34)),
-          boxShadow: [
-            BoxShadow(
-              color: tint.withValues(alpha: critical ? 0.2 : 0.08),
-              blurRadius: critical ? 16 : 10,
-            ),
-          ],
-        ),
-        child: Padding(
-          padding: EdgeInsets.symmetric(
-            horizontal: compact ? 9 : 11,
-            vertical: compact ? 7 : 8,
-          ),
-          child: TowerHealthBar(
-            value: health / 100,
-            label: '$health%',
-            color: LightcorePalette.success,
-            height: compact ? 8 : 10,
-          ),
         ),
       ),
     );
