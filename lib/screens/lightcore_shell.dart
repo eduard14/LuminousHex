@@ -157,6 +157,9 @@ class _LightcoreShellState extends State<LightcoreShell> {
 
   static double _battleFooterOverlayInset(bool compact) => compact ? 132 : 160;
 
+  static double _battleRebuildFooterOverlayInset(bool compact) =>
+      compact ? 188 : 220;
+
   static const Duration _promotionOverlayDismissDelay = Duration(
     milliseconds: 260,
   );
@@ -1019,6 +1022,8 @@ class _LightcoreShellState extends State<LightcoreShell> {
         : _battleHeaderOverlayInset(isCompactLayout);
     final battleBottomInset = openingBattlePreview
         ? (isCompactLayout ? 18.0 : 22.0)
+        : rebuildMode
+        ? _battleRebuildFooterOverlayInset(isCompactLayout)
         : _battleFooterOverlayInset(isCompactLayout);
 
     return SizedBox.expand(
