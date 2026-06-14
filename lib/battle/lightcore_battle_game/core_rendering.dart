@@ -406,6 +406,42 @@ extension LightcoreBattleGameCoreRendering on LightcoreBattleGame {
     };
   }
 
+  void _renderCoreBreachBoundary(Canvas canvas, Offset center, double radius) {
+    final pulse = 0.5 + (math.sin(controller.elapsed * math.pi * 2.1) * 0.5);
+    final boundaryRadius = radius * (0.96 + (pulse * 0.015));
+    final boundaryColor = LightcorePalette.warning;
+
+    canvas.drawPath(
+      _hexPath(center, boundaryRadius),
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = math.max(2.0, radius * 0.026)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 5)
+        ..color = boundaryColor.withValues(alpha: 0.16 + (pulse * 0.06)),
+    );
+    canvas.drawPath(
+      _hexPath(center, boundaryRadius),
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = math.max(1.5, radius * 0.018)
+        ..strokeCap = StrokeCap.round
+        ..color = boundaryColor.withValues(alpha: 0.54 + (pulse * 0.12)),
+    );
+    _drawPolygonPerimeterProgress(
+      canvas,
+      center: center,
+      radius: boundaryRadius * 1.025,
+      sides: 6,
+      rotation: math.pi / 6,
+      progress: 0.52 + (pulse * 0.2),
+      paint: Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = math.max(2.0, radius * 0.024)
+        ..strokeCap = StrokeCap.round
+        ..color = LightcorePalette.mist.withValues(alpha: 0.34),
+    );
+  }
+
   void _renderFoldedShell(
     Canvas canvas,
     Offset center, {
@@ -427,6 +463,10 @@ extension LightcoreBattleGameCoreRendering on LightcoreBattleGame {
       controller.coreState.affinity,
       controller.coreState.secondaryAffinity,
     );
+
+    if (showSlots) {
+      _renderCoreBreachBoundary(canvas, center, _coreRadius);
+    }
 
     if (showSlots) {
       for (var index = 0; index < controller.slots.length; index++) {
