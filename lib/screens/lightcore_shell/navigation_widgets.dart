@@ -298,13 +298,35 @@ class _LayerOneTowerHealthBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final health = controller.coreState.coreStability.round().clamp(0, 100);
+    final textTheme = Theme.of(context).textTheme;
+    final healthValue = (health / 100).clamp(0.0, 1.0).toDouble();
+    final statusColor = healthValue >= 0.55
+        ? LightcorePalette.success
+        : LightcorePalette.warning;
     return Semantics(
       label: 'Tower Health $health%',
-      child: TowerHealthBar(
-        value: health / 100,
-        label: '$health%',
-        color: LightcorePalette.success,
-        height: compact ? 8 : 10,
+      child: Row(
+        children: [
+          Icon(Icons.health_and_safety_rounded, size: 18, color: statusColor),
+          const SizedBox(width: 7),
+          Text(
+            'Tower Health',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: textTheme.labelLarge?.copyWith(
+              color: LightcorePalette.mist,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          SizedBox(width: compact ? 10 : 12),
+          Expanded(
+            child: MeterBar(
+              value: healthValue,
+              color: statusColor,
+              height: compact ? 8 : 10,
+            ),
+          ),
+        ],
       ),
     );
   }
