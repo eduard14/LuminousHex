@@ -1237,11 +1237,6 @@ class _LayerRebuildActionDockState extends State<_LayerRebuildActionDock> {
         : showPersistent
         ? 'Permanent Upgrades'
         : 'Layer 1 Run';
-    final actionLabel = runActive
-        ? 'Reset Run'
-        : showPersistent
-        ? 'Start New Run'
-        : 'Start Run';
     return DecoratedBox(
       decoration: BoxDecoration(
         color: LightcorePalette.panel.withValues(alpha: 0.78),
@@ -1258,27 +1253,6 @@ class _LayerRebuildActionDockState extends State<_LayerRebuildActionDock> {
           children: [
             Row(
               children: [
-                SizedBox(
-                  width: runActive ? 156 : 132,
-                  child: FilledButton.icon(
-                    onPressed: runActive
-                        ? controller.resetLayer1Run
-                        : controller.startLayer1Run,
-                    icon: Icon(
-                      runActive
-                          ? Icons.restart_alt_rounded
-                          : Icons.play_arrow_rounded,
-                      size: 18,
-                    ),
-                    label: Text(actionLabel),
-                    style: FilledButton.styleFrom(
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
                 Expanded(
                   child: Text(
                     title,

@@ -155,9 +155,25 @@ class _LayerOneWaveProgressPanel extends StatelessWidget {
     final waveNumber = controller.activeLayerWaveNumber;
     final releaseEnabled = controller.canReleaseLayer1Wave;
     final transitionActive = controller.layer1WaveTransitionActive;
+    final runActive = controller.layerRunState.active;
+    final showPersistent = controller.layer1PersistentUpgradeWindowVisible;
+    final runActionLabel = runActive
+        ? 'Reset Run'
+        : showPersistent
+        ? 'Start New Run'
+        : 'Start Run';
+    final runActionIcon = runActive
+        ? Icons.restart_alt_rounded
+        : Icons.play_arrow_rounded;
+    final VoidCallback runAction = runActive
+        ? controller.resetLayer1Run
+        : controller.startLayer1Run;
 
     return Semantics(
-      label: ['Wave $waveNumber progress', 'release wave control'].join(', '),
+      label: [
+        'Wave $waveNumber progress',
+        '$runActionLabel control',
+      ].join(', '),
       child: DecoratedBox(
         decoration: BoxDecoration(
           color: LightcorePalette.panel.withValues(alpha: 0.86),
@@ -200,6 +216,37 @@ class _LayerOneWaveProgressPanel extends StatelessWidget {
                 ),
               ),
               SizedBox(width: compact ? 6 : 8),
+              SizedBox(
+                width: compact ? 116 : 136,
+                height: compact ? 32 : 34,
+                child: FilledButton.icon(
+                  key: const ValueKey<String>('layer-wave-run-button'),
+                  onPressed: () {
+                    LightcoreAudio.instance.playSfx(LightcoreSfx.uiTap);
+                    runAction();
+                  },
+                  icon: Icon(runActionIcon, size: compact ? 16 : 17),
+                  label: Text(
+                    runActionLabel,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: runActive
+                        ? LightcorePalette.warning
+                        : LightcorePalette.aether,
+                    foregroundColor: LightcorePalette.night,
+                    padding: EdgeInsets.symmetric(horizontal: compact ? 9 : 12),
+                    textStyle: textTheme.labelMedium?.copyWith(
+                      fontWeight: FontWeight.w900,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                ),
+              ),
+              SizedBox(width: compact ? 4 : 6),
               Tooltip(
                 message: 'Release full wave',
                 child: IconButton(
