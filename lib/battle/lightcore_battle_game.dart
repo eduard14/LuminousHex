@@ -87,7 +87,6 @@ class LightcoreBattleGame extends FlameGame with ScaleDetector {
   double _screenShakeRemaining = 0;
   double _screenShakeAmplitude = 0;
   Vector2 _screenShakeOffset = Vector2.zero();
-  double _backgroundPhase = 0;
   Vector2 _baseCenter = Vector2.zero();
   Vector2 _panOffset = Vector2.zero();
   double _uiFocusLift = 0;
@@ -319,7 +318,6 @@ class LightcoreBattleGame extends FlameGame with ScaleDetector {
   void update(double dt) {
     super.update(dt);
     final clamped = dt.clamp(0, 0.05).toDouble();
-    _backgroundPhase = (_backgroundPhase + clamped) % 240.0;
     _updateUiFocus(clamped);
     if (_shellPromotion != null) {
       _shellPromotionElapsed = math.min(
@@ -659,90 +657,6 @@ class LightcoreBattleGame extends FlameGame with ScaleDetector {
             );
       canvas.drawRect(rect, upperGlow);
     }
-    _renderBackgroundParticles(canvas, rect);
-  }
-
-  void _renderBackgroundParticles(Canvas canvas, Rect rect) {
-    final particleCount = _qualityScaledCount(36, balanced: 24, lowPower: 10);
-    final width = math.max(size.x, 1.0);
-    final height = math.max(size.y, 1.0);
-    final center = Offset(_center.x, _center.y);
-    final calmRadius = math.min(width, height) * 0.34;
-    final edgeFadeStart = math.min(width, height) * 0.18;
-    final phase = _backgroundPhase;
-
-    for (var index = 0; index < particleCount; index += 1) {
-      final seed = (index + 1) * 97.137;
-      final baseX = ((math.sin(seed * 12.9898) * 43758.5453) % 1).abs();
-      final baseY = ((math.sin(seed * 78.233) * 24634.6345) % 1).abs();
-      final driftAngle = seed % (math.pi * 2);
-      final driftSpeed = 3.0 + ((index % 7) * 0.42);
-      final driftX = math.cos(driftAngle) * phase * driftSpeed;
-      final driftY = math.sin(driftAngle) * phase * driftSpeed * 0.72;
-      final x = (baseX * width + driftX) % width;
-      final y = (baseY * height + driftY) % height;
-      final point = Offset(x < 0 ? x + width : x, y < 0 ? y + height : y);
-      final distanceFromCenter = (point - center).distance;
-      final centerFade =
-          ((distanceFromCenter - edgeFadeStart) /
-                  math.max(1, calmRadius - edgeFadeStart))
-              .clamp(0.22, 1.0)
-              .toDouble();
-      final pulse =
-          (math.sin((phase * (0.55 + ((index % 5) * 0.08))) + seed) + 1) / 2;
-      final radius = 0.65 + ((index % 4) * 0.18) + (pulse * 0.28);
-      final tint = index % 9 == 0
-          ? LightcorePalette.solar
-          : index % 4 == 0
-          ? LightcorePalette.violet
-          : LightcorePalette.aether;
-      final alpha =
-          (0.08 + (pulse * 0.13)) *
-          centerFade *
-          _battleEffectAlphaScale *
-          (index % 6 == 0 ? 1.35 : 1.0);
-
-      canvas.drawCircle(
-        point,
-        radius,
-        Paint()..color = tint.withValues(alpha: alpha.clamp(0.0, 0.24)),
-      );
-    }
-
-    if (_lowPowerBattleEffects) {
-      return;
-    }
-
-    final streakCount = _qualityScaledCount(7, balanced: 4, lowPower: 0);
-    for (var index = 0; index < streakCount; index += 1) {
-      final seed = (index + 1) * 211.73;
-      final baseX = ((math.sin(seed * 18.17) * 19341.77) % 1).abs();
-      final baseY = ((math.sin(seed * 31.41) * 9273.31) % 1).abs();
-      final speed = 5.5 + (index * 0.9);
-      final x = (baseX * width + phase * speed) % width;
-      final y = (baseY * height + math.sin(phase * 0.12 + seed) * 14) % height;
-      final point = Offset(x < 0 ? x + width : x, y < 0 ? y + height : y);
-      final distanceFromCenter = (point - center).distance;
-      final centerFade =
-          ((distanceFromCenter - edgeFadeStart) /
-                  math.max(1, calmRadius - edgeFadeStart))
-              .clamp(0.0, 1.0)
-              .toDouble();
-      if (centerFade <= 0.02) {
-        continue;
-      }
-      final tail = Offset(22 + (index * 2.5), 5 + (index % 3) * 2.0);
-      canvas.drawLine(
-        point - tail,
-        point,
-        Paint()
-          ..strokeWidth = 0.75
-          ..strokeCap = StrokeCap.round
-          ..color = LightcorePalette.aether.withValues(
-            alpha: 0.08 * centerFade * _battleGlowAlphaScale,
-          ),
-      );
-    }
   }
 
   void _renderFallbackBackground(Canvas canvas) {
@@ -750,32 +664,34 @@ class LightcoreBattleGame extends FlameGame with ScaleDetector {
   }
 
   void _renderArena(Canvas canvas) {
-    final spawnBaseRadiusVisual = _modelRadiusToVisual(controller.spawnRadius);
-    final spawnRingPaint = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2.2
-      ..color = LightcorePalette.stroke.withValues(alpha: 0.35);
-    final spawnBandPaint = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.4
-      ..color = LightcorePalette.stroke.withValues(alpha: 0.18);
-    if ((_spawnRadiusVisual - spawnBaseRadiusVisual).abs() > 3) {
+    final showArenaGuide =
+        controller.outerRingRevealed ||
+        controller.swarmActivated ||
+        controller.enemyCount > 0;
+    if (showArenaGuide) {
+      final spawnBaseRadiusVisual = _modelRadiusToVisual(
+        controller.spawnRadius,
+      );
+      final spawnRingPaint = Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2.2
+        ..color = LightcorePalette.stroke.withValues(alpha: 0.35);
+      final spawnBandPaint = Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.4
+        ..color = LightcorePalette.stroke.withValues(alpha: 0.18);
+      if ((_spawnRadiusVisual - spawnBaseRadiusVisual).abs() > 3) {
+        canvas.drawCircle(
+          Offset(_center.x, _center.y),
+          spawnBaseRadiusVisual,
+          spawnBandPaint,
+        );
+      }
       canvas.drawCircle(
         Offset(_center.x, _center.y),
-        spawnBaseRadiusVisual,
-        spawnBandPaint,
+        _spawnRadiusVisual,
+        spawnRingPaint,
       );
-    }
-    canvas.drawCircle(
-      Offset(_center.x, _center.y),
-      _spawnRadiusVisual,
-      spawnRingPaint,
-    );
-
-    if (!controller.outerRingRevealed &&
-        !controller.swarmActivated &&
-        controller.enemyCount == 0) {
-      _renderPreBattleRouteEnergy(canvas);
     }
 
     final boardLinkPaint = Paint()
@@ -805,98 +721,6 @@ class LightcoreBattleGame extends FlameGame with ScaleDetector {
         ..strokeWidth = 1.8
         ..color = LightcorePalette.stroke.withValues(alpha: 0.42),
     );
-  }
-
-  void _renderPreBattleRouteEnergy(Canvas canvas) {
-    final center = Offset(_center.x, _center.y);
-    final glowAlphaScale = _battleGlowAlphaScale;
-    final effectAlphaScale = _battleEffectAlphaScale;
-    final time = controller.elapsed;
-    final pulse = 0.5 + (math.sin(time * 2.6) * 0.5);
-
-    if (glowAlphaScale > 0) {
-      canvas.drawCircle(
-        center,
-        _coreRadius * (3.1 + (pulse * 0.22)),
-        Paint()
-          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 32)
-          ..color = LightcorePalette.aether.withValues(
-            alpha: 0.08 * glowAlphaScale,
-          ),
-      );
-    }
-
-    final routeRadius = _spawnRadiusVisual * 0.72;
-    final routeRect = Rect.fromCircle(center: center, radius: routeRadius);
-    final routePaint = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round
-      ..strokeWidth = math.max(1.8, _coreRadius * 0.035)
-      ..color = LightcorePalette.aether.withValues(
-        alpha: (0.2 + (pulse * 0.16)) * effectAlphaScale,
-      );
-    final warningPaint = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round
-      ..strokeWidth = math.max(1.5, _coreRadius * 0.026)
-      ..color = LightcorePalette.warning.withValues(
-        alpha: (0.26 + (pulse * 0.12)) * effectAlphaScale,
-      );
-
-    for (var index = 0; index < 4; index += 1) {
-      final start =
-          (time * 0.34) + (index * math.pi / 2) + (pulse * math.pi / 32);
-      canvas.drawArc(routeRect, start, math.pi / 4.8, false, routePaint);
-    }
-
-    final innerRouteRect = Rect.fromCircle(
-      center: center,
-      radius: routeRadius * 0.72,
-    );
-    for (var index = 0; index < 3; index += 1) {
-      final start = (-time * 0.42) + (index * math.pi * 2 / 3);
-      canvas.drawArc(innerRouteRect, start, math.pi / 5.6, false, warningPaint);
-    }
-
-    final anomalyCount = _qualityScaledCount(6, balanced: 4, lowPower: 3);
-    for (var index = 0; index < anomalyCount; index += 1) {
-      final seed = index / math.max(1, anomalyCount);
-      final angle = (seed * math.pi * 2) + (time * (0.18 + seed * 0.12));
-      final wobble = math.sin((time * 1.8) + (index * 1.7));
-      final radius = routeRadius * (0.82 + (wobble * 0.035));
-      final anomalyCenter = center.translate(
-        math.cos(angle) * radius,
-        math.sin(angle) * radius,
-      );
-      final anomalySize = _coreRadius * (0.06 + (0.018 * (1 + wobble)));
-      final anomalyAlpha = (0.3 + (0.22 * (1 + wobble) / 2)) * effectAlphaScale;
-      canvas.drawCircle(
-        anomalyCenter,
-        anomalySize * 2.6,
-        Paint()
-          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8)
-          ..color = LightcorePalette.warning.withValues(
-            alpha: anomalyAlpha * 0.24,
-          ),
-      );
-      canvas.drawCircle(
-        anomalyCenter,
-        anomalySize,
-        Paint()
-          ..style = PaintingStyle.fill
-          ..color = LightcorePalette.mist.withValues(alpha: anomalyAlpha),
-      );
-      canvas.drawCircle(
-        anomalyCenter,
-        anomalySize * 1.9,
-        Paint()
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 1
-          ..color = LightcorePalette.warning.withValues(
-            alpha: anomalyAlpha * 0.62,
-          ),
-      );
-    }
   }
 
   void _updateScreenShake(double dt) {
