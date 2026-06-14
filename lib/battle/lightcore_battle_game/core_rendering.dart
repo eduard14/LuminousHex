@@ -411,7 +411,6 @@ extension LightcoreBattleGameCoreRendering on LightcoreBattleGame {
     Offset center, {
     required bool showSlots,
   }) {
-    final shellHex = _hexPath(center, _coreRadius);
     // A face-sharing honeycomb fills the folded shell better than a loose orbit.
     final centerHexRadius = _coreRadius / 3;
     final childHexRadius = centerHexRadius;
@@ -427,26 +426,6 @@ extension LightcoreBattleGameCoreRendering on LightcoreBattleGame {
     final shellGlowColor = _signatureColor(
       controller.coreState.affinity,
       controller.coreState.secondaryAffinity,
-    );
-
-    canvas.drawPath(
-      shellHex,
-      Paint()
-        ..style = PaintingStyle.fill
-        ..color = LightcorePalette.panelRaised.withValues(alpha: 0.96),
-    );
-    canvas.drawPath(
-      shellHex,
-      Paint()
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 3
-        ..color = LightcorePalette.layer2.withValues(alpha: 0.88),
-    );
-    canvas.drawPath(
-      _hexPath(center, _coreRadius * 0.88),
-      Paint()
-        ..style = PaintingStyle.fill
-        ..color = shellGlowColor.withValues(alpha: 0.08),
     );
 
     if (showSlots) {
