@@ -8,6 +8,12 @@ import 'app/lightcore_event_preview_app.dart';
 import 'app/lightcore_preview_app.dart';
 import 'services/lightcore_rewarded_ads.dart';
 
+/// App process entry point.
+///
+/// The root chooses exactly one top-level surface:
+/// - debug-only event previews for isolated screen and event QA,
+/// - web menu/demo previews for lightweight visual checks,
+/// - the full production app with ads, bootstrap, cloud sync, and gameplay.
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
   if (_verboseErrorLoggingEnabled) {

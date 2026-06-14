@@ -2138,9 +2138,6 @@ extension LightcoreControllerLayerTraits on LightcoreController {
   double get _coreEnergyOutputMultiplier =>
       coreEnergyUnlocked ? 0.92 + (0.08 * coreEnergyRatio) : 1.0;
 
-  double get _coreEnergyStabilityRecoveryMultiplier =>
-      coreEnergyUnlocked ? 0.90 + (0.20 * coreEnergyRatio) : 1.0;
-
   int coreStatUpgradeCost(TowerUpgradeOptionState upgrade) {
     if (!canTrainCoreStats || upgrade.rank >= maxTowerUpgradeRank) {
       return 0;

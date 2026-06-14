@@ -39,6 +39,11 @@ class _EmailCloudSaveCredentials {
   final String password;
 }
 
+/// Top-level Flutter client for a real player session.
+///
+/// `LightcoreApp` owns the long-lived app services that should survive screen
+/// changes: guest identity, Firebase bootstrap, cloud-save timers, foreground
+/// recovery, audio preferences, and the active `LightcoreController`.
 class LightcoreApp extends StatefulWidget {
   const LightcoreApp({super.key, this.backend, this.showStudioSplash = true});
 

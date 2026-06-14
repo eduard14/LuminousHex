@@ -25,6 +25,10 @@ import '../models/lightcore_social_state.dart';
 import '../models/lightcore_state.dart';
 import '../models/lightcore_tournament.dart';
 import '../models/lightcore_types.dart';
+
+// The controller is split into part files by responsibility. Keep new gameplay
+// authority here or in a focused `lib/state/lightcore_controller/*.dart` part;
+// keep rendering and Flutter widget concerns out of this layer.
 part 'lightcore_controller/state_accessors.dart';
 part 'lightcore_controller/save_restore.dart';
 part 'lightcore_controller/save_restore_payload.dart';
@@ -963,8 +967,6 @@ const int maxEnemyTargetUpgradeLevel =
     LightcoreController.maxEnemyTargetUpgradeLevel;
 const double _maxFlowEfficiency = LightcoreController._maxFlowEfficiency;
 const double _maxCoreStability = LightcoreController._maxCoreStability;
-const double _baseCoreStabilityRecoveryPerSecond =
-    LightcoreController._baseCoreStabilityRecoveryPerSecond;
 const int _coreEnergyUnlockLayer = LightcoreController._coreEnergyUnlockLayer;
 const int _maxCoreEnergyUpgradeLevel =
     LightcoreController._maxCoreEnergyUpgradeLevel;
@@ -1167,6 +1169,11 @@ int overallLevelForExperience(int totalExperience) =>
 int overallLevelForKills(int totalKills) =>
     LightcoreController.overallLevelForKills(totalKills);
 
+/// Local game authority for progression, battle state, rewards, and saves.
+///
+/// Screens read derived state from this controller and call command methods on
+/// it. The controller emits `notifyListeners` after state transitions; widgets
+/// and Flame rendering code should not mutate model objects behind its back.
 class LightcoreController extends ChangeNotifier {
   LightcoreController({
     Random? packRandom,
@@ -1341,7 +1348,6 @@ class LightcoreController extends ChangeNotifier {
   static const double _farmValidationBaseWaveSeconds = 30;
   static const double _maxFlowEfficiency = 100;
   static const double _maxCoreStability = 100;
-  static const double _baseCoreStabilityRecoveryPerSecond = 0.8;
   static const int _coreEnergyUnlockLayer = 3;
   static const int _maxCoreEnergyUpgradeLevel = 5;
   static const double _baseCoreEnergyCapacity = 100;

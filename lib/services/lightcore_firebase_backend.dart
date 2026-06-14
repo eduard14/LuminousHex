@@ -60,6 +60,11 @@ class LightcoreGoogleAccountCollisionException implements Exception {
   String toString() => message;
 }
 
+/// Firebase boundary for startup, auth, cloud save, social, and live services.
+///
+/// UI and controller code should call this service instead of reaching into
+/// Firebase packages directly. Keeping the boundary here makes local fallback,
+/// App Check failures, version gates, and callable error handling consistent.
 class FirebaseLightcoreBackend {
   FirebaseLightcoreBackend({required this.runtimeConfig});
 
@@ -148,6 +153,8 @@ class FirebaseLightcoreBackend {
       statusMessage: 'No offline rewards available yet.',
     );
 
+    // This local-only branch returns before any Firebase call so Layer 1
+    // gameplay can be exercised without auth, App Check, or callable services.
     if (bypassServerValidationForLayer1Testing) {
       warnings.add(
         'Temporary Layer 1 testing mode: Firebase startup and server validation are bypassed.',

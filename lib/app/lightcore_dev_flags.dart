@@ -1,5 +1,8 @@
-// Temporary local Layer 1 iteration switches. Flip both off when the menu and
-// Firebase-backed startup flow should be exercised again.
+/// Temporary local Layer 1 iteration switches.
+///
+/// Keep hard-coded startup bypasses in this file so agents can find and remove
+/// them quickly. Flip both to `false` before validating the menu, Firebase
+/// bootstrap, cloud save, App Check, social overview sync, or release builds.
 const bool bypassServerValidationForLayer1Testing = true;
 const bool skipMainMenuForLayer1Testing = true;
 

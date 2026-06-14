@@ -79,7 +79,7 @@ class _GuestSignInPromptResult {
 
 class _LightcoreMainMenuScreenState extends State<LightcoreMainMenuScreen>
     with SingleTickerProviderStateMixin {
-  static const _menuBackgroundAsset = 'lib/Menu_Background.png';
+  static const _menuBackgroundAsset = 'assets/Images/menu_background.png';
   static const _pulseCycleDuration = Duration(milliseconds: 7200);
   static const _loadingStageDuration = Duration(milliseconds: 1800);
   static const List<String> _loadingStages = ['Load'];
