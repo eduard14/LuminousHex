@@ -50,6 +50,7 @@ class LightcoreBattleGame extends FlameGame with ScaleDetector {
   static const double _slotFuseBurstDuration = 0.52;
   static const double _shotFireBurstDuration = 0.28;
   static const double _enemyHitFaceDuration = 0.28;
+  static const double _coreDamageFlashDuration = 0.46;
   static const double _enemySpawnRevealDuration = 5.0;
   static const double _coreDamageShakeDuration = 0.34;
   static const double shellPromotionStatsDelay = 3.35;
@@ -84,6 +85,7 @@ class LightcoreBattleGame extends FlameGame with ScaleDetector {
   int _previousCoreDamageSequence = 0;
   int _knownLevelUpRadianceSequence = 0;
   double _coreHexFirePopRemaining = 0;
+  double _coreDamageFlashRemaining = 0;
   double _screenShakeRemaining = 0;
   double _screenShakeAmplitude = 0;
   Vector2 _screenShakeOffset = Vector2.zero();

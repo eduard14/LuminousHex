@@ -311,6 +311,11 @@ extension LightcoreBattleGameDrawingHelpers on LightcoreBattleGame {
       return;
     }
     final destroyed = clampedHealth <= 0.001;
+    final flashProgress =
+        (_coreDamageFlashRemaining /
+                LightcoreBattleGame._coreDamageFlashDuration)
+            .clamp(0.0, 1.0)
+            .toDouble();
     final pulse = 0.5 + (math.sin(controller.elapsed * 8.2 + seed) * 0.5);
 
     canvas.save();
@@ -326,18 +331,18 @@ extension LightcoreBattleGameDrawingHelpers on LightcoreBattleGame {
     final crackPaint = Paint()
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round
-      ..strokeWidth = math.max(1.1, radius * (destroyed ? 0.044 : 0.032))
+      ..strokeWidth = math.max(0.9, radius * (destroyed ? 0.038 : 0.022))
       ..color = LightcorePalette.mist.withValues(
-        alpha: destroyed ? 0.92 : (0.36 + (damage * 0.34)),
+        alpha: destroyed ? 0.82 : (0.22 + (damage * 0.24)),
       );
     final hotCrackPaint = Paint()
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round
-      ..strokeWidth = math.max(0.8, radius * 0.018)
-      ..color = LightcorePalette.warning.withValues(
-        alpha: destroyed ? 0.78 : (0.22 + (damage * 0.34)),
+      ..strokeWidth = math.max(0.55, radius * 0.012)
+      ..color = tint.withValues(
+        alpha: destroyed ? 0.52 : (0.12 + (damage * 0.18)),
       );
-    final crackCount = destroyed ? 7 : (2 + (damage * 4)).round();
+    final crackCount = destroyed ? 6 : (1 + (damage * 3)).round();
     for (var index = 0; index < crackCount; index++) {
       final baseAngle =
           seed +
@@ -369,6 +374,29 @@ extension LightcoreBattleGameDrawingHelpers on LightcoreBattleGame {
       canvas.drawPath(path, hotCrackPaint);
     }
     canvas.restore();
+
+    if (flashProgress > 0) {
+      final eased = Curves.easeOutCubic.transform(1 - flashProgress);
+      canvas.drawPath(
+        _hexPath(center, radius * (1.04 + (eased * 0.18))),
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = math.max(2.0, radius * 0.045 * flashProgress)
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6)
+          ..color = LightcorePalette.warning.withValues(
+            alpha: 0.48 * flashProgress,
+          ),
+      );
+      canvas.drawPath(
+        _hexPath(center, radius * (0.84 + (eased * 0.12))),
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = math.max(1.3, radius * 0.028)
+          ..color = LightcorePalette.warning.withValues(
+            alpha: 0.62 * flashProgress,
+          ),
+      );
+    }
 
     if (!destroyed) {
       return;

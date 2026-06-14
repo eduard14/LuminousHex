@@ -227,6 +227,7 @@ extension LightcoreBattleGameTransientVisuals on LightcoreBattleGame {
 
     final coreDamageSequence = controller.coreDamageSequence;
     if (coreDamageSequence != _previousCoreDamageSequence) {
+      _coreDamageFlashRemaining = LightcoreBattleGame._coreDamageFlashDuration;
       _startCoreDamageShake(controller.coreDamageAmount);
       LightcoreAudio.instance.playSfx(LightcoreSfx.coreDamage);
     }
@@ -237,6 +238,8 @@ extension LightcoreBattleGameTransientVisuals on LightcoreBattleGame {
   }
 
   void _updateShotFireBursts(double dt) {
+    _coreDamageFlashRemaining = math.max(0, _coreDamageFlashRemaining - dt);
+
     final currentShotIds = controller.shots.map((shot) => shot.id).toSet();
     for (final shot in controller.shots) {
       if (_knownShotIds.contains(shot.id)) {
