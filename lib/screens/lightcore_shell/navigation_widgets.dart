@@ -176,7 +176,7 @@ class _LayerOneWaveProgressPanel extends StatelessWidget {
       ].join(', '),
       child: DecoratedBox(
         decoration: BoxDecoration(
-          color: LightcorePalette.panel.withValues(alpha: 0.86),
+          color: Colors.transparent,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: LightcorePalette.solar.withValues(alpha: 0.26),
