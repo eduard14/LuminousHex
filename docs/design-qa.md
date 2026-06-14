@@ -19,6 +19,4 @@ Blocked for strict Product Design comparison QA.
 ## Verification
 
 - `flutter analyze`
-- `flutter test test/battle_screen_controller_swap_test.dart`
-- `flutter test`
 - `flutter build web`

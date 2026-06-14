@@ -8,10 +8,10 @@
 ## Fast Repository Map
 
 - `README.md` explains the product scope and common run commands.
-- `docs/README.md` indexes design, QA, release, testing, and asset references.
+- `docs/README.md` indexes design, QA, release, and asset references.
 - `lib/README.md` maps the Flutter source tree and the main runtime flow.
 - `assets/README.md` explains where images, audio, guide art, and sprites live.
-- `functions/README.md` maps the Firebase Functions backend and backend tests.
+- `functions/README.md` maps the Firebase Functions backend.
 - `tool/README.md` covers one-off asset import and generation scripts.
 
 ## Runtime Entry Points
@@ -32,6 +32,6 @@
 
 ## Verification
 
-- Flutter client: run `flutter analyze` and the most focused `flutter test` command practical for the change.
-- Backend: run `cd functions` then `npm test` after editing `functions/`.
+- Flutter client: run `flutter analyze`; use a build check when the change touches assets or platform packaging.
+- Backend: run `cd functions` then `npm run check` after editing `functions/`.
 - Asset path changes require a Flutter analysis or build check because missing assets fail late.

@@ -381,8 +381,8 @@ class Layer2BaseBoard {
 ///
 /// The active anomaly deck, active region Threat Director, core stability, and
 /// target pressure already lived in separate controller fields. This snapshot
-/// gives UI and tests one documented surface to inspect without rebuilding the
-/// same calculations in multiple places.
+/// gives UI and debug surfaces one documented source without rebuilding the same
+/// calculations in multiple places.
 class ThreatScanBundleSnapshot {
   const ThreatScanBundleSnapshot({
     required this.id,

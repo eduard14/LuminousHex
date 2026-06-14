@@ -486,13 +486,13 @@ extension LightcoreControllerLayerRebuild on LightcoreController {
 
   @visibleForTesting
   void debugSetLayer1WaveForTest(int wave) {
-    // L1L2_REBUILD_SAFE: Test hook exercises Wave 10 completion without relying on frame timing.
+    // L1L2_REBUILD_SAFE: Debug hook exercises Wave 10 completion without relying on frame timing.
     _syncLayerRebuildWaveProgress(wave);
   }
 
   @visibleForTesting
   void debugSetLayer1SparksForTest(int sparks) {
-    // L1L2_REBUILD_SAFE: Test hook avoids coupling shell-completion tests to temporary economy numbers.
+    // L1L2_REBUILD_SAFE: Debug hook avoids coupling shell completion to temporary economy numbers.
     _layerRun = _layerRun.copyWith(sparks: max(0, sparks));
     _notifyNow();
   }

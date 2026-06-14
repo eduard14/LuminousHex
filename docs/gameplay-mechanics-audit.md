@@ -14,10 +14,6 @@ Primary sources:
 - `lib/data/enemy_manager_configs.dart`
 - `lib/screens/lightcore_shell.dart`
 - `lib/screens/advancement_screen.dart`
-- `test/overall_progression_and_boss_test.dart`
-- `test/progression_unlocks_test.dart`
-- `test/child_tower_growth_test.dart`
-- `test/manual_overdrive_test.dart`
 
 ## One-Page Summary
 
@@ -448,12 +444,6 @@ Use this instead of re-scanning the repo:
   `lib/screens/lightcore_shell.dart`
 - Promotion UI and advancement messaging:
   `lib/screens/advancement_screen.dart`
-- Behavior that already has tests:
-  `test/overall_progression_and_boss_test.dart`,
-  `test/progression_unlocks_test.dart`,
-  `test/child_tower_growth_test.dart`,
-  `test/manual_overdrive_test.dart`,
-  `test/battle_pass_rewards_test.dart`
 
 For a V8 design-bible-to-code map, including implementation status and `rg`
 anchors, use `docs/code-design-alignment-map.md`.

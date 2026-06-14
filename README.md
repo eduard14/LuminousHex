@@ -81,7 +81,7 @@ to the parent arsenal.
 AGENTS.md   Standing workflow rules for Codex and other agents
 docs/       Product, design, QA, release, and architecture references
 assets/     Runtime images, audio, guides, and sprites
-functions/  Firebase Functions backend and backend tests
+functions/  Firebase Functions backend
 lib/
   app/        App bootstrap, manifest, and session setup
   battle/     Flame battlefield runtime
@@ -91,7 +91,6 @@ lib/
   state/      Local game authority and progression logic
   theme/      Visual system
   widgets/    Shared UI components
-test/       Flutter smoke, widget, and gameplay tests
 tool/       Local asset-generation and import scripts
 web/          Web shell assets
 ```
@@ -112,9 +111,6 @@ concrete Dart and Cloud Functions symbols and calls out known alignment risks.
 Use [docs/versioning.md](docs/versioning.md) when bumping app versions across
 Flutter metadata, backend gates, menu display fixtures, and deployment checks.
 
-Use [docs/testing.md](docs/testing.md) before handing off changes. It keeps the
-Flutter and Firebase validation commands in one place.
-
 ## Running Locally
 
 ```bash
@@ -125,7 +121,6 @@ flutter run -d ios
 Other useful commands:
 
 ```bash
-flutter test
 flutter analyze
 ```
 

@@ -259,7 +259,7 @@ class _LightcoreAppState extends State<LightcoreApp>
           ) ??
           graphicsQuality;
     } catch (error) {
-      // Shared preferences are optional for tests and unsupported contexts.
+      // Shared preferences are optional in unsupported contexts.
       _logSession('bootstrap-session-store-warning', <String, Object?>{
         'reason': reason,
         'error': error,
@@ -323,7 +323,7 @@ class _LightcoreAppState extends State<LightcoreApp>
       try {
         await _sessionStore.writeGuideId(cloudGuide.storageId);
       } catch (_) {
-        // Shared preferences are optional for tests and unsupported contexts.
+        // Shared preferences are optional in unsupported contexts.
       }
     }
     if (skipMainMenuForLayer1Testing) {
@@ -332,7 +332,7 @@ class _LightcoreAppState extends State<LightcoreApp>
     try {
       await _sessionStore.writePlayerId(report.profile.playerId);
     } catch (error) {
-      // Shared preferences are optional for tests and unsupported contexts.
+      // Shared preferences are optional in unsupported contexts.
       _logSession('bootstrap-player-store-warning', <String, Object?>{
         'reason': reason,
         'error': error,

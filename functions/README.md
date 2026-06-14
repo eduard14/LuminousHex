@@ -12,12 +12,12 @@ social state, tournaments, chat, and live balance metadata.
 - `src/player_save_helpers.js`: cloud-save sanitation, revision, and integrity
   helpers.
 - `src/tournament_helpers.js`: tournament scoring and bracket helpers.
-- `scripts/`: lightweight Node tests and reference checks used by `npm test`.
+- `scripts/check-top-level-call-references.js`: callable export reference check.
 
 ## Commands
 
 ```bash
-npm test
+npm run check
 npm run serve
 npm run deploy
 npm run logs

@@ -505,8 +505,6 @@ Fields to configure for each pass:
 - Add subscription expiration handling.
 - Add store catalog loading with safe local fallback.
 - Add localized strings for every product and ad prompt.
-- Add tests for pass purchase, currency spend, subscription entitlement, ad caps,
-  refund/reversal, and restore purchases.
 
 ## Concrete First Pass
 

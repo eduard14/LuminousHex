@@ -24,9 +24,8 @@ When incrementing the app version, update these source files together:
   - `DEFAULT_MANIFEST.minimumSupportedBuildNumber`
   - `DEFAULT_MANIFEST.recommendedVersion`
   - `DEFAULT_MANIFEST.recommendedBuildNumber`
-- Preview and focused test fixtures when they assert a literal version:
+- Preview fixtures when they assert a literal version:
   - `lib/app/lightcore_preview_app.dart`
-  - `test/lightcore_main_menu_smoke_test.dart`
 
 Do not hand-edit generated `build/` output. Rebuild it from source.
 
@@ -67,8 +66,8 @@ which includes the recommended build number when one is configured.
 After bumping a version, run:
 
 ```bash
-dart format lib/app/lightcore_build_info.dart lib/app/lightcore_bootstrap.dart lib/app/lightcore_preview_app.dart lib/services/lightcore_firebase_backend.dart lib/screens/lightcore_main_menu_screen.dart test/helpers/lightcore_test_fixtures.dart test/lightcore_bootstrap_test.dart test/lightcore_main_menu_smoke_test.dart
-flutter test test/lightcore_bootstrap_test.dart test/lightcore_main_menu_smoke_test.dart
+dart format lib/app/lightcore_build_info.dart lib/app/lightcore_bootstrap.dart lib/app/lightcore_preview_app.dart lib/services/lightcore_firebase_backend.dart lib/screens/lightcore_main_menu_screen.dart
+flutter analyze
 ```
 
 Before release, deploy both app and backend surfaces that depend on the gate.

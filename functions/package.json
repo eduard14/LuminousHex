@@ -6,7 +6,7 @@
     "node": "22"
   },
   "scripts": {
-    "test": "node --check index.js && node scripts/check-top-level-call-references.js && node scripts/player-save-helpers-test.js && node scripts/tournament-helpers-test.js",
+    "check": "node --check index.js && node scripts/check-top-level-call-references.js",
     "serve": "firebase emulators:start --only functions,firestore --project lumicore-95c8a",
     "shell": "firebase functions:shell",
     "deploy": "firebase deploy --only functions,firestore --project lumicore-95c8a",

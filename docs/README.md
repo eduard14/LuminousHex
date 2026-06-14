@@ -29,7 +29,6 @@ steps that are too broad to keep in source comments.
 
 ## Development And QA
 
-- [testing.md](testing.md) lists validation commands for Flutter and Firebase.
 - [design-qa.md](design-qa.md) records the latest Product Design QA outcome.
 
 When a code change contradicts one of these notes, update the note in the same

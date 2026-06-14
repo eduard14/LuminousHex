@@ -1680,7 +1680,7 @@ extension LightcoreControllerStateAccessors on LightcoreController {
     final directorNames = _activeThreatDirectorNames(deck);
     final threatReward = activeThreatRewardMultiplier;
     final stabilityPressure = activeThreatStabilityMultiplier;
-    // L1L2_LEGACY_REVISIT: Threat bundle UI is hidden in the rebuild, but the snapshot remains stable for old screens/tests.
+    // L1L2_LEGACY_REVISIT: Threat bundle UI is hidden in the rebuild, but the snapshot remains stable for old screens and debug surfaces.
     const outputEfficiency = 1.0;
     return ThreatScanBundleSnapshot(
       id: _threatScanBundleId(deck),
